@@ -49,13 +49,8 @@ import {
   validerEntreeRelecture,
 } from "../validation/domaine/relectures-mesure.ts";
 import { RegistreRattachementsIllisible } from "../validation/io/rattachements-fichier.ts";
-import {
-  ajouterRelecture,
-  cheminRelectures,
-  lireRelectures,
-  RegistreModifieDepuisLecture,
-  RegistreRelecturesIllisible,
-} from "../validation/io/relectures-fichier.ts";
+import { RegistreModifieDepuisLecture } from "../validation/io/registre-ajout-seul.ts";
+import { ajouterRelecture, cheminRelectures, lireRelectures, RegistreRelecturesIllisible } from "../validation/io/relectures-fichier.ts";
 import { ItemStagingModifie } from "../validation/io/staging-renvoi.ts";
 import { analyserArguments, drapeau, obligatoire, texte, type Arguments } from "./arguments.ts";
 import {
@@ -251,7 +246,7 @@ function construireDecision(table: Arguments, options: Options): DecisionCorrect
       mesure_version: mesure.version,
       theme_demande: obligatoire(table, "theme", "c'est le thème demandé qui est tranché."),
       decision: sensDemande(table),
-      date: texte(table, "date", instantLocal(new Date()).slice(0, 10)),
+      date: dateDuJour(table),
       ...motifEventuel(table),
     },
     "arguments de la commande",
