@@ -61,6 +61,10 @@ class EntreeDivergente(Exception):
     """Une entrée existe déjà sous ce nom avec d'autres octets : elle n'est jamais écrasée."""
 
 
+class FicheSourceIllisible(Exception):
+    """La fiche de source n'est pas un JSON lisible, ou ne porte pas candidat_id (constat 18, revue du 2026-10-17)."""
+
+
 def chemin_entree(cle_source: str, sha256: str) -> PurePosixPath:
     return REPERTOIRE_ENTREES / cle_source / f"{sha256}.json"
 
@@ -109,6 +113,7 @@ REFUS_NOMMES = (
     ExtractionRefusee,
     EntreeNonConforme,
     EntreeDivergente,
+    FicheSourceIllisible,
 )
 
 
@@ -195,8 +200,20 @@ def _contenu(racine: Path, sha256: str) -> Contenu:
     return lire_contenu(chemin)
 
 
+def _candidat_id(fiche: FicheDeSource) -> object:
+    """Le `candidat_id` de la fiche de source ; nomme la fiche plutôt que de lever un `KeyError` ou
+    un `JSONDecodeError` brut (constat 18, revue du 2026-10-17)."""
+    try:
+        brut = json.loads(fiche.chemin.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as erreur:
+        raise FicheSourceIllisible(f"{fiche.chemin} : JSON illisible ({erreur}).") from erreur
+    if not isinstance(brut, dict) or "candidat_id" not in brut:
+        raise FicheSourceIllisible(f"{fiche.chemin} : candidat_id absent.")
+    return brut["candidat_id"]
+
+
 def construire_entree(fiche: FicheDeSource, textes: Sequence[str], deps: Dependances) -> dict[str, object]:
-    candidat_id = json.loads(fiche.chemin.read_text(encoding="utf-8"))["candidat_id"]
+    candidat_id = _candidat_id(fiche)
     epingle = deps.extracteur_en_service(_contenu(deps.racine, fiche.sha256).type_contenu)
     entree: dict[str, object] = {
         "cle_source": fiche.cle_source,

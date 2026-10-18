@@ -4,8 +4,9 @@
  * l'écrit par renommage (`ecriture.ts`). Le statut n'est pas touché : `invalide` s'écrit avec le
  * dépôt (§12), dans une étape de publication ultérieure.
  *
- * Rien n'est écrit si la transition est refusée, ni si l'invalidation est déjà là à l'identique
- * (`deja_inscrite`, règle 7). La date est l'instant `maintenant_ms`, écrit à l'heure de Paris.
+ * Rien n'est écrit si la transition est refusée, ni si une invalidation du même motif est déjà là
+ * (`deja_inscrite`, règle 7, D54 (5) : quelle que soit la date de cet appel). La date est l'instant
+ * `maintenant_ms`, écrit à l'heure de Paris.
  */
 
 import { dispositionRunNote, lireRunJson } from "../../analysis/lecture-run.ts";
@@ -26,8 +27,8 @@ export function invaliderRun(repertoire_run: string, motif: string, maintenant_m
   const chemin = dispositionRunNote(repertoire_run).run_json;
   const date = instantParis(maintenant_ms);
   const issue = invalider(run, motif, date);
-  const resultat = { issue: issue.issue, run_id: run.id, statut: run.statut, date };
-  if (issue.issue === "deja_inscrite") return resultat;
+  // D54 (5) : déjà inscrite ⇒ la date rendue est celle déjà inscrite, jamais celle de cet appel.
+  if (issue.issue === "deja_inscrite") return { issue: issue.issue, run_id: run.id, statut: run.statut, date: issue.date };
   ecrireParRenommage(chemin, valider<unknown>("run", issue.run, `${chemin} après invalidation`), "invalidation");
-  return resultat;
+  return { issue: issue.issue, run_id: run.id, statut: run.statut, date };
 }

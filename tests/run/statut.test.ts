@@ -104,14 +104,14 @@ describe("statut, cas 3 : invalider depuis un statut publié ou invalide", () =>
 });
 
 describe("statut, cas 4 : une invalidation n'est jamais réécrite (règle 7)", () => {
-  it("statut, cas 4 : même motif, même date ⇒ deja_inscrite, rien à écrire", () => {
+  it("statut, cas 4 : même motif, même date ⇒ deja_inscrite, la date déjà inscrite est rendue", () => {
     const deja = run("en_cours", { invalidation: { motif: MOTIF, date: APRES } });
-    expect(invalider(deja, MOTIF, APRES)).toEqual({ issue: "deja_inscrite" });
+    expect(invalider(deja, MOTIF, APRES)).toEqual({ issue: "deja_inscrite", date: APRES });
   });
 
-  it("statut, cas 4 : même motif, même instant écrit autrement ⇒ refus : la forme canonique compare les chaînes", () => {
+  it("statut, cas 4 (D54 (5)) : même motif, un instant écrit autrement ⇒ deja_inscrite quand même, date déjà inscrite rendue", () => {
     const deja = run("en_cours", { invalidation: { motif: MOTIF, date: APRES } });
-    expect(motifDu(() => invalider(deja, MOTIF, "2026-12-02T09:00:00.000Z"))).toBe("invalidation_differente");
+    expect(invalider(deja, MOTIF, "2026-12-02T09:00:00.000Z")).toEqual({ issue: "deja_inscrite", date: APRES });
   });
 
   it("statut, cas 4 : motif différent ⇒ refus invalidation_differente", () => {
@@ -119,9 +119,9 @@ describe("statut, cas 4 : une invalidation n'est jamais réécrite (règle 7)", 
     expect(motifDu(() => invalider(deja, `${MOTIF} Autre.`, APRES))).toBe("invalidation_differente");
   });
 
-  it("statut, cas 4 : même motif, date différente ⇒ refus invalidation_differente", () => {
+  it("statut, cas 4 (D54 (5)) : même motif, date tout à fait différente (même avant date_gel) ⇒ deja_inscrite, date déjà inscrite rendue", () => {
     const deja = run("planifie", { invalidation: { motif: MOTIF, date: APRES } });
-    expect(motifDu(() => invalider(deja, MOTIF, "2026-12-03T10:00:00.000+01:00"))).toBe("invalidation_differente");
+    expect(invalider(deja, MOTIF, "2026-12-03T10:00:00.000+01:00")).toEqual({ issue: "deja_inscrite", date: APRES });
   });
 });
 

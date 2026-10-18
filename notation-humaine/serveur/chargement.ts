@@ -5,6 +5,11 @@
  * Ce qui est chargé est immuable pour la durée de la session : le run, les réponses obtenues du
  * contexte `run`, leurs questions et les items épinglés au gel. Les notations, elles, changent
  * pendant la session ; elles se relisent à chaque demande (`contexte.ts`).
+ *
+ * **Run invalidé (D51 (2)).** `chargerRun` refuse (`RunInvalideRefuse`) un run qui porte une
+ * invalidation, par la même règle que la chaîne de notation automatique
+ * (`pipeline/notation/chaine.ts:exigerNotable`) : un run invalidé n'est plus noté, humain compris
+ * (constat 7, revue du 2026-10-17).
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -12,6 +17,7 @@ import { dispositionRunNote, lireDossier, lireItemsEpingles, lireRunJson, lireTi
 import { estDuRun } from "../../analysis/filtre.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import type { ReponseEcrite, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
+import { exigerNotable } from "../../pipeline/notation/chaine.ts";
 import { citationsDeReference, type TextesDeVerification } from "../../pipeline/notation/extrait.ts";
 import { tirerJeuOr, type JeuOr } from "../../pipeline/notation/echantillons.ts";
 import { resolusAuGel, type QuestionPosee, type ReferenceSoumise, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
@@ -109,6 +115,7 @@ function lireReponsesObtenues(repertoire_run: string, run_id: string): readonly 
 export function chargerRun(repertoire_run: string, repertoire_items: string): DonneesRun {
   if (!existsSync(dispositionRunNote(repertoire_run).run_json)) throw new RepertoireDeRunIllisible(repertoire_run);
   const run = lireRunJson(repertoire_run);
+  exigerNotable(run);
   const chemin_questions = dispositionRunNote(repertoire_run).questions;
   const questions = lireQuestions(chemin_questions);
   const items = lireItems(questions, run, repertoire_items, chemin_questions);

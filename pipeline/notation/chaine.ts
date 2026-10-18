@@ -241,8 +241,12 @@ function estRepriseD16(run: RunLu): boolean {
   return run.contrefactuel_candidats !== undefined && run.juges.every((juge) => juge.retire);
 }
 
-/** D51 (2) : refus, avant toute écriture, d'un run qui porte une invalidation, sauf la reprise d'un D16 (3). */
-function exigerNotable(run: RunLu): void {
+/**
+ * D51 (2) : refus, avant toute écriture, d'un run qui porte une invalidation, sauf la reprise d'un
+ * D16 (3). Exportée pour `notation-humaine/serveur/chargement.ts` : la même règle, le même refus,
+ * jamais recopiés (constat 7, revue du 2026-10-17).
+ */
+export function exigerNotable(run: RunLu): void {
   if (run.invalidation === undefined || estRepriseD16(run)) return;
   throw new RunInvalideRefuse(run.id, run.invalidation.motif);
 }

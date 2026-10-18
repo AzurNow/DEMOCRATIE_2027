@@ -89,7 +89,7 @@ describe("pnpm run:dry, la commande", () => {
     const runsAvant = existsSync(join(RACINE, "runs")) ? readdirSync(join(RACINE, "runs")).sort() : [];
     const sortieTexte = execFileSync(
       process.execPath,
-      ["--experimental-strip-types", "--no-warnings", join(RACINE, "outils/run-dry.ts"), "--sortie", racine],
+      ["--experimental-strip-types", "--no-warnings", join(RACINE, "outils/run-dry.ts"), `--sortie=${racine}`],
       { cwd: RACINE, encoding: "utf8" },
     );
     expect(sortieTexte).toContain("Bilan par outil × mode");
@@ -103,8 +103,8 @@ describe("pnpm run:dry, la commande", () => {
   it("--sortie sous runs/ : refus nommé, code non nul, rien n'est écrit (revue du 2026-10-12, constat 9)", () => {
     const runs = join(RACINE, "runs");
     const runsAvant = existsSync(runs) ? readdirSync(runs).sort() : [];
-    for (const argument of [["--sortie", join(runs, "essai-run-dry")], ["--sortie=runs/essai-run-dry"]]) {
-      const resultat = spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", join(RACINE, "outils/run-dry.ts"), ...argument], {
+    for (const argument of [`--sortie=${join(runs, "essai-run-dry")}`, "--sortie=runs/essai-run-dry"]) {
+      const resultat = spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", join(RACINE, "outils/run-dry.ts"), argument], {
         cwd: RACINE,
         encoding: "utf8",
       });
@@ -114,5 +114,28 @@ describe("pnpm run:dry, la commande", () => {
     }
     expect(existsSync(join(runs, "essai-run-dry"))).toBe(false);
     expect(existsSync(runs) ? readdirSync(runs).sort() : []).toEqual(runsAvant);
+  });
+
+  it("option inconnue (coquille) ⇒ refus nommé OptionsInconnues, code non nul, rien n'est écrit (constat 19)", () => {
+    const racine = sortie();
+    const resultat = spawnSync(
+      process.execPath,
+      ["--experimental-strip-types", "--no-warnings", join(RACINE, "outils/run-dry.ts"), `--saortie=${racine}`],
+      { cwd: RACINE, encoding: "utf8" },
+    );
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.stderr).toContain("OptionsInconnues");
+    expect(resultat.stdout).toBe("");
+    expect(existsSync(join(racine, "2026-11-27"))).toBe(false);
+  });
+
+  it("--sortie sans valeur (coquille sans =) ⇒ refus nommé, rien n'est écrit", () => {
+    const resultat = spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", join(RACINE, "outils/run-dry.ts"), "--sortie"], {
+      cwd: RACINE,
+      encoding: "utf8",
+    });
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.stderr).toContain("ArgumentsRunDryRefuses");
+    expect(resultat.stdout).toBe("");
   });
 });

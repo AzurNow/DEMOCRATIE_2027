@@ -116,3 +116,17 @@ describe("décision prise sur une version dépassée", () => {
     expect(promotion.sortie).toMatch(/dépassée/);
   });
 });
+
+describe("constat 20 (revue du 2026-10-17), 32 (revue du 2026-10-12) : un bogue remonte avec sa pile", () => {
+  it("un item de staging/ au JSON illisible : SyntaxError non attrapée, pile imprimée, rien écrit", () => {
+    const { bac } = preparer();
+    writeFileSync(join(bac.racine, "staging/items", "01JBANCESSA1000000000TEMCA.json"), "{ pas du json", "utf8");
+    commiterTout(bac.racine, "item de staging cassé");
+    const resultat = executerOutil("arbitrer.ts", chemins(bac));
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.erreur).toContain("SyntaxError");
+    expect(resultat.erreur).toMatch(/\n\s+at /);
+    expect(existsSync(registre(bac))).toBe(false);
+    bac.detruire();
+  });
+});

@@ -62,6 +62,15 @@ describe("cas limite 9 : la mesure figure sous une forme admise", () => {
     expect(mesureFigureSousFormeAdmise("X s'oppose à le budget ?", Q_NEG, "le budget")).toBe(false);
   });
 
+  it("constat 28 : « à le » avec une majuscule (« À le budget ») est rejeté, pas seulement la forme minuscule", () => {
+    expect(mesureFigureSousFormeAdmise("X s'oppose À le budget ?", Q_NEG, "le budget")).toBe(false);
+  });
+
+  it("constat 28 : « à le » avec une espace insécable ou fine insécable après « à » est rejeté", () => {
+    expect(mesureFigureSousFormeAdmise("X s'oppose à le budget ?", Q_NEG, "le budget")).toBe(false);
+    expect(mesureFigureSousFormeAdmise("X s'oppose à le budget ?", Q_NEG, "le budget")).toBe(false);
+  });
+
   it("Q-NEG + « le budget » : une occurrence admise suffit, même si une autre suit « à »", () => {
     expect(mesureFigureSousFormeAdmise("Contre le budget ? Ou à le budget ?", Q_NEG, "le budget")).toBe(true);
   });

@@ -38,6 +38,7 @@
  */
 
 import { resolve } from "node:path";
+import { ecriturePermise } from "./garde-fous-git.ts";
 import { IntrouvableEnStaging, RattachementInacheve, rattacher, trouverEnStaging } from "./rattachement-mesure.ts";
 import { estRefusAttendu, renvoyer } from "./renvoi-mesure.ts";
 import { EntreeRattachementInvalide, RattachementRefuse } from "../validation/domaine/rattachements-item.ts";
@@ -303,6 +304,7 @@ function enregistrer(table: Arguments, options: Options): void {
  * (`relectureDe`), jamais recopiée de son champ `empreinte`.
  */
 function relire(table: Arguments, options: Options): void {
+  if (options.ecrire && !ecriturePermise(options.racine)) return;
   const staging = chargerStaging(options.staging);
   const mesure = trouverEnStaging(staging.mesures, "Mesure", options.relire, staging);
   const relecture = validerEntreeRelecture(relectureDe(mesure, dateDuJour(table)), "arguments de la commande");

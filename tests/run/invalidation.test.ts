@@ -114,11 +114,21 @@ describe("invalider, cas 4 : une invalidation n'est jamais réécrite", () => {
     expect(octets(repertoire)).toBe(avant);
   });
 
-  it("invalider, cas 4 : deuxième appel, même motif, plus tard ⇒ refus invalidation_differente, octets identiques", () => {
+  it("invalider, cas 4 (D54 (5)) : deuxième appel, même motif, plus tard ⇒ deja_inscrite, octets et date inchangés", () => {
     const repertoire = poser(avantPublication("planifie"));
-    invaliderRun(repertoire, MOTIF, MAINTENANT);
+    const premier = invaliderRun(repertoire, MOTIF, MAINTENANT);
     const avant = octets(repertoire);
-    expect(refusDe(() => invaliderRun(repertoire, MOTIF, MAINTENANT + 1000))).toBe("invalidation_differente");
+    const second = invaliderRun(repertoire, MOTIF, MAINTENANT + 1000);
+    expect(second).toEqual({ ...premier, issue: "deja_inscrite" });
+    expect(octets(repertoire)).toBe(avant);
+  });
+
+  it("invalider, cas 4 (D54 (5)) : même motif, quelle que soit la date reçue (même avant date_gel) ⇒ deja_inscrite, date inscrite rendue", () => {
+    const repertoire = poser(avantPublication("planifie"));
+    const premier = invaliderRun(repertoire, MOTIF, MAINTENANT);
+    const avant = octets(repertoire);
+    const second = invaliderRun(repertoire, MOTIF, DATE_GEL_MS - 1);
+    expect(second).toEqual({ ...premier, issue: "deja_inscrite" });
     expect(octets(repertoire)).toBe(avant);
   });
 });
@@ -183,6 +193,20 @@ describe("pnpm run:invalider en ligne de commande", () => {
     const execution = executerOutil("run-invalider.ts", [repertoire, `--motif=${MOTIF}`]);
     expect(execution.status).toBe(2);
     expect(execution.erreur).toContain("TransitionRefusee");
+    expect(octets(repertoire)).toBe(avant);
+  });
+
+  it("invalider, cas 4 (D54 (5), constat 8) : relancer la commande sur le même motif ⇒ code 0, déjà inscrite, octets inchangés", () => {
+    const repertoire = runPasse();
+    const premiere = executerOutil("run-invalider.ts", [repertoire, `--motif=${MOTIF}`]);
+    expect(premiere.status).toBe(0);
+    const avant = octets(repertoire);
+    // Deux lancements réels n'ont jamais exactement le même Date.now() : c'est précisément le bogue
+    // du constat 8 (invalidation_differente affiché comme « non enregistrée » alors qu'elle l'est).
+    const seconde = executerOutil("run-invalider.ts", [repertoire, `--motif=${MOTIF}`]);
+    expect(seconde.status).toBe(0);
+    expect(seconde.sortie).toContain("invalidation déjà inscrite");
+    expect(seconde.erreur).toBe("");
     expect(octets(repertoire)).toBe(avant);
   });
 });

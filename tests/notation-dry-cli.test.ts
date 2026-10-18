@@ -30,7 +30,7 @@ function contenuDeRuns(): readonly string[] {
 describe("pnpm notation:dry, la commande", () => {
   it("après pnpm run:dry sur la même sortie, note le run, imprime son bilan, et pnpm notation:controle passe", () => {
     const racine = sortie();
-    expect(executerOutil("run-dry.ts", ["--sortie", racine]).status).toBe(0);
+    expect(executerOutil("run-dry.ts", [`--sortie=${racine}`]).status).toBe(0);
     const notation = executerOutil("notation-dry.ts", ["--sortie", racine]);
     expect(notation.erreur).not.toContain("non exécutée");
     expect(notation.status).toBe(0);

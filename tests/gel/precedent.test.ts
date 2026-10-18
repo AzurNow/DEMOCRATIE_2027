@@ -17,7 +17,7 @@ import { stringify } from "yaml";
 import { valider } from "../../outils/schemas/valider.ts";
 import { geler } from "../../pipeline/gel/geler.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
-import { choisirPrecedent, PrecedentRefuse } from "../../pipeline/gel/precedent.ts";
+import { choisirPrecedent, lireRunsDuDepot, PrecedentRefuse } from "../../pipeline/gel/precedent.ts";
 import type { RunDeRuns } from "../../pipeline/gel/precedent.ts";
 import { executerOutil, RACINE_PROJET } from "../aides/depot.ts";
 import { ALPHA, CONFIGURATION_GEL, depotDuJeu, optionsGel, perimetreSaisi, recommiter } from "./fixtures.ts";
@@ -202,6 +202,36 @@ describe("précédent, cas 1 : aucun run", () => {
   });
 });
 
+describe("lireRunsDuDepot, constat 21 : ordre de lecture par code-unit", () => {
+  /** Le minimum que `runDeRuns` lit dans un `run.json` (schéma), pour un répertoire donné. */
+  function minimalRunJson(repertoire: string): string {
+    return JSON.stringify({
+      id: `01K${repertoire.replaceAll("-", "").toUpperCase().padEnd(23, "0")}`.slice(0, 26),
+      date_gel: "2026-12-01T06:00:00+01:00",
+      type_run: "mensuel",
+      statut: "publie",
+      tirage: { chemin: `runs/${repertoire}/tirage.json`, sha256: "a".repeat(64), nombre_questions: 1 },
+    });
+  }
+
+  it("deux répertoires dont le nom diffère par la casse sont rendus par ordre de code-unit, quel que soit l'ordre d'écriture sur le disque", () => {
+    const racine = temporaire("banc-lire-runs-");
+    const runs = join(racine, "runs");
+    // Écrits dans l'ordre inverse de l'ordre de code-unit attendu (« a » avant « Z » sur le disque).
+    for (const repertoire of ["2026-12-01-a", "2026-12-01-Z"]) {
+      const dossier = join(runs, repertoire);
+      mkdirSync(dossier, { recursive: true });
+      writeFileSync(join(dossier, "run.json"), minimalRunJson(repertoire), "utf8");
+    }
+    const lus = lireRunsDuDepot(runs);
+    expect(lus.map((run) => run.repertoire)).toEqual(["2026-12-01-Z", "2026-12-01-a"]);
+  });
+
+  it("runs/ absent ⇒ liste vide", () => {
+    expect(lireRunsDuDepot(join(temporaire("banc-lire-runs-vide-"), "runs"))).toEqual([]);
+  });
+});
+
 describe("précédent, cas 2 : le plus récent strictement avant", () => {
   it("précédent, cas 2 : deux runs antérieurs ⇒ le plus récent, quel que soit l'ordre de lecture", () => {
     expect(choisirPrecedent([NOVEMBRE, DECEMBRE], NOTRE_GEL)).toBe(DECEMBRE);
@@ -227,6 +257,27 @@ describe("précédent, cas 2 : le plus récent strictement avant", () => {
     })();
     expect(erreur).toBeInstanceOf(PrecedentRefuse);
     expect((erreur as PrecedentRefuse).motif).toBe("precedent_ambigu");
+  });
+
+  it("précédent, cas 2 (constat 21) : le nom retenu dans le refus est par ordre de code-unit, pas par localeCompare ni par l'ordre de lecture", () => {
+    // Code-unit : « Z » (0x5A) précède « a » (0x61) ; la plupart des locales ordonneraient l'inverse
+    // (localeCompare dirait « a » avant « Z »). Les deux ordres d'entrée doivent nommer le même run.
+    const z = { ...DECEMBRE, repertoire: "2026-12-01-Z" };
+    const a = { ...DECEMBRE, repertoire: "2026-12-01-a" };
+    expect("Z".localeCompare("a")).toBeGreaterThan(0);
+    for (const runs of [[z, a], [a, z]]) {
+      const erreur = (() => {
+        try {
+          choisirPrecedent(runs, NOTRE_GEL);
+        } catch (refus) {
+          return refus;
+        }
+        throw new Error("aucun refus");
+      })();
+      expect(erreur).toBeInstanceOf(PrecedentRefuse);
+      expect((erreur as PrecedentRefuse).run).toBe("2026-12-01-Z");
+      expect((erreur as PrecedentRefuse).message).toContain("runs/2026-12-01-a");
+    }
   });
 
   it("précédent, cas 2 : un gel à la même date_gel qu'un run de runs/ ne le prend pas pour précédent", async () => {

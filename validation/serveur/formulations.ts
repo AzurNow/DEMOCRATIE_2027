@@ -20,7 +20,6 @@
  */
 
 import { join } from "node:path";
-import { ErreurSchema } from "../../outils/schemas/valider.ts";
 import { MesureIntrouvable } from "../../pipeline/questions/engendrement.ts";
 import { gabaritParCode, LibelleCandidatAbsent } from "../../pipeline/questions/gabarits.ts";
 import type { Registre } from "../../pipeline/questions/types.ts";
@@ -88,7 +87,9 @@ function charger(configuration: Configuration): Donnees {
 
 /**
  * Erreurs nommées qui disent pourquoi rien ne peut être relu ni écrit : renvoyées telles quelles à
- * l'écran (409), jamais avalées. Toute autre erreur remonte au serveur (500).
+ * l'écran (409), jamais avalées. Toute autre erreur remonte au serveur (500) — `ErreurSchema`
+ * comprise (constat 25, revue du 2026-10-17) : elle signale un bogue d'assemblage de ce code, pas
+ * une donnée externe indisponible, et ne s'affiche donc pas comme telle.
  */
 const ERREURS_DE_DONNEES: readonly (abstract new (...args: never[]) => Error)[] = [
   EntreeAbsente,
@@ -98,7 +99,6 @@ const ERREURS_DE_DONNEES: readonly (abstract new (...args: never[]) => Error)[] 
   JournalRefusIllisible,
   StagingFormulationsIllisible,
   FormulationValideeIllisible,
-  ErreurSchema,
   PropositionPerimee,
   FormulationsDejaPromues,
   FormulationsCreeesEntreTemps,
