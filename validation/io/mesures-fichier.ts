@@ -16,9 +16,12 @@
  *
  * Un fichier **absent** est en revanche un registre vide, et non une erreur : aucune décision
  * n'a encore été prise. C'est une absence, pas une donnée manquante.
+ *
+ * L'écriture est atomique (temporaire puis renommage), refusée si le fichier a changé depuis sa
+ * lecture, et le registre est relu après la pose (`poserRegistreAjoutSeul`, partagée avec les
+ * registres des relectures et des rattachements, `relectures-fichier.ts`).
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
 import {
@@ -26,6 +29,7 @@ import {
   type DecisionCorrectionMesure,
   type RegistreCorrectionsMesure,
 } from "../domaine/corrections-mesure.ts";
+import { poserRegistreAjoutSeul, texteDuRegistre } from "./relectures-fichier.ts";
 
 export const NOM_FICHIER_REGISTRE = "decisions.json";
 
@@ -46,9 +50,12 @@ export class RegistreIllisible extends Error {
 
 export function lireRegistre(repertoire: string): RegistreCorrectionsMesure {
   const chemin = cheminRegistre(repertoire);
-  if (!existsSync(chemin)) return [];
-  const brut = analyser(readFileSync(chemin, "utf8"), chemin);
-  return brut.map((valeur, index) => validerEntree(valeur, `${chemin}, entrée ${index + 1}`));
+  const texte = texteDuRegistre(chemin);
+  return texte === null ? [] : entreesDe(texte, chemin);
+}
+
+function entreesDe(texte: string, chemin: string): RegistreCorrectionsMesure {
+  return analyser(texte, chemin).map((valeur, index) => validerEntree(valeur, `${chemin}, entrée ${index + 1}`));
 }
 
 function validerEntree(valeur: unknown, provenance: string): DecisionCorrectionMesure {
@@ -70,16 +77,22 @@ function tenterJson(contenu: string, chemin: string): unknown {
 }
 
 /**
- * Ajoute une décision en fin de registre. Les entrées antérieures sont relues, validées et
- * réécrites telles quelles, dans leur ordre : la réécriture du fichier n'est qu'un ajout.
+ * Ajoute une décision en fin de registre ; le crée s'il est absent. Les entrées antérieures sont
+ * relues, validées et réécrites telles quelles, dans leur ordre : la réécriture n'est qu'un ajout.
+ * Rend le registre relu après la pose.
  */
 export function ajouterAuRegistre(
   repertoire: string,
   entree: DecisionCorrectionMesure,
 ): RegistreCorrectionsMesure {
-  const validee = validerEntree(entree, `décision à enregistrer dans ${cheminRegistre(repertoire)}`);
-  const registre = [...lireRegistre(repertoire), validee];
-  mkdirSync(repertoire, { recursive: true });
-  writeFileSync(cheminRegistre(repertoire), `${JSON.stringify(registre, null, 2)}\n`, "utf8");
-  return registre;
+  const chemin = cheminRegistre(repertoire);
+  const validee = validerEntree(entree, `décision à enregistrer dans ${chemin}`);
+  const lu = texteDuRegistre(chemin);
+  const registre = [...(lu === null ? [] : entreesDe(lu, chemin)), validee];
+  poserRegistreAjoutSeul(chemin, lu, registre);
+  const relu = lireRegistre(repertoire);
+  if (relu.length !== registre.length) {
+    throw new RegistreIllisible(chemin, `Relu après écriture : ${relu.length} entrée(s), ${registre.length} attendue(s).`);
+  }
+  return relu;
 }

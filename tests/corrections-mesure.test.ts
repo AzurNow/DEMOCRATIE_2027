@@ -28,7 +28,8 @@ import {
 import { empreinteContenuNotant } from "../validation/domaine/empreinte.ts";
 import { appliquerValidations, evaluerPromotion, VersionMesureEcart, type Dossier } from "../validation/domaine/promotion.ts";
 import type { Correction, Decision, EntreeDecision, Item } from "../validation/domaine/types.ts";
-import { ajouterAuRegistre, lireRegistre, RegistreIllisible } from "../validation/io/mesures-fichier.ts";
+import { ajouterAuRegistre, cheminRegistre, lireRegistre, RegistreIllisible } from "../validation/io/mesures-fichier.ts";
+import { poserRegistreAjoutSeul, RegistreModifieDepuisLecture } from "../validation/io/relectures-fichier.ts";
 import { urnSchema } from "../outils/schemas/noms.ts";
 import { construireRegistre } from "../outils/schemas/registre.ts";
 import { creerBac, lotDe, resceller, type Bac } from "./aides/bac.ts";
@@ -225,6 +226,23 @@ describe("registre en ajout seul", () => {
       mkdirSync(repertoire, { recursive: true });
       writeFileSync(join(repertoire, "decisions.json"), "{ ceci n'est pas du JSON", "utf8");
       expect(() => lireRegistre(repertoire)).toThrow(RegistreIllisible);
+    } finally {
+      bac.detruire();
+    }
+  });
+
+  it("19. une écriture concurrente est détectée par un refus nommé, sans fichier tronqué", () => {
+    const bac = creerBac();
+    const repertoire = repertoireDe(bac);
+    try {
+      const chemin = cheminRegistre(repertoire);
+      mkdirSync(repertoire, { recursive: true });
+      writeFileSync(chemin, "[]\n", "utf8");
+      // `lu: null` simule une lecture faite avant la création du fichier par un autre processus :
+      // la pose doit refuser plutôt qu'écraser la décision écrite entre-temps.
+      expect(() => poserRegistreAjoutSeul(chemin, null, [entree()])).toThrow(RegistreModifieDepuisLecture);
+      expect(readFileSync(chemin, "utf8")).toBe("[]\n");
+      expect(ajouterAuRegistre(repertoire, entree({ theme_demande: "sante" }))).toHaveLength(1);
     } finally {
       bac.detruire();
     }
