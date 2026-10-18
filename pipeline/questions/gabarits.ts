@@ -271,8 +271,13 @@ export class ArticleMajusculeApresA extends Error {
   }
 }
 
-/** « à » mot entier, suivi d'une espace, en fin du texte qui précède l'emplacement. */
-const PREPOSITION_A_EN_FIN = /(?:^|\s)à $/u;
+/**
+ * « à » mot entier, suivi d'une espace, en fin du texte qui précède l'emplacement. La majuscule
+ * (« À », début de phrase) et l'espace insécable ou fine insécable après « à » comptent : une
+ * reformulation qui les emploie devant « le »/« les » reste la forme interdite « à le » (constat 28,
+ * revue du 2026-10-17), pas une forme nouvelle que la contraction laisserait passer.
+ */
+const PREPOSITION_A_EN_FIN = /(?:^|\s)[àÀ][\u0020\u00A0\u202F]$/u;
 const PREPOSITION_A = "à ";
 /** L'article doit être un mot entier suivi d'une espace : « lesdites », « leur », « l'… » ne bougent pas. */
 const CONTRACTIONS: readonly (readonly [RegExp, string])[] = [

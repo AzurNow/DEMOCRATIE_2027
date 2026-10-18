@@ -375,14 +375,14 @@ un run, et `--sortie` ou `--run` sous `runs/` est refusé avant toute lecture ou
 
 ```
 pnpm run:dry                      fixtures, sous un répertoire temporaire neuf
-pnpm run:dry --sortie <chemin>    fixtures, sous <chemin>/<date>/volume/…
-pnpm run:dry --run <répertoire>   le run gelé par pnpm geler --sortie, sous <répertoire>/volume/…
+pnpm run:dry --sortie=<chemin>    fixtures, sous <chemin>/<date>/volume/…
+pnpm run:dry --run=<répertoire>   le run gelé par pnpm geler --sortie, sous <répertoire>/volume/…
 ```
 
 - **Fixtures** (sans `--run`) : périmètre, questions, identifiant et fenêtre viennent de
   `tests/interrogation/fixtures/run-simule/` ; seul le volume est écrit (`run.json` et
   `questions.json` ne le sont pas). C'est le mode de la CI et de `pnpm notation:dry`.
-- **Run gelé** (`--run <répertoire>` ou `--run=<répertoire>`, lot gel, PR 4) : le répertoire
+- **Run gelé** (`--run=<répertoire>`, lot gel, PR 4) : le répertoire
   `<sortie>/<date>/` qu'écrit `pnpm geler --sortie`. `run.json` est validé contre son schéma, les
   octets de `tirage.json` et de `questions.json` vérifiés contre les SHA-256 qu'il déclare (la
   vérification du précédent, `pipeline/gel/precedent.ts`), puis outils, modes, modèles demandés et

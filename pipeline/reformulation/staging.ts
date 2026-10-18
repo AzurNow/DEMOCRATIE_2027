@@ -13,8 +13,9 @@
  * - `lirePropositions` relit et valide toutes les propositions d'une question : le répertoire porte
  *   le nom de `question_id`, chaque fichier celui de son `id`, et `empreinte_texte_neutre` est le
  *   sha256 de `texte_neutre`. Un fichier étranger, mal nommé, incohérent ou non conforme arrête la
- *   lecture : il n'est ni lu ni ignoré. Seul lecteur du staging : la relecture de l'interface de
- *   validation passe aussi par ici.
+ *   lecture : il n'est ni lu ni ignoré, sauf `.DS_Store` seul (D54 (8)), liste fermée en données —
+ *   un `.tmp` ou tout autre fichier parasite reste un refus nommé. Seul lecteur du staging : la
+ *   relecture de l'interface de validation passe aussi par ici.
  */
 
 import { randomBytes } from "node:crypto";
@@ -125,11 +126,16 @@ function lireFichier(chemin: string, question_id: string, nom: string): Proposit
   return proposition;
 }
 
+/** D54 (8) : le seul fichier parasite toléré en staging, liste fermée (ni `.tmp` ni aucun autre). */
+const FICHIERS_IGNORES: ReadonlySet<string> = new Set([".DS_Store"]);
+
 /** Toutes les propositions d'une question, en ordre de nom ; aucune si le répertoire n'existe pas. */
 export function lirePropositions(staging: string, question_id: string): readonly PropositionFormulation[] {
   const repertoire = repertoireQuestion(staging, question_id);
   if (!existsSync(repertoire)) return [];
-  const noms = readdirSync(repertoire).sort();
+  const noms = readdirSync(repertoire)
+    .filter((nom) => !FICHIERS_IGNORES.has(nom))
+    .sort();
   const etrangers = noms.filter((nom) => !nom.endsWith(".json") || nom.startsWith("."));
   if (etrangers.length > 0) {
     throw new StagingFormulationsIllisible(repertoire, `fichiers qui ne sont pas des propositions : ${etrangers.join(", ")}.`);

@@ -91,4 +91,19 @@ describe("relecture des propositions", () => {
     writeFileSync(chemin, "{");
     expect(() => lirePropositions(racine, EXEMPLE.question_id)).toThrow(StagingFormulationsIllisible);
   });
+
+  it("D54 (8), constat 23 : .DS_Store est ignoré, les propositions valides à côté sont lues", () => {
+    const racine = staging();
+    ecrireProposition(racine, EXEMPLE);
+    writeFileSync(join(racine, EXEMPLE.question_id, ".DS_Store"), "appelé par le Finder", "utf8");
+    expect(lirePropositions(racine, EXEMPLE.question_id)).toEqual([EXEMPLE]);
+  });
+
+  it("D54 (8), constat 23 : liste fermée — un .tmp ou tout autre fichier parasite reste un refus nommé", () => {
+    const racine = staging();
+    mkdirSync(join(racine, EXEMPLE.question_id));
+    writeFileSync(join(racine, EXEMPLE.question_id, ".tmp"), "x", "utf8");
+    expect(() => lirePropositions(racine, EXEMPLE.question_id)).toThrow(StagingFormulationsIllisible);
+    expect(() => lirePropositions(racine, EXEMPLE.question_id)).toThrow(/\.tmp/u);
+  });
 });

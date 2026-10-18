@@ -130,7 +130,10 @@ export function choisirPrecedent(runs: readonly RunDeRuns[], date_gel_ms: number
   const candidats = runs.filter((run) => retenable(run, date_gel_ms));
   if (candidats.length === 0) return null;
   const plus_recent = Math.max(...candidats.map((run) => run.date_gel_ms));
-  const retenus = candidats.filter((run) => run.date_gel_ms === plus_recent).sort((a, b) => a.repertoire.localeCompare(b.repertoire));
+  // Tri par code-unit (comme le `.sort()` sans comparateur ailleurs dans le dépôt), jamais
+  // `localeCompare` : le nom retenu dans le message d'ambiguïté ne doit pas dépendre de la locale
+  // du processus (constat 21, revue du 2026-10-17).
+  const retenus = candidats.filter((run) => run.date_gel_ms === plus_recent).sort((a, b) => (a.repertoire < b.repertoire ? -1 : a.repertoire > b.repertoire ? 1 : 0));
   const [premier, second] = retenus;
   if (premier === undefined) return null;
   if (second !== undefined) {
@@ -311,8 +314,12 @@ export function tiragePrecedentVerifie(run: RunDeRuns, octets_tirage: Uint8Array
 /** Chaque run de `runs/` (le répertoire reçu), lu dans ses seuls champs utiles ; un seul illisible, refus. */
 export function lireRunsDuDepot(runs: string): readonly RunDeRuns[] {
   if (!existsSync(runs)) return [];
+  // Trié par code-unit (constat 21) : `readdirSync` ne garantit aucun ordre, qui varierait sinon
+  // avec le système de fichiers et rendrait non reproductible le nom retenu par `choisirPrecedent`
+  // en cas d'ambiguïté.
   return readdirSync(runs, { withFileTypes: true })
     .filter((entree) => entree.isDirectory())
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
     .map((entree) => {
       const chemin = join(runs, entree.name, "run.json");
       const texte = ou("run_illisible", entree.name, () => readFileSync(chemin, "utf8"));

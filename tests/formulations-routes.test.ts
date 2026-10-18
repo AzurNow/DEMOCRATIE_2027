@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { valider } from "../outils/schemas/valider.ts";
+import { ErreurSchema, valider } from "../outils/schemas/valider.ts";
 import { THEMES } from "../pipeline/questions/types.ts";
 import type { PropositionFormulation } from "../pipeline/reformulation/staging.ts";
 import { tachesDe } from "../pipeline/reformulation/entrees.ts";
@@ -147,14 +147,21 @@ describe("liste et détail", () => {
   it("périmètre absent ⇒ l'écran dit qu'il est indisponible, rien n'est inventé", () => {
     poserProposition(proposition(FER(), { cle: "sans-perimetre" }));
     const chemin = join(bac.racine, "config/perimetre.yaml");
-    writeFileSync(chemin, "", "utf8");
-    // Un fichier vide n'est pas un périmètre : schéma refusé, message renvoyé tel quel.
-    expect(appeler("formulations", []).statut).toBe(409);
     rmSync(chemin);
     const reponse = appeler("formulations", []);
     expect(reponse.statut).toBe(409);
     expect(corps(reponse)).toMatchObject({ disponible: false, nature: "EntreeAbsente" });
     expect(String(corps(reponse)["erreur"])).toContain("périmètre introuvable");
+  });
+
+  it("constat 25 : un périmètre vide (schéma refusé) est un bogue d'assemblage, pas une donnée indisponible ⇒ 500, pas 409", () => {
+    poserProposition(proposition(FER(), { cle: "perimetre-vide" }));
+    const chemin = join(bac.racine, "config/perimetre.yaml");
+    writeFileSync(chemin, "", "utf8");
+    // ErreurSchema n'est plus rangée parmi les erreurs de données (ERREURS_DE_DONNEES) : elle
+    // remonte, et c'est principal.ts qui la transforme en 500 (jamais ce test, qui appelle le
+    // gestionnaire de route directement, hors du serveur HTTP).
+    expect(() => appeler("formulations", [])).toThrow(ErreurSchema);
   });
 });
 

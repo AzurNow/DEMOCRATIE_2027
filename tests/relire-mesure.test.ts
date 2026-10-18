@@ -115,6 +115,18 @@ describe("`pnpm mesures --relire`", () => {
     });
   });
 
+  it("constat 27 : --relire --ecrire sur un arbre Git sale ⇒ refus, rien d'écrit (même garde que --rattacher et --renvoyer)", () => {
+    avecBac((bac) => {
+      writeFileSync(join(bac.racine, "trace.txt"), "modification non commitée\n", "utf8");
+      const mesureAvant = readFileSync(join(bac.racine, "staging/mesures", `${MESURE.id}.json`), "utf8");
+      const resultat = relire(bac, "--ecrire");
+      expect(resultat.status).not.toBe(0);
+      expect(resultat.erreur).toMatch(/Arbre Git non propre/);
+      expect(existsSync(registre(bac))).toBe(false);
+      expect(readFileSync(join(bac.racine, "staging/mesures", `${MESURE.id}.json`), "utf8")).toBe(mesureAvant);
+    });
+  });
+
   it("cas 2 : simulation ⇒ affiche en entier libellé, thème, fictive, formulation et l'empreinte ; n'écrit rien", () => {
     avecBac((bac) => {
       const resultat = relire(bac);
@@ -162,6 +174,7 @@ describe("`pnpm mesures --relire`", () => {
       const reprise: Mesure = { ...MESURE, formulation_canonique: "ramener la TVA sur l'électricité et le gaz à 5,5 %" };
       const editee: Mesure = { ...reprise, empreinte: empreinteMesure(reprise) };
       bac.ecrireMesure(editee);
+      commiterTout(bac.racine, "formulation reprise");
 
       const refus = executerOutil("promote.ts", cheminsPromote(bac));
       expect(refus.status).not.toBe(0);
@@ -181,6 +194,7 @@ describe("`pnpm mesures --relire`", () => {
   it("cas 6 : contenu exact déjà relu ⇒ message explicite, aucune nouvelle entrée", () => {
     avecBac((bac) => {
       expect(relire(bac, "--ecrire").status).toBe(0);
+      commiterTout(bac.racine, "relecture");
       const avant = readFileSync(registre(bac), "utf8");
       const seconde = executerOutil("mesures.ts", [...chemins(bac), `--relire=${MESURE.id}`, "--date=2026-10-17", "--ecrire"]);
       expect(seconde.status, seconde.erreur).toBe(0);
@@ -193,6 +207,7 @@ describe("`pnpm mesures --relire`", () => {
     avecBac((bac) => {
       mkdirSync(join(bac.racine, "validation/mesures"), { recursive: true });
       writeFileSync(registre(bac), "[{ pas du json", "utf8");
+      commiterTout(bac.racine, "registre corrompu");
       const resultat = relire(bac, "--ecrire");
       expect(resultat.status).not.toBe(0);
       expect(resultat.erreur).toMatch(/Registre des relectures de mesure illisible/);
