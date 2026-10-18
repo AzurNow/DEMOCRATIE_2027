@@ -8,8 +8,8 @@
  *
  * 1. **Garde-fou.** Une sortie sous `runs/` est refusée avant toute écriture (`gardes-sortie.ts`).
  * 2. **Interrogation simulée.** `lancerRunSimule` (celle de `pnpm run:dry`) écrit le run, ou le
- *    reprend sans rien réécrire s'il est déjà là : `pnpm run:dry --sortie X` puis
- *    `pnpm notation:dry --sortie X` notent le même run.
+ *    reprend sans rien réécrire s'il est déjà là : `pnpm run:dry --sortie=X` puis
+ *    `pnpm notation:dry --sortie=X` notent le même run.
  * 3. **Gel simulé.** `pnpm run:dry` n'écrit que le volume ; la notation lit aussi `run.json`,
  *    `questions.json` et `tirage.json` (réponse attendue et prémisse résolues au gel, que la charge
  *    v3 transmet, D27). Ils sont posés depuis les fixtures, par ouverture exclusive : un fichier déjà

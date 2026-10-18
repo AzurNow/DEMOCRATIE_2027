@@ -3,7 +3,7 @@
  * aucun appel réseau (`pipeline/notation/notation-simulee.ts`).
  *
  *   pnpm notation:dry                     interroge (comme run:dry) puis note, dans un répertoire temporaire neuf
- *   pnpm notation:dry --sortie <chemin>   sous <chemin> ; après `pnpm run:dry --sortie <chemin>`, note ce run
+ *   pnpm notation:dry --sortie=<chemin>   sous <chemin> ; après `pnpm run:dry --sortie=<chemin>`, note ce run
  *
  * Relancer sur la même sortie reprend sans rien réécrire. Une sortie sous `runs/` est refusée, avant
  * toute écriture : un run simulé n'est pas un run. Le bilan imprimé est relu du disque ; les

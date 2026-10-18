@@ -403,11 +403,11 @@ La chaîne de notation du §7 (`pipeline/notation/chaine.ts`, celle du vrai run)
 le run simulé de `pnpm run:dry`, sans modèle ni appel réseau : seuls les juges
 (`pipeline/notation/juge-simule.ts`) et le fournisseur des verdicts d'existence des liens
 (`pipeline/notation/fournisseur-simule.ts`) sont simulés. Même sortie que `run:dry` : un répertoire
-temporaire neuf, ou `--sortie <chemin>` ; **une sortie sous `runs/` est refusée** avant toute
+temporaire neuf, ou `--sortie=<chemin>` ; **une sortie sous `runs/` est refusée** avant toute
 écriture, et le juge et le fournisseur simulés refusent eux-mêmes un répertoire de `runs/`.
 
 ```
-pnpm run:dry --sortie X && pnpm notation:dry --sortie X     note le run interrogé
+pnpm run:dry --sortie=X && pnpm notation:dry --sortie=X     note le run interrogé
 pnpm notation:dry                                           interroge (comme run:dry) puis note
 ```
 
