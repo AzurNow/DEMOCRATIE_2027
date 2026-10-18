@@ -11,7 +11,9 @@
  *   `choix-texte.ts:choisirFiche` (D52 (4), extracteur épinglé inscrit dans l'entrée), le bloc
  *   `source` de son texte, le texte canonique relu sous son empreinte, et le `.vtt` d'un
  *   enregistrement. Toute incohérence est une erreur nommée : la source n'est pas traitée, rien
- *   n'est écrit pour elle.
+ *   n'est écrit pour elle. Si une fiche plus récente, d'un autre épinglage, existe pour cette
+ *   source, l'entrée n'a pas été régénérée depuis (`EpinglageExtracteurPerime`, D54 (3), constat 4
+ *   de la revue du 2026-10-17) : elle est refusée plutôt que lue avec l'ancien texte.
  *
  * Lecture seule ; les textes et transcriptions passent par les lecteurs de l'interface de validation
  * (`validation/io/staging.ts`), qui revérifient l'empreinte d'un texte à chaque lecture.
@@ -20,9 +22,10 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
+import { canoniser } from "../../validation/domaine/empreinte.ts";
 import type { Source } from "../../validation/domaine/types.ts";
 import { lireTexteCanonique, lireTranscription } from "../../validation/io/staging.ts";
-import { choisirFiche, type ExtracteurEpingle, type FicheExtraction } from "./choix-texte.ts";
+import { choisirFiche, ficheDepuisPlusRecente, type ExtracteurEpingle, type FicheExtraction } from "./choix-texte.ts";
 
 export const REPERTOIRE_ENTREES = "entrees-extraction";
 const REPERTOIRE_FICHES = "extractions";
@@ -56,6 +59,25 @@ export class EntreeExtractionIncoherente extends Error {
   constructor(cle: string, detail: string) {
     super(`Source ${cle} : ${detail}`);
     this.name = "EntreeExtractionIncoherente";
+  }
+}
+
+/**
+ * L'entrée épingle un extracteur de texte qui n'est plus celui du code (D54 (3), constat 4 de la
+ * revue du 2026-10-17) : une fiche plus récente, d'un autre outil, version ou jeu d'options, existe
+ * pour cette source. L'ancien texte resterait lu indéfiniment si la source n'était pas refusée :
+ * `pnpm extraction:entrees` ne réécrit jamais une entrée déjà présente (`EntreeDivergente`,
+ * `pipeline/collecte/entrees_extraction.py`), relancer cette commande ne suffit donc pas ; l'entrée
+ * se régénère en supprimant le fichier périmé sous `entrees-extraction/`, à la main.
+ */
+export class EpinglageExtracteurPerime extends Error {
+  constructor(cle: string, inscrit: ExtracteurEpingle, actuel: ExtracteurEpingle) {
+    super(
+      `Source ${cle} : l'entrée épingle ${JSON.stringify(inscrit)}, mais la fiche la plus récente porte ` +
+        `${JSON.stringify(actuel)} : l'extracteur de texte épinglé par le code a changé depuis que cette ` +
+        `entrée a été écrite (D52 (4)). Relancer pnpm extraction:entrees après avoir supprimé l'entrée périmée.`,
+    );
+    this.name = "EpinglageExtracteurPerime";
   }
 }
 
@@ -126,10 +148,22 @@ function vttDe(staging: string, lue: EntreeLue, source: Source): string | null {
   return vtt;
 }
 
-/** Lève `AucunTexteEpingle`, `PlusieursTextesEpingles`, `TexteCanoniqueAltere` ou `EntreeExtractionIncoherente`. */
+/** La fiche choisie a une postérieure, d'un épinglage différent : l'entrée est périmée. */
+function exigerEpinglageActuel(lue: EntreeLue, fiche: FicheExtraction, fiches: readonly unknown[]): void {
+  const posterieure = ficheDepuisPlusRecente(fiches, lue.entree.sha256_source, fiche);
+  if (posterieure === null) return;
+  if (canoniser(posterieure.extracteur) === canoniser(lue.entree.extracteur_epingle)) return;
+  throw new EpinglageExtracteurPerime(lue.cle, lue.entree.extracteur_epingle, posterieure.extracteur);
+}
+
+/**
+ * Lève `AucunTexteEpingle`, `PlusieursTextesEpingles`, `TexteCanoniqueAltere`,
+ * `EpinglageExtracteurPerime` ou `EntreeExtractionIncoherente`.
+ */
 export function materiauDe(staging: string, lue: EntreeLue): Materiau {
   const fiches = fichesDe(staging, lue);
   const fiche = choisirFiche(fiches, lue.entree.extracteur_epingle, lue.entree.sha256_source);
+  exigerEpinglageActuel(lue, fiche, fiches);
   const source = blocDe(lue, fiche);
   return { fiche, fiches, source, texte: texteDe(staging, lue, fiche.texte_sha256), vtt: vttDe(staging, lue, source) };
 }
