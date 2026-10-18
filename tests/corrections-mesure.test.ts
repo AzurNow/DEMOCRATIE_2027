@@ -29,7 +29,7 @@ import { empreinteContenuNotant } from "../validation/domaine/empreinte.ts";
 import { appliquerValidations, evaluerPromotion, VersionMesureEcart, type Dossier } from "../validation/domaine/promotion.ts";
 import type { Correction, Decision, EntreeDecision, Item } from "../validation/domaine/types.ts";
 import { ajouterAuRegistre, cheminRegistre, lireRegistre, RegistreIllisible } from "../validation/io/mesures-fichier.ts";
-import { poserRegistreAjoutSeul, RegistreModifieDepuisLecture } from "../validation/io/relectures-fichier.ts";
+import { poserRegistreAjoutSeul, RegistreModifieDepuisLecture } from "../validation/io/registre-ajout-seul.ts";
 import { urnSchema } from "../outils/schemas/noms.ts";
 import { construireRegistre } from "../outils/schemas/registre.ts";
 import { creerBac, lotDe, resceller, type Bac } from "./aides/bac.ts";
@@ -129,6 +129,19 @@ describe("decisionApplicable", () => {
     const resultat = decisionApplicable(registre, CORRECTION_THEME, mesure({ theme: "ecologie_energie" }));
     expect(resultat.verdict).toBe("acceptee_et_appliquee");
     expect(resultat.entree?.date).toBe("2026-11-27");
+  });
+
+  it("constat 1 : la dernière entrée du registre fait foi, même antérieure en date à une entrée qui la précède", () => {
+    // Le registre est en ajout seul, donc chronologique par construction : une décision inscrite
+    // après une autre fait foi, quelle que soit la `date` qu'elle porte (D54 (1)). Ici l'entrée
+    // la plus récemment écrite (seconde du tableau) porte une date antérieure à la première.
+    const registre = [
+      entree({ decision: "acceptee", date: "2026-11-27" }),
+      entree({ decision: "refusee", motif: "revirement", date: "2026-11-20" }),
+    ];
+    const resultat = decisionApplicable(registre, CORRECTION_THEME, mesure({ theme: "ecologie_energie" }));
+    expect(resultat.verdict).toBe("refusee");
+    expect(resultat.entree?.date).toBe("2026-11-20");
   });
 
   it("ne rapproche jamais une correction d'un autre chemin d'une entrée du registre", () => {
@@ -632,6 +645,34 @@ describe("`pnpm mesures`", () => {
       bac.detruire();
     }
   });
+
+  it("constat 1 : --date impossible est refusée par un refus nommé, rien n'est écrit", () => {
+    const bac = creerBac();
+    const mesures = join(bac.racine, "validation/mesures");
+    try {
+      const item = poserDemande(bac, {
+        suffixe: "73",
+        theme_mesure: "fiscalite_pouvoir_achat",
+        horodatage: ilYA(2),
+      });
+      bac.ecrireLot(lotDe("lot-001", [item]));
+      const demande = [
+        ...cheminsDe(bac),
+        `--mesure=${item.mesure_id}`,
+        "--theme=ecologie_energie",
+        "--decision=acceptee",
+        "--date=2027-02-29",
+        "--ecrire",
+      ];
+
+      const resultat = executer("outils/mesures.ts", demande);
+      expect(resultat.status).not.toBe(0);
+      expect(`${resultat.sortie}${resultat.erreur}`).toMatch(/date civile/);
+      expect(existsSync(join(mesures, "decisions.json"))).toBe(false);
+    } finally {
+      bac.detruire();
+    }
+  });
 });
 
 /* -------------------------------------------------- accord entre les deux validateurs */
@@ -692,6 +733,14 @@ describe("accord entre validerEntreeRegistre() et le schéma decision-mesure", (
     // explicitement ici, pas le découvrir en silence.
     expect(() => validerEntreeRegistre(exemple, "test")).not.toThrow();
   });
+
+  it.each(["2027-02-29", "2026-19-01", "2027-04-31"])(
+    "constat 1 : une date impossible (%s) est refusée par un refus nommé",
+    (date) => {
+      expect(() => validerEntreeRegistre(entree({ date }), "test")).toThrow(EntreeRegistreInvalide);
+      expect(() => validerEntreeRegistre(entree({ date }), "test")).toThrow(/date civile/);
+    },
+  );
 
   it("5. un mesure_id qui n'est pas un ULID (contient I ou U) est rejeté par le schéma", () => {
     const entree: DecisionCorrectionMesure = {

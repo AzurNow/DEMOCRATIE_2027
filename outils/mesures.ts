@@ -56,6 +56,7 @@ import { analyserArguments, drapeau, obligatoire, texte, type Arguments } from "
 import {
   ancienneteEnJours,
   decisionApplicable,
+  EntreeRegistreInvalide,
   validerEntreeRegistre,
   type DecisionCorrectionMesure,
   type RegistreCorrectionsMesure,
@@ -396,6 +397,7 @@ const REFUS_NOMMES: readonly (abstract new (...arguments_: never[]) => Error)[] 
   RattachementInacheve,
   EntreeRelectureInvalide,
   EntreeRattachementInvalide,
+  EntreeRegistreInvalide,
   RegistreRelecturesIllisible,
   RegistreRattachementsIllisible,
   RegistreModifieDepuisLecture,
