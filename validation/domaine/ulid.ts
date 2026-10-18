@@ -14,6 +14,9 @@ import { randomBytes } from "node:crypto";
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const MOTIF = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
+/** Le motif d'un ULID, exporté pour les frontières qui valident un champ par expression régulière. */
+export const MOTIF_ULID = MOTIF;
+
 /** 48 bits d'horodatage en millisecondes, puis 80 bits d'aléa. */
 export function ulid(maintenant: number = Date.now()): string {
   return encoderTemps(maintenant) + encoderOctets(randomBytes(10));

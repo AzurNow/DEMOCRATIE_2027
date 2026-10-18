@@ -18,18 +18,17 @@
  * n'a encore été prise. C'est une absence, pas une donnée manquante.
  *
  * L'écriture est atomique (temporaire puis renommage), refusée si le fichier a changé depuis sa
- * lecture, et le registre est relu après la pose (`poserRegistreAjoutSeul`, partagée avec les
- * registres des relectures et des rattachements, `relectures-fichier.ts`).
+ * lecture, et le registre est relu après la pose : `registre-ajout-seul.ts`, générique, partagé
+ * avec les registres des relectures et des rattachements.
  */
 
 import { join } from "node:path";
-import { valider } from "../../outils/schemas/valider.ts";
 import {
   validerEntreeRegistre,
   type DecisionCorrectionMesure,
   type RegistreCorrectionsMesure,
 } from "../domaine/corrections-mesure.ts";
-import { poserRegistreAjoutSeul, texteDuRegistre } from "./relectures-fichier.ts";
+import { ajouterAuRegistreGenerique, lireRegistreGenerique, type DefinitionRegistre } from "./registre-ajout-seul.ts";
 
 export const NOM_FICHIER_REGISTRE = "decisions.json";
 
@@ -48,32 +47,14 @@ export class RegistreIllisible extends Error {
   }
 }
 
+const DEFINITION: DefinitionRegistre<DecisionCorrectionMesure> = {
+  schema: "decision-mesure",
+  validerEntree: validerEntreeRegistre,
+  creerIllisible: (chemin, detail) => new RegistreIllisible(chemin, detail),
+};
+
 export function lireRegistre(repertoire: string): RegistreCorrectionsMesure {
-  const chemin = cheminRegistre(repertoire);
-  const texte = texteDuRegistre(chemin);
-  return texte === null ? [] : entreesDe(texte, chemin);
-}
-
-function entreesDe(texte: string, chemin: string): RegistreCorrectionsMesure {
-  return analyser(texte, chemin).map((valeur, index) => validerEntree(valeur, `${chemin}, entrée ${index + 1}`));
-}
-
-function validerEntree(valeur: unknown, provenance: string): DecisionCorrectionMesure {
-  return validerEntreeRegistre(valider("decision-mesure", valeur, provenance), provenance);
-}
-
-function analyser(contenu: string, chemin: string): readonly unknown[] {
-  const valeur = tenterJson(contenu, chemin);
-  if (!Array.isArray(valeur)) throw new RegistreIllisible(chemin, "Le registre est un tableau JSON.");
-  return valeur;
-}
-
-function tenterJson(contenu: string, chemin: string): unknown {
-  try {
-    return JSON.parse(contenu);
-  } catch (erreur) {
-    throw new RegistreIllisible(chemin, erreur instanceof Error ? erreur.message : String(erreur));
-  }
+  return lireRegistreGenerique(cheminRegistre(repertoire), DEFINITION);
 }
 
 /**
@@ -85,14 +66,5 @@ export function ajouterAuRegistre(
   repertoire: string,
   entree: DecisionCorrectionMesure,
 ): RegistreCorrectionsMesure {
-  const chemin = cheminRegistre(repertoire);
-  const validee = validerEntree(entree, `décision à enregistrer dans ${chemin}`);
-  const lu = texteDuRegistre(chemin);
-  const registre = [...(lu === null ? [] : entreesDe(lu, chemin)), validee];
-  poserRegistreAjoutSeul(chemin, lu, registre);
-  const relu = lireRegistre(repertoire);
-  if (relu.length !== registre.length) {
-    throw new RegistreIllisible(chemin, `Relu après écriture : ${relu.length} entrée(s), ${registre.length} attendue(s).`);
-  }
-  return relu;
+  return ajouterAuRegistreGenerique(cheminRegistre(repertoire), entree, DEFINITION);
 }

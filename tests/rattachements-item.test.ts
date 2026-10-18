@@ -33,7 +33,7 @@ import {
   lireRattachements,
   RegistreRattachementsIllisible,
 } from "../validation/io/rattachements-fichier.ts";
-import { poserRegistreAjoutSeul, RegistreModifieDepuisLecture } from "../validation/io/relectures-fichier.ts";
+import { poserRegistreAjoutSeul, RegistreModifieDepuisLecture } from "../validation/io/registre-ajout-seul.ts";
 import type { Item } from "../validation/domaine/types.ts";
 import { decision, itemA, itemF, itemO, itemP, mesure } from "./aides/fabriques.ts";
 
