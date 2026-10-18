@@ -28,6 +28,7 @@ from pipeline.collecte.entrees_extraction import (
     formater_rapport,
     preparer_tout,
 )
+from pipeline.collecte.manifeste import REPERTOIRE_FICHES
 from pipeline.collecte.textes.en_service import extracteur_en_service
 from pipeline.collecte.textes.extraction import Dependances as DependancesTextes
 from pipeline.collecte.textes.extraction import Extrait, extraire_tout
@@ -200,6 +201,35 @@ def test_cas_5_entree_non_conforme_rien_d_ecrit(racine: Path, horloge: HorlogeFa
     assert isinstance(resultat, Refusee)
     assert resultat.motif.startswith("EntreeNonConforme : ")
     assert not (racine / "staging" / "entrees-extraction").exists()
+
+
+def _chemin_fiche(racine: Path) -> Path:
+    return racine / REPERTOIRE_FICHES / CLE_A / f"{SHA_PDF}.json"
+
+
+def test_cas_18_fiche_de_source_sans_candidat_id_est_nommee(racine: Path, horloge: HorlogeFactice) -> None:
+    _collecter_pdf(racine, horloge)
+    _extraire(racine, horloge)
+    chemin = _chemin_fiche(racine)
+    fiche = json.loads(chemin.read_text(encoding="utf-8"))
+    del fiche["candidat_id"]
+    chemin.write_text(json.dumps(fiche), encoding="utf-8")
+    [resultat] = preparer_tout(_deps(racine))
+    assert isinstance(resultat, Refusee)
+    assert resultat.motif.startswith("FicheSourceIllisible : ")
+    assert str(chemin) in resultat.motif
+    assert not (racine / "staging" / "entrees-extraction").exists()
+
+
+def test_cas_18_fiche_de_source_illisible_est_nommee(racine: Path, horloge: HorlogeFactice) -> None:
+    _collecter_pdf(racine, horloge)
+    _extraire(racine, horloge)
+    chemin = _chemin_fiche(racine)
+    chemin.write_text("{ pas du json", encoding="utf-8")
+    [resultat] = preparer_tout(_deps(racine))
+    assert isinstance(resultat, Refusee)
+    assert resultat.motif.startswith("FicheSourceIllisible : ")
+    assert str(chemin) in resultat.motif
 
 
 def _entree_valide() -> dict[str, object]:
