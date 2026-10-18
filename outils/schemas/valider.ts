@@ -47,6 +47,27 @@ export class ErreurSchema extends Error {
   }
 }
 
+/**
+ * Levée à la place d'un `SyntaxError` nu (constat 26 de la revue du 2026-10-17) : le fichier en
+ * cause est nommé, pour qu'un JSON illisible dans `data/` ou `staging/` se diagnostique sans
+ * relire la pile d'appels.
+ */
+export class JsonIllisible extends Error {
+  constructor(chemin: string, detail: string) {
+    super(`${chemin} : JSON illisible.\n${detail}`);
+    this.name = "JsonIllisible";
+  }
+}
+
+/** `JSON.parse`, mais l'erreur nomme `chemin` au lieu d'un `SyntaxError` nu. */
+export function jsonDe(texte: string, chemin: string): unknown {
+  try {
+    return JSON.parse(texte);
+  } catch (erreur) {
+    throw new JsonIllisible(chemin, erreur instanceof Error ? erreur.message : String(erreur));
+  }
+}
+
 export class SchemaInconnu extends Error {
   constructor(nom: string, provenance: string) {
     super(
