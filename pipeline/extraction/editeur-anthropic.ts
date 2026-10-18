@@ -30,7 +30,7 @@
 
 import { estObjetJson, type Contenu, type RequeteHttp } from "../interrogation/editeur.ts";
 import type { ObjetJson } from "../interrogation/types.ts";
-import type { AdaptateurExtraction, LectureTexteModele } from "./editeur.ts";
+import { modeleDuCorps, type AdaptateurExtraction, type LectureTexteModele } from "./editeur.ts";
 
 export const ENDPOINT_ANTHROPIC = "https://api.anthropic.com/v1/messages";
 export const VERSION_API_ANTHROPIC = "2023-06-01";
@@ -121,5 +121,6 @@ export function adaptateurAnthropic(reglages: ReglagesAnthropic, cle_api: string
       },
     }),
     texteDuModele: texteDesMessages,
+    modeleServiPar: modeleDuCorps,
   };
 }

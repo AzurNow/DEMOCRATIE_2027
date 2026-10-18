@@ -269,6 +269,14 @@ describe("lecture illisible : rejet de sortie lecture_illisible, avec la raison 
     const [rejet] = resultat.rejets;
     expect(rejet).toEqual({ portee: "sortie", modele: MODELE_B, motif: "lecture_illisible", detail: raison });
   });
+
+  it("7. constat 17 : model servi différent de l'épinglé ⇒ motif modele_different, refus de la source, rien déposé", () => {
+    const raison = `model servi "un-autre-modele", épinglé ${JSON.stringify(MODELE_A)}.`;
+    const resultat = extraire(entreeHtml(TEXTE, illisible(raison, "modele_different"), sortie(propose(C_SANTE))));
+    expect(resultat.items).toEqual([]);
+    expect(resultat.mesures).toEqual([]);
+    expect(resultat.rejets).toEqual([{ portee: "sortie", modele: MODELE_A, motif: "modele_different", detail: raison }, refus(MODELE_A)]);
+  });
 });
 
 describe("rejets d'items, avant l'appariement", () => {

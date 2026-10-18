@@ -14,7 +14,7 @@
 import { estObjetJson, type Contenu } from "../interrogation/editeur.ts";
 import type { ObjetJson } from "../interrogation/types.ts";
 import { adaptateurMistral, texteDuChat } from "../reformulation/editeur-mistral.ts";
-import type { AdaptateurExtraction, LectureTexteModele } from "./editeur.ts";
+import { modeleDuCorps, type AdaptateurExtraction, type LectureTexteModele } from "./editeur.ts";
 
 export interface ReglagesMistral {
   /** Identifiant exact du modèle épinglé. */
@@ -59,5 +59,5 @@ export function texteDuChatTermine(contenu: Contenu): LectureTexteModele {
 
 export function adaptateurMistralExtraction(reglages: ReglagesMistral, cle_api: string): AdaptateurExtraction {
   const { modele, construireRequete } = adaptateurMistral(reglages, cle_api);
-  return { modele, construireRequete, texteDuModele: texteDuChatTermine };
+  return { modele, construireRequete, texteDuModele: texteDuChatTermine, modeleServiPar: modeleDuCorps };
 }

@@ -17,10 +17,10 @@
  *    traiter et sera reprise sans repayer l'appel déjà gardé ;
  * 4. les deux réponses gardées sont relues depuis ce qui est écrit, par l'enveloppe de leur éditeur
  *    (`editeur.ts:lectureDe`), et chaque lecture est passée au cœur telle quelle. **Une lecture
- *    illisible** (statut hors 2xx, sortie coupée, refus, enveloppe inattendue) n'a pas de texte :
- *    le cœur la rejette en entier sous `lecture_illisible`, avec sa raison, ce qui refuse la source
- *    (D53 (2), `extraction_double_incomplete`). La raison figure aussi dans le journal, à côté de la
- *    réponse ;
+ *    illisible** (statut hors 2xx, sortie coupée, refus, enveloppe inattendue, model servi différent
+ *    de l'épinglé) n'a pas de texte : le cœur la rejette en entier sous `lecture_illisible` ou
+ *    `modele_different`, avec sa raison, ce qui refuse la source (D53 (2), D54 (7),
+ *    `extraction_double_incomplete`). La raison figure aussi dans le journal, à côté de la réponse ;
  * 5. les identifiants (mesure puis item, par paire déposée) sont ceux repris d'une tentative
  *    précédente pour cette source, s'il en existe, sinon de nouveaux, tirés et consignés avant le
  *    premier item ou la première mesure ; items et mesures écrits sous `items/` et `mesures/`, sans
@@ -48,6 +48,7 @@ import {
   type ResultatExtraction,
 } from "./extraction.ts";
 import { rendrePromptExtraction, type VariablesExtraction } from "./prompt.ts";
+import type { SortieModele } from "./types.ts";
 import {
   ecrireIdentifiantsRepris,
   ecrireItemRepris,
@@ -199,14 +200,29 @@ async function obtenirLesDeux(demande: Demande, editeurs: readonly EditeurExtrac
 
 interface Lue {
   readonly reponse: ReponseGardee;
-  readonly lecture: LectureTexteModele;
+  readonly lecture: SortieModele;
+}
+
+/** Le `model` servi diffère de l'épinglé (constat 17) : la lecture est refusée avant d'être tentée. */
+function sortieDe(editeur: EditeurExtraction, contenu: Contenu, lecture: LectureTexteModele): SortieModele {
+  const servi = editeur.adaptateur.modeleServiPar(contenu);
+  if (servi !== null && servi !== editeur.adaptateur.modele) {
+    return {
+      lisible: false,
+      motif: "modele_different",
+      raison: `model servi ${JSON.stringify(servi)}, épinglé ${JSON.stringify(editeur.adaptateur.modele)} : l'identifiant du modèle est la donnée mesurée (§4).`,
+    };
+  }
+  return lecture.lisible ? lecture : { lisible: false, motif: "lecture_illisible", raison: lecture.raison };
 }
 
 function lire(gardees: readonly ReponseGardee[], editeurs: readonly EditeurExtraction[]): readonly Lue[] {
   return gardees.map((reponse, rang) => {
     const editeur = editeurs[rang];
     if (editeur === undefined) throw new Error(`Aucun éditeur au rang ${rang} pour relire la réponse de ${reponse.modele}.`);
-    return { reponse, lecture: lectureDe(editeur.adaptateur, reponse.statut_http, contenuGarde(reponse)) };
+    const contenu = contenuGarde(reponse);
+    const lecture = lectureDe(editeur.adaptateur, reponse.statut_http, contenu);
+    return { reponse, lecture: sortieDe(editeur, contenu, lecture) };
   });
 }
 

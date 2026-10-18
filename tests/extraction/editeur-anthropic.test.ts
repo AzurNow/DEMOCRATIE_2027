@@ -188,3 +188,18 @@ describe("cas limite 6 : corps 2xx non JSON", () => {
     expect(texteDesMessages(lireContenu(reponse(200, "[1, 2]"))).lisible).toBe(false);
   });
 });
+
+describe("constat 17 : model servi par l'enveloppe", () => {
+  const adaptateur = adaptateurAnthropic(REGLAGES, "cle-factice");
+  const content = [{ type: "text", text: '{"items": []}' }];
+
+  it("corps.model, tel quel", () => {
+    expect(adaptateur.modeleServiPar(message(content, { model: "un-autre-modele" }))).toBe("un-autre-modele");
+    expect(adaptateur.modeleServiPar(message(content, { model: REGLAGES.modele }))).toBe(REGLAGES.modele);
+  });
+
+  it("corps non JSON, ou model absent ⇒ null : rien n'est affirmé sans le lire", () => {
+    expect(adaptateur.modeleServiPar(lireContenu(reponse(200, "<html></html>")))).toBeNull();
+    expect(adaptateur.modeleServiPar(message(content))).toBeNull();
+  });
+});

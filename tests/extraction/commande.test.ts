@@ -33,6 +33,7 @@ import {
   nettoyer,
   racineDeTest,
   repondreConforme,
+  sortieConforme,
   temporaire,
   type Repondeur,
 } from "./aides-commande.ts";
@@ -168,6 +169,33 @@ describe("cas 7 : une sortie illisible refuse la source", () => {
 function sortieTronquee(): string {
   return '{"items": [{"type": "P"';
 }
+
+describe("constat 17 : model servi différent de l'épinglé", () => {
+  it("Anthropic sert un autre model ⇒ modele_different, journal refusee, aucun item ni mesure déposé", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const autreModele: Repondeur = (editeur) =>
+      editeur === "anthropic" ? new Response(corpsAnthropic(sortieConforme(), "end_turn", "un-autre-modele"), { status: 200 }) : repondreConforme(editeur);
+    const execution = await lancer(reel(racine), { repondre: autreModele });
+    expect(execution.code).toBe(0);
+    const lu = journal(staging);
+    expect(lu.issue.statut).toBe("refusee");
+    expect(lu.issue.rejets).toEqual([
+      { portee: "sortie", modele: MODELE_A, motif: "modele_different", detail: expect.stringContaining("un-autre-modele") as unknown },
+      expect.objectContaining({ portee: "source", motif: "extraction_double_incomplete" }) as unknown,
+    ]);
+    expect(existsSync(join(staging, "items"))).toBe(false);
+    expect(existsSync(join(staging, "mesures"))).toBe(false);
+    expect(reponses(staging)).toHaveLength(2);
+  });
+
+  it("Mistral sert son propre model épinglé ⇒ inchangé, extraite", async () => {
+    const racine = racineDeTest();
+    const execution = await lancer(reel(racine));
+    expect(execution.code).toBe(0);
+    expect(journal(join(racine, "staging")).issue.statut).toBe("extraite");
+  });
+});
 
 /* ------------------------------------------------------------------ reprise */
 

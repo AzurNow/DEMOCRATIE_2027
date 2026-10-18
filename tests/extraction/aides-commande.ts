@@ -104,12 +104,12 @@ export function sortieConforme(citation = CITATION): string {
   });
 }
 
-export function corpsAnthropic(texte: string, stop_reason = "end_turn"): string {
-  return JSON.stringify({ type: "message", role: "assistant", model: MODELE_A, content: [{ type: "text", text: texte }], stop_reason });
+export function corpsAnthropic(texte: string, stop_reason = "end_turn", model = MODELE_A): string {
+  return JSON.stringify({ type: "message", role: "assistant", model, content: [{ type: "text", text: texte }], stop_reason });
 }
 
-export function corpsMistral(texte: string, finish_reason = "stop"): string {
-  return JSON.stringify({ object: "chat.completion", model: MODELE_B, choices: [{ index: 0, message: { role: "assistant", content: texte }, finish_reason }] });
+export function corpsMistral(texte: string, finish_reason = "stop", model = MODELE_B): string {
+  return JSON.stringify({ object: "chat.completion", model, choices: [{ index: 0, message: { role: "assistant", content: texte }, finish_reason }] });
 }
 
 /** Ce que rend le serveur factice pour un éditeur : une réponse, ou un échec de transport. */

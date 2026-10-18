@@ -9,7 +9,7 @@
 import { createHash } from "node:crypto";
 import type { EntreeExtraction, Ports } from "../../pipeline/extraction/extraction.ts";
 import type { ExtracteurEpingle } from "../../pipeline/extraction/choix-texte.ts";
-import type { SortieModele } from "../../pipeline/extraction/types.ts";
+import type { MotifSortieIllisible, SortieModele } from "../../pipeline/extraction/types.ts";
 import { longueurPointsDeCode } from "../../validation/domaine/normalisation.ts";
 import type { Source } from "../../validation/domaine/types.ts";
 
@@ -134,9 +134,9 @@ export function lisible(texte: string): SortieModele {
   return { lisible: true, texte };
 }
 
-/** La sortie d'un modèle dont la réponse ne donne aucun texte, avec sa raison. */
-export function illisible(raison: string): SortieModele {
-  return { lisible: false, raison };
+/** La sortie d'un modèle dont la réponse ne donne aucun texte, avec son motif (défaut : `lecture_illisible`) et sa raison. */
+export function illisible(raison: string, motif: MotifSortieIllisible = "lecture_illisible"): SortieModele {
+  return { lisible: false, motif, raison };
 }
 
 /** Une chaîne est la sortie lisible d'un modèle ; une `SortieModele` passe telle quelle. */
