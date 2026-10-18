@@ -195,4 +195,18 @@ describe("pnpm run:invalider en ligne de commande", () => {
     expect(execution.erreur).toContain("TransitionRefusee");
     expect(octets(repertoire)).toBe(avant);
   });
+
+  it("invalider, cas 4 (D54 (5), constat 8) : relancer la commande sur le même motif ⇒ code 0, déjà inscrite, octets inchangés", () => {
+    const repertoire = runPasse();
+    const premiere = executerOutil("run-invalider.ts", [repertoire, `--motif=${MOTIF}`]);
+    expect(premiere.status).toBe(0);
+    const avant = octets(repertoire);
+    // Deux lancements réels n'ont jamais exactement le même Date.now() : c'est précisément le bogue
+    // du constat 8 (invalidation_differente affiché comme « non enregistrée » alors qu'elle l'est).
+    const seconde = executerOutil("run-invalider.ts", [repertoire, `--motif=${MOTIF}`]);
+    expect(seconde.status).toBe(0);
+    expect(seconde.sortie).toContain("invalidation déjà inscrite");
+    expect(seconde.erreur).toBe("");
+    expect(octets(repertoire)).toBe(avant);
+  });
 });

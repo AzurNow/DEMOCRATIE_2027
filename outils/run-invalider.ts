@@ -13,14 +13,15 @@
  *
  * Refuse, sans rien écrire : `--motif` absent, sans valeur ou vide ; un run `publie`,
  * `publie_provisoire` ou `invalide` (D51 (4)) ; une date avant `date_gel` ; une invalidation déjà
- * présente et différente (règle 7). Déjà présente à l'identique : rien n'est écrit, et la commande
- * le dit.
+ * présente d'un autre motif (règle 7). Déjà présente du même motif (D54 (5), quelle que soit la
+ * date de cet appel) : rien n'est écrit, et la commande le dit.
  *
  * Codes de sortie : 0, invalidation inscrite ou déjà là ; 2, commande mal appelée ou refusée.
  */
 
 import { invaliderRun, type ResultatInvalidation } from "../pipeline/run/invalidation.ts";
 import { analyserArguments, obligatoire } from "./arguments.ts";
+import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const USAGE = "usage : pnpm run:invalider <repertoire_run> --motif=<raison>";
 
@@ -42,7 +43,7 @@ function demande(bruts: readonly string[]): Demande {
 
 const LIBELLE = {
   inscrite: "invalidation inscrite",
-  deja_inscrite: "invalidation déjà inscrite à l'identique ; rien n'est écrit",
+  deja_inscrite: "invalidation déjà inscrite pour ce motif (D54 (5)) ; rien n'est écrit",
 } as const;
 
 function imprimer(repertoire: string, motif: string, resultat: ResultatInvalidation): void {
@@ -59,7 +60,7 @@ function principal(): void {
     const { repertoire, motif } = demande(process.argv.slice(2));
     imprimer(repertoire, motif, invaliderRun(repertoire, motif, Date.now()));
   } catch (erreur) {
-    if (!(erreur instanceof Error)) throw erreur;
+    if (!estUnRefusAttendu(erreur)) throw erreur;
     process.stderr.write(`Invalidation non enregistrée — ${erreur.name} :\n  ${erreur.message}\nRien n'est écrit.\n`);
     process.exitCode = 2;
   }
