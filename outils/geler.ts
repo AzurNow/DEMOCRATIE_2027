@@ -36,6 +36,7 @@
 
 import { resolve } from "node:path";
 import { analyserArguments, obligatoire } from "./arguments.ts";
+import { estUnRefusAttendu } from "./refus-attendu.ts";
 import { validerFragment } from "./schemas/valider.ts";
 import { geler } from "../pipeline/gel/geler.ts";
 import type { ResultatGel } from "../pipeline/gel/geler.ts";
@@ -91,7 +92,7 @@ async function principal(): Promise<void> {
 }
 
 principal().catch((erreur: unknown) => {
-  const message = erreur instanceof Error ? `${erreur.name} : ${erreur.message}` : String(erreur);
-  process.stderr.write(`${message}\nRien n'est écrit.\n`);
+  if (!estUnRefusAttendu(erreur)) throw erreur;
+  process.stderr.write(`${erreur.name} : ${erreur.message}\nRien n'est écrit.\n`);
   process.exitCode = 1;
 });

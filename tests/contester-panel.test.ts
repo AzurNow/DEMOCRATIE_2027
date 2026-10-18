@@ -159,6 +159,53 @@ describe("pnpm panel", () => {
   });
 });
 
+describe("constat 20 (revue du 2026-10-17), 32 (revue du 2026-10-12) : un bogue remonte avec sa pile", () => {
+  it("pnpm contester --sources avec un JSON illisible : SyntaxError non attrapée, pile imprimée, rien écrit", () => {
+    const banc = preparer("74");
+    const texte = banc.fichier("contestation.txt", "La source dit 5 %, pas 5,5 %.\n");
+    const sourcesCassees = banc.fichier("sources.json", "{ pas du json");
+    const avant = banc.lire();
+    const resultat = executerOutil("contester.ts", [
+      ...racine(banc),
+      `--item=${banc.item.id}`,
+      `--texte-fichier=${texte}`,
+      "--recu-le=2026-10-01T09:00:00+02:00",
+      "--type=campagne",
+      `--sources=${sourcesCassees}`,
+    ]);
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.erreur).toContain("SyntaxError");
+    expect(resultat.erreur).toMatch(/\n\s+at /);
+    expect(banc.lire()).toEqual(avant);
+  });
+
+  it("pnpm panel --corrections avec un JSON illisible : SyntaxError non attrapée, pile imprimée, rien écrit", () => {
+    const banc = preparer("75");
+    const texte = banc.fichier("contestation.txt", "La citation est incomplète.\n");
+    executerOutil("contester.ts", [...racine(banc), `--item=${banc.item.id}`, `--texte-fichier=${texte}`, "--recu-le=2026-10-01T09:00:00+02:00", "--type=parti", "--ecrire"]);
+    commiterTout(banc.bac.racine, "contestation");
+    const avant = banc.lire();
+    const contestation_id = (avant.contestations?.[0] as { id: string }).id;
+    const motivation = banc.fichier("motivation.txt", "La citation complète figure dans la source.\n");
+    const correctionsCassees = banc.fichier("corrections.json", "[ pas du json");
+    const resultat = executerOutil("panel.ts", [
+      ...racine(banc),
+      `--staging=${join(banc.bac.racine, "staging")}`,
+      `--item=${banc.item.id}`,
+      `--contestation=${contestation_id}`,
+      "--decision=correction",
+      `--motivation-fichier=${motivation}`,
+      "--version-jugee=1",
+      `--corrections=${correctionsCassees}`,
+      "--ecrire",
+    ]);
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.erreur).toContain("SyntaxError");
+    expect(resultat.erreur).toMatch(/\n\s+at /);
+    expect(banc.lire()).toEqual(avant);
+  });
+});
+
 describe("état effectif : un item contesté après sa promotion", () => {
   const banc = preparer("73");
   const { bac, item } = banc;

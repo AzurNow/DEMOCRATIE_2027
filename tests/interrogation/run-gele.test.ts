@@ -345,13 +345,13 @@ describe("run gelé, cas 8 : la ligne de commande", () => {
     expect(resultat.stdout).toContain("en_cours");
     expect(resultat.stdout).toMatch(/outil-alpha\s+web_activee\s+obtenues/);
     expect(json<Objet>(repertoire, "run.json")["statut"]).toBe("en_cours");
-    const relance = executerCommande("--run", repertoire);
+    const relance = executerCommande(`--run=${repertoire}`);
     expect(relance.status).toBe(0);
     expect(relance.stdout).toContain("reprise");
   });
 
   it("run gelé, cas 8 : --run sous runs/ du dépôt ⇒ refus SimuleSousRuns avant toute lecture, runs/ inchangé", () => {
-    for (const argument of [["--run", join(RUNS_DU_PROJET, "2026-12-01")], ["--run=runs/2026-12-01"]]) {
+    for (const argument of [[`--run=${join(RUNS_DU_PROJET, "2026-12-01")}`], ["--run=runs/2026-12-01"]]) {
       const resultat = executerCommande(...argument);
       expect(resultat.status).not.toBe(0);
       expect(resultat.stderr).toContain("SimuleSousRuns");
@@ -384,7 +384,7 @@ describe("run gelé, cas 8 : la ligne de commande", () => {
     const repertoire = copie();
     const sortie = temporaire("banc-run-gele-sortie-");
     const avant = texte(repertoire, "run.json");
-    const resultat = executerCommande(`--run=${repertoire}`, "--sortie", sortie);
+    const resultat = executerCommande(`--run=${repertoire}`, `--sortie=${sortie}`);
     expect(resultat.status).not.toBe(0);
     expect(resultat.stderr).toContain("ArgumentsRunDryRefuses");
     expect(resultat.stderr).toContain("--run et --sortie");

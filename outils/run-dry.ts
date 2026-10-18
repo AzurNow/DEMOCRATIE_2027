@@ -1,16 +1,17 @@
 /**
  * `pnpm run:dry` — un run d'interrogation complet en mode simulé : aucun appel réseau, aucun SDK.
  *
- *   pnpm run:dry                     fixtures, écrit dans un répertoire temporaire neuf
- *   pnpm run:dry --sortie <chemin>   fixtures, écrit sous <chemin> (relancer sur le même chemin reprend le run)
- *   pnpm run:dry --run <répertoire>  interroge le run gelé par `pnpm geler --sortie` (lot gel, PR 4)
+ *   pnpm run:dry                    fixtures, écrit dans un répertoire temporaire neuf
+ *   pnpm run:dry --sortie=<chemin>  fixtures, écrit sous <chemin> (relancer sur le même chemin reprend le run)
+ *   pnpm run:dry --run=<répertoire> interroge le run gelé par `pnpm geler --sortie` (lot gel, PR 4)
  *
- * `--run` (ou `--run=<répertoire>`) : périmètre, fenêtre, identifiant et questions tirées sont lus du
- * gel, `tirage.json` et `questions.json` vérifiés sur les empreintes que `run.json` déclare ;
- * `statut: en_cours` est écrit dans `run.json` avant la première tentative (D51 (1)), et un run déjà
- * `en_cours` reprend sans le réécrire. Seuls la clé d'API fictive et les profils de l'éditeur simulé
- * viennent d'une fixture (`tests/interrogation/fixtures/run-gele/profils-simules.json`). Réponses et
- * tentatives sous `<répertoire>/volume/`. `--run` et `--sortie` ensemble sont refusés.
+ * `--run` : périmètre, fenêtre, identifiant et questions tirées sont lus du gel, `tirage.json` et
+ * `questions.json` vérifiés sur les empreintes que `run.json` déclare ; `statut: en_cours` est écrit
+ * dans `run.json` avant la première tentative (D51 (1)), et un run déjà `en_cours` reprend sans le
+ * réécrire. Seuls la clé d'API fictive et les profils de l'éditeur simulé viennent d'une fixture
+ * (`tests/interrogation/fixtures/run-gele/profils-simules.json`). Réponses et tentatives sous
+ * `<répertoire>/volume/`. `--run` et `--sortie` ensemble sont refusés ; toute autre option aussi
+ * (`arguments.ts:analyserArguments`, constat 19 de la revue du 2026-10-17).
  *
  * Jamais dans `runs/`, ni par défaut ni sur demande : un run simulé n'est pas un run, et `--sortie`
  * ou `--run` sous `runs/` est refusé (`gardes-sortie.ts:exigerHorsDeRuns`) avant toute lecture ou
@@ -24,9 +25,11 @@ import { join, resolve } from "node:path";
 import type { LigneBilan } from "../pipeline/interrogation/bilan.ts";
 import { lancerRunGeleSimule, lancerRunSimule, type ResultatRunSimule } from "../pipeline/interrogation/run-simule.ts";
 import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
+import { analyserArguments, type Arguments } from "./arguments.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
 const PROFILS_RUN_GELE = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-gele/profils-simules.json");
+const OPTIONS: readonly string[] = ["run", "sortie"];
 
 class ArgumentsRunDryRefuses extends Error {
   constructor(message: string) {
@@ -35,16 +38,12 @@ class ArgumentsRunDryRefuses extends Error {
   }
 }
 
-/** `--<nom> <valeur>` ou `--<nom>=<valeur>` ; `undefined` si l'option est absente, refus si sa valeur l'est. */
-function valeurDOption(argv: readonly string[], nom: string): string | undefined {
-  const drapeau = `--${nom}`;
-  const rang = argv.findIndex((a) => a === drapeau || a.startsWith(`${drapeau}=`));
-  if (rang === -1) return undefined;
-  const argument = argv[rang] as string;
-  const valeur = argument === drapeau ? argv[rang + 1] : argument.slice(drapeau.length + 1);
-  if (valeur === undefined || valeur.length === 0 || valeur.startsWith("--")) {
-    throw new ArgumentsRunDryRefuses(`${drapeau} attend un chemin.`);
-  }
+/** `--<nom>=<valeur>` ; `undefined` si l'option est absente, refus si sa valeur l'est ou si elle est posée sans valeur (`--<nom>` seul). */
+function cheminOption(bruts: readonly string[], table: Arguments, nom: string): string | undefined {
+  if (bruts.includes(`--${nom}`)) throw new ArgumentsRunDryRefuses(`--${nom} attend un chemin (--${nom}=<chemin>).`);
+  const valeur = table.get(nom);
+  if (valeur === undefined) return undefined;
+  if (valeur.length === 0) throw new ArgumentsRunDryRefuses(`--${nom} attend un chemin.`);
   return resolve(valeur);
 }
 
@@ -87,8 +86,9 @@ const STATUT_DU_DEMARRAGE = {
 
 async function principal(): Promise<void> {
   const argv = process.argv.slice(2);
-  const run = valeurDOption(argv, "run");
-  const sortie = valeurDOption(argv, "sortie");
+  const table = analyserArguments(argv, OPTIONS);
+  const run = cheminOption(argv, table, "run");
+  const sortie = cheminOption(argv, table, "sortie");
   if (run !== undefined && sortie !== undefined) {
     throw new ArgumentsRunDryRefuses("--run et --sortie s'excluent : un run gelé s'interroge dans son propre répertoire.");
   }

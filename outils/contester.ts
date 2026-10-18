@@ -22,6 +22,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { analyserArguments, drapeau, obligatoire, texte, type Arguments } from "./arguments.ts";
 import { commandeGit, commitCourant, ecriturePermise } from "./garde-fous-git.ts";
+import { estUnRefusAttendu } from "./refus-attendu.ts";
 import { sansSautFinal } from "./texte-auteur.ts";
 import {
   ajouterContestation,
@@ -119,6 +120,7 @@ function principal(): void {
 try {
   principal();
 } catch (erreur) {
-  process.stderr.write(`${erreur instanceof Error ? erreur.message : String(erreur)}\n`);
+  if (!estUnRefusAttendu(erreur)) throw erreur;
+  process.stderr.write(`${erreur.message}\n`);
   process.exitCode = 1;
 }
