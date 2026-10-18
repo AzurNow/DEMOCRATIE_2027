@@ -22,7 +22,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { valider } from "../../outils/schemas/valider.ts";
+import { jsonDe, valider } from "../../outils/schemas/valider.ts";
 import { verifierAjoutSeul, type AutorisationReecriture } from "../domaine/ajout-seul.ts";
 import type { Item } from "../domaine/types.ts";
 
@@ -66,7 +66,7 @@ function empreinteOctets(octets: Buffer): string {
 
 function lireFichier(chemin: string): ItemLu {
   const octets = readFileSync(chemin);
-  const item = valider<Item>("item", JSON.parse(octets.toString("utf8")) as unknown, chemin);
+  const item = valider<Item>("item", jsonDe(octets.toString("utf8"), chemin), chemin);
   return { item, empreinte_fichier: empreinteOctets(octets) };
 }
 

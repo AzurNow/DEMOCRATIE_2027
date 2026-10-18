@@ -9,7 +9,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ErreurSchema } from "../outils/schemas/valider.ts";
+import { ErreurSchema, JsonIllisible } from "../outils/schemas/valider.ts";
 import { EcritureNonAjoutSeule } from "../validation/domaine/ajout-seul.ts";
 import type { Item } from "../validation/domaine/types.ts";
 import {
@@ -72,6 +72,15 @@ describe("lireItem et lireItemsData", () => {
 
   it("un répertoire absent est un data/ vide", () => {
     expect(lireItemsData(join(repertoire, "absent")).size).toBe(0);
+  });
+
+  it("constat 26 : un JSON illisible arrête la lecture par une erreur nommée qui nomme le fichier", () => {
+    const item = itemPromu();
+    const chemin = cheminItem(repertoire, item.id);
+    writeFileSync(chemin, "{ ceci n'est pas du JSON", "utf8");
+    expect(() => lireItem(repertoire, item.id)).toThrow(JsonIllisible);
+    expect(() => lireItem(repertoire, item.id)).toThrow(chemin);
+    expect(() => lireItemsData(repertoire)).toThrow(JsonIllisible);
   });
 });
 

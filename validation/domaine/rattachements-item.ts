@@ -27,6 +27,12 @@
 import { empreinteContenuNotant } from "./empreinte.ts";
 import { CHANGEMENT_RATTACHEMENT, jugementComplet, type JugementEnCours } from "./renvoi-mesure.ts";
 import type { Item, Mesure } from "./types.ts";
+import { MOTIF_ULID } from "./ulid.ts";
+import {
+  DATE_CIVILE,
+  objetOuLeve as objetOuLeveCommun,
+  refuserChampsEnTrop as refuserChampsEnTropCommun,
+} from "./validateurs-champ.ts";
 
 export interface RattachementItem {
   readonly item_id: string;
@@ -189,8 +195,7 @@ const CHAMPS: ReadonlySet<string> = new Set([
   "mesure_version_apres",
   "date",
 ]);
-const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
-const DATE_CIVILE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+const ULID = MOTIF_ULID;
 
 export class EntreeRattachementInvalide extends Error {
   constructor(detail: string, provenance: string) {
@@ -218,17 +223,15 @@ export function validerEntreeRattachement(valeur: unknown, provenance: string): 
 }
 
 function objetOuLeve(valeur: unknown, provenance: string): Record<string, unknown> {
-  if (typeof valeur !== "object" || valeur === null || Array.isArray(valeur)) {
-    throw new EntreeRattachementInvalide("ce n'est pas un objet JSON.", provenance);
-  }
-  return valeur as Record<string, unknown>;
+  return objetOuLeveCommun(valeur, provenance, (detail, p) => {
+    throw new EntreeRattachementInvalide(detail, p);
+  });
 }
 
 function refuserChampsEnTrop(brute: Record<string, unknown>, provenance: string): void {
-  const enTrop = Object.keys(brute).filter((cle) => !CHAMPS.has(cle));
-  if (enTrop.length > 0) {
-    throw new EntreeRattachementInvalide(`champ(s) inattendu(s) : ${enTrop.join(", ")}.`, provenance);
-  }
+  refuserChampsEnTropCommun(brute, CHAMPS, provenance, (detail, p) => {
+    throw new EntreeRattachementInvalide(detail, p);
+  });
 }
 
 function motifObligatoire(brute: Record<string, unknown>, cle: string, motif: RegExp, provenance: string): string {

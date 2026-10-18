@@ -16,7 +16,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { NomSchema } from "../../outils/schemas/noms.ts";
-import { valider } from "../../outils/schemas/valider.ts";
+import { jsonDe, valider } from "../../outils/schemas/valider.ts";
 import type { Item, Mesure } from "../domaine/types.ts";
 
 export interface Staging {
@@ -43,7 +43,7 @@ function chargerJson<T>(
   for (const nom of readdirSync(repertoire).sort()) {
     if (!nom.endsWith(".json")) continue;
     const chemin = join(repertoire, nom);
-    const valeur = valider<T>(schema, JSON.parse(readFileSync(chemin, "utf8")), chemin);
+    const valeur = valider<T>(schema, jsonDe(readFileSync(chemin, "utf8"), chemin), chemin);
     table.set(cle(valeur), valeur);
   }
   return table;

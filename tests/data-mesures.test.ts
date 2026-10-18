@@ -9,7 +9,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ErreurSchema, valider } from "../outils/schemas/valider.ts";
+import { ErreurSchema, JsonIllisible, valider } from "../outils/schemas/valider.ts";
 import { empreinteMesure } from "../validation/domaine/empreinte.ts";
 import type { Item, Mesure } from "../validation/domaine/types.ts";
 import { FichierModifieDepuisLecture } from "../validation/io/data-items.ts";
@@ -79,6 +79,13 @@ describe("lireMesuresData", () => {
     const chemin = cheminMesure(repertoire, valeur.id);
     writeFileSync(chemin, JSON.stringify({ ...valeur, version: 0 }), "utf8");
     expect(() => lireMesuresData(repertoire)).toThrow(ErreurSchema);
+    expect(() => lireMesuresData(repertoire)).toThrow(chemin);
+  });
+
+  it("constat 26 : un JSON illisible arrête la lecture par une erreur nommée qui nomme le fichier", () => {
+    const chemin = cheminMesure(repertoire, "01JBANCESSA90000000MESURE1");
+    writeFileSync(chemin, "{ ceci n'est pas du JSON", "utf8");
+    expect(() => lireMesuresData(repertoire)).toThrow(JsonIllisible);
     expect(() => lireMesuresData(repertoire)).toThrow(chemin);
   });
 

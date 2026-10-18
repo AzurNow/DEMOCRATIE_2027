@@ -118,10 +118,12 @@ describe("décision prise sur une version dépassée", () => {
 });
 
 describe("constat 20 (revue du 2026-10-17), 32 (revue du 2026-10-12) : un bogue remonte avec sa pile", () => {
-  it("un item de staging/ au JSON illisible : SyntaxError non attrapée, pile imprimée, rien écrit", () => {
+  it("un manifeste de lot au JSON illisible : SyntaxError non attrapée, pile imprimée, rien écrit", () => {
+    // `lots-fichier.ts` n'a pas de validation de frontière nommée (contrairement à `staging.ts`
+    // depuis le constat 26) : son JSON illisible reste donc l'exemple d'un bogue non attrapé.
     const { bac } = preparer();
-    writeFileSync(join(bac.racine, "staging/items", "01JBANCESSA1000000000TEMCA.json"), "{ pas du json", "utf8");
-    commiterTout(bac.racine, "item de staging cassé");
+    writeFileSync(join(bac.racine, "validation/lots", "lot-061.json"), "{ pas du json", "utf8");
+    commiterTout(bac.racine, "manifeste de lot cassé");
     const resultat = executerOutil("arbitrer.ts", chemins(bac));
     expect(resultat.status).not.toBe(0);
     expect(resultat.erreur).toContain("SyntaxError");

@@ -22,6 +22,7 @@
  */
 
 import type { Correction, Mesure } from "./types.ts";
+import { dateCivileValide, objetOuLeve as objetOuLeveCommun } from "./validateurs-champ.ts";
 
 /** Seul chemin de mesure qu'une décision du registre peut trancher (voir `corrections.ts`). */
 export const CHEMIN_THEME = "/theme";
@@ -53,8 +54,6 @@ export interface ResultatCorrectionMesure {
   readonly entree: DecisionCorrectionMesure | null;
 }
 
-const DATE_CIVILE = /^\d{4}-\d{2}-\d{2}$/;
-
 export class EntreeRegistreInvalide extends Error {
   constructor(detail: string, provenance: string) {
     super(`Entrée de registre invalide (${provenance}) : ${detail}`);
@@ -81,10 +80,9 @@ export function validerEntreeRegistre(valeur: unknown, provenance: string): Deci
 }
 
 function objetOuLeve(valeur: unknown, provenance: string): Record<string, unknown> {
-  if (typeof valeur !== "object" || valeur === null || Array.isArray(valeur)) {
-    throw new EntreeRegistreInvalide("ce n'est pas un objet JSON.", provenance);
-  }
-  return valeur as Record<string, unknown>;
+  return objetOuLeveCommun(valeur, provenance, (detail, p) => {
+    throw new EntreeRegistreInvalide(detail, p);
+  });
 }
 
 function chaineObligatoire(brute: Record<string, unknown>, cle: string, provenance: string): string {
@@ -111,10 +109,11 @@ function sensObligatoire(brute: Record<string, unknown>, provenance: string): Se
   return valeur;
 }
 
+/** Vraie date civile par aller-retour (constat 1) : `2026-19-01` et `2027-02-29` sont refusées. */
 function dateObligatoire(brute: Record<string, unknown>, provenance: string): string {
   const valeur = chaineObligatoire(brute, "date", provenance);
-  if (!DATE_CIVILE.test(valeur)) {
-    throw new EntreeRegistreInvalide(`date « ${valeur} » : attendu AAAA-MM-JJ.`, provenance);
+  if (!dateCivileValide(valeur)) {
+    throw new EntreeRegistreInvalide(`date « ${valeur} » : attendu une vraie date civile AAAA-MM-JJ.`, provenance);
   }
   return valeur;
 }
@@ -183,9 +182,12 @@ export function decisionApplicable(
 }
 
 /**
- * La plus récente fait foi : un revirement de l'auteur est une entrée de plus, jamais une
- * réécriture. À date égale, la dernière écrite l'emporte — le registre est en ajout seul, son
- * ordre est donc chronologique.
+ * La dernière du registre fait foi, dans l'ordre d'écriture, jamais celle de plus grande `date`
+ * (revue du 2026-10-17, constat 1 ; D54 (1)) : un revirement de l'auteur est une entrée de plus,
+ * jamais une réécriture, et le registre est en ajout seul — son ordre **est** la chronologie des
+ * décisions, une date tapée à la main ne la remplace pas. Une décision antérieure en `date` mais
+ * inscrite plus récemment au registre l'emporte donc sur une décision à `date` plus grande mais
+ * inscrite avant elle.
  */
 function derniereDecision(
   registre: RegistreCorrectionsMesure,
@@ -195,8 +197,7 @@ function derniereDecision(
   if (correction.cible !== "mesure" || correction.chemin !== CHEMIN_THEME) return null;
   let retenue: DecisionCorrectionMesure | null = null;
   for (const entree of registre) {
-    if (!vise(entree, correction, mesure)) continue;
-    if (retenue === null || entree.date >= retenue.date) retenue = entree;
+    if (vise(entree, correction, mesure)) retenue = entree;
   }
   return retenue;
 }

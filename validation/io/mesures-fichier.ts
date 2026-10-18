@@ -16,16 +16,19 @@
  *
  * Un fichier **absent** est en revanche un registre vide, et non une erreur : aucune décision
  * n'a encore été prise. C'est une absence, pas une donnée manquante.
+ *
+ * L'écriture est atomique (temporaire puis renommage), refusée si le fichier a changé depuis sa
+ * lecture, et le registre est relu après la pose : `registre-ajout-seul.ts`, générique, partagé
+ * avec les registres des relectures et des rattachements.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { valider } from "../../outils/schemas/valider.ts";
 import {
   validerEntreeRegistre,
   type DecisionCorrectionMesure,
   type RegistreCorrectionsMesure,
 } from "../domaine/corrections-mesure.ts";
+import { ajouterAuRegistreGenerique, lireRegistreGenerique, type DefinitionRegistre } from "./registre-ajout-seul.ts";
 
 export const NOM_FICHIER_REGISTRE = "decisions.json";
 
@@ -44,42 +47,24 @@ export class RegistreIllisible extends Error {
   }
 }
 
+const DEFINITION: DefinitionRegistre<DecisionCorrectionMesure> = {
+  schema: "decision-mesure",
+  validerEntree: validerEntreeRegistre,
+  creerIllisible: (chemin, detail) => new RegistreIllisible(chemin, detail),
+};
+
 export function lireRegistre(repertoire: string): RegistreCorrectionsMesure {
-  const chemin = cheminRegistre(repertoire);
-  if (!existsSync(chemin)) return [];
-  const brut = analyser(readFileSync(chemin, "utf8"), chemin);
-  return brut.map((valeur, index) => validerEntree(valeur, `${chemin}, entrée ${index + 1}`));
-}
-
-function validerEntree(valeur: unknown, provenance: string): DecisionCorrectionMesure {
-  return validerEntreeRegistre(valider("decision-mesure", valeur, provenance), provenance);
-}
-
-function analyser(contenu: string, chemin: string): readonly unknown[] {
-  const valeur = tenterJson(contenu, chemin);
-  if (!Array.isArray(valeur)) throw new RegistreIllisible(chemin, "Le registre est un tableau JSON.");
-  return valeur;
-}
-
-function tenterJson(contenu: string, chemin: string): unknown {
-  try {
-    return JSON.parse(contenu);
-  } catch (erreur) {
-    throw new RegistreIllisible(chemin, erreur instanceof Error ? erreur.message : String(erreur));
-  }
+  return lireRegistreGenerique(cheminRegistre(repertoire), DEFINITION);
 }
 
 /**
- * Ajoute une décision en fin de registre. Les entrées antérieures sont relues, validées et
- * réécrites telles quelles, dans leur ordre : la réécriture du fichier n'est qu'un ajout.
+ * Ajoute une décision en fin de registre ; le crée s'il est absent. Les entrées antérieures sont
+ * relues, validées et réécrites telles quelles, dans leur ordre : la réécriture n'est qu'un ajout.
+ * Rend le registre relu après la pose.
  */
 export function ajouterAuRegistre(
   repertoire: string,
   entree: DecisionCorrectionMesure,
 ): RegistreCorrectionsMesure {
-  const validee = validerEntree(entree, `décision à enregistrer dans ${cheminRegistre(repertoire)}`);
-  const registre = [...lireRegistre(repertoire), validee];
-  mkdirSync(repertoire, { recursive: true });
-  writeFileSync(cheminRegistre(repertoire), `${JSON.stringify(registre, null, 2)}\n`, "utf8");
-  return registre;
+  return ajouterAuRegistreGenerique(cheminRegistre(repertoire), entree, DEFINITION);
 }

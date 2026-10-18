@@ -19,6 +19,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse } from "yaml";
+import { DATE_CIVILE } from "../validation/domaine/validateurs-champ.ts";
 import { analyserArguments, texte } from "./arguments.ts";
 
 const OPTIONS: readonly string[] = ["perimetre"];
@@ -45,7 +46,6 @@ export class PerimetreContactsInvalide extends Error {
 
 const ADRESSE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-const DATE_CIVILE = /^\d{4}-\d{2}-\d{2}$/;
 const URL_HTTP = /^https?:\/\//;
 
 type Brut = Record<string, unknown>;

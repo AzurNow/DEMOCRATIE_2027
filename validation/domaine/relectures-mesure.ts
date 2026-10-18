@@ -29,6 +29,12 @@
 
 import { empreinteDe } from "./empreinte.ts";
 import type { Mesure } from "./types.ts";
+import { MOTIF_ULID } from "./ulid.ts";
+import {
+  DATE_CIVILE,
+  objetOuLeve as objetOuLeveCommun,
+  refuserChampsEnTrop as refuserChampsEnTropCommun,
+} from "./validateurs-champ.ts";
 
 export interface RelectureMesure {
   readonly mesure_id: string;
@@ -42,9 +48,8 @@ export interface RelectureMesure {
 export type RegistreRelecturesMesure = readonly RelectureMesure[];
 
 const CHAMPS: ReadonlySet<string> = new Set(["mesure_id", "mesure_version", "empreinte", "date"]);
-const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+const ULID = MOTIF_ULID;
 const SHA256 = /^[0-9a-f]{64}$/;
-const DATE_CIVILE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
 export class EntreeRelectureInvalide extends Error {
   constructor(detail: string, provenance: string) {
@@ -109,17 +114,15 @@ export function validerEntreeRelecture(valeur: unknown, provenance: string): Rel
 }
 
 function objetOuLeve(valeur: unknown, provenance: string): Record<string, unknown> {
-  if (typeof valeur !== "object" || valeur === null || Array.isArray(valeur)) {
-    throw new EntreeRelectureInvalide("ce n'est pas un objet JSON.", provenance);
-  }
-  return valeur as Record<string, unknown>;
+  return objetOuLeveCommun(valeur, provenance, (detail, p) => {
+    throw new EntreeRelectureInvalide(detail, p);
+  });
 }
 
 function refuserChampsEnTrop(brute: Record<string, unknown>, provenance: string): void {
-  const enTrop = Object.keys(brute).filter((cle) => !CHAMPS.has(cle));
-  if (enTrop.length > 0) {
-    throw new EntreeRelectureInvalide(`champ(s) inattendu(s) : ${enTrop.join(", ")}.`, provenance);
-  }
+  refuserChampsEnTropCommun(brute, CHAMPS, provenance, (detail, p) => {
+    throw new EntreeRelectureInvalide(detail, p);
+  });
 }
 
 function motifObligatoire(brute: Record<string, unknown>, cle: string, motif: RegExp, provenance: string): string {

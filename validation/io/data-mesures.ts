@@ -26,7 +26,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { erreurDeSchema, valider } from "../../outils/schemas/valider.ts";
+import { erreurDeSchema, jsonDe, valider } from "../../outils/schemas/valider.ts";
 import { canoniser, empreinteMesure } from "../domaine/empreinte.ts";
 import { empreinteRelecture, mesureRelue, type RegistreRelecturesMesure } from "../domaine/relectures-mesure.ts";
 import type { Item, Mesure } from "../domaine/types.ts";
@@ -72,7 +72,7 @@ function empreinteOctets(octets: Buffer): string {
 
 function lireFichier(chemin: string): MesureLue {
   const octets = readFileSync(chemin);
-  const mesure = valider<Mesure>("mesure", JSON.parse(octets.toString("utf8")) as unknown, chemin);
+  const mesure = valider<Mesure>("mesure", jsonDe(octets.toString("utf8"), chemin), chemin);
   return { mesure, empreinte_fichier: empreinteOctets(octets) };
 }
 

@@ -27,6 +27,7 @@
  */
 
 import { resolve } from "node:path";
+import { DATE_CIVILE } from "../validation/domaine/validateurs-champ.ts";
 import { analyserArguments, drapeau, obligatoire, texte, type Arguments } from "./arguments.ts";
 import {
   adjacenceRespectee,
@@ -77,8 +78,6 @@ interface Options {
   /** Date civile de la séance de calibration. `null` hors réannotation. */
   readonly calibration: string | null;
 }
-
-const DATE_CIVILE = /^\d{4}-\d{2}-\d{2}$/;
 
 function lireOptions(bruts: readonly string[]): Options {
   const table = analyserArguments(bruts, OPTIONS);
