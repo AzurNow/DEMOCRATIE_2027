@@ -12,8 +12,10 @@
  *   publication et son dépôt), hors d'ici. Admis depuis `planifie` ou `en_cours` seulement : après
  *   publication, un défaut serait un erratum, que le protocole ne prévoit pas.
  *
- * **Règle 7.** Une `invalidation` déjà présente n'est jamais écrasée : identique en forme canonique,
- * l'issue est `deja_inscrite` et il n'y a rien à écrire ; différente, refus.
+ * **Règle 7.** Une `invalidation` déjà présente n'est jamais écrasée. D54 (5) : même `motif`, l'issue
+ * est `deja_inscrite`, quelle que soit la date reçue (jamais comparée à `date_gel` dans ce cas) — la
+ * date rendue est celle déjà inscrite, jamais celle de l'appel qui ne réécrit rien ; `motif`
+ * différent, refus `invalidation_differente`.
  *
  * **Date.** Celle de l'horloge au moment de la commande, reçue de l'appelant. Elle est refusée si
  * elle précède `date_gel` ; exactement à `date_gel`, elle est admise : le run existe dès son gel
@@ -87,7 +89,9 @@ export function demarrerOuReprendre<T extends RunAvecStatut>(run: T): IssueDemar
   return { issue: "reprend" };
 }
 
-export type IssueInvalidation<T> = { readonly issue: "inscrite"; readonly run: T } | { readonly issue: "deja_inscrite" };
+export type IssueInvalidation<T> =
+  | { readonly issue: "inscrite"; readonly run: T }
+  | { readonly issue: "deja_inscrite"; readonly date: string };
 
 function exigerInvalidable(run: RunAvecStatut): void {
   if (INVALIDABLES.has(run.statut)) return;
@@ -120,10 +124,13 @@ function exigerDateApresGel(run: RunAvecStatut, date: string): void {
 export function invalider<T extends RunAvecStatut>(run: T, motif: string, date: string): IssueInvalidation<T> {
   exigerInvalidable(run);
   exigerMotif(motif);
+  // D54 (5) : même motif déjà inscrit ⇒ deja_inscrite quelle que soit la date reçue, jamais comparée
+  // à date_gel dans ce cas ; la date rendue est celle déjà inscrite, rien n'est réécrit (règle 7).
+  if (run.invalidation !== undefined && run.invalidation.motif === motif) {
+    return { issue: "deja_inscrite", date: run.invalidation.date };
+  }
   exigerDateApresGel(run, date);
-  const invalidation: Invalidation = { motif, date };
-  if (run.invalidation === undefined) return { issue: "inscrite", run: { ...run, invalidation } };
-  if (canoniser(run.invalidation) === canoniser(invalidation)) return { issue: "deja_inscrite" };
+  if (run.invalidation === undefined) return { issue: "inscrite", run: { ...run, invalidation: { motif, date } } };
   throw new TransitionRefusee(
     "invalider",
     "invalidation_differente",

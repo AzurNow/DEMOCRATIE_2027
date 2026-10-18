@@ -26,8 +26,8 @@ export function invaliderRun(repertoire_run: string, motif: string, maintenant_m
   const chemin = dispositionRunNote(repertoire_run).run_json;
   const date = instantParis(maintenant_ms);
   const issue = invalider(run, motif, date);
-  const resultat = { issue: issue.issue, run_id: run.id, statut: run.statut, date };
-  if (issue.issue === "deja_inscrite") return resultat;
+  // D54 (5) : déjà inscrite ⇒ la date rendue est celle déjà inscrite, jamais celle de cet appel.
+  if (issue.issue === "deja_inscrite") return { issue: issue.issue, run_id: run.id, statut: run.statut, date: issue.date };
   ecrireParRenommage(chemin, valider<unknown>("run", issue.run, `${chemin} après invalidation`), "invalidation");
-  return resultat;
+  return { issue: issue.issue, run_id: run.id, statut: run.statut, date };
 }
