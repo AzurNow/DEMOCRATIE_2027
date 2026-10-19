@@ -645,19 +645,23 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       contient le dernier, à la seconde supérieure. » Et (D53 (1)) : « Un item extrait n'est promu
       qu'une fois rattaché par la validation à une mesure, existante ou nouvelle, dont la
       formulation canonique a été relue. »
-- [ ] (D54, 2026-10-17) **Écrire D54 (2) au §4 et D54 (4) au §5 à la prochaine révision.**
-      Proposition au §4, après « Si l'une des deux sorties est illisible, la source n'est pas
+- [x] (2026-10-19, protocole 0.19, #163) (D54, 2026-10-17) **Écrire D54 (2) au §4 et D54 (4) au §5
+      à la prochaine révision.** Proposition au §4, après « Si l'une des deux sorties est illisible, la source n'est pas
       proposée et l'extraction est relancée » : « Une réponse au statut 408, 429 ou 5xx n'est pas une
       sortie illisible mais un échec de transport : elle est gardée, et la source est reprise. »
       Proposition au §5, dans la règle de la position qu'affirme une formulation orientée : « Un
-      état sans objet n'en affirme aucune, comme une question d'attribution. »
-- [ ] (D55, 2026-10-17) **Écrire D55 (4), (5) et (9) à la prochaine révision.** §7, test
+      état sans objet n'en affirme aucune, comme une question d'attribution. » La phrase d'ancrage
+      du §4 n'y figurant pas telle quelle, D54 (2) est écrit juste après la phrase actuelle sur la
+      sortie illisible.
+- [x] (2026-10-19, protocole 0.19, #163) (D55, 2026-10-17) **Écrire D55 (4), (5) et (9) à la
+      prochaine révision.** §7, test
       contrefactuel : « Les permutations sont un dérangement des candidats interrogés au run » (au
       lieu de « des candidats du run »). §7, juges : « Dans ce que reçoit le juge, chaque candidat est
       désigné par un alias aveugle stable du run, jamais par son identifiant. » §6 : « Une réponse
       reçue que le banc ne peut stocker est gardée telle quelle et n'est pas renvoyée : elle n'est
-      pas une tentative de l'outil, et la question attend l'opérateur. » Et, à la nouvelle version de
-      la table des liens (D55 (2)), la règle de relecture UTF-8 de `Location`.
+      pas une tentative de l'outil, et la question attend l'opérateur. »
+- [ ] (D55, 2026-10-17) **Écrire, à la nouvelle version de la table des liens (D55 (2)), la règle
+      de relecture UTF-8 de `Location`.** Pas dans la 0.19 : elle suit le code de D55 (2).
 - [ ] **Fusionner #149 (renommage du dépôt) et #150 (relecture étendue, F ⇔ fictive)** : CI verte ;
       le contrôle de Claude Code refuse `gh pr merge`.
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine

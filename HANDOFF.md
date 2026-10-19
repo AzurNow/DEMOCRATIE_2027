@@ -20,8 +20,9 @@ Deux choses seulement :
    une révision listée en tête du protocole, pas un amendement (§9). Ne jamais mélanger texte du
    protocole et code dans une même PR. Après chaque révision fusionnée, repasser la compétence
    `conformite-protocole` (rapport dans `docs/conformite/`), qui dit quel code doit suivre.
-   Première révision toute prête : les textes de D54 (2), (4) et D55 (4), (5), (9), déjà rédigés
-   dans `docs/TACHES-AUTEUR.md` (section 1, entrées datées du 2026-10-17).
+   Première révision faite : la 0.19 (#163, 2026-10-19) reporte au protocole les textes de
+   D54 (2), (4) et D55 (4), (5), (9) rédigés dans `docs/TACHES-AUTEUR.md` (section 1, entrées
+   datées du 2026-10-17).
 
 Hors mission : collecte réelle, appels d'API réels, écriture dans `data/` ou dans
 `config/perimetre.yaml`, site, déploiement, signature et gel de la 1.0 (l'auteur seul).
@@ -55,7 +56,7 @@ révision. Ne **jamais** baser une PR sur la branche d'une autre PR non fusionn�
 
 ## État actuel
 
-- Protocole en **version 0.18**, pas encore gelé en 1.0. Le jalon J1 (15 octobre) est dépassé :
+- Protocole en **version 0.19** (#163, 2026-10-19), pas encore gelé en 1.0. Le jalon J1 (15 octobre) est dépassé :
   les jalons sont repoussables, la qualité passe avant les dates.
 - Code livré, de T2 à T3 selon les lots : schémas, interface de validation, collecte et
   archivage, extraction double, questions/tirage/symétrie, interrogation simulée, notation et
@@ -77,8 +78,9 @@ La revue de code du 2026-10-17 (`docs/revues/2026-10-17.md`) a relevé 44 consta
 tranché le même jour ses 8 décisions (**D54**) et les 11 restées de la revue du 2026-10-12
 (**D55**), option recommandée partout. Il restait à **coder les lots de correction**, une petite PR
 chacune, en commençant par les gardes de sortie. Le texte au protocole de D54 (2), (4) et
-D55 (4), (5), (9) est rédigé dans `docs/TACHES-AUTEUR.md` mais pas encore reporté au protocole :
-c'est la première révision à proposer (voir « Mission », point 2).
+D55 (4), (5), (9) est reporté au protocole en 0.19 (#163, 2026-10-19), première révision de la
+mission (voir « Mission », point 2) ; la règle UTF-8 de `Location` (D55 (2)) attend la nouvelle
+version de la table des liens.
 
 ## Prochaines tâches, par priorité
 
