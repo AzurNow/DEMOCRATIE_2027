@@ -1,13 +1,13 @@
 {
   "$commentaire": "Matrice de conformité code ↔ docs/PROTOCOLE.md. Tenue par la compétence conformite-protocole ; ne pas éditer hors d'une passe.",
   "protocole": {
-    "version": "0.13",
-    "sha256": "7a2aa93e360ff2ddad20d34ba3e893800bbdaae3592a3ef63c3c67f39ffffb8d"
+    "version": "0.19",
+    "sha256": "4e1ce3a213e42e35f8e162eb804e1eab47ea8e9a666be00e1af0eade2e697069"
   },
   "passe": {
-    "date": "2026-09-29",
-    "commit": "e9a47e1",
-    "rapport": "docs/conformite/2026-09-29.md"
+    "date": "2026-10-19",
+    "commit": "5cd4d61",
+    "rapport": "docs/conformite/2026-10-19.md"
   },
   "exigences": [
     {
@@ -1413,7 +1413,7 @@
       "statut": "testee",
       "code": [
         "validation/domaine/lot.ts:lotsApresSupersession",
-        "outils/promote.ts:evaluerLot"
+        "outils/evaluation-lots.ts:evaluerLots"
       ],
       "tests": [
         "tests/reannotation.test.ts « 9. un item jugé dans les deux lots n'est jugé que par le lot de réannotation »",
@@ -2900,7 +2900,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/questions/tirage.ts:statutsAdmis",
+        "pipeline/questions/tirage.ts:juger",
         "pipeline/questions/engendrement.ts:itemEngendreDesQuestions",
         "pipeline/questions/contestation.ts:contestationPermetLeTirage",
         "pipeline/questions/symetrie.ts:aucunItemContesteOuEnAttente"
@@ -2923,7 +2923,7 @@
       "statut": "testee",
       "code": [
         "pipeline/questions/symetrie.ts:aucunNomCandidatDansQAtt",
-        "pipeline/questions/symetrie.ts:libellesDuPerimetre",
+        "pipeline/questions/libelles.ts:nomsCherchesEnAttribution",
         "pipeline/questions/libelles.ts:trouverLibelle",
         "schema/run.schema.json:perimetre.candidats[].libelle, nom"
       ],
@@ -3193,7 +3193,7 @@
         "pipeline/questions/completude.ts:exigerJeuComplet",
         "pipeline/questions/completude.ts:questionsExigees",
         "pipeline/questions/engendrement.ts:identitesEngendrees",
-        "outils/symmetry.ts:evaluerSymetrie",
+        "pipeline/gel/barriere.ts:jugerBarriere",
         "outils/items-au-gel.ts:exigerItemsDuGel",
         "pipeline/questions/completude.ts:exigerTirageDuRun"
       ],
@@ -3922,12 +3922,17 @@
       "section": "7",
       "citation": "Il ne reçoit jamais l'identité de l'outil noté",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "contredite",
+      "code": [
+        "pipeline/notation/charge-juge.ts:demandeDe (champ normalisation de ReponseSoumise)",
+        "pipeline/notation/juge.ts (a_vu_identite_outil: false, inconditionnel)"
+      ],
+      "tests": [
+        "tests/notation/charge-juge.test.ts « … » (exige la présence de normalisation.fonction, cf. revue 2026-10-12 constat 1)"
+      ],
       "lot": "notation",
-      "constat": null,
-      "note": "reponse.alias_aveugle et notation.notateur.a_vu_identite_outil (obligatoire pour un juge) existent ; le schéma n'impose pas la valeur false."
+      "constat": 3,
+      "note": "Revue du 2026-10-12 constat 1, toujours ouvert sur le code actuel (aucun commit sur charge-juge.ts depuis cette revue) : la charge transmise au juge recopie reponse.normalisation.fonction et .version (ex. normaliser_openai), qui nomme l'éditeur, alors que juge.ts inscrit inconditionnellement a_vu_identite_outil: false sur la notation publiée. Le lot notation n'existait pas à la passe du 2026-09-29 (a-implementer) ; il est livré depuis, d'où le passage à contredite."
     },
     {
       "id": "§7.15",
@@ -4231,7 +4236,7 @@
       "statut": "testee",
       "code": [
         "analysis/robustesse.ts:memeNote",
-        "analysis/robustesse.ts:memeSourcage"
+        "analysis/note-lue.ts:memeSourcage"
       ],
       "tests": [
         "tests/analysis/robustesse.test.ts « deux humains d'accord sur la catégorie mais pas sur les drapeaux divergent »"
@@ -7008,7 +7013,7 @@
       "statut": "testee",
       "code": [
         "pipeline/questions/symetrie.ts:aucunItemContesteOuEnAttente",
-        "pipeline/questions/tirage.ts:statutsAdmis"
+        "pipeline/questions/tirage.ts:juger"
       ],
       "tests": [
         "tests/questions/symetrie.test.ts « passe au rouge à la première occurrence et nomme l'item »"
@@ -7156,6 +7161,87 @@
       "lot": null,
       "constat": null,
       "note": null
+    },
+    {
+      "id": "§4.111",
+      "section": "4",
+      "citation": "Une réponse au statut 408, 429 ou 5xx n'est pas une sortie illisible mais un échec de transport : elle est gardée, et la source est reprise.",
+      "nature": "code",
+      "statut": "contredite",
+      "code": [
+        "pipeline/extraction/editeur.ts:lectureDe",
+        "pipeline/extraction/executer.ts:sortieDe"
+      ],
+      "tests": [
+        "tests/extraction/extraction.test.ts « 1. premier modèle illisible (HTTP 500), second conforme ⇒ lecture_illisible, refus de la source, rien déposé »"
+      ],
+      "lot": null,
+      "constat": 1,
+      "note": "D54 (2), revue du 2026-10-17 constat 2, confirmé ouvert sur le code actuel (5cd4d61) : lectureDe rend « illisible » toute réponse hors 2xx, sans distinguer 408/429/5xx ; sortieDe fige le motif « lecture_illisible » pour ce cas. Le test cité verrouille explicitement ce comportement pour un statut 500."
+    },
+    {
+      "id": "§5.51",
+      "section": "5",
+      "citation": "Un état sans objet n'en affirme aucune, comme une question d'attribution.",
+      "nature": "code",
+      "statut": "contredite",
+      "code": [
+        "pipeline/reformulation/position-affirmee.ts:affirmable",
+        "pipeline/reformulation/position-affirmee.ts:positionAffirmeeDemandee"
+      ],
+      "tests": [
+        "tests/reformulation/position-affirmee.test.ts « item P « sans_objet » ⇒ erreur nommée : le prompt n'admet que pour, contre, conditionnel ou AUCUNE »"
+      ],
+      "lot": null,
+      "constat": 6,
+      "note": "D54 (4), revue du 2026-10-17 constat 5, confirmé ouvert sur le code actuel : affirmable() lève PositionNonAffirmable pour « sans_objet » au lieu de rendre AUCUNE, ce qui arrête pnpm reformuler, l'écran de relecture et le gel dès qu'un item P ou O validé porte cet état."
+    },
+    {
+      "id": "§6.25",
+      "section": "6",
+      "citation": "Une réponse reçue que le banc ne peut stocker est gardée telle quelle et n'est pas renvoyée : elle n'est pas une tentative de l'outil, et la question attend l'opérateur.",
+      "nature": "code",
+      "statut": "contredite",
+      "code": [
+        "pipeline/interrogation/executer.ts:executerRequete",
+        "pipeline/interrogation/journal.ts:interrompue"
+      ],
+      "tests": [],
+      "lot": null,
+      "constat": 2,
+      "note": "D55 (5), revue du 2026-10-12 constat 6, confirmé ouvert sur le code actuel : executerRequete n'entoure pas contexte.depot.ecrire(...) d'un traitement dédié ; une erreur à cet endroit (corps non UTF-8, normalisation inattendue, schéma refusé) laisse une ligne de journal sans issue, lue comme « tentative interrompue » (journal.ts:interrompue) et renvoyée à la relance, au lieu d'être gardée telle quelle avec la question mise en attente d'un opérateur. Aucun test ne couvre ce chemin (revue : « décision de l'auteur »)."
+    },
+    {
+      "id": "§7.41",
+      "section": "7",
+      "citation": "Les permutations sont un dérangement des candidats interrogés au run, tiré avec sa graine dérivée, appliqué par remplacement exact du libellé et du nom seul déclarés au périmètre",
+      "nature": "code",
+      "statut": "contredite",
+      "code": [
+        "pipeline/notation/derangement.ts:tirerDerangement",
+        "pipeline/notation/chaine.ts (appel tirerDerangement(run.candidats, …), ligne ≈424)",
+        "analysis/lecture-run.ts:runDeNotationDe"
+      ],
+      "tests": [
+        "tests/notation/derangement.test.ts"
+      ],
+      "lot": null,
+      "constat": 4,
+      "note": "D55 (4), revue du 2026-10-12 constat 5, confirmé ouvert sur le code actuel : tirerDerangement prend run.candidats, c'est-à-dire tout le périmètre (run.perimetre.candidats sans filtre interroge), comme le dit encore la docstring du module (« tous ceux que déclare run.perimetre.candidats, interrogés ou non »), citant explicitement D14 (2) et le texte de la 0.16 — pas celui de la 0.19. Sur une Q-ATT, note-attribution.ts:classeDe compare les candidats cités à etat.interroges, non permuté : une image tombée sur un candidat non interrogé rend la paire « incertaine » et l'écarte du taux de changement, un artefact mécanique que rien ne distingue d'un vrai biais de juge."
+    },
+    {
+      "id": "§7.42",
+      "section": "7",
+      "citation": "Dans ce que reçoit le juge, chaque candidat est désigné par un alias aveugle stable du run, jamais par son identifiant.",
+      "nature": "code",
+      "statut": "contredite",
+      "code": [
+        "pipeline/notation/charge-juge.ts:itemSoumis"
+      ],
+      "tests": [],
+      "lot": null,
+      "constat": 5,
+      "note": "D55 (9), revue du 2026-10-12 constat 24, confirmé ouvert sur le code actuel : ItemSoumis.candidat_id reprend item.candidat_id tel quel (ex. « jordan-bardella ») dans la charge transmise au juge, sur toute référence de la grille, y compris une question d'attribution. Aucun mécanisme d'alias aveugle de candidat n'existe dans le code ou les schémas (seul outils[].alias_aveugle existe, pour l'identité de l'outil, §7 D23) : la règle reste entièrement à construire."
     }
   ]
 }
