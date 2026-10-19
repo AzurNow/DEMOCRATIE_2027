@@ -247,6 +247,22 @@ describe("constat 2 du 2026-10-17 (D54 (2)) : 408, 429 et 5xx sont un échec de 
     });
   }
 
+  it("503 chez Anthropic, premier dans l'ordre de la configuration ⇒ Mistral n'est pas appelé, aucun journal, la relance rappelle les deux", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const echec: Repondeur = (editeur) => (editeur === "anthropic" ? new Response("indisponible", { status: 503 }) : repondreConforme(editeur));
+    const premiere = await lancer(reel(racine), { repondre: echec });
+    expect(premiere.code).toBe(CODE_SOURCES_NON_TRAITEES);
+    expect(premiere.envois).toEqual(["anthropic"]);
+    expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE))).toBe(false);
+    expect(reponses(staging).map((reponse) => reponse.statut_http)).toEqual([503]);
+
+    const relance = await lancer(reel(racine));
+    expect(relance.code).toBe(0);
+    expect(relance.envois).toEqual(["anthropic", "mistral"]);
+    expect(journal(staging).issue.statut).toBe("extraite");
+  });
+
   it("relance après un 429 chez Mistral : extraite normalement, seul Mistral est rappelé, la réponse en échec reste gardée sur disque, jamais réécrite", async () => {
     const racine = racineDeTest();
     const staging = join(racine, "staging");

@@ -7176,7 +7176,7 @@
       ],
       "tests": [
         "tests/extraction/commande.test.ts « constat 2 du 2026-10-17 (D54 (2)) : 408, 429 et 5xx sont un échec de transport, pas lecture_illisible » (408, 429, 500, 503, 599 ; relance ; 499 et 407 restent illisibles ; réponse héritée sous l'ancien nom)",
-        "tests/extraction/commande.test.ts « cas 9 : journal présent » « second modèle en 429 après un premier modèle conforme : la relance réutilise le premier, ne rappelle que le second »",
+        "tests/extraction/commande.test.ts « constat 2 du 2026-10-17 (D54 (2)) : 408, 429 et 5xx sont un échec de transport, pas lecture_illisible » « second modèle en 429 après un premier modèle conforme : la relance réutilise le premier, ne rappelle que le second »",
         "tests/extraction/extraction.test.ts « 1. premier modèle illisible (HTTP 400), second conforme ⇒ lecture_illisible, refus de la source, rien déposé »"
       ],
       "lot": null,
