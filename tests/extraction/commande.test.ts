@@ -97,7 +97,7 @@ describe("cas 6 : bout en bout conforme", () => {
 /* ----------------------------------------------------------------- D53 (2) */
 
 describe("cas 7 : une sortie illisible refuse la source", () => {
-  for (const issue of ["http_500", "coupee", "bloc_de_code", "refus", "non_json"] as const) {
+  for (const issue of ["coupee", "bloc_de_code", "refus", "non_json"] as const) {
     it(`${issue} chez Anthropic ⇒ journal refusee, extraction_double_incomplete, aucun item, deux réponses gardées`, async () => {
       const racine = racineDeTest();
       const sortie = temporaire();
@@ -115,40 +115,41 @@ describe("cas 7 : une sortie illisible refuse la source", () => {
 
   it("la raison réelle d'une lecture illisible est consignée à côté de la réponse", async () => {
     const racine = racineDeTest();
-    const sortie = temporaire();
-    await lancer(simule(racine, sortie), { issues: { anthropic: "conforme", mistral: "http_500" } });
-    const [, mistral] = journal(sortie).reponses;
-    expect(mistral).toMatchObject({ modele: MODELE_SIMULE_MISTRAL, statut_http: 500, lecture: { lisible: false } });
-    expect(mistral?.lecture).toMatchObject({ raison: expect.stringContaining("HTTP 500") as unknown });
+    const refus400: Repondeur = (editeur) => (editeur === "mistral" ? new Response("peu importe", { status: 400 }) : repondreConforme(editeur));
+    await lancer(reel(racine), { repondre: refus400 });
+    const [, mistral] = journal(join(racine, "staging")).reponses;
+    expect(mistral).toMatchObject({ modele: MODELE_B, statut_http: 400, lecture: { lisible: false } });
+    expect(mistral?.lecture).toMatchObject({ raison: expect.stringContaining("HTTP 400") as unknown });
   });
 
-  it("réponse HTTP 500 gardée ⇒ journal refusee validé, rejet lecture_illisible à la raison du journal, réponse gardée inchangée", async () => {
+  it("réponse HTTP 400 gardée ⇒ journal refusee validé, rejet lecture_illisible à la raison du journal, réponse gardée inchangée", async () => {
     const racine = racineDeTest();
-    const sortie = temporaire();
-    await lancer(simule(racine, sortie), { issues: { anthropic: "conforme", mistral: "http_500" } });
-    const lu = valider<JournalExtraction>("journal-extraction", journal(sortie), "journal");
+    const staging = join(racine, "staging");
+    const corps = JSON.stringify({ error: "requête invalide, simulée" });
+    const refus400: Repondeur = (editeur) => (editeur === "mistral" ? new Response(corps, { status: 400 }) : repondreConforme(editeur));
+    await lancer(reel(racine), { repondre: refus400 });
+    const lu = valider<JournalExtraction>("journal-extraction", journal(staging), "journal");
     const [, mistral] = lu.reponses;
     expect(mistral?.lecture.lisible).toBe(false);
     const raison = mistral?.lecture.lisible === false ? mistral.lecture.raison : null;
-    expect(raison).toContain("HTTP 500");
+    expect(raison).toContain("HTTP 400");
     expect(lu.issue).toEqual({
       statut: "refusee",
       rejets: [
-        { portee: "sortie", modele: MODELE_SIMULE_MISTRAL, motif: "lecture_illisible", detail: raison },
+        { portee: "sortie", modele: MODELE_B, motif: "lecture_illisible", detail: raison },
         expect.objectContaining({ portee: "source", motif: "extraction_double_incomplete" }) as unknown,
       ],
     });
-    const corps = JSON.stringify({ object: "error", message: "Erreur interne simulée.", type: "internal_error", code: "simule_500" });
-    const gardee = reponses(sortie).find((reponse) => reponse.modele === MODELE_SIMULE_MISTRAL);
-    expect(gardee).toMatchObject({ statut_http: 500, brut: JSON.parse(corps) as unknown, brut_octets_sha256: sha256(corps) });
+    const gardee = reponses(staging).find((reponse) => reponse.modele === MODELE_B);
+    expect(gardee).toMatchObject({ statut_http: 400, brut: JSON.parse(corps) as unknown, brut_octets_sha256: sha256(corps) });
     expect(mistral?.brut_octets_sha256).toBe(sha256(corps));
   });
 
   it("schéma : lecture_illisible est un motif de portée sortie, jamais de portée item", async () => {
     const racine = racineDeTest();
-    const sortie = temporaire();
-    await lancer(simule(racine, sortie), { issues: { anthropic: "http_500", mistral: "conforme" } });
-    const lu = journal(sortie);
+    const refus400: Repondeur = (editeur) => (editeur === "anthropic" ? new Response("peu importe", { status: 400 }) : repondreConforme(editeur));
+    await lancer(reel(racine), { repondre: refus400 });
+    const lu = journal(join(racine, "staging"));
     expect(lu.issue.rejets[0]).toMatchObject({ portee: "sortie", motif: "lecture_illisible" });
     expect(erreurDeSchema("journal-extraction", lu, "journal")).toBeNull();
     const [premier, ...suite] = lu.issue.rejets;
@@ -228,6 +229,111 @@ describe("cas 8 : échec de transport sur le second extracteur", () => {
   });
 });
 
+describe("constat 2 du 2026-10-17 (D54 (2)) : 408, 429 et 5xx sont un échec de transport, pas lecture_illisible", () => {
+  for (const statut of [408, 429, 500, 503, 599] as const) {
+    it(`${statut} chez Mistral ⇒ échec de transport nommé (statut, modèle), source non refusée, aucun journal, rien déposé, réponse gardée`, async () => {
+      const racine = racineDeTest();
+      const staging = join(racine, "staging");
+      const echec: Repondeur = (editeur) => (editeur === "mistral" ? new Response("indisponible", { status: statut }) : repondreConforme(editeur));
+      const execution = await lancer(reel(racine), { repondre: echec });
+      expect(execution.code).toBe(CODE_SOURCES_NON_TRAITEES);
+      expect(execution.sortie).toContain(`HTTP ${statut}`);
+      expect(execution.sortie).toContain(MODELE_B);
+      expect(execution.sortie).toContain("Source laissée à traiter.");
+      expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE))).toBe(false);
+      expect(existsSync(join(staging, "items"))).toBe(false);
+      expect(existsSync(join(staging, "mesures"))).toBe(false);
+      expect(reponses(staging)).toHaveLength(2);
+    });
+  }
+
+  it("503 chez Anthropic, premier dans l'ordre de la configuration ⇒ Mistral n'est pas appelé, aucun journal, la relance rappelle les deux", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const echec: Repondeur = (editeur) => (editeur === "anthropic" ? new Response("indisponible", { status: 503 }) : repondreConforme(editeur));
+    const premiere = await lancer(reel(racine), { repondre: echec });
+    expect(premiere.code).toBe(CODE_SOURCES_NON_TRAITEES);
+    expect(premiere.envois).toEqual(["anthropic"]);
+    expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE))).toBe(false);
+    expect(reponses(staging).map((reponse) => reponse.statut_http)).toEqual([503]);
+
+    const relance = await lancer(reel(racine));
+    expect(relance.code).toBe(0);
+    expect(relance.envois).toEqual(["anthropic", "mistral"]);
+    expect(journal(staging).issue.statut).toBe("extraite");
+  });
+
+  it("relance après un 429 chez Mistral : extraite normalement, seul Mistral est rappelé, la réponse en échec reste gardée sur disque, jamais réécrite", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const echec429: Repondeur = (editeur) => (editeur === "mistral" ? new Response("trop de requêtes", { status: 429 }) : repondreConforme(editeur));
+    const premiere = await lancer(reel(racine), { repondre: echec429 });
+    expect(premiere.code).toBe(CODE_SOURCES_NON_TRAITEES);
+    expect(premiere.envois).toEqual(["anthropic", "mistral"]);
+    const avant = instantane(staging);
+    const echecsAvant = [...avant.keys()].filter((chemin) => chemin.includes("echec-transport"));
+    expect(echecsAvant).toHaveLength(1);
+
+    const seconde = await lancer(reel(racine));
+    expect(seconde.code).toBe(0);
+    expect(seconde.envois).toEqual(["mistral"]);
+    expect(seconde.sortie).toContain("réponses gardées réutilisées : 1");
+    expect(journal(staging).issue.statut).toBe("extraite");
+    const apres = instantane(staging);
+    for (const chemin of echecsAvant) expect(apres.get(chemin)).toBe(avant.get(chemin));
+    expect(reponses(staging)).toHaveLength(3);
+  });
+
+  it("un 499 ou un 407 reste une lecture illisible : source refusée, journal écrit (bornes de la liste)", async () => {
+    for (const statut of [499, 407] as const) {
+      const racine = racineDeTest();
+      const echec: Repondeur = (editeur) => (editeur === "mistral" ? new Response("peu importe", { status: statut }) : repondreConforme(editeur));
+      const execution = await lancer(reel(racine), { repondre: echec });
+      expect(execution.code).toBe(0);
+      expect(journal(join(racine, "staging")).issue.statut).toBe("refusee");
+    }
+  });
+
+  it("second modèle en 429 après un premier modèle conforme : la relance réutilise le premier, ne rappelle que le second", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const echec429: Repondeur = (editeur) => (editeur === "mistral" ? new Response("trop de requêtes", { status: 429 }) : repondreConforme(editeur));
+    const premiere = await lancer(reel(racine), { repondre: echec429 });
+    expect(premiere.envois).toEqual(["anthropic", "mistral"]);
+    expect(reponses(staging).filter((reponse) => reponse.statut_http === 200)).toHaveLength(1);
+
+    const relance = await lancer(reel(racine));
+    expect(relance.envois).toEqual(["mistral"]);
+    expect(relance.sortie).toContain("réponses gardées réutilisées : 1");
+  });
+
+  it("réponse en échec gardée sous l'ancien nom (code antérieur à la révision 0.19) : ni lue comme illisible, ni blocage pour toujours", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const echec429: Repondeur = (editeur) => (editeur === "mistral" ? new Response("trop de requêtes", { status: 429 }) : repondreConforme(editeur));
+    await lancer(reel(racine), { repondre: echec429 });
+
+    // Simule ce qu'une version du code antérieure à la révision 0.19 aurait laissé : la réponse en
+    // échec de transport écrite sous le nom propre, celui que lireReponseGardeeUtilisable
+    // interroge à la relance, au lieu du nom d'échec que ce lot introduit.
+    const [cheminHerite] = cheminsSous(staging, "reponses-extraction/").filter((chemin) => chemin.includes("echec-transport"));
+    if (cheminHerite === undefined) throw new Error("aucune réponse en échec de transport gardée");
+    const contenu = JSON.parse(readFileSync(join(staging, cheminHerite), "utf8")) as ReponseGardee;
+    const cheminPropre = cheminReponse(staging, contenu);
+    rmSync(join(staging, cheminHerite));
+    writeFileSync(cheminPropre, JSON.stringify(contenu));
+
+    const relance = await lancer(reel(racine));
+    expect(relance.code).toBe(0);
+    expect(relance.envois).toEqual(["mistral"]);
+    expect(journal(staging).issue.statut).toBe("extraite");
+    const reponsesMistral = reponses(staging).filter((reponse) => reponse.modele === MODELE_B);
+    expect(reponsesMistral.map((reponse) => reponse.statut_http).sort()).toEqual([200, 429]);
+    const fraiche = JSON.parse(readFileSync(cheminPropre, "utf8")) as ReponseGardee;
+    expect(fraiche.statut_http).toBe(200);
+  });
+});
+
 describe("cas 9 : journal présent", () => {
   it("source sautée, zéro appel", async () => {
     const racine = racineDeTest();
@@ -242,7 +348,7 @@ describe("cas 9 : journal présent", () => {
 
   it("une source refusée n'est pas relancée non plus", async () => {
     const racine = racineDeTest();
-    const echec: Repondeur = (editeur) => (editeur === "anthropic" ? new Response("{}", { status: 500 }) : repondreConforme(editeur));
+    const echec: Repondeur = (editeur) => (editeur === "anthropic" ? new Response("{}", { status: 400 }) : repondreConforme(editeur));
     await lancer(reel(racine), { repondre: echec });
     expect(journal(join(racine, "staging")).issue.statut).toBe("refusee");
     expect((await lancer(reel(racine))).envois).toEqual([]);

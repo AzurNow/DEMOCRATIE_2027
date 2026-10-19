@@ -20,16 +20,26 @@
  *
  * La clé d'une réponse gardée est (source, modèle, empreinte du prompt rendu) : le nom du fichier la
  * porte, et `lireReponseGardee` vérifie que le contenu dit la même chose.
+ *
+ * Une réponse dont le statut est un échec de transport (408, 429, 5xx — `editeur.ts:
+ * estEchecTransportHttp`, §4, D54 (2), constat 2 du 2026-10-17) est gardée elle aussi (règle 7),
+ * mais sous un nom distinct, numéroté par un aléa (`.echec-transport-<hex>.json`), que
+ * `lireReponseGardee` ne lit jamais : `lireReponseGardeeUtilisable` est la seule entrée que
+ * `executer.ts` interroge pour savoir si un appel peut être évité, et elle ne rend jamais une telle
+ * réponse. Une réponse d'un tel statut trouvée sous le nom propre (écrite par une version du code
+ * antérieure à la révision 0.19, qui ne distinguait pas le statut) y est déplacée au premier
+ * passage, pour libérer ce nom à la relance, sans jamais être ni réécrite ni effacée.
  */
 
 import { randomBytes } from "node:crypto";
-import { existsSync, linkSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { NomSchema } from "../../outils/schemas/noms.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import type { ObjetJson } from "../interrogation/types.ts";
 import type { MesureStaging } from "./assemblage.ts";
+import { estEchecTransportHttp } from "./editeur.ts";
 import type { Rejet } from "./rejets.ts";
 
 export const REPERTOIRE_REPONSES = "reponses-extraction";
@@ -150,6 +160,19 @@ export function ecrireReponse(sortie: string, reponse: ReponseGardee): string {
   return ecrireUneFois("reponse-extraction", cheminReponse(sortie, reponse), reponse);
 }
 
+/** Le nom distinct d'une réponse en échec de transport, jamais celui que `lireReponseGardee` lit. */
+function cheminEchecTransport(chemin: string): string {
+  return `${chemin.slice(0, -".json".length)}.echec-transport-${randomBytes(6).toString("hex")}.json`;
+}
+
+/**
+ * Garde une réponse dont le statut est un échec de transport (règle 7), sous son nom distinct : la
+ * relance refait l'appel plutôt que de la relire (constat 2 du 2026-10-17, D54 (2)).
+ */
+export function ecrireReponseEchecTransport(sortie: string, reponse: ReponseGardee): string {
+  return ecrireUneFois("reponse-extraction", cheminEchecTransport(cheminReponse(sortie, reponse)), reponse);
+}
+
 export function ecrireItemRepris(sortie: string, item: Item): string {
   return ecrireSiAbsent("item", cheminObjet(sortie, "items", item.id), item);
 }
@@ -186,6 +209,22 @@ export function lireReponseGardee(sortie: string, cle: CleReponse): ReponseGarde
   const ecart = CHAMPS_DE_LA_CLE.find((champ) => reponse[champ] !== cle[champ]);
   if (ecart !== undefined) throw new StagingExtractionIllisible(chemin, `porte ${ecart} « ${reponse[ecart]} », son nom dit « ${cle[ecart]} ».`);
   return reponse;
+}
+
+/**
+ * La réponse gardée sous cette clé, utilisable comme réponse d'un modèle ; `null` si aucune n'est
+ * gardée, ou si celle qui l'est porte un statut d'échec de transport (408, 429, 5xx) — une telle
+ * réponse n'est jamais rejouée (constat 2 du 2026-10-17, D54 (2)). Trouvée sous le nom propre (une
+ * version du code antérieure à la révision 0.19 l'y aurait écrite, sans distinguer le statut), elle
+ * est déplacée sous son nom d'échec pour libérer ce nom à la relance, sans être ni réécrite ni
+ * effacée.
+ */
+export function lireReponseGardeeUtilisable(sortie: string, cle: CleReponse): ReponseGardee | null {
+  const gardee = lireReponseGardee(sortie, cle);
+  if (gardee === null || !estEchecTransportHttp(gardee.statut_http)) return gardee;
+  const chemin = cheminReponse(sortie, cle);
+  renameSync(chemin, cheminEchecTransport(chemin));
+  return null;
 }
 
 export function cheminIdentifiants(sortie: string, cle_source: string, sha256_source: string): string {
