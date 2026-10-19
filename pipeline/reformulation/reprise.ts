@@ -25,8 +25,7 @@ import {
   lireFormulationsQuestion,
 } from "../../validation/io/data-formulations.ts";
 import { JournalRefusIllisible, lireRefusFormulations } from "../../validation/io/refus-formulations.ts";
-import type { PositionDemandee } from "./position-affirmee.ts";
-import { clePromotion, type ClePromotion } from "./relecture.ts";
+import { clePromotion, promotionEnVigueur, propositionRelisible, type ClePromotion, type QuestionCourante } from "./relecture.ts";
 import type { PropositionFormulation } from "./staging.ts";
 
 export { FormulationValideeIllisible, JournalRefusIllisible };
@@ -54,30 +53,20 @@ export function lireRefus(chemin: string): ReadonlySet<string> {
 export type DecisionReprise = "a_appeler" | "deja_validee" | "deja_acceptee";
 
 export interface EtatQuestion {
-  readonly empreinte_courante: string;
-  /** D42 (3), recalculée sur l'item courant. */
-  readonly position_courante: PositionDemandee;
+  /** La question et la position que sa prémisse doit affirmer aujourd'hui (D42 (3), Q1 option (a)). */
+  readonly courante: QuestionCourante;
   readonly validee: ClePromotion | null;
   readonly propositions: readonly PropositionFormulation[];
   readonly refus: ReadonlySet<string>;
 }
 
-function accepteeEnVigueur(proposition: PropositionFormulation, etat: EtatQuestion): boolean {
-  return (
-    proposition.issue.statut === "acceptee" &&
-    proposition.empreinte_texte_neutre === etat.empreinte_courante &&
-    proposition.demande.position_affirmee === etat.position_courante &&
-    !etat.refus.has(proposition.id)
-  );
-}
-
-function valideeEnVigueur(etat: EtatQuestion): boolean {
-  if (etat.validee === null) return false;
-  return etat.validee.empreinte_texte_neutre === etat.empreinte_courante && etat.validee.position === etat.position_courante;
-}
-
+/**
+ * Même règle « formulation en vigueur » que la relecture (constat 10, revue du 2026-10-17) :
+ * `promotionEnVigueur` pour une question déjà validée, `propositionRelisible` pour une proposition
+ * acceptée toujours relisible. Reprise et relecture ne peuvent plus diverger en silence.
+ */
 export function deciderReprise(etat: EtatQuestion): DecisionReprise {
-  if (valideeEnVigueur(etat)) return "deja_validee";
-  if (etat.propositions.some((proposition) => accepteeEnVigueur(proposition, etat))) return "deja_acceptee";
+  if (promotionEnVigueur(etat.validee ?? undefined, etat.courante)) return "deja_validee";
+  if (propositionRelisible(etat.courante, etat.propositions, etat.refus) !== null) return "deja_acceptee";
   return "a_appeler";
 }

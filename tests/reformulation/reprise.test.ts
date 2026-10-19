@@ -17,14 +17,33 @@ import {
   lireRefus,
 } from "../../pipeline/reformulation/reprise.ts";
 import type { EtatQuestion } from "../../pipeline/reformulation/reprise.ts";
+import type { PositionDemandee } from "../../pipeline/reformulation/position-affirmee.ts";
+import type { QuestionCourante } from "../../pipeline/reformulation/relecture.ts";
+import type { QuestionEngendree } from "../../pipeline/questions/types.ts";
 import type { PropositionFormulation } from "../../pipeline/reformulation/staging.ts";
+import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { formulationsValideesDeTest, ligneRefusDeTest } from "./aides.ts";
 
 const QUESTION = "q_0123456789abcdef0123456789abcdef";
-const EMPREINTE = "a".repeat(64);
+const TEXTE_NEUTRE = "Texte neutre de test pour la reprise.";
+const EMPREINTE = sha256(TEXTE_NEUTRE);
 const AUTRE = "b".repeat(64);
 const ID_1 = "01JA0000000000000000000001";
 const ID_2 = "01JA0000000000000000000002";
+
+/** La question et la position demandée courantes, telles que `executer.ts` les construit (`Tache`). */
+function courante(position_affirmee: PositionDemandee, texte_neutre = TEXTE_NEUTRE): QuestionCourante {
+  const question: QuestionEngendree = {
+    id: QUESTION,
+    gabarit: "Q-FER",
+    items: [],
+    grappe_id: "g1",
+    theme: "education",
+    texte_neutre,
+    version_gabarits: "0.1.0",
+  };
+  return { question, demande: { position_affirmee } };
+}
 
 const repertoires: string[] = [];
 function repertoire(): string {
@@ -36,17 +55,28 @@ afterEach(() => {
   for (const chemin of repertoires.splice(0)) rmSync(chemin, { recursive: true, force: true });
 });
 
-function proposition(id: string, statut: "acceptee" | "rejetee" | "echec_http", empreinte = EMPREINTE, position = "pour"): PropositionFormulation {
+function proposition(
+  id: string,
+  statut: "acceptee" | "rejetee" | "echec_http",
+  empreinte = EMPREINTE,
+  position: PositionDemandee = "pour",
+): PropositionFormulation {
   const issues = {
     acceptee: { statut: "acceptee", familier: { texte: "f" }, oriente: { texte: "o" } },
     rejetee: { statut: "rejetee", motif: "json_invalide", detail: "d" },
     echec_http: { statut: "echec_http" },
   } as const;
-  return { id, empreinte_texte_neutre: empreinte, demande: { position_affirmee: position }, issue: issues[statut] } as unknown as PropositionFormulation;
+  return {
+    id,
+    question_id: QUESTION,
+    empreinte_texte_neutre: empreinte,
+    demande: { position_affirmee: position },
+    issue: issues[statut],
+  } as unknown as PropositionFormulation;
 }
 
 function etat(partiel: Partial<EtatQuestion>): EtatQuestion {
-  return { empreinte_courante: EMPREINTE, position_courante: "pour", validee: null, propositions: [], refus: new Set(), ...partiel };
+  return { courante: courante("pour"), validee: null, propositions: [], refus: new Set(), ...partiel };
 }
 
 describe("data/formulations/<question_id>.json", () => {
@@ -166,29 +196,29 @@ describe("décision de reprise", () => {
 
 describe("Q1, option (a) : position demandée recalculée sur l'item courant", () => {
   it("item corrigé (« pour » → « contre »), validée sur l'ancienne position, même empreinte ⇒ à appeler", () => {
-    const corrige = etat({ position_courante: "contre", validee: { empreinte_texte_neutre: EMPREINTE, position: "pour" } });
+    const corrige = etat({ courante: courante("contre"), validee: { empreinte_texte_neutre: EMPREINTE, position: "pour" } });
     expect(deciderReprise(corrige)).toBe("a_appeler");
   });
 
   it("item corrigé, acceptée sur l'ancienne position, même empreinte ⇒ à appeler", () => {
-    expect(deciderReprise(etat({ position_courante: "contre", propositions: [proposition(ID_1, "acceptee")] }))).toBe("a_appeler");
+    expect(deciderReprise(etat({ courante: courante("contre"), propositions: [proposition(ID_1, "acceptee")] }))).toBe("a_appeler");
   });
 
   it("validée ou acceptée sur la position courante ⇒ inchangé", () => {
-    expect(deciderReprise(etat({ position_courante: "contre", validee: { empreinte_texte_neutre: EMPREINTE, position: "contre" } }))).toBe(
-      "deja_validee",
-    );
-    expect(deciderReprise(etat({ position_courante: "contre", propositions: [proposition(ID_1, "acceptee", EMPREINTE, "contre")] }))).toBe(
-      "deja_acceptee",
-    );
+    expect(
+      deciderReprise(etat({ courante: courante("contre"), validee: { empreinte_texte_neutre: EMPREINTE, position: "contre" } })),
+    ).toBe("deja_validee");
+    expect(
+      deciderReprise(etat({ courante: courante("contre"), propositions: [proposition(ID_1, "acceptee", EMPREINTE, "contre")] })),
+    ).toBe("deja_acceptee");
   });
 
   it("AUCUNE : validée sans position ⇒ déjà validée ; validée avec une position ⇒ à appeler", () => {
-    expect(deciderReprise(etat({ position_courante: "AUCUNE", validee: { empreinte_texte_neutre: EMPREINTE, position: "AUCUNE" } }))).toBe(
-      "deja_validee",
-    );
-    expect(deciderReprise(etat({ position_courante: "AUCUNE", validee: { empreinte_texte_neutre: EMPREINTE, position: "pour" } }))).toBe(
-      "a_appeler",
-    );
+    expect(
+      deciderReprise(etat({ courante: courante("AUCUNE"), validee: { empreinte_texte_neutre: EMPREINTE, position: "AUCUNE" } })),
+    ).toBe("deja_validee");
+    expect(
+      deciderReprise(etat({ courante: courante("AUCUNE"), validee: { empreinte_texte_neutre: EMPREINTE, position: "pour" } })),
+    ).toBe("a_appeler");
   });
 });
