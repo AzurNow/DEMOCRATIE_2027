@@ -34,10 +34,17 @@ export type RangModele = 0 | 1;
 
 export type Accord = "accord" | "desaccord_existence" | "desaccord_contenu";
 
+/** Les deux motifs qu'une sortie entière décide en amont du cœur, avant `lecture-sortie.ts:lireSortie`. */
+export type MotifSortieIllisible = "lecture_illisible" | "modele_different";
+
 /**
- * Ce que le cœur reçoit d'un modèle : le texte de sa sortie, ou la raison pour laquelle la réponse
- * n'en donne pas (statut hors 2xx, sortie coupée, refus, enveloppe inattendue). Une sortie illisible
- * n'est jamais remplacée par une chaîne plausible : le cœur la rejette sous `lecture_illisible`,
- * avec cette raison. `LectureTexteModele` (`pipeline/reformulation/editeur.ts`) a cette forme.
+ * Ce que le cœur reçoit d'un modèle : le texte de sa sortie, ou le motif et la raison pour laquelle
+ * la réponse n'en donne pas (statut hors 2xx, sortie coupée, refus, enveloppe inattendue, model
+ * servi différent de l'épinglé). Une sortie illisible n'est jamais remplacée par une chaîne
+ * plausible : le cœur la rejette sous ce motif, avec cette raison. `LectureTexteModele`
+ * (`pipeline/reformulation/editeur.ts`) a la même forme, sans le motif : `executer.ts` l'ajoute en
+ * comparant le `model` reçu à celui que l'éditeur a épinglé (constat 17 de la revue du 2026-10-17).
  */
-export type SortieModele = { readonly lisible: true; readonly texte: string } | { readonly lisible: false; readonly raison: string };
+export type SortieModele =
+  | { readonly lisible: true; readonly texte: string }
+  | { readonly lisible: false; readonly motif: MotifSortieIllisible; readonly raison: string };

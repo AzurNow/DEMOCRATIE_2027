@@ -272,9 +272,9 @@ type LectureModele =
   | { readonly ok: true; readonly sortie: SortieExtraction }
   | { readonly ok: false; readonly motif: MotifRejetSortieEntiere; readonly detail: string };
 
-/** Une sortie illisible est rejetée avec sa raison, telle quelle ; une sortie lisible est lue par `lireSortie`. */
+/** Une sortie illisible est rejetée avec son motif et sa raison, telle quelle ; une sortie lisible est lue par `lireSortie`. */
 function lireSortieModele(sortie: SortieModele): LectureModele {
-  if (!sortie.lisible) return { ok: false, motif: "lecture_illisible", detail: sortie.raison };
+  if (!sortie.lisible) return { ok: false, motif: sortie.motif, detail: sortie.raison };
   return lireSortie(sortie.texte);
 }
 

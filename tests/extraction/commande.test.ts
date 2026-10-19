@@ -6,7 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { erreurDeSchema, valider } from "../../outils/schemas/valider.ts";
@@ -25,6 +25,7 @@ import {
   CLE_SOURCE,
   TEXTE,
   cheminsSous,
+  compteurUlid,
   corpsAnthropic,
   corpsMistral,
   instantane,
@@ -32,6 +33,7 @@ import {
   nettoyer,
   racineDeTest,
   repondreConforme,
+  sortieConforme,
   temporaire,
   type Repondeur,
 } from "./aides-commande.ts";
@@ -168,6 +170,33 @@ function sortieTronquee(): string {
   return '{"items": [{"type": "P"';
 }
 
+describe("constat 17 : model servi différent de l'épinglé", () => {
+  it("Anthropic sert un autre model ⇒ modele_different, journal refusee, aucun item ni mesure déposé", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const autreModele: Repondeur = (editeur) =>
+      editeur === "anthropic" ? new Response(corpsAnthropic(sortieConforme(), "end_turn", "un-autre-modele"), { status: 200 }) : repondreConforme(editeur);
+    const execution = await lancer(reel(racine), { repondre: autreModele });
+    expect(execution.code).toBe(0);
+    const lu = journal(staging);
+    expect(lu.issue.statut).toBe("refusee");
+    expect(lu.issue.rejets).toEqual([
+      { portee: "sortie", modele: MODELE_A, motif: "modele_different", detail: expect.stringContaining("un-autre-modele") as unknown },
+      expect.objectContaining({ portee: "source", motif: "extraction_double_incomplete" }) as unknown,
+    ]);
+    expect(existsSync(join(staging, "items"))).toBe(false);
+    expect(existsSync(join(staging, "mesures"))).toBe(false);
+    expect(reponses(staging)).toHaveLength(2);
+  });
+
+  it("Mistral sert son propre model épinglé ⇒ inchangé, extraite", async () => {
+    const racine = racineDeTest();
+    const execution = await lancer(reel(racine));
+    expect(execution.code).toBe(0);
+    expect(journal(join(racine, "staging")).issue.statut).toBe("extraite");
+  });
+});
+
 /* ------------------------------------------------------------------ reprise */
 
 describe("cas 8 : échec de transport sur le second extracteur", () => {
@@ -220,6 +249,51 @@ describe("cas 9 : journal présent", () => {
   });
 });
 
+describe("constat 3 : arrêt entre les items et le journal", () => {
+  it("relance après le journal seul manquant : aucun item ni mesure dupliqué, mêmes identifiants, commande menée à terme", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const ulid = compteurUlid();
+    const premiere = await lancer(reel(racine), { nouvelUlid: ulid });
+    expect(premiere.code).toBe(0);
+    const itemsAvant = cheminsSous(staging, "items/");
+    const mesuresAvant = cheminsSous(staging, "mesures/");
+    expect(itemsAvant).toHaveLength(1);
+    expect(mesuresAvant).toHaveLength(1);
+    const avant = instantane(staging);
+
+    // Simule un arrêt entre l'écriture des items et celle du journal : seul le journal manque,
+    // comme si le processus avait été tué juste avant de l'écrire (constat 3).
+    rmSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE));
+
+    // Le même compteur d'identifiants continue : sans la reprise, la relance tirerait de nouveaux
+    // identifiants (comme `ulid()` en production) et déposerait un second item et une seconde mesure.
+    const relance = await lancer(reel(racine), { nouvelUlid: ulid });
+    expect(relance.code).toBe(0);
+    expect(relance.envois).toEqual([]);
+    expect(cheminsSous(staging, "items/")).toEqual(itemsAvant);
+    expect(cheminsSous(staging, "mesures/")).toEqual(mesuresAvant);
+    const apres = instantane(staging);
+    expect(apres.get(itemsAvant[0] as string)).toBe(avant.get(itemsAvant[0] as string));
+    expect(apres.get(mesuresAvant[0] as string)).toBe(avant.get(mesuresAvant[0] as string));
+    expect(journal(staging).issue.statut).toBe("extraite");
+    const staging_charge = chargerStaging(staging);
+    expect(staging_charge.items.size).toBe(1);
+    expect(staging_charge.mesures.size).toBe(1);
+  });
+
+  it("relance avec un compteur d'identifiants qui se réinitialise (ULID déterministes) : menée à terme, sans `DejaEcrit`", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    expect((await lancer(reel(racine))).code).toBe(0);
+    rmSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE));
+    const relance = await lancer(reel(racine));
+    expect(relance.code).toBe(0);
+    expect(relance.sortie).not.toContain("DejaEcrit");
+    expect(cheminsSous(staging, "items/")).toHaveLength(1);
+  });
+});
+
 describe("cas 10 : plafond atteint au milieu d'une source", () => {
   it("arrêt, réponse déjà reçue gardée, pas de journal, code distinct", async () => {
     const racine = racineDeTest();
@@ -264,6 +338,33 @@ describe("cas 11 : aucune ou plusieurs fiches de l'extracteur épinglé", () => 
   it("patch de Python différent entre pnpm textes et pnpm extraction:entrees ⇒ AucunTexteEpingle, jamais de repli", async () => {
     const racine = racineDeTest({ epingle: { ...HTML, version: "3.12.8" } });
     await incoherente(racine, /AucunTexteEpingle|Aucune fiche d'extraction produite par l'extracteur épinglé .*3\.12\.8/u);
+  });
+});
+
+describe("constat 4 : épinglage périmé après une montée de version de l'extracteur de texte", () => {
+  it("une fiche plus récente d'un autre épinglage existe ⇒ EpinglageExtracteurPerime, rien d'écrit", async () => {
+    const racine = racineDeTest({
+      fiches: [HTML, { ...HTML, version: "3.11.0" }],
+      dates_extraction: ["2026-10-01T09:00:00+02:00", "2026-10-10T09:00:00+02:00"],
+    });
+    await incoherente(racine, /EpinglageExtracteurPerime|n'est plus celui du code|a changé depuis que cette/u);
+  });
+
+  it("l'épinglage de l'entrée est celui de la fiche la plus récente ⇒ toujours accepté", async () => {
+    const racine = racineDeTest({
+      fiches: [{ ...HTML, version: "3.11.0" }, HTML],
+      dates_extraction: ["2026-10-01T09:00:00+02:00", "2026-10-10T09:00:00+02:00"],
+      epingle: HTML,
+    });
+    const execution = await lancer(reel(racine));
+    expect(execution.code).toBe(0);
+    expect(journal(join(racine, "staging")).issue.statut).toBe("extraite");
+  });
+
+  it("deux fiches de même date d'extraction (aucune montée de version) ⇒ toujours accepté", async () => {
+    const racine = racineDeTest({ fiches: [HTML, { ...HTML, version: "3.11.0" }] });
+    const execution = await lancer(reel(racine));
+    expect(execution.code).toBe(0);
   });
 });
 

@@ -71,7 +71,7 @@
           "description": "Désigne la réponse gardée sous staging/reponses-extraction/."
         },
         "lecture": {
-          "description": "Ce que l'enveloppe de l'éditeur a permis de lire. Illisible (statut hors 2xx, sortie coupée, refus, enveloppe inattendue) : la raison, que le cœur reprend telle quelle dans un rejet de portée sortie, motif lecture_illisible, ce qui refuse la source (D53 (2)).",
+          "description": "Ce que l'enveloppe de l'éditeur a permis de lire. Illisible (statut hors 2xx, sortie coupée, refus, enveloppe inattendue, ou model servi différent de l'épinglé, D54 (7)) : la raison, que le cœur reprend telle quelle dans un rejet de portée sortie, motif lecture_illisible ou modele_different, ce qui refuse la source (D53 (2)).",
           "oneOf": [
             {
               "type": "object",
@@ -99,7 +99,7 @@
           "properties": {
             "portee": { "const": "sortie" },
             "modele": { "type": "string", "minLength": 1 },
-            "motif": { "enum": ["lecture_illisible", "bloc_de_code", "json_invalide", "cle_dupliquee", "non_conforme"] },
+            "motif": { "enum": ["lecture_illisible", "modele_different", "bloc_de_code", "json_invalide", "cle_dupliquee", "non_conforme"] },
             "detail": { "type": "string" }
           }
         },

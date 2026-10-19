@@ -22,7 +22,7 @@
 import { canoniser, sha256 } from "../../validation/domaine/empreinte.ts";
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
 import type { Contenu, ReponseHttp, RequeteHttp, Transport } from "../interrogation/editeur.ts";
-import type { AdaptateurExtraction, EditeurExtraction, LectureTexteModele, NomEditeur } from "./editeur.ts";
+import { modeleDuCorps, type AdaptateurExtraction, type EditeurExtraction, type LectureTexteModele, type NomEditeur } from "./editeur.ts";
 import { texteDesMessages } from "./editeur-anthropic.ts";
 import { texteDuChatTermine } from "./editeur-mistral.ts";
 import { rendrePromptExtraction, type VariablesExtraction } from "./prompt.ts";
@@ -220,6 +220,7 @@ function adaptateurSimule(enveloppe: Enveloppe): AdaptateurExtraction {
       corps: { model: enveloppe.modele, messages: [{ role: "user", content: prompt }] },
     }),
     texteDuModele: enveloppe.lecteur,
+    modeleServiPar: modeleDuCorps,
   };
 }
 

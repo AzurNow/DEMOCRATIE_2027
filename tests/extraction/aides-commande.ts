@@ -56,6 +56,8 @@ export interface OptionsSource {
   readonly epingle?: ExtracteurEpingle;
   /** Extracteurs des fiches présentes, une fiche chacun (textes distincts au-delà du premier). */
   readonly fiches?: readonly ExtracteurEpingle[];
+  /** `date_extraction` de chaque fiche, même index que `fiches` ; par défaut celle de `fiche()`. */
+  readonly dates_extraction?: readonly string[];
   /** Octets écrits sous le nom du texte, s'ils diffèrent du texte. */
   readonly texte_ecrit?: string;
 }
@@ -71,7 +73,11 @@ export function racineDeTest(options: OptionsSource = {}): string {
     const texteDeLaFiche = rang === 0 ? texte : `${texte}\nVariante ${rang}.`;
     const sha = sha256Texte(texteDeLaFiche);
     ecrire(join(staging, "textes", `${sha}.txt`), rang === 0 && options.texte_ecrit !== undefined ? options.texte_ecrit : texteDeLaFiche);
-    const contenu = fiche(texteDeLaFiche, extracteur, { encodage: { nom: "utf-8", origine: "content-type" } });
+    const date_extraction = options.dates_extraction?.[rang];
+    const contenu = fiche(texteDeLaFiche, extracteur, {
+      encodage: { nom: "utf-8", origine: "content-type" },
+      ...(date_extraction === undefined ? {} : { date_extraction }),
+    });
     ecrire(join(staging, "extractions", SHA_SOURCE, `${sha}.json`), `${JSON.stringify(contenu, null, 2)}\n`);
     sources[sha] = sourceHtml(texteDeLaFiche);
   });
@@ -98,12 +104,12 @@ export function sortieConforme(citation = CITATION): string {
   });
 }
 
-export function corpsAnthropic(texte: string, stop_reason = "end_turn"): string {
-  return JSON.stringify({ type: "message", role: "assistant", model: MODELE_A, content: [{ type: "text", text: texte }], stop_reason });
+export function corpsAnthropic(texte: string, stop_reason = "end_turn", model = MODELE_A): string {
+  return JSON.stringify({ type: "message", role: "assistant", model, content: [{ type: "text", text: texte }], stop_reason });
 }
 
-export function corpsMistral(texte: string, finish_reason = "stop"): string {
-  return JSON.stringify({ object: "chat.completion", model: MODELE_B, choices: [{ index: 0, message: { role: "assistant", content: texte }, finish_reason }] });
+export function corpsMistral(texte: string, finish_reason = "stop", model = MODELE_B): string {
+  return JSON.stringify({ object: "chat.completion", model, choices: [{ index: 0, message: { role: "assistant", content: texte }, finish_reason }] });
 }
 
 /** Ce que rend le serveur factice pour un éditeur : une réponse, ou un échec de transport. */
@@ -131,11 +137,25 @@ export interface OptionsLancement {
   readonly depot?: string;
   readonly temporaire?: () => string;
   readonly attendre?: Dependances["attendre"];
+  /** Générateur d'ULID ; par défaut un compteur propre à cet appel (voir `compteurUlid`). */
+  readonly nouvelUlid?: () => string;
+}
+
+/**
+ * Un compteur d'ULID qui continue d'un appel à l'autre : à partager entre deux `lancer()`
+ * successifs pour que la seconde tentative tire des identifiants différents de la première,
+ * comme `ulid()` le ferait en production (constat 3 de la revue du 2026-10-17).
+ */
+export function compteurUlid(prefixe = "01K"): () => string {
+  let rang = 0;
+  return () => {
+    rang += 1;
+    return `${prefixe}${String(rang).padStart(23, "0")}`;
+  };
 }
 
 export async function lancer(argv: readonly string[], options: OptionsLancement = {}): Promise<Execution> {
   let sortie = "";
-  let rang = 0;
   const envois: NomEditeur[] = [];
   const corps_envoyes: string[] = [];
   const repondre = options.repondre ?? repondreConforme;
@@ -150,10 +170,7 @@ export async function lancer(argv: readonly string[], options: OptionsLancement 
       return reponse instanceof Error ? Promise.reject(reponse) : Promise.resolve(reponse);
     },
     maintenant: () => INSTANT_MS,
-    nouvelUlid: () => {
-      rang += 1;
-      return `01J${String(rang).padStart(23, "0")}`;
-    },
+    nouvelUlid: options.nouvelUlid ?? compteurUlid("01J"),
     attendre: options.attendre ?? jamaisEcoulee,
     imprimer: (texte) => {
       sortie += texte;

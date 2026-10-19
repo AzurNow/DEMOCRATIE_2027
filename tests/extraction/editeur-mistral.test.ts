@@ -122,3 +122,21 @@ describe("cas limite 6 : corps 2xx non JSON", () => {
     });
   });
 });
+
+describe("constat 17 : model servi par l'enveloppe", () => {
+  const adaptateur = adaptateurMistralExtraction(REGLAGES, "cle-factice");
+
+  function chatAvecModel(model: unknown): Contenu {
+    return { forme: "objet", brut: { object: "chat.completion", model, choices: [] } };
+  }
+
+  it("corps.model, tel quel", () => {
+    expect(adaptateur.modeleServiPar(chatAvecModel("un-autre-modele"))).toBe("un-autre-modele");
+    expect(adaptateur.modeleServiPar(chatAvecModel(REGLAGES.modele))).toBe(REGLAGES.modele);
+  });
+
+  it("corps non JSON, ou model absent ⇒ null : rien n'est affirmé sans le lire", () => {
+    expect(adaptateur.modeleServiPar(lireContenu(reponse(200, "<html></html>")))).toBeNull();
+    expect(adaptateur.modeleServiPar({ forme: "objet", brut: { object: "chat.completion", choices: [] } })).toBeNull();
+  });
+});

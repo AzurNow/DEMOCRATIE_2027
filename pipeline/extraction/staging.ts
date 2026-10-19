@@ -6,13 +6,17 @@
  * | Fichier | Schéma | Quand |
  * | --- | --- | --- |
  * | `reponses-extraction/<cle_source>/<sha256>/<modèle encodé>.<prompt_sha256>.json` | `reponse-extraction` | dès la réception, avant toute lecture du corps (règle 7) |
+ * | `identifiants-extraction/<cle_source>/<sha256>.json` | aucun (tableau d'ULID validés individuellement) | avant le premier item ou la première mesure déposés |
  * | `items/<id>.json`, `mesures/<id>.json` | `item`, `mesure` | après l'extraction, lus par `validation/io/staging.ts:chargerStaging` |
  * | `journal-extraction/<cle_source>/<sha256>.json` | `journal-extraction` | en dernier : il marque la source traitée |
  *
  * Chaque fichier est validé contre son schéma avant l'écriture (une donnée non conforme est une
  * erreur de code, rien n'est écrit), puis écrit une fois, de façon atomique : un temporaire du même
  * répertoire, puis un lien vers le nom final, qui échoue si ce nom existe déjà
- * (`DejaEcrit`, calqué sur `pipeline/reformulation/staging.ts`). Rien n'est jamais réécrit.
+ * (`DejaEcrit`, calqué sur `pipeline/reformulation/staging.ts`). Rien n'est jamais réécrit, sauf les
+ * items et les mesures à la relance (`ecrireItemRepris`, `ecrireMesureRepris`) : un fichier déjà
+ * présent sous l'identifiant repris n'est alors ni comparé ni réécrit, simplement laissé tel quel
+ * (constat 3 de la revue du 2026-10-17).
  *
  * La clé d'une réponse gardée est (source, modèle, empreinte du prompt rendu) : le nom du fichier la
  * porte, et `lireReponseGardee` vérifie que le contenu dit la même chose.
@@ -22,7 +26,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, linkSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { NomSchema } from "../../outils/schemas/noms.ts";
-import { valider } from "../../outils/schemas/valider.ts";
+import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import type { ObjetJson } from "../interrogation/types.ts";
 import type { MesureStaging } from "./assemblage.ts";
@@ -30,6 +34,7 @@ import type { Rejet } from "./rejets.ts";
 
 export const REPERTOIRE_REPONSES = "reponses-extraction";
 export const REPERTOIRE_JOURNAUX = "journal-extraction";
+export const REPERTOIRE_IDENTIFIANTS = "identifiants-extraction";
 
 export type CorpsGarde = { readonly brut: ObjetJson } | { readonly brut_texte: string };
 
@@ -108,9 +113,8 @@ function cheminObjet(sortie: string, repertoire: "items" | "mesures", id: string
 
 /* ------------------------------------------------------------------ écriture */
 
-/** Valide, puis écrit une fois ; lève `ErreurSchema` ou `DejaEcrit` sans rien laisser alors. */
-function ecrireUneFois(schema: NomSchema, chemin: string, valeur: unknown): string {
-  const texte = `${JSON.stringify(valider(schema, valeur, `${schema} à écrire dans ${chemin}`), null, 2)}\n`;
+/** Écrit une fois, atomiquement : un temporaire du même répertoire, puis un lien vers le nom final. */
+function ecrireAtomique(chemin: string, texte: string): void {
   const repertoire = dirname(chemin);
   mkdirSync(repertoire, { recursive: true });
   const tmp = join(repertoire, `.ecriture.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
@@ -123,19 +127,35 @@ function ecrireUneFois(schema: NomSchema, chemin: string, valeur: unknown): stri
   } finally {
     rmSync(tmp, { force: true });
   }
+}
+
+/** Valide, puis écrit une fois ; lève `ErreurSchema` ou `DejaEcrit` sans rien laisser alors. */
+function ecrireUneFois(schema: NomSchema, chemin: string, valeur: unknown): string {
+  ecrireAtomique(chemin, `${JSON.stringify(valider(schema, valeur, `${schema} à écrire dans ${chemin}`), null, 2)}\n`);
   return chemin;
+}
+
+/**
+ * Comme `ecrireUneFois`, sauf qu'un fichier déjà présent au même chemin n'est pas réécrit : la
+ * relance après un arrêt entre les items et le journal (constat 3) retrouve ainsi l'item ou la
+ * mesure qu'une tentative précédente avait déjà écrits sous l'identifiant repris
+ * (`lireIdentifiantsRepris`), sans jamais comparer ni réécrire leur contenu.
+ */
+function ecrireSiAbsent(schema: NomSchema, chemin: string, valeur: unknown): string {
+  if (existsSync(chemin)) return chemin;
+  return ecrireUneFois(schema, chemin, valeur);
 }
 
 export function ecrireReponse(sortie: string, reponse: ReponseGardee): string {
   return ecrireUneFois("reponse-extraction", cheminReponse(sortie, reponse), reponse);
 }
 
-export function ecrireItem(sortie: string, item: Item): string {
-  return ecrireUneFois("item", cheminObjet(sortie, "items", item.id), item);
+export function ecrireItemRepris(sortie: string, item: Item): string {
+  return ecrireSiAbsent("item", cheminObjet(sortie, "items", item.id), item);
 }
 
-export function ecrireMesure(sortie: string, mesure: MesureStaging): string {
-  return ecrireUneFois("mesure", cheminObjet(sortie, "mesures", mesure.id), mesure);
+export function ecrireMesureRepris(sortie: string, mesure: MesureStaging): string {
+  return ecrireSiAbsent("mesure", cheminObjet(sortie, "mesures", mesure.id), mesure);
 }
 
 export function ecrireJournal(sortie: string, journal: JournalExtraction): string {
@@ -166,4 +186,38 @@ export function lireReponseGardee(sortie: string, cle: CleReponse): ReponseGarde
   const ecart = CHAMPS_DE_LA_CLE.find((champ) => reponse[champ] !== cle[champ]);
   if (ecart !== undefined) throw new StagingExtractionIllisible(chemin, `porte ${ecart} « ${reponse[ecart]} », son nom dit « ${cle[ecart]} ».`);
   return reponse;
+}
+
+export function cheminIdentifiants(sortie: string, cle_source: string, sha256_source: string): string {
+  return join(sortie, REPERTOIRE_IDENTIFIANTS, cle_source, `${sha256_source}.json`);
+}
+
+function exigerTableauDeChaines(valeur: unknown, chemin: string): readonly string[] {
+  if (!Array.isArray(valeur) || !valeur.every((entree): entree is string => typeof entree === "string")) {
+    throw new StagingExtractionIllisible(chemin, "les identifiants repris devraient être un tableau de chaînes.");
+  }
+  return valeur;
+}
+
+/**
+ * Les identifiants (mesure puis item, par paire déposée, dans l'ordre où `deposer` les tire) qu'une
+ * tentative précédente a déjà tirés pour cette source, avant d'écrire le premier item ou la
+ * première mesure ; `null` si aucune tentative n'en a encore tiré. Reconnu à la relance (constat 3) :
+ * `deposer` réutilise alors exactement ces identifiants plutôt que d'en tirer de nouveaux, ce qui
+ * déposerait les mêmes items une seconde fois sous un autre nom. Ce fichier n'est ni un item, ni
+ * une mesure, ni un journal, et n'est jamais lu par la validation : pas de schéma JSON propre pour
+ * lui, mais chaque identifiant qu'il porte est validé contre `commun#/$defs/ulid`.
+ */
+export function lireIdentifiantsRepris(sortie: string, cle_source: string, sha256_source: string): readonly string[] | null {
+  const chemin = cheminIdentifiants(sortie, cle_source, sha256_source);
+  if (!existsSync(chemin)) return null;
+  const identifiants = exigerTableauDeChaines(lireJson(chemin), chemin);
+  return identifiants.map((id, index) => validerFragment<string>("commun", "#/$defs/ulid", id, `${chemin}[${index}]`));
+}
+
+export function ecrireIdentifiantsRepris(sortie: string, cle_source: string, sha256_source: string, identifiants: readonly string[]): string {
+  const chemin = cheminIdentifiants(sortie, cle_source, sha256_source);
+  identifiants.forEach((id, index) => validerFragment<string>("commun", "#/$defs/ulid", id, `${chemin}[${index}] à écrire`));
+  ecrireAtomique(chemin, `${JSON.stringify(identifiants, null, 2)}\n`);
+  return chemin;
 }

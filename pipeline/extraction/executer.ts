@@ -17,11 +17,16 @@
  *    traiter et sera reprise sans repayer l'appel déjà gardé ;
  * 4. les deux réponses gardées sont relues depuis ce qui est écrit, par l'enveloppe de leur éditeur
  *    (`editeur.ts:lectureDe`), et chaque lecture est passée au cœur telle quelle. **Une lecture
- *    illisible** (statut hors 2xx, sortie coupée, refus, enveloppe inattendue) n'a pas de texte :
- *    le cœur la rejette en entier sous `lecture_illisible`, avec sa raison, ce qui refuse la source
- *    (D53 (2), `extraction_double_incomplete`). La raison figure aussi dans le journal, à côté de la
- *    réponse ;
- * 5. items et mesures écrits sous `items/` et `mesures/`, puis le journal en dernier.
+ *    illisible** (statut hors 2xx, sortie coupée, refus, enveloppe inattendue, model servi différent
+ *    de l'épinglé) n'a pas de texte : le cœur la rejette en entier sous `lecture_illisible` ou
+ *    `modele_different`, avec sa raison, ce qui refuse la source (D53 (2), D54 (7),
+ *    `extraction_double_incomplete`). La raison figure aussi dans le journal, à côté de la réponse ;
+ * 5. les identifiants (mesure puis item, par paire déposée) sont ceux repris d'une tentative
+ *    précédente pour cette source, s'il en existe, sinon de nouveaux, tirés et consignés avant le
+ *    premier item ou la première mesure ; items et mesures écrits sous `items/` et `mesures/`, sans
+ *    réécrire ceux déjà présents sous un identifiant repris, puis le journal en dernier (constat 3
+ *    de la revue du 2026-10-17 : un arrêt entre les items et le journal, suivi d'une relance, ne
+ *    dépose plus les mêmes items une seconde fois).
  */
 
 import { createHash } from "node:crypto";
@@ -32,7 +37,7 @@ import { instantParis } from "../interrogation/heure-paris.ts";
 import { AucunTexteEpingle, FicheDUneAutreSource, PlusieursTextesEpingles } from "./choix-texte.ts";
 import type { ConfigurationExtraction } from "./configuration.ts";
 import { appelerExtracteur, lectureDe, type EditeurExtraction, type LectureTexteModele } from "./editeur.ts";
-import { EntreeExtractionIncoherente, lireEntree, materiauDe, type EntreeLue, type Materiau } from "./entrees.ts";
+import { EntreeExtractionIncoherente, EpinglageExtracteurPerime, lireEntree, materiauDe, type EntreeLue, type Materiau } from "./entrees.ts";
 import {
   extraireSource,
   PagesAbsentes,
@@ -43,12 +48,15 @@ import {
   type ResultatExtraction,
 } from "./extraction.ts";
 import { rendrePromptExtraction, type VariablesExtraction } from "./prompt.ts";
+import type { SortieModele } from "./types.ts";
 import {
-  ecrireItem,
+  ecrireIdentifiantsRepris,
+  ecrireItemRepris,
   ecrireJournal,
-  ecrireMesure,
+  ecrireMesureRepris,
   ecrireReponse,
   journalPresent,
+  lireIdentifiantsRepris,
   lireReponseGardee,
   type CorpsGarde,
   type IssueJournal,
@@ -93,6 +101,7 @@ export interface Bilan {
 /** Les incohérences d'entrée nommées : la source n'est pas traitée, la commande continue. */
 const INCOHERENCES = [
   EntreeExtractionIncoherente,
+  EpinglageExtracteurPerime,
   AucunTexteEpingle,
   PlusieursTextesEpingles,
   FicheDUneAutreSource,
@@ -191,18 +200,33 @@ async function obtenirLesDeux(demande: Demande, editeurs: readonly EditeurExtrac
 
 interface Lue {
   readonly reponse: ReponseGardee;
-  readonly lecture: LectureTexteModele;
+  readonly lecture: SortieModele;
+}
+
+/** Le `model` servi diffère de l'épinglé (constat 17) : la lecture est refusée avant d'être tentée. */
+function sortieDe(editeur: EditeurExtraction, contenu: Contenu, lecture: LectureTexteModele): SortieModele {
+  const servi = editeur.adaptateur.modeleServiPar(contenu);
+  if (servi !== null && servi !== editeur.adaptateur.modele) {
+    return {
+      lisible: false,
+      motif: "modele_different",
+      raison: `model servi ${JSON.stringify(servi)}, épinglé ${JSON.stringify(editeur.adaptateur.modele)} : l'identifiant du modèle est la donnée mesurée (§4).`,
+    };
+  }
+  return lecture.lisible ? lecture : { lisible: false, motif: "lecture_illisible", raison: lecture.raison };
 }
 
 function lire(gardees: readonly ReponseGardee[], editeurs: readonly EditeurExtraction[]): readonly Lue[] {
   return gardees.map((reponse, rang) => {
     const editeur = editeurs[rang];
     if (editeur === undefined) throw new Error(`Aucun éditeur au rang ${rang} pour relire la réponse de ${reponse.modele}.`);
-    return { reponse, lecture: lectureDe(editeur.adaptateur, reponse.statut_http, contenuGarde(reponse)) };
+    const contenu = contenuGarde(reponse);
+    const lecture = lectureDe(editeur.adaptateur, reponse.statut_http, contenu);
+    return { reponse, lecture: sortieDe(editeur, contenu, lecture) };
   });
 }
 
-function extraire(demande: Demande, materiau: Materiau, lues: readonly Lue[], contexte: ContexteExtraction): ResultatExtraction {
+function extraire(demande: Demande, materiau: Materiau, lues: readonly Lue[], contexte: ContexteExtraction, nouvelUlid: () => string): ResultatExtraction {
   return extraireSource(
     {
       configuration: contexte.configuration,
@@ -215,8 +239,34 @@ function extraire(demande: Demande, materiau: Materiau, lues: readonly Lue[], co
       sorties: new Map(lues.map((lue) => [lue.reponse.modele, lue.lecture])),
       commit: contexte.commit,
     },
-    { maintenant: () => instantParis(contexte.maintenant()), nouvelUlid: contexte.nouvelUlid },
+    { maintenant: () => instantParis(contexte.maintenant()), nouvelUlid },
   );
+}
+
+/** Rejoue dans l'ordre les identifiants déjà tirés par une tentative précédente, puis en tire de nouveaux au besoin. */
+function nouvelUlidDeReprise(base: () => string, repris: readonly string[]): { readonly nouvelUlid: () => string; readonly tousEmis: () => readonly string[] } {
+  const emis: string[] = [];
+  const nouvelUlid = (): string => {
+    const id = emis.length < repris.length ? (repris[emis.length] as string) : base();
+    emis.push(id);
+    return id;
+  };
+  return { nouvelUlid, tousEmis: () => emis };
+}
+
+/** Une tentative de dépôt de source traitée deux fois sans redonner le même nombre d'identifiants : le code ou les réponses gardées ont changé entre les deux. */
+export class RepriseIncoherente extends Error {
+  constructor(cle: string, repris: readonly string[], obtenus: readonly string[]) {
+    super(
+      `${cle} : ${repris.length} identifiant(s) repris d'une tentative précédente, ${obtenus.length} à cette relance — ` +
+        `l'extraction ne redonne plus le même nombre d'items ou de mesures pour une source déjà entamée.`,
+    );
+    this.name = "RepriseIncoherente";
+  }
+}
+
+function exigerReprisesCoherentes(cle: string, repris: readonly string[], emis: readonly string[]): void {
+  if (repris.length > 0 && emis.length !== repris.length) throw new RepriseIncoherente(cle, repris, emis);
 }
 
 function issueDe(resultat: ResultatExtraction): IssueJournal {
@@ -239,12 +289,18 @@ function reponseJournal(lue: Lue): ReponseJournal {
 }
 
 function deposer(demande: Demande, materiau: Materiau, lues: readonly Lue[], contexte: ContexteExtraction): IssueJournal {
-  const resultat = extraire(demande, materiau, lues, contexte);
-  resultat.items.forEach((item) => ecrireItem(contexte.sortie, item));
-  resultat.mesures.forEach((mesure) => ecrireMesure(contexte.sortie, mesure));
+  const { cle_source, sha256_source } = demande.lue.entree;
+  const repris = lireIdentifiantsRepris(contexte.sortie, cle_source, sha256_source) ?? [];
+  const reprise = nouvelUlidDeReprise(contexte.nouvelUlid, repris);
+  const resultat = extraire(demande, materiau, lues, contexte, reprise.nouvelUlid);
+  const emis = reprise.tousEmis();
+  exigerReprisesCoherentes(`${cle_source}/${sha256_source}`, repris, emis);
+  if (repris.length === 0 && emis.length > 0) ecrireIdentifiantsRepris(contexte.sortie, cle_source, sha256_source, emis);
+  resultat.items.forEach((item) => ecrireItemRepris(contexte.sortie, item));
+  resultat.mesures.forEach((mesure) => ecrireMesureRepris(contexte.sortie, mesure));
   const journal: JournalExtraction = {
-    cle_source: demande.lue.entree.cle_source,
-    sha256_source: demande.lue.entree.sha256_source,
+    cle_source,
+    sha256_source,
     texte_sha256: materiau.fiche.texte_sha256,
     date: instantParis(contexte.maintenant()),
     commit: contexte.commit,
