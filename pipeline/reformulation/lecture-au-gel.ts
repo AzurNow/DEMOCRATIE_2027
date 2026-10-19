@@ -23,7 +23,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { empreintesSuiventTextes, neutreSuitVersionGabarits } from "../questions/invariants.ts";
 import type { Question, QuestionEngendree } from "../questions/types.ts";
-import { positionPromue, type FormulationsValidees, type QuestionCourante } from "./relecture.ts";
+import { clePromotionEgale, positionPromue, type ClePromotion, type FormulationsValidees, type QuestionCourante } from "./relecture.ts";
 
 export type MotifDefaut = "absente" | "autre_empreinte" | "position_perimee" | "invariant";
 
@@ -46,24 +46,31 @@ export class FormulationsEnDefautAuGel extends Error {
   }
 }
 
-/** Q1, option (a) : la position de l'orientée promue (ou son absence) est celle de la règle sur l'item courant. */
-function defautDePosition(courante: QuestionCourante, lue: FormulationsValidees): string | null {
-  const promue = positionPromue(lue);
-  const demandee = courante.demande.position_affirmee;
-  if (promue === demandee) return null;
-  return `l'orientée promue affirme « ${promue} », la règle de D42 (3) donne « ${demandee} » sur l'item courant.`;
+/**
+ * La clé que l'item courant demande (constat 10, revue du 2026-10-17) : même empreinte de texte
+ * neutre, même position affirmée, comparées par `clePromotionEgale` comme ailleurs dans le dépôt.
+ */
+function cleDemandee(courante: QuestionCourante): ClePromotion {
+  return { empreinte_texte_neutre: sha256(courante.question.texte_neutre), position: courante.demande.position_affirmee };
 }
 
 function defautsDe(courante: QuestionCourante, lue: FormulationsValidees | undefined): readonly DefautAuGel[] {
   const engendree = courante.question;
   const defaut = (motif: MotifDefaut, detail: string): DefautAuGel => ({ question_id: engendree.id, motif, detail });
   if (lue === undefined) return [defaut("absente", "aucun fichier data/formulations/<question_id>.json.")];
-  const empreinte = sha256(engendree.texte_neutre);
-  if (lue.empreinte_texte_neutre !== empreinte) {
-    return [defaut("autre_empreinte", `relue sur le texte neutre ${lue.empreinte_texte_neutre}, texte courant ${empreinte}.`)];
+  const demandee = cleDemandee(courante);
+  if (lue.empreinte_texte_neutre !== demandee.empreinte_texte_neutre) {
+    return [defaut("autre_empreinte", `relue sur le texte neutre ${lue.empreinte_texte_neutre}, texte courant ${demandee.empreinte_texte_neutre}.`)];
   }
-  const position = defautDePosition(courante, lue);
-  if (position !== null) return [defaut("position_perimee", position)];
+  const promue: ClePromotion = { empreinte_texte_neutre: demandee.empreinte_texte_neutre, position: positionPromue(lue) };
+  if (!clePromotionEgale(demandee, promue)) {
+    return [
+      defaut(
+        "position_perimee",
+        `l'orientée promue affirme « ${promue.position} », la règle de D42 (3) donne « ${demandee.position} » sur l'item courant.`,
+      ),
+    ];
+  }
   const violations = [
     ...neutreSuitVersionGabarits([lue], new Map([[engendree.id, engendree.version_gabarits]])),
     ...empreintesSuiventTextes([lue]),

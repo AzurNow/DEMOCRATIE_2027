@@ -204,11 +204,19 @@ export function clePromotion(valeur: FormulationsValidees): ClePromotion {
   return { empreinte_texte_neutre: valeur.empreinte_texte_neutre, position: positionPromue(valeur) };
 }
 
+/**
+ * La seule égalité de `ClePromotion` du dépôt (constat 10, revue du 2026-10-17) : même texte
+ * neutre relu, même position affirmée. Reprise, relecture, gel et écriture s'y appuient partout où
+ * ils comparent deux clés de promotion, pour qu'une évolution ne les désaccorde pas en silence.
+ */
+export function clePromotionEgale(a: ClePromotion, b: ClePromotion): boolean {
+  return a.empreinte_texte_neutre === b.empreinte_texte_neutre && a.position === b.position;
+}
+
 /** Vrai si la promotion porte sur le texte neutre courant ET sur la position demandée courante. */
 export function promotionEnVigueur(cle: ClePromotion | undefined, courante: QuestionCourante): boolean {
   if (cle === undefined) return false;
-  const memeTexte = cle.empreinte_texte_neutre === sha256(courante.question.texte_neutre);
-  return memeTexte && cle.position === courante.demande.position_affirmee;
+  return clePromotionEgale(cle, { empreinte_texte_neutre: sha256(courante.question.texte_neutre), position: courante.demande.position_affirmee });
 }
 
 export interface ARelire {

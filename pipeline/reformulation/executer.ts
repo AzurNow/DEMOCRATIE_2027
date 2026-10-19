@@ -91,8 +91,7 @@ export interface Triage {
 
 function decisionPour(tache: Tache, staging: string, reprise: EtatReprise): DecisionReprise {
   const etat: EtatQuestion = {
-    empreinte_courante: sha256(tache.question.texte_neutre),
-    position_courante: tache.demande.position_affirmee,
+    courante: tache,
     validee: reprise.validee(tache.question.id),
     propositions: lirePropositions(staging, tache.question.id),
     refus: reprise.refus,

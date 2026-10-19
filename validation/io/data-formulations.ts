@@ -25,7 +25,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ErreurSchema, valider } from "../../outils/schemas/valider.ts";
-import { clePromotion, type FormulationsValidees } from "../../pipeline/reformulation/relecture.ts";
+import { clePromotion, clePromotionEgale, type FormulationsValidees } from "../../pipeline/reformulation/relecture.ts";
 import { FichierModifieDepuisLecture } from "./data-items.ts";
 
 export interface FormulationsLues {
@@ -145,7 +145,7 @@ function exigerInchange(chemin: string, lu: FormulationsLues): void {
 function exigerAutreCle(chemin: string, lu: FormulationsLues, valeur: FormulationsValidees): void {
   const avant = clePromotion(lu.formulations);
   const apres = clePromotion(valeur);
-  if (avant.empreinte_texte_neutre === apres.empreinte_texte_neutre && avant.position === apres.position) {
+  if (clePromotionEgale(avant, apres)) {
     throw new FormulationsDejaPromues(chemin, apres.empreinte_texte_neutre, apres.position);
   }
 }
