@@ -15,6 +15,15 @@
  *
  * `modeleServiPar` (`modeleDuCorps`, la même lecture chez les deux éditeurs) dit quel `model`
  * l'enveloppe rapporte avoir servi ; `executer.ts` le compare à l'épinglé avant de lire le texte.
+ *
+ * `lectureDe` rend toute réponse hors 2xx `lisible: false`, sans distinguer le statut : ce n'est
+ * pas à elle de décider si l'échec est repris ou refusé pour toujours. C'est `executer.ts` qui
+ * tranche, avant d'atteindre cette fonction pour une réponse fraîche ou avant de réutiliser une
+ * réponse gardée : un statut 408, 429 ou 5xx (`estEchecTransportHttp`) est un échec de transport,
+ * pas une sortie illisible (§4, « Extraction double », révisé en 0.19 — D54 (2), revue de code du
+ * 2026-10-17, constat 2) — la réponse est gardée sous un nom distinct (`staging.ts:
+ * ecrireReponseEchecTransport`), jamais relue comme réponse du modèle, et la source est reprise à
+ * la prochaine relance plutôt que refusée.
  */
 
 import { lireContenu, type Contenu, type ReponseHttp, type RequeteHttp, type Transport } from "../interrogation/editeur.ts";
@@ -66,6 +75,16 @@ export interface AppelExtracteur {
 
 function estSucces(statut: number): boolean {
   return statut >= 200 && statut < 300;
+}
+
+/**
+ * 408, 429 et 5xx (500 à 599) : un échec de transport, pas une sortie illisible (§4, « Extraction
+ * double », révisé en 0.19 — D54 (2), revue de code du 2026-10-17, constat 2). `executer.ts` en
+ * tient compte avant de laisser une réponse hors 2xx atteindre `lectureDe` comme `lecture_illisible` :
+ * elle est gardée (règle 7) sous un nom que la relance ne réutilise jamais, et refait l'appel.
+ */
+export function estEchecTransportHttp(statut: number): boolean {
+  return statut === 408 || statut === 429 || (statut >= 500 && statut <= 599);
 }
 
 /**

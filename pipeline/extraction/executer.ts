@@ -10,15 +10,21 @@
  * 2. entrée lue et validée, fiche choisie, texte et transcription relus (`entrees.ts`) ; une
  *    incohérence est nommée et la source laissée non traitée, rien n'est écrit pour elle ;
  * 3. prompt rendu (`prompt.ts`), puis, pour chaque extracteur **dans l'ordre de la configuration** :
- *    réponse déjà gardée pour (source, modèle, empreinte du prompt rendu) ⇒ réutilisée ; sinon,
- *    plafond atteint ⇒ arrêt de toute la commande ; sinon un appel (`editeur.ts:appelerExtracteur`),
- *    décompté du plafond, et la réponse est écrite telle que reçue avant d'être lue (règle 7). Un
- *    échec de transport, un délai dépassé ou un corps non UTF-8 n'écrit rien : la source reste à
- *    traiter et sera reprise sans repayer l'appel déjà gardé ;
- * 4. les deux réponses gardées sont relues depuis ce qui est écrit, par l'enveloppe de leur éditeur
- *    (`editeur.ts:lectureDe`), et chaque lecture est passée au cœur telle quelle. **Une lecture
- *    illisible** (statut hors 2xx, sortie coupée, refus, enveloppe inattendue, model servi différent
- *    de l'épinglé) n'a pas de texte : le cœur la rejette en entier sous `lecture_illisible` ou
+ *    réponse déjà gardée et utilisable pour (source, modèle, empreinte du prompt rendu)
+ *    (`staging.ts:lireReponseGardeeUtilisable`) ⇒ réutilisée ; sinon, plafond atteint ⇒ arrêt de
+ *    toute la commande ; sinon un appel (`editeur.ts:appelerExtracteur`), décompté du plafond. Un
+ *    échec de transport au sens strict — rejet réseau, délai dépassé, corps non UTF-8 — n'écrit
+ *    rien, rien n'est reçu. Une réponse HTTP reçue est écrite telle quelle avant d'être lue
+ *    (règle 7) ; un statut 408, 429 ou 5xx (`editeur.ts:estEchecTransportHttp`) est aussi un échec
+ *    de transport (§4, D54 (2), constat 2 du 2026-10-17) : la réponse est gardée sous un nom
+ *    distinct (`staging.ts:ecrireReponseEchecTransport`), jamais relue comme réponse du modèle.
+ *    Dans tous les cas d'échec de transport, la source reste à traiter et sera reprise sans
+ *    repayer l'appel déjà gardé avec succès pour l'autre extracteur ;
+ * 4. les deux réponses gardées — jamais un échec de transport, qui ne se rend pas jusqu'ici — sont
+ *    relues depuis ce qui est écrit, par l'enveloppe de leur éditeur (`editeur.ts:lectureDe`), et
+ *    chaque lecture est passée au cœur telle quelle. **Une lecture illisible** (statut hors 2xx et
+ *    hors échec de transport, sortie coupée, refus, enveloppe inattendue, model servi différent de
+ *    l'épinglé) n'a pas de texte : le cœur la rejette en entier sous `lecture_illisible` ou
  *    `modele_different`, avec sa raison, ce qui refuse la source (D53 (2), D54 (7),
  *    `extraction_double_incomplete`). La raison figure aussi dans le journal, à côté de la réponse ;
  * 5. les identifiants (mesure puis item, par paire déposée) sont ceux repris d'une tentative
@@ -36,7 +42,7 @@ import { CorpsNonUtf8, ErreurReseau, type Contenu, type ReponseHttp } from "../i
 import { instantParis } from "../interrogation/heure-paris.ts";
 import { AucunTexteEpingle, FicheDUneAutreSource, PlusieursTextesEpingles } from "./choix-texte.ts";
 import type { ConfigurationExtraction } from "./configuration.ts";
-import { appelerExtracteur, lectureDe, type EditeurExtraction, type LectureTexteModele } from "./editeur.ts";
+import { appelerExtracteur, estEchecTransportHttp, lectureDe, type EditeurExtraction, type LectureTexteModele } from "./editeur.ts";
 import { EntreeExtractionIncoherente, EpinglageExtracteurPerime, lireEntree, materiauDe, type EntreeLue, type Materiau } from "./entrees.ts";
 import {
   extraireSource,
@@ -55,9 +61,10 @@ import {
   ecrireJournal,
   ecrireMesureRepris,
   ecrireReponse,
+  ecrireReponseEchecTransport,
   journalPresent,
   lireIdentifiantsRepris,
-  lireReponseGardee,
+  lireReponseGardeeUtilisable,
   type CorpsGarde,
   type IssueJournal,
   type JournalExtraction,
@@ -161,6 +168,13 @@ async function appeler(demande: Demande, editeur: EditeurExtraction, contexte: C
   try {
     const appel = await appelerExtracteur(editeur, demande.prompt, new AbortController().signal);
     const reponse = reponseGardee(demande, editeur.adaptateur.modele, appel.reponse, appel.contenu, contexte);
+    if (estEchecTransportHttp(appel.reponse.statut)) {
+      ecrireReponseEchecTransport(contexte.sortie, reponse);
+      return {
+        genre: "transport",
+        message: `réponse HTTP ${appel.reponse.statut} de ${editeur.adaptateur.modele} : échec de transport (§4, D54 (2)).`,
+      };
+    }
     ecrireReponse(contexte.sortie, reponse);
     return { genre: "gardee", reponse };
   } catch (erreur) {
@@ -175,7 +189,7 @@ function plafondAtteint(compteurs: Compteurs, plafond: number | null): boolean {
 
 async function obtenir(demande: Demande, editeur: EditeurExtraction, contexte: ContexteExtraction, compteurs: Compteurs): Promise<Obtention> {
   const cle = { ...demande.lue.entree, modele: editeur.adaptateur.modele, prompt_sha256: demande.prompt_sha256 };
-  const deja = lireReponseGardee(contexte.sortie, cle);
+  const deja = lireReponseGardeeUtilisable(contexte.sortie, cle);
   if (deja !== null) {
     compteurs.reutilisees += 1;
     return { genre: "gardee", reponse: deja };

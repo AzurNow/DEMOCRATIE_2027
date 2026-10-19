@@ -213,39 +213,42 @@ describe("cas 4 : une sortie rejetée en entier, l'autre valide (décision D53 (
 });
 
 describe("lecture illisible : rejet de sortie lecture_illisible, avec la raison reçue", () => {
-  const HTTP_500 = "réponse HTTP 500 : aucun texte du modèle n'est lu hors 2xx.";
+  // HTTP 400 : hors de la liste des échecs de transport (408, 429, 5xx — §4, D54 (2), constat 2 du
+  // 2026-10-17) ; ce test exerce le cœur, qui ne voit jamais le statut HTTP, mais le choix du
+  // statut dans la raison doit rester cohérent avec ce que le pipeline y laisse vraiment arriver.
+  const HTTP_400 = "réponse HTTP 400 : aucun texte du modèle n'est lu hors 2xx.";
   const refus = (modeles: string): Rejet => ({
     portee: "source",
     motif: "extraction_double_incomplete",
     detail: `sortie de ${modeles} rejetée en entier : la source n'a pas été extraite deux fois (§4), aucun item déposé`,
   });
 
-  it("1. premier modèle illisible (HTTP 500), second conforme ⇒ lecture_illisible, refus de la source, rien déposé", () => {
-    const resultat = extraire(entreeHtml(TEXTE, illisible(HTTP_500), sortie(propose(C_SANTE))));
+  it("1. premier modèle illisible (HTTP 400), second conforme ⇒ lecture_illisible, refus de la source, rien déposé", () => {
+    const resultat = extraire(entreeHtml(TEXTE, illisible(HTTP_400), sortie(propose(C_SANTE))));
     expect(resultat.items).toEqual([]);
     expect(resultat.mesures).toEqual([]);
-    expect(resultat.rejets).toEqual([{ portee: "sortie", modele: MODELE_A, motif: "lecture_illisible", detail: HTTP_500 }, refus(MODELE_A)]);
+    expect(resultat.rejets).toEqual([{ portee: "sortie", modele: MODELE_A, motif: "lecture_illisible", detail: HTTP_400 }, refus(MODELE_A)]);
   });
 
   it("2. second modèle illisible, premier conforme ⇒ le même rejet, au nom du second", () => {
-    const resultat = extraire(entreeHtml(TEXTE, sortie(propose(C_SANTE)), illisible(HTTP_500)));
+    const resultat = extraire(entreeHtml(TEXTE, sortie(propose(C_SANTE)), illisible(HTTP_400)));
     expect(resultat.items).toEqual([]);
     expect(resultat.mesures).toEqual([]);
-    expect(resultat.rejets).toEqual([{ portee: "sortie", modele: MODELE_B, motif: "lecture_illisible", detail: HTTP_500 }, refus(MODELE_B)]);
+    expect(resultat.rejets).toEqual([{ portee: "sortie", modele: MODELE_B, motif: "lecture_illisible", detail: HTTP_400 }, refus(MODELE_B)]);
   });
 
   it("3. les deux illisibles ⇒ deux rejets lecture_illisible, chacun avec sa raison, un seul refus de la source", () => {
-    const resultat = extraire(entreeHtml(TEXTE, illisible(HTTP_500), illisible("sortie coupée : finish_reason « length ».")));
+    const resultat = extraire(entreeHtml(TEXTE, illisible(HTTP_400), illisible("sortie coupée : finish_reason « length ».")));
     expect(resultat.items).toEqual([]);
     expect(resultat.rejets).toEqual([
-      { portee: "sortie", modele: MODELE_A, motif: "lecture_illisible", detail: HTTP_500 },
+      { portee: "sortie", modele: MODELE_A, motif: "lecture_illisible", detail: HTTP_400 },
       { portee: "sortie", modele: MODELE_B, motif: "lecture_illisible", detail: "sortie coupée : finish_reason « length »." },
       refus(`${MODELE_A} et de ${MODELE_B}`),
     ]);
   });
 
   it("4. un illisible, l'autre lisible mais pas du JSON ⇒ lecture_illisible, json_invalide, refus de la source", () => {
-    const resultat = extraire(entreeHtml(TEXTE, "pas du JSON", illisible(HTTP_500)));
+    const resultat = extraire(entreeHtml(TEXTE, "pas du JSON", illisible(HTTP_400)));
     expect(resultat.items).toEqual([]);
     expect(resultat.rejets.map((rejet) => [rejet.portee, "modele" in rejet ? rejet.modele : null, rejet.motif])).toEqual([
       ["sortie", MODELE_A, "json_invalide"],
