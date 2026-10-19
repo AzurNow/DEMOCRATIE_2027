@@ -7181,7 +7181,7 @@
       ],
       "lot": null,
       "constat": 1,
-      "note": "Corrigé dans #PR (D54 (2), revue du 2026-10-17 constat 2) : lectureDe reste inchangée (toute réponse hors 2xx y est illisible, sans distinguer le statut), mais executer.ts n'y laisse plus jamais atteindre un statut 408, 429 ou 5xx — estEchecTransportHttp le route comme échec de transport avant appel et avant réutilisation d'une réponse gardée."
+      "note": "Corrigé dans #167 (D54 (2), revue du 2026-10-17 constat 2) : lectureDe reste inchangée (toute réponse hors 2xx y est illisible, sans distinguer le statut), mais executer.ts n'y laisse plus jamais atteindre un statut 408, 429 ou 5xx — estEchecTransportHttp le route comme échec de transport avant appel et avant réutilisation d'une réponse gardée."
     },
     {
       "id": "§5.51",
