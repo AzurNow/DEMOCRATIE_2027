@@ -14,7 +14,10 @@
  * ensuite, ce n'est pas une tentative de l'outil : le journal reçoit un événement
  * `recue_non_stockee` qui conclut la ligne, aucune réponse n'est écrite, et la requête n'est plus
  * jamais retentée — elle attend l'opérateur. Les autres requêtes, du même outil ou d'un autre,
- * continuent normalement.
+ * continuent normalement. Si `garderOctets` échoue lui-même (collision, erreur disque), la réponse
+ * est pourtant bien reçue : `garderOctetsOuSignaler` tente d'inscrire `recue_non_stockee` sans
+ * octets (`chemin_octets: null`) avant de relever l'erreur d'origine, pour que la file s'arrête
+ * bruyamment comme avant — mais sans jamais renvoyer cette requête à la relance.
  *
  * Une erreur qui n'est pas un échec de tentative ni une réponse reçue non stockée (par exemple une
  * incohérence de programme pendant l'envoi lui-même) arrête la file de son outil ; les autres
@@ -22,6 +25,7 @@
  */
 
 import { mkdirSync } from "node:fs";
+import { join } from "node:path";
 import { empreinteDe } from "../../validation/domaine/empreinte.ts";
 import { ulid } from "../../validation/domaine/ulid.ts";
 import { attenteAvantTentative, TENTATIVES_MAX } from "./conditions.ts";
@@ -57,12 +61,16 @@ export interface ContexteRun {
   readonly editeurs: ReadonlyMap<string, Editeur>;
 }
 
-/** Une requête dont la réponse reçue n'a pas pu être stockée : elle attend l'opérateur (§6). */
+/**
+ * Une requête dont la réponse reçue n'a pas pu être stockée : elle attend l'opérateur (§6).
+ * `chemin_octets` est résolu en chemin complet (le journal, lui, ne garde qu'un nom relatif) ;
+ * `null` si la garde des octets a elle-même échoué (`garderOctetsOuSignaler`).
+ */
 export interface EnAttenteOperateur {
   readonly genre: "en_attente_operateur";
   readonly requete: CleRequete;
   readonly numero: number;
-  readonly chemin_octets: string;
+  readonly chemin_octets: string | null;
   readonly cause: string;
 }
 
@@ -143,6 +151,26 @@ async function attendreSonTour(numero: number, contexte: ContexteRun): Promise<b
 }
 
 /**
+ * Garde les octets reçus ; si la garde elle-même échoue (collision, erreur disque), la réponse a
+ * pourtant été reçue : une inscription `recue_non_stockee` sans octets est tentée avant de relever
+ * l'erreur d'origine, pour que la file s'arrête bruyamment comme avant (§6, D55 (5)). Si cette
+ * inscription échoue à son tour, l'erreur d'origine remonte seule — limite connue, documentée en
+ * tête de `journal.ts`.
+ */
+function garderOctetsOuSignaler(numero: number, course: Course, octets: Uint8Array): string {
+  try {
+    return course.journal.garderOctets(numero, octets);
+  } catch (erreurGarde) {
+    try {
+      course.journal.inscrireRecueNonStockee(numero, null, `octets non gardés : ${causeDe(erreurGarde)}`);
+    } catch {
+      // L'inscription échoue aussi : l'erreur d'origine remonte seule (limite documentée, journal.ts).
+    }
+    throw erreurGarde;
+  }
+}
+
+/**
  * Classe l'envoi reçu (`conclure`, `tentatives.ts`). Si la classification elle-même échoue
  * (décodage non UTF-8, forme inattendue) après qu'un corps a été reçu, les octets déjà gardés
  * (`chemin_octets`) permettent de conclure la ligne par `recue_non_stockee` plutôt que de laisser
@@ -155,7 +183,7 @@ async function tenter(numero: number, course: Course): Promise<Essai> {
   const horodatage = instantParis(debut_ms);
   course.journal.inscrireDebut(numero, horodatage, cleDe(course.requete));
   const envoi = await envoyerSousDelai(course.editeur, course.http, horloge);
-  const chemin_octets = envoi.genre === "http" ? course.journal.garderOctets(numero, envoi.reponse.corps) : null;
+  const chemin_octets = envoi.genre === "http" ? garderOctetsOuSignaler(numero, course, envoi.reponse.corps) : null;
   try {
     const conclusion = conclure(envoi, course.editeur.adaptateur);
     if (conclusion.genre === "echec") {
@@ -278,8 +306,17 @@ function reponseManquante(course: Course, fin: Extract<Aboutissement, { genre: "
 
 type IssueRequete = "ecrite" | "deja_ecrite" | EnAttenteOperateur;
 
-function enAttente(requete: RequetePlanifiee, info: Pick<EnAttenteOperateur, "numero" | "chemin_octets" | "cause">): EnAttenteOperateur {
-  return { genre: "en_attente_operateur", requete: cleDe(requete), ...info };
+/**
+ * Construit l'item public : `info.chemin_octets` est le nom relatif que porte le journal, résolu
+ * ici en chemin complet (l'opérateur a besoin d'un chemin utilisable, le journal non — règle 2).
+ */
+function enAttente(
+  requete: RequetePlanifiee,
+  repertoire_tentatives: string,
+  info: Pick<EnAttenteOperateur, "numero" | "cause"> & { readonly chemin_octets: string | null },
+): EnAttenteOperateur {
+  const chemin_octets = info.chemin_octets === null ? null : join(repertoire_tentatives, info.chemin_octets);
+  return { genre: "en_attente_operateur", requete: cleDe(requete), ...info, chemin_octets };
 }
 
 /**
@@ -295,7 +332,7 @@ function ecrireObtenue(course: Course, fin: Extract<Aboutissement, { genre: "obt
   } catch (erreur) {
     const cause = causeDe(erreur);
     course.journal.inscrireRecueNonStockee(fin.numero, fin.chemin_octets, cause);
-    return enAttente(course.requete, { numero: fin.numero, chemin_octets: fin.chemin_octets, cause });
+    return enAttente(course.requete, course.contexte.repertoire_tentatives, { numero: fin.numero, chemin_octets: fin.chemin_octets, cause });
   }
 }
 
@@ -303,7 +340,7 @@ async function executerRequete(requete: RequetePlanifiee, editeur: Editeur, cont
   if (contexte.depot.contient(requete)) return "deja_ecrite";
   const journal = new JournalRequete(contexte.repertoire_tentatives, cleDe(requete));
   const reprise = journal.reprise();
-  if (reprise.genre === "recue_non_stockee") return enAttente(requete, reprise);
+  if (reprise.genre === "recue_non_stockee") return enAttente(requete, contexte.repertoire_tentatives, reprise);
   const http = editeur.adaptateur.construireRequete({
     texte: requete.texte,
     mode: requete.mode,
@@ -311,7 +348,7 @@ async function executerRequete(requete: RequetePlanifiee, editeur: Editeur, cont
   });
   const course: Course = { requete, http, editeur, journal, contexte };
   const fin = await poursuivre(course, reprise.tentatives);
-  if (fin.genre === "recue_non_stockee") return enAttente(requete, fin);
+  if (fin.genre === "recue_non_stockee") return enAttente(requete, contexte.repertoire_tentatives, fin);
   if (fin.genre === "manquante") {
     contexte.depot.ecrire(reponseManquante(course, fin));
     return "ecrite";

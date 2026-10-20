@@ -3,7 +3,7 @@
  * plafond de trois tentatives même après un arrêt brutal, et une relance ne refait rien de fait.
  */
 
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { JournalIllisible, JournalRequete, MESSAGE_INTERROMPUE, nomJournal, nomOctets, OctetsDejaGardes } from "../../pipeline/interrogation/journal.ts";
@@ -122,9 +122,22 @@ describe("cas 11 : reprise", () => {
     expect(() => journal.reprise()).toThrow(JournalIllisible);
   });
 
+  it.each([
+    ["chemin absolu", "/tmp/octets-etrangers.octets"],
+    ["chemin composé", "sous-repertoire/octets.octets"],
+    ["remontée de répertoire", "../octets.octets"],
+  ])("un chemin_octets %s dans recue_non_stockee lève à la relecture (règle 2, §6, D55 (5))", (_cas, chemin_octets) => {
+    const b = nouveauBanc();
+    const journal = journalDe(b);
+    journal.inscrireDebut(1, "2026-12-01T06:00:00.000+01:00", cleDe(requete()));
+    appendFileSync(journal.chemin, `${JSON.stringify({ evenement: "recue_non_stockee", numero: 1, chemin_octets, cause: "x" })}\n`);
+    expect(() => journal.reprise()).toThrow(JournalIllisible);
+  });
+
   it(
-    "garderOctets qui échoue (collision avec des octets déjà gardés) n'est pas confondu avec recue_non_stockee : " +
-      "la file s'arrête, et la relance repart avec un numéro de tentative neuf (§6, D55 (5), option la plus prudente)",
+    "garderOctets qui échoue (collision avec des octets déjà gardés) : la première exécution lève " +
+      "OctetsDejaGardes, le journal porte recue_non_stockee sans octets, et la relance n'envoie rien, " +
+      "la requête attend l'opérateur (§6, D55 (5))",
     async () => {
       const b = nouveauBanc();
       mkdirSync(b.tentatives, { recursive: true });
@@ -132,14 +145,45 @@ describe("cas 11 : reprise", () => {
       b.editeur("outil-alpha", scenarioScripte(["reponse"]));
       await expect(b.executer(plan(requete()))).rejects.toThrow(OctetsDejaGardes);
       expect(b.lues()).toHaveLength(0);
+      const lignes = readFileSync(join(b.tentatives, nomJournal(cleDe(requete()))), "utf8").trimEnd().split("\n");
+      const derniere = JSON.parse(lignes[lignes.length - 1] as string) as {
+        evenement: string;
+        chemin_octets: unknown;
+        cause: string;
+      };
+      expect(derniere.evenement).toBe("recue_non_stockee");
+      expect(derniere.chemin_octets).toBeNull();
+      expect(derniere.cause).toContain("octets non gardés");
 
       const relance = nouveauBanc(b.racine);
-      relance.editeur("outil-alpha", scenarioScripte(["reponse"]));
-      await relance.executer(plan(requete()));
-      const reponse = seule(relance.lues());
-      expect(reponse.statut_reponse).toBe("obtenue");
-      expect(reponse.tentatives?.map((t) => [t.numero, t.erreur.type])).toEqual([[1, "autre"]]);
-      expect(transportDe(relance).interne.recues).toHaveLength(1);
+      relance.editeur("outil-alpha", scenarioScripte([]));
+      const bilan = await relance.executer(plan(requete()));
+      expect(bilan.ecrites).toBe(0);
+      expect(bilan.en_attente_operateur).toHaveLength(1);
+      expect(bilan.en_attente_operateur[0]?.chemin_octets).toBeNull();
+      expect(transportDe(relance).interne.recues).toHaveLength(0);
     },
   );
+});
+
+describe("D55 (5) : écriture atomique des octets gardés (garderOctets)", () => {
+  it("octets rendus identiques octet à octet, nom relatif, aucun .tmp restant après succès", () => {
+    const b = nouveauBanc();
+    const journal = journalDe(b);
+    const octets = new Uint8Array([0, 1, 2, 253, 254, 255, 42]);
+    const nom = journal.garderOctets(1, octets);
+    expect(nom).toBe(nomOctets(cleDe(requete()), 1));
+    expect(Array.from(readFileSync(join(b.tentatives, nom)))).toEqual(Array.from(octets));
+    expect(readdirSync(b.tentatives).filter((f) => f.endsWith(".tmp"))).toEqual([]);
+  });
+
+  it("collision : OctetsDejaGardes, octets d'origine intacts, aucun .tmp restant", () => {
+    const b = nouveauBanc();
+    const journal = journalDe(b);
+    const octets = new Uint8Array([1, 2, 3]);
+    journal.garderOctets(1, octets);
+    expect(() => journal.garderOctets(1, new Uint8Array([9, 9, 9]))).toThrow(OctetsDejaGardes);
+    expect(Array.from(readFileSync(join(b.tentatives, nomOctets(cleDe(requete()), 1))))).toEqual(Array.from(octets));
+    expect(readdirSync(b.tentatives).filter((f) => f.endsWith(".tmp"))).toEqual([]);
+  });
 });

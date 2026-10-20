@@ -7208,9 +7208,11 @@
       "statut": "testee",
       "code": [
         "pipeline/interrogation/journal.ts:garderOctets",
+        "pipeline/interrogation/journal.ts:ecrireOctetsExclusif",
         "pipeline/interrogation/journal.ts:inscrireRecueNonStockee",
         "pipeline/interrogation/journal.ts:reprise",
         "pipeline/interrogation/executer.ts:tenter",
+        "pipeline/interrogation/executer.ts:garderOctetsOuSignaler",
         "pipeline/interrogation/executer.ts:ecrireObtenue",
         "pipeline/interrogation/executer.ts:executerRequete",
         "pipeline/interrogation/operateur.ts:messageAttenteOperateur"
@@ -7219,12 +7221,14 @@
         "tests/interrogation/executer.test.ts « D55 (5), §6 : réponse reçue, non stockée » « corps non UTF-8 : octets gardés sous volume/, événement recue_non_stockee, en attente de l'opérateur (§6, D55 (5)) »",
         "tests/interrogation/executer.test.ts « D55 (5), §6 : réponse reçue, non stockée » « écriture de la réponse structurée qui lève après réception (schéma refusé, p. ex.) : octets gardés, recue_non_stockee, aucune tentative comptée, pas de « manquante » »",
         "tests/interrogation/executer.test.ts « D55 (5), §6 : réponse reçue, non stockée » « une requête en recue_non_stockee n'empêche pas une autre requête, d'un autre outil, d'aboutir »",
-        "tests/interrogation/reprise.test.ts « cas 11 : reprise » « garderOctets qui échoue (collision avec des octets déjà gardés) n'est pas confondu avec recue_non_stockee […] »",
+        "tests/interrogation/reprise.test.ts « cas 11 : reprise » « garderOctets qui échoue (collision avec des octets déjà gardés) : la première exécution lève OctetsDejaGardes […] »",
+        "tests/interrogation/reprise.test.ts « cas 11 : reprise » « un chemin_octets %s dans recue_non_stockee lève à la relecture (règle 2, §6, D55 (5)) »",
+        "tests/interrogation/reprise.test.ts « D55 (5) : écriture atomique des octets gardés (garderOctets) »",
         "tests/interrogation/operateur.test.ts « opérateur : requête en attente (§6, D55 (5)) »"
       ],
       "lot": null,
       "constat": 2,
-      "note": "Corrigé dans #PR (D55 (5), revue du 2026-10-12 constat 6) : les octets reçus sont gardés sous volume/tentatives/ avant toute interprétation (garderOctets) ; si le décodage, la normalisation ou l'écriture de la réponse structurée échoue ensuite, le journal reçoit un événement recue_non_stockee qui conclut la ligne sans compter de tentative ni de « manquante » ; reprise() ne relit plus une telle requête comme tentative interrompue et executerRequete ne la renvoie jamais ; la commande (outils/run-dry.ts) l'imprime nommée et sort avec le code documenté CODE_RECUE_NON_STOCKEE = 4. Périmètre : l'interrogation seule, pas la reformulation ni l'extraction (texte 0.19 du §6, signalé comme suite à faire)."
+      "note": "Corrigé dans #PR (D55 (5), revue du 2026-10-12 constat 6) : les octets reçus sont gardés sous volume/tentatives/ avant toute interprétation (garderOctets) ; si le décodage, la normalisation ou l'écriture de la réponse structurée échoue ensuite, le journal reçoit un événement recue_non_stockee qui conclut la ligne sans compter de tentative ni de « manquante » ; reprise() ne relit plus une telle requête comme tentative interrompue et executerRequete ne la renvoie jamais ; la commande (outils/run-dry.ts) l'imprime nommée et sort avec le code documenté CODE_RECUE_NON_STOCKEE = 4. Périmètre : l'interrogation seule, pas la reformulation ni l'extraction (texte 0.19 du §6, signalé comme suite à faire). Relecture du 2026-10-20 (trois points) : garderOctets écrit désormais par fichier temporaire caché + fsync + linkSync exclusif (jamais de nom final tronqué) ; le journal ne garde que le nom relatif des octets (chemin_octets, jamais un chemin absolu, règle 2 — la lecture refuse tout autre format), le chemin complet n'étant résolu que pour l'opérateur (executer.ts:enAttente, operateur.ts) ; et si garderOctets échoue lui-même, la ligne recue_non_stockee est tentée sans octets (chemin_octets: null) avant que l'erreur d'origine ne remonte, pour que la requête ne soit jamais ni retentée ni comptée comme tentative de l'outil (garderOctetsOuSignaler) — si cette inscription échoue aussi, l'erreur d'origine remonte seule et la relance lira une tentative interrompue ordinaire (limite connue, documentée en tête de journal.ts)."
     },
     {
       "id": "§7.41",

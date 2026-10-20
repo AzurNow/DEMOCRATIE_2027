@@ -251,14 +251,28 @@ C'est ce journal qui fait tenir le plafond de trois tentatives du §6 après un 
   ligne, écriture interrompue) arrête la relance avec `JournalIllisible`, qui nomme le fichier et la
   ligne. Il n'y a pas de quarantaine automatique : un humain examine le fichier et décide.
 - **Réponse reçue, non stockée (§6, D55 (5)).** Dès qu'une réponse HTTP est reçue, ses octets exacts
-  sont gardés sous `<empreinte>.<numero>.octets` (écriture exclusive, synchronisée, jamais réécrite —
-  `OctetsDejaGardes` sinon) avant toute interprétation. Si le décodage, la normalisation ou
-  l'écriture de la réponse structurée échoue ensuite, la ligne est conclue par un événement
-  `recue_non_stockee` (numéro, chemin des octets, cause) au lieu de `echec` : ce n'est pas une
-  tentative de l'outil, elle n'entre jamais dans le plafond de trois ni dans le motif « manquante ».
-  Une requête dont le journal porte cet événement n'est plus jamais relue comme une tentative
-  interrompue ni renvoyée : la question attend l'opérateur, et `pnpm run:dry` la nomme en sortant
-  avec le code documenté dans son en-tête (`outils/run-dry.ts`).
+  sont gardés sous `<empreinte>.<numero>.octets`, écrits de façon atomique : un fichier temporaire
+  caché du même répertoire, écrit en entier puis synchronisé (`fsync`), est lié sous son nom final
+  (exclusif — `OctetsDejaGardes` si ce nom existe déjà, jamais de remplacement) ; un arrêt pendant
+  l'écriture laisse au plus le temporaire, jamais le nom final tronqué. Si le décodage, la
+  normalisation ou l'écriture de la réponse structurée échoue ensuite, la ligne est conclue par un
+  événement `recue_non_stockee` (numéro, chemin des octets, cause) au lieu de `echec` : ce n'est pas
+  une tentative de l'outil, elle n'entre jamais dans le plafond de trois ni dans le motif
+  « manquante ». `chemin_octets` est le nom de fichier relatif au répertoire des tentatives — jamais
+  un chemin absolu de la machine qui a tourné le run, ce répertoire étant archivé et publié ; la
+  lecture refuse tout autre format. Le chemin complet n'est résolu que pour l'opérateur (message de
+  `pnpm run:dry`, `pipeline/interrogation/operateur.ts`). Une requête dont le journal porte cet
+  événement n'est plus jamais relue comme une tentative interrompue ni renvoyée : la question
+  attend l'opérateur, et `pnpm run:dry` la nomme en sortant avec le code documenté dans son en-tête
+  (`outils/run-dry.ts`, code 4).
+- **Si la garde des octets échoue elle-même** (collision, erreur disque, avant même d'avoir écrit un
+  seul octet) : la réponse a pourtant été reçue, donc une ligne `recue_non_stockee` sans octets
+  (`chemin_octets: null`) est tentée avant de relever l'erreur d'origine, qui arrête la file de
+  l'outil comme avant. La requête n'est donc jamais retentée ni renvoyée, même si cette tentative
+  d'inscription réussit après que l'erreur a déjà été vue par l'opérateur. Si l'inscription échoue
+  à son tour, l'erreur d'origine remonte seule et la relance lira un `debut` sans suite comme une
+  tentative interrompue ordinaire : limite connue, non résolue (`pipeline/interrogation/journal.ts`,
+  en-tête).
 
 ## `volume/liens/` — `pnpm liens <repertoire_run>`
 
@@ -391,6 +405,9 @@ pnpm run:dry --sortie=<chemin>    fixtures, sous <chemin>/<date>/volume/…
 pnpm run:dry --run=<répertoire>   le run gelé par pnpm geler --sortie, sous <répertoire>/volume/…
 ```
 
+- **Code de sortie 4** : au moins une requête est en attente de l'opérateur, réponse reçue que le
+  banc n'a pas pu stocker (§6, D55 (5)) — jamais renvoyée. Code et message documentés dans l'en-tête
+  de `outils/run-dry.ts`.
 - **Fixtures** (sans `--run`) : périmètre, questions, identifiant et fenêtre viennent de
   `tests/interrogation/fixtures/run-simule/` ; seul le volume est écrit (`run.json` et
   `questions.json` ne le sont pas). C'est le mode de la CI et de `pnpm notation:dry`.

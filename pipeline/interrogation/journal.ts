@@ -12,9 +12,18 @@
  * inattendue, schéma refusé, écriture de la réponse structurée en échec) conclut la ligne par un
  * événement `recue_non_stockee` plutôt que `echec` : ce n'est pas une tentative de l'outil (§6,
  * D55 (5)). Ses octets, déjà gardés sous `volume/` avant toute interprétation (`garderOctets`),
- * restent accessibles par `chemin_octets`. Une requête dont le journal porte cet événement n'est
- * jamais relue comme une tentative interrompue ni retentée : `reprise()` le dit explicitement, et
- * aucune ligne ne peut suivre.
+ * restent accessibles par `chemin_octets` — le nom de fichier relatif au répertoire des tentatives,
+ * jamais un chemin absolu (le volume est archivé et publié ; un chemin absolu de la machine qui a
+ * tourné le run n'y a pas de sens). La lecture refuse tout autre chemin. Une requête dont le
+ * journal porte cet événement n'est jamais relue comme une tentative interrompue ni retentée :
+ * `reprise()` le dit explicitement, et aucune ligne ne peut suivre.
+ *
+ * Si `garderOctets` échoue avant même d'avoir gardé les octets (collision, erreur disque), la
+ * réponse a tout de même été reçue : une inscription `recue_non_stockee` avec `chemin_octets: null`
+ * est tentée, puis l'erreur d'origine remonte pour arrêter la file de l'outil comme aujourd'hui
+ * (`executer.ts:garderOctetsOuSignaler`). Si cette inscription échoue à son tour, l'erreur d'origine
+ * remonte seule : la relance lira alors un `debut` sans suite comme une tentative interrompue
+ * ordinaire — limite connue, non résolue ici (§6, D55 (5), décision du 2026-10-20).
  *
  * Le journal ne consigne pas les réussites stockées : une requête aboutie a sa réponse écrite
  * (`stockage.ts`), et c'est elle qui fait sauter la requête à la relance.
@@ -24,8 +33,9 @@
  * nommant le fichier et la ligne : un journal abîmé se montre, il ne se répare pas en silence.
  */
 
-import { closeSync, existsSync, fsyncSync, openSync, readFileSync, writeSync } from "node:fs";
-import { join } from "node:path";
+import { randomBytes } from "node:crypto";
+import { closeSync, existsSync, fsyncSync, linkSync, openSync, readFileSync, rmSync, writeSync } from "node:fs";
+import { isAbsolute, join } from "node:path";
 import { validerFragment } from "../../outils/schemas/valider.ts";
 import { canoniser, sha256 } from "../../validation/domaine/empreinte.ts";
 import { TENTATIVES_MAX } from "./conditions.ts";
@@ -40,7 +50,8 @@ type LigneEchec = { readonly evenement: "echec"; readonly numero: number; readon
 type LigneRecueNonStockee = {
   readonly evenement: "recue_non_stockee";
   readonly numero: number;
-  readonly chemin_octets: string;
+  /** Nom de fichier relatif au répertoire des tentatives, ou `null` si la garde a elle-même échoué. */
+  readonly chemin_octets: string | null;
   readonly cause: string;
 };
 type Ligne = LigneDebut | LigneEchec | LigneRecueNonStockee;
@@ -70,19 +81,37 @@ export function nomOctets(cle: CleRequete, numero: number): string {
   return `${sha256(canoniser(cle))}.${numero}.octets`;
 }
 
-function ecrireOctetsExclusif(chemin: string, octets: Uint8Array): void {
-  let descripteur: number;
-  try {
-    descripteur = openSync(chemin, "wx");
-  } catch (erreur) {
-    if (erreur instanceof Error && "code" in erreur && erreur.code === "EEXIST") throw new OctetsDejaGardes(chemin);
-    throw erreur;
+/** Écrit la totalité du tampon : `writeSync` peut n'en écrire qu'une partie en un seul appel. */
+function ecrireIntegralement(descripteur: number, octets: Uint8Array): void {
+  let ecrit = 0;
+  while (ecrit < octets.length) {
+    ecrit += writeSync(descripteur, octets, ecrit, octets.length - ecrit);
   }
+}
+
+/**
+ * Écrit `octets` sous `<repertoire>/<nom>`, en entier ou pas du tout : un fichier temporaire caché
+ * du même répertoire, écrit intégralement puis synchronisé (`fsync`), est ensuite lié sous son nom
+ * final (`linkSync`, exclusif — jamais de remplacement). Un arrêt pendant l'écriture laisse au plus
+ * le temporaire, jamais le nom final tronqué. `chemin` déjà pris ⇒ `OctetsDejaGardes`, sans écrire.
+ */
+function ecrireOctetsExclusif(repertoire: string, nom: string, octets: Uint8Array): void {
+  const chemin = join(repertoire, nom);
+  const tmp = join(repertoire, `.${nom}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
+  const descripteur = openSync(tmp, "wx");
   try {
-    writeSync(descripteur, octets);
+    ecrireIntegralement(descripteur, octets);
     fsyncSync(descripteur);
   } finally {
     closeSync(descripteur);
+  }
+  try {
+    linkSync(tmp, chemin);
+  } catch (erreur) {
+    if (erreur instanceof Error && "code" in erreur && erreur.code === "EEXIST") throw new OctetsDejaGardes(chemin);
+    throw erreur;
+  } finally {
+    rmSync(tmp, { force: true });
   }
 }
 
@@ -107,6 +136,15 @@ function exigerNumero(valeur: unknown): number {
 
 function exigerTexte(valeur: unknown, nom: string): string {
   if (typeof valeur !== "string") throw new Error(`${nom} absent ou non textuel`);
+  return valeur;
+}
+
+/** `chemin_octets` : un nom de fichier relatif au répertoire des tentatives, ou `null`. Jamais un chemin absolu ni composé (règle 2, D55 (5)). */
+function exigerCheminOctetsOuNul(valeur: unknown): string | null {
+  if (valeur === null) return null;
+  if (typeof valeur !== "string" || valeur.length === 0 || isAbsolute(valeur) || valeur.includes("/") || valeur.includes("\\") || valeur.includes("..")) {
+    throw new Error(`chemin_octets doit être un nom de fichier relatif ou null : ${JSON.stringify(valeur)}`);
+  }
   return valeur;
 }
 
@@ -136,7 +174,7 @@ function lireRecueNonStockee(objet: Readonly<Record<string, unknown>>): LigneRec
   return {
     evenement: "recue_non_stockee",
     numero: exigerNumero(objet["numero"]),
-    chemin_octets: exigerTexte(objet["chemin_octets"], "chemin_octets"),
+    chemin_octets: exigerCheminOctetsOuNul(objet["chemin_octets"]),
     cause: exigerTexte(objet["cause"], "cause"),
   };
 }
@@ -198,7 +236,7 @@ function lignesDe(chemin: string): readonly string[] {
 /** Ce que la relecture du journal d'une requête rend : ses tentatives, ou une requête en attente. */
 export type Reprise =
   | { readonly genre: "tentatives"; readonly tentatives: readonly Tentative[] }
-  | { readonly genre: "recue_non_stockee"; readonly numero: number; readonly chemin_octets: string; readonly cause: string };
+  | { readonly genre: "recue_non_stockee"; readonly numero: number; readonly chemin_octets: string | null; readonly cause: string };
 
 /* ------------------------------------------------------------------ journal */
 
@@ -248,15 +286,18 @@ export class JournalRequete {
     ajouterLigne(this.chemin, { evenement: "echec", numero, erreur });
   }
 
-  /** Garde les octets reçus pour la tentative `numero`, avant toute interprétation (§6, D55 (5)). */
+  /**
+   * Garde les octets reçus pour la tentative `numero`, avant toute interprétation (§6, D55 (5)).
+   * Rend le nom de fichier relatif au répertoire des tentatives (jamais un chemin absolu, règle 2).
+   */
   garderOctets(numero: number, octets: Uint8Array): string {
-    const chemin = join(this.repertoire, nomOctets(this.cleOriginale, numero));
-    ecrireOctetsExclusif(chemin, octets);
-    return chemin;
+    const nom = nomOctets(this.cleOriginale, numero);
+    ecrireOctetsExclusif(this.repertoire, nom, octets);
+    return nom;
   }
 
   /** Conclut la ligne ouverte par `inscrireDebut(numero, …)` : la réponse est reçue, non stockée. */
-  inscrireRecueNonStockee(numero: number, chemin_octets: string, cause: string): void {
+  inscrireRecueNonStockee(numero: number, chemin_octets: string | null, cause: string): void {
     ajouterLigne(this.chemin, { evenement: "recue_non_stockee", numero, chemin_octets, cause });
   }
 }
