@@ -3922,17 +3922,21 @@
       "section": "7",
       "citation": "Il ne reçoit jamais l'identité de l'outil noté",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "pipeline/notation/charge-juge.ts:demandeDe (champ normalisation de ReponseSoumise)",
-        "pipeline/notation/juge.ts (a_vu_identite_outil: false, inconditionnel)"
+        "pipeline/notation/charge-juge.ts:reponseSoumise (ReponseSoumise sans normalisation, charge-juge-v5)",
+        "pipeline/notation/vue-annotateur.ts:construireVue (ReponseVue sans normalisation, D18)",
+        "pipeline/notation/juge.ts:notateurDe (a_vu_identite_outil: false, désormais exact)"
       ],
       "tests": [
-        "tests/notation/charge-juge.test.ts « … » (exige la présence de normalisation.fonction, cf. revue 2026-10-12 constat 1)"
+        "tests/notation/charge-juge.test.ts « porte la projection versionnée de la réponse et la version de la normalisation verbatim » (inversé : n'exige plus normalisation.fonction)",
+        "tests/notation/charge-juge.test.ts « D55 (1), §7 : reponse.normalisation (fonction et version de l'adaptateur) n'est jamais soumise au juge »",
+        "tests/notation/vue-annotateur.test.ts « D55 (1), §7 : reponse.normalisation n'est pas davantage montrée à l'humain qu'au juge (D18) »",
+        "tests/notation-humaine/aveuglement.test.ts « chaque route, exécutée sur un run chargé de sentinelles, n'en renvoie aucune » (sentinelle de normalisation.fonction ajoutée)"
       ],
       "lot": "notation",
       "constat": 3,
-      "note": "Revue du 2026-10-12 constat 1, toujours ouvert sur le code actuel (aucun commit sur charge-juge.ts depuis cette revue) : la charge transmise au juge recopie reponse.normalisation.fonction et .version (ex. normaliser_openai), qui nomme l'éditeur, alors que juge.ts inscrit inconditionnellement a_vu_identite_outil: false sur la notation publiée. Le lot notation n'existait pas à la passe du 2026-09-29 (a-implementer) ; il est livré depuis, d'où le passage à contredite."
+      "note": "Corrigé dans #PR, selon D55 (1) (option 1, 2026-10-17) : reponse.normalisation (fonction et version de l'adaptateur, ex. normaliser_openai) retirée de ReponseSoumise, donc de la charge du juge et de la vue de l'annotateur humain (D18 : il reçoit exactement ce que reçoit un juge) ; version de la charge passée à charge-juge-v5 (charge-juge-v4 déjà pris par D55 (9), #168). reponse.normalisation reste dans la réponse publiée (schema/reponse.schema.json, règle 7) et dans la réponse contrefactuelle. juge.ts:notateurDe inscrit toujours a_vu_identite_outil: false, désormais exact."
     },
     {
       "id": "§7.15",

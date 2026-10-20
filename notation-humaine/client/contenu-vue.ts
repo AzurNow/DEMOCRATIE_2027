@@ -24,8 +24,6 @@ export type Bloc =
 export const CHAMPS_NON_AFFICHES: Readonly<Record<string, string>> = {
   version_vue: "version du format de la vue : identifiant technique, aucune information sur la réponse",
   version_grille: "la session la montre déjà (Session.version_grille), à côté de la grille",
-  "reponse.normalisation.fonction": "nom de la fonction de projection de l'adaptateur : identifiant technique",
-  "reponse.normalisation.version": "version de la fonction de projection : identifiant technique",
   version_normalisation_verbatim: "version de la normalisation du test verbatim : sert au contrôle de l'extrait, pas au jugement",
 };
 

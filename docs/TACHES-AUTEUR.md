@@ -324,7 +324,7 @@ Mis à jour le 2026-10-16. Sources relues : `docs/feuille-de-route.json`, `docs/
       commune restent en attente : le §7 n'admet pas d'arbitre ici ; faut-il un troisième humain ?
       (2) `reponse.normalisation.fonction` est montrée au juge et à l'humain : imposer aux
       adaptateurs un nom neutre, qui ne trahisse pas l'outil ? Tranché en D55 (1) le 2026-10-17 :
-      `normalisation` sort de la charge du juge. (3) double soumission : garder deux
+      `normalisation` sort de la charge du juge, codé dans #PR. (3) double soumission : garder deux
       messages (« tâche indisponible », « fichier déjà écrit ») ou un seul ?
 
 - [ ] **Cadrer l'écrivain du gel** (lot notation, #89) : aucun code n'écrit `run.json` ni

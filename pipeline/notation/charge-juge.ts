@@ -21,9 +21,14 @@
  * transmis. Le nom du candidat arrive par la question et par les textes de l'item, qui le portent ;
  * l'identifiant du candidat de chaque item est transmis, l'item le portant.
  *
- * **Normalisation.** La charge porte `reponse.normalisation` (la fonction de projection de
- * l'adaptateur et sa version) et la version de la normalisation du test verbatim
- * (`validation/domaine/normalisation.ts`, `VERSION_NORMALISATION`), contre laquelle son extrait
+ * **Normalisation (charge-juge-v5, D55 (1), §7).** `reponse.normalisation` (la fonction de
+ * projection de l'adaptateur et sa version, p. ex. `normaliser_openai`) n'est plus soumise : son nom
+ * nommerait l'éditeur noté, exactement ce que le §7 interdit (« il ne reçoit jamais l'identité de
+ * l'outil noté »). Elle reste dans la réponse publiée (`schema/reponse.schema.json`, règle 7), où
+ * elle sert de trace de la projection appliquée, et la réponse contrefactuelle la recopie comme le
+ * reste du brut non permuté. Seule la version de la normalisation du test verbatim
+ * (`validation/domaine/normalisation.ts`, `VERSION_NORMALISATION`), interne au banc et qui ne désigne
+ * aucun outil, reste transmise (`version_normalisation_verbatim`), contre laquelle l'extrait
  * justificatif sera contrôlé (`extrait.ts`).
  *
  * **Ce qu'un fichier du run sait déjà (D27, 2026-10-09).** La charge v3 transmet au juge ce que le
@@ -70,8 +75,9 @@ import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
  * prémisse de la formulation, réponse attendue, texte des pages citées et sa borne ; le juge ne rend
  * plus ni la fraîcheur ni le bloc d'attribution (`juge.ts`). v4 (D55 (9), protocole 0.20) :
  * `candidat_id` et `candidats_attendus` portent l'alias aveugle du candidat, jamais son identifiant.
+ * v5 (D55 (1), §7) : `reponse.normalisation` retirée de `ReponseSoumise`, qui nommait l'éditeur noté.
  */
-export const VERSION_CHARGE_JUGE = "charge-juge-v4";
+export const VERSION_CHARGE_JUGE = "charge-juge-v5";
 
 export interface PromptDeJuge {
   /** Chemin d'un fichier de `prompts/`, fourni par l'appelant. */
@@ -169,7 +175,6 @@ export interface ReponseSoumise {
   readonly citations?: readonly CitationSoumise[];
   readonly troncature: boolean;
   readonly refus_api: boolean;
-  readonly normalisation: { readonly fonction: string; readonly version: string };
 }
 
 /** La question telle que la charge la transmet : la prémisse n'existe que sur la formulation orientée. */
@@ -283,7 +288,6 @@ export function reponseSoumise(reponse: ReponseObtenue | ReponseContrefactuelle)
     ...(projection.citations === undefined ? {} : { citations: projection.citations.map(citationSoumise) }),
     troncature: projection.troncature,
     refus_api: projection.refus_api,
-    normalisation: { fonction: reponse.normalisation.fonction, version: reponse.normalisation.version },
   };
 }
 
