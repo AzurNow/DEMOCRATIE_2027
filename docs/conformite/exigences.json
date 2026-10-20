@@ -7260,7 +7260,7 @@
       ],
       "lot": null,
       "constat": 4,
-      "note": "Corrigé dans #PR (constat 4 de la conformité du 2026-10-19, constat 5 de la revue du 2026-10-12) : tirerDerangement se tire sur les seuls candidats interrogés au run (candidatsInterroges, dans chaine.ts), verifierCandidats continuant de vérifier l'unicité des formes sur tout le périmètre. Un candidat au périmètre mais non interrogé n'a pas d'image : son identifiant n'est pas permuté (reponse-contrefactuelle.ts:imageDeItem, qui lève pour un identifiant hors périmètre) et son libellé ou son nom seul reste en clair (permutation.ts, formes tirées du dérangement). La liste attendue d'une Q-ATT lève si elle désigne un non interrogé (imageDeAttendu, annexe B). L'éligibilité au sous-ensemble (chaine.ts:estEligible) et les correspondances publiées (schema/run.schema.json) ne portent plus que les candidats interrogés."
+      "note": "Corrigé dans #171 (constat 4 de la conformité du 2026-10-19, constat 5 de la revue du 2026-10-12) : tirerDerangement se tire sur les seuls candidats interrogés au run (candidatsInterroges, dans chaine.ts), verifierCandidats continuant de vérifier l'unicité des formes sur tout le périmètre. Un candidat au périmètre mais non interrogé n'a pas d'image : son identifiant n'est pas permuté (reponse-contrefactuelle.ts:imageDeItem, qui lève pour un identifiant hors périmètre) et son libellé ou son nom seul reste en clair (permutation.ts, formes tirées du dérangement). La liste attendue d'une Q-ATT lève si elle désigne un non interrogé (imageDeAttendu, annexe B). L'éligibilité au sous-ensemble (chaine.ts:estEligible) et les correspondances publiées (schema/run.schema.json) ne portent plus que les candidats interrogés."
     },
     {
       "id": "§7.42",
