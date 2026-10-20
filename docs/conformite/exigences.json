@@ -3931,6 +3931,8 @@
       "tests": [
         "tests/notation/charge-juge.test.ts « porte la projection versionnée de la réponse et la version de la normalisation verbatim » (inversé : n'exige plus normalisation.fonction)",
         "tests/notation/charge-juge.test.ts « D55 (1), §7 : reponse.normalisation (fonction et version de l'adaptateur) n'est jamais soumise au juge »",
+        "tests/notation/charge-juge.test.ts « D55 (1) : la réponse elle-même, donc celle qui est publiée, garde reponse.normalisation ; seule la charge en est privée »",
+        "tests/notation/reponse-contrefactuelle.test.ts (permutee.normalisation égale à celle d'origine, inchangé par D55 (1))",
         "tests/notation/vue-annotateur.test.ts « D55 (1), §7 : reponse.normalisation n'est pas davantage montrée à l'humain qu'au juge (D18) »",
         "tests/notation-humaine/aveuglement.test.ts « chaque route, exécutée sur un run chargé de sentinelles, n'en renvoie aucune » (sentinelle de normalisation.fonction ajoutée)"
       ],
