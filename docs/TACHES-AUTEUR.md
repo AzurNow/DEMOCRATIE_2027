@@ -666,7 +666,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       suivie d'un rang, de 1 à n, n étant le nombre de candidats interrogés au run. L'ordre des
       rangs est tiré avec une graine dérivée de l'aléa par la clé « alias_candidats », comme les
       autres graines du run, sans aucune saisie de l'auteur. La table qui associe chaque alias à
-      son candidat est publiée avec le run. » Codé par la PR #PR : graine `alias_candidats`
+      son candidat est publiée avec le run. » Codé par la PR #168 : graine `alias_candidats`
       (sixième graine du run), table publiée dans `run.json#/alias_candidats`, `candidat_id` et
       `candidats_attendus` aliasés dans la charge du juge (charge-juge-v4).
 - [ ] (D55, 2026-10-17) **Écrire, à la nouvelle version de la table des liens (D55 (2)), la règle
