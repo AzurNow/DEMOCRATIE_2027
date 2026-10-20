@@ -5,9 +5,9 @@
 
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
-import { CorpsNonUtf8 } from "../../pipeline/interrogation/editeur.ts";
 import { CORPS_REFUS_LISTE, LATENCE_SIMULEE_MS } from "../../pipeline/interrogation/editeur-simule.ts";
 import { RunHorsFenetre } from "../../pipeline/interrogation/executer.ts";
+import { messageAttenteOperateur } from "../../pipeline/interrogation/operateur.ts";
 import { empreinteOctets, MESSAGE_TIMEOUT } from "../../pipeline/interrogation/tentatives.ts";
 import type { ReponseManquante, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { canoniser, empreinteDe } from "../../validation/domaine/empreinte.ts";
@@ -166,7 +166,7 @@ describe("corps qui ne sont pas des objets JSON (décisions de l'auteur du 2026-
     const suite = banc(undefined, b.racine);
     courant = suite;
     suite.editeur("outil-alpha", scenarioScripte([]));
-    expect(await suite.executer(plan(requete()))).toEqual({ ecrites: 0, deja_ecrites: 1 });
+    expect(await suite.executer(plan(requete()))).toEqual({ ecrites: 0, deja_ecrites: 1, en_attente_operateur: [] });
     expect(transportDe(suite).interne.recues).toHaveLength(0);
   });
 
@@ -182,11 +182,20 @@ describe("corps qui ne sont pas des objets JSON (décisions de l'auteur du 2026-
     expect(reponse.metadonnees.stop_reason).toBeNull();
   });
 
-  it("corps non UTF-8 : erreur explicite, rien n'est écrit", async () => {
+  it("corps non UTF-8 : octets gardés sous volume/, événement recue_non_stockee, en attente de l'opérateur (§6, D55 (5))", async () => {
     const b = nouveauBanc();
-    b.editeur("outil-alpha", () => ({ genre: "corps", statut: 200, corps: new Uint8Array([0x7b, 0xff, 0xfe, 0x7d]) }));
-    await expect(b.executer(plan(requete()))).rejects.toThrow(CorpsNonUtf8);
+    const corps = new Uint8Array([0x7b, 0xff, 0xfe, 0x7d]);
+    b.editeur("outil-alpha", () => ({ genre: "corps", statut: 200, corps }));
+    const bilan = await b.executer(plan(requete()));
+    expect(bilan.ecrites).toBe(0);
+    expect(bilan.deja_ecrites).toBe(0);
+    expect(bilan.en_attente_operateur).toHaveLength(1);
+    const [attente] = bilan.en_attente_operateur;
+    expect(attente?.numero).toBe(1);
+    expect(attente?.cause).toContain("UTF-8");
+    expect(Array.from(readFileSync(attente?.chemin_octets as string))).toEqual(Array.from(corps));
     expect(b.lues()).toHaveLength(0);
+    expect(transportDe(b).interne.recues).toHaveLength(1);
   });
 
   it("brut_octets_sha256 diffère de brut_sha256 sur un corps à gros entier et clés réordonnées, et égale le SHA-256 des octets envoyés", async () => {
@@ -203,6 +212,61 @@ describe("corps qui ne sont pas des objets JSON (décisions de l'auteur du 2026-
     expect(reponse.brut_octets_sha256).not.toBe(reponse.brut_sha256);
     // La lecture JSON a perdu l'entier exact : c'est ce que l'empreinte des octets rend visible.
     expect(String(reponse.brut?.["id"])).not.toBe("12345678901234567890");
+  });
+});
+
+describe("D55 (5), §6 : réponse reçue, non stockée", () => {
+  it(
+    "écriture de la réponse structurée qui lève après réception (schéma refusé, p. ex.) : octets gardés, " +
+      "recue_non_stockee, aucune tentative comptée, pas de « manquante »",
+    async () => {
+      const b = nouveauBanc();
+      b.editeur("outil-alpha", scenarioScripte(["reponse"]));
+      const echec = new Error("Écriture simulée en échec (schéma refusé).");
+      const bilan = await b.executer(plan(requete()), {
+        depotPatch: (depot) => {
+          depot.ecrire = () => {
+            throw echec;
+          };
+        },
+      });
+      expect(bilan.ecrites).toBe(0);
+      expect(bilan.en_attente_operateur).toHaveLength(1);
+      const [attente] = bilan.en_attente_operateur;
+      expect(attente?.numero).toBe(1);
+      expect(attente?.cause).toBe(echec.message);
+      const octetsEnvoyes = seule(transportDe(b).rendues).corps;
+      expect(Array.from(readFileSync(attente?.chemin_octets as string))).toEqual(Array.from(octetsEnvoyes));
+      expect(b.lues()).toHaveLength(0);
+      expect(transportDe(b).interne.recues).toHaveLength(1);
+    },
+  );
+
+  it("une requête en recue_non_stockee n'empêche pas une autre requête, d'un autre outil, d'aboutir", async () => {
+    const b = nouveauBanc();
+    const corpsInvalide = new Uint8Array([0x7b, 0xff, 0xfe, 0x7d]);
+    b.editeur("outil-alpha", scenarioScripte(["reponse"]));
+    b.editeur("outil-beta", () => ({ genre: "corps", statut: 200, corps: corpsInvalide }));
+    const normale = requete();
+    const invalide = requete({ outil_id: "outil-beta", alias_aveugle: "B02" });
+    const premier = await b.executer(plan(normale, invalide));
+    expect(premier.ecrites).toBe(1);
+    expect(premier.en_attente_operateur).toHaveLength(1);
+    expect(premier.en_attente_operateur[0]?.requete.outil_id).toBe("outil-beta");
+    expect(seule(b.lues()).outil_id).toBe("outil-alpha");
+
+    const relance = banc(undefined, b.racine);
+    courant = relance;
+    relance.editeur("outil-alpha", scenarioScripte([]));
+    relance.editeur("outil-beta", scenarioScripte([]));
+    const second = await relance.executer(plan(normale, invalide));
+    expect(second).toEqual({ ecrites: 0, deja_ecrites: 1, en_attente_operateur: premier.en_attente_operateur });
+    expect(transportDe(relance, "outil-alpha").interne.recues).toHaveLength(0);
+    expect(transportDe(relance, "outil-beta").interne.recues).toHaveLength(0);
+    const message = messageAttenteOperateur(second.en_attente_operateur[0] as (typeof second.en_attente_operateur)[number]);
+    expect(message).toContain("outil-beta");
+    expect(message).toContain(invalide.question_id);
+    expect(message).toContain("opérateur");
   });
 });
 

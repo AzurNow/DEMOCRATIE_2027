@@ -178,7 +178,7 @@ describe("run gelé, cas 1 : bout en bout", () => {
     const reponses = DepotReponses.ouvrir(join(repertoire, "volume", "reponses")).toutes();
     const prevues = requetesPrevues(repertoire);
     expect(prevues.size).toBeGreaterThan(0);
-    expect(resultat.execution).toEqual({ ecrites: prevues.size, deja_ecrites: 0 });
+    expect(resultat.execution).toEqual({ ecrites: prevues.size, deja_ecrites: 0, en_attente_operateur: [] });
     expect(reponses).toHaveLength(prevues.size);
     expect(new Set(reponses.map(cle))).toEqual(prevues);
     expect(new Set(reponses.map((r) => r.run_id))).toEqual(new Set([avant["id"]]));
@@ -327,7 +327,7 @@ describe("run gelé, cas 7 : reprise d'un run en_cours", () => {
     const fichiers_avant = new Map(readdirSync(reponses).map((nom) => [nom, readFileSync(join(reponses, nom), "utf8")]));
     const second = await lancer(repertoire);
     expect(second.demarrage).toBe("reprend");
-    expect(second.execution).toEqual({ ecrites: 0, deja_ecrites: premier.execution.ecrites });
+    expect(second.execution).toEqual({ ecrites: 0, deja_ecrites: premier.execution.ecrites, en_attente_operateur: [] });
     expect(second.execution.deja_ecrites).toBeGreaterThan(0);
     expect(texte(repertoire, "run.json")).toBe(run_avant);
     expect(new Map(readdirSync(reponses).map((nom) => [nom, readFileSync(join(reponses, nom), "utf8")]))).toEqual(fichiers_avant);
