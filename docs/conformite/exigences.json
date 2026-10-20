@@ -7205,15 +7205,26 @@
       "section": "6",
       "citation": "Une réponse reçue que le banc ne peut stocker est gardée telle quelle et n'est pas renvoyée : elle n'est pas une tentative de l'outil, et la question attend l'opérateur.",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
+        "pipeline/interrogation/journal.ts:garderOctets",
+        "pipeline/interrogation/journal.ts:inscrireRecueNonStockee",
+        "pipeline/interrogation/journal.ts:reprise",
+        "pipeline/interrogation/executer.ts:tenter",
+        "pipeline/interrogation/executer.ts:ecrireObtenue",
         "pipeline/interrogation/executer.ts:executerRequete",
-        "pipeline/interrogation/journal.ts:interrompue"
+        "pipeline/interrogation/operateur.ts:messageAttenteOperateur"
       ],
-      "tests": [],
+      "tests": [
+        "tests/interrogation/executer.test.ts « D55 (5), §6 : réponse reçue, non stockée » « corps non UTF-8 : octets gardés sous volume/, événement recue_non_stockee, en attente de l'opérateur (§6, D55 (5)) »",
+        "tests/interrogation/executer.test.ts « D55 (5), §6 : réponse reçue, non stockée » « écriture de la réponse structurée qui lève après réception (schéma refusé, p. ex.) : octets gardés, recue_non_stockee, aucune tentative comptée, pas de « manquante » »",
+        "tests/interrogation/executer.test.ts « D55 (5), §6 : réponse reçue, non stockée » « une requête en recue_non_stockee n'empêche pas une autre requête, d'un autre outil, d'aboutir »",
+        "tests/interrogation/reprise.test.ts « cas 11 : reprise » « garderOctets qui échoue (collision avec des octets déjà gardés) n'est pas confondu avec recue_non_stockee […] »",
+        "tests/interrogation/operateur.test.ts « opérateur : requête en attente (§6, D55 (5)) »"
+      ],
       "lot": null,
       "constat": 2,
-      "note": "D55 (5), revue du 2026-10-12 constat 6, confirmé ouvert sur le code actuel : executerRequete n'entoure pas contexte.depot.ecrire(...) d'un traitement dédié ; une erreur à cet endroit (corps non UTF-8, normalisation inattendue, schéma refusé) laisse une ligne de journal sans issue, lue comme « tentative interrompue » (journal.ts:interrompue) et renvoyée à la relance, au lieu d'être gardée telle quelle avec la question mise en attente d'un opérateur. Aucun test ne couvre ce chemin (revue : « décision de l'auteur »)."
+      "note": "Corrigé dans #PR (D55 (5), revue du 2026-10-12 constat 6) : les octets reçus sont gardés sous volume/tentatives/ avant toute interprétation (garderOctets) ; si le décodage, la normalisation ou l'écriture de la réponse structurée échoue ensuite, le journal reçoit un événement recue_non_stockee qui conclut la ligne sans compter de tentative ni de « manquante » ; reprise() ne relit plus une telle requête comme tentative interrompue et executerRequete ne la renvoie jamais ; la commande (outils/run-dry.ts) l'imprime nommée et sort avec le code documenté CODE_RECUE_NON_STOCKEE = 4. Périmètre : l'interrogation seule, pas la reformulation ni l'extraction (texte 0.19 du §6, signalé comme suite à faire)."
     },
     {
       "id": "§7.41",

@@ -3,10 +3,10 @@
  * plafond de trois tentatives même après un arrêt brutal, et une relance ne refait rien de fait.
  */
 
-import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { JournalIllisible, JournalRequete, MESSAGE_INTERROMPUE, nomJournal } from "../../pipeline/interrogation/journal.ts";
+import { JournalIllisible, JournalRequete, MESSAGE_INTERROMPUE, nomJournal, nomOctets, OctetsDejaGardes } from "../../pipeline/interrogation/journal.ts";
 import { cleDe } from "../../pipeline/interrogation/types.ts";
 import { banc, plan, requete, scenarioScripte, seule, transportDe, type Banc } from "./aides.ts";
 
@@ -119,6 +119,27 @@ describe("cas 11 : reprise", () => {
     const journal = journalDe(b);
     journal.inscrireDebut(1, "2026-12-01T06:00:00.000+01:00", cleDe(requete()));
     appendFileSync(journal.chemin, `${JSON.stringify({ evenement: "echec", numero: 1, erreur: { type: "refus_api", message: "x" } })}\n`);
-    expect(() => journal.tentativesPassees()).toThrow(JournalIllisible);
+    expect(() => journal.reprise()).toThrow(JournalIllisible);
   });
+
+  it(
+    "garderOctets qui échoue (collision avec des octets déjà gardés) n'est pas confondu avec recue_non_stockee : " +
+      "la file s'arrête, et la relance repart avec un numéro de tentative neuf (§6, D55 (5), option la plus prudente)",
+    async () => {
+      const b = nouveauBanc();
+      mkdirSync(b.tentatives, { recursive: true });
+      writeFileSync(join(b.tentatives, nomOctets(cleDe(requete()), 1)), "octets étrangers, jamais écrits par le banc");
+      b.editeur("outil-alpha", scenarioScripte(["reponse"]));
+      await expect(b.executer(plan(requete()))).rejects.toThrow(OctetsDejaGardes);
+      expect(b.lues()).toHaveLength(0);
+
+      const relance = nouveauBanc(b.racine);
+      relance.editeur("outil-alpha", scenarioScripte(["reponse"]));
+      await relance.executer(plan(requete()));
+      const reponse = seule(relance.lues());
+      expect(reponse.statut_reponse).toBe("obtenue");
+      expect(reponse.tentatives?.map((t) => [t.numero, t.erreur.type])).toEqual([[1, "autre"]]);
+      expect(transportDe(relance).interne.recues).toHaveLength(1);
+    },
+  );
 });

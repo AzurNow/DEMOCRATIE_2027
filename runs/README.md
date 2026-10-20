@@ -29,6 +29,8 @@ runs/<date>/
   volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo
     reponses/<id>.json              une réponse par requête (schema/reponse.schema.json)
     tentatives/<empreinte>.jsonl    le journal des tentatives d'une requête
+    tentatives/<empreinte>.<n>.octets
+                                    octets reçus de la n-ième tentative, gardés avant interprétation
     notations/<id>.json             une notation individuelle par fichier (schema/notation.schema.json)
     reponses-contrefactuelles/<id>.json
                                     les réponses permutées du test contrefactuel (§7), contexte ≠ run
@@ -232,14 +234,15 @@ fuiter l'outil vers un juge aveugle (§7).
   2026-10-02) ; une manquante porte `motif_manquante` : `echecs` (trois tentatives) ou
   `hors_fenetre` (zéro à deux, la fenêtre de 48 h s'étant fermée).
 
-## `volume/tentatives/<empreinte>.jsonl`
+## `volume/tentatives/<empreinte>.jsonl` et `<empreinte>.<numero>.octets`
 
-Un fichier par requête, nommé par le SHA-256 de sa clé canonique (`outil_id`, `question_id`, `mode`,
+Un journal par requête, nommé par le SHA-256 de sa clé canonique (`outil_id`, `question_id`, `mode`,
 `formulation_id`, `echantillon`), en ajout seul. Avant chaque envoi : une ligne `debut` (numéro,
 horodatage, clé), synchronisée sur disque ; après un échec : une ligne `echec` (l'erreur, au format
 de `reponse.schema.json#/$defs/tentative/properties/erreur`). Une relance compte ces lignes : un
-`debut` sans `echec` est une tentative interrompue, comptée comme échouée. C'est ce journal qui fait
-tenir le plafond de trois tentatives du §6 après un arrêt brutal (`pipeline/interrogation/journal.ts`).
+`debut` sans `echec` ni `recue_non_stockee` est une tentative interrompue, comptée comme échouée.
+C'est ce journal qui fait tenir le plafond de trois tentatives du §6 après un arrêt brutal
+(`pipeline/interrogation/journal.ts`).
 
 - **Attente après une relance.** L'attente qui précède la tentative suivante (30 s avant la 2e,
   120 s avant la 3e) repart de la relance, pas de la fin de la tentative interrompue, que le journal
@@ -247,6 +250,15 @@ tenir le plafond de trois tentatives du §6 après un arrêt brutal (`pipeline/i
 - **Journal abîmé.** Une ligne illisible, hors séquence ou tronquée (dernière ligne sans fin de
   ligne, écriture interrompue) arrête la relance avec `JournalIllisible`, qui nomme le fichier et la
   ligne. Il n'y a pas de quarantaine automatique : un humain examine le fichier et décide.
+- **Réponse reçue, non stockée (§6, D55 (5)).** Dès qu'une réponse HTTP est reçue, ses octets exacts
+  sont gardés sous `<empreinte>.<numero>.octets` (écriture exclusive, synchronisée, jamais réécrite —
+  `OctetsDejaGardes` sinon) avant toute interprétation. Si le décodage, la normalisation ou
+  l'écriture de la réponse structurée échoue ensuite, la ligne est conclue par un événement
+  `recue_non_stockee` (numéro, chemin des octets, cause) au lieu de `echec` : ce n'est pas une
+  tentative de l'outil, elle n'entre jamais dans le plafond de trois ni dans le motif « manquante ».
+  Une requête dont le journal porte cet événement n'est plus jamais relue comme une tentative
+  interrompue ni renvoyée : la question attend l'opérateur, et `pnpm run:dry` la nomme en sortant
+  avec le code documenté dans son en-tête (`outils/run-dry.ts`).
 
 ## `volume/liens/` — `pnpm liens <repertoire_run>`
 
