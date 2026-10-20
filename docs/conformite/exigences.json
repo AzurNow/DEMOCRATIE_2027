@@ -7188,17 +7188,22 @@
       "section": "5",
       "citation": "Un état sans objet n'en affirme aucune, comme une question d'attribution.",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
         "pipeline/reformulation/position-affirmee.ts:affirmable",
         "pipeline/reformulation/position-affirmee.ts:positionAffirmeeDemandee"
       ],
       "tests": [
-        "tests/reformulation/position-affirmee.test.ts « item P « sans_objet » ⇒ erreur nommée : le prompt n'admet que pour, contre, conditionnel ou AUCUNE »"
+        "tests/reformulation/position-affirmee.test.ts « item P « sans_objet » ⇒ aucune, comme une question d'attribution (§5, D54 (4)) »",
+        "tests/reformulation/position-affirmee.test.ts « item O dont l'état antérieur est « sans_objet » ⇒ aucune »",
+        "tests/reformulation/position-affirmee.test.ts « item O dont l'état antérieur est « pour » et l'état postérieur « sans_objet » ⇒ toujours l'antérieur, « pour » »",
+        "tests/reformulation/entrees.test.ts « item P « sans_objet » : les tâches se construisent sans lever, position affirmée AUCUNE (§5, D54 (4)) »",
+        "tests/reformulation/lecture-au-gel.test.ts « item P « sans_objet » : la position recalculée est AUCUNE, le gel passe sans lever »",
+        "tests/reformulation/lecture-au-gel.test.ts « item O dont l'état antérieur est « sans_objet » : la position recalculée est AUCUNE, le gel passe sans lever »"
       ],
       "lot": null,
       "constat": 6,
-      "note": "D54 (4), revue du 2026-10-17 constat 5, confirmé ouvert sur le code actuel : affirmable() lève PositionNonAffirmable pour « sans_objet » au lieu de rendre AUCUNE, ce qui arrête pnpm reformuler, l'écran de relecture et le gel dès qu'un item P ou O validé porte cet état."
+      "note": "Corrigé dans #PR (D54 (4), revue du 2026-10-17 constat 5) : affirmable() rend AUCUNE pour l'état « sans_objet » sur un item P ou sur l'état ANTÉRIEUR d'un item O, au lieu de lever PositionNonAffirmable ; une position hors du vocabulaire fermé (ni pour, contre, conditionnel, ni sans_objet) continue de lever ce refus nommé. pnpm reformuler, l'écran de relecture et le gel ne s'arrêtent plus sur un tel item."
     },
     {
       "id": "§6.25",
