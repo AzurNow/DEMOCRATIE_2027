@@ -45,6 +45,7 @@ function reponse(): ReponseObtenue {
       mode: "web_activee",
       metadonnees: { ...lue.metadonnees, modele_demande: "modele-demande-secret", modele_renvoye: "modele-renvoye-secret" },
       requete: { ...lue.requete, endpoint: "https://api.editeur-secret.invalid/v1" },
+      normalisation: { fonction: "normaliser_editeurx", version: "1.0.0" },
       normalise: { ...lue.normalise, liens: ["https://exemple.invalid/source"], citations: [CITATION_EDITEUR] },
     },
     "réponse de test",
@@ -74,6 +75,7 @@ function identites(r: ReponseObtenue): readonly string[] {
     r.requete.endpoint,
     r.requete.sha256,
     r.brut_octets_sha256,
+    r.normalisation.fonction,
     CITATION_EDITEUR.type,
     CITATION_EDITEUR.cited_text,
     CITATION_EDITEUR.encryptedIndex,
@@ -135,7 +137,8 @@ describe("aveuglement", () => {
       | "brut_sha256"
       | "brut_octets_sha256"
       | "modele_demande"
-      | "modele_renvoye";
+      | "modele_renvoye"
+      | "normalisation";
     expectTypeOf<Extract<keyof ChargeJuge, Interdits>>().toEqualTypeOf<never>();
     expectTypeOf<Extract<keyof ChargeJuge["reponse"], Interdits>>().toEqualTypeOf<never>();
     expectTypeOf<Extract<keyof ChargeJuge["references"][number], Interdits>>().toEqualTypeOf<never>();
@@ -157,9 +160,7 @@ describe("aveuglement", () => {
         "version_normalisation_verbatim",
       ].sort(),
     );
-    expect(Object.keys(construireCharge(demande()).reponse).sort()).toEqual(
-      ["citations", "liens", "normalisation", "refus_api", "texte", "troncature"].sort(),
-    );
+    expect(Object.keys(construireCharge(demande()).reponse).sort()).toEqual(["citations", "liens", "refus_api", "texte", "troncature"].sort());
   });
 });
 
@@ -173,11 +174,23 @@ describe("contenu", () => {
       citations: [CITATION_NUE],
       troncature: false,
       refus_api: false,
-      normalisation: { fonction: "normaliser_reponse", version: "1.0.0" },
     });
     expect(charge.version_normalisation_verbatim).toBe(VERSION_NORMALISATION);
     expect(charge.version_charge).toBe(VERSION_CHARGE_JUGE);
-    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v4");
+    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v5");
+  });
+
+  it("D55 (1), §7 : reponse.normalisation (fonction et version de l'adaptateur) n'est jamais soumise au juge", () => {
+    const r = reponse();
+    const charge = construireCharge(demande(r));
+    expect("normalisation" in charge.reponse).toBe(false);
+    expect(JSON.stringify(charge)).not.toContain(r.normalisation.fonction);
+  });
+
+  it("D55 (1) : construireCharge ne retire pas normalisation de la réponse source", () => {
+    const r = reponse();
+    construireCharge(demande(r));
+    expect(r.normalisation).toEqual({ fonction: "normaliser_editeurx", version: "1.0.0" });
   });
 
   it("porte la question, la date du run, le prompt désigné et l'identifiant opaque de la réponse", () => {

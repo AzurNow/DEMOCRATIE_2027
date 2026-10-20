@@ -32,8 +32,12 @@ import type { Instant, VerdictExistence } from "../../analysis/types.ts";
 import type { ReponseObtenue } from "../interrogation/types.ts";
 import { contenuSoumis, type CitationSoumise, type ContenuSoumis, type DemandeCharge } from "./charge-juge.ts";
 
-/** Version du format de la vue : un champ ajouté ou retiré la change. v2 : la charge v3 (D27). */
-export const VERSION_VUE_ANNOTATEUR = "vue-annotateur-v2";
+/**
+ * Version du format de la vue : un champ ajouté ou retiré la change. v2 : la charge v3 (D27). v3 :
+ * la charge v5 (D55 (1), §7) — `reponse.normalisation` n'est plus soumise, D18 obligeant l'humain à
+ * recevoir exactement ce que reçoit un juge.
+ */
+export const VERSION_VUE_ANNOTATEUR = "vue-annotateur-v3";
 
 /**
  * Version de la grille de notation humaine : la grille du §7 telle que la saisie la porte
@@ -68,7 +72,6 @@ export interface ReponseVue {
   readonly citations?: readonly CitationSoumise[];
   readonly troncature: boolean;
   readonly refus_api: boolean;
-  readonly normalisation: { readonly fonction: string; readonly version: string };
 }
 
 export interface VueAnnotateur extends Omit<ContenuSoumis, "reponse"> {
@@ -108,7 +111,6 @@ export function construireVue(demande: DemandeVue): VueAnnotateur {
       ...(soumise.citations === undefined ? {} : { citations: soumise.citations }),
       troncature: soumise.troncature,
       refus_api: soumise.refus_api,
-      normalisation: soumise.normalisation,
     },
   };
 }

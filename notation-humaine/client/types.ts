@@ -95,7 +95,6 @@ export interface Vue {
     readonly citations?: readonly Citation[];
     readonly troncature: boolean;
     readonly refus_api: boolean;
-    readonly normalisation: { readonly fonction: string; readonly version: string };
   };
   readonly references: readonly ItemSoumis[];
   readonly version_normalisation_verbatim: string;

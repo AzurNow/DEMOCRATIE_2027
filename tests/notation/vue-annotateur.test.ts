@@ -40,6 +40,7 @@ function reponse(liens: readonly string[] = [LIEN_A, LIEN_B]): ReponseObtenue {
       mode: "web_activee",
       metadonnees: { ...lue.metadonnees, modele_demande: "modele-demande-secret", modele_renvoye: "modele-renvoye-secret" },
       requete: { ...lue.requete, endpoint: "https://api.editeur-secret.invalid/v1" },
+      normalisation: { fonction: "normaliser_editeurx", version: "1.0.0" },
       normalise: { ...lue.normalise, liens: [...liens], citations: [{ url: LIEN_A, texte: "extrait cité", cited_text: "propre-editeur" }] },
     },
     "réponse de test",
@@ -74,12 +75,17 @@ describe("aveuglement de la vue (D18)", () => {
   it("aucun champ d'outil : aucune valeur d'identité de l'outil dans la vue sérialisée", () => {
     const r = reponse();
     const serialisee = JSON.stringify(construireVue(demande(r)));
-    for (const valeur of [r.outil_id, r.alias_aveugle, r.metadonnees.modele_demande, String(r.metadonnees.modele_renvoye), r.requete.endpoint, r.requete.sha256, r.brut_sha256, r.brut_octets_sha256, "propre-editeur"]) {
+    for (const valeur of [r.outil_id, r.alias_aveugle, r.metadonnees.modele_demande, String(r.metadonnees.modele_renvoye), r.requete.endpoint, r.requete.sha256, r.brut_sha256, r.brut_octets_sha256, r.normalisation.fonction, "propre-editeur"]) {
       expect(serialisee).not.toContain(valeur);
     }
     expect(serialisee).not.toContain(JSON.stringify(r.canal));
     expect(serialisee).not.toContain(JSON.stringify(r.mode));
     expect(serialisee).not.toContain('"brut');
+  });
+
+  it("D55 (1), §7 : reponse.normalisation n'est pas davantage montrée à l'humain qu'au juge (D18)", () => {
+    const vue = construireVue(demande());
+    expect("normalisation" in vue.reponse).toBe(false);
   });
 
   it("aucun motif d'appel : ni clé motif, ni aucune valeur de motif_notation", () => {
@@ -110,7 +116,7 @@ describe("aveuglement de la vue (D18)", () => {
         "version_vue",
       ].sort(),
     );
-    expect(Object.keys(vue.reponse).sort()).toEqual(["citations", "liens", "normalisation", "refus_api", "texte", "troncature"].sort());
+    expect(Object.keys(vue.reponse).sort()).toEqual(["citations", "liens", "refus_api", "texte", "troncature"].sort());
     expect(Object.keys(vue.question).sort()).toEqual(["gabarit", "premisse_fausse", "registre", "texte"]);
   });
 
@@ -122,7 +128,6 @@ describe("aveuglement de la vue (D18)", () => {
     expect(vue.question).toEqual(charge.question);
     expect(vue.pages_citees).toEqual(charge.pages_citees);
     expect(vue.longueur_max_texte_page).toBe(charge.longueur_max_texte_page);
-    expect(VERSION_VUE_ANNOTATEUR).toBe("vue-annotateur-v2");
   });
 
   it("hors les liens enrichis et les versions, la vue est la charge du juge sans son prompt", () => {
@@ -140,6 +145,7 @@ describe("aveuglement de la vue (D18)", () => {
     expect(vue.version_grille).toBe(VERSION_GRILLE_HUMAINE);
     expect(vue.version_vue).toBe(VERSION_VUE_ANNOTATEUR);
     expect(VERSION_GRILLE_HUMAINE).toMatch(/^grille-humaine-v\d+$/);
+    expect(VERSION_VUE_ANNOTATEUR).toBe("vue-annotateur-v3");
   });
 });
 

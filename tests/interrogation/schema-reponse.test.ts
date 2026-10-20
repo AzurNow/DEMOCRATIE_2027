@@ -58,6 +58,16 @@ describe("cas 12 : chaque tentative est contrôlée, pas seulement son numéro",
   });
 });
 
+describe("D55 (1), §7 : la trace de normalisation ne peut pas disparaître de la réponse publiée", () => {
+  it("une réponse obtenue sans reponse.normalisation est refusée par le schéma", () => {
+    const obtenue = exemple("valide-01-api-obtenue.json") as Record<string, unknown>;
+    const { normalisation: _normalisation, ...sansNormalisation } = obtenue;
+    const erreur = erreurDeSchema("reponse", sansNormalisation, "obtenue sans normalisation");
+    expect(erreur).not.toBeNull();
+    expect(erreur?.chemins).toContain("");
+  });
+});
+
 describe("les listes fermées du lot égalent les énumérations du schéma", () => {
   it("TYPES_ERREUR_TENTATIVE = $defs/tentative/properties/erreur/properties/type, sans refus_api", () => {
     expect([...TYPES_ERREUR_TENTATIVE]).toEqual(SCHEMA.$defs.tentative.properties.erreur.properties.type.enum);

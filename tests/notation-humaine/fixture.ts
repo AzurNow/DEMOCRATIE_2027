@@ -32,6 +32,8 @@ export const SENTINELLES = {
   alias: "S99",
   autre_humain: "sentinelle-autre-humain",
   extrait_juge: "SENTINELLE-EXTRAIT-DU-JUGE",
+  /** D55 (1), §7 : une fonction de normalisation nommerait l'éditeur noté, jamais soumise. */
+  normalisation: "normaliser_editeurx_sentinelle",
 } as const;
 
 /** Les deux juges du run (`schema/exemples/run/valide-01-mensuel-publie.json`). */
@@ -86,6 +88,7 @@ function reponse(run_id: string, rang: number, question: { readonly id: string; 
       question_id: question.id,
       formulation_id: formulation.id,
       echantillon: rang + 1,
+      normalisation: { fonction: SENTINELLES.normalisation, version: "1.0.0" },
       normalise: { ...base.normalise, liens: lien ? [LIEN] : [] },
     },
     `réponse fictive ${rang}`,

@@ -25,6 +25,7 @@ const INTERDITS = [
   SENTINELLES.alias,
   SENTINELLES.autre_humain,
   SENTINELLES.extrait_juge,
+  SENTINELLES.normalisation,
   "outil_id",
   "alias_aveugle",
   "juge-1",
@@ -97,7 +98,7 @@ describe("1. aveuglement : aucune route ne sert l'outil, un juge ni un autre ann
       ["date_run", "longueur_max_texte_page", "pages_citees", "question", "reponse", "reponse_attendue", "reponse_id", "references", "version_grille", "version_normalisation_verbatim", "version_vue"].sort(),
     );
     expect(Object.keys(vue["question"] as object).sort()).toEqual(["gabarit", "registre", "texte"]);
-    expect(Object.keys(vue["reponse"] as object).sort()).toEqual(["citations", "liens", "normalisation", "refus_api", "texte", "troncature"]);
+    expect(Object.keys(vue["reponse"] as object).sort()).toEqual(["citations", "liens", "refus_api", "texte", "troncature"]);
   });
 
   it("la session ne dit que le pseudonyme de la session", () => {
