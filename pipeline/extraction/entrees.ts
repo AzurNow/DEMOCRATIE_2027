@@ -113,7 +113,8 @@ export function lireEntree(staging: string, cle: string): EntreeLue {
 
 /* ------------------------------------------------------------------ matériau */
 
-const FORMATS_MINUTES: ReadonlySet<string> = new Set(["audio", "video"]);
+/** Formats dont le texte est dérivé d'une transcription minutée (docs/CONTRATS.md §2). */
+export const FORMATS_MINUTES: ReadonlySet<Source["format"]> = new Set(["audio", "video"]);
 
 function fichesDe(staging: string, lue: EntreeLue): readonly unknown[] {
   const repertoire = join(staging, REPERTOIRE_FICHES, lue.entree.sha256_source);

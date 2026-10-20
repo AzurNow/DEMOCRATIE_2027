@@ -22,6 +22,7 @@ import { join } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import * as analyse from "../analysis/types.ts";
 import * as questions from "../pipeline/questions/types.ts";
+import * as run from "../pipeline/run/types.ts";
 import * as client from "../validation/client/types.ts";
 import * as domaine from "../validation/domaine/types.ts";
 import * as promotion from "../validation/domaine/promotion.ts";
@@ -119,6 +120,7 @@ type Element<T extends readonly unknown[]> = T[number];
 
 const ANALYSE = "analysis/types.ts";
 const QUESTIONS = "pipeline/questions/types.ts";
+const RUN_TYPES = "pipeline/run/types.ts";
 const DOMAINE = "validation/domaine/types.ts";
 const CLIENT = "validation/client/types.ts";
 
@@ -131,6 +133,7 @@ const ITEM = "item.schema.json";
 const TIRAGE = "tirage.schema.json";
 const QUESTION = "question.schema.json";
 const DECISION = "decision.schema.json";
+const PERIMETRE = "perimetre.schema.json";
 
 const MODE_DE_TETE = "#/properties/perimetre/properties/outils/items/properties/mode_de_tete";
 const STATUT_AU_GEL = "#/properties/perimetre/properties/candidats/items/properties/statut_au_gel";
@@ -186,6 +189,15 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(QUESTIONS, "STATUTS_SYMETRIE"), valeurs: questions.STATUTS_SYMETRIE, fichier: RUN, pointeur: `${CONDITIONS}/statut` },
   { liste: en(QUESTIONS, "ReponseAttendue.etat_attendu"), valeurs: PONT_ETAT_ATTENDU, fichier: TIRAGE, pointeur: "#/$defs/reponse_attendue/properties/etat_attendu" },
   { liste: en(QUESTIONS, "CandidatAuGel.statut_au_gel"), valeurs: PONT_STATUT_AU_GEL, fichier: RUN, pointeur: STATUT_AU_GEL },
+  // Constat 30 (avec le constat 38 du 2026-10-12) : les listes de pipeline/questions/charger-perimetre.ts,
+  // recopiées dans pipeline/questions/types.ts plutôt que laissées en unions locales sans accord.
+  { liste: en(QUESTIONS, "STATUTS_AU_GEL"), valeurs: questions.STATUTS_AU_GEL, fichier: PERIMETRE, pointeur: "#/$defs/candidat/properties/statut_au_gel" },
+  { liste: en(QUESTIONS, "REGIMES_INCLUSION"), valeurs: questions.REGIMES_INCLUSION, fichier: PERIMETRE, pointeur: "#/properties/regime_inclusion/anyOf/1" },
+  { liste: en(QUESTIONS, "REGIMES_INCLUSION"), valeurs: questions.REGIMES_INCLUSION, fichier: RUN, pointeur: "#/properties/perimetre/properties/regime_inclusion" },
+
+  // pipeline/run/types.ts (constat 30, revue du 2026-10-17)
+  { liste: en(RUN_TYPES, "STATUTS_RUN"), valeurs: run.STATUTS_RUN, fichier: RUN, pointeur: "#/properties/statut" },
+  { liste: en(RUN_TYPES, "TYPES_RUN"), valeurs: run.TYPES_RUN, fichier: RUN, pointeur: "#/properties/type_run" },
 
   // validation/domaine/types.ts
   { liste: en(DOMAINE, "TYPES_ITEM"), valeurs: domaine.TYPES_ITEM, fichier: COMMUN, pointeur: "#/$defs/type_item" },

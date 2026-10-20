@@ -75,15 +75,16 @@ function fusionner(publication: PublicationContrefactuel, ajuster: (run: RunBrut
     // du kappa suivent le kappa.
     return { ...reste, ...(publie?.retire === true ? {} : { kappa_echantillon_humain: kappa, renvois_ecartes_kappa_echantillon: renvois }), ...publie };
   });
-  const { statut, invalidation, ...champs } = publication;
+  const { invalidation, ...champs } = publication;
   const run: RunBrut = {
     ...base,
     ...champs,
     juges,
-    ...(statut === undefined ? {} : { statut }),
     // Modifié ouvertement (D51 (2)) : l'appelant date l'invalidation qu'il inscrit (inscription-contrefactuel.ts),
-    // et le schéma exige désormais cette date ; la publication n'en porte pas.
-    ...(invalidation === undefined ? {} : { invalidation: { ...invalidation, date: "2026-12-02T10:00:00+01:00" } }),
+    // et le schéma exige désormais cette date ; la publication n'en porte pas. Le statut, lui, n'est
+    // jamais écrit par publierContrefactuel (constat 34, revue du 2026-10-17) : c'est l'appelant qui,
+    // pour ce test, le fait passer à invalide afin de garder le run fusionné conforme au schéma.
+    ...(invalidation === undefined ? {} : { statut: "invalide", invalidation: { ...invalidation, date: "2026-12-02T10:00:00+01:00" } }),
   };
   return ajuster(run);
 }
@@ -99,7 +100,7 @@ describe("12. ResultatContrefactuel → champs du run", () => {
     };
     const publication = publierContrefactuel(resultat, sousEnsemble(200, 480), CYCLE, runDeNotation());
     expect(publication.taux_echantillon_humain).toBe(0.25);
-    expect(publication.statut).toBeUndefined();
+    expect(publication.invalidation).toBeUndefined();
     expect(publication.contrefactuel_candidats).toEqual({
       etat: "termine",
       eligibles: 480,
@@ -169,7 +170,7 @@ describe("12. ResultatContrefactuel → champs du run", () => {
     expect(() => valider("run", fusionner(publication), "run fusionné")).not.toThrow();
   });
 
-  it("run_invalide : les deux juges retirés, statut invalide et motif, sans nouveau champ (D16 (3))", () => {
+  it("run_invalide : les deux juges retirés, motif publié, sans nouveau champ (D16 (3)) ; le statut n'est jamais écrit ici (constat 34)", () => {
     const resultat: ResultatContrefactuel = {
       statut: "run_invalide",
       raison: "Les deux juges dépassent 3 % de changement au test contrefactuel des noms de candidats : aucun juge n'est retenu (§7, D16 (3)).",
@@ -178,7 +179,9 @@ describe("12. ResultatContrefactuel → champs du run", () => {
       juges: [resultatJuge("j1", 1, true, 20), resultatJuge("j2", 2, true, 20)],
     };
     const publication = publierContrefactuel(resultat, sousEnsemble(20), CYCLE, runDeNotation());
-    expect(publication.statut).toBe("invalide");
+    // Le run invalide se reconnaît à resultat.statut === "run_invalide" et à sa raison (chaine.ts
+    // en fait de même) ; publierContrefactuel ne produit ni ne lit de champ "statut".
+    expect(resultat.statut).toBe("run_invalide");
     expect(publication.invalidation).toEqual({ motif: resultat.raison });
     expect(publication.taux_echantillon_humain).toBe(0.25);
     expect(publication.juges.every((j) => j.retire)).toBe(true);

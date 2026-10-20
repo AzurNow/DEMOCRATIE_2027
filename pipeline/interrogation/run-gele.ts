@@ -23,7 +23,7 @@
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
-import { lireFichiersDuRun, PrecedentRefuse, runDeRuns } from "../gel/precedent.ts";
+import { lireFichiersDuRun, messageAttendu, PrecedentRefuse, runDeRuns } from "../gel/precedent.ts";
 import type { FichiersDuRun, MotifPrecedent } from "../gel/precedent.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
@@ -67,13 +67,6 @@ export interface RunGele {
   readonly demarrage: IssueDemarrage<RunJsonGele>;
 }
 
-/** Le message d'une lecture attendue en échec (fichier absent, JSON illisible) ; toute autre erreur est relevée. */
-function messageDeLecture(erreur: unknown): string {
-  if (erreur instanceof SyntaxError) return erreur.message;
-  if (erreur instanceof Error && "code" in erreur && erreur.code === "ENOENT") return erreur.message;
-  throw erreur;
-}
-
 function lireRunJson(repertoire: string, chemin: string): { readonly texte: string; readonly run: RunJsonGele } {
   let texte: string;
   let brut: unknown;
@@ -81,7 +74,7 @@ function lireRunJson(repertoire: string, chemin: string): { readonly texte: stri
     texte = readFileSync(chemin, "utf8");
     brut = JSON.parse(texte);
   } catch (erreur) {
-    throw new RunGeleRefuse("run_json_illisible", repertoire, messageDeLecture(erreur));
+    throw new RunGeleRefuse("run_json_illisible", repertoire, messageAttendu(erreur));
   }
   return { texte, run: valider<RunJsonGele>("run", brut, chemin) };
 }
@@ -106,11 +99,24 @@ function fenetreDuGel(repertoire: string, run: RunJsonGele): Fenetre {
   );
 }
 
-function questionsTirees(repertoire: string, fichiers: FichiersDuRun): readonly Question[] {
+/**
+ * `fichiers` vient de `fichiersVerifies`, qui a déjà refusé (`PrecedentRefuse` « question_introuvable »,
+ * repris en `RunGeleRefuse`) toute entrée du tirage dont la question manquerait à `questions.json` :
+ * ce chemin est donc inatteignable depuis `lireRunGele` (constat 31, revue du 2026-10-17). Gardé
+ * comme garde interne plutôt que supprimé, pour ne pas faire confiance en silence à un appelant
+ * futur qui construirait `FichiersDuRun` sans passer par cette vérification ; une erreur d'invariant,
+ * pas un motif de refus nommé et publié, puisque rien de légitime ne peut l'atteindre.
+ */
+export function questionsTirees(repertoire: string, fichiers: FichiersDuRun): readonly Question[] {
   const parId = new Map(fichiers.questions.map((question) => [question.id, question]));
   return fichiers.tirage.entrees.map((entree) => {
     const question = parId.get(entree.question_id);
-    if (question === undefined) throw new RunGeleRefuse("question_introuvable", repertoire, `${entree.question_id} est tirée mais absente de questions.json.`);
+    if (question === undefined) {
+      throw new Error(
+        `Invariant violé (run gelé ${repertoire}) : ${entree.question_id} est tirée mais absente de questions.json ; ` +
+          `fichiersVerifies aurait dû refuser ce run avant (precedent.ts, question_introuvable).`,
+      );
+    }
     return question;
   });
 }
