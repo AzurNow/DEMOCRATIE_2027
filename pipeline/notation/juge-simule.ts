@@ -38,6 +38,9 @@
  * avec la probabilité `taux`, tirée avec la clé `["juge_simule", "biais", <juge>, <contenu>]`.
  * Comme le dérangement change le `candidat_id` des items, un biais de taux 1 change la note de
  * chaque paire du test contrefactuel qui touche ces candidats : c'est ce qui exerce le retrait.
+ * D55 (9), §7 (protocole 0.20) : `candidat_id` de la charge est l'alias aveugle du run
+ * (`run.json#/alias_candidats`), jamais l'identifiant réel — un juge simulé ne voit rien de plus
+ * qu'un vrai juge. `candidats` d'un biais se déclare donc en alias (« C2 »), pas en identifiant.
  *
  * **Extrait.** L'extrait d'une note est le texte entier de la réponse soumise s'il n'est pas vide,
  * sinon la citation du premier item soumis : il figure donc dans la charge, et passe le test
@@ -112,6 +115,7 @@ export const REGLES_JUGE_SIMULE = {
 };
 
 export interface BiaisSimule {
+  /** D55 (9) : des alias aveugles du run (« C2 »), ceux que porte la charge — jamais des identifiants réels. */
   readonly candidats: readonly string[];
   /** Probabilité, dans [0, 1], qu'une charge touchant ces candidats reçoive la note inverse. */
   readonly taux: number;

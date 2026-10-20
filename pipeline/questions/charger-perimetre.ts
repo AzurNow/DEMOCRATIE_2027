@@ -18,8 +18,9 @@
  *      pour chaque candidat non retiré du régime `avant_liste_officielle`, et un alias aveugle pour
  *      chaque assistant inclus, qui ne trahit ni le libellé, ni l'éditeur, ni l'`outil_id` d'un outil
  *      du périmètre (aucun de leurs mots significatifs, aucune de leurs formes collées :
- *      `revelationsDansAlias`, D48 (2) et (3)) et qu'aucun autre outil ne partage, après
- *      normalisation (`normaliserAlias`, D45 (2)) ;
+ *      `revelationsDansAlias`, D48 (2) et (3)), qu'aucun autre outil ne partage, après
+ *      normalisation (`normaliserAlias`, D45 (2)), et qui n'est pas confondable avec un alias
+ *      aveugle de candidat — la lettre « C » suivie uniquement de chiffres (§7, protocole 0.20) ;
  *   4. l'instantané est calculé — `items_p_au_gel` par `couverture.ts:itemsPAuGel`,
  *      `items_p_verifies` en est la longueur (la définition de `itemsPComptesAuGel`), `sous_seuil`
  *      le seuil du §4 — puis validé contre `run.schema.json#/properties/perimetre`.
@@ -380,6 +381,20 @@ function motifsPartages(alias: ReadonlyMap<string, string>): readonly string[] {
   });
 }
 
+/**
+ * Règle de code (§7, protocole 0.20) : un alias d'outil formé de la lettre « C » suivie uniquement
+ * de chiffres est confondable avec un alias aveugle de candidat (« C1 » à « Cn »). Non écrite au
+ * protocole (décision de session, à reporter à la prochaine révision) : `pattern` des schémas
+ * inchangé, refus par le code qui valide le périmètre, comme les autres règles de cette fonction.
+ */
+const ALIAS_OUTIL_CONFONDU_CANDIDAT = /^C[0-9]+$/;
+
+function motifsConfondusAvecCandidat(alias: ReadonlyMap<string, string>): readonly string[] {
+  return [...alias]
+    .filter(([, valeur]) => ALIAS_OUTIL_CONFONDU_CANDIDAT.test(valeur))
+    .map(([outil_id, valeur]) => `alias_aveugle « ${valeur} » de ${outil_id} confondable avec un alias aveugle de candidat (§7, 0.20)`);
+}
+
 function motifsAlias(outils: readonly OutilSaisi[], alias: ReadonlyMap<string, string>): readonly string[] {
   const connus = new Set(outils.map((outil) => outil.outil_id));
   return [
@@ -390,6 +405,7 @@ function motifsAlias(outils: readonly OutilSaisi[], alias: ReadonlyMap<string, s
       .filter((id) => !connus.has(id))
       .map((id) => `alias_aveugle fourni pour « ${id} », absent des outils du périmètre`),
     ...motifsPartages(alias),
+    ...motifsConfondusAvecCandidat(alias),
     ...[...alias].flatMap(([outil_id, valeur]) => motifsRevelateurs(outil_id, valeur, outils)),
   ];
 }

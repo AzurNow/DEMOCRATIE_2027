@@ -99,6 +99,7 @@ function enregistrer(contexte: Contexte, notable: Notable, reponse_id: string, s
     items: prep.items,
     date_gel: contexte.donnees.run.date_gel,
     perimetre: contexte.donnees.perimetre,
+    resolu_au_gel: prep.resolu_au_gel,
   });
   // Chaque motif de refus est rendu tel quel : l'annotateur corrige, rien n'est écrit.
   if (resultat.statut === "refusee") return { statut: 422, corps: { statut: "refusee", motifs: resultat.motifs } };

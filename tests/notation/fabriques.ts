@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { empreinte, ulid } from "../analysis/fabriques.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
+import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
 import { notationParRegle } from "../../pipeline/notation/regle-refus.ts";
 import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
@@ -142,6 +143,21 @@ export const CANDIDATS_DU_RUN: readonly CandidatDuRun[] = [
   { candidat_id: "demo-gamma", libelle: "Camille Ollivier", nom: "Ollivier" },
 ];
 
+/** Graine de test de l'alias des candidats (D55 (9)) : les trois candidats sont interrogés. */
+export const GRAINE_ALIAS_CANDIDATS_TEST = { valeur: 20261203, ...GENERATEUR_DU_TIRAGE };
+
+/** La table alias → candidat_id des tests, recalculée comme au gel : jamais une valeur en dur. */
+export const ALIAS_CANDIDATS_TEST = tableAliasCandidats(CANDIDATS_DU_RUN, GRAINE_ALIAS_CANDIDATS_TEST);
+
+const CANDIDAT_VERS_ALIAS_TEST = new Map(Object.entries(ALIAS_CANDIDATS_TEST).map(([alias, candidat_id]) => [candidat_id, alias]));
+
+/** L'alias de test d'un candidat de `CANDIDATS_DU_RUN`, pour écrire les attentes sans deviner la table. */
+export function aliasDeTest(candidat_id: string): string {
+  const alias = CANDIDAT_VERS_ALIAS_TEST.get(candidat_id);
+  if (alias === undefined) throw new Error(`${candidat_id} n'est pas un candidat de test interrogé (ALIAS_CANDIDATS_TEST).`);
+  return alias;
+}
+
 /** Le gel des tests de charge : `run.date_gel` de `run-fictif.ts`. */
 export const GEL_DES_TESTS = "2026-12-01T06:00:00+01:00";
 
@@ -177,7 +193,9 @@ export function runDeNotation(retires: readonly string[] = [], surcharges: Parti
     graines: {
       echantillon_humain: { valeur: 20261201, ...GENERATEUR_DU_TIRAGE },
       contrefactuel: { valeur: 20261202, ...GENERATEUR_DU_TIRAGE },
+      alias_candidats: GRAINE_ALIAS_CANDIDATS_TEST,
     },
+    alias_candidats: ALIAS_CANDIDATS_TEST,
     ...surcharges,
   };
 }

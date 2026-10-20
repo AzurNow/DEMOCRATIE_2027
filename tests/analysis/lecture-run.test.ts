@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { assembler } from "../../analysis/filtre.ts";
 import {
+  AliasCandidatsDivergent,
   dispositionRunNote,
   EmpreinteDivergente,
   FichierDeRunRefuse,
@@ -110,6 +111,17 @@ describe("4. un fichier illisible, invalide ou mal nommé est une erreur qui cit
     ecrireJson(chemin, { ...notation, run_id: "01ZZZZZZZZZZZZZZZZZZZZZZZZ" });
     const erreur = erreurDe(() => lireNotationsDuRun(run.repertoire_run, String(run.run["id"])));
     expect((erreur as FichierDeRunRefuse).motif).toBe("autre_run");
+    expect(erreur.message).toContain(chemin);
+  });
+
+  it("§7 (protocole 0.20), D55 (9) : alias_candidats altéré à la relecture ⇒ AliasCandidatsDivergent", () => {
+    const run = runNote();
+    const chemin = dispositionRunNote(run.repertoire_run).run_json;
+    const objet = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown> & { alias_candidats: Record<string, string> };
+    rmSync(chemin);
+    ecrireJson(chemin, { ...objet, alias_candidats: { ...objet.alias_candidats, C1: "candidat-fantome" } });
+    const erreur = erreurDe(() => lireRunJson(run.repertoire_run));
+    expect(erreur).toBeInstanceOf(AliasCandidatsDivergent);
     expect(erreur.message).toContain(chemin);
   });
 });

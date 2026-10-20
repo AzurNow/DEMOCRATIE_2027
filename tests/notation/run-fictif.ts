@@ -18,6 +18,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { lireRunJson, runDeNotationDe } from "../../analysis/lecture-run.ts";
+import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
 import { decider } from "../../pipeline/notation/decision.ts";
 import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import type { Derangement } from "../../pipeline/notation/derangement.ts";
@@ -28,7 +29,7 @@ import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { entreesPour } from "../../pipeline/questions/tirage.ts";
-import type { CandidatNomme, Item, Question, RunAuGel } from "../../pipeline/questions/types.ts";
+import type { CandidatNomme, GraineTirage, Item, Question, RunAuGel } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { GRILLE_TOUT_VRAI } from "../aides/fabriques.ts";
 import { head, initialiserDepot, RACINE_PROJET } from "../aides/depot.ts";
@@ -99,13 +100,17 @@ function runDuJeu(commit: string, tirage_sha256: string): Record<string, unknown
   const exemple = lireExemple("run/valide-01-mensuel-publie.json") as Record<string, unknown> & {
     perimetre: { candidats: Record<string, unknown>[] };
     versions: Record<string, unknown>;
+    graines: { alias_candidats: GraineTirage };
   };
   const candidat = { ...(exemple.perimetre.candidats[0] as Record<string, unknown>), candidat_id: CANDIDAT };
+  // D55 (9) : un seul candidat ici, contre trois dans l'exemple ; la table se recalcule pour lui.
+  const alias_candidats = tableAliasCandidats([{ candidat_id: CANDIDAT }], exemple.graines.alias_candidats);
   return {
     ...exemple,
     id: RUN_ID,
     date_gel: GEL,
     versions: { ...exemple.versions, donnees_commit: commit },
+    alias_candidats,
     perimetre: { ...exemple.perimetre, candidats: [candidat] },
     tirage: { chemin: `runs/${DATE_DU_RUN}/tirage.json`, sha256: tirage_sha256, nombre_questions: 2 },
   };

@@ -394,7 +394,15 @@ function noterParRegle(etat: Etat, r: Preparee): void {
 }
 
 function demandeDe(etat: Etat, r: Preparee, liens: LiensEtablis): Omit<DemandeCharge, "prompt"> {
-  return { reponse: r.reponse, question: r.question, references: r.references, date_run: etat.run.date_gel, resolu_au_gel: r.resolu_au_gel, pages_citees: liens.pages };
+  return {
+    reponse: r.reponse,
+    question: r.question,
+    references: r.references,
+    date_run: etat.run.date_gel,
+    resolu_au_gel: r.resolu_au_gel,
+    pages_citees: liens.pages,
+    alias_candidats: etat.run.alias_candidats,
+  };
 }
 
 function cibleOrigine(etat: Etat, r: Preparee, liens: LiensEtablis): Cible {

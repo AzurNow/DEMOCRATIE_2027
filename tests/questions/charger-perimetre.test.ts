@@ -466,6 +466,17 @@ describe("cas 11 : alias aveugle et motif d'exclusion", () => {
   });
 });
 
+describe("§7 (protocole 0.20) : un alias d'outil confondable avec un alias aveugle de candidat est refusé", () => {
+  it.each(["C12", "C1234"])("refuse « %s » : la lettre C suivie uniquement de chiffres", (alias) => {
+    const erreur = refus(perimetreComplet(), contexte([["outil-alpha", alias]]));
+    expect(erreur.motifs).toEqual([expect.stringContaining("confondable avec un alias aveugle de candidat")]);
+  });
+
+  it.each(["CA12", "XC12", "B12"])("accepte « %s » : pas la lettre C seule suivie de chiffres", (alias) => {
+    expect(charger(perimetreComplet(), contexte([["outil-alpha", alias]])).perimetre.outils[0]).toMatchObject({ alias_aveugle: alias });
+  });
+});
+
 describe("gel, PR 2b, cas 8 : alias aveugle qui trahit un outil (D45 (2))", () => {
   it("normalisation fixe : NFKD, diacritiques retirés, minuscules, espaces repliés", () => {
     expect(normaliserAlias("  Éditeur \t  ALPHA\n")).toBe("editeur alpha");
