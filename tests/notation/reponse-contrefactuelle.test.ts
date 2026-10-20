@@ -33,6 +33,16 @@ const CYCLE: Derangement = {
     { source: candidat("demo-beta"), image: candidat("demo-gamma") },
     { source: candidat("demo-gamma"), image: candidat("demo-alpha") },
   ],
+  hors_derangement: [],
+};
+
+/** alpha → beta, « demo-gamma » au périmètre mais non interrogé (D55 (4)) : hors du dérangement. */
+const ECHANGE_AVEC_NON_INTERROGE: Derangement = {
+  paires: [
+    { source: candidat("demo-alpha"), image: candidat("demo-beta") },
+    { source: candidat("demo-beta"), image: candidat("demo-alpha") },
+  ],
+  hors_derangement: ["demo-gamma"],
 };
 
 const TEXTE = "Alix Martinez propose de ramener la TVA à 5,5 %, LE BRUN s'y oppose.";
@@ -239,10 +249,17 @@ describe("charge permutée", () => {
     expect(sortie.textes.citations_reference).toEqual(["Martinez : la retraite à 60 ans.", avant.etat_posterieur.citation_verbatim]);
   });
 
-  it("D55 (4) : un item dont le candidat n'est pas au dérangement (non interrogé) garde son identifiant inchangé", () => {
+  it("un item dont le candidat n'est pas au périmètre du dérangement (ni interrogé ni non interrogé) lève", () => {
     const etranger = { ...demande(), references: [{ item: itemP({ candidat_id: "inconnu" }), role: "principal" as const }] };
-    const sortie = demandePermutee(etranger, NOUVEL_ID, CYCLE);
-    expect(sortie.demande.references[0]?.item.candidat_id).toBe("inconnu");
+    expect(() => demandePermutee(etranger, NOUVEL_ID, CYCLE)).toThrow(/inconnu/);
+  });
+
+  it("D55 (4) : un item dont le candidat est au périmètre mais non interrogé garde son identifiant inchangé", () => {
+    const nonInterroge = { ...demande(), references: [{ item: itemP({ candidat_id: "demo-gamma" }), role: "principal" as const }] };
+    const sortie = demandePermutee(nonInterroge, NOUVEL_ID, ECHANGE_AVEC_NON_INTERROGE);
+    expect(sortie.demande.references[0]?.item.candidat_id).toBe("demo-gamma");
+    // Les correspondances publiées (permutation.correspondances) ne portent que les interrogés.
+    expect(Object.keys(sortie.reponse.permutation.correspondances)).not.toContain("demo-gamma");
   });
 
   it("D27 (G) : la liste attendue d'une Q-ATT suit les items, triée ; prémisse et registre recopiés", () => {
@@ -257,6 +274,12 @@ describe("charge permutée", () => {
 
   it("D27 (G) : une réponse attendue sans liste de candidats est recopiée telle quelle", () => {
     expect(demandePermutee(demande(), NOUVEL_ID, CYCLE).demande.resolu_au_gel).toEqual(RESOLU_POSITION_POUR);
+  });
+
+  it("D55 (4), annexe B : une liste attendue contenant un candidat non interrogé lève", () => {
+    const reponse_attendue = { nature: "liste_candidats" as const, candidats_attendus: ["demo-alpha", "demo-gamma"], resolution_temporelle: RESOLU_POSITION_POUR.reponse_attendue.resolution_temporelle };
+    const base = { ...demande(), resolu_au_gel: { reponse_attendue, premisse_fausse: false } };
+    expect(() => demandePermutee(base, NOUVEL_ID, ECHANGE_AVEC_NON_INTERROGE)).toThrow(/demo-gamma/);
   });
 
   it("D27 (E) : le texte des pages citées n'est pas permuté (§7 ne permute que réponse et item ; trou signalé)", () => {

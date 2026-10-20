@@ -53,6 +53,12 @@ export interface PaireDuDerangement {
 export interface Derangement {
   /** Une paire par candidat, dans l'ordre croissant des `candidat_id` des sources. */
   readonly paires: readonly PaireDuDerangement[];
+  /**
+   * Les `candidat_id` du périmètre non interrogés au run, triés par `comparerChaines` (D55 (4)) :
+   * ni source ni image d'aucune paire, mais au périmètre, donc un identifiant que
+   * `reponse-contrefactuelle.ts` garde inchangé plutôt que de le rejeter comme hors périmètre.
+   */
+  readonly hors_derangement: readonly string[];
 }
 
 /**
@@ -65,9 +71,14 @@ export function tirerDerangement(interroges: readonly CandidatDuRun[], perimetre
     throw new Error(`Dérangement impossible : ${interroges.length} candidat(s) interrogé(s) au run, il en faut au moins deux candidats interrogés (§7).`);
   }
   verifierGraine(graine);
+  const idsInterroges = new Set(interroges.map((candidat) => candidat.candidat_id));
+  const hors_derangement = perimetre
+    .filter((candidat) => !idsInterroges.has(candidat.candidat_id))
+    .map((candidat) => candidat.candidat_id)
+    .sort(comparerChaines);
   const ranges = [...interroges].sort((a, b) => comparerChaines(a.candidat_id, b.candidat_id));
   const images = melangeSansPointFixe(ranges, generateur(graineDerivee(graine.valeur, CLE_DERANGEMENT_CANDIDATS)));
-  return { paires: ranges.map((source, rang) => ({ source, image: exiger(images, rang) })) };
+  return { paires: ranges.map((source, rang) => ({ source, image: exiger(images, rang) })), hors_derangement };
 }
 
 /** `reponse.schema.json#/properties/permutation/properties/correspondances` : source → image. */

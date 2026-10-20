@@ -146,7 +146,7 @@ function referencePermutee(reference: ReferenceSoumise, derangement: Derangement
   const { item } = reference;
   const permute: Item = {
     ...item,
-    candidat_id: imageDe(item.candidat_id, derangement),
+    candidat_id: imageDeItem(item.candidat_id, derangement, item.id),
     ...(item.assertion === undefined ? {} : { assertion: etatPermute(item.assertion, permuter) }),
     ...(item.obsolescence === undefined
       ? {}
@@ -174,17 +174,30 @@ function etatPermute(etat: EtatPositionnel, permuter: (texte: string) => string)
 /**
  * D27 (G) : la liste attendue d'une Q-ATT désigne des candidats interrogés (annexe B) ; elle suit
  * leurs items, dont le `candidat_id` devient celui de leur image. Triée comme le tirage la trie. La
- * prémisse, la nature et les dates ne nomment personne : recopiées.
+ * prémisse, la nature et les dates ne nomment personne : recopiées. Un candidat non interrogé n'a
+ * rien à y faire (annexe B) : lève plutôt que de le recopier (D55 (4)).
  */
 function resoluPermute(resolu: ResoluAuGel, derangement: Derangement): ResoluAuGel {
   const candidats = resolu.reponse_attendue.candidats_attendus;
   if (candidats === undefined) return resolu;
-  const images = candidats.map((candidat_id) => imageDe(candidat_id, derangement)).sort(comparerChaines);
+  const images = candidats.map((candidat_id) => imageDeAttendu(candidat_id, derangement)).sort(comparerChaines);
   return { ...resolu, reponse_attendue: { ...resolu.reponse_attendue, candidats_attendus: images } };
 }
 
-/** D55 (4) : un candidat non interrogé n'a pas d'image dans le dérangement ; son identifiant est inchangé. */
-function imageDe(candidat_id: string, derangement: Derangement): string {
+/**
+ * D55 (4) : un candidat au périmètre mais non interrogé n'a pas d'image, son identifiant est
+ * inchangé (`derangement.hors_derangement`) ; un candidat hors périmètre lève, comme avant D55 (4).
+ */
+function imageDeItem(candidat_id: string, derangement: Derangement, item_id: string): string {
   const paire = derangement.paires.find((p) => p.source.candidat_id === candidat_id);
-  return paire === undefined ? candidat_id : paire.image.candidat_id;
+  if (paire !== undefined) return paire.image.candidat_id;
+  if (derangement.hors_derangement.includes(candidat_id)) return candidat_id;
+  throw new Error(`Item ${item_id} : le candidat ${candidat_id} n'est pas un candidat du périmètre du run.`);
+}
+
+/** D55 (4), annexe B : la liste attendue ne désigne que des candidats interrogés ; aucun autre n'y a d'image. */
+function imageDeAttendu(candidat_id: string, derangement: Derangement): string {
+  const paire = derangement.paires.find((p) => p.source.candidat_id === candidat_id);
+  if (paire !== undefined) return paire.image.candidat_id;
+  throw new Error(`La liste attendue : le candidat ${candidat_id} n'est pas un candidat interrogé du dérangement du run (annexe B).`);
 }

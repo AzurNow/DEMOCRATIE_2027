@@ -7245,18 +7245,22 @@
       "code": [
         "pipeline/notation/derangement.ts:tirerDerangement",
         "pipeline/notation/chaine.ts (passerContrefactuel, candidatsInterroges, estEligible ; appel tirerDerangement(interroges, run.candidats, …))",
-        "pipeline/notation/reponse-contrefactuelle.ts:imageDe"
+        "pipeline/notation/reponse-contrefactuelle.ts (imageDeItem, imageDeAttendu)"
       ],
       "tests": [
         "tests/notation/derangement.test.ts « un candidat non interrogé n'a jamais ni source ni image »",
         "tests/notation/derangement.test.ts « une forme ambiguë entre un candidat interrogé et un candidat non interrogé lève : l'unicité se vérifie sur tout le périmètre »",
         "tests/notation/contrefactuel-attribution-interroges.test.ts « avant la correction (dérangement sur tout le périmètre) : le côté permuté est indécidable, la paire est écartée pour les deux juges, aucun taux »",
         "tests/notation/contrefactuel-attribution-interroges.test.ts « corrigé (dérangement sur les seuls interrogés) : le côté permuté reste comparable, aucun renvoi, la paire est comptée dans le taux »",
-        "tests/notation/reponse-contrefactuelle.test.ts « D55 (4) : un item dont le candidat n'est pas au dérangement (non interrogé) garde son identifiant inchangé »"
+        "tests/notation/reponse-contrefactuelle.test.ts « un item dont le candidat n'est pas au périmètre du dérangement (ni interrogé ni non interrogé) lève »",
+        "tests/notation/reponse-contrefactuelle.test.ts « D55 (4) : un item dont le candidat est au périmètre mais non interrogé garde son identifiant inchangé »",
+        "tests/notation/reponse-contrefactuelle.test.ts « D55 (4), annexe B : une liste attendue contenant un candidat non interrogé lève »",
+        "tests/notation/eligibilite-contrefactuelle.test.ts « une réponse et son item qui ne nomment qu'un candidat au périmètre mais non interrogé ne sont pas éligibles »",
+        "tests/notation/eligibilite-contrefactuelle.test.ts « une réponse qui nomme un candidat interrogé est éligible »"
       ],
       "lot": null,
       "constat": 4,
-      "note": "Corrigé dans #PR (constat 4 de la conformité du 2026-10-19, constat 5 de la revue du 2026-10-12) : tirerDerangement se tire sur les seuls candidats interrogés au run (candidatsInterroges, dans chaine.ts), verifierCandidats continuant de vérifier l'unicité des formes sur tout le périmètre. Un candidat non interrogé n'a pas d'image : son identifiant n'est pas permuté (reponse-contrefactuelle.ts:imageDe) et son libellé ou son nom seul reste en clair (permutation.ts, formes tirées du dérangement). L'éligibilité au sous-ensemble (chaine.ts:estEligible) et les correspondances publiées (schema/run.schema.json) ne portent plus que les candidats interrogés."
+      "note": "Corrigé dans #PR (constat 4 de la conformité du 2026-10-19, constat 5 de la revue du 2026-10-12) : tirerDerangement se tire sur les seuls candidats interrogés au run (candidatsInterroges, dans chaine.ts), verifierCandidats continuant de vérifier l'unicité des formes sur tout le périmètre. Un candidat au périmètre mais non interrogé n'a pas d'image : son identifiant n'est pas permuté (reponse-contrefactuelle.ts:imageDeItem, qui lève pour un identifiant hors périmètre) et son libellé ou son nom seul reste en clair (permutation.ts, formes tirées du dérangement). La liste attendue d'une Q-ATT lève si elle désigne un non interrogé (imageDeAttendu, annexe B). L'éligibilité au sous-ensemble (chaine.ts:estEligible) et les correspondances publiées (schema/run.schema.json) ne portent plus que les candidats interrogés."
     },
     {
       "id": "§7.42",

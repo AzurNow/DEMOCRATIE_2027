@@ -417,8 +417,11 @@ function runAvantLeTest(run: RunDeNotation): RunDeNotation {
   return { ...gel, juges: run.juges.map((juge) => ({ juge_id: juge.juge_id, retire: false })), taux_echantillon_humain: 0.1 };
 }
 
-/** D55 (4), §7 (0.19) : éligibilité restreinte aux candidats interrogés, ceux que le dérangement permute. */
-function estEligible(r: Preparee, interroges: readonly CandidatDuRun[]): boolean {
+/**
+ * D55 (4), §7 (0.19) : éligibilité restreinte aux candidats interrogés, ceux que le dérangement
+ * permute. Exportée (signature réduite à ce qu'elle lit) pour un test unitaire direct.
+ */
+export function estEligible(r: Pick<ReponseANoter, "reponse" | "references">, interroges: readonly CandidatDuRun[]): boolean {
   if (r.reponse.normalise.refus_api) return false;
   return nommeUnCandidat(textesNommables(r.reponse.normalise.texte, r.references.map((reference) => reference.item)), interroges);
 }

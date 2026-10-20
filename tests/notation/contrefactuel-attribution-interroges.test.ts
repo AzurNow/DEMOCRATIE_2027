@@ -16,13 +16,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { testerContrefactuel, type PaireContrefactuelle } from "../../pipeline/notation/contrefactuel.ts";
-import type { Derangement } from "../../pipeline/notation/derangement.ts";
+import { tirerDerangement, type Derangement } from "../../pipeline/notation/derangement.ts";
 import type { SousEnsembleContrefactuel } from "../../pipeline/notation/echantillons.ts";
 import { reponseContrefactuelle } from "../../pipeline/notation/reponse-contrefactuelle.ts";
 import { issueDeJuge, type CadreNotationJuge, type IdentiteJuge, type SortieJuge } from "../../pipeline/notation/juge.ts";
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain } from "../../pipeline/notation/types.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
+import type { GraineTirage } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { runDeNotation } from "./fabriques.ts";
@@ -34,23 +36,16 @@ const A: CandidatDuRun = { candidat_id: "a", libelle: "Alix A", nom: "A" };
 const B: CandidatDuRun = { candidat_id: "b", libelle: "Bela B", nom: "B" };
 const C: CandidatDuRun = { candidat_id: "c", libelle: "Cora C", nom: "C" };
 const PERIMETRE = [A, B, C];
-const INTERROGES_IDS = ["a", "c"];
+const INTERROGES = [A, C];
+const INTERROGES_IDS = INTERROGES.map((c) => c.candidat_id);
 
-/** D'autrefois : dérangement tiré sur tout le périmètre (graine 2, voir derangement.test.ts). */
-const DERANGEMENT_D_AUTREFOIS: Derangement = {
-  paires: [
-    { source: A, image: C },
-    { source: B, image: A },
-    { source: C, image: B },
-  ],
-};
+/** Graine 2, celle du cas construit de `derangement.test.ts` : l'image de « c » y est « b ». */
+const GRAINE_DU_CAS: GraineTirage = { valeur: 2, ...GENERATEUR_DU_TIRAGE };
+
+/** D'autrefois : dérangement tiré sur tout le périmètre, interrogés et non interrogés ensemble. */
+const DERANGEMENT_D_AUTREFOIS: Derangement = tirerDerangement(PERIMETRE, PERIMETRE, GRAINE_DU_CAS);
 /** Corrigé (D55 (4)) : dérangement tiré sur les deux seuls interrogés, l'échange. */
-const DERANGEMENT_CORRIGE: Derangement = {
-  paires: [
-    { source: A, image: C },
-    { source: C, image: A },
-  ],
-};
+const DERANGEMENT_CORRIGE: Derangement = tirerDerangement(INTERROGES, PERIMETRE, GRAINE_DU_CAS);
 
 const REPONSE_ID = ulid("rep-cas-construit-d55-4");
 const CONTREFACTUELLE_ID = ulid("rep-cas-construit-d55-4-permutee");
