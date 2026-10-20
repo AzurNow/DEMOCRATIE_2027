@@ -1,6 +1,6 @@
 /**
  * La balise publique d'aléa du gel (§5, décisions D44 et D45 (1)) : le tour retenu, la lecture de deux
- * relais, leurs vérifications, et les dérivations des cinq graines et de l'identifiant du run.
+ * relais, leurs vérifications, et les dérivations des six graines et de l'identifiant du run.
  *
  * - **Chaîne** : quicknet, épinglée ici (`QUICKNET`) et vérifiée contre `/<empreinte>/info` de chaque
  *   relais au gel ; un écart est un refus.
@@ -55,13 +55,14 @@ export const RELAIS: readonly Relais[] = Object.freeze([
   { nom: "drand.cloudflare.com", base: "https://drand.cloudflare.com" },
 ]);
 
-/** La clé lisible de chaque graine : son nom (D44). */
+/** La clé lisible de chaque graine : son nom (D44 ; `alias_candidats`, D55 (9), protocole 0.20). */
 export const CLES_DES_GRAINES: Readonly<Record<NomGraine, string>> = Object.freeze({
   tirage: "tirage",
   echantillon_humain: "echantillon_humain",
   bootstrap: "bootstrap",
   permutation: "permutation",
   contrefactuel: "contrefactuel",
+  alias_candidats: "alias_candidats",
 });
 
 /** La clé de la partie aléatoire de l'identifiant du run (D45 (1)). */
@@ -264,7 +265,7 @@ export function graineDesOctets(octets: Uint8Array): number {
   return Number(valeur >> 11n);
 }
 
-/** Les cinq graines du run, chacune dérivée de l'aléa par sa clé. */
+/** Les six graines du run, chacune dérivée de l'aléa par sa clé. */
 export function valeursDesGraines(alea: string): ValeursDesGraines {
   const valeur = (nom: NomGraine): number => graineDesOctets(empreinteDeCle(alea, CLES_DES_GRAINES[nom]).subarray(0, 8));
   return Object.fromEntries(NOMS_GRAINES.map((nom) => [nom, valeur(nom)])) as Record<NomGraine, number>;

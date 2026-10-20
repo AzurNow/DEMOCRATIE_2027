@@ -36,8 +36,10 @@ import { basename, join } from "node:path";
 import { valider } from "../outils/schemas/valider.ts";
 import type { NomSchema } from "../outils/schemas/noms.ts";
 import { dateParis, lireInstant } from "../pipeline/interrogation/heure-paris.ts";
+import { tableAliasCandidats, type TableAliasCandidats } from "../pipeline/notation/alias-candidats.ts";
 import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain, VerdictProduit } from "../pipeline/notation/types.ts";
 import type { GraineTirage } from "../pipeline/questions/types.ts";
+import { canoniser } from "../validation/domaine/empreinte.ts";
 import type { EntreesAnalyse } from "./filtre.ts";
 import type { CandidatAuGel, EntreeTirage, Item, Question, ReferenceItem, Reponse, Run } from "./types.ts";
 
@@ -132,6 +134,20 @@ export class EmpreinteDivergente extends Error {
   }
 }
 
+/** §7 (protocole 0.20), D55 (9) : la table publiée diverge de celle que la graine et les candidats interrogés recalculent. */
+export class AliasCandidatsDivergent extends Error {
+  readonly chemin: string;
+
+  constructor(chemin: string, publiee: TableAliasCandidats, recalculee: TableAliasCandidats) {
+    super(
+      `${chemin}#/alias_candidats diverge de la table recalculée depuis graines.alias_candidats et les candidats ` +
+        `interrogés : publiée ${JSON.stringify(publiee)}, recalculée ${JSON.stringify(recalculee)}. Rien n'est lu.`,
+    );
+    this.name = "AliasCandidatsDivergent";
+    this.chemin = chemin;
+  }
+}
+
 export class ArchiveInverifiable extends Error {
   readonly chemin: string;
 
@@ -184,7 +200,9 @@ export interface RunLu extends Run {
   readonly depot?: { readonly archives: readonly { readonly nom: string; readonly sha256: string }[] };
   readonly juges: readonly JugeDuRun[];
   readonly taux_echantillon_humain: TauxEchantillonHumain;
-  readonly graines: { readonly echantillon_humain: GraineTirage; readonly contrefactuel: GraineTirage };
+  readonly graines: { readonly echantillon_humain: GraineTirage; readonly contrefactuel: GraineTirage; readonly alias_candidats: GraineTirage };
+  /** §7 (protocole 0.20), D55 (9) : alias (« C1 » à « Cn ») → identifiant, un par candidat interrogé. */
+  readonly alias_candidats: TableAliasCandidats;
   readonly contrefactuel_candidats?: { readonly taille: number };
   /** D51 (2) : posée par `pnpm run:invalider` ou par la notation en D16 (3) ; le run n'est alors plus noté ni décidé. */
   readonly invalidation?: { readonly motif: string; readonly date: string; readonly run_remplacant_id?: string };
@@ -215,6 +233,19 @@ function lireObjet<T>(nom: NomSchema, chemin: string): T {
   return valider<T>(nom, lireJson(chemin, readFileSync(chemin, "utf8")), chemin);
 }
 
+/** §7 (protocole 0.20), D55 (9) : les candidats interrogés au run, la même définition que le dérangement. */
+function candidatsInterroges(run: RunLu): readonly { readonly candidat_id: string }[] {
+  return run.perimetre.candidats.filter((candidat) => candidat.interroge);
+}
+
+/** La table publiée doit être exactement celle que la graine et les candidats interrogés recalculent. */
+function verifierAliasCandidats(run: RunLu, chemin: string): void {
+  const recalculee = tableAliasCandidats(candidatsInterroges(run), run.graines.alias_candidats);
+  if (canoniser(run.alias_candidats) !== canoniser(recalculee)) {
+    throw new AliasCandidatsDivergent(chemin, run.alias_candidats, recalculee);
+  }
+}
+
 /** `run.json`, validé, rangé sous la date de son gel à Paris (`runs/README.md`). */
 export function lireRunJson(repertoire_run: string): RunLu {
   const chemin = dispositionRunNote(repertoire_run).run_json;
@@ -223,6 +254,7 @@ export function lireRunJson(repertoire_run: string): RunLu {
   if (basename(repertoire_run) !== date) {
     throw new FichierDeRunRefuse(chemin, "hors_du_repertoire_du_run", `run gelé le ${date} (heure de Paris), rangé sous ${basename(repertoire_run)}`);
   }
+  verifierAliasCandidats(run, chemin);
   return run;
 }
 
@@ -233,7 +265,8 @@ export function runDeNotationDe(run: RunLu): RunDeNotation {
     candidats: run.perimetre.candidats.map((c) => ({ candidat_id: c.candidat_id, libelle: c.libelle, nom: c.nom })),
     juges: run.juges,
     taux_echantillon_humain: run.taux_echantillon_humain,
-    graines: { echantillon_humain: run.graines.echantillon_humain, contrefactuel: run.graines.contrefactuel },
+    graines: { echantillon_humain: run.graines.echantillon_humain, contrefactuel: run.graines.contrefactuel, alias_candidats: run.graines.alias_candidats },
+    alias_candidats: run.alias_candidats,
     ...(run.contrefactuel_candidats === undefined ? {} : { contrefactuel_candidats: { taille: run.contrefactuel_candidats.taille } }),
   };
 }

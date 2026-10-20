@@ -56,7 +56,7 @@ révision. Ne **jamais** baser une PR sur la branche d'une autre PR non fusionn�
 
 ## État actuel
 
-- Protocole en **version 0.19** (#163, 2026-10-19), pas encore gelé en 1.0. Le jalon J1 (15 octobre) est dépassé :
+- Protocole en **version 0.20** (#166, 2026-10-19), pas encore gelé en 1.0. Le jalon J1 (15 octobre) est dépassé :
   les jalons sont repoussables, la qualité passe avant les dates.
 - Code livré, de T2 à T3 selon les lots : schémas, interface de validation, collecte et
   archivage, extraction double, questions/tirage/symétrie, interrogation simulée, notation et

@@ -44,7 +44,17 @@
       "algorithme": "splitmix64-sha256-v1",
       "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
       "version": "1"
+    },
+    "alias_candidats": {
+      "valeur": 20261206,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
     }
+  },
+  "alias_candidats": {
+    "C1": "cand-b",
+    "C2": "cand-a"
   },
   "engagement": {
     "url": "https://web.archive.org/web/20261130050000/https://github.com/AzurNow/DEMOCRATIE_2027/commit/e6fb06210fafc02fd7479ddbed2d042cc3a5155e",

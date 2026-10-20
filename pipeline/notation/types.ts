@@ -220,7 +220,10 @@ export interface RunDeNotation {
   readonly graines: {
     readonly echantillon_humain: GraineTirage;
     readonly contrefactuel: GraineTirage;
+    readonly alias_candidats: GraineTirage;
   };
+  /** §7 (protocole 0.20), D55 (9) : alias (« C1 » à « Cn ») → identifiant, un par candidat interrogé. */
+  readonly alias_candidats: Readonly<Record<string, string>>;
   /**
    * `run.schema.json#/properties/contrefactuel_candidats`, réduit à la taille du sous-ensemble :
    * le dénominateur du taux de chaque juge plus ses paires écartées (D31 (1)). Absent tant que le

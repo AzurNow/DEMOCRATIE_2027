@@ -7238,14 +7238,23 @@
       "section": "7",
       "citation": "Dans ce que reçoit le juge, chaque candidat est désigné par un alias aveugle stable du run, jamais par son identifiant.",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "pipeline/notation/charge-juge.ts:itemSoumis"
+        "pipeline/notation/alias-candidats.ts:tableAliasCandidats",
+        "pipeline/notation/charge-juge.ts:itemSoumis",
+        "pipeline/notation/charge-juge.ts:reponseAttendueSoumise",
+        "pipeline/gel/assemblage.ts:runDuGel",
+        "analysis/lecture-run.ts:verifierAliasCandidats"
       ],
-      "tests": [],
+      "tests": [
+        "tests/notation/alias-candidats.test.ts « table alias aveugle de candidat »",
+        "tests/notation/charge-juge.test.ts « alias aveugle de candidat (D55 (9)) »",
+        "tests/analysis/lecture-run.test.ts « §7 (protocole 0.20), D55 (9) : alias_candidats altéré à la relecture ⇒ AliasCandidatsDivergent »",
+        "tests/gel/geler.test.ts « §7 (protocole 0.20), D55 (9) : run.json porte la table alias aveugle des candidats interrogés, recalculée de la graine »"
+      ],
       "lot": null,
       "constat": 5,
-      "note": "D55 (9), revue du 2026-10-12 constat 24, confirmé ouvert sur le code actuel : ItemSoumis.candidat_id reprend item.candidat_id tel quel (ex. « jordan-bardella ») dans la charge transmise au juge, sur toute référence de la grille, y compris une question d'attribution. Aucun mécanisme d'alias aveugle de candidat n'existe dans le code ou les schémas (seul outils[].alias_aveugle existe, pour l'identité de l'outil, §7 D23) : la règle reste entièrement à construire."
+      "note": "D55 (9), revue du 2026-10-12 constat 24, codé (option 1 : alias calculé par le code depuis la graine alias_candidats et les candidats interrogés au run, jamais saisi par l'auteur ; forme écrite au protocole 0.20, #166). ItemSoumis.candidat_id et reponse_attendue.candidats_attendus portent désormais l'alias (charge-juge-v4), jamais l'identifiant réel ; la table est publiée dans run.json#/alias_candidats et vérifiée recalculable à la relecture."
     }
   ]
 }

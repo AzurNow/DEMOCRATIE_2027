@@ -70,7 +70,8 @@ afterEach(nettoyerSorties);
 const QUESTION_SANS_NOM = "q_1b2c3d4e5f60718293a4b5c6d7e8f90a";
 /** Q1 : son item nomme Demo-Alpha. */
 const QUESTION_NOMMANTE = "q_0a1b2c3d4e5f60718293a4b5c6d7e8f9";
-const BIAIS_BETA = { candidats: ["demo-beta"], taux: 1 };
+/** D55 (9) : le juge simulé ne voit que l'alias (run.json#/alias_candidats) ; « C2 » est celui de demo-beta, l'image de demo-alpha au dérangement. */
+const BIAIS_BETA = { candidats: ["C2"], taux: 1 };
 
 interface Execution {
   readonly prepare: RunSimulePrepare;

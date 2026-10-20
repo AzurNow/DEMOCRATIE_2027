@@ -16,6 +16,7 @@ import {
   type SaisieAttribution,
   type SaisieHumaine,
 } from "../../pipeline/notation/notation-humaine.ts";
+import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
 import { construireVue, type ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
@@ -25,7 +26,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { itemA, itemF, itemO, itemP } from "../aides/fabriques.ts";
 import { decider } from "../../pipeline/notation/decision.ts";
-import { CANDIDATS_DU_RUN, notationRegle, pagesSansTexte, refusApi, REPONSE_PROJETEE, RESOLU_POSITION_POUR, RUN_ID, runDeNotation } from "./fabriques.ts";
+import { CANDIDATS_DU_RUN, GRAINE_ALIAS_CANDIDATS_TEST, notationRegle, pagesSansTexte, refusApi, REPONSE_PROJETEE, RESOLU_POSITION_POUR, RUN_ID, runDeNotation } from "./fabriques.ts";
 import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
@@ -52,6 +53,15 @@ interface OptionsContexte {
   readonly surcharges?: Partial<ContexteNotationHumaine>;
 }
 
+/** La table alias des tests couvre le périmètre surchargé et tout candidat ajouté par la seule liste attendue. */
+function aliasDeTest(options: Pick<OptionsContexte, "surcharges" | "resolu">): Readonly<Record<string, string>> {
+  const base = options.surcharges?.perimetre?.candidats ?? CANDIDATS_DU_RUN;
+  const connus = new Set(base.map((c) => c.candidat_id));
+  const attendus = options.resolu?.reponse_attendue.candidats_attendus ?? [];
+  const extras = attendus.filter((id) => !connus.has(id)).map((candidat_id) => ({ candidat_id, libelle: candidat_id, nom: candidat_id }));
+  return tableAliasCandidats([...base, ...extras], GRAINE_ALIAS_CANDIDATS_TEST);
+}
+
 function contexte(options: OptionsContexte = {}): ContexteNotationHumaine {
   const items = options.items ?? [itemP()];
   const liens = options.liens ?? [];
@@ -64,6 +74,7 @@ function contexte(options: OptionsContexte = {}): ContexteNotationHumaine {
     resolu_au_gel: options.resolu ?? RESOLU_POSITION_POUR,
     pages_citees: pagesSansTexte(liens.map((l) => l.url_citee), "sans_copie"),
     existences: liens,
+    alias_candidats: aliasDeTest(options),
   });
   return {
     notation_id: ulid("notation-humaine"),
@@ -76,6 +87,7 @@ function contexte(options: OptionsContexte = {}): ContexteNotationHumaine {
     items,
     date_gel,
     perimetre: { candidats: CANDIDATS_DU_RUN, interroges: CANDIDATS_DU_RUN.map((c) => c.candidat_id) },
+    resolu_au_gel: options.resolu ?? RESOLU_POSITION_POUR,
     ...options.surcharges,
   };
 }
@@ -417,6 +429,7 @@ describe("D33 : refus de l'API dans l'échantillon, noté sans extrait", () => {
       resolu_au_gel: RESOLU_POSITION_POUR,
       pages_citees: [],
       existences: [],
+      alias_candidats: aliasDeTest({}),
     });
     return { ...contexte({ items: [item] }), notation_id: ulid(`notation-refus-${annotateur_id}`), annotateur_id, vue };
   }
