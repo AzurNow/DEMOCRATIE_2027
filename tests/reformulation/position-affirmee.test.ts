@@ -74,9 +74,33 @@ describe("position affirmée par la formulation orientée (D42 (3))", () => {
     expect(() => positionAffirmeeDemandee("Q-ORI", sansBloc)).toThrow(ContenuItemAbsent);
   });
 
-  it("item P « sans_objet » ⇒ erreur nommée : le prompt n'admet que pour, contre, conditionnel ou AUCUNE", () => {
+  it("item P « sans_objet » ⇒ aucune, comme une question d'attribution (§5, D54 (4))", () => {
     const item = itemP({ cle: "p-so", candidat_id: "demo-alpha", mesure: MESURE, position: "sans_objet" });
-    expect(() => positionAffirmeeDemandee("Q-ORI", item)).toThrow(PositionNonAffirmable);
+    expect(positionAffirmeeDemandee("Q-ORI", item)).toBe(AUCUNE);
+  });
+
+  it("item O dont l'état antérieur est « sans_objet » ⇒ aucune", () => {
+    const item = itemO({
+      cle: "o-so",
+      candidat_id: "demo-alpha",
+      mesure: MESURE,
+      position: "sans_objet",
+      position_posterieure: "pour",
+      date_changement: "2026-09-02",
+    });
+    expect(positionAffirmeeDemandee("Q-ORI", item)).toBe(AUCUNE);
+  });
+
+  it("item O dont l'état antérieur est « pour » et l'état postérieur « sans_objet » ⇒ toujours l'antérieur, « pour »", () => {
+    const item = itemO({
+      cle: "o-post-so",
+      candidat_id: "demo-alpha",
+      mesure: MESURE,
+      position: "pour",
+      position_posterieure: "sans_objet",
+      date_changement: "2026-09-02",
+    });
+    expect(positionAffirmeeDemandee("Q-ORI", item)).toBe("pour");
   });
 
   it("item O dont l'état antérieur est hors vocabulaire ⇒ erreur nommée", () => {

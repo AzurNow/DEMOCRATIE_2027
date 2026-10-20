@@ -44,7 +44,17 @@
       "algorithme": "splitmix64-sha256-v1",
       "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
       "version": "1"
+    },
+    "alias_candidats": {
+      "valeur": 20261206,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
     }
+  },
+  "alias_candidats": {
+    "C1": "cand-b",
+    "C2": "cand-a"
   },
   "run_precedent": {
     "id": "01K95Q7RG0PRECEDENT0EXEMP0",

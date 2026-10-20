@@ -13,6 +13,7 @@
     "statut",
     "versions",
     "graines",
+    "alias_candidats",
     "balise",
     "engagement",
     "run_precedent",
@@ -146,9 +147,10 @@
         "echantillon_humain",
         "bootstrap",
         "permutation",
-        "contrefactuel"
+        "contrefactuel",
+        "alias_candidats"
       ],
-      "description": "Le protocole exige une graine publiée à quatre endroits différents (§5 tirage, §7 échantillon de 10 % et test contrefactuel, §8 bootstrap et permutation) sans jamais dire où elles vivent.",
+      "description": "Le protocole exige une graine publiée à cinq endroits différents (§5 tirage, §7 échantillon de 10 %, test contrefactuel et alias aveugle de candidat, §8 bootstrap et permutation) sans jamais dire où elles vivent.",
       "properties": {
         "tirage": {
           "$ref": "#/$defs/graine"
@@ -164,6 +166,21 @@
         },
         "contrefactuel": {
           "$ref": "#/$defs/graine_generateur_du_tirage"
+        },
+        "alias_candidats": {
+          "$ref": "#/$defs/graine_generateur_du_tirage",
+          "description": "§7 (protocole 0.20), D55 (9) : amorce la table alias aveugle de candidat (pipeline/notation/alias-candidats.ts)."
+        }
+      }
+    },
+    "alias_candidats": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "description": "§7 (protocole 0.20), D55 (9) : la table alias aveugle de candidat, publiée avec le run et transmise au juge à la place de candidat_id (pipeline/notation/alias-candidats.ts, pipeline/notation/charge-juge.ts). Une entrée par candidat interrogé au run (perimetre.candidats[].interroge), alias C1 à Cn dans un ordre tiré par graines.alias_candidats ; un candidat non interrogé n'a pas d'alias. Recalculable à l'identique depuis cette graine et la liste des candidats interrogés ; un écart est un refus à la relecture.",
+      "patternProperties": {
+        "^C[1-9][0-9]*$": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
         }
       }
     },
@@ -207,14 +224,15 @@
         "cles": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["tirage", "echantillon_humain", "bootstrap", "permutation", "contrefactuel"],
+          "required": ["tirage", "echantillon_humain", "bootstrap", "permutation", "contrefactuel", "alias_candidats"],
           "description": "§5 : la clé lisible dont chaque graine de run.graines est dérivée.",
           "properties": {
             "tirage": { "type": "string", "minLength": 1 },
             "echantillon_humain": { "type": "string", "minLength": 1 },
             "bootstrap": { "type": "string", "minLength": 1 },
             "permutation": { "type": "string", "minLength": 1 },
-            "contrefactuel": { "type": "string", "minLength": 1 }
+            "contrefactuel": { "type": "string", "minLength": 1 },
+            "alias_candidats": { "type": "string", "minLength": 1 }
           }
         },
         "cle_identifiant": { "type": "string", "minLength": 1, "description": "D45 (1) : la clé de la partie aléatoire de l'ULID du run." }

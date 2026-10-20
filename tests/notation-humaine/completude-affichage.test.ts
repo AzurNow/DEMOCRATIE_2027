@@ -13,13 +13,21 @@ import { describe, expect, it } from "vitest";
 import { aplatir, CHAMPS_NON_AFFICHES, contenuVue, type Bloc } from "../../notation-humaine/client/contenu-vue.ts";
 import type { Vue } from "../../notation-humaine/client/types.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
+import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
 import { construireVue, type ExistenceEtablie, type VueAnnotateur } from "../../pipeline/notation/vue-annotateur.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemO, itemP } from "../aides/fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const LIEN_A = "https://exemple.invalid/sentinelle-lien-a";
 const LIEN_B = "https://exemple.invalid/sentinelle-lien-b";
+
+/** D18 : l'humain reçoit la même charge aliasée que le juge (§7, D55 (9)) ; graine de test locale. */
+const ALIAS_CANDIDATS = tableAliasCandidats(
+  [{ candidat_id: "demo-alpha" }, { candidat_id: "sentinelle-candidat-a" }, { candidat_id: "sentinelle-candidat-b" }],
+  { valeur: 20261299, ...GENERATEUR_DU_TIRAGE },
+);
 
 function reponse(normalise: Record<string, unknown>): ReponseObtenue {
   // Non revalidée : le schéma lie la projection au brut stocké, et la vue ne lit que la projection.
@@ -88,6 +96,7 @@ function vueComplete(): VueAnnotateur {
       { url_citee: LIEN_B, texte_disponible: false, raison: "lien_mort" },
     ],
     existences,
+    alias_candidats: ALIAS_CANDIDATS,
   });
 }
 
@@ -104,6 +113,7 @@ function vueMinimale(): VueAnnotateur {
     resolu_au_gel: { reponse_attendue: { nature: "oui", resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", regle: "semi_ouvert" } }, premisse_fausse: false },
     pages_citees: [{ url_citee: LIEN_A, texte_disponible: false, raison: "sans_copie" }],
     existences: [{ url_citee: LIEN_A, verdict_existence: "existe", date_test: "2026-12-03T11:05:00+01:00" }],
+    alias_candidats: ALIAS_CANDIDATS,
   });
 }
 

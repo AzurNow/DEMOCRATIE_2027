@@ -15,7 +15,9 @@
  * 2. `tirerAuGel` puis `fichiersDuGel` : le tirage (`tirage.ts:tirer`, graine du tirage, quotas du
  *    périmètre, tirage du run précédent pour les reprises du §5), puis, une fois la barrière passée, `run.json` qui référence `tirage.json` et
  *    `questions.json` (D48 (4)) par leur chemin et le SHA-256 de leurs octets exacts, et porte la balise (`balise.ts:baliseDuRun`),
- *    l'engagement archivé (D46), le run précédent (D45 (3), `precedent.ts`) et l'empreinte du
+ *    la table alias aveugle de candidat (§7, protocole 0.20, D55 (9), `notation/alias-candidats.ts:tableAliasCandidats`,
+ *    graine `alias_candidats` et candidats interrogés au gel), l'engagement archivé (D46), le run
+ *    précédent (D45 (3), `precedent.ts`) et l'empreinte du
  *    protocole ; enfin les réponses brutes des relais
  *    (sous `balise/`) et de la Wayback Machine (`engagement/wayback.json`, D47 (3)), octet pour
  *    octet. Chaque objet est validé contre son schéma avant d'être rendu.
@@ -36,6 +38,7 @@ import type { PerimetreCharge } from "../questions/charger-perimetre.ts";
 import { tirer } from "../questions/tirage.ts";
 import type { ResultatTirage } from "../questions/tirage.ts";
 import type { Item, Mesure, Question, RunAuGel, Symetrie, Tirage } from "../questions/types.ts";
+import { tableAliasCandidats } from "../notation/alias-candidats.ts";
 import { TAUX_ECHANTILLON_SANS_RETRAIT } from "../notation/taux-echantillon.ts";
 import { tachesDe } from "../reformulation/entrees.ts";
 import { questionsAuGel } from "../reformulation/lecture-au-gel.ts";
@@ -172,6 +175,11 @@ interface TextesEngages {
   readonly questions: string;
 }
 
+/** §7 (protocole 0.20), D55 (9) : les mêmes candidats interrogés que le dérangement du test contrefactuel. */
+function candidatsInterrogesAuGel(prepare: GelPrepare): readonly { readonly candidat_id: string }[] {
+  return prepare.perimetre.perimetre.candidats.filter((candidat) => candidat.interroge);
+}
+
 function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta: MetaDuRun, textes: TextesEngages): unknown {
   const tirage = tire.resultat.tirage;
   return {
@@ -188,6 +196,7 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
       donnees_commit: meta.commit,
     },
     graines: tire.graines,
+    alias_candidats: tableAliasCandidats(candidatsInterrogesAuGel(prepare), tire.graines.alias_candidats),
     balise: baliseDuRun(meta.balise, prepare.date_repertoire),
     engagement: engagementDuRun(meta.engagement, prepare.date_repertoire),
     run_precedent: tire.precedent.run_precedent,

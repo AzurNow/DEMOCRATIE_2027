@@ -7,8 +7,10 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
+import { AUCUNE } from "../../pipeline/reformulation/position-affirmee.ts";
 import { dispositionEntrees, EntreeAbsente, lireCandidats, lireDonnees, tachesDe } from "../../pipeline/reformulation/entrees.ts";
-import { CANDIDATS, ITEMS, LIBELLE, MESURE_BUDGET, MESURE_JARDIN, racineDeTest } from "./aides.ts";
+import { itemP } from "../questions/fabriques.ts";
+import { CANDIDATS, ITEMS, LIBELLE, MESURE_BUDGET, MESURE_JARDIN, promu, racineDeTest } from "./aides.ts";
 
 const racines: string[] = [];
 function racine(options: Parameters<typeof racineDeTest>[0] = {}): string {
@@ -88,5 +90,17 @@ describe("tâches : une demande par question engendrée", () => {
     const surA = taches.filter((tache) => tache.question.candidat_id === "demo-beta");
     expect(new Set(surP.map((tache) => tache.demande.position_affirmee))).toEqual(new Set(["contre"]));
     expect(new Set(surA.map((tache) => tache.demande.position_affirmee))).toEqual(new Set(["AUCUNE"]));
+  });
+
+  it("item P « sans_objet » : les tâches se construisent sans lever, position affirmée AUCUNE (§5, D54 (4))", () => {
+    const itemSansObjet = promu(
+      itemP({ cle: "reformuler-p-sans-objet", candidat_id: "demo-alpha", mesure: MESURE_JARDIN, position: "sans_objet" }),
+    );
+    const avecSansObjet = tachesDe({ items: [...ITEMS, itemSansObjet], mesures: [MESURE_BUDGET, MESURE_JARDIN], candidats: CANDIDATS });
+    const surItem = avecSansObjet.filter((tache) =>
+      tache.question.items.some((entree) => entree.role === "principal" && entree.reference.item_id === itemSansObjet.id),
+    );
+    expect(surItem.length).toBeGreaterThan(0);
+    for (const tache of surItem) expect(tache.demande.position_affirmee).toBe(AUCUNE);
   });
 });

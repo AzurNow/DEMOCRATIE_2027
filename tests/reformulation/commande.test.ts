@@ -25,8 +25,10 @@ import {
   ligneRefusDeTest,
   MESURE_BUDGET,
   MESURE_JARDIN,
+  promu,
   racineDeTest,
 } from "./aides.ts";
+import { itemP } from "../questions/fabriques.ts";
 
 /** Code de sortie documenté dans l'en-tête de `commande.ts` : bilan complet, mais des appels sans réponse. */
 const CODE_ECHECS_APPEL = 2;
@@ -203,6 +205,24 @@ describe("mode réel sur fetch factice", () => {
     expect(propositionsDe(chemin)).toBe(NOMBRE);
     expect(execution.sortie).toContain(`Appels faits : ${NOMBRE} (plafond 100)`);
     expect(execution.sortie).toContain(`  acceptées : ${NOMBRE}`);
+  });
+
+  it("item P « sans_objet » : pnpm reformuler va au bout, code 0, ses orientées demandées sans prémisse (AUCUNE, §5, D54 (4))", async () => {
+    const sansObjet = promu(itemP({ cle: "reformuler-p-sans-objet", candidat_id: "demo-alpha", mesure: MESURE_JARDIN, position: "sans_objet" }));
+    const items = [...ITEMS, sansObjet];
+    const taches = tachesDe({ items, mesures: [MESURE_BUDGET, MESURE_JARDIN], candidats: CANDIDATS });
+    const surItem = taches.filter((tache) => tache.question.items.some((entree) => entree.role === "principal" && entree.reference.item_id === sansObjet.id));
+    expect(surItem.length).toBeGreaterThan(0);
+    const chemin = racine({ items });
+    const positions: string[] = [];
+    const execution = await lancer(reel(chemin), (prompt, rang) => {
+      positions.push(ligneDuPrompt(prompt, "- Position que la prémisse orientée doit affirmer : "));
+      return accepter(prompt, rang);
+    });
+    expect(execution).toMatchObject({ code: 0, envois: taches.length });
+    expect(execution.sortie).toContain(`  acceptées : ${taches.length}`);
+    for (const tache of surItem) expect(lirePropositions(join(chemin, "staging", "formulations"), tache.question.id)).toHaveLength(1);
+    expect(positions.filter((position) => position === "AUCUNE").length).toBeGreaterThanOrEqual(surItem.length);
   });
 
   it("--question vise une seule question ; une question inconnue est refusée", async () => {

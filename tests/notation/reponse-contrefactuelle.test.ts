@@ -15,7 +15,7 @@ import type { ReponseManquante, ReponseObtenue } from "../../pipeline/interrogat
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemA, itemO, itemP } from "../aides/fabriques.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { CANDIDATS_DU_RUN, notationJuge, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
+import { ALIAS_CANDIDATS_TEST, aliasDeTest, CANDIDATS_DU_RUN, notationJuge, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const NOUVEL_ID = ulid("reponse-contrefactuelle");
@@ -80,6 +80,7 @@ function demande(r: ReponseObtenue = reponse()): DemandeCharge {
     prompt: { chemin: "prompts/judge-primaire.md", version: "1.0.0" },
     resolu_au_gel: RESOLU_POSITION_POUR,
     pages_citees: pagesSansTexte(r.normalise.liens),
+    alias_candidats: ALIAS_CANDIDATS_TEST,
   };
 }
 
@@ -178,7 +179,7 @@ describe("charge permutée", () => {
   it("candidat_id de chaque item remplacé par son image ; question et textes des items permutés", () => {
     const { demande: permutee } = demandePermutee(demande(), NOUVEL_ID, CYCLE);
     const charge = construireCharge(permutee);
-    expect(charge.references.map((r) => r.candidat_id)).toEqual(["demo-beta", "demo-beta"]);
+    expect(charge.references.map((r) => r.candidat_id)).toEqual([aliasDeTest("demo-beta"), aliasDeTest("demo-beta")]);
     expect(charge.question.texte).toBe("Quelle est la position d’Maxime Le Brun sur la TVA ?");
     expect(charge.references[0]?.assertion?.paraphrase).toBe("Le Brun veut ramener la TVA sur l'énergie à 5,5 %.");
     expect(charge.references[0]?.assertion?.citation_verbatim).toBe("Moi, Maxime Le Brun, je ramènerai la TVA sur l'énergie à 5,5 %.");
@@ -232,7 +233,7 @@ describe("charge permutée", () => {
     };
     const sortie = demandePermutee({ ...demande(), references: [{ item, role: "principal" }] }, NOUVEL_ID, CYCLE);
     const charge = construireCharge(sortie.demande);
-    expect(charge.references[0]?.candidat_id).toBe("demo-alpha");
+    expect(charge.references[0]?.candidat_id).toBe(aliasDeTest("demo-alpha"));
     expect(charge.references[0]?.obsolescence?.etat_anterieur.citation_verbatim).toBe("Martinez : la retraite à 60 ans.");
     expect(charge.references[0]?.obsolescence?.etat_posterieur.paraphrase).toBe("Alix Martinez passe à 62 ans.");
     expect(sortie.textes.citations_reference).toEqual(["Martinez : la retraite à 60 ans.", avant.etat_posterieur.citation_verbatim]);

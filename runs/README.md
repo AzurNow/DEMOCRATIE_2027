@@ -77,7 +77,8 @@ statut `planifie` et tout ou rien (un temporaire voisin renommé d'un geste) :
   reprises du run précédent (§5) ;
 - `run.json` : fenêtre, `versions.code_commit` et `versions.donnees_commit` (HEAD : `data/` est dans le
   même dépôt), `versions.protocole_sha256` (SHA-256 des octets de `docs/PROTOCOLE.md` au commit gelé),
-  graines, `balise`, `engagement`, `run_precedent`, périmètre au gel, juges, symétrie, `tirage`
+  graines, table `alias_candidats` (alias aveugle de chaque candidat interrogé, §7, protocole 0.20),
+  `balise`, `engagement`, `run_precedent`, périmètre au gel, juges, symétrie, `tirage`
   (`runs/<date>/tirage.json`, SHA-256 de ses octets, nombre de questions tirées) et `questions`
   (`runs/<date>/questions.json`, SHA-256 de ses octets exacts, D48 (4)) — même quand `--sortie` est
   donnée ;
@@ -95,7 +96,8 @@ nommé ; un alias aveugle que deux outils partagent, ou qui trahit le libellé, 
 l'`outil_id` d'un outil du périmètre, après normalisation : il contient un de leurs mots
 significatifs (3 lettres au moins, mots découpés sur tout ce qui n'est ni lettre ni chiffre :
 « Mistral » contre « Mistral AI ») ou leur forme sans espaces ni séparateurs, de 3 lettres au moins aussi (« LeChat »
-contre « Le Chat ») (`PerimetreRefuse`, D45 (2), D48 (2) et (3), D50) ; une fenêtre ouverte à
+contre « Le Chat »), ou qui est la lettre « C » suivie uniquement de chiffres, confondable avec un alias
+aveugle de candidat (`PerimetreRefuse`, D45 (2), D48 (2) et (3), D50, §7 protocole 0.20) ; une fenêtre ouverte à
 `date_gel` ou avant (`OrdreDesInstantsRefuse`, D45 (4), D50) ; une question sans formulations relues sur son texte
 neutre et sa position courants (`FormulationsEnDefautAuGel`) ; **avant tout appel réseau**, un gel
 exécuté avant `date_gel`, ou à l'ouverture de sa fenêtre ou après (`OrdreDesInstantsRefuse`,
@@ -189,9 +191,11 @@ publique de la chaîne (`public_key` de `https://api.drand.sh/<empreinte>/info`,
 même empreinte) avec un client drand qui vérifie les signatures — la bibliothèque JavaScript
 `drand-client` ou le client Go de `github.com/drand/drand`, configurés sur cette empreinte. Pour le
 schéma `bls-unchained-g1-rfc9380`, le message signé est SHA-256 du numéro de tour sur 8 octets
-gros-boutistes, la signature est sur G1 ; (3) recalculer l'aléa, les cinq graines et l'identifiant
+gros-boutistes, la signature est sur G1 ; (3) recalculer l'aléa, les six graines et l'identifiant
 par les règles ci-dessus, et les comparer à `run.json#/balise/alea`, `run.json#/graines` et
-`run.json#/id`. Cette procédure n'a pas encore été rejouée de bout en bout sur un vrai run.
+`run.json#/id` ; (4) recalculer la table alias aveugle de candidat depuis `graines.alias_candidats`
+et les candidats interrogés (`pipeline/notation/alias-candidats.ts:tableAliasCandidats`, §7,
+protocole 0.20), et la comparer à `run.json#/alias_candidats`. Cette procédure n'a pas encore été rejouée de bout en bout sur un vrai run.
 
 ## `verdicts/`, `volume/notations/`, `volume/reponses-contrefactuelles/`
 

@@ -10,9 +10,12 @@
  * le type et le contenu de l'item : ni le candidat (son type d'entrée ne le porte pas), ni une date
  * (la vérité de la prémisse se résout au gel, dans le tirage : `reponse-attendue.ts:premisseFausseAuGel`).
  *
- * Le prompt `prompts/reformulation-1.0.1` n'admet que « pour », « contre », « conditionnel » ou
- * `AUCUNE` : une position « sans_objet » ou hors vocabulaire est refusée, jamais rabattue sur
- * `AUCUNE`.
+ * §5 (protocole 0.19, D54 (4)) : « Un état sans objet n'en affirme aucune, comme une question
+ * d'attribution. » Un item P dont l'assertion est « sans_objet », ou un item O dont l'état
+ * ANTÉRIEUR est « sans_objet », rend donc `AUCUNE`, jamais un refus. Le prompt
+ * `prompts/reformulation-1.0.1` n'admet que « pour », « contre », « conditionnel » ou `AUCUNE` :
+ * une position hors de ce vocabulaire (ni l'un des trois, ni « sans_objet ») reste un refus nommé,
+ * jamais rabattue sur `AUCUNE`.
  */
 
 import { gabaritParCode } from "../questions/gabarits.ts";
@@ -57,17 +60,19 @@ function estAffirmable(position: string): position is PositionAffirmable {
   return (POSITIONS_AFFIRMABLES as readonly string[]).includes(position);
 }
 
-function affirmable(item: ItemLu, etat: EtatPositionnel): PositionAffirmable {
+/** Un état « sans_objet » n'affirme aucune position, comme une question d'attribution (§5). */
+function affirmable(item: ItemLu, etat: EtatPositionnel): PositionDemandee {
+  if (etat.position === "sans_objet") return AUCUNE;
   if (!estAffirmable(etat.position)) throw new PositionNonAffirmable(item, etat.position);
   return etat.position;
 }
 
-function positionDeP(item: ItemLu): PositionAffirmable {
+function positionDeP(item: ItemLu): PositionDemandee {
   if (item.assertion === undefined) throw new ContenuItemAbsent(item, "assertion");
   return affirmable(item, item.assertion);
 }
 
-function positionDeO(item: ItemLu): PositionAffirmable {
+function positionDeO(item: ItemLu): PositionDemandee {
   if (item.obsolescence === undefined) throw new ContenuItemAbsent(item, "obsolescence");
   return affirmable(item, item.obsolescence.etat_anterieur);
 }
