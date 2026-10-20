@@ -6,6 +6,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { VERSION_CHARGE_JUGE } from "../../pipeline/notation/charge-juge.ts";
 import { AttributionIndecidable, issueDeJuge, notationDeJuge, SortieJugeIncoherente, type CadreNotationJuge, type IdentiteJuge, type SortieJuge, type SortieJugeAttribution } from "../../pipeline/notation/juge.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
@@ -180,7 +181,7 @@ describe("(D) et D29 (1) : question d'attribution, le juge relève les noms, le 
         const resultat = issue(sortie, attendue, surcharges);
         if (resultat.type !== "renvoi") throw new Error("renvoi attendu");
         expect(() => valider("renvoi-humain", resultat.renvoi, cas)).not.toThrow();
-        expect(resultat.renvoi).toMatchObject({ motif: "attribution_indecidable", gabarit: "Q-ATT", version_charge: "charge-juge-v3", noms_cites: (sortie as SortieJugeAttribution).noms_cites });
+        expect(resultat.renvoi).toMatchObject({ motif: "attribution_indecidable", gabarit: "Q-ATT", version_charge: VERSION_CHARGE_JUGE, noms_cites: (sortie as SortieJugeAttribution).noms_cites });
       });
     }
 
@@ -202,6 +203,6 @@ describe("(D) et D29 (1) : question d'attribution, le juge relève les noms, le 
   });
 
   it("D29 (4) : la version de la charge est enregistrée dans la notation", () => {
-    expect(qatt(releve(["Martinez", "Le Brun"])).version_charge).toBe("charge-juge-v3");
+    expect(qatt(releve(["Martinez", "Le Brun"])).version_charge).toBe(VERSION_CHARGE_JUGE);
   });
 });

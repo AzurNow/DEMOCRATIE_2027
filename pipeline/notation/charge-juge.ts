@@ -45,11 +45,20 @@
  * ne transmet toujours aucun nom de candidat qui ne figure pas déjà dans la question ou les textes de
  * l'item : une question d'attribution n'en nomme aucun (§5), et le juge relève les noms dans la
  * réponse.
+ *
+ * **Alias aveugle de candidat (charge-juge-v4, §7, protocole 0.20, D55 (9)).** Tout identifiant de
+ * candidat qui atteindrait la charge est remplacé par son alias du run (`alias-candidats.ts`) :
+ * `ItemSoumis.candidat_id` et `reponse_attendue.candidats_attendus`. La table (alias → candidat_id,
+ * publiée avec le run) est reçue de l'appelant dans `DemandeCharge.alias_candidats`, inversée une
+ * fois (`inverserTable`), puis consultée pour chaque champ. Un candidat sans alias — hors des
+ * candidats interrogés au run — fait refuser la charge (`CandidatSansAlias`), jamais transmettre
+ * son vrai identifiant.
  */
 
 import type { Gabarit, Instant, RoleItem } from "../../analysis/types.ts";
 import type { ObjetJson, ReponseObtenue } from "../interrogation/types.ts";
 import type { EntreeTirage, Registre, ReponseAttendue } from "../questions/types.ts";
+import { aliasDeCandidat, inverserTable, type TableAliasCandidats } from "./alias-candidats.ts";
 import { LONGUEUR_MAX_TEXTE_PAGE, type PageCitee } from "./pages-citees.ts";
 import type { ReponseContrefactuelle } from "./reponse-contrefactuelle.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
@@ -59,9 +68,10 @@ import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
  * Version du format de la charge : un champ ajouté ou retiré la change. v2 (décision D15 de
  * l'auteur) : les citations sont projetées sur `{ url, texte }`. v3 (décision D27) : registre et
  * prémisse de la formulation, réponse attendue, texte des pages citées et sa borne ; le juge ne rend
- * plus ni la fraîcheur ni le bloc d'attribution (`juge.ts`).
+ * plus ni la fraîcheur ni le bloc d'attribution (`juge.ts`). v4 (D55 (9), protocole 0.20) :
+ * `candidat_id` et `candidats_attendus` portent l'alias aveugle du candidat, jamais son identifiant.
  */
-export const VERSION_CHARGE_JUGE = "charge-juge-v3";
+export const VERSION_CHARGE_JUGE = "charge-juge-v4";
 
 export interface PromptDeJuge {
   /** Chemin d'un fichier de `prompts/`, fourni par l'appelant. */
@@ -114,6 +124,8 @@ export interface DemandeCharge {
   readonly resolu_au_gel: ResoluAuGel;
   /** Une page par lien distinct de la réponse (`pages-citees.ts:pagesCitees`). */
   readonly pages_citees: readonly PageCitee[];
+  /** `run.alias_candidats` (§7, protocole 0.20, D55 (9)) : alias → candidat_id, publiée avec le run. */
+  readonly alias_candidats: TableAliasCandidats;
 }
 
 export interface EtatSoumis {
@@ -130,6 +142,7 @@ export interface ItemSoumis {
   readonly item_empreinte: string;
   readonly role: RoleItem;
   readonly type: Item["type"];
+  /** L'alias aveugle du candidat (§7, protocole 0.20), jamais son identifiant : `candidat_id` reste le nom du champ. */
   readonly candidat_id: string;
   readonly valide_du: string;
   readonly valide_au: string | null;
@@ -199,15 +212,16 @@ export function contenuSoumis(demande: Omit<DemandeCharge, "prompt">): ContenuSo
     throw new Error(`Réponse ${demande.reponse.id} : aucun item de référence, rien contre quoi noter (notation.schema.json, references_item).`);
   }
   exigerUnePageParLien(demande.reponse, demande.pages_citees);
+  const alias = inverserTable(demande.alias_candidats);
   return {
     date_run: demande.date_run,
     reponse_id: demande.reponse.id,
     question: questionSoumise(demande.question, demande.resolu_au_gel.premisse_fausse),
-    reponse_attendue: reponseAttendueSoumise(demande.resolu_au_gel.reponse_attendue),
+    reponse_attendue: reponseAttendueSoumise(demande.resolu_au_gel.reponse_attendue, alias),
     reponse: reponseSoumise(demande.reponse),
     pages_citees: demande.pages_citees.map(pageSoumise),
     longueur_max_texte_page: LONGUEUR_MAX_TEXTE_PAGE,
-    references: demande.references.map(itemSoumis),
+    references: demande.references.map((reference) => itemSoumis(reference, alias)),
     version_normalisation_verbatim: VERSION_NORMALISATION,
   };
 }
@@ -231,14 +245,14 @@ function questionSoumise(question: QuestionPosee, premisse_fausse: boolean): Que
   };
 }
 
-/** D27 (G) : recopie champ par champ ; aucun champ ajouté au tirage ne passe. */
-function reponseAttendueSoumise(attendue: ReponseAttendue): ReponseAttendue {
+/** D27 (G) : recopie champ par champ ; aucun champ ajouté au tirage ne passe. D55 (9) : candidats_attendus aliasé. */
+function reponseAttendueSoumise(attendue: ReponseAttendue, alias: ReadonlyMap<string, string>): ReponseAttendue {
   const temporelle = attendue.resolution_temporelle;
   return {
     nature: attendue.nature,
     ...(attendue.position === undefined ? {} : { position: attendue.position }),
     ...(attendue.etat_attendu === undefined ? {} : { etat_attendu: attendue.etat_attendu }),
-    ...(attendue.candidats_attendus === undefined ? {} : { candidats_attendus: [...attendue.candidats_attendus] }),
+    ...(attendue.candidats_attendus === undefined ? {} : { candidats_attendus: attendue.candidats_attendus.map((id) => aliasDeCandidat(alias, id)) }),
     resolution_temporelle: {
       date_gel: temporelle.date_gel,
       ...(temporelle.date_changement === undefined ? {} : { date_changement: temporelle.date_changement }),
@@ -288,14 +302,15 @@ function citationSoumise(citation: ObjetJson): CitationSoumise {
   };
 }
 
-export function itemSoumis({ item, role }: ReferenceSoumise): ItemSoumis {
+/** D55 (9) : `candidat_id` porte l'alias aveugle du candidat (`alias`, candidat_id → alias), jamais son identifiant. */
+export function itemSoumis({ item, role }: ReferenceSoumise, alias: ReadonlyMap<string, string>): ItemSoumis {
   return {
     item_id: item.id,
     item_version: item.version,
     item_empreinte: item.empreinte,
     role,
     type: item.type,
-    candidat_id: item.candidat_id,
+    candidat_id: aliasDeCandidat(alias, item.candidat_id),
     valide_du: item.valide_du,
     valide_au: item.valide_au,
     ...(item.assertion === undefined ? {} : { assertion: etatSoumis(item.assertion) }),

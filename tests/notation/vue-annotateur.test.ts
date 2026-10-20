@@ -22,7 +22,7 @@ import {
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemP } from "../aides/fabriques.ts";
-import { pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
+import { ALIAS_CANDIDATS_TEST, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const LIEN_A = "https://exemple.invalid/a";
@@ -59,6 +59,7 @@ function demande(r: ReponseObtenue = reponse(), existences: readonly ExistenceEt
     resolu_au_gel: RESOLU_POSITION_POUR,
     pages_citees: pagesSansTexte(r.normalise.liens),
     existences,
+    alias_candidats: ALIAS_CANDIDATS_TEST,
   };
 }
 

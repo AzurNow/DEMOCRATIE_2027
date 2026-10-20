@@ -21,7 +21,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { ITEM_P } from "./run-fictif.ts";
 import { FIXTURES_INTERROGATION, FIXTURES_NOTATION, parametresDeReference } from "./simulation.ts";
-import { CADRE_V3, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
+import { ALIAS_CANDIDATS_TEST, CADRE_V3, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const temporaires: string[] = [];
 
@@ -51,6 +51,7 @@ function charge(r: ReponseObtenue, gabarit: ChargeJuge["question"]["gabarit"] = 
     prompt: REGLES_JUGE_SIMULE.prompt,
     resolu_au_gel: RESOLU_POSITION_POUR,
     pages_citees: pagesSansTexte(r.normalise.liens),
+    alias_candidats: ALIAS_CANDIDATS_TEST,
   });
 }
 

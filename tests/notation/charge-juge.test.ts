@@ -11,7 +11,7 @@ import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import { itemA, itemO, itemP } from "../aides/fabriques.ts";
-import { CANDIDATS_DU_RUN, GEL_DES_TESTS, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
+import { ALIAS_CANDIDATS_TEST, aliasDeTest, CANDIDATS_DU_RUN, GEL_DES_TESTS, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
 import { LONGUEUR_MAX_TEXTE_PAGE } from "../../pipeline/notation/pages-citees.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 
@@ -60,6 +60,7 @@ function demande(r: ReponseObtenue = reponse()): DemandeCharge {
     prompt: { chemin: "prompts/judge-primaire.md", version: "1.0.0" },
     resolu_au_gel: RESOLU_POSITION_POUR,
     pages_citees: pagesSansTexte(r.normalise.liens),
+    alias_candidats: ALIAS_CANDIDATS_TEST,
   };
 }
 
@@ -176,7 +177,7 @@ describe("contenu", () => {
     });
     expect(charge.version_normalisation_verbatim).toBe(VERSION_NORMALISATION);
     expect(charge.version_charge).toBe(VERSION_CHARGE_JUGE);
-    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v3");
+    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v4");
   });
 
   it("porte la question, la date du run, le prompt désigné et l'identifiant opaque de la réponse", () => {
@@ -198,7 +199,7 @@ describe("contenu", () => {
         item_empreinte: item.empreinte,
         role: "principal",
         type: "P",
-        candidat_id: item.candidat_id,
+        candidat_id: aliasDeTest(item.candidat_id),
         valide_du: "2026-09-01",
         valide_au: "2027-01-01",
         assertion: {
@@ -262,11 +263,20 @@ describe("charge v3 : réponse attendue (G)", () => {
     ["Q-DIR, item O avant changement", { nature: "position_anterieure", etat_attendu: "anterieur", position: "contre", resolution_temporelle: { ...temporelle, date_changement: "2026-12-15" } }],
   ];
 
+  /** D55 (9) : `candidats_attendus` est aliasé, le reste de la réponse attendue est recopié tel quel. */
+  function aliasee(attendue: ReponseAttendue): ReponseAttendue {
+    return attendue.candidats_attendus === undefined ? attendue : { ...attendue, candidats_attendus: attendue.candidats_attendus.map(aliasDeTest) };
+  }
+
   for (const [cas, reponse_attendue] of PAR_GABARIT) {
-    it(`${cas} : présente, identique au tirage, conforme au schéma`, () => {
+    it(`${cas} : présente, identique au tirage (candidats_attendus aliasé)`, () => {
       const charge = construireCharge({ ...demande(), resolu_au_gel: { ...RESOLU_POSITION_POUR, reponse_attendue } });
-      expect(charge.reponse_attendue).toEqual(reponse_attendue);
-      expect(() => validerFragment("tirage", "#/$defs/reponse_attendue", charge.reponse_attendue, cas)).not.toThrow();
+      expect(charge.reponse_attendue).toEqual(aliasee(reponse_attendue));
+      // D55 (9) : un alias (« C1 ») ne suit pas le motif identifiant_court (minuscules) de tirage.json ;
+      // la conformité au schéma ne se vérifie donc que hors candidats_attendus non vide.
+      if ((reponse_attendue.candidats_attendus?.length ?? 0) === 0) {
+        expect(() => validerFragment("tirage", "#/$defs/reponse_attendue", charge.reponse_attendue, cas)).not.toThrow();
+      }
     });
   }
 
@@ -275,13 +285,16 @@ describe("charge v3 : réponse attendue (G)", () => {
     expect(construireCharge({ ...demande(), resolu_au_gel: { ...RESOLU_POSITION_POUR, reponse_attendue: enrichie } }).reponse_attendue).toEqual(RESOLU_POSITION_POUR.reponse_attendue);
   });
 
-  it("Q-ATT : la charge ne porte aucun libellé de candidat, seulement les identifiants opaques du tirage", () => {
+  it("Q-ATT : la charge ne porte aucun libellé de candidat ni son identifiant, seulement son alias (D55 (9))", () => {
     const question = { gabarit: "Q-ATT" as const, registre: "neutre" as const, texte: "Quels candidats proposent la prime aux marcheurs ?" };
     const reponse_attendue: ReponseAttendue = { nature: "liste_candidats", candidats_attendus: ["demo-alpha"], resolution_temporelle: temporelle };
-    const serialisee = JSON.stringify(construireCharge({ ...demande(), question, resolu_au_gel: { ...RESOLU_POSITION_POUR, reponse_attendue } }));
+    const charge = construireCharge({ ...demande(), question, resolu_au_gel: { ...RESOLU_POSITION_POUR, reponse_attendue } });
+    expect(charge.reponse_attendue).toMatchObject({ candidats_attendus: [aliasDeTest("demo-alpha")] });
+    const serialisee = JSON.stringify(charge);
     for (const candidat of CANDIDATS_DU_RUN) {
       expect(serialisee).not.toContain(candidat.libelle);
       expect(serialisee).not.toContain(`"${candidat.nom}"`);
+      expect(serialisee).not.toContain(`"${candidat.candidat_id}"`);
     }
   });
 });
@@ -303,5 +316,27 @@ describe("charge v3 : pages citées (E)", () => {
   it("des pages qui ne sont pas celles des liens de la réponse sont refusées", () => {
     expect(() => construireCharge({ ...demande(), pages_citees: [] })).toThrow(/pages citées/);
     expect(() => construireCharge({ ...demande(), pages_citees: pagesSansTexte(["https://exemple.invalid/autre"]) })).toThrow(/pages citées/);
+  });
+});
+
+/** §7 (protocole 0.20), D55 (9) : alias aveugle de candidat dans la charge du juge. */
+describe("alias aveugle de candidat (D55 (9))", () => {
+  it("aucun vrai candidat_id du périmètre n'apparaît dans la charge sérialisée (références et candidats_attendus)", () => {
+    const references = CANDIDATS_DU_RUN.map((candidat) => ({ item: itemP({ candidat_id: candidat.candidat_id }), role: "principal" as const }));
+    const reponse_attendue: ReponseAttendue = {
+      nature: "liste_candidats",
+      candidats_attendus: CANDIDATS_DU_RUN.map((c) => c.candidat_id),
+      resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" },
+    };
+    const charge = construireCharge({ ...demande(), references, resolu_au_gel: { ...RESOLU_POSITION_POUR, reponse_attendue } });
+    const serialisee = JSON.stringify(charge);
+    for (const candidat of CANDIDATS_DU_RUN) expect(serialisee).not.toContain(`"${candidat.candidat_id}"`);
+    expect(charge.references.map((r) => r.candidat_id)).toEqual(CANDIDATS_DU_RUN.map((c) => aliasDeTest(c.candidat_id)));
+    expect(charge.reponse_attendue).toMatchObject({ candidats_attendus: CANDIDATS_DU_RUN.map((c) => aliasDeTest(c.candidat_id)) });
+  });
+
+  it("un candidat sans alias (hors des candidats interrogés de la table) est refusé, jamais transmis en clair", () => {
+    const references = [{ item: itemP({ candidat_id: "candidat-fantome" }), role: "principal" as const }];
+    expect(() => construireCharge({ ...demande(), references })).toThrow(/candidat-fantome/);
   });
 });

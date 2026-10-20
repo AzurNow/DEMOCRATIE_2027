@@ -25,6 +25,8 @@ import { geler, GelBloque } from "../../pipeline/gel/geler.ts";
 import { OrdreDesInstantsRefuse } from "../../pipeline/gel/instants.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
+import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
+import type { GraineTirage } from "../../pipeline/questions/types.ts";
 import { head, RACINE_PROJET } from "../aides/depot.ts";
 import {
   CONFIGURATION_GEL,
@@ -537,10 +539,23 @@ describe("balise, cas 11 : run.json porte la balise et l'engagement", () => {
       bootstrap: "bootstrap",
       permutation: "permutation",
       contrefactuel: "contrefactuel",
+      alias_candidats: "alias_candidats",
     });
     expect(balise.cle_identifiant).toBe("run_id");
     const graines = json(run, "run.json")["graines"] as Record<string, { valeur: number }>;
     expect(Object.fromEntries(Object.entries(graines).map(([nom, graine]) => [nom, graine.valeur]))).toEqual(valeursDesGraines(balise.alea));
+  });
+
+  it("§7 (protocole 0.20), D55 (9) : run.json porte la table alias aveugle des candidats interrogés, recalculée de la graine", async () => {
+    const { run } = await gelNominal();
+    const objet = json(run, "run.json");
+    const graine = (objet["graines"] as Record<string, GraineTirage>)["alias_candidats"] as GraineTirage;
+    const candidats = (objet["perimetre"] as { candidats: { candidat_id: string; interroge: boolean }[] }).candidats;
+    const interroges = candidats.filter((candidat) => candidat.interroge);
+    const table = objet["alias_candidats"] as Record<string, string>;
+    expect(table).toEqual(tableAliasCandidats(interroges, graine));
+    expect(Object.keys(table).sort()).toEqual(interroges.map((_, rang) => `C${rang + 1}`).sort());
+    for (const candidat of candidats.filter((c) => !c.interroge)) expect(Object.values(table)).not.toContain(candidat.candidat_id);
   });
 
   it("l'engagement inscrit : l'URL de capture et son horodatage", async () => {

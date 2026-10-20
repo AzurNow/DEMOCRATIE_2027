@@ -14,6 +14,7 @@
 
 import { construireFile, type TacheAnnotateur } from "../../pipeline/notation/file-humaine.ts";
 import { pagesCitees } from "../../pipeline/notation/pages-citees.ts";
+import type { RunDeNotation } from "../../pipeline/notation/types.ts";
 import { construireVue, indexerExistences, LienSansVerdictExistence, type VueAnnotateur } from "../../pipeline/notation/vue-annotateur.ts";
 import type { ReponsePreparee } from "./chargement.ts";
 import type { Contexte } from "./contexte.ts";
@@ -37,7 +38,7 @@ export interface EtatDesTaches {
  * d'un lien n'a pas encore son texte extrait (D27 (E) : l'humain voit le texte de la page comme le
  * juge). Toute autre erreur monte.
  */
-function vueOuAttente(prep: ReponsePreparee, fournisseur: FournisseurExistences, date_run: string): VueAnnotateur | null {
+function vueOuAttente(prep: ReponsePreparee, fournisseur: FournisseurExistences, date_run: string, alias_candidats: RunDeNotation["alias_candidats"]): VueAnnotateur | null {
   const liens = prep.reponse.normalise.liens;
   try {
     const existences = fournisseur.existencesDe(prep.reponse.id, liens);
@@ -52,6 +53,7 @@ function vueOuAttente(prep: ReponsePreparee, fournisseur: FournisseurExistences,
       resolu_au_gel: prep.resolu_au_gel,
       pages_citees: pages,
       existences,
+      alias_candidats,
     });
   } catch (erreur) {
     if (erreur instanceof LienSansVerdictExistence) return null;
@@ -74,7 +76,7 @@ export function etatDesTaches(contexte: Contexte): EtatDesTaches {
   for (const tache of file.tachesPour(contexte.annotateur_id)) {
     const prep = parId.get(tache.reponse_id);
     if (prep === undefined) throw new Error(`Tâche sur la réponse ${tache.reponse_id}, inconnue du run chargé.`);
-    const vue = vueOuAttente(prep, contexte.existences, donnees.run.date_gel);
+    const vue = vueOuAttente(prep, contexte.existences, donnees.run.date_gel, donnees.run_note.alias_candidats);
     if (vue === null) en_attente += 1;
     else notables.push({ tache, vue });
   }

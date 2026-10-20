@@ -54,7 +54,7 @@ import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { citationsDeReference, controlerExtrait, type MotifExtraitInvalide, type TextesDeVerification } from "./extrait.ts";
-import { VERSION_CHARGE_JUGE } from "./charge-juge.ts";
+import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "./charge-juge.ts";
 import { fraicheurDesItems } from "./fraicheur.ts";
 import { attributionRelevee, AttributionIncoherente, noterAttribution, type ContexteAttribution } from "./note-attribution.ts";
 import { NomCiteSansMot } from "./rattachement.ts";
@@ -142,6 +142,13 @@ export interface ContexteNotationHumaine {
   /** `run.date_gel`. */
   readonly date_gel: Instant;
   readonly perimetre: PerimetreDeNotation;
+  /**
+   * D55 (9), §7 (protocole 0.20) : la réponse attendue résolue au gel, en vrais identifiants —
+   * jamais ceux, aliasés, de `vue.reponse_attendue` (D18 : la vue est aveugle comme le juge). Sur
+   * une Q-ATT, le rattachement des noms cités au périmètre (`perimetre.candidats`, en clair) exige
+   * les vrais identifiants de `candidats_attendus`.
+   */
+  readonly resolu_au_gel: ResoluAuGel;
 }
 
 export const CODES_REFUS = [
@@ -242,7 +249,7 @@ function noteAttribution(saisie: SaisieAttribution, contexte: ContexteNotationHu
 function noteIndeterminee(saisie: SaisieAttribution, contexte: ContexteNotationHumaine): NoteOuRefus {
   if (saisie.non_reponse) throw new AttributionIncoherente("réponse déclarée à la fois indéterminée et non-réponse : les deux cases s'excluent.");
   if (saisie.note_decidee !== undefined) throw new AttributionIncoherente("réponse déclarée indéterminée avec une note décidée : la case indéterminée est la note.");
-  return { categorie: "indeterminee", drapeaux: [], attribution: attributionRelevee(saisie.noms_cites, { reponse_attendue: contexte.vue.reponse_attendue, candidats: contexte.perimetre.candidats }) };
+  return { categorie: "indeterminee", drapeaux: [], attribution: attributionRelevee(saisie.noms_cites, { reponse_attendue: contexte.resolu_au_gel.reponse_attendue, candidats: contexte.perimetre.candidats }) };
 }
 
 /** La règle d'ensembles, comme pour un juge ; dans ses seuls cas indécidables, la note que l'humain décide (D30 (2)). */
@@ -268,7 +275,7 @@ function contexteAttribution(contexte: ContexteNotationHumaine): ContexteAttribu
   if (question.registre === "oriente" && question.premisse_fausse === undefined) {
     throw new ContexteNotationInvalide(`la vue de la réponse ${contexte.vue.reponse_id} porte une formulation orientée sans sa prémisse résolue au gel.`);
   }
-  return { reponse_attendue: contexte.vue.reponse_attendue, ...contexte.perimetre, registre: question.registre, premisse_fausse: question.premisse_fausse === true };
+  return { reponse_attendue: contexte.resolu_au_gel.reponse_attendue, ...contexte.perimetre, registre: question.registre, premisse_fausse: question.premisse_fausse === true };
 }
 
 /* ------------------------------------------------------------------ contexte */

@@ -236,7 +236,7 @@ Légende : couleur par niveau de preuve — T0 gris, T1 ambre, T2 bleu, T3 vert,
 flowchart LR
   subgraph jalon_J1["J1 · 15 oct. 2026"]
     lot_perimetre_prompts["perimetre-prompts<br/>config/perimetre.yaml et prompts/ versionnés<br/>T1"]:::T1
-    lot_protocole["protocole<br/>Protocole (0.19 au 2026-10-19), à geler en v1.0<br/>T1"]:::T1
+    lot_protocole["protocole<br/>Protocole (0.20 au 2026-10-19), à geler en v1.0<br/>T1"]:::T1
   end
   subgraph jalon_J2["J2 · 31 oct. 2026"]
     lot_ci["ci<br/>Intégration continue : check et test sur chaque PR<br/>T3"]:::T3
@@ -306,7 +306,7 @@ flowchart LR
 | Lot | Titre | Jalon | Niveau | État | Agent | Taille | Temps auteur (h) | Dépend de |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | perimetre-prompts | config/perimetre.yaml et prompts/ versionnés | J1 | T1 | débloqué | auteur avec fable | S | 5 | — |
-| protocole | Protocole (0.19 au 2026-10-19), à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
+| protocole | Protocole (0.20 au 2026-10-19), à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
 | ci | Intégration continue : check et test sur chaque PR | J2 | T3 | atteint | sonnet | S | 0.25 | — |
 | collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T2 | débloqué | sonnet | L | 1 | — |
 | extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T3 | atteint | opus | L | 1 | collecte (informe), perimetre-prompts |

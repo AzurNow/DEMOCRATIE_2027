@@ -119,13 +119,14 @@ describe("balise, cas 2 : dérivation des graines et de l'identifiant", () => {
     expect(aleaDe(VECTEUR_1000.signature)).toBe(VECTEUR_1000.randomness);
   });
 
-  it("balise, cas 2 : les cinq graines d'un aléa connu, calculées à la main", () => {
+  it("balise, cas 2 : les six graines d'un aléa connu, calculées à la main", () => {
     expect(valeursDesGraines(VECTEUR_1000.randomness)).toEqual({
       tirage: 1988838112253212,
       echantillon_humain: 4397518236614702,
       bootstrap: 6226129174604279,
       permutation: 379229182868508,
       contrefactuel: 8908148394566155,
+      alias_candidats: 6622177807060453,
     });
   });
 
