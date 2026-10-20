@@ -7198,6 +7198,7 @@
         "tests/reformulation/position-affirmee.test.ts « item O dont l'état antérieur est « sans_objet » ⇒ aucune »",
         "tests/reformulation/position-affirmee.test.ts « item O dont l'état antérieur est « pour » et l'état postérieur « sans_objet » ⇒ toujours l'antérieur, « pour » »",
         "tests/reformulation/entrees.test.ts « item P « sans_objet » : les tâches se construisent sans lever, position affirmée AUCUNE (§5, D54 (4)) »",
+        "tests/reformulation/commande.test.ts « item P « sans_objet » : pnpm reformuler va au bout, code 0, ses orientées demandées sans prémisse (AUCUNE, §5, D54 (4)) »",
         "tests/reformulation/lecture-au-gel.test.ts « item P « sans_objet » : la position recalculée est AUCUNE, le gel passe sans lever »",
         "tests/reformulation/lecture-au-gel.test.ts « item O dont l'état antérieur est « sans_objet » : la position recalculée est AUCUNE, le gel passe sans lever »"
       ],
