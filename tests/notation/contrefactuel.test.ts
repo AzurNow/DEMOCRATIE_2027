@@ -346,7 +346,7 @@ describe("renvois d'attribution dans les paires (D31 (1))", () => {
     expect(resultatDe(resultat, "j1")).toEqual({ juge_id: "j1", motif_indefini_contrefactuel: "toutes_paires_ecartees", paires_ecartees_contrefactuel: 2, retire: false });
     expect(resultat.taux_echantillon_humain).toBe(0.1);
     const ensemble = { reponse_ids: [origineId(0), origineId(1)], eligibles: 2, taille_visee: 200, sous_effectif: true };
-    const publication = publierContrefactuel(resultat, ensemble, { paires: [] }, runDeNotation());
+    const publication = publierContrefactuel(resultat, ensemble, { paires: [], hors_derangement: [] }, runDeNotation());
     const critere = critereTestContrefactuel(publication.juges.map((j) => ({ ...j, retire: j.retire })));
     expect(critere.statut).toBe("rouge");
   });

@@ -67,6 +67,7 @@ export const ITEM_F = conforme(itemF({ cle: "es-f", candidat_id: CANDIDAT, mesur
 /** alpha → beta → gamma → alpha, sur les candidats fictifs des fabriques de notation. */
 export const CYCLE: Derangement = {
   paires: CANDIDATS_DU_RUN.map((source, rang) => ({ source, image: CANDIDATS_DU_RUN[(rang + 1) % CANDIDATS_DU_RUN.length] as (typeof CANDIDATS_DU_RUN)[number] })),
+  hors_derangement: [],
 };
 
 export interface RunFictif {

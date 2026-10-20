@@ -28,6 +28,7 @@ const CYCLE: Derangement = {
     { source: BETA, image: GAMMA },
     { source: GAMMA, image: ALPHA },
   ],
+  hors_derangement: [],
 };
 
 function sousEnsemble(taille: number, eligibles = taille): SousEnsembleContrefactuel {

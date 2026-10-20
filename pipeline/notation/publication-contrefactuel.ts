@@ -15,7 +15,8 @@
  *
  * `cle_graine` est la clé lisible du sous-ensemble (`CLE_SOUS_ENSEMBLE_CONTREFACTUEL`), celle que
  * le §7 dit publiée avec le résultat ; `cle_graine_derangement` est celle du dérangement
- * (`CLE_DERANGEMENT_CANDIDATS`), publié aussi en clair (`correspondances`).
+ * (`CLE_DERANGEMENT_CANDIDATS`), publié aussi en clair (`correspondances`, D55 (4) : les seuls
+ * candidats interrogés au run, un candidat non interrogé n'y figure pas).
  *
  * Un run invalide garde un taux d'échantillon humain stocké, que le schéma exige : 25 %, celui
  * qu'impose un retrait (§7), et celui que le contrôle croisé attend dès qu'un juge est retiré.

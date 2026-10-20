@@ -1,16 +1,20 @@
 /**
- * Le dérangement des candidats du test contrefactuel de biais du juge (§7).
+ * Le dérangement des candidats du test contrefactuel de biais du juge (§7, protocole 0.19).
  *
- * Décision D14 (2) de l'auteur du 2026-10-05 (texte proposé pour la 0.16) : « Les permutations sont
- * un dérangement des candidats du run, tiré avec sa graine dérivée, appliqué par remplacement exact
- * du libellé et du nom seul déclarés au périmètre ». Un seul dérangement pour tout le run : chaque
- * candidat a une image, distincte de lui, et la même pour toutes les réponses du sous-ensemble.
+ * Décision D55 (4) de l'auteur, reportée au protocole en 0.19 : « Les permutations sont un
+ * dérangement des candidats interrogés au run, tiré avec sa graine dérivée, appliqué par
+ * remplacement exact du libellé et du nom seul déclarés au périmètre ». Un seul dérangement pour
+ * tout le run : chaque candidat interrogé a une image, distincte de lui, et la même pour toutes les
+ * réponses du sous-ensemble.
  *
- * **Candidats.** Tous ceux que déclare `run.perimetre.candidats`, interrogés ou non : un candidat
- * retiré peut encore être nommé dans une réponse ou dans un item, et ne pas le permuter laisserait
- * son nom en clair. Leurs formes (libellés et noms seuls, toutes ensemble) doivent être deux à deux
- * distinctes et non blanches : une forme partagée par deux candidats, ou servant de libellé à l'un
- * et de nom seul à l'autre, ne dirait pas par quoi la remplacer. Identifiants en double : erreur.
+ * **Candidats.** Le dérangement se tire sur les seuls candidats interrogés au run
+ * (`run.perimetre.candidats` filtré sur `interroge`, la même définition que `candidatsInterroges`
+ * d'`analysis/lecture-run.ts`) : un candidat non interrogé n'a pas d'image, son libellé et son nom
+ * seul ne sont jamais remplacés (`reponse-contrefactuelle.ts`). L'unicité des formes
+ * (`verifierCandidats`) se vérifie en revanche sur tout le périmètre, interrogés et non interrogés
+ * ensemble : une forme non blanche, deux à deux distincte, servant de libellé à l'un et de nom seul
+ * à l'autre rendrait le remplacement ambigu même si l'un des deux candidats n'est pas interrogé.
+ * Identifiants en double, sur tout le périmètre : erreur.
  *
  * **Tirage, pour le rejouer ailleurs.** Graine : `run.graines.contrefactuel`, dont le générateur
  * déclaré doit être celui du tirage (`splitmix64-sha256-v1`, sinon `GraineNonConforme`). Clé
@@ -49,17 +53,32 @@ export interface PaireDuDerangement {
 export interface Derangement {
   /** Une paire par candidat, dans l'ordre croissant des `candidat_id` des sources. */
   readonly paires: readonly PaireDuDerangement[];
+  /**
+   * Les `candidat_id` du périmètre non interrogés au run, triés par `comparerChaines` (D55 (4)) :
+   * ni source ni image d'aucune paire, mais au périmètre, donc un identifiant que
+   * `reponse-contrefactuelle.ts` garde inchangé plutôt que de le rejeter comme hors périmètre.
+   */
+  readonly hors_derangement: readonly string[];
 }
 
-export function tirerDerangement(candidats: readonly CandidatDuRun[], graine: GraineTirage): Derangement {
-  verifierCandidats(candidats);
-  if (candidats.length < 2) {
-    throw new Error(`Dérangement impossible : ${candidats.length} candidat(s) au périmètre, il en faut au moins deux candidats (§7).`);
+/**
+ * `interroges` : les seuls candidats permutés (D55 (4)). `perimetre` : tout le périmètre du run,
+ * interroges compris, sur lequel se vérifie l'unicité des formes (`verifierCandidats`).
+ */
+export function tirerDerangement(interroges: readonly CandidatDuRun[], perimetre: readonly CandidatDuRun[], graine: GraineTirage): Derangement {
+  verifierCandidats(perimetre);
+  if (interroges.length < 2) {
+    throw new Error(`Dérangement impossible : ${interroges.length} candidat(s) interrogé(s) au run, il en faut au moins deux candidats interrogés (§7).`);
   }
   verifierGraine(graine);
-  const ranges = [...candidats].sort((a, b) => comparerChaines(a.candidat_id, b.candidat_id));
+  const idsInterroges = new Set(interroges.map((candidat) => candidat.candidat_id));
+  const hors_derangement = perimetre
+    .filter((candidat) => !idsInterroges.has(candidat.candidat_id))
+    .map((candidat) => candidat.candidat_id)
+    .sort(comparerChaines);
+  const ranges = [...interroges].sort((a, b) => comparerChaines(a.candidat_id, b.candidat_id));
   const images = melangeSansPointFixe(ranges, generateur(graineDerivee(graine.valeur, CLE_DERANGEMENT_CANDIDATS)));
-  return { paires: ranges.map((source, rang) => ({ source, image: exiger(images, rang) })) };
+  return { paires: ranges.map((source, rang) => ({ source, image: exiger(images, rang) })), hors_derangement };
 }
 
 /** `reponse.schema.json#/properties/permutation/properties/correspondances` : source → image. */
@@ -82,7 +101,7 @@ function enregistrerForme(formes: Map<string, string>, forme: string, candidat_i
   if (forme.trim().length === 0) throw new Error(`Candidat ${candidat_id} : libellé ou nom seul vide ou blanc.`);
   const deja = formes.get(forme);
   if (deja !== undefined) {
-    throw new Error(`La forme « ${forme} » est déclarée pour ${deja} et pour ${candidat_id} : son remplacement serait ambigu (D14 (2)).`);
+    throw new Error(`La forme « ${forme} » est déclarée pour ${deja} et pour ${candidat_id} : son remplacement serait ambigu (D55 (4)).`);
   }
   formes.set(forme, candidat_id);
 }

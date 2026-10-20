@@ -17,7 +17,7 @@ function candidat(id: string): CandidatDuRun {
 
 /** Un dérangement posé à la main : source → image. */
 function derangement(images: Readonly<Record<string, string>>): Derangement {
-  return { paires: Object.entries(images).map(([source, image]) => ({ source: candidat(source), image: candidat(image) })) };
+  return { paires: Object.entries(images).map(([source, image]) => ({ source: candidat(source), image: candidat(image) })), hors_derangement: [] };
 }
 
 /** alpha → beta → gamma → alpha. */

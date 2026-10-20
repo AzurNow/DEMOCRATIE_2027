@@ -321,9 +321,8 @@
     "taille": 0,
     "sous_effectif": true,
     "correspondances": {
-      "cand-a": "cand-d",
-      "cand-b": "cand-a",
-      "cand-d": "cand-b"
+      "cand-a": "cand-b",
+      "cand-b": "cand-a"
     },
     "cle_graine": [
       "contrefactuel",
