@@ -27,6 +27,7 @@ import {
 } from "../../pipeline/questions/charger-perimetre.ts";
 import type { ContexteDuGel } from "../../pipeline/questions/charger-perimetre.ts";
 import { itemsPAuGel } from "../../pipeline/questions/couverture.ts";
+import { AMORCE_GROUPE_ATTRIBUTION } from "../../pipeline/questions/tirage.ts";
 import { THEMES } from "../../pipeline/questions/types.ts";
 import type { Item } from "../../pipeline/questions/types.ts";
 import { ErreurSchema, erreurDeSchema, validerFragment } from "../../outils/schemas/valider.ts";
@@ -753,6 +754,22 @@ describe("cas 14 : l'instantané est conforme à run.schema.json et garde les pr
     delete rang(outils(sansPreuve), 0)["preuve_inclusion"];
     const erreur = erreurDe(() => validerFragment("run", "#/properties/perimetre", sansPreuve, "essai"));
     expect((erreur as ErreurSchema).chemins).toContain("/outils/0");
+  });
+});
+
+describe("cas 15 : candidat_id homonyme de l'amorce du groupe d'attribution (D55 (10), constat 42)", () => {
+  it(`refuse candidat_id « ${AMORCE_GROUPE_ATTRIBUTION} »`, () => {
+    const perimetre = perimetreComplet();
+    candidats(perimetre)[0] = candidatActif(AMORCE_GROUPE_ATTRIBUTION);
+    expect(refus(perimetre).motifs).toEqual([expect.stringContaining(AMORCE_GROUPE_ATTRIBUTION)]);
+  });
+
+  it("admet un candidat_id voisin qui ne partage pas l'amorce", () => {
+    for (const voisin of [`${AMORCE_GROUPE_ATTRIBUTION}-2`, `${AMORCE_GROUPE_ATTRIBUTION}s`]) {
+      const perimetre = perimetreComplet();
+      candidats(perimetre)[0] = candidatActif(voisin);
+      expect(() => charger(perimetre)).not.toThrow();
+    }
   });
 });
 

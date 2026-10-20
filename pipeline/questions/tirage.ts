@@ -161,6 +161,14 @@ export type GelDuRun = Pick<RunAuGel, "date_gel"> & {
 /** Identifiant conventionnel du groupe des questions d'attribution, sans candidat. */
 const GROUPE_ATTRIBUTION = "";
 
+/**
+ * Amorce du flux aléatoire du groupe d'attribution (§5). Exportée pour que `charger-perimetre.ts`
+ * refuse un `candidat_id` homonyme (D55 (10), constat 42 de la revue du 2026-10-12) : un tel
+ * candidat partagerait sinon son flux aléatoire avec le groupe d'attribution, puisque `amorce` ne
+ * voit que cette chaîne, jamais `GROUPE_ATTRIBUTION` qu'aucun `candidat_id` ne peut prendre.
+ */
+export const AMORCE_GROUPE_ATTRIBUTION = "attribution";
+
 /* ------------------------------------------------------------- indexation */
 
 interface Index {
@@ -1043,7 +1051,7 @@ function tirerGroupeAttribution(contexte: ContexteTirage): ResultatPublie {
     cibles: undefined,
     eligible_a_la_reprise: demande.tirage_precedent !== undefined,
     index: contexte.index,
-    rng: generateur(amorce(demande, "attribution")),
+    rng: generateur(amorce(demande, AMORCE_GROUPE_ATTRIBUTION)),
     precedent: demande.tirage_precedent,
   });
   return publier(contexte, resultat, {});
@@ -1077,7 +1085,7 @@ function publier(
  * Amorce textuelle du générateur, bâtie sur les seuls champs publiés : un tiers qui a le fichier
  * de tirage rejoue le tirage sans rien d'autre.
  */
-function amorce(demande: DemandeTirage, groupe: string): bigint {
+export function amorce(demande: DemandeTirage, groupe: string): bigint {
   return graineDepuisTexte(
     String(demande.graine.valeur),
     demande.graine.algorithme,

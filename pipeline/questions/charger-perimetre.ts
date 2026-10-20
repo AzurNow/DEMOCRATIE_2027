@@ -13,8 +13,10 @@
  *   2. pour un run, aucun null ne reste dans une clé obligatoire et les listes de candidats et
  *      d'outils ne sont pas vides (`PerimetreIncomplet`, qui nomme chaque clé) ;
  *   3. ce que le JSON Schema ne sait pas contrôler (`PerimetreRefuse`, qui nomme chaque motif) :
- *      les dix thèmes exactement, les identifiants uniques, la liste officielle selon le régime, un
- *      candidat retiré non interrogé, la règle d'inclusion du §3 (`perimetre.ts:inclusionAvantListe`)
+ *      les dix thèmes exactement, les identifiants uniques, un `candidat_id` homonyme de l'amorce
+ *      du groupe d'attribution du tirage (`tirage.ts:AMORCE_GROUPE_ATTRIBUTION`, D55 (10)), la
+ *      liste officielle selon le régime, un candidat retiré non interrogé, la règle d'inclusion du
+ *      §3 (`perimetre.ts:inclusionAvantListe`)
  *      pour chaque candidat non retiré du régime `avant_liste_officielle`, et un alias aveugle pour
  *      chaque assistant inclus, qui ne trahit ni le libellé, ni l'éditeur, ni l'`outil_id` d'un outil
  *      du périmètre (aucun de leurs mots significatifs, aucune de leurs formes collées :
@@ -38,6 +40,7 @@ import type { Mode } from "../../analysis/types.ts";
 import { validerFragment, valider } from "../../outils/schemas/valider.ts";
 import { itemsPAuGel } from "./couverture.ts";
 import { inclusionAvantListe, SONDAGES_MINIMUM } from "./perimetre.ts";
+import { AMORCE_GROUPE_ATTRIBUTION } from "./tirage.ts";
 import { THEMES } from "./types.ts";
 import type { Item, Mesure, ParametresTirage, RegimeInclusion, StatutAuGel } from "./types.ts";
 
@@ -240,10 +243,26 @@ function motifsThemes(themes: readonly string[]): readonly string[] {
   ].map((motif) => `${motif} (exactement commun#/$defs/theme)`);
 }
 
+/**
+ * D55 (10), constat 42 de la revue du 2026-10-12 : un `candidat_id` homonyme de l'amorce du groupe
+ * d'attribution (`tirage.ts:AMORCE_GROUPE_ATTRIBUTION`) partagerait son flux aléatoire avec lui au
+ * tirage (`tirage.ts:amorce`). Seule source de vérité de cette chaîne : importée, jamais recopiée.
+ */
+function motifsAmorceAttribution(candidats: readonly CandidatSaisi[]): readonly string[] {
+  return candidats
+    .filter((candidat) => candidat.candidat_id === AMORCE_GROUPE_ATTRIBUTION)
+    .map(
+      (candidat) =>
+        `candidats : candidat_id « ${candidat.candidat_id} » est l'identifiant du groupe d'attribution ` +
+        `du tirage ; il partagerait son flux aléatoire avec lui (§5, D55 (10))`,
+    );
+}
+
 function motifsIdentifiants(perimetre: PerimetrePourRun): readonly string[] {
   return [
     ...doublons(perimetre.candidats.map((candidat) => candidat.candidat_id)).map((id) => `candidats : candidat_id « ${id} » en double`),
     ...doublons(perimetre.outils.map((outil) => outil.outil_id)).map((id) => `outils : outil_id « ${id} » en double`),
+    ...motifsAmorceAttribution(perimetre.candidats),
   ];
 }
 
