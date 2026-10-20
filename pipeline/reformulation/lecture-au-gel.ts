@@ -2,7 +2,7 @@
  * Lecture des formulations relues au gel (décision D39, option 1) : des questions engendrées et du
  * contenu de `data/formulations/`, les objets `question` complets que le run publie, ou un refus.
  *
- * Fonction pure : la commande de gel (lot `gel`, à venir) lit les fichiers avec
+ * Fonction pure : la commande de gel (`pnpm geler`, `pipeline/gel/`) lit les fichiers avec
  * `validation/io/data-formulations.ts:lireFormulationsData` et passe leur contenu ici. Le gel lit
  * seulement : il n'écrit ni ne relit aucune formulation.
  *

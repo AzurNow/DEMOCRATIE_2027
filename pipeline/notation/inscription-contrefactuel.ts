@@ -3,8 +3,9 @@
  * champs, « l'appelant les écrit dans le run »).
  *
  * Ce qui est écrit : le bloc `contrefactuel_candidats`, le taux de l'échantillon humain, et, pour
- * chaque juge, les champs que le test fixe (`retire`, `motif_retrait`, `taux_changement_contrefactuel`,
- * `changements_contrefactuel`) ; tout autre champ du run et de ses juges est recopié tel quel. Le
+ * chaque juge, les six champs de `CHAMPS_DU_TEST` (`retire`, `motif_retrait`,
+ * `taux_changement_contrefactuel`, `changements_contrefactuel`, `paires_ecartees_contrefactuel`,
+ * `motif_indefini_contrefactuel`) ; tout autre champ du run et de ses juges est recopié tel quel. Le
  * run fusionné est validé contre `schema/run.schema.json` avant d'être écrit, par un fichier
  * temporaire synchronisé puis renommé : `run.json` n'est jamais à moitié écrit.
  *

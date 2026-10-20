@@ -47,7 +47,7 @@
         "institutions_democratie",
         "europe_defense_international"
       ],
-      "description": "Les dix thèmes fixes du §3. Une position hors de ces thèmes est enregistrée mais n'entre pas dans le tirage."
+      "description": "Les dix thèmes fixes du §3. Une position hors de ces thèmes est hors périmètre : elle n'est pas enregistrée, et n'entre donc pas dans le tirage des questions."
     },
 
     "type_item": {

@@ -66,7 +66,10 @@ describe("cas 6 : caractère hors du plan de base avant la citation", () => {
 describe("cas 7 : coquille corrigée par le modèle", () => {
   it("la citation « corrigée » ne figure pas dans la source ⇒ introuvable, jamais rapprochée", () => {
     const texte = "Nous créeront une prime de 150 euros pour chaque apprenti.";
-    expect(motif("Nous créerons une prime de 150 euros pour chaque apprenti.", texte)).toBe("introuvable");
+    const resultat = localiser("Nous créerons une prime de 150 euros pour chaque apprenti.", texte, SANS_REPERES);
+    if (resultat.ok) throw new Error("citation acceptée à tort");
+    expect(resultat.motif).toBe("introuvable");
+    expect(resultat.detail).toContain("ne figure pas dans le texte");
   });
 
   it("la coquille recopiée telle quelle passe", () => {
@@ -85,8 +88,11 @@ describe("cas 8 : saut de page dans la citation, citation vide", () => {
     expect(motif(citation, TEXTE, { pages: pagesDe(PAGES), vtt: null })).toBe("saut_de_page");
   });
 
-  it("citation faite d'espaces ⇒ citation_vide", () => {
-    expect(motif("   \n ", TEXTE)).toBe("citation_vide");
+  it("citation faite d'espaces ⇒ citation_vide, détail propre au motif", () => {
+    const resultat = localiser("   \n ", TEXTE, SANS_REPERES);
+    if (resultat.ok) throw new Error("citation acceptée à tort");
+    expect(resultat.motif).toBe("citation_vide");
+    expect(resultat.detail).toContain("vide");
   });
 
   it("U+000C refusé aussi pour une source sans pages", () => {

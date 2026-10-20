@@ -22,9 +22,10 @@
  * **Absent ≠ vide.** Un champ absent n'entre pas dans l'objet canonisé ; un `alias: []` y entre.
  * Les deux contenus diffèrent, leurs empreintes aussi.
  *
- * **L'empreinte est recalculée depuis le contenu.** Le champ `empreinte` porté par la mesure n'est
- * contrôlé nulle part contre son contenu : s'y fier laisserait passer une formulation modifiée
- * après la relecture sans que ce champ suive.
+ * **L'empreinte est recalculée depuis le contenu.** Le champ `empreinte` porté par la mesure est
+ * contrôlé contre son contenu à la promotion (`validation/io/data-mesures.ts:refusEmpreinte`,
+ * refus `empreinte_incoherente`, #152) : une formulation modifiée après la relecture sans que ce
+ * champ suive est refusée, jamais promue en silence.
  */
 
 import { empreinteDe } from "./empreinte.ts";
@@ -98,9 +99,10 @@ export function mesureRelue(registre: RegistreRelecturesMesure, mesure: Mesure):
 }
 
 /**
- * Frontière d'exécution d'une entrée, en lecture (et en écriture, PR B). Même verdict que
- * `schema/relecture-mesure.schema.json` sur chaque cas (test d'accord) : une entrée malformée
- * arrête, elle n'est jamais complétée ni ignorée.
+ * Frontière d'exécution d'une entrée, lue à la lecture du registre comme avant chaque écriture
+ * (`validation/io/relectures-fichier.ts`). Même verdict que `schema/relecture-mesure.schema.json`
+ * sur chaque cas (test d'accord) : une entrée malformée arrête, elle n'est jamais complétée ni
+ * ignorée.
  */
 export function validerEntreeRelecture(valeur: unknown, provenance: string): RelectureMesure {
   const brute = objetOuLeve(valeur, provenance);
