@@ -62,9 +62,9 @@ export class EntreeRegistreInvalide extends Error {
 }
 
 /**
- * Le registre n'a pas de JSON Schema — il n'existe pas dans `schema/`, que ce lot n'écrit pas.
- * Cette fonction tient lieu de validation de frontière, en lecture comme en écriture : une
- * entrée malformée arrête, elle n'est jamais complétée.
+ * Chaque entrée est d'abord confrontée à `schema/decision-mesure.schema.json`
+ * (`validation/io/mesures-fichier.ts`), puis à cette fonction, qui en construit la valeur typée,
+ * en lecture comme avant l'écriture : une entrée malformée arrête, elle n'est jamais complétée.
  */
 export function validerEntreeRegistre(valeur: unknown, provenance: string): DecisionCorrectionMesure {
   const brute = objetOuLeve(valeur, provenance);

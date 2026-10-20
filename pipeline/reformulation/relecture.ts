@@ -71,7 +71,7 @@ export interface CasesRelecture {
   readonly premisse_conforme: boolean;
 }
 
-/** Ce qui identifie une relecture : qui, quand, et le commentaire s'il y en a un. */
+/** Ce qui identifie une relecture : qui et quand. */
 export interface Relecteur {
   readonly annotateur_id: string;
   readonly date: string;

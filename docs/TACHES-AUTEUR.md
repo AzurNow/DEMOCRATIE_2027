@@ -11,7 +11,7 @@ Mis à jour le 2026-10-16. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ## 0. Fusions en attente
 
-- [ ] **#136** (texte de D51 dans le bloc 0.17), CI verte après mise à jour sur `main`.
+- [x] (2026-10-16) #136 fusionnée (texte de D51 dans le bloc 0.17).
 - [x] (2026-10-16) #135, #137 et #138 fusionnées (lot gel, PR 3 et 4 ; dépôts de test sans gc).
 - [x] (2026-10-12) #109, #104, #110 et #111 fusionnées. Conflit de #104 réglé par l'agent (D34 et
       D35 gardées toutes deux). Le contrôle de Claude Code refuse toujours `gh pr merge` à l'agent.
@@ -327,7 +327,7 @@ Mis à jour le 2026-10-16. Sources relues : `docs/feuille-de-route.json`, `docs/
       `normalisation` sort de la charge du juge, codé dans #172. (3) double soumission : garder deux
       messages (« tâche indisponible », « fichier déjà écrit ») ou un seul ?
 
-- [ ] **Cadrer l'écrivain du gel** (lot notation, #89) : aucun code n'écrit `run.json` ni
+- [x] (2026-10-16, #127 et #135) **Cadrer l'écrivain du gel** (lot notation, #89) : aucun code n'écrit `run.json` ni
       `questions.json` pour un vrai run, et personne n'inscrit un run invalide (D16 (3)), dont le
       schéma exige `publication` et `depot`. Dire quel outil gèle un run et quand il est invalidé.
 

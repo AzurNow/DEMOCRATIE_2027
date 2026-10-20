@@ -100,6 +100,7 @@ function pageExigee(reperes: Reperes, debut: number, fin: number): number | null
 export function localiser(citation: string, texte: string, reperes: Reperes): ResultatLocalisation {
   if (citation.includes(SAUT_DE_PAGE)) return rejet("saut_de_page", "la citation contient U+000C : elle franchit un saut de page.");
   const verbatim = testerVerbatim(citation, texte);
+  if (verbatim.motif_echec === "citation_vide") return rejet("citation_vide", "test verbatim échoué : la citation est vide après normalisation.");
   if (verbatim.motif_echec !== null) return rejet(verbatim.motif_echec, "test verbatim échoué : la citation ne figure pas dans le texte canonique.");
   if (verbatim.offset_debut === null || verbatim.offset_fin === null) throw new Error("Test verbatim réussi sans offsets.");
   if (verbatim.occurrences > 1) {

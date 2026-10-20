@@ -13,6 +13,59 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-19 — Lot 5, extraction et reprise : relance sans doublon, épinglage périmé, échec de transport, `modele_different` (constats 2 à 4 et 17 de `docs/revues/2026-10-17.md`, PR #161 et #167 : `pipeline/extraction/`)
+
+### 1. `staging/identifiants-extraction/` n'est jamais purgé — *basse*
+
+La relance sans doublon (constat 3) enregistre les identifiants tirés pour chaque source dans
+`staging/identifiants-extraction/<source>/<sha>.json`, jamais nettoyé après la promotion.
+
+**Pourquoi ça casse.** Friction seulement : une purge de `staging/` pour une source oubliera ce
+fichier si elle n'est pas écrite pour en tenir compte.
+
+**Ce qu'il faut faire.** Y penser si une commande de purge de `staging/` est un jour écrite.
+
+### 2. Une relance n'audite pas les items déjà déposés — *basse*
+
+À la relance, un item déjà présent (d'après `staging/identifiants-extraction/`) n'est ni comparé ni
+réécrit : seul le nombre d'identifiants est confronté à la tentative précédente, sous peine de
+`RepriseIncoherente`.
+
+**Pourquoi ça casse.** Si le code change entre deux tentatives d'une même source sans changer le
+nombre d'identifiants produits, la relance garde les anciens items sans avertir que leur contenu ne
+correspond plus à ce que produirait le code actuel.
+
+**Ce qu'il faut faire.** Rien tant que ce cas reste théorique ; au premier incident, comparer aussi
+le contenu, pas seulement le compte.
+
+### 3. Une réponse 2xx sans champ `model` échappe au contrôle de l'épinglage — *moyenne*
+
+Le refus `modele_different` (constat 17) compare le `model` rendu par l'éditeur à l'identifiant
+épinglé ; une réponse 2xx qui omettrait ce champ est acceptée, rien n'étant affirmé sans pouvoir le
+lire.
+
+**Pourquoi ça casse.** Un éditeur qui cesserait de renvoyer `model` (changement de version de SDK,
+par exemple) ferait disparaître silencieusement ce contrôle, sans qu'aucun test ne le voie puisque
+l'éditeur simulé renvoie toujours ce champ.
+
+**Ce qu'il faut faire.** Au premier appel réel, vérifier que chaque éditeur renvoie bien `model` à
+chaque réponse ; sinon, décider si son absence doit refuser la source.
+
+### 4. Une source refusée avant #167 sur un 408/429/5xx reste sautée après la reprise — *basse*
+
+Le nouveau traitement de l'échec de transport (constat 2) ne s'applique qu'aux refus écrits depuis
+la PR #167 ; une source déjà refusée par l'ancien code sur l'un de ces statuts garde son journal de
+refus (lecture illisible) et reste sautée aux relances suivantes.
+
+**Pourquoi ça casse.** Aucune donnée réelle n'existe encore (`staging/` est vide dans un clone) :
+le cas est théorique. S'il se produisait sur un vrai run, il faudrait reprendre ces sources à la
+main.
+
+**Ce qu'il faut faire.** Si une telle source existe un jour, retirer son entrée du journal
+d'extraction avant de relancer `pnpm extraire`.
+
+---
+
 ## 2026-10-17 — Lot 1, gardes de sortie (constats 6 et 32 de `docs/revues/2026-10-17.md`, branche `lots/gardes-de-sortie` : `pipeline/gardes-sortie.ts`, `pipeline/reformulation/commande.ts`, `pipeline/extraction/commande.ts`, `pipeline/gel/destination.ts`, `pipeline/notation/*`)
 
 ### 1. La liste des zones protégées est figée dans le code, pas dérivée de l'arborescence — *basse*
@@ -181,6 +234,39 @@ valeur de ces champs. `alias` sert à l'appariement (§6) et `verification_ficti
 
 ---
 
+## 2026-10-16 — Lot extraction, PR 3 : `pnpm extraction:entrees`, `pnpm extraire`, lecture illisible (PR #144, #145 : `pipeline/extraction/`, `pipeline/collecte/entrees_extraction.py`)
+
+### ~~1. Une lecture illisible est transmise au cœur comme une chaîne vide, le motif publié est `json_invalide` au lieu de la vraie raison~~ — réglé le même jour par la PR #145 (`SortieModele` typée, `{ lisible: true, texte }` ou `{ lisible: false, raison }`, motif `lecture_illisible` ajouté à `schema/journal-extraction.schema.json`)
+
+`pnpm extraction:entrees` écrit une fiche par source dans `staging/entrees-extraction/`, et `pnpm
+extraire` appelle les deux éditeurs sur chaque source. Une réponse HTTP illisible (hors 2xx, sortie
+coupée, refus, enveloppe inattendue) était transmise au cœur comme une chaîne vide avant #145.
+
+**Pourquoi ça casse.** Le journal publié donnait une raison fausse (`json_invalide`) à une source
+pourtant inaccessible pour une autre cause : un audit du corpus aurait cherché le mauvais défaut.
+
+### ~~2. Un arrêt entre le dépôt des items et celui du journal fait redéposer les mêmes items~~ — réglé le 2026-10-19 par la PR #161 (constat 3 de `docs/revues/2026-10-17.md` ; identifiants tirés persistés dans `staging/identifiants-extraction/`, réutilisés à la relance)
+
+`deposer` écrivait items, mesures, puis le journal, seule garde de reprise : un arrêt entre les deux
+puis une relance redéposait les mêmes items sous de nouveaux identifiants.
+
+**Pourquoi ça casse.** Une extraction interrompue deux fois ferait entrer la même position en
+double en validation, sans qu'aucun refus ne le signale.
+
+### 3. `pnpm extraire` n'a jamais fait un seul appel réel — *basse*
+
+Les 17 cas limites du brief et les cas de #145 sont couverts sur éditeurs simulés uniquement ; la
+PR d'interface qui bloque la promotion d'un item extrait jusqu'à son rattachement (D53 (1)) est
+livrée depuis (#146, #147, #150), mais aucune clé d'API n'a encore servi.
+
+**Pourquoi ça casse.** Un défaut propre à un éditeur réel (en-têtes, pagination, format de refus non
+couvert par l'éditeur simulé) ne se verra qu'au premier run réel.
+
+**Ce qu'il faut faire.** Au premier `pnpm extraire` sans `--simule` : relire les tentatives en
+erreur HTTP de chaque éditeur (même recommandation que DETTE 2026-10-02, lot interrogation, point 1).
+
+---
+
 ## 2026-10-16 — Lot extraction, PR 2 : éditeurs des deux extracteurs, rendu du prompt, éditeur simulé (branche `lots/extraction-editeurs` : `pipeline/extraction/editeur*.ts`, `configuration-editeurs.ts`, `prompt.ts`, `config/extraction.json`, `tests/extraction/`)
 
 ### 1. La requête Mistral de l'extraction est celle de la reformulation, par import — *moyenne*
@@ -211,7 +297,7 @@ reformulation ne sont pas exportés.
 
 ## 2026-10-16 — Lot extraction, PR 1 : cœur pur de l'extraction double (branche `lots/extraction-coeur` : `pipeline/extraction/`, `schema/sortie-extraction.schema.json`, `tests/extraction/`)
 
-### 1. La mesure d'un item extrait reçoit le libellé du modèle comme formulation canonique, et aucune mesure n'est partagée — *haute*
+### ~~1. La mesure d'un item extrait reçoit le libellé du modèle comme formulation canonique, et aucune mesure n'est partagée~~ — réglé le 2026-10-16 par les PR #146, #147 et #150 (verrou de relecture au `pnpm promote`, registre `validation/mesures/relectures.json`, commande `pnpm mesures --rattacher`)
 
 `mesure.schema.json` exige `formulation_canonique`, que le prompt ne demande pas.
 `pipeline/extraction/assemblage.ts:formulationProposee` y recopie le libellé proposé. Chaque item
@@ -230,7 +316,7 @@ séparée de l'interface de validation bloque la promotion d'un item extrait jus
 rattachement à une mesure existante ou nouvelle et à la relecture de `formulation_canonique`. La
 règle ne vit qu'à un seul endroit, `formulationProposee`.
 
-### 2. Trois règles tranchées par D53 ne sont écrites ni au §4 ni dans `docs/CONTRATS.md` — *moyenne*
+### ~~2. Trois règles tranchées par D53 ne sont écrites ni au §4 ni dans `docs/CONTRATS.md`~~ — réglé par la PR #148 (protocole 0.17, §4) et `docs/CONTRATS.md` §2
 
 (a) D53 (3) : une citation présente plusieurs fois dans le texte est rejetée (`citation_ambigue`)
 et n'entre pas dans l'appariement. (b) D53 (4) : l'extrait minuté d'une source T2 va du début du cue
@@ -422,7 +508,7 @@ de recopie : la question perd deux registres sur trois. La perte se voit au reje
 remplissage, et contrôler la reformulation sur la mesure contractée. Tests d'abord. À faire avant
 le premier appel du prompt de reformulation.
 
-### 3. Le prompt juge validé (D34) ne vit que dans `scratch/`, hors Git — *basse*
+### ~~3. Le prompt juge validé (D34) ne vit que dans `scratch/`, hors Git~~ — réglé par la PR #121 (`prompts/judge-1.0.0.md`)
 
 `scratch/prompts/judge-1.0.0.md` n'est suivi par aucun commit ; D34 le cite par ce chemin.
 
@@ -1877,22 +1963,38 @@ pas à prendre seul : un contrôle trop strict pousse à écrire des entrées vi
 
 ## 2026-09-17 — JSON Schema des objets du projet (`schema/`)
 
-### 1. Les invariants inter-fichiers ne sont vérifiés par personne — *haute*
+### 1. Deux des quatre invariants inter-fichiers ne sont vérifiés par aucun code de production — *haute*
 
-JSON Schema valide un fichier à la fois. Quatre cohérences essentielles échappent donc aux schémas
-et ne sont aujourd'hui garanties par aucun test :
+JSON Schema valide un fichier à la fois. Quatre cohérences essentielles échappent donc aux schémas :
 
-- `question.grappe_id` doit être l'item marqué `principal` dans `question.items[]` ;
-- `notation.contexte` et `verdict.contexte` doivent valoir celui de l'objet noté ;
-- tout item de type `F` doit pointer une mesure dont `fictive` vaut `true` ;
-- les deux validations concordantes d'un item doivent porter sur la **même version** de cet item.
+- `question.grappe_id` doit être l'item marqué `principal` dans `question.items[]` : contrôlé en
+  tant qu'invariant bloquant par `pipeline/gel/barriere.ts` (`grappeSuitItemPrincipal`) ;
+- tout item de type `F` doit pointer une mesure dont `fictive` vaut `true` : contrôlé de même par
+  `pipeline/gel/barriere.ts` (`itemsFictifsPointentMesureFictive`) ;
+- `notation.contexte` et `verdict.contexte` doivent valoir celui de l'objet noté : non vérifié par
+  l'invariant générique correspondant (`pipeline/questions/invariants.ts:contexteSuitObjetNote`,
+  appelé par aucun code de production, seulement par `tests/questions/invariants.test.ts`), mais le
+  contexte d'un verdict l'est à l'assemblage par `analysis/filtre.ts:estDuRun` ;
+- les deux validations concordantes d'un item doivent porter sur la **même version** de cet item :
+  gardé à l'entrée par `validation/domaine/promotion.ts:memeVersionJugee` (appelée par
+  `evaluerPromotion`, refus `versions_differentes`) au moment de la promotion, mais l'invariant
+  générique correspondant (`validationsConcordantesMemeVersion`) n'est pas non plus appelé par du
+  code de production, un contrôle a posteriori sur tout le corpus déjà promu.
 
-**Pourquoi ça casse.** Une divergence sur `grappe_id` fausse les grappes du bootstrap (§8) et donc
-tous les intervalles de confiance publiés, sans qu'aucune validation n'échoue. Un `contexte` mal
-recopié fait entrer une réponse contrefactuelle dans une métrique primaire.
+**Le trou qui reste.** `contexteSuitObjetNote` et `validationsConcordantesMemeVersion` existent,
+sont testés, et ne tournent sur aucun corpus réel : une divergence de contexte ou de version
+introduite par un autre chemin que ceux déjà gardés (`barriere.ts`, `filtre.ts`, `promotion.ts`)
+passerait sans qu'aucun test ne la voie.
 
-**Ce qu'il faut faire.** En faire des tests bloquants au moment d'écrire le pipeline, dans le même
-lot que les tests de symétrie. Tant que ce n'est pas fait, aucune métrique publiée n'est fiable.
+**Pourquoi ça casse.** Une divergence sur `grappe_id` ou sur la fictivité est désormais bloquée au
+gel. Un `contexte` mal recopié par un chemin que `filtre.ts` ne lit pas, ou deux validations de
+versions différentes entrées par un chemin que `promotion.ts` ne garde pas, feraient entrer une
+donnée incohérente dans une métrique publiée sans qu'aucune validation n'échoue.
+
+**Ce qu'il faut faire.** Brancher `contexteSuitObjetNote` et `validationsConcordantesMemeVersion`
+sur un contrôle a posteriori du corpus (à la manière de `pipeline/gel/barriere.ts` pour les deux
+premiers), ou documenter explicitement qu'ils sont redondants avec les gardes existantes si une
+revue le confirme.
 
 ### ~~2. L'épinglage `version` + `empreinte` durcit toute correction d'item~~ — réglé le 2026-09-18 par la définition du contenu notant au §4 du protocole
 
