@@ -297,7 +297,7 @@ reformulation ne sont pas exportés.
 
 ## 2026-10-16 — Lot extraction, PR 1 : cœur pur de l'extraction double (branche `lots/extraction-coeur` : `pipeline/extraction/`, `schema/sortie-extraction.schema.json`, `tests/extraction/`)
 
-### 1. La mesure d'un item extrait reçoit le libellé du modèle comme formulation canonique, et aucune mesure n'est partagée — *haute*
+### ~~1. La mesure d'un item extrait reçoit le libellé du modèle comme formulation canonique, et aucune mesure n'est partagée~~ — réglé le 2026-10-16 par les PR #146, #147 et #150 (verrou de relecture au `pnpm promote`, registre `validation/mesures/relectures.json`, commande `pnpm mesures --rattacher`)
 
 `mesure.schema.json` exige `formulation_canonique`, que le prompt ne demande pas.
 `pipeline/extraction/assemblage.ts:formulationProposee` y recopie le libellé proposé. Chaque item
@@ -316,7 +316,7 @@ séparée de l'interface de validation bloque la promotion d'un item extrait jus
 rattachement à une mesure existante ou nouvelle et à la relecture de `formulation_canonique`. La
 règle ne vit qu'à un seul endroit, `formulationProposee`.
 
-### 2. Trois règles tranchées par D53 ne sont écrites ni au §4 ni dans `docs/CONTRATS.md` — *moyenne*
+### ~~2. Trois règles tranchées par D53 ne sont écrites ni au §4 ni dans `docs/CONTRATS.md`~~ — réglé par la PR #148 (protocole 0.17, §4) et `docs/CONTRATS.md` §2
 
 (a) D53 (3) : une citation présente plusieurs fois dans le texte est rejetée (`citation_ambigue`)
 et n'entre pas dans l'appariement. (b) D53 (4) : l'extrait minuté d'une source T2 va du début du cue
@@ -508,7 +508,7 @@ de recopie : la question perd deux registres sur trois. La perte se voit au reje
 remplissage, et contrôler la reformulation sur la mesure contractée. Tests d'abord. À faire avant
 le premier appel du prompt de reformulation.
 
-### 3. Le prompt juge validé (D34) ne vit que dans `scratch/`, hors Git — *basse*
+### ~~3. Le prompt juge validé (D34) ne vit que dans `scratch/`, hors Git~~ — réglé par la PR #121 (`prompts/judge-1.0.0.md`)
 
 `scratch/prompts/judge-1.0.0.md` n'est suivi par aucun commit ; D34 le cite par ce chemin.
 
@@ -1963,7 +1963,7 @@ pas à prendre seul : un contrôle trop strict pousse à écrire des entrées vi
 
 ## 2026-09-17 — JSON Schema des objets du projet (`schema/`)
 
-### 1. Un des quatre invariants inter-fichiers n'est vérifié par aucun code de production — *haute*
+### 1. Deux des quatre invariants inter-fichiers ne sont vérifiés par aucun code de production — *haute*
 
 JSON Schema valide un fichier à la fois. Quatre cohérences essentielles échappent donc aux schémas :
 
@@ -1976,7 +1976,8 @@ JSON Schema valide un fichier à la fois. Quatre cohérences essentielles échap
   appelé par aucun code de production, seulement par `tests/questions/invariants.test.ts`), mais le
   contexte d'un verdict l'est à l'assemblage par `analysis/filtre.ts:estDuRun` ;
 - les deux validations concordantes d'un item doivent porter sur la **même version** de cet item :
-  gardé à l'entrée par `validation/domaine/promotion.ts` au moment de la promotion, mais l'invariant
+  gardé à l'entrée par `validation/domaine/promotion.ts:memeVersionJugee` (appelée par
+  `evaluerPromotion`, refus `versions_differentes`) au moment de la promotion, mais l'invariant
   générique correspondant (`validationsConcordantesMemeVersion`) n'est pas non plus appelé par du
   code de production, un contrôle a posteriori sur tout le corpus déjà promu.
 
