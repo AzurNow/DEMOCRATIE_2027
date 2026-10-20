@@ -13,6 +13,7 @@ import {
   type FormulationsValidees,
   type PropositionAcceptee,
 } from "../../pipeline/reformulation/relecture.ts";
+import { AUCUNE } from "../../pipeline/reformulation/position-affirmee.ts";
 import { identifiants, jeu, jeuO, proposition, questionDe, RELECTEUR, surAutreTexte, toutCoche } from "./fabriques-relecture.ts";
 
 const ENGENDREE_LE = "2026-12-01T06:00:00+01:00";
@@ -120,5 +121,19 @@ describe("Q1, option (a) : position périmée au gel", () => {
     expect(questionsAuGel(jeu("pour").taches, toutes(), ENGENDREE_LE)).toHaveLength(taches.length);
     const o = jeuO("pour", "contre").taches;
     expect(questionsAuGel(o, toutes(o), ENGENDREE_LE)).toHaveLength(o.length);
+  });
+});
+
+describe("§5, D54 (4) : un état « sans_objet » n'affirme aucune position, au gel comme à la demande", () => {
+  it("item P « sans_objet » : la position recalculée est AUCUNE, le gel passe sans lever", () => {
+    const sansObjet = jeu("sans_objet").taches;
+    for (const tache of sansObjet) expect(tache.demande.position_affirmee).toBe(AUCUNE);
+    expect(questionsAuGel(sansObjet, toutes(sansObjet), ENGENDREE_LE)).toHaveLength(sansObjet.length);
+  });
+
+  it("item O dont l'état antérieur est « sans_objet » : la position recalculée est AUCUNE, le gel passe sans lever", () => {
+    const sansObjet = jeuO("sans_objet", "pour").taches;
+    for (const tache of sansObjet) expect(tache.demande.position_affirmee).toBe(AUCUNE);
+    expect(questionsAuGel(sansObjet, toutes(sansObjet), ENGENDREE_LE)).toHaveLength(sansObjet.length);
   });
 });
