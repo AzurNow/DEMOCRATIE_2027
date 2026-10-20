@@ -3940,7 +3940,7 @@
       ],
       "lot": "notation",
       "constat": 3,
-      "note": "Corrigé dans #PR, selon D55 (1) (option 1, 2026-10-17) : reponse.normalisation (fonction et version de l'adaptateur, ex. normaliser_openai) retirée de ReponseSoumise, donc de la charge du juge et de la vue de l'annotateur humain (D18 : il reçoit exactement ce que reçoit un juge) ; version de la charge passée à charge-juge-v5 (charge-juge-v4 déjà pris par D55 (9), #168). reponse.normalisation reste dans la réponse publiée (schema/reponse.schema.json, règle 7) et dans la réponse contrefactuelle. juge.ts:notateurDe inscrit toujours a_vu_identite_outil: false, désormais exact."
+      "note": "Corrigé dans #172, selon D55 (1) (option 1, 2026-10-17) : reponse.normalisation (fonction et version de l'adaptateur, ex. normaliser_openai) retirée de ReponseSoumise, donc de la charge du juge et de la vue de l'annotateur humain (D18 : il reçoit exactement ce que reçoit un juge) ; version de la charge passée à charge-juge-v5 (charge-juge-v4 déjà pris par D55 (9), #168). reponse.normalisation reste dans la réponse publiée (schema/reponse.schema.json, règle 7) et dans la réponse contrefactuelle. juge.ts:notateurDe inscrit toujours a_vu_identite_outil: false, désormais exact."
     },
     {
       "id": "§7.15",
