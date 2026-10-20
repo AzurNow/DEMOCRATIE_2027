@@ -7204,7 +7204,7 @@
       ],
       "lot": null,
       "constat": 6,
-      "note": "Corrigé dans #PR (D54 (4), revue du 2026-10-17 constat 5) : affirmable() rend AUCUNE pour l'état « sans_objet » sur un item P ou sur l'état ANTÉRIEUR d'un item O, au lieu de lever PositionNonAffirmable ; une position hors du vocabulaire fermé (ni pour, contre, conditionnel, ni sans_objet) continue de lever ce refus nommé. pnpm reformuler, l'écran de relecture et le gel ne s'arrêtent plus sur un tel item."
+      "note": "Corrigé dans #169 (D54 (4), revue du 2026-10-17 constat 5) : affirmable() rend AUCUNE pour l'état « sans_objet » sur un item P ou sur l'état ANTÉRIEUR d'un item O, au lieu de lever PositionNonAffirmable ; une position hors du vocabulaire fermé (ni pour, contre, conditionnel, ni sans_objet) continue de lever ce refus nommé. pnpm reformuler, l'écran de relecture et le gel ne s'arrêtent plus sur un tel item."
     },
     {
       "id": "§6.25",
