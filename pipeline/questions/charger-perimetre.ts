@@ -246,7 +246,8 @@ function motifsThemes(themes: readonly string[]): readonly string[] {
 /**
  * D55 (10), constat 42 de la revue du 2026-10-12 : un `candidat_id` homonyme de l'amorce du groupe
  * d'attribution (`tirage.ts:AMORCE_GROUPE_ATTRIBUTION`) partagerait son flux aléatoire avec lui au
- * tirage (`tirage.ts:amorce`). Seule source de vérité de cette chaîne : importée, jamais recopiée.
+ * tirage (`tirage.ts:amorceDuGroupe`). Seule source de vérité de cette chaîne : importée, jamais
+ * recopiée.
  */
 function motifsAmorceAttribution(candidats: readonly CandidatSaisi[]): readonly string[] {
   return candidats
@@ -254,7 +255,7 @@ function motifsAmorceAttribution(candidats: readonly CandidatSaisi[]): readonly 
     .map(
       (candidat) =>
         `candidats : candidat_id « ${candidat.candidat_id} » est l'identifiant du groupe d'attribution ` +
-        `du tirage ; il partagerait son flux aléatoire avec lui (§5, D55 (10))`,
+        `du tirage ; il partagerait son flux aléatoire avec lui (D55 (10), graine du tirage)`,
     );
 }
 

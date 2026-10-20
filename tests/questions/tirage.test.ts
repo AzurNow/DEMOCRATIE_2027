@@ -10,8 +10,8 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  amorce,
   AMORCE_GROUPE_ATTRIBUTION,
+  amorceDuGroupe,
   ArbitrageSansDecision,
   DecisionPanelPosterieureAuGel,
   DecisionsPanelSimultanees,
@@ -583,7 +583,7 @@ describe("contenu des entrées tirées", () => {
 
 describe("amorce du groupe d'attribution (D55 (10), constat 42 de la revue du 2026-10-12)", () => {
   it("un candidat_id valant AMORCE_GROUPE_ATTRIBUTION tirerait avec l'amorce du groupe d'attribution", () => {
-    const demande: Parameters<typeof amorce>[0] = {
+    const demande: Parameters<typeof amorceDuGroupe>[0] = {
       questions: JEU.questions,
       items: JEU.items,
       mesures: JEU.mesures,
@@ -592,7 +592,7 @@ describe("amorce du groupe d'attribution (D55 (10), constat 42 de la revue du 20
       parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
     };
     const candidat_id_homonyme = AMORCE_GROUPE_ATTRIBUTION;
-    expect(amorce(demande, candidat_id_homonyme)).toBe(amorce(demande, AMORCE_GROUPE_ATTRIBUTION));
-    expect(amorce(demande, "demo-alpha")).not.toBe(amorce(demande, AMORCE_GROUPE_ATTRIBUTION));
+    expect(amorceDuGroupe(demande, candidat_id_homonyme)).toBe(amorceDuGroupe(demande, undefined));
+    expect(amorceDuGroupe(demande, "demo-alpha")).not.toBe(amorceDuGroupe(demande, undefined));
   });
 });
