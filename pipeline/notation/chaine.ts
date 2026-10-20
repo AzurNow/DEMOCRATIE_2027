@@ -8,10 +8,10 @@
  *
  * **Ordre du §7 (D14 (1)).** Le test contrefactuel passe avant la notation de masse :
  *
- * 1. **Sous-ensemble.** Les réponses éligibles (D14 (2) : la réponse ou l'item nomme un candidat,
- *    `candidats.ts`), hors refus de l'API, que `reponse-contrefactuelle.ts` refuse de permuter
- *    faute de texte, sont tirées (`tirerSousEnsembleContrefactuel`) ; le dérangement des candidats
- *    est tiré (`tirerDerangement`).
+ * 1. **Sous-ensemble.** Les réponses éligibles (D55 (4), §7 (0.19) : la réponse ou l'item nomme un
+ *    candidat interrogé au run, `candidats.ts`), hors refus de l'API, que `reponse-contrefactuelle.ts`
+ *    refuse de permuter faute de texte, sont tirées (`tirerSousEnsembleContrefactuel`) ; le
+ *    dérangement des candidats interrogés est tiré (`tirerDerangement`).
  * 2. **Paires.** Chaque réponse du sous-ensemble est notée par les deux juges (notation ordinaire du
  *    run, réutilisée ensuite par la règle de décision), puis sa réponse permutée (`demandePermutee`)
  *    est écrite et notée par les deux juges (contexte `contrefactuel_candidat`, motif `contrefactuel`).
@@ -417,19 +417,25 @@ function runAvantLeTest(run: RunDeNotation): RunDeNotation {
   return { ...gel, juges: run.juges.map((juge) => ({ juge_id: juge.juge_id, retire: false })), taux_echantillon_humain: 0.1 };
 }
 
-/** D14 (2), et une réponse qui a un texte à permuter (un refus de l'API n'en a pas). */
-function estEligible(r: Preparee, run: RunDeNotation): boolean {
+/** D55 (4), §7 (0.19) : éligibilité restreinte aux candidats interrogés, ceux que le dérangement permute. */
+function estEligible(r: Preparee, interroges: readonly CandidatDuRun[]): boolean {
   if (r.reponse.normalise.refus_api) return false;
-  return nommeUnCandidat(textesNommables(r.reponse.normalise.texte, r.references.map((reference) => reference.item)), run.candidats);
+  return nommeUnCandidat(textesNommables(r.reponse.normalise.texte, r.references.map((reference) => reference.item)), interroges);
+}
+
+/** Les candidats du périmètre interrogés au run, ceux que le dérangement permute (D55 (4)). */
+function candidatsInterroges(etat: Etat, run: RunDeNotation): readonly CandidatDuRun[] {
+  return run.candidats.filter((candidat) => etat.interroges.includes(candidat.candidat_id));
 }
 
 async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
   const run = runAvantLeTest(runDeNotationDe(etat.run));
-  const eligibles = etat.reponses.filter((r) => estEligible(r, run)).map((r) => r.reponse.id);
+  const interroges = candidatsInterroges(etat, run);
+  const eligibles = etat.reponses.filter((r) => estEligible(r, interroges)).map((r) => r.reponse.id);
   const sous_ensemble = tirerSousEnsembleContrefactuel(eligibles, run.graines.contrefactuel);
   const attendent = sous_ensemble.reponse_ids.filter((id) => exigerPreparee(etat, id).liens === null);
   if (attendent.length > 0) return { statut: "en_attente_test_liens", reponse_ids: attendent };
-  const derangement = tirerDerangement(run.candidats, run.graines.contrefactuel);
+  const derangement = tirerDerangement(interroges, run.candidats, run.graines.contrefactuel);
   const paires: PaireContrefactuelle[] = [];
   for (const id of sous_ensemble.reponse_ids) paires.push(await noterPaire(etat, exigerPreparee(etat, id), derangement));
   const resultat = testerContrefactuel({ run, sous_ensemble, paires, notations: notationsDesPaires(etat, paires), renvois: renvoisDesPaires(etat, paires) });

@@ -239,9 +239,10 @@ describe("charge permutée", () => {
     expect(sortie.textes.citations_reference).toEqual(["Martinez : la retraite à 60 ans.", avant.etat_posterieur.citation_verbatim]);
   });
 
-  it("un item dont le candidat n'est pas au dérangement lève", () => {
+  it("D55 (4) : un item dont le candidat n'est pas au dérangement (non interrogé) garde son identifiant inchangé", () => {
     const etranger = { ...demande(), references: [{ item: itemP({ candidat_id: "inconnu" }), role: "principal" as const }] };
-    expect(() => demandePermutee(etranger, NOUVEL_ID, CYCLE)).toThrow(/inconnu/);
+    const sortie = demandePermutee(etranger, NOUVEL_ID, CYCLE);
+    expect(sortie.demande.references[0]?.item.candidat_id).toBe("inconnu");
   });
 
   it("D27 (G) : la liste attendue d'une Q-ATT suit les items, triée ; prémisse et registre recopiés", () => {

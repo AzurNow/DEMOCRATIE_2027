@@ -1013,7 +1013,7 @@
           "additionalProperties": {
             "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
           },
-          "description": "D14 (2) : le dérangement des candidats du périmètre, candidat_id source → candidat_id image, un seul pour tout le run (pipeline/notation/derangement.ts, correspondancesDe)."
+          "description": "D55 (4), §7 (protocole 0.19) : le dérangement des candidats interrogés au run, candidat_id source → candidat_id image, un seul pour tout le run (pipeline/notation/derangement.ts, correspondancesDe). Un candidat non interrogé n'y figure pas : il n'a pas d'image."
         },
         "cle_graine": {
           "type": "array",
@@ -1031,7 +1031,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "D14 (2) : la clé lisible de la graine du dérangement des candidats, dérivée de graines.contrefactuel comme en section 8 (pipeline/notation/derangement.ts, CLE_DERANGEMENT_CANDIDATS). Publiée pour que le dérangement se rejoue, et pas seulement se lise dans correspondances."
+          "description": "D55 (4), §7 (protocole 0.19) : la clé lisible de la graine du dérangement des candidats interrogés au run, dérivée de graines.contrefactuel comme en section 8 (pipeline/notation/derangement.ts, CLE_DERANGEMENT_CANDIDATS). Publiée pour que le dérangement se rejoue, et pas seulement se lise dans correspondances."
         },
         "mentions_residuelles": {
           "type": "integer",
