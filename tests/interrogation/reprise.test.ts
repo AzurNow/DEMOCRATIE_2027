@@ -87,7 +87,7 @@ describe("cas 11 : reprise", () => {
     const relance = nouveauBanc(b.racine);
     relance.editeur("outil-alpha", scenarioScripte([]));
     const bilan = await relance.executer(plan(...requetes));
-    expect(bilan).toEqual({ ecrites: 0, deja_ecrites: 2 });
+    expect(bilan).toEqual({ ecrites: 0, deja_ecrites: 2, en_attente_operateur: [] });
     expect(transportDe(relance).interne.recues).toHaveLength(0);
     expect(relance.lues()).toEqual(avant);
   });

@@ -17,12 +17,21 @@
  * ou `--run` sous `runs/` est refusé (`gardes-sortie.ts:exigerHorsDeRuns`) avant toute lecture ou
  * écriture. Chaque réponse est validée contre `schema/reponse.schema.json` au moment de son
  * écriture ; le bilan imprimé est relu du disque.
+ *
+ * Code de sortie :
+ * - 0 : le run est allé au bout ; les requêtes écrites (obtenues ou manquantes) sont toutes
+ *   écrites, et aucune ne porte de réponse reçue mais non stockée ;
+ * - 4 : au moins une requête porte une réponse reçue que le banc n'a pas pu stocker (§6, D55 (5)) ;
+ *   le reste du run s'est terminé normalement, le bilan est imprimé, et chaque requête concernée
+ *   est nommée avec la tentative, la cause et le fichier d'octets gardé. Elle n'est jamais
+ *   renvoyée : la question attend l'opérateur.
  */
 
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { LigneBilan } from "../pipeline/interrogation/bilan.ts";
+import { CODE_RECUE_NON_STOCKEE, messageAttenteOperateur } from "../pipeline/interrogation/operateur.ts";
 import { lancerRunGeleSimule, lancerRunSimule, type ResultatRunSimule } from "../pipeline/interrogation/run-simule.ts";
 import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
 import { analyserArguments, type Arguments } from "./arguments.ts";
@@ -79,6 +88,18 @@ function imprimerBilan(resultat: ResultatRunSimule, statut: string): void {
   resultat.bilan.forEach(imprimerLigne);
 }
 
+/** Imprime chaque requête en attente de l'opérateur ; vrai si le run en porte au moins une. */
+function imprimerAttenteOperateur(resultat: ResultatRunSimule): boolean {
+  const { en_attente_operateur } = resultat.execution;
+  for (const item of en_attente_operateur) process.stdout.write(`${messageAttenteOperateur(item)}\n`);
+  return en_attente_operateur.length > 0;
+}
+
+function finirRun(resultat: ResultatRunSimule, statut: string): void {
+  imprimerBilan(resultat, statut);
+  if (imprimerAttenteOperateur(resultat)) process.exitCode = CODE_RECUE_NON_STOCKEE;
+}
+
 const STATUT_DU_DEMARRAGE = {
   demarre: "run.json : statut planifie ⇒ en_cours, écrit avant la première tentative (D51 (1)).",
   reprend: "run.json : déjà en_cours, reprise sans nouvelle transition ni réécriture.",
@@ -93,11 +114,11 @@ async function principal(): Promise<void> {
     throw new ArgumentsRunDryRefuses("--run et --sortie s'excluent : un run gelé s'interroge dans son propre répertoire.");
   }
   if (run === undefined) {
-    imprimerBilan(await lancerRunSimule({ sortie: sortieDemandee(sortie), fixtures: FIXTURES }), "");
+    finirRun(await lancerRunSimule({ sortie: sortieDemandee(sortie), fixtures: FIXTURES }), "");
     return;
   }
   const resultat = await lancerRunGeleSimule({ repertoire: run, profils: PROFILS_RUN_GELE });
-  imprimerBilan(resultat, STATUT_DU_DEMARRAGE[resultat.demarrage]);
+  finirRun(resultat, STATUT_DU_DEMARRAGE[resultat.demarrage]);
 }
 
 await principal();

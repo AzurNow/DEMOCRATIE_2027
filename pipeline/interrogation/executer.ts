@@ -1,15 +1,24 @@
 /**
  * L'exécution d'un run d'interrogation (§6) : chaque outil a sa file, les files avancent en
  * parallèle, chaque requête a au plus trois tentatives dans la fenêtre du run, et chaque requête
- * finit en une réponse écrite une fois — obtenue, ou manquante avec son motif.
+ * finit en une réponse écrite une fois — obtenue, manquante avec son motif, ou, si une réponse
+ * reçue n'a pas pu être stockée, en attente de l'opérateur.
  *
  * Reprise : une requête dont la réponse est écrite est sautée ; sinon ses tentatives déjà
  * journalisées comptent (`journal.ts`), et l'exécution reprend à la suivante, après l'attente qui
  * la précède. Relancer un run complet ne fait donc rien.
  *
- * Une erreur qui n'est pas un échec de tentative (corps qui n'est pas de l'UTF-8 valide, réponse
- * malformée, réponse non conforme au schéma) arrête la file de son outil ; les autres files vont au bout, puis
- * l'erreur remonte. Sa tentative reste journalisée sans résultat.
+ * Réponse reçue, non stockée (§6, D55 (5)) : dès qu'une réponse HTTP est reçue, ses octets sont
+ * gardés sous `volume/` avant toute interprétation (`journal.ts:garderOctets`). Si le décodage
+ * (UTF-8, forme JSON attendue), la normalisation ou l'écriture de la réponse structurée échoue
+ * ensuite, ce n'est pas une tentative de l'outil : le journal reçoit un événement
+ * `recue_non_stockee` qui conclut la ligne, aucune réponse n'est écrite, et la requête n'est plus
+ * jamais retentée — elle attend l'opérateur. Les autres requêtes, du même outil ou d'un autre,
+ * continuent normalement.
+ *
+ * Une erreur qui n'est pas un échec de tentative ni une réponse reçue non stockée (par exemple une
+ * incohérence de programme pendant l'envoi lui-même) arrête la file de son outil ; les autres
+ * files vont au bout, puis l'erreur remonte. Sa tentative reste journalisée sans résultat.
  */
 
 import { mkdirSync } from "node:fs";
@@ -27,6 +36,7 @@ import { conclure, envoyerSousDelai } from "./tentatives.ts";
 import {
   cleDe,
   type BrutStocke,
+  type CleRequete,
   type MotifManquante,
   type ProjectionNormalisee,
   type ReponseEcrite,
@@ -41,15 +51,26 @@ export interface ContexteRun {
   readonly fenetre: Fenetre;
   readonly horloge: Horloge;
   readonly depot: DepotReponses;
-  /** Répertoire des journaux de tentatives (`volume/tentatives/`). */
+  /** Répertoire des journaux de tentatives et des octets gardés (`volume/tentatives/`). */
   readonly repertoire_tentatives: string;
   /** L'éditeur de chaque outil du plan. Un outil sans éditeur lève avant tout envoi. */
   readonly editeurs: ReadonlyMap<string, Editeur>;
 }
 
+/** Une requête dont la réponse reçue n'a pas pu être stockée : elle attend l'opérateur (§6). */
+export interface EnAttenteOperateur {
+  readonly genre: "en_attente_operateur";
+  readonly requete: CleRequete;
+  readonly numero: number;
+  readonly chemin_octets: string;
+  readonly cause: string;
+}
+
 export interface BilanExecution {
   readonly ecrites: number;
   readonly deja_ecrites: number;
+  /** Réponses reçues non stockées, nouvelles ou déjà connues du journal : jamais retentées. */
+  readonly en_attente_operateur: readonly EnAttenteOperateur[];
 }
 
 export class RunHorsFenetre extends Error {
@@ -68,9 +89,19 @@ interface Course {
   readonly contexte: ContexteRun;
 }
 
+/** Ce qu'une réponse reçue, mais que le banc n'a pas pu stocker, porte pour l'opérateur. */
+interface RecueNonStockee {
+  readonly genre: "recue_non_stockee";
+  readonly numero: number;
+  readonly chemin_octets: string;
+  readonly cause: string;
+}
+
 type Aboutissement =
   | {
       readonly genre: "obtenue";
+      readonly numero: number;
+      readonly chemin_octets: string;
       readonly tentatives: readonly Tentative[];
       readonly contenu: Contenu;
       readonly refus_api: boolean;
@@ -78,18 +109,27 @@ type Aboutissement =
       readonly debut_ms: number;
       readonly fin_ms: number;
     }
-  | { readonly genre: "manquante"; readonly motif: MotifManquante; readonly tentatives: readonly Tentative[] };
+  | { readonly genre: "manquante"; readonly motif: MotifManquante; readonly tentatives: readonly Tentative[] }
+  | RecueNonStockee;
 
 type Essai =
   | {
       readonly genre: "obtenue";
+      readonly numero: number;
+      readonly chemin_octets: string;
       readonly contenu: Contenu;
       readonly refus_api: boolean;
       readonly brut_octets_sha256: string;
       readonly debut_ms: number;
       readonly fin_ms: number;
     }
-  | { readonly genre: "echec"; readonly tentative: Tentative };
+  | { readonly genre: "echec"; readonly tentative: Tentative }
+  | RecueNonStockee;
+
+/** Le message d'une erreur, sans secret : celle-ci vient du code du banc, jamais du corps reçu. */
+function causeDe(erreur: unknown): string {
+  return erreur instanceof Error ? erreur.message : String(erreur);
+}
 
 /* ----------------------------------------------------------------- tentatives */
 
@@ -102,17 +142,34 @@ async function attendreSonTour(numero: number, contexte: ContexteRun): Promise<b
   return tentativePeutDemarrer(fenetre, horloge.maintenant());
 }
 
+/**
+ * Classe l'envoi reçu (`conclure`, `tentatives.ts`). Si la classification elle-même échoue
+ * (décodage non UTF-8, forme inattendue) après qu'un corps a été reçu, les octets déjà gardés
+ * (`chemin_octets`) permettent de conclure la ligne par `recue_non_stockee` plutôt que de laisser
+ * remonter l'erreur (§6, D55 (5)). Une erreur avant toute réception (`chemin_octets` nul) reste une
+ * incohérence de programme, non rattrapée ici.
+ */
 async function tenter(numero: number, course: Course): Promise<Essai> {
   const { horloge } = course.contexte;
   const debut_ms = horloge.maintenant();
   const horodatage = instantParis(debut_ms);
   course.journal.inscrireDebut(numero, horodatage, cleDe(course.requete));
-  const conclusion = conclure(await envoyerSousDelai(course.editeur, course.http, horloge), course.editeur.adaptateur);
-  if (conclusion.genre === "echec") {
-    course.journal.inscrireEchec(numero, conclusion.erreur);
-    return { genre: "echec", tentative: { numero, horodatage, erreur: conclusion.erreur } };
+  const envoi = await envoyerSousDelai(course.editeur, course.http, horloge);
+  const chemin_octets = envoi.genre === "http" ? course.journal.garderOctets(numero, envoi.reponse.corps) : null;
+  try {
+    const conclusion = conclure(envoi, course.editeur.adaptateur);
+    if (conclusion.genre === "echec") {
+      course.journal.inscrireEchec(numero, conclusion.erreur);
+      return { genre: "echec", tentative: { numero, horodatage, erreur: conclusion.erreur } };
+    }
+    // `chemin_octets` est non nul ici : seul un envoi "http" conclut "obtenue" (`conclureHttp`).
+    return { ...conclusion, debut_ms, fin_ms: horloge.maintenant(), numero, chemin_octets: chemin_octets as string };
+  } catch (erreur) {
+    if (chemin_octets === null) throw erreur;
+    const cause = causeDe(erreur);
+    course.journal.inscrireRecueNonStockee(numero, chemin_octets, cause);
+    return { genre: "recue_non_stockee", numero, chemin_octets, cause };
   }
-  return { ...conclusion, debut_ms, fin_ms: horloge.maintenant() };
 }
 
 async function poursuivre(course: Course, passees: readonly Tentative[]): Promise<Aboutissement> {
@@ -122,6 +179,7 @@ async function poursuivre(course: Course, passees: readonly Tentative[]): Promis
     if (!(await attendreSonTour(numero, course.contexte))) return { genre: "manquante", motif: "hors_fenetre", tentatives };
     const essai = await tenter(numero, course);
     if (essai.genre === "obtenue") return { ...essai, tentatives };
+    if (essai.genre === "recue_non_stockee") return essai;
     tentatives.push(essai.tentative);
   }
   return { genre: "manquante", motif: "echecs", tentatives };
@@ -216,26 +274,49 @@ function reponseManquante(course: Course, fin: Extract<Aboutissement, { genre: "
   };
 }
 
-function reponseDe(course: Course, fin: Aboutissement): ReponseEcrite {
-  return fin.genre === "obtenue" ? reponseObtenue(course, fin) : reponseManquante(course, fin);
-}
-
 /* ------------------------------------------------------------------- files */
 
-type IssueRequete = "ecrite" | "deja_ecrite";
+type IssueRequete = "ecrite" | "deja_ecrite" | EnAttenteOperateur;
+
+function enAttente(requete: RequetePlanifiee, info: Pick<EnAttenteOperateur, "numero" | "chemin_octets" | "cause">): EnAttenteOperateur {
+  return { genre: "en_attente_operateur", requete: cleDe(requete), ...info };
+}
+
+/**
+ * Écrit la réponse obtenue. Si l'écriture échoue (normalisation en échec, schéma refusé, écriture
+ * de la réponse structurée en échec), les octets reçus à la tentative `fin.numero` sont déjà
+ * gardés : la ligne ouverte par `inscrireDebut` est conclue par `recue_non_stockee` plutôt que
+ * d'arrêter la file (§6, D55 (5)).
+ */
+function ecrireObtenue(course: Course, fin: Extract<Aboutissement, { genre: "obtenue" }>): IssueRequete {
+  try {
+    course.contexte.depot.ecrire(reponseObtenue(course, fin));
+    return "ecrite";
+  } catch (erreur) {
+    const cause = causeDe(erreur);
+    course.journal.inscrireRecueNonStockee(fin.numero, fin.chemin_octets, cause);
+    return enAttente(course.requete, { numero: fin.numero, chemin_octets: fin.chemin_octets, cause });
+  }
+}
 
 async function executerRequete(requete: RequetePlanifiee, editeur: Editeur, contexte: ContexteRun): Promise<IssueRequete> {
   if (contexte.depot.contient(requete)) return "deja_ecrite";
   const journal = new JournalRequete(contexte.repertoire_tentatives, cleDe(requete));
+  const reprise = journal.reprise();
+  if (reprise.genre === "recue_non_stockee") return enAttente(requete, reprise);
   const http = editeur.adaptateur.construireRequete({
     texte: requete.texte,
     mode: requete.mode,
     modele_demande: requete.modele_demande,
   });
   const course: Course = { requete, http, editeur, journal, contexte };
-  const fin = await poursuivre(course, journal.tentativesPassees());
-  contexte.depot.ecrire(reponseDe(course, fin));
-  return "ecrite";
+  const fin = await poursuivre(course, reprise.tentatives);
+  if (fin.genre === "recue_non_stockee") return enAttente(requete, fin);
+  if (fin.genre === "manquante") {
+    contexte.depot.ecrire(reponseManquante(course, fin));
+    return "ecrite";
+  }
+  return ecrireObtenue(course, fin);
 }
 
 async function executerFile(requetes: readonly RequetePlanifiee[], editeur: Editeur, contexte: ContexteRun): Promise<IssueRequete[]> {
@@ -258,6 +339,10 @@ function premierRejet(resultats: readonly PromiseSettledResult<IssueRequete[]>[]
   return raison instanceof Error ? raison : new Error(`File d'outil arrêtée : ${String(raison)}`);
 }
 
+function estEnAttente(issue: IssueRequete): issue is EnAttenteOperateur {
+  return typeof issue !== "string";
+}
+
 export async function executerRun(plan: PlanInterrogation, contexte: ContexteRun): Promise<BilanExecution> {
   const maintenant = contexte.horloge.maintenant();
   if (maintenant < contexte.fenetre.debut_ms) throw new RunHorsFenetre(instantParis(maintenant), contexte.fenetre);
@@ -270,5 +355,6 @@ export async function executerRun(plan: PlanInterrogation, contexte: ContexteRun
   return {
     ecrites: issues.filter((i) => i === "ecrite").length,
     deja_ecrites: issues.filter((i) => i === "deja_ecrite").length,
+    en_attente_operateur: issues.filter(estEnAttente),
   };
 }

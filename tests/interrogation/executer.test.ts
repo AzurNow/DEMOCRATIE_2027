@@ -166,7 +166,7 @@ describe("corps qui ne sont pas des objets JSON (décisions de l'auteur du 2026-
     const suite = banc(undefined, b.racine);
     courant = suite;
     suite.editeur("outil-alpha", scenarioScripte([]));
-    expect(await suite.executer(plan(requete()))).toEqual({ ecrites: 0, deja_ecrites: 1 });
+    expect(await suite.executer(plan(requete()))).toEqual({ ecrites: 0, deja_ecrites: 1, en_attente_operateur: [] });
     expect(transportDe(suite).interne.recues).toHaveLength(0);
   });
 

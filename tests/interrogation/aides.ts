@@ -65,6 +65,12 @@ export function requete(surcharges: Partial<RequetePlanifiee> = {}): RequetePlan
   };
 }
 
+/** Options d'un appel à `Banc.executer` : seul le cas « écriture de la réponse structurée qui lève » en a besoin. */
+export interface OptionsExecuter {
+  /** Appelé sur le dépôt juste avant l'exécution, pour lui faire lever au moment d'écrire. */
+  readonly depotPatch?: (depot: DepotReponses) => void;
+}
+
 export interface Banc {
   readonly racine: string;
   readonly fenetre: Fenetre;
@@ -74,7 +80,7 @@ export interface Banc {
   /** Un transport par outil, à créer avant `executer`. */
   readonly transports: Map<string, TransportEnregistreur>;
   editeur(outil_id: string, scenario: Scenario): void;
-  executer(plan: PlanInterrogation): Promise<BilanExecution>;
+  executer(plan: PlanInterrogation, options?: OptionsExecuter): Promise<BilanExecution>;
   /** Les réponses écrites, relues du disque et validées. */
   lues(): readonly ReponseEcrite[];
   nettoyer(): void;
@@ -97,15 +103,17 @@ export function banc(depart_ms?: number, racine = mkdtempSync(join(tmpdir(), "ba
     editeur(outil_id, scenario) {
       transports.set(outil_id, new TransportEnregistreur(new TransportSimule(horloge, scenario)));
     },
-    executer(plan) {
+    executer(plan, options) {
       const editeurs = new Map<string, Editeur>(
         [...transports].map(([outil_id, transport]) => [outil_id, { adaptateur: adaptateurSimule(CLE_API), transport }]),
       );
+      const depot = DepotReponses.ouvrir(reponses);
+      options?.depotPatch?.(depot);
       return executerRun(plan, {
         run_id: RUN_ID,
         fenetre,
         horloge,
-        depot: DepotReponses.ouvrir(reponses),
+        depot,
         repertoire_tentatives: tentatives,
         editeurs,
       });

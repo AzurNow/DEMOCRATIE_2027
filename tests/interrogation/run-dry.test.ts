@@ -33,7 +33,7 @@ describe("run simulé complet", () => {
     const resultat = await lancerRunSimule({ sortie: racine, fixtures: FIXTURES });
     expect(resultat.disposition.run).toBe(join(racine, "2026-11-27"));
     // outil-alpha : 3 questions × 3 formulations × 2 modes × 2 échantillons ; outil-beta : un seul mode.
-    expect(resultat.execution).toEqual({ ecrites: 54, deja_ecrites: 0 });
+    expect(resultat.execution).toEqual({ ecrites: 54, deja_ecrites: 0, en_attente_operateur: [] });
     const reponses = DepotReponses.ouvrir(resultat.disposition.reponses).toutes();
     expect(reponses).toHaveLength(54);
     expect(new Set(reponses.map((r) => r.outil_id))).toEqual(new Set(["outil-alpha", "outil-beta"]));
@@ -55,7 +55,7 @@ describe("run simulé complet", () => {
     const racine = sortie();
     const premier = await lancerRunSimule({ sortie: racine, fixtures: FIXTURES });
     const second = await lancerRunSimule({ sortie: racine, fixtures: FIXTURES });
-    expect(second.execution).toEqual({ ecrites: 0, deja_ecrites: 54 });
+    expect(second.execution).toEqual({ ecrites: 0, deja_ecrites: 54, en_attente_operateur: [] });
     expect(second.bilan).toEqual(premier.bilan);
   });
 
