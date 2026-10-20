@@ -34,11 +34,12 @@
 
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
+import type { Mode } from "../../analysis/types.ts";
 import { validerFragment, valider } from "../../outils/schemas/valider.ts";
 import { itemsPAuGel } from "./couverture.ts";
 import { inclusionAvantListe, SONDAGES_MINIMUM } from "./perimetre.ts";
 import { THEMES } from "./types.ts";
-import type { Item, Mesure, ParametresTirage } from "./types.ts";
+import type { Item, Mesure, ParametresTirage, RegimeInclusion, StatutAuGel } from "./types.ts";
 
 /**
  * §4 : « Un candidat comptant moins de 10 items P vérifiés à la date du run est rapporté à part. »
@@ -47,10 +48,6 @@ import type { Item, Mesure, ParametresTirage } from "./types.ts";
  * lèverait si les deux divergeaient.
  */
 export const SEUIL_COUVERTURE_ITEMS_P = 10;
-
-type Regime = "avant_liste_officielle" | "liste_officielle";
-type StatutAuGel = "actif" | "nouveau" | "retire";
-type Mode = "web_activee" | "web_desactivee";
 
 /** `run.schema.json#/$defs/preuve_archivee`. */
 export interface PreuveArchivee {
@@ -107,7 +104,7 @@ interface OutilSaisi extends OutilCommun {
 interface PerimetreSaisi {
   readonly version: string;
   readonly date_gel: string | null;
-  readonly regime_inclusion: Regime | null;
+  readonly regime_inclusion: RegimeInclusion | null;
   readonly liste_officielle: PreuveArchivee | null;
   readonly themes: readonly string[];
   readonly tirage: {
@@ -121,7 +118,7 @@ interface PerimetreSaisi {
 /** Le même, sans aucun null restant dans une clé obligatoire. */
 interface PerimetrePourRun extends Omit<PerimetreSaisi, "date_gel" | "regime_inclusion" | "tirage"> {
   readonly date_gel: string;
-  readonly regime_inclusion: Regime;
+  readonly regime_inclusion: RegimeInclusion;
   readonly tirage: ParametresTirage;
 }
 
@@ -144,7 +141,7 @@ export interface OutilDeRun extends OutilCommun {
 
 /** `run.perimetre`, tel que `run.schema.json` le décrit. */
 export interface PerimetreDeRun {
-  readonly regime_inclusion: Regime;
+  readonly regime_inclusion: RegimeInclusion;
   readonly liste_officielle?: PreuveArchivee;
   readonly candidats: readonly CandidatDeRun[];
   readonly outils: readonly OutilDeRun[];
@@ -251,7 +248,7 @@ function motifsIdentifiants(perimetre: PerimetrePourRun): readonly string[] {
 }
 
 /** §3 : la liste officielle est exigée dans son régime et interdite avant. Une table, pas un `if` par régime. */
-const LISTE_OFFICIELLE_EXIGEE: Readonly<Record<Regime, boolean>> = {
+const LISTE_OFFICIELLE_EXIGEE: Readonly<Record<RegimeInclusion, boolean>> = {
   avant_liste_officielle: false,
   liste_officielle: true,
 };

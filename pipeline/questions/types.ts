@@ -322,6 +322,18 @@ export interface Tirage {
 
 /* ----------------------------------------------------------------------- run */
 
+/** `schema/perimetre.schema.json#/$defs/candidat/properties/statut_au_gel`, recopiée une seule fois ici. */
+export const STATUTS_AU_GEL = ["actif", "nouveau", "retire"] as const;
+export type StatutAuGel = (typeof STATUTS_AU_GEL)[number];
+
+/**
+ * §3 (protocole 0.11) : chaque run déclare son régime d'inclusion.
+ * `schema/perimetre.schema.json#/properties/regime_inclusion` et
+ * `schema/run.schema.json#/properties/perimetre/properties/regime_inclusion`.
+ */
+export const REGIMES_INCLUSION = ["avant_liste_officielle", "liste_officielle"] as const;
+export type RegimeInclusion = (typeof REGIMES_INCLUSION)[number];
+
 /**
  * Le nom d'un candidat, saisi par l'auteur dans le périmètre du run : `libelle` (prénom et nom tels
  * qu'affichés) remplit `[candidat]` dans les gabarits qui le nomment, et la barrière « aucun nom de
@@ -335,7 +347,7 @@ export interface CandidatNomme {
 }
 
 export interface CandidatAuGel extends CandidatNomme {
-  readonly statut_au_gel: "actif" | "nouveau" | "retire";
+  readonly statut_au_gel: StatutAuGel;
   readonly items_p_verifies: number;
   readonly sous_seuil: boolean;
   readonly interroge: boolean;

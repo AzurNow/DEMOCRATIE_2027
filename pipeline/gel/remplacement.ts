@@ -23,6 +23,7 @@
 import { join } from "node:path";
 import { lireRunsDuDepot } from "./precedent.ts";
 import type { RunDeRuns } from "./precedent.ts";
+import { TYPE_REEXECUTION } from "../run/types.ts";
 
 export type MotifRemplacement =
   | "remplace_sans_reexecution"
@@ -41,17 +42,14 @@ export class RemplacementRefuse extends Error {
   }
 }
 
-/** Le seul type de run qui remplace un run invalidé. */
-const REEXECUTION = "reexecution";
-
 /** `--remplace` et `--type-run=reexecution` vont ensemble, ou pas du tout. */
 export function exigerRemplacementDeclare(type_run: string, remplace: string | undefined): void {
-  const est_reexecution = type_run === REEXECUTION;
+  const est_reexecution = type_run === TYPE_REEXECUTION;
   if (est_reexecution && remplace === undefined) {
     throw new RemplacementRefuse("reexecution_sans_remplace", "une réexécution déclare le run invalidé qu'elle remplace : --remplace=<id> est obligatoire.");
   }
   if (!est_reexecution && remplace !== undefined) {
-    throw new RemplacementRefuse("remplace_sans_reexecution", `--remplace n'est admis qu'avec --type-run=${REEXECUTION} (reçu : ${type_run}).`);
+    throw new RemplacementRefuse("remplace_sans_reexecution", `--remplace n'est admis qu'avec --type-run=${TYPE_REEXECUTION} (reçu : ${type_run}).`);
   }
 }
 

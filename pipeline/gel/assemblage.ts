@@ -52,9 +52,10 @@ import { grainesDuRun } from "./graines.ts";
 import type { GrainesDuRun, ValeursDesGraines } from "./graines.ts";
 import { exigerFenetreApresDateGel } from "./instants.ts";
 import type { PrecedentDuGel } from "./precedent.ts";
+import { STATUT_PLANIFIE } from "../run/types.ts";
 
 /** Le statut d'un run qui vient d'être gelé : il n'est ni lancé ni publié. */
-export const STATUT_AU_GEL = "planifie";
+export const STATUT_AU_GEL = STATUT_PLANIFIE;
 
 /** Un fichier du run : chemin relatif au répertoire du run, contenu exact. */
 export interface FichierDuGel {

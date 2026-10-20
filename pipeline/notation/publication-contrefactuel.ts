@@ -2,8 +2,12 @@
  * Du résultat du test contrefactuel des noms de candidats (`contrefactuel.ts`) aux champs que le
  * run publie (`schema/run.schema.json`) : le bloc `contrefactuel_candidats`, pour chaque juge son
  * taux et ses effectifs (`taux_changement_contrefactuel`, `changements_contrefactuel`), son retrait
- * et son motif, le taux de l'échantillon humain, et, si les deux juges sont retirés, le statut
- * `invalide` avec la raison dans `invalidation.motif` (D16 (3) : aucun champ nouveau).
+ * et son motif, le taux de l'échantillon humain, et, si les deux juges sont retirés, la raison dans
+ * `invalidation.motif` (D16 (3) : aucun champ nouveau). Le `statut` du run n'est jamais touché ici :
+ * `invalidation.motif` est lu par `inscription-contrefactuel.ts:avecInvalidation`, qui pose
+ * l'invalidation par la transition pure de `pipeline/run/statut.ts:invalider`, qui ne touche pas
+ * `statut` non plus (voir son en-tête) ; `invalide` s'écrit avec le dépôt (§12, protocole §6), hors
+ * de tout ce qui précède.
  *
  * Fonction pure : elle rend les champs, l'appelant les écrit dans le run. Elle ne recalcule rien
  * et refuse ce qui ne se publie pas, plutôt que de le compléter :
@@ -58,8 +62,7 @@ export interface PublicationContrefactuel {
   readonly contrefactuel_candidats: BlocContrefactuelCandidats;
   readonly juges: readonly JugePublie[];
   readonly taux_echantillon_humain: TauxEchantillonHumain;
-  /** Présents ensemble, et seulement quand les deux juges sont retirés (D16 (3)). */
-  readonly statut?: "invalide";
+  /** Présente seulement quand les deux juges sont retirés (D16 (3)) ; lue par `inscription-contrefactuel.ts`. */
   readonly invalidation?: { readonly motif: string };
 }
 
@@ -89,7 +92,6 @@ export function publierContrefactuel(
     case "run_invalide":
       return {
         ...publierTermine(resultat.juges, resultat, sous_ensemble, derangement, run, TAUX_ECHANTILLON_APRES_RETRAIT),
-        statut: "invalide",
         invalidation: { motif: resultat.raison },
       };
   }

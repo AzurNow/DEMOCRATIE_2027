@@ -17,7 +17,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { ErreurSchema, erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { geler } from "../../pipeline/gel/geler.ts";
 import { ECHANTILLONS } from "../../pipeline/interrogation/conditions.ts";
-import { RunGeleRefuse } from "../../pipeline/interrogation/run-gele.ts";
+import { questionsTirees, RunGeleRefuse } from "../../pipeline/interrogation/run-gele.ts";
 import { lancerRunGeleSimule, ProfilSimuleAbsent } from "../../pipeline/interrogation/run-simule.ts";
 import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
 import { invaliderRun } from "../../pipeline/run/invalidation.ts";
@@ -234,6 +234,23 @@ describe("run gelé, cas 3 : entrée du tirage absente de questions.json", () =>
     expect(erreur).toBeInstanceOf(RunGeleRefuse);
     expect((erreur as RunGeleRefuse).motif).toBe("question_introuvable");
     expect(erreur.message).toContain(String(premiere));
+  });
+
+  it("run gelé, cas 3 : la garde interne de questionsTirees, inatteignable depuis lireRunGele (constat 31), lève une erreur d'invariant et non un RunGeleRefuse", () => {
+    const repertoire = copie();
+    const tirage = json<Tirage>(repertoire, "tirage.json");
+    const premiere = tirage.entrees[0]?.question_id;
+    const questions = json<readonly Question[]>(repertoire, "questions.json").filter((q) => q.id !== premiere);
+    expect(() => questionsTirees(repertoire, { tirage, questions })).toThrow(Error);
+    try {
+      questionsTirees(repertoire, { tirage, questions });
+      throw new Error("devait lever");
+    } catch (erreur) {
+      expect(erreur).not.toBeInstanceOf(RunGeleRefuse);
+      expect(erreur).toBeInstanceOf(Error);
+      expect((erreur as Error).message).toContain(String(premiere));
+      expect((erreur as Error).message).toContain("Invariant");
+    }
   });
 });
 

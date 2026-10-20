@@ -24,6 +24,8 @@
 
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { lireInstant } from "../interrogation/heure-paris.ts";
+import { STATUT_EN_COURS, STATUT_PLANIFIE } from "./types.ts";
+import type { StatutRun } from "./types.ts";
 
 export interface Invalidation {
   readonly motif: string;
@@ -61,16 +63,16 @@ export class TransitionRefusee extends Error {
 }
 
 /** D51 (4) : les seuls statuts depuis lesquels un run s'invalide. */
-const INVALIDABLES: ReadonlySet<string> = new Set(["planifie", "en_cours"]);
+const INVALIDABLES: ReadonlySet<string> = new Set<StatutRun>([STATUT_PLANIFIE, STATUT_EN_COURS]);
 
 export function demarrer<T extends RunAvecStatut>(run: T): T {
-  if (run.statut !== "planifie") {
+  if (run.statut !== STATUT_PLANIFIE) {
     throw new TransitionRefusee("demarrer", "statut_de_depart", `le run est au statut « ${run.statut} » ; seul un run planifie démarre.`);
   }
   if (run.invalidation !== undefined) {
     throw new TransitionRefusee("demarrer", "porte_une_invalidation", `le run porte une invalidation (« ${run.invalidation.motif} ») ; il ne part pas.`);
   }
-  return { ...run, statut: "en_cours" };
+  return { ...run, statut: STATUT_EN_COURS };
 }
 
 export type IssueDemarrage<T> = { readonly issue: "demarre"; readonly run: T } | { readonly issue: "reprend" };
@@ -82,7 +84,7 @@ export type IssueDemarrage<T> = { readonly issue: "demarre"; readonly run: T } |
  * statut est refusé par `demarrer`.
  */
 export function demarrerOuReprendre<T extends RunAvecStatut>(run: T): IssueDemarrage<T> {
-  if (run.statut !== "en_cours") return { issue: "demarre", run: demarrer(run) };
+  if (run.statut !== STATUT_EN_COURS) return { issue: "demarre", run: demarrer(run) };
   if (run.invalidation !== undefined) {
     throw new TransitionRefusee("demarrer", "porte_une_invalidation", `le run en_cours porte une invalidation (« ${run.invalidation.motif} ») ; il ne reprend pas.`);
   }

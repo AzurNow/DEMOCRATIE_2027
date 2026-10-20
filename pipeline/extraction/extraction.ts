@@ -32,6 +32,7 @@ import { deposer, type ContexteDepot, type MesureStaging } from "./assemblage.ts
 import { choisirFiche, type ExtracteurEpingle, type FicheExtraction } from "./choix-texte.ts";
 import { accordDe } from "./comparaison.ts";
 import { exigerConfiguration, type ConfigurationExtraction } from "./configuration.ts";
+import { FORMATS_MINUTES } from "./entrees.ts";
 import { lireSortie } from "./lecture-sortie.ts";
 import { localiser, type Localisation, type Reperes } from "./localisation.ts";
 import type { MotifRejetSortieEntiere, Rejet, RejetDepot, RejetItem, RejetSortie } from "./rejets.ts";
@@ -119,9 +120,6 @@ export class TranscriptionIncoherente extends Error {
 }
 
 /* ------------------------------------------------------------ vérifications */
-
-/** Formats dont le texte est dérivé d'une transcription minutée (docs/CONTRATS.md §2). */
-const FORMATS_MINUTES: ReadonlySet<Source["format"]> = new Set(["audio", "video"]);
 
 function sortiesOrdonnees(entree: EntreeExtraction): readonly [SortieModele, SortieModele] {
   const [premier, second] = entree.configuration.modeles;

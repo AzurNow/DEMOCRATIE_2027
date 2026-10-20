@@ -12,8 +12,9 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, expectTypeOf, it } from "vitest";
 import { valider } from "../../outils/schemas/valider.ts";
+import { STATUT_AU_GEL } from "../../pipeline/gel/assemblage.ts";
 import { BaliseRefusee, identifiantDuRun, QUICKNET, RELAIS, urlTour, valeursDesGraines } from "../../pipeline/gel/balise.ts";
 import { DepotSale } from "../../pipeline/gel/depot.ts";
 import { RunDejaGele, SortieSousRuns } from "../../pipeline/gel/destination.ts";
@@ -131,6 +132,7 @@ describe("gel nominal", () => {
     expect(readdirSync(join(run, "balise")).sort()).toEqual(RELAIS.map((relais) => `${relais.nom}.json`).sort());
     const objet = json(run, "run.json");
     expect(objet["statut"]).toBe("planifie");
+    expectTypeOf<typeof STATUT_AU_GEL>().toEqualTypeOf<"planifie">();
     expect(objet["type_run"]).toBe("pilote");
     // D45 (1) : l'identifiant est dérivé de date_gel et de l'aléa du tour, jamais tiré.
     expect(objet["id"]).toBe(identifiantDuRun(Date.parse(GEL), reponseTour(TOUR_DU_GEL).randomness));

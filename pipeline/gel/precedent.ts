@@ -44,6 +44,8 @@ import { lireInstant } from "../interrogation/heure-paris.ts";
 import { tiragePrecedentDepuis } from "../questions/tirage.ts";
 import type { TiragePrecedent } from "../questions/tirage.ts";
 import type { Question, Tirage } from "../questions/types.ts";
+import { STATUT_PUBLIE, STATUT_PUBLIE_PROVISOIRE, TYPE_PILOTE } from "../run/types.ts";
+import type { StatutRun, TypeRun } from "../run/types.ts";
 
 export type MotifPrecedent =
   | "run_illisible"
@@ -114,9 +116,9 @@ export const SANS_PRECEDENT: PrecedentDuGel = { run_precedent: null, tirage_prec
  * `en_cours`, `invalide`) est sauté : un run supplémentaire à 72 h (§6) doit pouvoir geler pendant
  * qu'un run est en cours de notation.
  */
-const STATUTS_ADMIS: ReadonlySet<string> = new Set(["publie", "publie_provisoire"]);
+const STATUTS_ADMIS: ReadonlySet<string> = new Set<StatutRun>([STATUT_PUBLIE, STATUT_PUBLIE_PROVISOIRE]);
 /** D45 (3) : un pilote ne sert jamais de précédent ; il est sauté. */
-const TYPES_SAUTES: ReadonlySet<string> = new Set(["pilote"]);
+const TYPES_SAUTES: ReadonlySet<string> = new Set<TypeRun>([TYPE_PILOTE]);
 
 function retenable(run: RunDeRuns, date_gel_ms: number): boolean {
   return run.date_gel_ms < date_gel_ms && STATUTS_ADMIS.has(run.statut) && !TYPES_SAUTES.has(run.type_run);
@@ -144,8 +146,12 @@ export function choisirPrecedent(runs: readonly RunDeRuns[], date_gel_ms: number
 
 /* -------------------------------------------------------- lecture d'un run */
 
-/** Le message d'une erreur de lecture attendue (JSON, schéma, fichier) ; toute autre est relevée. */
-function messageAttendu(erreur: unknown): string {
+/**
+ * Le message d'une erreur de lecture attendue (JSON, schéma, fichier) ; toute autre est relevée.
+ * Partagée avec `pipeline/interrogation/run-gele.ts`, seul autre lecteur d'un `run.json` de ce genre
+ * (constat 31, revue du 2026-10-17).
+ */
+export function messageAttendu(erreur: unknown): string {
   if (erreur instanceof SyntaxError || erreur instanceof ErreurSchema) return erreur.message;
   if (erreur instanceof Error && "code" in erreur && erreur.code === "ENOENT") return erreur.message;
   throw erreur;
