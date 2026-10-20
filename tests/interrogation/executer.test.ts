@@ -87,6 +87,14 @@ describe("cas 1 : succès", () => {
   });
 });
 
+describe("D55 (1), §7 : la réponse écrite sous le run garde reponse.normalisation", () => {
+  it("porte la fonction et la version de l'adaptateur simulé, telles que publiées", async () => {
+    const b = nouveauBanc();
+    await uneRequete(b, ["reponse"]);
+    expect(obtenue(b).normalisation).toEqual({ fonction: "normaliser_editeur_simule", version: "1.1.0" });
+  });
+});
+
 describe("cas 2 : trois échecs", () => {
   it("donnent une manquante, motif « echecs », 3 tentatives, ni brut ni normalise", async () => {
     const b = nouveauBanc();

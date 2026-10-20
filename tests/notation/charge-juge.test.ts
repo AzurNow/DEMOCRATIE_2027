@@ -187,7 +187,7 @@ describe("contenu", () => {
     expect(JSON.stringify(charge)).not.toContain(r.normalisation.fonction);
   });
 
-  it("D55 (1) : la réponse elle-même, donc celle qui est publiée, garde reponse.normalisation ; seule la charge en est privée", () => {
+  it("D55 (1) : construireCharge ne retire pas normalisation de la réponse source", () => {
     const r = reponse();
     construireCharge(demande(r));
     expect(r.normalisation).toEqual({ fonction: "normaliser_editeurx", version: "1.0.0" });
