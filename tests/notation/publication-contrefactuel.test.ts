@@ -6,7 +6,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { ulid } from "../analysis/fabriques.ts";
 import type { ResultatContrefactuel, ResultatJuge } from "../../pipeline/notation/contrefactuel.ts";
 import type { Derangement } from "../../pipeline/notation/derangement.ts";
@@ -90,6 +90,10 @@ function fusionner(publication: PublicationContrefactuel, ajuster: (run: RunBrut
 }
 
 describe("12. ResultatContrefactuel → champs du run", () => {
+  it("constat 34 : PublicationContrefactuel ne porte aucune clé statut, à la compilation", () => {
+    expectTypeOf<Extract<keyof PublicationContrefactuel, "statut">>().toEqualTypeOf<never>();
+  });
+
   it("termine avec un retrait : taux 0.25, effectifs et motif publiés, bloc conforme au schéma", () => {
     const resultat: ResultatContrefactuel = {
       statut: "termine",
@@ -101,6 +105,7 @@ describe("12. ResultatContrefactuel → champs du run", () => {
     const publication = publierContrefactuel(resultat, sousEnsemble(200, 480), CYCLE, runDeNotation());
     expect(publication.taux_echantillon_humain).toBe(0.25);
     expect(publication.invalidation).toBeUndefined();
+    expect("statut" in publication).toBe(false);
     expect(publication.contrefactuel_candidats).toEqual({
       etat: "termine",
       eligibles: 480,
@@ -167,6 +172,7 @@ describe("12. ResultatContrefactuel → champs du run", () => {
       { juge_id: "j2", retire: false },
     ]);
     expect(publication.taux_echantillon_humain).toBe(0.1);
+    expect("statut" in publication).toBe(false);
     expect(() => valider("run", fusionner(publication), "run fusionné")).not.toThrow();
   });
 
@@ -181,7 +187,7 @@ describe("12. ResultatContrefactuel → champs du run", () => {
     const publication = publierContrefactuel(resultat, sousEnsemble(20), CYCLE, runDeNotation());
     // Le run invalide se reconnaît à resultat.statut === "run_invalide" et à sa raison (chaine.ts
     // en fait de même) ; publierContrefactuel ne produit ni ne lit de champ "statut".
-    expect(resultat.statut).toBe("run_invalide");
+    expect("statut" in publication).toBe(false);
     expect(publication.invalidation).toEqual({ motif: resultat.raison });
     expect(publication.taux_echantillon_humain).toBe(0.25);
     expect(publication.juges.every((j) => j.retire)).toBe(true);

@@ -188,7 +188,7 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(QUESTIONS, "STATUTS_SYMETRIE"), valeurs: questions.STATUTS_SYMETRIE, fichier: RUN, pointeur: "#/properties/symetrie/properties/statut_global" },
   { liste: en(QUESTIONS, "STATUTS_SYMETRIE"), valeurs: questions.STATUTS_SYMETRIE, fichier: RUN, pointeur: `${CONDITIONS}/statut` },
   { liste: en(QUESTIONS, "ReponseAttendue.etat_attendu"), valeurs: PONT_ETAT_ATTENDU, fichier: TIRAGE, pointeur: "#/$defs/reponse_attendue/properties/etat_attendu" },
-  { liste: en(QUESTIONS, "CandidatAuGel.statut_au_gel"), valeurs: PONT_STATUT_AU_GEL, fichier: RUN, pointeur: STATUT_AU_GEL },
+  { liste: en(QUESTIONS, "CandidatAuGel.statut_au_gel"), valeurs: questions.STATUTS_AU_GEL, fichier: RUN, pointeur: STATUT_AU_GEL },
   // Constat 30 (avec le constat 38 du 2026-10-12) : les listes de pipeline/questions/charger-perimetre.ts,
   // recopiées dans pipeline/questions/types.ts plutôt que laissées en unions locales sans accord.
   { liste: en(QUESTIONS, "STATUTS_AU_GEL"), valeurs: questions.STATUTS_AU_GEL, fichier: PERIMETRE, pointeur: "#/$defs/candidat/properties/statut_au_gel" },
@@ -243,6 +243,7 @@ describe("constat 5 : les listes de pont sont exactement les unions en ligne", (
     expectTypeOf<Element<typeof PONT_OBJET_NOTE>>().toEqualTypeOf<analyse.ObjetNote["type"]>();
     expectTypeOf<Element<typeof PONT_STATUT_AU_GEL>>().toEqualTypeOf<analyse.CandidatAuGel["statut_au_gel"]>();
     expectTypeOf<Element<typeof PONT_STATUT_AU_GEL>>().toEqualTypeOf<questions.CandidatAuGel["statut_au_gel"]>();
+    expectTypeOf<analyse.CandidatAuGel["statut_au_gel"]>().toEqualTypeOf<questions.StatutAuGel>();
     expectTypeOf<Element<typeof PONT_FAMILLE_OUTIL>>().toEqualTypeOf<analyse.OutilAuGel["famille"]>();
     expectTypeOf<Element<typeof PONT_ETAT_ATTENDU>>().toEqualTypeOf<
       NonNullable<questions.ReponseAttendue["etat_attendu"]>

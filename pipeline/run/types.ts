@@ -9,10 +9,10 @@
 export const STATUTS_RUN = ["planifie", "en_cours", "publie", "publie_provisoire", "invalide"] as const;
 export type StatutRun = (typeof STATUTS_RUN)[number];
 
-export const STATUT_PLANIFIE: StatutRun = "planifie";
-export const STATUT_EN_COURS: StatutRun = "en_cours";
-export const STATUT_PUBLIE: StatutRun = "publie";
-export const STATUT_PUBLIE_PROVISOIRE: StatutRun = "publie_provisoire";
+export const STATUT_PLANIFIE = "planifie" satisfies StatutRun;
+export const STATUT_EN_COURS = "en_cours" satisfies StatutRun;
+export const STATUT_PUBLIE = "publie" satisfies StatutRun;
+export const STATUT_PUBLIE_PROVISOIRE = "publie_provisoire" satisfies StatutRun;
 
 export const TYPES_RUN = [
   "pilote",
@@ -24,5 +24,5 @@ export const TYPES_RUN = [
 ] as const;
 export type TypeRun = (typeof TYPES_RUN)[number];
 
-export const TYPE_PILOTE: TypeRun = "pilote";
-export const TYPE_REEXECUTION: TypeRun = "reexecution";
+export const TYPE_PILOTE = "pilote" satisfies TypeRun;
+export const TYPE_REEXECUTION = "reexecution" satisfies TypeRun;
