@@ -12,12 +12,12 @@
  * avec `echantillons.ts:tirerEchantillonHumain`, le même tirage que celui qui a désigné les humains.
  *
  * Le résultat publié du test contrefactuel (lot notation, PR C) est relu juge par juge, quand il
- * est présent : le retrait se décide sur les effectifs, en entiers (`SEUIL_RETRAIT` de
+ * est présent : le retrait se décide sur les effectifs, en entiers (`depasseSeuilRetrait` de
  * `contrefactuel.ts`, « au-delà de 3 % » strict), et le taux publié doit être leur quotient exact.
  */
 
 import type { Ulid } from "../../analysis/types.ts";
-import { SEUIL_RETRAIT } from "./contrefactuel.ts";
+import { depasseSeuilRetrait } from "./contrefactuel.ts";
 import { jugesDuRun } from "./decision.ts";
 import { tirerEchantillonHumain } from "./echantillons.ts";
 import { porteDrapeauGrave } from "./note-retenue.ts";
@@ -135,7 +135,7 @@ function violationsContrefactuelles(juge: JugeDuRun): Violation[] {
   if (changements === undefined) return [];
   const { numerateur, denominateur } = changements;
   const violations: Violation[] = [];
-  const auDela = numerateur * SEUIL_RETRAIT.denominateur > SEUIL_RETRAIT.numerateur * denominateur;
+  const auDela = depasseSeuilRetrait(numerateur, denominateur);
   if (juge.retire !== auDela) {
     violations.push({
       code: "retrait_contrefactuel_incoherent",

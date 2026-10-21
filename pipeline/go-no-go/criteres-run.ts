@@ -21,7 +21,7 @@
  */
 
 import { graineHexadecimale } from "../../analysis/graines.ts";
-import { couplesComparables, cleCouple, partReponsesManquantes, runIncomplet } from "../../analysis/seuils.ts";
+import { couplesComparables, cleCouple, partReponsesManquantes, runIncomplet, SEUIL_RUN_INCOMPLET } from "../../analysis/seuils.ts";
 import type { CoupleOutilMode, Mode, Reponse, Ulid } from "../../analysis/types.ts";
 import { conditionDeSymetrie } from "../questions/symetrie.ts";
 import type { Symetrie } from "../questions/types.ts";
@@ -72,7 +72,7 @@ function couplesAJuger(outils: readonly OutilDeclare[], reponses: readonly Repon
 
 /** §12 : « au plus 20 % de réponses manquantes par outil et par mode » (canal API, §8). */
 export function critereReponsesManquantes(outils: readonly OutilDeclare[], reponses: readonly Reponse[]): Critere {
-  const socle = { code: "reponses_manquantes", seuil: 0.2 } as const;
+  const socle = { code: "reponses_manquantes", seuil: SEUIL_RUN_INCOMPLET.numerateur / SEUIL_RUN_INCOMPLET.denominateur } as const;
   const couples = couplesAJuger(outils, reponses);
   if (couples.length === 0) return { ...socle, statut: "rouge", valeur: "aucun couple outil × mode à juger" };
   const parts = couples.map((couple) => partReponsesManquantes(reponses, couple));

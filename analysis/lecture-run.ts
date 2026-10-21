@@ -29,10 +29,10 @@
  * §8(a).
  */
 
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync } from "node:fs";
 import { basename, join } from "node:path";
+import { executerGit } from "../outils/executer-git.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import type { NomSchema } from "../outils/schemas/noms.ts";
 import { dateParis, lireInstant } from "../pipeline/interrogation/heure-paris.ts";
@@ -434,17 +434,6 @@ function epingles(questions: readonly Question[], chemin: string): readonly Refe
   return [...parItem.values()].sort((a, b) => (a.item_id < b.item_id ? -1 : 1));
 }
 
-interface SortieGit {
-  readonly ok: boolean;
-  readonly sortie: string;
-  readonly erreur: string;
-}
-
-function git(repertoire: string, arguments_: readonly string[]): SortieGit {
-  const resultat = spawnSync("git", arguments_, { cwd: repertoire, encoding: "utf8", maxBuffer: 1 << 26 });
-  return { ok: resultat.status === 0, sortie: resultat.stdout, erreur: resultat.stderr.trim() };
-}
-
 /** Lit dans Git, au commit du gel : `<prefixe>` est le chemin de `repertoire_items` dans son dépôt. */
 interface DepotDesItems {
   readonly repertoire: string;
@@ -453,9 +442,9 @@ interface DepotDesItems {
 }
 
 function ouvrirDepotDesItems(repertoire_items: string, commit: string): DepotDesItems {
-  const prefixe = git(repertoire_items, ["rev-parse", "--show-prefix"]);
+  const prefixe = executerGit(repertoire_items, ["rev-parse", "--show-prefix"], commit);
   if (!prefixe.ok) throw new ItemsDuGelIllisibles(repertoire_items, `répertoire hors d'un dépôt Git (${prefixe.erreur})`);
-  if (!git(repertoire_items, ["cat-file", "-e", `${commit}^{commit}`]).ok) {
+  if (!executerGit(repertoire_items, ["cat-file", "-e", `${commit}^{commit}`], commit).ok) {
     throw new ItemsDuGelIllisibles(repertoire_items, `le commit du gel ${commit} (run.versions.donnees_commit) est introuvable dans ce dépôt`);
   }
   return { repertoire: repertoire_items, commit, prefixe: prefixe.sortie.trim() };
@@ -463,7 +452,7 @@ function ouvrirDepotDesItems(repertoire_items: string, commit: string): DepotDes
 
 function lireItemAuGel(depot: DepotDesItems, reference: ReferenceItem): Item {
   const chemin = `${depot.prefixe}${reference.item_id}.json`;
-  const lu = git(depot.repertoire, ["show", `${depot.commit}:${chemin}`]);
+  const lu = executerGit(depot.repertoire, ["show", `${depot.commit}:${chemin}`], depot.commit);
   if (!lu.ok) throw new ItemEpingleIntrouvable(reference, `${chemin} absent du commit du gel ${depot.commit}`);
   const provenance = `${depot.commit}:${chemin}`;
   const item = valider<ItemLu>("item", lireJson(provenance, lu.sortie), provenance);

@@ -148,4 +148,10 @@ describe("graine non conforme", () => {
     expect(() => tirerEchantillonHumain(ids(10), autre, 0.1)).toThrow(GraineNonConforme);
     expect(() => tirerSousEnsembleContrefactuel(ids(10), autre)).toThrow(GraineNonConforme);
   });
+
+  it("nomme l'échantillon, pas le tirage, dans le message de refus (constat 18 de la revue du 2026-10-12)", () => {
+    const autre: GraineTirage = { ...graine(1), algorithme: "pcg64" };
+    expect(() => tirerEchantillonHumain(ids(10), autre, 0.1)).toThrow(/Graine de l.échantillon non conforme/);
+    expect(() => tirerSousEnsembleContrefactuel(ids(10), autre)).toThrow(/Graine de l.échantillon non conforme/);
+  });
 });

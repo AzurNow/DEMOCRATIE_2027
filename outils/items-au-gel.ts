@@ -20,8 +20,8 @@
  * elles sont lues dans `data/mesures/` au commit `donnees_commit`, comme les items.
  */
 
-import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
+import { executerGit } from "./executer-git.ts";
 
 /** Un répertoire reçu n'est pas celui du gel, ou le gel ne peut pas être relu : la barrière ne juge pas. */
 export class RepertoireHorsDuGel extends Error {
@@ -72,36 +72,25 @@ interface Nature {
 const ITEMS: Nature = { recus: "items reçus", refus: (repertoire, ecarts) => new ItemsHorsDuGel(repertoire, ecarts) };
 const MESURES: Nature = { recus: "mesures reçues", refus: (repertoire, ecarts) => new MesuresHorsDuGel(repertoire, ecarts) };
 
-interface SortieGit {
-  readonly ok: boolean;
-  readonly sortie: string;
-  readonly erreur: string;
-}
-
-function git(repertoire: string, arguments_: readonly string[]): SortieGit {
-  const resultat = spawnSync("git", arguments_, { cwd: repertoire, encoding: "utf8" });
-  return { ok: resultat.status === 0, sortie: resultat.stdout, erreur: resultat.stderr.trim() };
-}
-
 /** Nom de fichier → empreinte Git, pour les `*.json` directement sous le répertoire. */
 export type Empreintes = ReadonlyMap<string, string>;
 
 /** Le chemin du répertoire dans son dépôt (`data/items/`), ou le refus nommé s'il est hors d'un dépôt. */
 function prefixeDansLeDepot(repertoire: string, nature: Nature): string {
-  const prefixe = git(repertoire, ["rev-parse", "--show-prefix"]);
+  const prefixe = executerGit(repertoire, ["rev-parse", "--show-prefix"]);
   if (!prefixe.ok) throw nature.refus(repertoire, [`répertoire hors d'un dépôt Git (${prefixe.erreur})`]);
   return prefixe.sortie.trim();
 }
 
 function exigerCommit(repertoire: string, commit: string, nature: Nature): void {
-  if (git(repertoire, ["cat-file", "-e", `${commit}^{commit}`]).ok) return;
+  if (executerGit(repertoire, ["cat-file", "-e", `${commit}^{commit}`], commit).ok) return;
   throw nature.refus(repertoire, [`le commit ${commit} inscrit au gel est introuvable dans ce dépôt`]);
 }
 
 /** `git ls-tree -z --full-tree <commit> -- <prefixe>` : `mode type empreinte\tchemin`, séparés par NUL. */
 function empreintesAuGel(repertoire: string, commit: string, prefixe: string, nature: Nature): Empreintes {
   // --full-tree : le chemin passé et les chemins rendus partent de la racine du dépôt, pas du répertoire.
-  const liste = git(repertoire, ["ls-tree", "-z", "--full-tree", commit, "--", prefixe.length === 0 ? "." : prefixe]);
+  const liste = executerGit(repertoire, ["ls-tree", "-z", "--full-tree", commit, "--", prefixe.length === 0 ? "." : prefixe], commit);
   if (!liste.ok) throw nature.refus(repertoire, [`lecture du commit ${commit} impossible (${liste.erreur})`]);
   const empreintes = new Map<string, string>();
   for (const ligne of liste.sortie.split("\0")) {
@@ -120,7 +109,7 @@ function empreintesRecues(repertoire: string, nature: Nature): Empreintes {
     .filter((nom) => nom.endsWith(".json"))
     .sort();
   if (noms.length === 0) return new Map();
-  const calcul = git(repertoire, ["hash-object", "--", ...noms]);
+  const calcul = executerGit(repertoire, ["hash-object", "--", ...noms]);
   if (!calcul.ok) throw nature.refus(repertoire, [`empreintes des fichiers reçus incalculables (${calcul.erreur})`]);
   const empreintes = calcul.sortie.trim().split("\n");
   if (empreintes.length !== noms.length) {

@@ -42,7 +42,7 @@
 
 import { graineDerivee } from "../../analysis/graines.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
-import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../questions/tirage.ts";
+import { verifierGraine } from "../questions/tirage.ts";
 import type { GraineTirage } from "../questions/types.ts";
 import type { TauxEchantillonHumain } from "./types.ts";
 
@@ -159,7 +159,7 @@ export function tirerJeuOr(reponse_ids: readonly string[], graine: GraineTirage)
 }
 
 function ordreTire(ids: readonly string[], graine: GraineTirage, cle: readonly string[]): readonly string[] {
-  verifierGraine(graine);
+  verifierGraine(graine, "de l'échantillon");
   const ranges = rangerSansDoublon(ids);
   return melanger(ranges, generateur(graineDerivee(graine.valeur, cle)));
 }
@@ -179,10 +179,5 @@ export function comparerChaines(a: string, b: string): number {
   return a > b ? 1 : 0;
 }
 
-/** Une graine qui déclare un autre générateur que celui du tirage promet un tirage non rejouable. */
-export function verifierGraine(graine: GraineTirage): void {
-  for (const champ of ["algorithme", "bibliotheque", "version"] as const) {
-    const attendu = GENERATEUR_DU_TIRAGE[champ];
-    if (graine[champ] !== attendu) throw new GraineNonConforme(champ, graine[champ], `« ${attendu} »`);
-  }
-}
+/** Réexportée pour `derangement.ts` et `alias-candidats.ts` (constat 18 de la revue du 2026-10-12). */
+export { verifierGraine };
