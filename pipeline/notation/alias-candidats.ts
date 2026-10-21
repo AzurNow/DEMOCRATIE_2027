@@ -29,8 +29,9 @@
 
 import { graineDerivee } from "../../analysis/graines.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
+import { verifierGraine } from "../questions/tirage.ts";
 import type { GraineTirage } from "../questions/types.ts";
-import { comparerChaines, verifierGraine } from "./echantillons.ts";
+import { comparerChaines } from "./echantillons.ts";
 
 /**
  * Clé lisible de la graine de l'alias des candidats, dérivée de `run.graines.alias_candidats`.
@@ -71,7 +72,7 @@ function rangerSansDoublon(identifiants: readonly string[]): string[] {
  * l'auteur.
  */
 export function tableAliasCandidats(interroges: readonly { readonly candidat_id: string }[], graine: GraineTirage): TableAliasCandidats {
-  verifierGraine(graine);
+  verifierGraine(graine, "de la table d'alias");
   const ranges = rangerSansDoublon(interroges.map((candidat) => candidat.candidat_id));
   const ordre = melanger(ranges, generateur(graineDerivee(graine.valeur, CLE_ALIAS_CANDIDATS)));
   return Object.fromEntries(ordre.map((candidat_id, rang) => [`C${rang + 1}`, candidat_id]));

@@ -82,6 +82,11 @@ describe("n° 24 : la graine désigne le générateur employé", () => {
     expect(() => tirer(demande(pcg))).toThrow(/algorithme « PCG64 ».*splitmix64-sha256-v1/);
   });
 
+  it("nomme le tirage, pas l'échantillon ou une autre graine, dans le message de refus (constat 18 de la revue du 2026-10-12)", () => {
+    const pcg = { ...graine(), algorithme: "PCG64" };
+    expect(() => tirer(demande(pcg))).toThrow(/^Graine du tirage non conforme/);
+  });
+
   it("refuse une graine au bon algorithme mais qui nomme une autre bibliothèque", () => {
     const autre = { ...graine(), bibliotheque: "numpy.random.Generator" };
     expect(() => tirer(demande(autre))).toThrow(/bibliotheque « numpy\.random\.Generator »/);

@@ -65,6 +65,11 @@ describe("table alias aveugle de candidat", () => {
     expect(() => tableAliasCandidats(candidats(2), { ...graine(1), algorithme: "mt19937" })).toThrow(GraineNonConforme);
   });
 
+  it("nomme la table d'alias, pas le tirage, dans le message de refus (constat 18 de la revue du 2026-10-12)", () => {
+    const autre: GraineTirage = { ...graine(1), algorithme: "mt19937" };
+    expect(() => tableAliasCandidats(candidats(2), autre)).toThrow(/Graine de la table d.alias non conforme/);
+  });
+
   it("un identifiant de candidat en double lève CandidatEnDouble", () => {
     expect(() => tableAliasCandidats([...candidats(2), { candidat_id: "cand-00" }], graine(1))).toThrow(CandidatEnDouble);
   });

@@ -6,7 +6,18 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { GitInaccessible } from "../outils/executer-git.ts";
 import { ecartsAuGel, exigerItemsDuGel, ItemsHorsDuGel } from "../outils/items-au-gel.ts";
+
+function sansGit<T>(appel: () => T): T {
+  const avant = process.env["PATH"];
+  process.env["PATH"] = "";
+  try {
+    return appel();
+  } finally {
+    process.env["PATH"] = avant;
+  }
+}
 
 const GEL = new Map([
   ["a.json", "1111"],
@@ -39,5 +50,28 @@ describe("exigerItemsDuGel", () => {
   it("refuse un run sans commit du gel, sans lire aucun dépôt", () => {
     expect(() => exigerItemsDuGel("/nulle-part", undefined)).toThrow(ItemsHorsDuGel);
     expect(() => exigerItemsDuGel("/nulle-part", undefined)).toThrow("versions.donnees_commit");
+  });
+
+  it("répertoire inexistant : ItemsHorsDuGel nommé, dont la cause dit le répertoire absent, jamais « git introuvable » (constat 37 de la revue du 2026-10-12)", () => {
+    expect(() => exigerItemsDuGel("/nulle-part-xyz", "0".repeat(40))).toThrow(ItemsHorsDuGel);
+    try {
+      exigerItemsDuGel("/nulle-part-xyz", "0".repeat(40));
+      throw new Error("exigerItemsDuGel n'a pas levé");
+    } catch (erreur) {
+      expect((erreur as Error).message).not.toContain("git introuvable");
+      expect((erreur as Error).message).toMatch(/inexistant/);
+    }
+  });
+
+  it("git absent du PATH, répertoire existant : GitInaccessible, pas une TypeError (constat 37 de la revue du 2026-10-12)", () => {
+    const erreur = sansGit(() => {
+      try {
+        exigerItemsDuGel(".", "0".repeat(40));
+        throw new Error("exigerItemsDuGel n'a pas levé");
+      } catch (e) {
+        return e;
+      }
+    });
+    expect(erreur).toBeInstanceOf(GitInaccessible);
   });
 });

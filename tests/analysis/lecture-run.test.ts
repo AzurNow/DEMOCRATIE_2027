@@ -15,6 +15,7 @@ import {
   EmpreinteDivergente,
   FichierDeRunRefuse,
   ItemEpingleIntrouvable,
+  ItemsDuGelIllisibles,
   lireNotationsDuRun,
   lireReponses,
   lireRun,
@@ -24,6 +25,7 @@ import {
   runDeNotationDe,
   VolumeAbsent,
 } from "../../analysis/lecture-run.ts";
+import { GitInaccessible } from "../../outils/executer-git.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { commiterTout } from "../aides/depot.ts";
@@ -260,6 +262,25 @@ describe("6. items à la version épinglée, au commit du gel", () => {
     }
     ecrireJson(chemin, questions);
     expect(() => lire(run)).toThrow(ItemEpingleIntrouvable);
+  });
+
+  it("répertoire d'items inexistant : ItemsDuGelIllisibles nommé, jamais GitInaccessible ni TypeError (constat 37 de la revue du 2026-10-12)", () => {
+    const run = runNote();
+    const erreur = erreurDe(() => lireRun(run.repertoire_run, { items: "/nulle-part-xyz" }));
+    expect(erreur).toBeInstanceOf(ItemsDuGelIllisibles);
+    expect(erreur.message).not.toContain("git introuvable");
+    expect(erreur.message).toMatch(/inexistant/);
+  });
+
+  it("git absent du PATH, répertoire d'items existant : GitInaccessible, pas une TypeError (constat 37 de la revue du 2026-10-12)", () => {
+    const run = runNote();
+    const avant = process.env["PATH"];
+    process.env["PATH"] = "";
+    try {
+      expect(() => lire(run)).toThrow(GitInaccessible);
+    } finally {
+      process.env["PATH"] = avant;
+    }
   });
 });
 

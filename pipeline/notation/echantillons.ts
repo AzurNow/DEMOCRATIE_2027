@@ -178,6 +178,3 @@ export function comparerChaines(a: string, b: string): number {
   if (a < b) return -1;
   return a > b ? 1 : 0;
 }
-
-/** Réexportée pour `derangement.ts` et `alias-candidats.ts` (constat 18 de la revue du 2026-10-12). */
-export { verifierGraine };
