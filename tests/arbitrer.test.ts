@@ -117,17 +117,20 @@ describe("décision prise sur une version dépassée", () => {
   });
 });
 
-describe("constat 20 (revue du 2026-10-17), 32 (revue du 2026-10-12) : un bogue remonte avec sa pile", () => {
-  it("un manifeste de lot au JSON illisible : SyntaxError non attrapée, pile imprimée, rien écrit", () => {
-    // `lots-fichier.ts` n'a pas de validation de frontière nommée (contrairement à `staging.ts`
-    // depuis le constat 26) : son JSON illisible reste donc l'exemple d'un bogue non attrapé.
+describe("constat 20 (revue du 2026-10-17), 32 (revue du 2026-10-12) : un manifeste de lot au JSON illisible", () => {
+  it("refuse par un message d'une ligne, sans pile, rien écrit (D55 (3) : lots-fichier.ts a désormais une frontière nommée, comme staging.ts depuis le constat 26)", () => {
+    // Avant D55 (3), `lireLots` faisait `JSON.parse(...) as Lot` : un JSON illisible levait un
+    // SyntaxError nu, une classe de bogue pour `outils/refus-attendu.ts`, remonté avec sa pile.
+    // `jsonDe` lève désormais `JsonIllisible`, un refus nommé : `arbitrer.ts` l'affiche en une
+    // ligne et sort au code 1, sans rien écrire, exactement comme les autres refus attendus.
     const { bac } = preparer();
     writeFileSync(join(bac.racine, "validation/lots", "lot-061.json"), "{ pas du json", "utf8");
     commiterTout(bac.racine, "manifeste de lot cassé");
     const resultat = executerOutil("arbitrer.ts", chemins(bac));
     expect(resultat.status).not.toBe(0);
-    expect(resultat.erreur).toContain("SyntaxError");
-    expect(resultat.erreur).toMatch(/\n\s+at /);
+    expect(resultat.erreur).toContain("JSON illisible");
+    expect(resultat.erreur).not.toContain("SyntaxError");
+    expect(resultat.erreur).not.toMatch(/\n\s+at /);
     expect(existsSync(registre(bac))).toBe(false);
     bac.detruire();
   });

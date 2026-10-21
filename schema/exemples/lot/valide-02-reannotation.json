@@ -1,0 +1,18 @@
+{
+  "lot_id": "lot-001-r1",
+  "nature": "reannotation",
+  "graine_maitresse": "graine-reannotation-2026-11",
+  "algorithme_ordre": "ordre-annotateur-v1",
+  "date_creation": "2026-11-25T09:00:00+01:00",
+  "annotateurs": ["a1", "a2"],
+  "reannote": "lot-001",
+  "date_calibration": "2026-11-24",
+  "items": [
+    {
+      "item_id": "01JBANCESSAI00000000ITEM01",
+      "item_version": 1,
+      "item_empreinte": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "candidat_id": "cand-a"
+    }
+  ]
+}

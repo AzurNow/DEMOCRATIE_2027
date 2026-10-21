@@ -380,8 +380,9 @@ describe("exemples de schema/exemples/", () => {
   // 300 → 309 : décisions D52 et D53 (lot extraction, PR 3), un valide et un invalide d'entree-extraction, deux valides et un invalide de reponse-extraction, deux valides et deux invalides de journal-extraction.
   // 309 → 312 : décision D53 (1) (verrou de relecture des mesures), un valide et deux invalides de relecture-mesure.
   // 312 → 316 : décision D53 (1) (rattachement d'un item à une autre mesure), un valide et trois invalides de rattachement-item.
-  it("charge les 316 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(316);
+  // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
+  it("charge les 324 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(324);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
