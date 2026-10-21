@@ -21,7 +21,14 @@ import {
 } from "../domaine/decision.ts";
 import { validerCorrections } from "../domaine/corrections.ts";
 import { RACCOURCIS, TOUCHES_DECISION, TOUCHE_CONFIRMATION, TOUCHES_REPONSE } from "../domaine/interaction.ts";
-import { itemCourant, prochaineVisite, progression, rejouer, type EtatAnnotateur } from "../domaine/journal.ts";
+import {
+  itemCourant,
+  prochaineVisite,
+  progression,
+  rejouer,
+  retiresEffectifs,
+  type EtatAnnotateur,
+} from "../domaine/journal.ts";
 import { ordreAffichage, tailleAttendue } from "../domaine/lot.ts";
 import { refusSurLotTermine } from "../domaine/verrou-lot.ts";
 import { ulid } from "../domaine/ulid.ts";
@@ -70,7 +77,11 @@ function session(contexte: Contexte): Reponse {
       positions: enumerationCommune(contexte.configuration.racine_depot, "position"),
       lots: lots.map((lot) => ({
         ...projeterLot(lot),
-        progression: progression(lot.items, rejouer(contexte.journal.lire(lot.lot_id))),
+        progression: progression(
+          lot.items,
+          rejouer(contexte.journal.lire(lot.lot_id)),
+          contestesParmi(contexte, lot.items),
+        ),
         accessible: lot.nature === "entrainement" || blocage === null,
         motif_inaccessible: lot.nature === "entrainement" ? null : blocage,
       })),
@@ -255,21 +266,23 @@ function ecrireRetrait(contexte: Contexte, lot: Lot, item_id: string, statut: st
 }
 
 /**
- * Les contestations qu'un GET a montrées sans les journaliser (constat 13) s'écrivent ici, dans
- * l'ordre d'affichage, une seule fois chacune. Appelée seulement après le verrou
- * (`refuserSiLotTermine`) et juste avant l'écriture qu'elle précède : un refus plus tard dans la
- * route (corrections invalides, schéma non conforme) n'écrit donc aucun retrait.
+ * Les retirés effectifs (`retiresEffectifs`) qu'un GET a montrés sans les journaliser (constat 13)
+ * s'écrivent ici, dans l'ordre d'affichage, une seule fois chacun. Un item contesté que cet
+ * annotateur a déjà décidé n'en fait pas partie : une contestation reçue après coup ne défait pas
+ * la décision. Appelée seulement après le verrou (`refuserSiLotTermine`) et juste avant l'écriture
+ * qu'elle précède : un refus plus tard dans la route (corrections invalides, schéma non conforme)
+ * n'écrit donc aucun retrait.
  */
 function ecrireRetraitsEnAttente(contexte: Contexte, lot: Lot, etat: EtatAnnotateur): void {
   const ordre = ordreAffichage(lot, contexte.annotateur_id);
+  const effectifs = retiresEffectifs(etat, contestesParmi(contexte, ordre));
   const staging = contexte.staging();
   const data = contexte.itemsData();
   for (const entree of ordre) {
-    if (etat.retires.has(entree.item_id)) continue;
+    if (etat.retires.has(entree.item_id) || !effectifs.has(entree.item_id)) continue;
     const item = staging.items.get(entree.item_id);
     if (item === undefined) continue;
-    const statut = statutContestationEffectif(item, data);
-    if (statut !== "aucune") ecrireRetrait(contexte, lot, item.id, statut);
+    ecrireRetrait(contexte, lot, item.id, statutContestationEffectif(item, data));
   }
 }
 

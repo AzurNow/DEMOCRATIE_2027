@@ -168,6 +168,37 @@ describe("item contesté (§4, droit de réponse)", () => {
     expect(apresSeconde.map((entree) => entree.type_entree)).toEqual(["retrait_item", "decision", "decision"]);
   });
 
+  it("une contestation reçue après la décision ne défait pas la décision (D55 (6), relecture)", () => {
+    const premier = items[0] as Item;
+    const second = items[1] as Item;
+    bac.journal("a1").ajouter(
+      "ent-001",
+      decision({ annotateur_id: "a1", item: premier, decision: "accepter", lot_id: "ent-001", lot_nature: "entrainement" }),
+    );
+
+    const conteste = contester(premier);
+    bac.ecrireItem(conteste);
+
+    const reponse = appeler(bac.contexte("a1"), "decision", [], {
+      lot_id: "ent-001",
+      item_id: second.id,
+      decision: "accepter",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(reponse.statut).toBe(201);
+
+    const entrees = bac.journal("a1").lire("ent-001");
+    expect(entrees.map((entree) => entree.type_entree)).toEqual(["decision", "decision"]);
+
+    const corps = appeler(bac.contexte("a1"), "lot", ["ent-001"]).corps as {
+      progression: { total: number; decides: number; retires: number; restants: number; termine: boolean };
+    };
+    expect(corps.progression).toEqual({ total: 2, decides: 2, retires: 0, restants: 0, termine: true });
+  });
+
   it("l'item retiré sort du dénominateur du kappa, et n'est pas compté comme un désaccord", () => {
     const conteste = contester(items[0] as Item);
     bac.ecrireItem(conteste);
@@ -288,6 +319,26 @@ describe("vueLot et motifBlocage sautent un item contesté non journalisé (cons
       lots: { lot_id: string; accessible: boolean }[];
     };
     expect(corps.lots.find((lot) => lot.lot_id === "lot-002")?.accessible).toBe(true);
+  });
+
+  it("/api/session donne la même progression que /api/lots/<id> pour un item contesté non journalisé (D55 (6), relecture)", () => {
+    const conteste = contester(items[0] as Item);
+    bac.ecrireItem(conteste);
+
+    const progressionSession = (
+      appeler(bac.contexte("a1"), "session").corps as {
+        lots: { lot_id: string; progression: { retires: number; restants: number } }[];
+      }
+    ).lots.find((lot) => lot.lot_id === "ent-001")?.progression;
+
+    const progressionLot = (
+      appeler(bac.contexte("a1"), "lot", ["ent-001"]).corps as {
+        progression: { retires: number; restants: number };
+      }
+    ).progression;
+
+    expect(progressionSession).toEqual(progressionLot);
+    expect(progressionSession).toEqual({ total: 2, decides: 0, retires: 1, restants: 1, termine: false });
   });
 });
 
@@ -423,6 +474,30 @@ describe("annulation par l'interface", () => {
     bac.ecrireItem(conteste);
     expect(appeler(bac.contexte("a1"), "annulation", [], { lot_id: "ent-001" }).statut).toBe(409);
     expect(bac.journal("a1").lire("ent-001")).toHaveLength(0);
+  });
+
+  it("annuler la décision d'un autre item que celui déjà décidé puis contesté ne défait pas sa décision (D55 (6), relecture)", () => {
+    const premier = items[0] as Item;
+    const second = items[1] as Item;
+    const journal = bac.journal("a1");
+    journal.ajouter(
+      "ent-001",
+      decision({ annotateur_id: "a1", item: premier, decision: "accepter", lot_id: "ent-001", lot_nature: "entrainement" }),
+    );
+    journal.ajouter(
+      "ent-001",
+      decision({ annotateur_id: "a1", item: second, decision: "accepter", lot_id: "ent-001", lot_nature: "entrainement" }),
+    );
+
+    const conteste = contester(premier);
+    bac.ecrireItem(conteste);
+
+    const reponse = appeler(bac.contexte("a1"), "annulation", [], { lot_id: "ent-001" });
+    expect(reponse.statut).toBe(201);
+    expect((reponse.corps as { item_id: string }).item_id).toBe(second.id);
+
+    const entrees = bac.journal("a1").lire("ent-001");
+    expect(entrees.filter((entree) => entree.type_entree === "retrait_item")).toHaveLength(0);
   });
 });
 
