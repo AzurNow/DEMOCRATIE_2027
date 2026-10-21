@@ -20,7 +20,7 @@ import type { ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts
 import { creerContexte, type Contexte } from "../../notation-humaine/serveur/contexte.ts";
 import { FOURNISSEUR_SANS_EXISTENCE, type FournisseurExistences } from "../../notation-humaine/serveur/fournisseur.ts";
 import { ROUTES } from "../../notation-humaine/serveur/routes.ts";
-import type { Reponse } from "../../notation-humaine/serveur/http.ts";
+import type { Reponse } from "../../validation/serveur/http.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";

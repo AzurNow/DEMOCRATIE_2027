@@ -9,7 +9,7 @@ import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { creerServeur, ADRESSE } from "../../notation-humaine/serveur/principal.ts";
-import { POLITIQUE_SECURITE } from "../../notation-humaine/serveur/http.ts";
+import { POLITIQUE_SECURITE } from "../../validation/serveur/http.ts";
 import { PseudonymeVide } from "../../pipeline/notation/notation-humaine.ts";
 import { RACINE_PROJET, executerOutil } from "../aides/depot.ts";
 import { monter, type Monde } from "./fixture.ts";
@@ -102,8 +102,11 @@ describe("le serveur local", () => {
     expect(ADRESSE).toBe("127.0.0.1");
     expect(code).toContain("serveur.listen(options.port, ADRESSE");
     expect(code).not.toContain("0.0.0.0");
-    const validation = readFileSync(join(RACINE_PROJET, "validation/serveur/principal.ts"), "utf8");
-    for (const directive of POLITIQUE_SECURITE.split("; ")) expect(validation).toContain(`"${directive}"`);
+    // La politique de sécurité n'est plus recopiée : une seule définition, dans le module
+    // partagé (constat 20 de la revue du 2026-10-12, D55 (8)). `tests/serveur-http.test.ts`
+    // vérifie à l'exécution que les deux serveurs servent le même en-tête.
+    const partagee = readFileSync(join(RACINE_PROJET, "validation/serveur/http.ts"), "utf8");
+    for (const directive of POLITIQUE_SECURITE.split("; ")) expect(partagee).toContain(`"${directive}"`);
   });
 
   it("le client ne référence aucune URL externe", () => {

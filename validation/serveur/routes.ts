@@ -46,14 +46,10 @@ import { itemsEffectifs, statutContestationEffectif } from "../io/items-effectif
 import type { Contexte } from "./contexte.ts";
 import { accesTexteCorrections, emplacement } from "./emplacements.ts";
 import { GESTIONNAIRES_FORMULATIONS } from "./formulations.ts";
+import type { Reponse } from "./http.ts";
 import { construireVueItem, construireVueLot, projeterLot } from "./vues.ts";
 
-export interface Reponse {
-  readonly statut: number;
-  readonly corps?: unknown;
-  readonly binaire?: Buffer;
-  readonly type_mime?: string;
-}
+export type { Reponse } from "./http.ts";
 
 export interface Route {
   readonly nom: string;

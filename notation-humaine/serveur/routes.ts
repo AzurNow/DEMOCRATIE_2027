@@ -17,8 +17,8 @@ import { construireNotationHumaine } from "../../pipeline/notation/notation-huma
 import { FichierDejaEcrit } from "../../pipeline/notation/stockage.ts";
 import { MOTIFS_INEXACTITUDE } from "../../pipeline/notation/types.ts";
 import { VERSION_GRILLE_HUMAINE } from "../../pipeline/notation/vue-annotateur.ts";
+import type { Reponse } from "../../validation/serveur/http.ts";
 import type { Contexte } from "./contexte.ts";
-import type { Reponse } from "./http.ts";
 import { lireDemande } from "./saisie.ts";
 import { etatDesTaches, type Notable } from "./taches.ts";
 
@@ -131,7 +131,7 @@ export function trouverRoute(methode: string, chemin: string): { readonly route:
   for (const route of ROUTES) {
     if (route.methode !== methode) continue;
     const trouve = route.motif.exec(chemin);
-    if (trouve !== null) return { route, params: trouve.slice(1).map(decodeURIComponent) };
+    if (trouve !== null) return { route, params: trouve.slice(1) };
   }
   return null;
 }
