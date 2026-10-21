@@ -671,6 +671,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       `candidats_attendus` aliasés dans la charge du juge (charge-juge-v4).
 - [ ] (D55, 2026-10-17) **Écrire, à la nouvelle version de la table des liens (D55 (2)), la règle
       de relecture UTF-8 de `Location`.** Pas dans la 0.19 : elle suit le code de D55 (2).
+      Code et table `table-liens-v3` livrés par #PR (clé `lecture_location`).
 - [ ] **Fusionner #149 (renommage du dépôt) et #150 (relecture étendue, F ⇔ fictive)** : CI verte ;
       le contrôle de Claude Code refuse `gh pr merge`.
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine

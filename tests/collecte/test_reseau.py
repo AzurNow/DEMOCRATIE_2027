@@ -1,10 +1,12 @@
-"""Le vrai transport urllib, exercé contre un serveur local sur 127.0.0.1."""
+"""Le vrai transport urllib, exercé contre un serveur local sur 127.0.0.1, et `relire_location`
+(D55 (2)) : un en-tête `Location` reçu en UTF-8 brut, décodé en latin-1 par `http.client`, est relu
+en UTF-8 quand l'aller-retour réussit."""
 
 from __future__ import annotations
 
 import pytest
 
-from pipeline.collecte.reseau import ErreurReseau, TransportUrllib
+from pipeline.collecte.reseau import ErreurReseau, TransportUrllib, relire_location
 from tests.collecte.doubles import RouteLocale, ServeurLocal
 
 BOM_CRLF = b"\xef\xbb\xbfLigne une\r\nLigne deux\r\n"
@@ -51,3 +53,35 @@ def test_delai_depasse_leve_une_erreur_reseau(serveur_local: ServeurLocal) -> No
 def test_hote_injoignable_leve_une_erreur_reseau() -> None:
     with pytest.raises(ErreurReseau):
         TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/rien", {})
+
+
+# --------------------------------------------------------------------- relire_location (D55 (2))
+
+
+def test_d55_2_location_utf8_brut_relue_en_utf8() -> None:
+    assert relire_location("/cafÃ©") == "/café"
+
+
+def test_d55_2_location_ascii_inchangee() -> None:
+    assert relire_location("/nouveau") == "/nouveau"
+
+
+def test_d55_2_location_latin1_qui_n_est_pas_de_l_utf8_inchangee() -> None:
+    assert relire_location("/café") == "/café"
+
+
+def test_d55_2_location_non_encodable_en_latin1_inchangee() -> None:
+    assert relire_location("/caf€") == "/caf€"
+
+
+def test_d55_2_transport_rend_la_location_utf8_brute_telle_que_decodee_en_latin1(
+    serveur_local: ServeurLocal,
+) -> None:
+    """Reproduit ce que produit `http.client` pour un en-tête `Location` envoyé en octets UTF-8
+    bruts : la mauvaise relecture latin-1, inchangée par le transport (`relire_location` s'applique
+    plus haut, dans la sonde et `politesse`)."""
+    serveur_local.routes["/ancien"] = RouteLocale(301, b"", (("Location", "/cafÃ©"),))
+
+    reponse = TransportUrllib(delai_s=5).envoyer(f"{serveur_local.base}/ancien", {})
+
+    assert reponse.en_tetes["location"] == "/cafÃ©"

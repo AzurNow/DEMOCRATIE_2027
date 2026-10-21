@@ -157,7 +157,7 @@ def test_url_sans_verdict_code_1(tmp_path: Path, capsys: pytest.CaptureFixture[s
     run, b = _monter(tmp_path, routes)
     table = tmp_path / "table.toml"
     contenu = CHEMIN_TABLE.read_text(encoding="utf-8").replace('"1xx", "3xx", ', '"1xx", ')
-    table.write_text(contenu.replace('"table-liens-v2"', '"table-liens-v99"'), encoding="utf-8")
+    table.write_text(contenu.replace('"table-liens-v3"', '"table-liens-v99"'), encoding="utf-8")
 
     assert principal([str(run), f"--table={table}"], _construire(b)) == 1
     assert "reponse_http (code HTTP 304) hors de la table table-liens-v99" in capsys.readouterr().out

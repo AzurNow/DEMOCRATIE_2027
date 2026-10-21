@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from pipeline.collecte.politesse import Cadence
+from pipeline.collecte.reseau import LECTURES_LOCATION
 from pipeline.collecte.wayback import ArchivageEchoue, ArchivageReussi, Resultat
 from pipeline.liens.iri import CONVERSIONS_IRI
 from pipeline.liens.instantanes import InstantaneAbsent, Recherche
@@ -77,7 +78,12 @@ def banc(
     chercheur = chercheur if chercheur is not None else ChercheurFactice()
     table = charger_table(chemin_table)
     deps = Dependances(
-        sonde=SondeLiens(transport, Cadence(horloge, intervalle_s=1.0), CONVERSIONS_IRI[table.conversion_iri]),
+        sonde=SondeLiens(
+            transport,
+            Cadence(horloge, intervalle_s=1.0),
+            CONVERSIONS_IRI[table.conversion_iri],
+            LECTURES_LOCATION[table.lecture_location],
+        ),
         archiveur=archiveur,
         chercheur=chercheur,
         horloge=horloge,

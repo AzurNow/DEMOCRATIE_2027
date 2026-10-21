@@ -6,8 +6,10 @@ version absente), inconnue (clé, verdict, issue, classe ou code que le code ne 
 ambiguë (un même code, une même classe ou une même issue sous deux verdicts).
 
 D21 : la table porte aussi le délai d'une requête (`delai_s`, nombre > 0) et la règle de conversion
-IRI → URI pour l'envoi (`conversion_iri`, une clé de `pipeline.liens.iri.CONVERSIONS_IRI`). Le code
-lit les deux ici ; aucune constante ne les double.
+IRI → URI pour l'envoi (`conversion_iri`, une clé de `pipeline.liens.iri.CONVERSIONS_IRI`). D55 (2) :
+elle porte de même la règle de relecture de l'en-tête `Location` (`lecture_location`, une clé de
+`pipeline.collecte.reseau.LECTURES_LOCATION`). Le code lit les trois ici ; aucune constante ne les
+double.
 
 Lecture : un code listé l'emporte sur sa classe ; un résultat que la table ne classe pas n'a pas de
 verdict (`None`), jamais un verdict voisin.
@@ -22,6 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from pipeline.collecte.reseau import LECTURES_LOCATION
 from pipeline.collecte.sources import RACINE_DEPOT
 from pipeline.liens.constat import CLASSES_HTTP, ISSUES_SANS_REPONSE, REPONSE_HTTP, Constat, classe_http
 from pipeline.liens.iri import CONVERSIONS_IRI
@@ -29,7 +32,9 @@ from pipeline.liens.schemas import verdicts_existence
 
 CHEMIN_TABLE = RACINE_DEPOT / "config" / "test-liens.toml"
 MOTIF_VERSION = re.compile(r"table-liens-v[0-9]+")
-CLES_RACINE = frozenset({"version", "conversion_iri", "delai_s", "tentatives", "transitoire", "verdicts"})
+CLES_RACINE = frozenset(
+    {"version", "conversion_iri", "lecture_location", "delai_s", "tentatives", "transitoire", "verdicts"}
+)
 CLES_TENTATIVES = frozenset({"maximum", "espacement_s"})
 CLES_REGLES = frozenset({"codes_http", "classes_http", "issues"})
 
@@ -72,6 +77,8 @@ class TableLiens:
     version: str
     conversion_iri: str
     """Clé de `CONVERSIONS_IRI` : la règle qui rend une IRI envoyable (D21)."""
+    lecture_location: str
+    """Clé de `LECTURES_LOCATION` : la règle qui relit l'en-tête `Location` (D55 (2))."""
     delai_s: float
     """Délai d'une requête du test des liens, en secondes (D21)."""
     tentatives_max: int
@@ -120,6 +127,7 @@ def charger_table(chemin: Path) -> TableLiens:
     return TableLiens(
         version=version,
         conversion_iri=_conversion_iri(brute["conversion_iri"]),
+        lecture_location=_lecture_location(brute["lecture_location"]),
         delai_s=_delai(brute["delai_s"]),
         tentatives_max=maximum,
         espacement_s=espacement,
@@ -153,6 +161,12 @@ def _version(valeur: object) -> str:
 def _conversion_iri(valeur: object) -> str:
     if not isinstance(valeur, str) or valeur not in CONVERSIONS_IRI:
         raise TableInconnue(f"conversion_iri {valeur!r} inconnue ; connues : {sorted(CONVERSIONS_IRI)}")
+    return valeur
+
+
+def _lecture_location(valeur: object) -> str:
+    if not isinstance(valeur, str) or valeur not in LECTURES_LOCATION:
+        raise TableInconnue(f"lecture_location {valeur!r} inconnue ; connues : {sorted(LECTURES_LOCATION)}")
     return valeur
 
 

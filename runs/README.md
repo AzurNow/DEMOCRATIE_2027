@@ -284,7 +284,9 @@ Le test HTTP des liens du §7 (décisions D20 et D21, `pipeline/liens`), un pass
 fermeture de la fenêtre d'interrogation (refusé avant `fenetre.fin`) et avant la notation. Les URL de
 `normalise.liens` des réponses obtenues sont prises telles qu'écrites, dédoublonnées sur la chaîne
 exacte et testées en ordre trié ; la table résultat → verdict est `config/test-liens.toml`
-(`table-liens-v2`), qui fixe aussi le délai d'une requête (`delai_s`) et la conversion des IRI.
+(`table-liens-v3`), qui fixe aussi le délai d'une requête (`delai_s`), la conversion des IRI et, depuis
+la v3 (D55 (2)), la relecture UTF-8 de l'en-tête `Location` (`lecture_location`) quand l'aller-retour
+latin-1 réussit.
 
 - **Un fichier par URL**, `<sha256 de l'URL en UTF-8>.json`, écrit une fois (refus d'écraser), après
   contrôle de sa forme. Une URL que la table ne classe pas n'a pas de fichier : elle reste « en

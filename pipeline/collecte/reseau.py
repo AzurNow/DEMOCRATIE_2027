@@ -11,7 +11,7 @@ import socket
 import ssl
 import urllib.error
 import urllib.request
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -65,6 +65,27 @@ class _SansRedirection(urllib.request.HTTPRedirectHandler):
 
 def _en_tetes(message: http.client.HTTPMessage) -> dict[str, str]:
     return {cle.lower(): valeur for cle, valeur in message.items()}
+
+
+def relire_location(valeur: str) -> str:
+    """D55 (2) : `http.client` décode tout en-tête en latin-1 (RFC 7230, bytes 8 bits sans charset).
+    Un serveur qui envoie `Location` en octets UTF-8 bruts (pratique courante pour un slug accentué,
+    non conforme mais suivie par tout navigateur) en ressort donc mal décodée. Si l'aller-retour
+    latin-1 → UTF-8 réussit, la chaîne réellement envoyée est rendue (même règle que `requests`) ;
+    sinon, `valeur` est rendue telle quelle. Une valeur ASCII est inchangée dans les deux cas. Ne
+    fait rien d'autre : pas de percent-encoding, qui est le rôle de la conversion IRI (`pipeline.liens.iri`)."""
+    try:
+        octets = valeur.encode("latin-1")
+    except UnicodeEncodeError:
+        return valeur
+    try:
+        return octets.decode("utf-8")
+    except UnicodeDecodeError:
+        return valeur
+
+
+LECTURES_LOCATION: dict[str, Callable[[str], str]] = {"utf-8-si-aller-retour-latin-1": relire_location}
+"""Règles de relecture de `Location` qu'une table peut déclarer (`lecture_location`, D55 (2))."""
 
 
 class TransportUrllib:

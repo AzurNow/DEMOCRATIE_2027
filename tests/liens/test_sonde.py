@@ -10,10 +10,17 @@ from __future__ import annotations
 from itertools import pairwise
 
 from pipeline.collecte.politesse import Cadence
-from pipeline.collecte.reseau import ConnexionRefusee, DelaiDepasse, ErreurReseau, NomIntrouvable
+from pipeline.collecte.reseau import (
+    ConnexionRefusee,
+    DelaiDepasse,
+    ErreurReseau,
+    NomIntrouvable,
+    TransportUrllib,
+    relire_location,
+)
 from pipeline.liens.iri import iri_vers_uri
 from pipeline.liens.sonde import AGENT_LIENS, SondeLiens
-from tests.collecte.doubles import HorlogeFactice, Route, TransportFactice, reponse
+from tests.collecte.doubles import HorlogeFactice, Route, RouteLocale, ServeurLocal, TransportFactice, reponse
 
 ROBOTS = "https://example.org/robots.txt"
 ROBOTS_OUVERT = reponse(200, b"User-agent: *\nAllow: /\n")
@@ -22,7 +29,7 @@ A = "https://example.org/a"
 
 def _sonde(horloge: HorlogeFactice, routes: dict[str, Route]) -> tuple[SondeLiens, TransportFactice]:
     transport = TransportFactice(horloge, routes)
-    return SondeLiens(transport, Cadence(horloge, intervalle_s=1.0), iri_vers_uri), transport
+    return SondeLiens(transport, Cadence(horloge, intervalle_s=1.0), iri_vers_uri, relire_location), transport
 
 
 def test_200_direct_rend_le_corps_tel_quel(horloge: HorlogeFactice) -> None:
@@ -278,6 +285,36 @@ def test_domaine_inexistant_sur_l_url_elle_meme(horloge: HorlogeFactice) -> None
 
     assert (constat.issue, constat.code_http) == ("domaine_inexistant", None)
     assert transport.urls() == ["https://inexistant.example/robots.txt"]
+
+
+def test_d55_2_redirection_location_utf8_brut_relue_avant_conversion_iri(horloge: HorlogeFactice) -> None:
+    """D55 (2) : `http.client` décode `Location` en latin-1 ; des octets UTF-8 bruts (`/cafÃ©`)
+    doivent être relus en UTF-8 (`/café`) avant la conversion IRI → URI, pour viser `…/caf%C3%A9` et
+    non `…/caf%C3%83%C2%A9` (le double encodage de la version non corrigée)."""
+    envoyee = "https://example.org/caf%C3%A9"
+    transport = TransportFactice(horloge, {ROBOTS: ROBOTS_OUVERT, A: reponse(301, location="/cafÃ©"), envoyee: reponse(200, b"ok")})
+    sonde = SondeLiens(transport, Cadence(horloge, intervalle_s=1.0), iri_vers_uri, relire_location)
+
+    constat = sonde.sonder(A)
+
+    assert (constat.code_http, constat.url_finale) == (200, envoyee)
+    assert transport.urls() == [ROBOTS, A, envoyee]
+
+
+def test_d55_2_bout_en_bout_serveur_local_transport_urllib(horloge: HorlogeFactice, serveur_local: ServeurLocal) -> None:
+    """Même cas que ci-dessus, de bout en bout : un vrai `http.server` sur 127.0.0.1 envoie `Location`
+    en octets UTF-8 bruts, relus par `TransportUrllib` (reproduction du relecteur de `http.client`),
+    puis par `relire_location`."""
+    serveur_local.routes["/robots.txt"] = RouteLocale(200, b"User-agent: *\nAllow: /\n")
+    serveur_local.routes["/ancien"] = RouteLocale(301, b"", (("Location", "/cafÃ©"),))
+    serveur_local.routes["/caf%C3%A9"] = RouteLocale(200, b"ok")
+    sonde = SondeLiens(TransportUrllib(delai_s=5), Cadence(horloge, intervalle_s=0.0), iri_vers_uri, relire_location)
+
+    constat = sonde.sonder(f"{serveur_local.base}/ancien")
+
+    assert (constat.issue, constat.code_http) == ("reponse_http", 200)
+    assert constat.url_finale == f"{serveur_local.base}/caf%C3%A9"
+    assert serveur_local.vus == ["/robots.txt", "/ancien", "/caf%C3%A9"]
 
 
 def test_cas_19_deux_url_du_meme_hote_au_moins_une_seconde_entre_les_debuts(horloge: HorlogeFactice) -> None:

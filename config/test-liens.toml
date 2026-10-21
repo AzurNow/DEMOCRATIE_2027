@@ -32,8 +32,14 @@
 # chaque tentative après un échec de lecture ; lu avec succès, il reste valable pour le passage) ;
 # le délai par requête et la conversion IRI → URI entrent dans la table ; l'issue url_non_ascii
 # disparaît.
+#
+# v2 → v3 (D55 (2), revue du 2026-10-12, constat 2) : `http.client` décode tout en-tête `Location`
+# en latin-1, y compris quand le serveur l'a envoyé en octets UTF-8 bruts (slug accentué, pratique
+# courante, suivie par tout navigateur). La sonde réencodait alors la chaîne mal décodée, obtenait un
+# 404 de la cible déformée, et un lien valide se rangeait sous « mort ». La règle de relecture
+# (`lecture_location`) entre dans la table, au même titre que `conversion_iri`.
 
-version = "table-liens-v2"
+version = "table-liens-v3"
 
 # D21 : une URL citée non ASCII (IRI) est convertie en URI pour l'envoi seulement, selon RFC 3987
 # §3.1 : percent-encoding UTF-8 des caractères non ASCII du chemin, de la requête et du fragment,
@@ -41,6 +47,11 @@ version = "table-liens-v2"
 # `url_citee`, le dédoublonnage et le nom du fichier de résultat gardent la chaîne exacte. Une IRI
 # inconvertible ⇒ url_malformee. Seule valeur connue du code : "rfc3987-3.1".
 conversion_iri = "rfc3987-3.1"
+
+# D55 (2) : l'en-tête `Location` d'une redirection est relu en UTF-8 quand l'aller-retour
+# latin-1 → UTF-8 réussit, sinon rendu tel quel (même règle que la bibliothèque `requests`), avant la
+# conversion IRI → URI ci-dessus. Seule valeur connue du code : "utf-8-si-aller-retour-latin-1".
+lecture_location = "utf-8-si-aller-retour-latin-1"
 
 # D21 : délai d'une requête du test des liens, en secondes (URL citée, robots.txt, API de
 # disponibilité Wayback, téléchargement d'un instantané). Save Page Now garde le sien.

@@ -3,8 +3,9 @@
 Cas limite 15 de D20 : une table ambiguë (un code dans deux verdicts), incomplète (clé manquante,
 version absente) ou inconnue (clé, issue ou verdict que le code ne connaît pas) est refusée au
 chargement, par une erreur nommée. Cas limite 4 de D21 : `delai_s` et `conversion_iri` sont lus dans
-la table, une table sans `delai_s` ou avec une conversion inconnue est refusée. Puis la table réelle
-(table-liens-v2) est confrontée, ligne à ligne, au texte de D20 et de D21.
+la table, une table sans `delai_s` ou avec une conversion inconnue est refusée. D55 (2) : `lecture_location`
+suit la même règle. Puis la table réelle (table-liens-v3) est confrontée, ligne à ligne, au texte de
+D20 et de D21.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from pipeline.liens.table import (
 TABLE_MINIMALE = """
 version = "table-liens-v9"
 conversion_iri = "rfc3987-3.1"
+lecture_location = "utf-8-si-aller-retour-latin-1"
 delai_s = 12
 
 [tentatives]
@@ -100,6 +102,25 @@ def test_d21_cas_4_conversion_iri_inconnue_est_refusee(tmp_path: Path) -> None:
 def test_d21_table_sans_conversion_iri_est_incomplete(tmp_path: Path) -> None:
     with pytest.raises(TableIncomplete, match="conversion_iri"):
         charger_table(_ecrire(tmp_path, TABLE_MINIMALE.replace('conversion_iri = "rfc3987-3.1"\n', "")))
+
+
+def test_d55_2_lecture_location_lue_dans_la_table(tmp_path: Path) -> None:
+    table = charger_table(_ecrire(tmp_path, TABLE_MINIMALE))
+    assert table.lecture_location == "utf-8-si-aller-retour-latin-1"
+
+
+def test_d55_2_table_sans_lecture_location_est_incomplete(tmp_path: Path) -> None:
+    contenu = TABLE_MINIMALE.replace('lecture_location = "utf-8-si-aller-retour-latin-1"\n', "")
+    with pytest.raises(TableIncomplete, match="lecture_location"):
+        charger_table(_ecrire(tmp_path, contenu))
+
+
+def test_d55_2_lecture_location_inconnue_est_refusee(tmp_path: Path) -> None:
+    contenu = TABLE_MINIMALE.replace(
+        'lecture_location = "utf-8-si-aller-retour-latin-1"', 'lecture_location = "latin-1-toujours"'
+    )
+    with pytest.raises(TableInconnue, match="latin-1-toujours"):
+        charger_table(_ecrire(tmp_path, contenu))
 
 
 def test_cas_15_code_present_dans_deux_verdicts_est_ambigu(tmp_path: Path) -> None:
@@ -236,8 +257,9 @@ def test_d21_la_table_v2_classe_toute_issue_et_toute_classe(table: TableLiens) -
 
 
 def test_d21_tentatives_transitoires_delai_et_conversion(table: TableLiens) -> None:
-    assert table.version == "table-liens-v2"
+    assert table.version == "table-liens-v3"
     assert table.conversion_iri == "rfc3987-3.1"
+    assert table.lecture_location == "utf-8-si-aller-retour-latin-1"
     assert table.delai_s == 30.0
     assert (table.tentatives_max, table.espacement_s) == (3, 60.0)
     transitoires = [_http(429), _http(500), _http(503), Constat(issue="delai_depasse", code_http=None),

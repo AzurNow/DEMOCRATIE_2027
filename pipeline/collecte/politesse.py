@@ -13,7 +13,7 @@ from urllib.parse import urljoin, urlsplit
 from urllib.robotparser import RobotFileParser
 
 from pipeline.collecte.horloge import Horloge
-from pipeline.collecte.reseau import ErreurReseau, ReponseHttp, Transport
+from pipeline.collecte.reseau import ErreurReseau, ReponseHttp, Transport, relire_location
 
 AGENT_UTILISATEUR = "BancEssai2027-collecte/0.1 (+https://github.com/AzurNow/DEMOCRATIE_2027)"
 INTERVALLE_PAR_HOTE_S = 1.0
@@ -67,9 +67,12 @@ def _origine(url: str) -> str:
 
 
 def _cible_de_redirection(courante: str, reponse: ReponseHttp) -> str:
+    """L'en-tête `Location` est relu en UTF-8 quand l'aller-retour latin-1 → UTF-8 réussit (D55 (2)) :
+    `http.client` décode tout en-tête en latin-1, et un `Location` envoyé en octets UTF-8 bruts en
+    ressort mal décodé."""
     if "location" not in reponse.en_tetes:
         raise EchecCollecte(f"redirection HTTP {reponse.statut} sans en-tête Location : {courante}")
-    cible = urljoin(courante, reponse.en_tetes["location"])
+    cible = urljoin(courante, relire_location(reponse.en_tetes["location"]))
     if urlsplit(cible).scheme not in SCHEMAS_ADMIS:
         raise EchecCollecte(f"redirection hors http ou https : {courante} → {cible}")
     return cible

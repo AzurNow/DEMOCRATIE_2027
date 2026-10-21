@@ -20,7 +20,7 @@ from pathlib import Path
 
 from pipeline.collecte.horloge import HorlogeSysteme
 from pipeline.collecte.politesse import Cadence
-from pipeline.collecte.reseau import Transport, TransportUrllib
+from pipeline.collecte.reseau import LECTURES_LOCATION, Transport, TransportUrllib
 from pipeline.collecte.wayback import ArchiveurWayback
 from pipeline.liens.entree import EntreeRefusee, liens_cites, lire_run
 from pipeline.liens.instantanes import ChercheurInstantanes
@@ -39,12 +39,18 @@ class FenetreOuverte(Exception):
 
 def dependances_reelles(table: TableLiens, transport: Callable[[float], Transport] = TransportUrllib) -> Dependances:
     """D21 : le délai d'une requête (`table.delai_s`) et la conversion IRI → URI (`table.conversion_iri`)
-    viennent de la table. La sonde sert aussi à télécharger la version brute des instantanés. Save
-    Page Now garde son propre délai. `transport` fabrique un transport à partir d'un délai."""
+    viennent de la table. D55 (2) : la relecture de `Location` (`table.lecture_location`) de même. La
+    sonde sert aussi à télécharger la version brute des instantanés. Save Page Now garde son propre
+    délai. `transport` fabrique un transport à partir d'un délai."""
     horloge = HorlogeSysteme()
     cadence = Cadence(horloge)
     return Dependances(
-        sonde=SondeLiens(transport(table.delai_s), cadence, CONVERSIONS_IRI[table.conversion_iri]),
+        sonde=SondeLiens(
+            transport(table.delai_s),
+            cadence,
+            CONVERSIONS_IRI[table.conversion_iri],
+            LECTURES_LOCATION[table.lecture_location],
+        ),
         archiveur=ArchiveurWayback(transport(DELAI_WAYBACK_S), cadence, horloge, agent_utilisateur=AGENT_LIENS),
         chercheur=ChercheurInstantanes(transport(table.delai_s), cadence),
         horloge=horloge,
