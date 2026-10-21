@@ -20,6 +20,7 @@ import { ECHANTILLONS } from "../../pipeline/interrogation/conditions.ts";
 import { questionsTirees, RunGeleRefuse } from "../../pipeline/interrogation/run-gele.ts";
 import { lancerRunGeleSimule, ProfilSimuleAbsent } from "../../pipeline/interrogation/run-simule.ts";
 import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
+import { TemporaireOrphelin } from "../../pipeline/run/ecriture.ts";
 import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { TransitionRefusee } from "../../pipeline/run/statut.ts";
 import type { Question, Tirage } from "../../pipeline/questions/types.ts";
@@ -423,13 +424,15 @@ describe("run gelé, cas 9 : outil interrogé sans profil simulé", () => {
 });
 
 describe("run gelé, cas 10 : temporaire laissé par une écriture interrompue", () => {
-  it("run gelé, cas 10 : run.json.demarrage présent ⇒ échec EEXIST qui le nomme, pas d'écrasement, volume/ absent", async () => {
+  it("run gelé, cas 10 : run.json.demarrage présent ⇒ refus nommé TemporaireOrphelin qui le nomme, pas d'écrasement, volume/ absent", async () => {
     const repertoire = copie();
     const temporaire_laisse = join(repertoire, "run.json.demarrage");
     writeFileSync(temporaire_laisse, "reste d'une écriture interrompue", "utf8");
     const erreur = await refusSansEcriture(repertoire);
-    expect((erreur as Error & { code?: string }).code).toBe("EEXIST");
+    expect(erreur).toBeInstanceOf(TemporaireOrphelin);
+    expect((erreur as TemporaireOrphelin).name).toBe("TemporaireOrphelin");
     expect(erreur.message).toContain(temporaire_laisse);
+    expect(erreur.message).toContain("demarrage");
     expect(readFileSync(temporaire_laisse, "utf8")).toBe("reste d'une écriture interrompue");
   });
 });

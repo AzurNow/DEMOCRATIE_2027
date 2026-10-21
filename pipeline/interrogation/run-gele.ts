@@ -140,8 +140,8 @@ export function lireRunGele(repertoire: string): RunGele {
 
 /**
  * D51 (1) : `en_cours`, validé puis écrit par renommage, si le run démarre ; rien s'il reprend.
- * Un temporaire `run.json.demarrage` laissé par une écriture interrompue fait échouer (EEXIST),
- * jamais écraser.
+ * Un temporaire `run.json.demarrage` laissé par une écriture interrompue lève `TemporaireOrphelin`
+ * (`pipeline/run/ecriture.ts`), jamais écrasé.
  */
 export function inscrireDemarrage(gele: RunGele): void {
   if (gele.demarrage.issue === "reprend") return;
