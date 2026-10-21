@@ -3,13 +3,13 @@
  * le fichier relu.
  */
 
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
 import { DepotReponses, ReponseDejaEcrite } from "../../pipeline/interrogation/stockage.ts";
 import type { ReponseEcrite } from "../../pipeline/interrogation/types.ts";
-import { TemporaireOrphelin } from "../../pipeline/run/ecriture.ts";
+import { TemporaireOrphelin, type EcritureTemporaire } from "../../pipeline/run/ecriture.ts";
 import { empreinteDe } from "../../validation/domaine/empreinte.ts";
 import { banc, plan, requete, scenarioScripte, seule, type Banc } from "./aides.ts";
 
@@ -90,17 +90,46 @@ describe("écriture atomique de reponses/<id>.json (temporaire .partiel), Lot 8 
     expect(readFileSync(partiel, "utf8")).toBe("tronqué par un arrêt pendant l'écriture");
   });
 
-  it("la relance après suppression du .partiel orphelin écrit la réponse normalement, sans .partiel restant", async () => {
+  it("un échec de l'écriture du temporaire, rattrapé par ce processus (disque plein, par exemple), ne laisse ni .partiel ni fichier définitif, remonte l'erreur d'origine, et la relance directe écrit la réponse", async () => {
     const { b, reponse } = await uneReponseEcrite();
     const depot = DepotReponses.ouvrir(join(b.racine, "autre"));
     const chemin = depot.chemin(reponse.id);
     const partiel = `${chemin}.partiel`;
-    writeFileSync(partiel, "tronqué par un arrêt pendant l'écriture", "utf8");
-    rmSync(partiel);
+    const erreurDisque = new Error("ENOSPC: no space left on device, write");
+    const ecritureQuiEchoue: EcritureTemporaire = {
+      writeSync: () => {
+        throw erreurDisque;
+      },
+      fsyncSync: () => {
+        throw new Error("fsyncSync ne doit pas être atteint : writeSync a déjà levé");
+      },
+    };
+
+    expect(() => depot.ecrire(reponse, ecritureQuiEchoue)).toThrow(erreurDisque);
+    expect(existsSync(chemin)).toBe(false);
+    expect(existsSync(partiel)).toBe(false);
 
     depot.ecrire(reponse);
 
     expect(JSON.parse(readFileSync(chemin, "utf8")) as unknown).toEqual(reponse);
+    expect(existsSync(partiel)).toBe(false);
+  });
+
+  it("un échec de la synchronisation (fsyncSync) du temporaire, rattrapé par ce processus, ne laisse ni .partiel ni fichier définitif et remonte l'erreur d'origine", async () => {
+    const { b, reponse } = await uneReponseEcrite();
+    const depot = DepotReponses.ouvrir(join(b.racine, "autre"));
+    const chemin = depot.chemin(reponse.id);
+    const partiel = `${chemin}.partiel`;
+    const erreurDisque = new Error("EIO: i/o error, fsync");
+    const ecritureQuiEchoue: EcritureTemporaire = {
+      writeSync: (descripteur, contenu) => contenu.length,
+      fsyncSync: () => {
+        throw erreurDisque;
+      },
+    };
+
+    expect(() => depot.ecrire(reponse, ecritureQuiEchoue)).toThrow(erreurDisque);
+    expect(existsSync(chemin)).toBe(false);
     expect(existsSync(partiel)).toBe(false);
   });
 
