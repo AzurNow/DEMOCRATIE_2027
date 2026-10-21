@@ -8,17 +8,19 @@
  * l'existence de `metriques/`. Chaque fichier est validé contre son schéma (`analysis/lecture-run.ts`).
  *
  * Ce qui est écrit : dans `run.json`, `go_no_go`, `kappa_echantillon_humain` ou
- * `motif_indefini_kappa_echantillon_humain` de chaque juge retenu, et `motif_provisoire` quand la
- * décision est provisoire ; `checklist.json`, sans contreseing. `statut` n'est JAMAIS touché : le
- * gel et la publication ne sont pas l'affaire de cette commande.
+ * `motif_indefini_kappa_echantillon_humain` de chaque juge retenu, `motif_provisoire` quand la
+ * décision est provisoire, et `perimetre.outils[].par_mode` de chaque assistant inclus (D55 (7),
+ * `analysis/seuils.ts:parModeDuRun`, seul calcul de ce champ) ; `checklist.json`, sans contreseing.
+ * `statut` n'est JAMAIS touché : le gel et la publication ne sont pas l'affaire de cette commande.
  *
  * Refus, avant toute écriture : symétrie rouge (le run est invalide ou ne part pas, et ne porte
  * aucun go/no-go), run `invalide`, run qui porte une `invalidation` (D51 (2) : enregistrée par
  * `pnpm run:invalider` ou par la notation en D16 (3), statut encore `planifie` ou `en_cours`), run
  * `planifie`. Un `run.json` qui porte déjà un go/no-go (ou un
- * kappa d'échantillon, ou un motif provisoire) différent du recalcul, ou une checklist dont la part
- * calculée diffère, lève : jamais d'écrasement silencieux. Identique : rien n'est réécrit, et
- * l'issue le dit. `run.json` et `checklist.json` sont validés contre leur schéma avant d'être écrits.
+ * kappa d'échantillon, un motif provisoire, ou un `par_mode`) différent du recalcul, ou une checklist
+ * dont la part calculée diffère, lève : jamais d'écrasement silencieux. Identique : rien n'est
+ * réécrit, et l'issue le dit. `run.json` et `checklist.json` sont validés contre leur schéma avant
+ * d'être écrits.
  *
  * `metriques/` n'a encore aucun écrivain ni aucun format (`runs/README.md`) : absent, le critère
  * des analyses est rouge ; présent, la commande s'arrête plutôt que d'inventer sa lecture.
@@ -37,7 +39,8 @@ import {
   lireVerdicts,
   type RunLu,
 } from "../../analysis/lecture-run.ts";
-import type { Reponse, Ulid } from "../../analysis/types.ts";
+import { parModeDuRun } from "../../analysis/seuils.ts";
+import type { IdentifiantCourt, ParMode, Reponse, Ulid } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { tirerEchantillonHumain } from "../notation/echantillons.ts";
@@ -112,6 +115,7 @@ export interface ResultatGoNoGo {
   readonly indeterminees: number;
   readonly refus_api: number;
   readonly checklist: Checklist;
+  readonly par_mode: ReadonlyMap<IdentifiantCourt, ParMode>;
   readonly run_json: IssueEcriture;
   readonly checklist_json: IssueEcriture;
 }
@@ -126,6 +130,8 @@ interface Calcul {
   /** D32 : refus de l'API de l'échantillon, notés par règle, écartés du kappa de chaque juge. */
   readonly refus_api: number;
   readonly checklist: Checklist;
+  /** D55 (7) : `par_mode` de chaque assistant inclus, par `outil_id` (`analysis/seuils.ts:parModeDuRun`). */
+  readonly par_mode: ReadonlyMap<IdentifiantCourt, ParMode>;
 }
 
 /* ------------------------------------------------------------------ refus */
@@ -185,6 +191,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     renvois: renvois.filter((r) => r.contexte === "run").length,
     refus_api,
     checklist: construireChecklist(run.id, go_no_go.criteres, constats),
+    par_mode: parModeDuRun(vue.perimetre.outils, reponses),
   };
 }
 
@@ -199,13 +206,32 @@ function jugeAvecKappa(juge: Objet, kappas: readonly KappaDeJuge[]): Objet {
   return { ...juge, kappa_echantillon_humain: kappa.kappa, ...ecartes };
 }
 
+/** D55 (7) : le `par_mode` recalculé pour cet outil, ou l'outil tel quel s'il n'en a pas (comparateur, exclu). */
+function outilAvecParMode(outil: Objet, par_mode: ReadonlyMap<IdentifiantCourt, ParMode>): Objet {
+  const calcule = par_mode.get(outil["outil_id"] as IdentifiantCourt);
+  return calcule === undefined ? outil : { ...outil, par_mode: calcule };
+}
+
+function outilsDe(run: Objet): readonly Objet[] | null {
+  const perimetre = run["perimetre"];
+  if (typeof perimetre !== "object" || perimetre === null) return null;
+  const outils = (perimetre as Objet)["outils"];
+  return Array.isArray(outils) ? (outils as Objet[]) : null;
+}
+
 function fusionner(brut: Objet, calcul: Calcul): Objet {
   const juges = brut["juges"];
   if (!Array.isArray(juges)) throw new GoNoGoRefuse("run.json sans tableau juges.");
+  const perimetre = brut["perimetre"];
+  const outils = outilsDe(brut);
+  if (typeof perimetre !== "object" || perimetre === null || outils === null) {
+    throw new GoNoGoRefuse("run.json sans tableau perimetre.outils.");
+  }
   const motif = calcul.go_no_go.motif;
   return {
     ...brut,
     juges: juges.map((juge: Objet) => jugeAvecKappa(juge, calcul.kappas)),
+    perimetre: { ...(perimetre as Objet), outils: outils.map((outil) => outilAvecParMode(outil, calcul.par_mode)) },
     ...(motif === undefined ? {} : { motif_provisoire: motif }),
     indeterminees_echantillon_humain: calcul.indeterminees,
     renvois_attribution_indecidable: calcul.renvois,
@@ -217,6 +243,7 @@ function fusionner(brut: Objet, calcul: Calcul): Objet {
 /** Ce que la commande écrit dans `run.json`, et rien d'autre : la base de la comparaison au recalcul. */
 function partEcrite(run: Objet): string {
   const juges = run["juges"];
+  const outils = outilsDe(run);
   return canoniser({
     go_no_go: run["go_no_go"],
     motif_provisoire: run["motif_provisoire"],
@@ -226,12 +253,17 @@ function partEcrite(run: Objet): string {
     juges: Array.isArray(juges)
       ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"], juge["renvois_ecartes_kappa_echantillon"]])
       : null,
+    outils: outils === null ? null : outils.map((outil) => outil["par_mode"]),
   });
 }
 
 function partVide(run: Objet): string {
   const juges = run["juges"];
-  return canoniser({ juges: Array.isArray(juges) ? juges.map(() => [undefined, undefined, undefined]) : null });
+  const outils = outilsDe(run);
+  return canoniser({
+    juges: Array.isArray(juges) ? juges.map(() => [undefined, undefined, undefined]) : null,
+    outils: outils === null ? null : outils.map(() => undefined),
+  });
 }
 
 function issueRun(chemin: string, actuel: Objet, fusionne: Objet): IssueEcriture | null {

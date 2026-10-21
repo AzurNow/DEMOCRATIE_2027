@@ -253,12 +253,29 @@ export interface CandidatAuGel {
   readonly interroge: boolean;
 }
 
+/** §8 : part des réponses manquantes du canal API pour un couple outil × mode, et son verdict. */
+export interface SeuilMode {
+  readonly reponses_manquantes_part: number;
+  readonly run_incomplet: boolean;
+}
+
+/** `run.schema.json#/.../par_mode` : une entrée par mode déclaré d'un assistant inclus. */
+export type ParMode = Readonly<Partial<Record<Mode, SeuilMode>>>;
+
 export interface OutilAuGel {
   readonly outil_id: IdentifiantCourt;
   readonly famille: "assistant" | "comparateur";
   readonly inclus: boolean;
   /** §8 : le mode dont vient le chiffre de tête. Lu, jamais décidé par l'analyse. */
   readonly mode_de_tete?: Mode;
+  /** §6 : déclaré pour un assistant inclus, un par mode qu'il interroge sur le canal API. */
+  readonly modes?: readonly Mode[];
+  /**
+   * §8, §12, D55 (7) : part de réponses manquantes et verdict « run incomplet » par mode,
+   * calculés par `analysis/seuils.ts:parModeDuRun`, jamais un second calcul. Écrit par
+   * `pipeline/go-no-go/go-no-go.ts` ; recoupé à la lecture par `analysis/lecture-run.ts:lireRun`.
+   */
+  readonly par_mode?: ParMode;
 }
 
 export interface ContestationPosterieure {

@@ -19,6 +19,7 @@ import {
   lireRun,
   lireRunJson,
   lireVerdicts,
+  ParModeDivergent,
   runDeNotationDe,
   VolumeAbsent,
 } from "../../analysis/lecture-run.ts";
@@ -141,15 +142,74 @@ describe("5. volume absent, volume vide", () => {
     expect(() => lire(run)).toThrow(VolumeAbsent);
   });
 
-  it("reponses/ présent mais vide, run publié : lu tel quel, puis assembler() décide", () => {
+  it("reponses/ présent mais vide, assistant sans par_mode : lu tel quel, puis assembler() décide", () => {
+    // Modifié ouvertement (constat 17 de la revue du 2026-10-12) : ce cas portait par_mode (exigé
+    // par le schéma d'un run publié) jusqu'à ce que zéro réponse API le rende indécidable (cas
+    // suivant). Il isole ici le comportement « volume vide » d'origine en retirant aussi le
+    // par_mode déclaré, pour qu'il n'y ait rien à recouper.
     const run = runNote();
     const reponses = dispositionRunNote(run.repertoire_run).reponses;
     for (const reponse of run.reponses) rmSync(join(reponses, `${reponse.id}.json`));
+    const chemin = dispositionRunNote(run.repertoire_run).run_json;
+    const objet = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown> & { perimetre: { outils: Record<string, unknown>[] } };
+    const outils = objet.perimetre.outils.map((outil) => {
+      if (outil["outil_id"] !== "outil-alpha") return outil;
+      const { par_mode: _p, ...sansParMode } = outil;
+      return sansParMode;
+    });
+    rmSync(chemin);
+    ecrireJson(chemin, { ...objet, statut: "en_cours", perimetre: { ...objet.perimetre, outils } });
     const { entrees } = lire(run);
-    expect(entrees.run).toMatchObject({ statut: "publie" });
     expect(entrees.reponses).toEqual([]);
     expect(entrees.verdicts).toHaveLength(2);
     expect(() => assembler(entrees)).toThrow(/réponse notée introuvable/);
+  });
+
+  it("reponses/ vide, par_mode toujours déclaré : constat 17, le seuil n'est plus décidable", () => {
+    // Un run publié qui déclare par_mode mais dont il ne reste aucune réponse API pour le
+    // recalculer n'est plus « lu tel quel » : la recoupe de D55 (7) refuse avant d'y arriver.
+    const run = runNote();
+    const reponses = dispositionRunNote(run.repertoire_run).reponses;
+    for (const reponse of run.reponses) rmSync(join(reponses, `${reponse.id}.json`));
+    expect(() => lire(run)).toThrow(/décidable/);
+  });
+});
+
+describe("10. par_mode recoupé à la lecture (constat 17, D55 (7))", () => {
+  function remplacerParModeAlpha(run: RunFictif, par_mode: Record<string, unknown>): void {
+    const chemin = dispositionRunNote(run.repertoire_run).run_json;
+    const objet = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown> & { perimetre: { outils: Record<string, unknown>[] } };
+    const outils = objet.perimetre.outils.map((outil) => (outil["outil_id"] === "outil-alpha" ? { ...outil, par_mode } : outil));
+    rmSync(chemin);
+    ecrireJson(chemin, { ...objet, perimetre: { ...objet.perimetre, outils } });
+  }
+
+  it("un par_mode concordant avec les réponses passe", () => {
+    const run = runNote();
+    expect(() => lire(run)).not.toThrow();
+  });
+
+  it("un par_mode qui contredit les réponses lève une erreur nommée", () => {
+    const run = runNote();
+    remplacerParModeAlpha(run, { web_desactivee: { reponses_manquantes_part: 0.3, run_incomplet: true } });
+    const erreur = erreurDe(() => lire(run));
+    expect(erreur).toBeInstanceOf(ParModeDivergent);
+    expect(erreur.message).toContain("outil-alpha");
+    expect(erreur.message).toContain("web_desactivee");
+  });
+
+  it("un run sans par_mode (en cours) n'est pas une erreur de lireRun", () => {
+    const run = runNote();
+    const chemin = dispositionRunNote(run.repertoire_run).run_json;
+    const objet = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown> & { perimetre: { outils: Record<string, unknown>[] } };
+    const outils = objet.perimetre.outils.map((outil) => {
+      if (outil["outil_id"] !== "outil-alpha") return outil;
+      const { par_mode: _p, ...sansParMode } = outil;
+      return sansParMode;
+    });
+    rmSync(chemin);
+    ecrireJson(chemin, { ...objet, statut: "en_cours", perimetre: { ...objet.perimetre, outils } });
+    expect(() => lire(run)).not.toThrow();
   });
 });
 
