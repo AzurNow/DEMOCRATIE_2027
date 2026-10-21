@@ -105,7 +105,9 @@ function contester(item: Item): Item {
 }
 
 describe("item contesté (§4, droit de réponse)", () => {
-  it("sort du lot dès l'affichage, et le retrait est journalisé une seule fois", () => {
+  // Revue du 2026-10-12, constat 13 : un GET ne doit plus jamais écrire au journal, lot ouvert
+  // ou figé. Le retrait est montré par le 409, journalisé seulement à la prochaine écriture.
+  it("sort du lot dès l'affichage, et un GET n'écrit jamais rien au journal (constat 13)", () => {
     const conteste = contester(items[0] as Item);
     bac.ecrireItem(conteste);
     const contexte = bac.contexte("a1");
@@ -117,11 +119,10 @@ describe("item contesté (§4, droit de réponse)", () => {
     const seconde = appeler(contexte, "item", ["ent-001", conteste.id]);
     expect(seconde.statut).toBe(409);
 
-    const entrees = bac.journal("a1").lire("ent-001");
-    expect(entrees.filter((entree) => entree.type_entree === "retrait_item")).toHaveLength(1);
+    expect(bac.journal("a1").lire("ent-001")).toHaveLength(0);
   });
 
-  it("refuse aussi la décision sur un item contesté", () => {
+  it("refuse aussi la décision sur un item contesté, et journalise son retrait une seule fois", () => {
     const conteste = contester(items[0] as Item);
     bac.ecrireItem(conteste);
     const reponse = appeler(bac.contexte("a1"), "decision", [], {
@@ -134,6 +135,37 @@ describe("item contesté (§4, droit de réponse)", () => {
       duree_active_ms: 900,
     });
     expect(reponse.statut).toBe(409);
+
+    const entrees = bac.journal("a1").lire("ent-001");
+    expect(entrees).toHaveLength(1);
+    expect(entrees[0]?.type_entree).toBe("retrait_item");
+  });
+
+  it("une décision sur un autre item écrit d'abord le retrait en attente, une seule fois (constat 13)", () => {
+    const conteste = contester(items[0] as Item);
+    bac.ecrireItem(conteste);
+    const contexte = bac.contexte("a1");
+    const autre = items[1] as Item;
+
+    const soumettreAutre = (verdict: string): Reponse =>
+      appeler(contexte, "decision", [], {
+        lot_id: "ent-001",
+        item_id: autre.id,
+        decision: verdict,
+        reponses_grille: GRILLE_TOUT_VRAI,
+        corrections: [],
+        duree_affichage_ms: 1000,
+        duree_active_ms: 900,
+      });
+
+    expect(soumettreAutre("accepter").statut).toBe(201);
+    const apresPremiere = bac.journal("a1").lire("ent-001");
+    expect(apresPremiere.map((entree) => entree.type_entree)).toEqual(["retrait_item", "decision"]);
+    expect((apresPremiere[0] as { item_id: string }).item_id).toBe(conteste.id);
+
+    expect(soumettreAutre("rejeter").statut).toBe(201);
+    const apresSeconde = bac.journal("a1").lire("ent-001");
+    expect(apresSeconde.map((entree) => entree.type_entree)).toEqual(["retrait_item", "decision", "decision"]);
   });
 
   it("l'item retiré sort du dénominateur du kappa, et n'est pas compté comme un désaccord", () => {
@@ -161,6 +193,101 @@ describe("item contesté (§4, droit de réponse)", () => {
     };
     expect(corps.les_deux_ont_fini).toBe(true);
     expect(corps.kappa.n).toBe(1);
+  });
+});
+
+/**
+ * Revue du 2026-10-12, constat 13 : le retrait d'un item contesté ne s'écrit par aucune route sur
+ * un lot figé par les deux annotateurs, et un GET ne le journalise jamais, qu'il soit rencontré
+ * avant ou après le gel du lot.
+ */
+describe("lot figé : le retrait ne s'écrit par aucune route (constat 13)", () => {
+  it("GET sur un item contesté jamais vu, lot figé par les deux annotateurs : 409, journal inchangé", () => {
+    const conteste = contester(items[0] as Item);
+    bac.ecrireItem(conteste);
+    for (const annotateur of ["a1", "a2"]) {
+      bac.journal(annotateur).ajouter(
+        "lot-002",
+        decision({ annotateur_id: annotateur, item: items[1] as Item, decision: "accepter", lot_id: "lot-002" }),
+      );
+    }
+
+    const reponse = appeler(bac.contexte("a1"), "item", ["lot-002", conteste.id]);
+    expect(reponse.statut).toBe(409);
+    expect((reponse.corps as { retire: boolean }).retire).toBe(true);
+    // Seule l'entrée de décision sur items[1], écrite par le test lui-même, est présente.
+    expect(bac.journal("a1").lire("lot-002")).toHaveLength(1);
+  });
+
+  it("décision et annulation sur un lot figé : le verrou passe avant tout retrait en attente, rien n'est écrit", () => {
+    const conteste = contester(items[0] as Item);
+    bac.ecrireItem(conteste);
+    for (const annotateur of ["a1", "a2"]) {
+      bac.journal(annotateur).ajouter(
+        "lot-002",
+        decision({ annotateur_id: annotateur, item: items[1] as Item, decision: "accepter", lot_id: "lot-002" }),
+      );
+    }
+    const avant = bac.journal("a1").lire("lot-002");
+
+    const decisionReponse = appeler(bac.contexte("a1"), "decision", [], {
+      lot_id: "lot-002",
+      item_id: conteste.id,
+      decision: "accepter",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(decisionReponse.statut).toBe(409);
+    expect((decisionReponse.corps as { erreur?: string }).erreur).toContain("réannotation");
+
+    const annulationReponse = appeler(bac.contexte("a1"), "annulation", [], { lot_id: "lot-002" });
+    expect(annulationReponse.statut).toBe(409);
+    expect((annulationReponse.corps as { erreur?: string }).erreur).toContain("réannotation");
+
+    expect(bac.journal("a1").lire("lot-002")).toEqual(avant);
+  });
+});
+
+/**
+ * Revue du 2026-10-12, constat 13 : un item contesté qu'un GET a montré comme retiré sans le
+ * journaliser doit quand même être sauté par `vueLot`/`itemCourant`, et compté par sa
+ * progression — sinon l'annotateur resterait bloqué dessus.
+ */
+describe("vueLot et motifBlocage sautent un item contesté non journalisé (constat 13)", () => {
+  it("vueLot ne propose pas l'item contesté comme item_courant, et sa progression le compte comme retiré", () => {
+    const conteste = contester(items[0] as Item);
+    bac.ecrireItem(conteste);
+
+    const corps = appeler(bac.contexte("a1"), "lot", ["ent-001"]).corps as {
+      item_courant: string | null;
+      progression: { total: number; decides: number; retires: number; restants: number; termine: boolean };
+    };
+
+    expect(corps.item_courant).toBe((items[1] as Item).id);
+    expect(corps.progression).toEqual({ total: 2, decides: 0, retires: 1, restants: 1, termine: false });
+    expect(bac.journal("a1").lire("ent-001")).toHaveLength(0);
+  });
+
+  it("motifBlocage ne reste pas bloqué sur un item d'entraînement contesté non journalisé", () => {
+    const conteste = contester(items[0] as Item);
+    bac.ecrireItem(conteste);
+    bac.journal("a1").ajouter(
+      "ent-001",
+      decision({
+        annotateur_id: "a1",
+        item: items[1] as Item,
+        decision: "accepter",
+        lot_id: "ent-001",
+        lot_nature: "entrainement",
+      }),
+    );
+
+    const corps = appeler(bac.contexte("a1"), "session").corps as {
+      lots: { lot_id: string; accessible: boolean }[];
+    };
+    expect(corps.lots.find((lot) => lot.lot_id === "lot-002")?.accessible).toBe(true);
   });
 });
 
@@ -289,6 +416,13 @@ describe("annulation par l'interface", () => {
 
   it("répond proprement quand il n'y a rien à annuler", () => {
     expect(appeler(bac.contexte("a1"), "annulation", [], { lot_id: "ent-001" }).statut).toBe(409);
+  });
+
+  it("rien à annuler, item contesté en attente : 409, aucun retrait écrit (constat 13)", () => {
+    const conteste = contester(items[0] as Item);
+    bac.ecrireItem(conteste);
+    expect(appeler(bac.contexte("a1"), "annulation", [], { lot_id: "ent-001" }).statut).toBe(409);
+    expect(bac.journal("a1").lire("ent-001")).toHaveLength(0);
   });
 });
 

@@ -16,13 +16,39 @@ import type { EntreeDecision, EntreeJournal, ItemDuLot } from "./types.ts";
 export interface EtatAnnotateur {
   /** Dernière décision non annulée, par item. */
   readonly decisions: ReadonlyMap<string, EntreeDecision>;
-  /** Items sortis du lot parce que contestés (§4, droit de réponse). */
+  /**
+   * Items sortis du lot par une entrée `retrait_item` du journal (§4, droit de réponse). Un GET
+   * n'en écrit plus jamais (revue du 2026-10-12, constat 13) : un item contesté rencontré sans
+   * avoir encore été journalisé n'est donc pas ici, voir `retiresEffectifs`.
+   */
   readonly retires: ReadonlySet<string>;
   /** Nombre de décisions déjà portées sur chaque item, annulées comprises. */
   readonly decomptes: ReadonlyMap<string, number>;
   /** La décision annulable, c'est-à-dire la dernière encore active. `null` s'il n'y en a pas. */
   readonly annulable: EntreeDecision | null;
   readonly entrees: readonly EntreeJournal[];
+}
+
+const AUCUNE_CONTESTATION: ReadonlySet<string> = new Set();
+
+/**
+ * Items à traiter comme retirés pour l'affichage : ceux que le journal porte déjà (`etat.retires`)
+ * et ceux qu'une contestation vise effectivement au moment de la lecture mais que cet annotateur
+ * n'a pas encore décidés. Un GET ne journalise plus le retrait (constat 13 du 2026-10-12) ; sans
+ * cette union, `itemCourant` représenterait un item que le GET refuse, et `progression` le
+ * compterait comme restant plutôt que retiré. Un item déjà décidé reste décidé : une contestation
+ * reçue après coup ne défait pas la décision.
+ */
+export function retiresEffectifs(
+  etat: EtatAnnotateur,
+  contestes: ReadonlySet<string> = AUCUNE_CONTESTATION,
+): ReadonlySet<string> {
+  if (contestes.size === 0) return etat.retires;
+  const effectifs = new Set(etat.retires);
+  for (const item_id of contestes) {
+    if (!etat.decisions.has(item_id)) effectifs.add(item_id);
+  }
+  return effectifs;
 }
 
 export function rejouer(entrees: readonly EntreeJournal[]): EtatAnnotateur {
@@ -93,11 +119,16 @@ export interface Progression {
   readonly termine: boolean;
 }
 
-export function progression(ordre: readonly ItemDuLot[], etat: EtatAnnotateur): Progression {
+export function progression(
+  ordre: readonly ItemDuLot[],
+  etat: EtatAnnotateur,
+  contestes: ReadonlySet<string> = AUCUNE_CONTESTATION,
+): Progression {
+  const retiresEffectifsDuLot = retiresEffectifs(etat, contestes);
   let decides = 0;
   let retires = 0;
   for (const entree of ordre) {
-    if (etat.retires.has(entree.item_id)) retires += 1;
+    if (retiresEffectifsDuLot.has(entree.item_id)) retires += 1;
     else if (etat.decisions.has(entree.item_id)) decides += 1;
   }
   const restants = ordre.length - decides - retires;
@@ -105,12 +136,17 @@ export function progression(ordre: readonly ItemDuLot[], etat: EtatAnnotateur): 
 }
 
 /**
- * Premier item de l'ordre qui n'a ni décision active ni retrait. La reprise de session se
- * résume à cette fonction : rouvrir l'interface, c'est rejouer le journal et reprendre ici.
+ * Premier item de l'ordre qui n'a ni décision active ni retrait effectif. La reprise de session
+ * se résume à cette fonction : rouvrir l'interface, c'est rejouer le journal et reprendre ici.
  */
-export function itemCourant(ordre: readonly ItemDuLot[], etat: EtatAnnotateur): ItemDuLot | null {
+export function itemCourant(
+  ordre: readonly ItemDuLot[],
+  etat: EtatAnnotateur,
+  contestes: ReadonlySet<string> = AUCUNE_CONTESTATION,
+): ItemDuLot | null {
+  const retiresEffectifsDuLot = retiresEffectifs(etat, contestes);
   for (const entree of ordre) {
-    if (etat.retires.has(entree.item_id)) continue;
+    if (retiresEffectifsDuLot.has(entree.item_id)) continue;
     if (!etat.decisions.has(entree.item_id)) return entree;
   }
   return null;
