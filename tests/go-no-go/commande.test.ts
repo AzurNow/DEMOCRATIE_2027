@@ -7,11 +7,24 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { lireReponses, lireRunJson } from "../../analysis/lecture-run.ts";
+import type { Mode, Reponse } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import type { Checklist } from "../../pipeline/go-no-go/checklist.ts";
 import { FormatMetriquesNonDefini, GoNoGoDivergent, GoNoGoRefuse, goNoGo } from "../../pipeline/go-no-go/go-no-go.ts";
 import { executerOutil } from "../aides/depot.ts";
 import { ecrireObjet, lireObjet, nettoyerReference, nettoyerRepertoires, runSimuleNote } from "./aides.ts";
+
+/**
+ * Établit, indépendamment de `parModeDuRun`, le `seuil_mode` attendu d'un couple : compte les
+ * réponses API de contexte run du run simulé lui-même, sans passer par le code noté (D55 (7),
+ * relecture du constat 17 — une comparaison à `resultat.par_mode` serait tautologique).
+ */
+function seuilModeAttendu(reponses: readonly Reponse[], outil_id: string, mode: Mode): Record<string, unknown> {
+  const siennes = reponses.filter((r) => r.contexte === "run" && r.canal === "api" && r.outil_id === outil_id && r.mode === mode);
+  const manquantes = siennes.filter((r) => r.statut_reponse === "manquante").length;
+  return { reponses_manquantes_part: manquantes / siennes.length, run_incomplet: 5 * manquantes > siennes.length };
+}
 
 afterEach(nettoyerRepertoires);
 afterAll(nettoyerReference);
@@ -97,14 +110,21 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
     "D55 (7), constat 17 : écrit perimetre.outils[].par_mode des assistants inclus ; un par_mode déjà écrit différent du recalcul : refus, run.json inchangé à l'octet",
     async () => {
       const run = await runSimuleNote();
-      const resultat = goNoGo(run);
+      goNoGo(run);
       const ecrit = valider<Record<string, unknown>>("run", lireObjet(join(run, "run.json")), "run.json écrit");
       const outils = (ecrit["perimetre"] as Record<string, unknown>)["outils"] as Record<string, unknown>[];
       const alpha = outils.find((o) => o["outil_id"] === "outil-alpha");
       const beta = outils.find((o) => o["outil_id"] === "outil-beta");
       const gamma = outils.find((o) => o["outil_id"] === "comparateur-gamma");
-      expect(alpha?.["par_mode"]).toEqual(resultat.par_mode.get("outil-alpha"));
-      expect(beta?.["par_mode"]).toEqual(resultat.par_mode.get("outil-beta"));
+
+      const reponses = lireReponses(run, lireRunJson(run).id);
+      expect(alpha?.["par_mode"]).toEqual({
+        web_activee: seuilModeAttendu(reponses, "outil-alpha", "web_activee"),
+        web_desactivee: seuilModeAttendu(reponses, "outil-alpha", "web_desactivee"),
+      });
+      expect(beta?.["par_mode"]).toEqual({
+        web_desactivee: seuilModeAttendu(reponses, "outil-beta", "web_desactivee"),
+      });
       expect(gamma).not.toHaveProperty("par_mode");
 
       // Relancée à l'identique : rien n'est réécrit.

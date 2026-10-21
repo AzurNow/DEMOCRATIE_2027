@@ -231,11 +231,14 @@ describe("par_mode du run (D55 (7), constat 17 de la revue du 2026-10-12)", () =
     });
   });
 
-  it("un mode déclaré sans aucune réponse API lève, le seuil n'y étant pas décidable", () => {
+  it("un mode déclaré sans aucune réponse API lève, en nommant le couple, le seuil n'y étant pas décidable", () => {
     const outils = [outil({ outil_id: "outil-alpha", modes: ["web_activee", "web_desactivee"] })];
     const jeu = reponses(4, 1, "outil-alpha", "web_desactivee");
 
-    expect(() => parModeDuRun(outils, jeu)).toThrow(/décidable/);
+    // outil-alpha/web_desactivee a des réponses ; outil-alpha/web_activee, le couple sans
+    // aucune réponse API, doit être nommé dans le message (format de `cleCouple`), pas seulement
+    // le message générique de `runIncomplet`.
+    expect(() => parModeDuRun(outils, jeu)).toThrow(/outil-alpha\/web_activee.*décidable/);
   });
 
   it("une réponse API d'un couple non déclaré par un assistant inclus lève", () => {

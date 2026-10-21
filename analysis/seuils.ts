@@ -178,7 +178,11 @@ export function parModeDuRun(outils: readonly OutilAuGel[], reponses: readonly R
   for (const [outil_id, modes] of declares) {
     const parMode: Partial<Record<Mode, SeuilMode>> = {};
     for (const mode of modes) {
-      const part = partReponsesManquantes(reponses, { outil_id, mode });
+      const couple = { outil_id, mode };
+      const part = partReponsesManquantes(reponses, couple);
+      if (part.denominateur === 0) {
+        throw new Error(`Couple ${cleCouple(couple)} sans aucune réponse API dans le run : le seuil de 20 % n'est pas décidable.`);
+      }
       const run_incomplet = runIncomplet(part);
       parMode[mode] = { reponses_manquantes_part: part.numerateur / part.denominateur, run_incomplet };
     }
