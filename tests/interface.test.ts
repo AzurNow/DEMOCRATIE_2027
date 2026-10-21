@@ -564,9 +564,12 @@ describe("aucune ressource distante", () => {
 
   it("la politique de sécurité de contenu n'autorise que l'origine locale", () => {
     const serveur = readFileSync(join(racineDepot, "validation/serveur/principal.ts"), "utf8");
-    expect(serveur).toContain("default-src 'self'");
     expect(serveur).toContain('const ADRESSE = "127.0.0.1"');
     expect(serveur).toContain("serveur.listen(port, ADRESSE");
+    // La politique de sécurité n'est plus recopiée dans ce fichier : une seule définition, dans
+    // le module partagé avec la notation humaine (constat 20 de la revue du 2026-10-12, D55 (8)).
+    const partagee = readFileSync(join(racineDepot, "validation/serveur/http.ts"), "utf8");
+    expect(partagee).toContain("default-src 'self'");
   });
 
   it("le serveur n'écoute sur aucune adresse d'écoute globale", () => {
