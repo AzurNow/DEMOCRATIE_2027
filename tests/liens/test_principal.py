@@ -20,7 +20,7 @@ from pipeline.liens.instantanes import InstantaneAbsent, InstantaneEcarte, Insta
 from pipeline.liens.passage import Dependances
 from pipeline.liens.sortie import nom_resultat
 from pipeline.liens.table import CHEMIN_TABLE, TableLiens, charger_table
-from tests.collecte.doubles import Route, reponse
+from tests.collecte.doubles import HorlogeFactice, Route, TransportFactice, reponse
 from tests.liens.doubles_liens import ArchiveurFactice, Banc, banc, ecrire_manquante, ecrire_reponse, ecrire_run, reussite
 
 DORE = Path(__file__).resolve().parent / "dore"
@@ -157,7 +157,7 @@ def test_url_sans_verdict_code_1(tmp_path: Path, capsys: pytest.CaptureFixture[s
     run, b = _monter(tmp_path, routes)
     table = tmp_path / "table.toml"
     contenu = CHEMIN_TABLE.read_text(encoding="utf-8").replace('"1xx", "3xx", ', '"1xx", ')
-    table.write_text(contenu.replace('"table-liens-v2"', '"table-liens-v99"'), encoding="utf-8")
+    table.write_text(contenu.replace('"table-liens-v3"', '"table-liens-v99"'), encoding="utf-8")
 
     assert principal([str(run), f"--table={table}"], _construire(b)) == 1
     assert "reponse_http (code HTTP 304) hors de la table table-liens-v99" in capsys.readouterr().out
@@ -178,6 +178,29 @@ def test_d21_cas_4_delai_s_lu_dans_la_table_et_passe_aux_transports(tmp_path: Pa
 
     assert delais == [7.5, DELAI_WAYBACK_S, 7.5]  # sonde (liens et instantanés bruts), Save Page Now, API de disponibilité
     assert deps.table is table
+
+
+def test_d55_2_relecture_location_de_la_sonde_assemblee_par_dependances_reelles() -> None:
+    """Revue du 2026-10-12, constat 2, relecture : `LECTURES_LOCATION[table.lecture_location]` n'était
+    exercé par aucun test à travers `dependances_reelles`, le point d'entrée réel qui assemble la
+    sonde depuis la table du dépôt (`CHEMIN_TABLE`, table-liens-v3) ; les tests de la sonde passent
+    `relire_location` à la main, et `doubles_liens.banc` recopie ce branchement au lieu de l'appeler."""
+    robots = "https://example.org/robots.txt"
+    a = "https://example.org/a"
+    cafe = "https://example.org/caf%C3%A9"
+    routes: dict[str, Route] = {
+        robots: reponse(200, b"User-agent: *\nAllow: /\n", content_type="text/plain"),
+        a: reponse(301, location="/cafÃ©"),
+        cafe: reponse(200, b"ok"),
+    }
+    transport = TransportFactice(HorlogeFactice(), routes)
+    table = charger_table(CHEMIN_TABLE)
+
+    deps = dependances_reelles(table, lambda _delai_s: transport)
+    constat = deps.sonde.sonder(a)
+
+    assert (constat.code_http, constat.url_finale) == (200, cafe)
+    assert deps.table.verdict(constat) == "existe"
 
 
 def test_relance_apres_passage_complet_ne_teste_rien(tmp_path: Path) -> None:

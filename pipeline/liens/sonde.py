@@ -101,11 +101,16 @@ def _type_contenu(reponse: ReponseHttp) -> str | None:
     return reponse.en_tetes["content-type"] if "content-type" in reponse.en_tetes else None
 
 
-def _cible(courante: str, reponse: ReponseHttp, vues: list[str], convertir: Conversion) -> Constat | str:
-    """L'URI de la cible d'une redirection, ou le constat qui arrête la chaîne."""
+def _cible(
+    courante: str, reponse: ReponseHttp, vues: list[str], convertir: Conversion, lire_location: Conversion
+) -> Constat | str:
+    """L'URI de la cible d'une redirection, ou le constat qui arrête la chaîne. `location` est relu
+    par `lire_location` (D55 (2) : un en-tête `Location` en octets UTF-8 bruts, décodé en latin-1 par
+    `http.client`) avant d'être résolu, pour que la conversion IRI → URI qui suit ne le double-encode
+    pas."""
     if "location" not in reponse.en_tetes:
         return Constat("redirection_sans_location", reponse.statut, motif=courante)
-    cible = urljoin(courante, reponse.en_tetes["location"])
+    cible = urljoin(courante, lire_location(reponse.en_tetes["location"]))
     envoi = preparer(cible, convertir)
     if isinstance(envoi, Constat):
         return replace(envoi, code_http=reponse.statut, motif=f"{courante} → {cible}")
@@ -120,13 +125,17 @@ class SondeLiens:
         transport: Transport,
         cadence: Cadence,
         convertir: Conversion,
+        lire_location: Conversion,
         agent_utilisateur: str = AGENT_LIENS,
         max_redirections: int = MAX_REDIRECTIONS,
     ) -> None:
-        """`convertir` : la règle IRI → URI que déclare la table (`CONVERSIONS_IRI[table.conversion_iri]`)."""
+        """`convertir` : la règle IRI → URI que déclare la table (`CONVERSIONS_IRI[table.conversion_iri]`).
+        `lire_location` : la règle de relecture de `Location` que déclare la table (D55 (2),
+        `LECTURES_LOCATION[table.lecture_location]`)."""
         self._transport = transport
         self._cadence = cadence
         self._convertir = convertir
+        self._lire_location = lire_location
         self._agent = agent_utilisateur
         self._max_redirections = max_redirections
         self._robots: dict[str, RobotFileParser] = {}
@@ -160,7 +169,7 @@ class SondeLiens:
         if reponse.statut not in STATUTS_REDIRECTION:
             return Constat(REPONSE_HTTP, reponse.statut, courante, reponse.corps, _type_contenu(reponse))
         vues.append(courante)
-        cible = _cible(courante, reponse, vues, self._convertir)
+        cible = _cible(courante, reponse, vues, self._convertir, self._lire_location)
         return cible if isinstance(cible, Constat) else (cible, reponse.statut)
 
     def _envoyer(self, url: str) -> ReponseHttp:

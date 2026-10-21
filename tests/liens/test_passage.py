@@ -466,7 +466,7 @@ def test_d21_cas_1_nouvelle_issue_inaccessible(tmp_path: Path, route: list, issu
     assert (resultat["verdict_existence"], resultat["code_http"]) == ("inaccessible", code)
     assert {t["issue"] for t in resultat["tentatives"]} == {issue}
     assert len(resultat["tentatives"]) == len(route)
-    assert resultat["version_table"] == "table-liens-v2"
+    assert resultat["version_table"] == "table-liens-v3"
     assert bilans[0].etat == "teste"
 
 

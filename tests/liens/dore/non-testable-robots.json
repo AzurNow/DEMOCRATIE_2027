@@ -3,7 +3,7 @@
   "verdict_existence": "non_testable",
   "date_test": "2026-09-22T14:30:08+02:00",
   "code_http": null,
-  "version_table": "table-liens-v2",
+  "version_table": "table-liens-v3",
   "tentatives": [
     {
       "numero": 1,

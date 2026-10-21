@@ -238,3 +238,15 @@ def test_content_type_absent_reste_absent(horloge: HorlogeFactice) -> None:
         horloge, {ROBOTS: ROBOTS_OUVERT, "https://example.org/doc": reponse(200, b"x")}
     )
     assert client.telecharger("https://example.org/doc").type_contenu is None
+
+
+def test_d55_2_redirection_location_utf8_brut_relue_en_utf8(horloge: HorlogeFactice) -> None:
+    """D55 (2) : `http.client` décode `Location` en latin-1 ; des octets UTF-8 bruts (`/cafÃ©`) sont
+    relus en UTF-8 (`/café`) avant d'être suivis — pas le chemin mojibake que la relecture latin-1
+    donnerait telle quelle."""
+    cible = "https://example.org/café"
+    client, transport = _client(
+        horloge, {ROBOTS: ROBOTS_OUVERT, "https://example.org/ancien": reponse(301, location="/cafÃ©"), cible: reponse(200, b"ok")}
+    )
+    assert client.telecharger("https://example.org/ancien").url_finale == cible
+    assert transport.urls()[-1] == cible

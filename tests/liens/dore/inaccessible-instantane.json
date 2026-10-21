@@ -6,7 +6,7 @@
   "code_http": 403,
   "sha256_contenu": "783e79c7583c4c47cc65a5a105ca00055d30b686bcff2f2405c57f774c7f59d5",
   "archive_url": "https://web.archive.org/web/20260918071500/https://example.org/reserve",
-  "version_table": "table-liens-v2",
+  "version_table": "table-liens-v3",
   "tentatives": [
     {
       "numero": 1,
