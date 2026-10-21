@@ -21,7 +21,14 @@ import {
 } from "../domaine/decision.ts";
 import { validerCorrections } from "../domaine/corrections.ts";
 import { RACCOURCIS, TOUCHES_DECISION, TOUCHE_CONFIRMATION, TOUCHES_REPONSE } from "../domaine/interaction.ts";
-import { itemCourant, prochaineVisite, progression, rejouer } from "../domaine/journal.ts";
+import {
+  itemCourant,
+  prochaineVisite,
+  progression,
+  rejouer,
+  retiresEffectifs,
+  type EtatAnnotateur,
+} from "../domaine/journal.ts";
 import { ordreAffichage, tailleAttendue } from "../domaine/lot.ts";
 import { refusSurLotTermine } from "../domaine/verrou-lot.ts";
 import { ulid } from "../domaine/ulid.ts";
@@ -70,7 +77,11 @@ function session(contexte: Contexte): Reponse {
       positions: enumerationCommune(contexte.configuration.racine_depot, "position"),
       lots: lots.map((lot) => ({
         ...projeterLot(lot),
-        progression: progression(lot.items, rejouer(contexte.journal.lire(lot.lot_id))),
+        progression: progression(
+          lot.items,
+          rejouer(contexte.journal.lire(lot.lot_id)),
+          contestesParmi(contexte, lot.items),
+        ),
         accessible: lot.nature === "entrainement" || blocage === null,
         motif_inaccessible: lot.nature === "entrainement" ? null : blocage,
       })),
@@ -88,12 +99,30 @@ function motifBlocage(contexte: Contexte, lots: readonly Lot[]): string | null {
     return "Aucun lot d'entraînement n'est composé : le §4 en exige un avant tout lot réel.";
   }
   for (const lot of entrainements) {
-    const avancement = progression(lot.items, rejouer(contexte.journal.lire(lot.lot_id)));
+    const contestes = contestesParmi(contexte, lot.items);
+    const avancement = progression(lot.items, rejouer(contexte.journal.lire(lot.lot_id)), contestes);
     if (!avancement.termine) {
       return `Lot d'entraînement ${lot.lot_id} inachevé : ${avancement.restants} item(s) restant(s).`;
     }
   }
   return null;
+}
+
+/**
+ * `item_id` de `items` dont le statut de contestation effectif (§4, 0.8) n'est pas « aucune ».
+ * Un item sans correspondant dans `staging/` n'est jamais tenu pour contesté ici.
+ */
+function contestesParmi(contexte: Contexte, items: readonly ItemDuLot[]): ReadonlySet<string> {
+  const staging = contexte.staging();
+  const data = contexte.itemsData();
+  const contestes = new Set<string>();
+  for (const reference of items) {
+    const item = staging.items.get(reference.item_id);
+    if (item !== undefined && statutContestationEffectif(item, data) !== "aucune") {
+      contestes.add(reference.item_id);
+    }
+  }
+  return contestes;
 }
 
 /* ------------------------------------------------------------------- lot */
@@ -105,6 +134,7 @@ function vueLot(contexte: Contexte, params: readonly string[]): Reponse {
 
   const etat = rejouer(contexte.journal.lire(lot_id));
   const ordre = ordreAffichage(lot, contexte.annotateur_id);
+  const contestes = contestesParmi(contexte, ordre);
   const blocage = lot.nature === "entrainement" ? null : motifBlocage(contexte, contexte.lots());
 
   return {
@@ -113,7 +143,8 @@ function vueLot(contexte: Contexte, params: readonly string[]): Reponse {
       lot,
       ordre,
       etat,
-      item_courant: itemCourant(ordre, etat),
+      item_courant: itemCourant(ordre, etat, contestes),
+      contestes,
       accessible: blocage === null,
       motif_inaccessible: blocage,
     }),
@@ -152,8 +183,8 @@ function vueItem(contexte: Contexte, params: readonly string[]): Reponse {
   const cadre = resoudre(contexte, lot_id, item_id);
   if ("erreur" in cadre) return cadre.erreur;
 
-  const { lot, item, staging, ordre } = cadre;
-  const retrait = retirerSiConteste(contexte, lot, item);
+  const { item, staging, ordre } = cadre;
+  const retrait = retirerSiConteste(contexte, item);
   if (retrait !== null) return retrait;
 
   const index = ordre.findIndex((entree) => entree.item_id === item_id);
@@ -193,39 +224,66 @@ function annulable(contexte: Contexte, lot_id: string): { id: string; item_id: s
 }
 
 /**
- * §4, droit de réponse : une contestation retire l'item du lot en cours, immédiatement. Garde-fou
- * d'affichage : l'annotateur ne voit ni ne décide un item contesté. Le retrait est journalisé une
- * fois, pour tracer ce que l'annotateur a rencontré et pour sa progression ; il ne décide **pas**
- * du dénominateur du kappa, que `diagnostiquerLot` lit sur le statut de l'item au calcul.
+ * §4, droit de réponse, lecture seule : un item contesté sort du lot en cours dès l'affichage.
+ * Garde-fou d'affichage : l'annotateur ne voit ni ne décide un item contesté. Un GET n'écrit
+ * jamais rien au journal, que le lot soit ouvert ou figé (revue du 2026-10-12, constat 13) : le
+ * retrait est seulement montré par ce 409, et journalisé à la première écriture qui suit
+ * (décision ou annulation), sous le verrou d'un lot terminé (`ecrireRetraitsEnAttente`). Il ne
+ * décide **pas** du dénominateur du kappa, que `diagnostiquerLot` lit sur le statut de l'item au
+ * calcul.
  */
-function retirerSiConteste(contexte: Contexte, lot: Lot, item: Item): Reponse | null {
+function retirerSiConteste(contexte: Contexte, item: Item): Reponse | null {
   const statut = statutContestationEffectif(item, contexte.itemsData());
-  if (statut === "aucune") return null;
-  const etat = rejouer(contexte.journal.lire(lot.lot_id));
-  if (!etat.retires.has(item.id)) {
-    contexte.journal.ajouter(
-      lot.lot_id,
-      construireRetrait({
-        identifiant: ulid(),
-        annotateur_id: contexte.annotateur_id,
-        lot_id: lot.lot_id,
-        lot_nature: lot.nature,
-        item_id: item.id,
-        motif: `item ${statut}`,
-        horodatage: contexte.maintenant(),
-      }),
-    );
-  }
+  return statut === "aucune" ? null : reponseRetire(item.id);
+}
+
+function reponseRetire(item_id: string): Reponse {
   return {
     statut: 409,
     corps: {
       retire: true,
-      item_id: item.id,
+      item_id,
       motif:
         "Cet item a été contesté : il sort du lot en cours et n'est pas à valider. " +
         "Le panel statue sous 14 jours (annexe E).",
     },
   };
+}
+
+function ecrireRetrait(contexte: Contexte, lot: Lot, item_id: string, statut: string): void {
+  contexte.journal.ajouter(
+    lot.lot_id,
+    construireRetrait({
+      identifiant: ulid(),
+      annotateur_id: contexte.annotateur_id,
+      lot_id: lot.lot_id,
+      lot_nature: lot.nature,
+      item_id,
+      motif: `item ${statut}`,
+      horodatage: contexte.maintenant(),
+    }),
+  );
+}
+
+/**
+ * Les retirés effectifs (`retiresEffectifs`) qu'un GET a montrés sans les journaliser (constat 13)
+ * s'écrivent ici, dans l'ordre d'affichage, une seule fois chacun. Un item contesté que cet
+ * annotateur a déjà décidé n'en fait pas partie : une contestation reçue après coup ne défait pas
+ * la décision. Appelée seulement après le verrou (`refuserSiLotTermine`) et juste avant l'écriture
+ * qu'elle précède : un refus plus tard dans la route (corrections invalides, schéma non conforme)
+ * n'écrit donc aucun retrait.
+ */
+function ecrireRetraitsEnAttente(contexte: Contexte, lot: Lot, etat: EtatAnnotateur): void {
+  const ordre = ordreAffichage(lot, contexte.annotateur_id);
+  const effectifs = retiresEffectifs(etat, contestesParmi(contexte, ordre));
+  const staging = contexte.staging();
+  const data = contexte.itemsData();
+  for (const entree of ordre) {
+    if (etat.retires.has(entree.item_id) || !effectifs.has(entree.item_id)) continue;
+    const item = staging.items.get(entree.item_id);
+    if (item === undefined) continue;
+    ecrireRetrait(contexte, lot, item.id, statutContestationEffectif(item, data));
+  }
 }
 
 /* -------------------------------------------------------------- décisions */
@@ -270,6 +328,7 @@ function enregistrerDecision(contexte: Contexte, _params: readonly string[], cor
   const nonConforme = erreurDeSchema("decision", construite.entree, "requête POST /api/decisions");
   if (nonConforme !== null) return { statut: 400, corps: { ok: false, erreur: nonConforme.message } };
 
+  ecrireRetraitsEnAttente(contexte, lot, etat);
   contexte.journal.ajouter(lot.lot_id, construite.entree);
   contexte.brouillons.effacer();
   return { statut: 201, corps: { ok: true, id: construite.entree.id } };
@@ -293,7 +352,19 @@ function refuserSiLotTermine(contexte: Contexte, lot: Lot): Reponse | null {
 function refusAvantDecision(contexte: Contexte, lot: Lot, item: Item): Reponse | null {
   const verrou = refuserSiLotTermine(contexte, lot);
   if (verrou !== null) return verrou;
-  return retirerSiConteste(contexte, lot, item);
+  return retirerSiContesteEtEcrire(contexte, lot, item);
+}
+
+/**
+ * Une décision qui vise elle-même un item contesté est refusée : 409, le retrait est journalisé
+ * s'il ne l'est pas déjà, aucune décision n'est écrite. N'est appelée qu'après le verrou.
+ */
+function retirerSiContesteEtEcrire(contexte: Contexte, lot: Lot, item: Item): Reponse | null {
+  const statut = statutContestationEffectif(item, contexte.itemsData());
+  if (statut === "aucune") return null;
+  const etat = rejouer(contexte.journal.lire(lot.lot_id));
+  if (!etat.retires.has(item.id)) ecrireRetrait(contexte, lot, item.id, statut);
+  return reponseRetire(item.id);
 }
 
 function accesCorrections(contexte: Contexte, item: Item) {
@@ -313,6 +384,8 @@ function annuler(contexte: Contexte, _params: readonly string[], corps: unknown)
   if (etat.annulable === null) {
     return { statut: 409, corps: { erreur: "Aucune décision à annuler dans ce lot." } };
   }
+
+  ecrireRetraitsEnAttente(contexte, lot, etat);
 
   const entree = construireAnnulation({
     identifiant: ulid(),

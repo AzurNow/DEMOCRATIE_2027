@@ -10,7 +10,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { construireAnnulation, construireRetrait } from "../validation/domaine/decision.ts";
-import { itemCourant, prochaineVisite, progression, rejouer } from "../validation/domaine/journal.ts";
+import { itemCourant, prochaineVisite, progression, rejouer, retiresEffectifs } from "../validation/domaine/journal.ts";
 import { ordreAffichage } from "../validation/domaine/lot.ts";
 import { JournalIncomplet, LigneAlteree } from "../validation/io/journal-fichier.ts";
 import * as journalFichier from "../validation/io/journal-fichier.ts";
@@ -223,5 +223,60 @@ describe("reprise de session", () => {
     const etat = rejouer(bac.journal("a1").lire("lot-001"));
     expect(progression(ordre, etat).termine).toBe(true);
     expect(itemCourant(ordre, etat)).toBeNull();
+  });
+});
+
+describe("retiresEffectifs (D55 (6), relecture)", () => {
+  it("ajoute un item contesté non décidé à etat.retires", () => {
+    const journal = bac.journal("a1");
+    const premier = items[0] as Item;
+    journal.ajouter("lot-001", decision({ annotateur_id: "a1", item: premier, decision: "accepter" }));
+    const etat = rejouer(journal.lire("lot-001"));
+
+    const effectifs = retiresEffectifs(etat, new Set([(items[1] as Item).id]));
+    expect(effectifs).toEqual(new Set([(items[1] as Item).id]));
+  });
+
+  it("exclut un item contesté dont cet annotateur a une décision active", () => {
+    const journal = bac.journal("a1");
+    const premier = items[0] as Item;
+    journal.ajouter("lot-001", decision({ annotateur_id: "a1", item: premier, decision: "accepter" }));
+    const etat = rejouer(journal.lire("lot-001"));
+
+    const effectifs = retiresEffectifs(etat, new Set([premier.id]));
+    expect(effectifs.has(premier.id)).toBe(false);
+    expect(effectifs).toEqual(etat.retires);
+  });
+
+  it("un ensemble de contestations vide rend etat.retires tel quel", () => {
+    const journal = bac.journal("a1");
+    journal.ajouter(
+      "lot-001",
+      construireRetrait({
+        identifiant: "01JBANCESSA1RETRA1T0000002",
+        annotateur_id: "a1",
+        lot_id: "lot-001",
+        lot_nature: "reel",
+        item_id: (items[0] as Item).id,
+        motif: "item contestee",
+        horodatage: "2026-09-20T10:20:00+02:00",
+      }),
+    );
+    const etat = rejouer(journal.lire("lot-001"));
+
+    expect(retiresEffectifs(etat)).toBe(etat.retires);
+    expect(retiresEffectifs(etat, new Set())).toBe(etat.retires);
+  });
+
+  it("progression et itemCourant sans 3ᵉ argument gardent leur comportement d'avant", () => {
+    const lot = lotDe("lot-001", items);
+    const ordre = ordreAffichage(lot, "a1");
+    const journal = bac.journal("a1");
+    const premierDeLOrdre = items.find((item) => item.id === (ordre[0] as { item_id: string }).item_id) as Item;
+    journal.ajouter("lot-001", decision({ annotateur_id: "a1", item: premierDeLOrdre, decision: "accepter" }));
+
+    const etat = rejouer(journal.lire("lot-001"));
+    expect(progression(ordre, etat)).toEqual({ total: 3, decides: 1, retires: 0, restants: 2, termine: false });
+    expect(itemCourant(ordre, etat)?.item_id).toBe((ordre[1] as { item_id: string }).item_id);
   });
 });

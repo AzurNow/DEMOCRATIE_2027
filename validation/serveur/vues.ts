@@ -170,11 +170,13 @@ export function construireVueLot(parametres: {
   readonly item_courant: ItemDuLot | null;
   readonly accessible: boolean;
   readonly motif_inaccessible: string | null;
+  /** Items que la contestation vise effectivement (constat 13) : comptés comme retirés. */
+  readonly contestes?: ReadonlySet<string>;
 }): VueLot {
   return {
     lot: projeterLot(parametres.lot),
     ordre: parametres.ordre.map((entree) => entree.item_id),
-    progression: progression(parametres.ordre, parametres.etat),
+    progression: progression(parametres.ordre, parametres.etat, parametres.contestes),
     item_courant: parametres.item_courant === null ? null : parametres.item_courant.item_id,
     accessible: parametres.accessible,
     motif_inaccessible: parametres.motif_inaccessible,

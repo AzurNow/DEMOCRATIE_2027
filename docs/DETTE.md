@@ -756,7 +756,9 @@ changer une décision après le kappa. Le lot repasse au-dessus de 0,80 sans ré
 0.15 interdit. Le journal en garde la trace, mais aucun test ne tombe.
 
 **Ce qu'il faut faire.** Au prochain chemin d'écriture, déplacer le verrou dans la couche qui écrit
-au journal, pas dans chaque route.
+au journal, pas dans chaque route. Le retrait d'un item contesté passe désormais lui aussi par ce
+verrou : il ne s'écrit plus sur un GET, mais à la première écriture du lot qui le rencontre, après
+`refuserSiLotTermine` (revue du 2026-10-12, constat 13, #177).
 
 ### 5. La non-évaluabilité par le panel ne se lit pas sur la dernière décision — *basse*
 
