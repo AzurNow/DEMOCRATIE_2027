@@ -176,7 +176,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | extraction-texte | fiche pymupdf portant un `encodage` · fiche html.parser sans `encodage` · fiche webvtt sans `vtt_sha256` |
 | transcription | température de décodage non nulle · révision des poids qui n'est pas un hash de commit |
 | diagnostic-lot | kappa indéfini remplacé par 0 à côté de son motif · diagnostic sans `supersede_par` · lot de réannotation sans date de calibration |
-| lot | champ inconnu · trois annotateurs · annotateurs non distincts · `nature` inconnue · réannotation sans `date_calibration` · réannotation sans `reannote` |
+| lot | champ inconnu · trois annotateurs · annotateurs non distincts · `nature` inconnue · réannotation sans `date_calibration` · réannotation sans `reannote` · lot ordinaire portant `reannote` |
 | existence-lien | lien mort portant une page conservée · lien existant sans page · `archive_url` sans instantané renvoyé · verdict hors des quatre du schéma de notation · copie archivée sans empreinte · instantané écarté recopié en `archive_url` · téléchargement en échec avec `archive_url` · instantané retenu de statut 302 · issue `url_non_ascii` retirée (D21) |
 | extraction-page-lien | refus portant un texte · texte extrait sans extracteur · extracteur `webvtt` sur une page citée (D27) |
 | renvoi-humain | renvoi sur une question qui n'est pas d'attribution (D30) |

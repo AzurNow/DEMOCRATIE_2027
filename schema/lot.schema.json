@@ -39,7 +39,7 @@
       "type": "string",
       "enum": ["entrainement", "reel", "reannotation"],
       "description": "§4. Fixe la taille réglementaire du lot (30, 50, ou celle du lot d'origine réannoté) ; cette taille n'est pas un contrôle de ce schéma, qui décrit le manifeste tel qu'il est écrit, pas une règle de composition (`validation/domaine/lot.ts:tailleDeComposition`)."
-      },
+    },
 
     "graine_maitresse": {
       "type": "string",
@@ -86,9 +86,14 @@
 
   "allOf": [
     {
-      "$comment": "§4 : sans `reannote` ni `date_calibration`, le kappa d'un lot de réannotation n'est pas interprétable. `validerReannotation` (`validation/io/lots-fichier.ts`) applique la même règle en code, avec un message qui nomme le champ manquant.",
+      "$comment": "§4 : sans `reannote` ni `date_calibration`, le kappa d'un lot de réannotation n'est pas interprétable (branche `then`) ; et un lot ordinaire qui porterait l'un des deux serait pris pour une réannotation par `chaineAvant` (`validation/domaine/lot.ts`), qui remonte la chaîne tant que `reannote` est défini (branche `else`). Cette règle vit uniquement dans ce schéma, dans les deux sens ; `validerManifeste` (`validation/io/lots-fichier.ts`) l'applique en confrontant le manifeste à ajv, sans la dupliquer en code.",
       "if": { "properties": { "nature": { "const": "reannotation" } }, "required": ["nature"] },
-      "then": { "required": ["reannote", "date_calibration"] }
+      "then": { "required": ["reannote", "date_calibration"] },
+      "else": {
+        "not": {
+          "anyOf": [{ "required": ["reannote"] }, { "required": ["date_calibration"] }]
+        }
+      }
     }
   ]
 }

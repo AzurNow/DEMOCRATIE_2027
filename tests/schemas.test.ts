@@ -129,12 +129,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 309 → 312 : décision D53 (1) (verrou de relecture des mesures), un valide et deux invalides de relecture-mesure.
   // 312 → 316 : décision D53 (1) (rattachement d'un item à une autre mesure), un valide et trois invalides de rattachement-item.
   // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
-  it("1. les 324 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 324 → 325 : relecture de D55 (3), réannotation exigée dans les deux sens, un invalide de lot (ordinaire portant reannote).
+  it("1. les 325 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(324);
+    expect(manifeste.exemples).toHaveLength(325);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -294,7 +295,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 309 → 312 : décision D53 (1) (verrou de relecture des mesures), un valide et deux invalides de relecture-mesure.
   // 312 → 316 : décision D53 (1) (rattachement d'un item à une autre mesure), un valide et trois invalides de rattachement-item.
   // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 324 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(324);
+  // 324 → 325 : relecture de D55 (3), réannotation exigée dans les deux sens, un invalide de lot (ordinaire portant reannote).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 325 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(325);
   });
 });

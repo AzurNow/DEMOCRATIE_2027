@@ -2173,6 +2173,13 @@
       "attendu": "invalide",
       "motif": "nature=reannotation sans reannote : impossible de savoir quel lot d'origine ce lot supersède.",
       "regle_protocole": "§4, « Réannotation »"
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/invalide-07-ordinaire-portant-reannote.json",
+      "attendu": "invalide",
+      "motif": "nature=reel portant reannote : un lot ordinaire serait pris pour une réannotation par chaineAvant, qui remonte la chaîne tant que reannote est défini.",
+      "regle_protocole": "§4, « Réannotation » ; revue du 2026-10-12, constat 4 (relecture)"
     }
   ]
 }

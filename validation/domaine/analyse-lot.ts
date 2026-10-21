@@ -95,9 +95,10 @@ const VISE_PAR_UNE_CONTESTATION: ReadonlyMap<string, boolean> = new Map([
 
 function etatsDesDeux(etats: ReadonlyMap<string, EtatAnnotateur>): readonly [EtatAnnotateur, EtatAnnotateur] {
   if (etats.size !== 2) {
+    const liste = [...etats.keys()].join(", ");
     throw new Error(
-      `Un diagnostic de lot exige exactement deux annotateurs (reçu : ${etats.size}, ` +
-        `${[...etats.keys()].join(", ")}).`,
+      `Un diagnostic de lot exige exactement deux annotateurs (reçu : ${etats.size}` +
+        `${liste.length > 0 ? `, ${liste}` : ""}).`,
     );
   }
   const [premier, second] = [...etats.keys()].sort();

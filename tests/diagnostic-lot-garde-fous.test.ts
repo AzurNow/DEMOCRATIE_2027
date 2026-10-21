@@ -66,6 +66,14 @@ describe("etatsDesDeux : nombre d'annotateurs", () => {
     ).toThrow(/exactement deux/);
   });
 
+  it("zéro annotateur : lève un message propre, sans liste vide ni virgule en trop", () => {
+    const lot = lotDe("lot-001", [ITEM_A]);
+    const etats = etatsDe({});
+    expect(() => diagnostiquerLot({ lot, items: itemsDe([ITEM_A]), etats, taille_attendue: 1 })).toThrow(
+      "Un diagnostic de lot exige exactement deux annotateurs (reçu : 0).",
+    );
+  });
+
   it("un seul annotateur : lève aussi", () => {
     const lot = lotDe("lot-001", [ITEM_A]);
     const etats = etatsDe({ a1: [entree("a1", ITEM_A, "accepter")] });

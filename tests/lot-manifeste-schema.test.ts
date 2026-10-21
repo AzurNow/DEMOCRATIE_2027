@@ -79,6 +79,12 @@ describe("lireLot() / lireLots() : conformité au schéma", () => {
     expect(() => lireLot(dossier, "lot-001")).not.toThrow();
   });
 
+  it("lot ordinaire portant reannote : lireLot lève", () => {
+    const dossier = nouveauRepertoire();
+    ecrireManifesteBrut(dossier, "lot-001", lot({ reannote: "lot-000" }));
+    expect(() => lireLot(dossier, "lot-001")).toThrow(ManifesteLotInvalide);
+  });
+
   it("lireLots() lève aussi sur le premier manifeste non conforme du répertoire, sans le sauter", () => {
     const dossier = nouveauRepertoire();
     ecrireManifesteBrut(dossier, "lot-001", lot());
@@ -108,6 +114,13 @@ describe("ecrireLot() / ecrireLots() : rien n'est écrit sur un manifeste non co
     const invalide = lot({ lot_id: "lot-002", annotateurs: ["a1", "a2", "a3"] });
     expect(() => ecrireLots(dossier, [valide, invalide])).toThrow(ManifesteLotInvalide);
     expect(existsSync(dossier) ? readdirSync(dossier) : []).toEqual([]);
+  });
+
+  it("lot ordinaire portant date_calibration : ecrireLot() lève, aucun fichier n'est créé", () => {
+    const dossier = nouveauRepertoire();
+    const invalide = lot({ date_calibration: "2026-11-24" });
+    expect(() => ecrireLot(dossier, invalide)).toThrow(ManifesteLotInvalide);
+    expect(existsSync(join(dossier, "lot-001.json"))).toBe(false);
   });
 
   it("un manifeste conforme : ecrireLot() écrit normalement", () => {
