@@ -2,20 +2,29 @@
  * Le stockage des réponses d'un run : un fichier `reponses/<id>.json` par réponse, écrit une fois.
  *
  * Règle 7 : « Les réponses brutes sont immuables. » Chaque réponse est validée contre
- * `schema/reponse.schema.json` au moment de l'écriture, puis écrite par ouverture exclusive
- * (`wx`) : un fichier qui existe déjà fait lever, il n'est jamais remplacé. Comme l'identifiant
- * d'une réponse est opaque et neuf à chaque écriture, l'ouverture exclusive ne suffit pas à
- * empêcher deux réponses pour une même requête : le dépôt tient aussi l'index des requêtes déjà
- * écrites, et refuse la seconde.
+ * `schema/reponse.schema.json` au moment de l'écriture, puis écrite atomiquement : d'abord dans un
+ * temporaire `<id>.json.partiel` du même répertoire, créé en exclusif (`wx`) et synchronisé, puis
+ * publiée sous son nom définitif par lien dur (`linkSync`), qui échoue en `EEXIST` si ce nom existe
+ * déjà (c'est l'exclusivité, traduite en `ReponseDejaEcrite` comme avant — le temporaire qu'on vient
+ * de créer est alors supprimé pour ne laisser aucun déchet), puis le temporaire est supprimé dans
+ * tous les cas. Un arrêt entre l'écriture du temporaire et sa publication ne laisse donc jamais de
+ * fichier définitif partiel ; au pire un `.partiel` orphelin, que la relance refuse
+ * (`TemporaireOrphelin`, `pipeline/run/ecriture.ts`) plutôt que d'écraser ou de supprimer d'elle-même,
+ * car il peut aussi signaler un écrivain concurrent. Comme l'identifiant d'une réponse est opaque et
+ * neuf à chaque écriture, l'exclusivité du nom de fichier ne suffit pas à empêcher deux réponses pour
+ * une même requête : le dépôt tient aussi l'index des requêtes déjà écrites, et refuse la seconde.
  *
  * À l'ouverture, toutes les réponses déjà écrites sont relues et validées : c'est ce qui permet à
- * une relance de sauter ce qui est fait, et ce qui fait apparaître un fichier abîmé.
+ * une relance de sauter ce qui est fait, et ce qui fait apparaître un fichier abîmé. Un `.partiel`
+ * resté là n'est jamais lu comme une réponse : il ne porte pas l'extension `.json`, et tombe donc
+ * dans le refus déjà en place pour tout fichier étranger du répertoire, jamais dans un `JSON.parse`.
  */
 
-import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readdirSync, readFileSync, writeSync } from "node:fs";
+import { closeSync, existsSync, fsyncSync, linkSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeSync } from "node:fs";
 import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
+import { ouvrirTemporaireExclusif } from "../run/ecriture.ts";
 import { dateParis, lireInstant } from "./heure-paris.ts";
 import { cleDe, type ReponseEcrite } from "./types.ts";
 
@@ -57,20 +66,28 @@ function lireReponse(chemin: string): ReponseEcrite {
   return valider<ReponseEcrite>("reponse", JSON.parse(readFileSync(chemin, "utf8")) as unknown, chemin);
 }
 
-function ecrireExclusif(chemin: string, contenu: string): void {
-  let descripteur: number;
+/** Publie `temporaire` sous `chemin` par lien dur : exclusif (§7), sans jamais laisser `chemin` partiel. */
+function publierParLien(temporaire: string, chemin: string): void {
   try {
-    descripteur = openSync(chemin, "wx");
+    linkSync(temporaire, chemin);
   } catch (erreur) {
+    unlinkSync(temporaire);
     if (erreur instanceof Error && "code" in erreur && erreur.code === "EEXIST") throw new ReponseDejaEcrite(chemin);
     throw erreur;
   }
+  unlinkSync(temporaire);
+}
+
+function ecrireExclusif(chemin: string, contenu: string): void {
+  const temporaire = `${chemin}.partiel`;
+  const descripteur = ouvrirTemporaireExclusif(temporaire, chemin, "reponse");
   try {
     writeSync(descripteur, contenu);
     fsyncSync(descripteur);
   } finally {
     closeSync(descripteur);
   }
+  publierParLien(temporaire, chemin);
 }
 
 export class DepotReponses {

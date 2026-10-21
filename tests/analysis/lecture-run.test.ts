@@ -16,6 +16,7 @@ import {
   FichierDeRunRefuse,
   ItemEpingleIntrouvable,
   lireNotationsDuRun,
+  lireReponses,
   lireRun,
   lireRunJson,
   lireVerdicts,
@@ -102,6 +103,18 @@ describe("4. un fichier illisible, invalide ou mal nommé est une erreur qui cit
     const erreur = erreurDe(() => lireNotationsDuRun(run.repertoire_run, String(run.run["id"])));
     expect((erreur as FichierDeRunRefuse).motif).toBe("fichier_etranger");
     expect(erreur.message).toContain(chemin);
+  });
+
+  it("un .partiel laissé dans volume/reponses/ par un arrêt pendant l'écriture est refusé nommément, jamais un SyntaxError sur un JSON tronqué (Lot 8, constat 30 du 2026-10-12)", () => {
+    const run = runNote();
+    const reponse = premier(run.reponses);
+    const chemin = join(dispositionRunNote(run.repertoire_run).reponses, `${reponse.id}.json`);
+    writeFileSync(`${chemin}.partiel`, '{"id": "tronque par un arr', "utf8");
+    const erreur = erreurDe(() => lireReponses(run.repertoire_run, String(run.run["id"])));
+    expect(erreur).not.toBeInstanceOf(SyntaxError);
+    expect(erreur).toBeInstanceOf(FichierDeRunRefuse);
+    expect((erreur as FichierDeRunRefuse).motif).toBe("fichier_etranger");
+    expect(erreur.message).toContain(`${chemin}.partiel`);
   });
 
   it("une notation du volume qui appartient à un autre run", () => {
