@@ -8,7 +8,7 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, resolve, sep } from "node:path";
 
 export interface Reponse {
   readonly statut: number;
@@ -74,11 +74,18 @@ export function decoderParametres(bruts: readonly string[]): readonly string[] {
   });
 }
 
-/** Sert un fichier de `dossier_client`, et de lui seul. */
+/**
+ * Sert un fichier de `dossier_client`, et de lui seul. La comparaison se fait sur des chemins
+ * résolus et exige une égalité au dossier ou une descendance sous `dossier_client + sep` : un
+ * voisin dont le nom commence pareil (`client-autre` à côté de `client`) ne passe pas le simple
+ * `startsWith` sur la chaîne, qui l'aurait laissé passer.
+ */
 export function servirStatique(dossier_client: string, chemin: string): Reponse {
+  const racine = resolve(dossier_client);
   const relatif = chemin === "/" ? "index.html" : chemin.replace(/^\/+/, "");
-  const complet = join(dossier_client, relatif);
-  if (!complet.startsWith(dossier_client) || !existsSync(complet)) {
+  const complet = resolve(racine, relatif);
+  const confine = complet === racine || complet.startsWith(racine + sep);
+  if (!confine || !existsSync(complet)) {
     return { statut: 404, corps: { erreur: `Introuvable : ${chemin}` } };
   }
   return { statut: 200, binaire: readFileSync(complet), type_mime: TYPES_STATIQUES[extname(complet)] ?? "application/octet-stream" };

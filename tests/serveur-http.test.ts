@@ -6,17 +6,20 @@
  * deux serveurs servent le même en-tête `content-security-policy`, tiré du même module.
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { creerServeur as creerServeurNotation, ADRESSE } from "../notation-humaine/serveur/principal.ts";
 import { creerServeur as creerServeurValidation } from "../validation/serveur/principal.ts";
-import { POLITIQUE_SECURITE } from "../validation/serveur/http.ts";
+import { POLITIQUE_SECURITE, servirStatique } from "../validation/serveur/http.ts";
 import type { Item } from "../validation/domaine/types.ts";
 import { creerBac, lotDe, mesurePour, type Bac } from "./aides/bac.ts";
 import { decision, itemP } from "./aides/fabriques.ts";
 import { monter, type Monde } from "./notation-humaine/fixture.ts";
+import { VERSION_VUE_ANNOTATEUR } from "../pipeline/notation/vue-annotateur.ts";
 
 let bac: Bac | null = null;
 let monde: Monde | null = null;
@@ -112,8 +115,21 @@ describe("paramètre de route mal encodé (D55 (8))", () => {
     const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
     const reponse = await fetch(`${base}/api/lots/lot%2Daa`);
     expect(reponse.status).toBe(200);
-    const corps = (await reponse.json()) as { lot_id?: string };
-    expect(corps.lot_id ?? "lot-aa").toBe("lot-aa");
+    const corps = (await reponse.json()) as { lot: { lot_id: string } };
+    expect(corps.lot.lot_id).toBe("lot-aa");
+  });
+
+  it("le pendant côté notation : un paramètre pourcent-encodé valide atteint le gestionnaire décodé", async () => {
+    monde = monter();
+    const id = monde.dans.id;
+    const premier = id[0] as string;
+    const encode = `%${premier.charCodeAt(0).toString(16).padStart(2, "0")}${id.slice(1)}`;
+    expect(encode).not.toBe(id);
+    const base = await ecouter(creerServeurNotation(monde.contexte("a1")));
+    const reponse = await fetch(`${base}/api/vue/${encode}`);
+    expect(reponse.status).toBe(200);
+    const corps = (await reponse.json()) as { version_vue: string };
+    expect(corps.version_vue).toBe(VERSION_VUE_ANNOTATEUR);
   });
 });
 
@@ -139,5 +155,40 @@ describe("une seule politique de sécurité pour les deux serveurs (constat 20, 
     expect(reponse.status).toBe(204);
     expect(reponse.headers.get("content-type")).toBeNull();
     expect(await reponse.text()).toBe("");
+  });
+});
+
+describe("servirStatique confiné au dossier du client (relecture D55 (8))", () => {
+  let racine: string | null = null;
+
+  afterEach(() => {
+    if (racine !== null) rmSync(racine, { recursive: true, force: true });
+    racine = null;
+  });
+
+  function poserDossiers(): { client: string } {
+    racine = mkdtempSync(join(tmpdir(), "banc-statique-"));
+    const client = join(racine, "client");
+    mkdirSync(join(client, "sous"), { recursive: true });
+    writeFileSync(join(client, "index.html"), "<p>accueil</p>", "utf8");
+    writeFileSync(join(client, "app.js"), "// app", "utf8");
+    writeFileSync(join(client, "sous", "feuille.css"), "body{}", "utf8");
+    const voisin = join(racine, "client-autre");
+    mkdirSync(voisin, { recursive: true });
+    writeFileSync(join(voisin, "secret.txt"), "secret", "utf8");
+    return { client };
+  }
+
+  it("un dossier voisin dont le nom commence pareil (« client-autre ») n'est pas servi", () => {
+    const { client } = poserDossiers();
+    const resultat = servirStatique(client, "/../client-autre/secret.txt");
+    expect(resultat.statut).toBe(404);
+  });
+
+  it("l'accueil, un script et un fichier de sous-dossier légitimes restent servis", () => {
+    const { client } = poserDossiers();
+    expect(servirStatique(client, "/").statut).toBe(200);
+    expect(servirStatique(client, "/app.js").statut).toBe(200);
+    expect(servirStatique(client, "/sous/feuille.css").statut).toBe(200);
   });
 });
