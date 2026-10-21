@@ -8,16 +8,19 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { ErreurSchema, jsonDe, valider } from "../../outils/schemas/valider.ts";
 import type { Lot, NatureLot } from "../domaine/types.ts";
 
 const NATURES_CONNUES: readonly NatureLot[] = ["entrainement", "reel", "reannotation"];
 
 /**
- * Un manifeste de lot dont `nature` est inconnue, ou dont une réannotation ne porte pas
- * `reannote` ou `date_calibration`. Ni l'un ni l'autre n'est un lot ordinaire lisible tel quel :
- * sans `date_calibration`, le kappa du lot n'est pas interprétable (§4, réannotation après
- * calibration), et un `nature` hors des trois valeurs connues signale un manifeste écrit par un
- * outil désynchronisé du domaine plutôt qu'un cas particulier à tolérer.
+ * Un manifeste de lot non conforme à `schema/lot.schema.json` (champ manquant ou inconnu, type
+ * faux, `nature` hors des trois valeurs connues, réannotation sans `reannote` ni
+ * `date_calibration`, moins ou plus de deux annotateurs, deux annotateurs identiques), ou dont
+ * `items` porte deux fois le même `item_id` — la seule règle que le schéma ne peut pas exprimer
+ * (revue du 2026-10-12, constat 4) : JSON Schema ne garantit l'unicité que d'un objet entier dans
+ * un tableau (`uniqueItems`), pas d'une seule de ses clés, et deux entrées du même item à des
+ * versions différentes ne seraient alors pas vues comme des doublons.
  */
 export class ManifesteLotInvalide extends Error {
   constructor(chemin: string, detail: string) {
@@ -30,37 +33,59 @@ function estNatureConnue(valeur: unknown): valeur is NatureLot {
   return typeof valeur === "string" && (NATURES_CONNUES as readonly string[]).includes(valeur);
 }
 
-function validerNature(lot: Lot, chemin: string): void {
-  if (!estNatureConnue(lot.nature)) {
-    throw new ManifesteLotInvalide(
-      chemin,
-      `nature "${String(lot.nature)}" inconnue (attendu : ${NATURES_CONNUES.join(", ")}).`,
-    );
+/**
+ * Message de `ManifesteLotInvalide` pour une violation du schéma. Repris de `ErreurSchema.message`
+ * (sans répéter le chemin, déjà porté par `ManifesteLotInvalide`), sauf pour `nature` : l'erreur
+ * `enum` d'ajv ne cite jamais la valeur reçue, alors que le nommer est ce qui rend le refus
+ * immédiatement compréhensible (message gardé identique à celui d'avant ce schéma).
+ */
+function detailDuRefus(valeurBrute: unknown, erreur: ErreurSchema, chemin: string): string {
+  const nature = estObjet(valeurBrute) ? valeurBrute["nature"] : undefined;
+  if (nature !== undefined && !estNatureConnue(nature)) {
+    return `nature "${String(nature)}" inconnue (attendu : ${NATURES_CONNUES.join(", ")}).`;
   }
+  const prefixe = `${chemin} : `;
+  return erreur.message.startsWith(prefixe) ? erreur.message.slice(prefixe.length) : erreur.message;
 }
 
-function validerReannotation(lot: Lot, chemin: string): void {
-  if (lot.nature !== "reannotation") return;
-  if (lot.reannote === undefined) {
-    throw new ManifesteLotInvalide(
-      chemin,
-      "nature=reannotation sans reannote : impossible de savoir quel lot d'origine ce lot supersède.",
-    );
+function estObjet(valeur: unknown): valeur is Record<string, unknown> {
+  return typeof valeur === "object" && valeur !== null && !Array.isArray(valeur);
+}
+
+/**
+ * Confronte un manifeste, lu ou à écrire, à `schema/lot.schema.json` puis à l'unicité des
+ * `item_id`. Seule frontière du domaine qui parle à ajv : `lireLot`, `lireLots`, `ecrireLot` et
+ * `ecrireLots` l'appellent tous, pour qu'aucun des deux écrivains (la composition, une
+ * réannotation) ne puisse produire un manifeste que l'autre refuserait.
+ */
+function validerManifeste(valeurBrute: unknown, chemin: string): Lot {
+  let lot: Lot;
+  try {
+    lot = valider<Lot>("lot", valeurBrute, chemin);
+  } catch (erreur) {
+    if (!(erreur instanceof ErreurSchema)) throw erreur;
+    throw new ManifesteLotInvalide(chemin, detailDuRefus(valeurBrute, erreur, chemin));
   }
-  if (lot.date_calibration === undefined) {
-    throw new ManifesteLotInvalide(
-      chemin,
-      "nature=reannotation sans date_calibration : le kappa de ce lot n'est pas interprétable sans " +
-        "la date de la séance de calibration qui l'a déclenché (§4).",
-    );
+  validerItemsUniques(lot, chemin);
+  return lot;
+}
+
+function validerItemsUniques(lot: Lot, chemin: string): void {
+  const vus = new Set<string>();
+  for (const item of lot.items) {
+    if (vus.has(item.item_id)) {
+      throw new ManifesteLotInvalide(
+        chemin,
+        `item_id "${item.item_id}" figure deux fois dans items : un doublon gonflerait le n du ` +
+          "kappa (apparier produirait deux paires pour la même décision).",
+      );
+    }
+    vus.add(item.item_id);
   }
 }
 
 function lireEtValiderLot(chemin: string): Lot {
-  const lot = JSON.parse(readFileSync(chemin, "utf8")) as Lot;
-  validerNature(lot, chemin);
-  validerReannotation(lot, chemin);
-  return lot;
+  return validerManifeste(jsonDe(readFileSync(chemin, "utf8"), chemin), chemin);
 }
 
 export function lireLots(repertoire: string): readonly Lot[] {
@@ -107,6 +132,7 @@ export function ecrireLots(repertoire: string, lots: readonly Lot[]): void {
 function verifierAvantEcriture(repertoire: string, lots: readonly Lot[]): readonly string[] {
   const vus = new Set<string>();
   return lots.map((lot) => {
+    validerManifeste(lot, lot.lot_id);
     if (vus.has(lot.lot_id)) {
       throw new Error(
         `Composition refusée : l'identifiant ${lot.lot_id} y figure deux fois. Aucun manifeste écrit.`,

@@ -94,11 +94,15 @@ const VISE_PAR_UNE_CONTESTATION: ReadonlyMap<string, boolean> = new Map([
 ]);
 
 function etatsDesDeux(etats: ReadonlyMap<string, EtatAnnotateur>): readonly [EtatAnnotateur, EtatAnnotateur] {
-  const [premier, second] = [...etats.keys()].sort();
-  if (premier === undefined || second === undefined) {
-    throw new Error("Un diagnostic de lot exige exactement deux annotateurs.");
+  if (etats.size !== 2) {
+    const liste = [...etats.keys()].join(", ");
+    throw new Error(
+      `Un diagnostic de lot exige exactement deux annotateurs (reçu : ${etats.size}` +
+        `${liste.length > 0 ? `, ${liste}` : ""}).`,
+    );
   }
-  return [etats.get(premier) as EtatAnnotateur, etats.get(second) as EtatAnnotateur];
+  const [premier, second] = [...etats.keys()].sort();
+  return [etats.get(premier as string) as EtatAnnotateur, etats.get(second as string) as EtatAnnotateur];
 }
 
 /**
@@ -155,6 +159,26 @@ function viseParUneContestation(item: Item): boolean {
 }
 
 /**
+ * Un `item_id` que `lot.items` porte deux fois : `apparier` produirait sinon deux paires
+ * identiques pour la même décision, gonflant le `n` du kappa publié (revue du 2026-10-12,
+ * constat 4). `lireLot` et `ecrireLot` (`validation/io/lots-fichier.ts`) refusent déjà ce cas à
+ * la lecture et avant l'écriture ; cette erreur est la défense de `apparier` pour tout `Lot` qui
+ * lui arriverait sans être passé par l'un des deux, par exemple construit en mémoire.
+ */
+export class ItemEnDoubleDansLeLot extends Error {
+  readonly item_id: string;
+
+  constructor(lot_id: string, item_id: string) {
+    super(
+      `Lot ${lot_id} : l'item ${item_id} figure deux fois dans items. Le kappa n'est pas calculé ` +
+        "plutôt que calculé sur un n gonflé par un doublon.",
+    );
+    this.name = "ItemEnDoubleDansLeLot";
+    this.item_id = item_id;
+  }
+}
+
+/**
  * Un item qu'une contestation vise au calcul sort du dénominateur. Le §4 parle de lots de 50 ;
  * quand une contestation en retire un, le kappa porte sur ce qui reste, et `n` le dit.
  */
@@ -164,8 +188,11 @@ function apparier(
   etatB: EtatAnnotateur,
   exclus: ReadonlySet<string>,
 ): readonly PaireDecisions[] {
+  const vus = new Set<string>();
   const paires: PaireDecisions[] = [];
   for (const reference of entree.lot.items) {
+    if (vus.has(reference.item_id)) throw new ItemEnDoubleDansLeLot(entree.lot.lot_id, reference.item_id);
+    vus.add(reference.item_id);
     if (exclus.has(reference.item_id)) continue;
     const a = etatA.decisions.get(reference.item_id);
     const b = etatB.decisions.get(reference.item_id);

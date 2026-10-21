@@ -97,6 +97,11 @@
  * `validation/mesures/rattachements.json`, publié en ajout seul et écrit par
  * `pnpm mesures --rattacher`, qui réécrit un item de staging sur une autre mesure existante
  * (décision D53 (1)). Le trente-septième.
+ *
+ * `lot` décrit le manifeste d'un lot de validation, `validation/lots/<lot_id>.json`, écrit une
+ * fois par `pnpm lots` et jamais réécrit (§4). Revue du 2026-10-12, constat 4 (D55 (3)) :
+ * `lireLot`, `lireLots`, `ecrireLot` et `ecrireLots` le valident désormais, à la lecture comme
+ * avant toute écriture. Le trente-huitième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -136,6 +141,7 @@ export const NOMS_SCHEMAS = [
   "journal-extraction",
   "relecture-mesure",
   "rattachement-item",
+  "lot",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

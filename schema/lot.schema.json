@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:lot",
+  "title": "Manifeste de lot de validation",
+  "description": "Un fichier de `validation/lots/<lot_id>.json`, écrit une fois par `pnpm lots` (§4) et jamais réécrit : la composition et la graine sont ce qui rend le kappa d'un lot reproductible. Décrit exactement ce que `validation/domaine/types.ts:Lot` et `ItemDuLot` portent aujourd'hui. Revue du 2026-10-12, constat 4 : avant ce schéma, `lireEtValiderLot` faisait `JSON.parse(...) as Lot` sans contrôle de structure, un `item_id` en double dans `items` gonflait silencieusement le `n` du kappa (`apparier`), et un troisième annotateur passait inaperçu (`etatsDesDeux` ne vérifiait qu'« au moins deux »). Ce schéma couvre la structure ; l'unicité des `item_id` de `items` reste un contrôle de code (`validation/io/lots-fichier.ts`), parce que JSON Schema ne peut pas garantir qu'une seule clé d'un tableau d'objets est unique sans contraindre l'objet entier : `uniqueItems` comparerait l'objet `{item_id, item_version, item_empreinte, candidat_id}` en bloc, et laisserait passer deux entrées qui partagent le même `item_id` avec une autre version ou une autre empreinte.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lot_id", "nature", "graine_maitresse", "algorithme_ordre", "date_creation", "annotateurs", "items"],
+
+  "$defs": {
+    "item_du_lot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "item_version", "item_empreinte", "candidat_id"],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Identifiant de l'item épinglé. Un item composé par `pnpm lots` depuis `staging/` ou `data/items/` porte déjà un ULID (`item.schema.json#/properties/id`, `commun#/$defs/ulid`) : ce schéma ne le réimpose pas, pour ne pas dupliquer une garantie qui appartient à `item.schema.json` et qui porterait sur un item déjà promu ailleurs, pas sur le manifeste lui-même. Une chaîne non vide, opaque ou lisible."
+        },
+        "item_version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Version de l'item au moment où le lot a été composé (§4, épinglage)."
+        },
+        "item_empreinte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" }
+      }
+    }
+  },
+
+  "properties": {
+    "lot_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "`<prefixe>-<numero>` pour un lot ordinaire (`numeroterLots`), `<lot_id d'origine>-r<rang>` pour une réannotation (`identifiantReannotation`). Même convention que `diagnostic-lot.schema.json#/properties/lot_id`, qui le recopie."
+    },
+
+    "nature": {
+      "type": "string",
+      "enum": ["entrainement", "reel", "reannotation"],
+      "description": "§4. Fixe la taille réglementaire du lot (30, 50, ou celle du lot d'origine réannoté) ; cette taille n'est pas un contrôle de ce schéma, qui décrit le manifeste tel qu'il est écrit, pas une règle de composition (`validation/domaine/lot.ts:tailleDeComposition`)."
+    },
+
+    "graine_maitresse": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Graine enregistrée dont dérive, avec `lot_id` et l'identifiant de l'annotateur, l'ordre d'affichage recalculé à chaque lecture (`ordreAffichage`). Texte libre fourni par `--graine` : aucun format n'est imposé par le code, donc aucun ici."
+    },
+
+    "algorithme_ordre": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Nom de l'algorithme d'ordre, enregistré tel que la composition l'a écrit, pour qu'un futur algorithme distinct ne soit jamais rejoué silencieusement sur un ancien lot."
+    },
+
+    "date_creation": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Instant de la composition (`instantLocal`), ou celui de la réannotation pour un lot qui en est une."
+    },
+
+    "annotateurs": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+      "description": "§4 : un lot est commun aux deux annotateurs qui en tireront le kappa, jamais plus, jamais moins — sans quoi la paire de décisions comparée par `etatsDesDeux` ne serait plus définie. `pnpm lots` refuse déjà `--annotateurs` d'une autre longueur (`outils/lots.ts`) ; ce schéma rend le contrôle vérifiable sur le fichier lui-même, pas seulement à l'écriture."
+    },
+
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/item_du_lot" },
+      "description": "Les items communs aux deux annotateurs. Un `item_id` qui y figure deux fois n'est pas refusé par ce schéma (voir la description du schéma) : `validation/io/lots-fichier.ts` le refuse à la lecture et avant l'écriture, et `validation/domaine/analyse-lot.ts:apparier` le refuse aussi, en défense, pour tout `Lot` qui lui arriverait sans être passé par la lecture ou l'écriture validées."
+    },
+
+    "reannote": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "Lot d'origine que ce lot supersède (§4, « Réannotation »). Présent si et seulement si `nature` vaut `reannotation`."
+    },
+
+    "date_calibration": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+      "description": "Date civile de la séance de calibration qui a déclenché la réannotation, sans laquelle le kappa du lot de réannotation n'est pas interprétable (§4). Présente si et seulement si `nature` vaut `reannotation`."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "§4 : sans `reannote` ni `date_calibration`, le kappa d'un lot de réannotation n'est pas interprétable (branche `then`) ; et un lot ordinaire qui porterait l'un des deux serait pris pour une réannotation par `chaineAvant` (`validation/domaine/lot.ts`), qui remonte la chaîne tant que `reannote` est défini (branche `else`). Cette règle vit uniquement dans ce schéma, dans les deux sens ; `validerManifeste` (`validation/io/lots-fichier.ts`) l'applique en confrontant le manifeste à ajv, sans la dupliquer en code.",
+      "if": { "properties": { "nature": { "const": "reannotation" } }, "required": ["nature"] },
+      "then": { "required": ["reannote", "date_calibration"] },
+      "else": {
+        "not": {
+          "anyOf": [{ "required": ["reannote"] }, { "required": ["date_calibration"] }]
+        }
+      }
+    }
+  ]
+}

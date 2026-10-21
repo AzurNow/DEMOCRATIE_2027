@@ -2119,6 +2119,67 @@
       "attendu": "invalide",
       "motif": "Issue extraite portant extraction_double_incomplete : une source refusée ne dépose aucun item.",
       "regle_protocole": "§4, extraction double ; décision D53 (2)"
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/valide-01-ordinaire.json",
+      "attendu": "valide",
+      "motif": "Lot réel nominal : deux annotateurs distincts, deux items communs."
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/valide-02-reannotation.json",
+      "attendu": "valide",
+      "motif": "Lot de réannotation portant reannote et date_calibration, les deux exigés ensemble par le §4."
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/invalide-01-champ-inconnu.json",
+      "attendu": "invalide",
+      "motif": "Champ commentaire inconnu de Lot : additionalProperties: false le rejette.",
+      "regle_protocole": "§4 ; revue du 2026-10-12, constat 4"
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/invalide-02-trois-annotateurs.json",
+      "attendu": "invalide",
+      "motif": "Trois annotateurs : un lot est commun à exactement deux annotateurs, jamais plus (§4). Avant ce schéma, etatsDesDeux prenait les deux premiers triés et ignorait le troisième en silence.",
+      "regle_protocole": "§4 ; revue du 2026-10-12, constat 4"
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/invalide-03-nature-inconnue.json",
+      "attendu": "invalide",
+      "motif": "nature=\"brouillon\" hors des trois valeurs connues (entrainement, reel, reannotation).",
+      "regle_protocole": "§4"
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/invalide-04-reannotation-sans-date-calibration.json",
+      "attendu": "invalide",
+      "motif": "nature=reannotation sans date_calibration : le kappa du lot de réannotation n'est pas interprétable sans la date de la séance de calibration.",
+      "regle_protocole": "§4, « Réannotation »"
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/invalide-05-annotateurs-non-distincts.json",
+      "attendu": "invalide",
+      "motif": "Les deux annotateurs sont identiques (a1, a1) : sans deux annotateurs distincts, il n'y a pas de paire de décisions à comparer pour le kappa.",
+      "regle_protocole": "§4"
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/invalide-06-reannotation-sans-reannote.json",
+      "attendu": "invalide",
+      "motif": "nature=reannotation sans reannote : impossible de savoir quel lot d'origine ce lot supersède.",
+      "regle_protocole": "§4, « Réannotation »"
+    },
+    {
+      "objet": "lot",
+      "fichier": "lot/invalide-07-ordinaire-portant-reannote.json",
+      "attendu": "invalide",
+      "motif": "nature=reel portant reannote : un lot ordinaire serait pris pour une réannotation par chaineAvant, qui remonte la chaîne tant que reannote est défini.",
+      "regle_protocole": "§4, « Réannotation » ; revue du 2026-10-12, constat 4 (relecture)"
     }
   ]
 }

@@ -1,0 +1,9 @@
+{
+  "lot_id": "lot-001",
+  "nature": "reel",
+  "graine_maitresse": "graine-2026-11",
+  "algorithme_ordre": "ordre-annotateur-v1",
+  "date_creation": "2026-11-02T10:00:00+01:00",
+  "annotateurs": ["a1", "a2", "a3"],
+  "items": []
+}

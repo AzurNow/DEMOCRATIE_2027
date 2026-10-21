@@ -1509,7 +1509,7 @@ les valider contre `urn:banc-essai-2027:schema:decision`. Suppose le point 3 cor
 Valider à l'écriture dans `ajouter()` serait plus fort, mais mettrait ajv dans le chemin d'exécution
 de l'interface de validation : à trancher seulement si le test ne suffit pas.
 
-### 2. `lireLot()` refuse désormais un manifeste que `ecrireLot()` accepte d'écrire — *moyenne*
+### ~~2. `lireLot()` refuse désormais un manifeste que `ecrireLot()` accepte d'écrire~~ — réglé le 2026-10-21 par le schéma `lot.schema.json` (revue du 2026-10-12, constat 4 ; D55 (3), #176) : `lireLot`, `lireLots`, `ecrireLot` et `ecrireLots` valident désormais tous contre lui, avant toute écriture
 
 La validation ajoutée cette session est en lecture seule. `ecrireLot()` écrit tout objet `Lot` que
 le type TypeScript accepte, et un manifeste n'est jamais réécrit (`LotDejaExistant`,
