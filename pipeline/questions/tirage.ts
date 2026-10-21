@@ -161,6 +161,14 @@ export type GelDuRun = Pick<RunAuGel, "date_gel"> & {
 /** Identifiant conventionnel du groupe des questions d'attribution, sans candidat. */
 const GROUPE_ATTRIBUTION = "";
 
+/**
+ * Amorce du flux aléatoire du groupe d'attribution (§5). Exportée pour que `charger-perimetre.ts`
+ * refuse un `candidat_id` homonyme (D55 (10), constat 42 de la revue du 2026-10-12) : un tel
+ * candidat partagerait sinon son flux aléatoire avec le groupe d'attribution, puisque `amorce` ne
+ * voit que cette chaîne, jamais `GROUPE_ATTRIBUTION` qu'aucun `candidat_id` ne peut prendre.
+ */
+export const AMORCE_GROUPE_ATTRIBUTION = "attribution";
+
 /* ------------------------------------------------------------- indexation */
 
 interface Index {
@@ -1020,7 +1028,7 @@ function tirerGroupeCandidat(contexte: ContexteTirage, candidat: CandidatAuGel):
     // §5 et schema/README.md : un candidat « nouveau » est hors du calcul du ratio 80/20.
     eligible_a_la_reprise: demande.tirage_precedent !== undefined && candidat.statut_au_gel !== "nouveau",
     index: contexte.index,
-    rng: generateur(amorce(demande, candidat.candidat_id)),
+    rng: generateur(amorceDuGroupe(demande, candidat.candidat_id)),
     precedent: demande.tirage_precedent,
   });
   return publier(contexte, resultat, { candidat_id: candidat.candidat_id });
@@ -1043,7 +1051,7 @@ function tirerGroupeAttribution(contexte: ContexteTirage): ResultatPublie {
     cibles: undefined,
     eligible_a_la_reprise: demande.tirage_precedent !== undefined,
     index: contexte.index,
-    rng: generateur(amorce(demande, "attribution")),
+    rng: generateur(amorceDuGroupe(demande, undefined)),
     precedent: demande.tirage_precedent,
   });
   return publier(contexte, resultat, {});
@@ -1084,4 +1092,14 @@ function amorce(demande: DemandeTirage, groupe: string): bigint {
     demande.run.id,
     groupe,
   );
+}
+
+/**
+ * Amorce du groupe candidat ou du groupe d'attribution, selon `candidat_id` : seul point commun
+ * aux deux sites de tirage (`tirerGroupeCandidat`, `tirerGroupeAttribution`), exporté pour que le
+ * test de collision (D55 (10), constat 42 de la revue du 2026-10-12) passe par le code réellement
+ * utilisé au tirage plutôt que par deux appels isolés de `amorce`.
+ */
+export function amorceDuGroupe(demande: DemandeTirage, candidat_id: string | undefined): bigint {
+  return amorce(demande, candidat_id === undefined ? AMORCE_GROUPE_ATTRIBUTION : candidat_id);
 }
