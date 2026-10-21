@@ -41,7 +41,8 @@ import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, Taux
 import type { GraineTirage } from "../pipeline/questions/types.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import type { EntreesAnalyse } from "./filtre.ts";
-import type { CandidatAuGel, EntreeTirage, Item, Question, ReferenceItem, Reponse, Run } from "./types.ts";
+import { parModeDuRun } from "./seuils.ts";
+import type { CandidatAuGel, EntreeTirage, Item, Mode, ParMode, Question, ReferenceItem, Reponse, Run, SeuilMode } from "./types.ts";
 
 /* ------------------------------------------------------------------ disposition */
 
@@ -144,6 +145,20 @@ export class AliasCandidatsDivergent extends Error {
         `interrogés : publiée ${JSON.stringify(publiee)}, recalculée ${JSON.stringify(recalculee)}. Rien n'est lu.`,
     );
     this.name = "AliasCandidatsDivergent";
+    this.chemin = chemin;
+  }
+}
+
+/** D55 (7), constat 17 : `par_mode` écrit dans `run.json` diverge du recalcul sur les réponses lues. */
+export class ParModeDivergent extends Error {
+  readonly chemin: string;
+
+  constructor(chemin: string, outil_id: string, mode: Mode, ecrit: SeuilMode, recalcule: SeuilMode | undefined) {
+    super(
+      `${chemin}#/perimetre/outils (${outil_id}, ${mode}) : par_mode écrit ${JSON.stringify(ecrit)}, recalculé ` +
+        `${JSON.stringify(recalcule)} depuis les réponses du run (D55 (7)). Rien n'est lu.`,
+    );
+    this.name = "ParModeDivergent";
     this.chemin = chemin;
   }
 }
@@ -503,6 +518,26 @@ export interface RunPourAnalyse {
   readonly archive: VerificationArchive;
 }
 
+/**
+ * D55 (7), constat 17 : un `par_mode` présent dans `run.json` doit être celui que les réponses du
+ * run recalculent, mode par mode. Un `par_mode` absent (run en cours) n'est pas une erreur ici :
+ * le schéma l'exige déjà d'un run publié.
+ */
+function verifierParMode(run: RunLu, reponses: readonly Reponse[], chemin: string): void {
+  const declarent = run.perimetre.outils.filter((outil): outil is typeof outil & { par_mode: ParMode } => outil.par_mode !== undefined);
+  if (declarent.length === 0) return;
+  const recalcule = parModeDuRun(run.perimetre.outils, reponses);
+  for (const outil of declarent) {
+    const attendu = recalcule.get(outil.outil_id) ?? {};
+    for (const mode of Object.keys(outil.par_mode) as Mode[]) {
+      const ecrit = outil.par_mode[mode];
+      if (ecrit !== undefined && canoniser(ecrit) !== canoniser(attendu[mode])) {
+        throw new ParModeDivergent(chemin, outil.outil_id, mode, ecrit, attendu[mode]);
+      }
+    }
+  }
+}
+
 /** `runs/README.md`, « Ce que l'analyse lira » : l'`EntreesAnalyse` d'un run enregistré. */
 export function lireRun(repertoire_run: string, options: OptionsLectureRun): RunPourAnalyse {
   const run = lireRunJson(repertoire_run);
@@ -510,13 +545,15 @@ export function lireRun(repertoire_run: string, options: OptionsLectureRun): Run
   const tirage = lireTirage(repertoire_run, run);
   const questions = lireQuestions(repertoire_run);
   const items = lireItemsEpingles(questions, options.items, run.versions.donnees_commit, dispositionRunNote(repertoire_run).questions);
+  const reponses = lireReponses(repertoire_run, run.id);
+  verifierParMode(run, reponses, dispositionRunNote(repertoire_run).run_json);
   return {
     entrees: {
       run,
       entrees_tirage: tirage.entrees,
       questions,
       items,
-      reponses: lireReponses(repertoire_run, run.id),
+      reponses,
       verdicts: lireVerdicts(repertoire_run, run.id),
     },
     archive,

@@ -94,6 +94,40 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
   );
 
   it(
+    "D55 (7), constat 17 : écrit perimetre.outils[].par_mode des assistants inclus ; un par_mode déjà écrit différent du recalcul : refus, run.json inchangé à l'octet",
+    async () => {
+      const run = await runSimuleNote();
+      const resultat = goNoGo(run);
+      const ecrit = valider<Record<string, unknown>>("run", lireObjet(join(run, "run.json")), "run.json écrit");
+      const outils = (ecrit["perimetre"] as Record<string, unknown>)["outils"] as Record<string, unknown>[];
+      const alpha = outils.find((o) => o["outil_id"] === "outil-alpha");
+      const beta = outils.find((o) => o["outil_id"] === "outil-beta");
+      const gamma = outils.find((o) => o["outil_id"] === "comparateur-gamma");
+      expect(alpha?.["par_mode"]).toEqual(resultat.par_mode.get("outil-alpha"));
+      expect(beta?.["par_mode"]).toEqual(resultat.par_mode.get("outil-beta"));
+      expect(gamma).not.toHaveProperty("par_mode");
+
+      // Relancée à l'identique : rien n'est réécrit.
+      const avant = octets(run, "run.json");
+      expect(goNoGo(run).run_json).toBe("inchange");
+      expect(octets(run, "run.json")).toEqual(avant);
+
+      // Un par_mode déjà écrit, différent du recalcul : refus, rien n'est écrit.
+      modifierRun(run, (r) => {
+        const p = r["perimetre"] as Record<string, unknown>;
+        const o = (p["outils"] as Record<string, unknown>[]).map((outil) =>
+          outil["outil_id"] === "outil-alpha" ? { ...outil, par_mode: { ...(outil["par_mode"] as Record<string, unknown>), web_desactivee: { reponses_manquantes_part: 0.99, run_incomplet: true } } } : outil,
+        );
+        return { ...r, perimetre: { ...p, outils: o } };
+      });
+      const avant2 = [octets(run, "run.json"), octets(run, "checklist.json")];
+      expect(() => goNoGo(run)).toThrow(GoNoGoDivergent);
+      expect([octets(run, "run.json"), octets(run, "checklist.json")]).toEqual(avant2);
+    },
+    TEMPS,
+  );
+
+  it(
     "relancée après contreseing : la checklist signée n'est pas réécrite",
     async () => {
       const run = await runSimuleNote();

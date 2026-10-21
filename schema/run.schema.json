@@ -569,7 +569,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "minProperties": 1,
-                "description": "§8 et §12 (protocole 0.11) : le seuil de réponses manquantes se décide par couple outil × mode, sur le seul canal API. Un mode au-delà de 0,20 est marqué run incomplet et exclu des comparaisons de ce run ; l'autre mode de l'outil reste publié s'il passe le seuil. Une entrée par mode déclaré dans `modes`, aucune pour un mode non déclaré. Report du calcul d'analysis/seuils.ts, jamais un second calcul.",
+                "description": "§8 et §12 (protocole 0.11) : le seuil de réponses manquantes se décide par couple outil × mode, sur le seul canal API. Un mode au-delà de 0,20 est marqué run incomplet et exclu des comparaisons de ce run ; l'autre mode de l'outil reste publié s'il passe le seuil. Une entrée par mode déclaré dans `modes`, aucune pour un mode non déclaré. Report du calcul d'analysis/seuils.ts:parModeDuRun, jamais un second calcul : écrit par pnpm go-no-go (pipeline/go-no-go/go-no-go.ts, D55 (7)), recoupé à la lecture par analysis/lecture-run.ts:lireRun.",
                 "properties": {
                   "web_activee": {
                     "$ref": "#/$defs/seuil_mode"

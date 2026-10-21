@@ -97,9 +97,24 @@ function lireExemple(chemin: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(RACINE_PROJET, "schema", "exemples", chemin), "utf8")) as Record<string, unknown>;
 }
 
+/**
+ * Constat 17 (revue du 2026-10-12) : l'exemple déclare `par_mode` pour deux modes (0,04 et 0,02),
+ * un chiffre que rien ne recoupait. `reponseObtenue` ne produit que des réponses outil-alpha en
+ * web_desactivee (ci-dessous) : `modes` et `par_mode` sont réduits à ce seul mode, à la part que
+ * ces deux réponses obtenues recalculent (0 manquante sur 2), pour que `lireRun` (D55 (7)) trouve
+ * un `par_mode` concordant plutôt qu'un second énoncé contredit par le run fictif lui-même.
+ */
+function outilsDuJeu(outils: readonly Record<string, unknown>[]): Record<string, unknown>[] {
+  return outils.map((outil) =>
+    outil["outil_id"] === "outil-alpha"
+      ? { ...outil, modes: ["web_desactivee"], mode_de_tete: "web_desactivee", par_mode: { web_desactivee: { reponses_manquantes_part: 0, run_incomplet: false } } }
+      : outil,
+  );
+}
+
 function runDuJeu(commit: string, tirage_sha256: string): Record<string, unknown> {
   const exemple = lireExemple("run/valide-01-mensuel-publie.json") as Record<string, unknown> & {
-    perimetre: { candidats: Record<string, unknown>[] };
+    perimetre: { candidats: Record<string, unknown>[]; outils: Record<string, unknown>[] };
     versions: Record<string, unknown>;
     graines: { alias_candidats: GraineTirage };
   };
@@ -112,7 +127,7 @@ function runDuJeu(commit: string, tirage_sha256: string): Record<string, unknown
     date_gel: GEL,
     versions: { ...exemple.versions, donnees_commit: commit },
     alias_candidats,
-    perimetre: { ...exemple.perimetre, candidats: [candidat] },
+    perimetre: { ...exemple.perimetre, candidats: [candidat], outils: outilsDuJeu(exemple.perimetre.outils) },
     tirage: { chemin: `runs/${DATE_DU_RUN}/tirage.json`, sha256: tirage_sha256, nombre_questions: 2 },
   };
 }

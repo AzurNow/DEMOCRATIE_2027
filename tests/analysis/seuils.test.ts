@@ -11,17 +11,21 @@
  * affaiblie, les effectifs et les frontières (2/10, 3/10, 1/5) sont conservés.
  */
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   candidatsComparables,
   cleCouple,
   couplesComparables,
+  parModeDuRun,
   partReponsesManquantes,
   repartirParCandidat,
   runIncomplet,
 } from "../../analysis/seuils.ts";
 import type { Canal, Mode } from "../../analysis/types.ts";
-import { candidat, reponse, run, ulid, unite } from "./fabriques.ts";
+import { valider } from "../../outils/schemas/valider.ts";
+import { candidat, outil, reponse, run, ulid, unite } from "./fabriques.ts";
 
 const ALPHA_DESACTIVEE = { outil_id: "outil-alpha", mode: "web_desactivee" } as const;
 
@@ -187,6 +191,81 @@ describe("seuil de réponses manquantes par couple outil × mode (conformité n�
     // deux couples distincts ne peuvent pas partager une clé.
     expect(cleCouple({ outil_id: "outil-alpha", mode: "web_activee" })).toBe("outil-alpha/web_activee");
     expect(cleCouple(ALPHA_DESACTIVEE)).toBe("outil-alpha/web_desactivee");
+  });
+});
+
+describe("par_mode du run (D55 (7), constat 17 de la revue du 2026-10-12)", () => {
+  const EXEMPLE_RUN = resolve(import.meta.dirname, "../../schema/exemples/run/valide-01-mensuel-publie.json");
+
+  it("calcule un seuil_mode par mode déclaré d'un assistant inclus ; rien pour l'exclu ni le comparateur", () => {
+    const jeu = [
+      ...reponses(8, 2, "outil-alpha", "web_activee"),
+      ...reponses(7, 3, "outil-alpha", "web_desactivee"),
+    ];
+    const outils = [
+      outil({ outil_id: "outil-alpha", modes: ["web_activee", "web_desactivee"] }),
+      outil({ outil_id: "outil-exclu", inclus: false, modes: ["web_activee"] }),
+      outil({ outil_id: "comparateur-un", famille: "comparateur", mode_de_tete: undefined }),
+    ];
+
+    const resultat = parModeDuRun(outils, jeu);
+
+    expect(resultat.get("outil-alpha")).toEqual({
+      web_activee: { reponses_manquantes_part: 0.2, run_incomplet: false },
+      web_desactivee: { reponses_manquantes_part: 0.3, run_incomplet: true },
+    });
+    expect(resultat.has("outil-exclu")).toBe(false);
+    expect(resultat.has("comparateur-un")).toBe(false);
+  });
+
+  it("ignore les réponses hors contexte run et hors canal api, comme partReponsesManquantes", () => {
+    const outils = [outil({ outil_id: "outil-alpha", modes: ["web_desactivee"] })];
+    const jeu = [
+      ...reponses(4, 1, "outil-alpha", "web_desactivee"),
+      reponse({ id: ulid("cf"), outil_id: "outil-alpha", mode: "web_desactivee", statut_reponse: "manquante", normalise: undefined, contexte: "contrefactuel_candidat" }),
+      ...reponses(0, 10, "outil-alpha", "web_desactivee", "application"),
+    ];
+
+    expect(parModeDuRun(outils, jeu).get("outil-alpha")).toEqual({
+      web_desactivee: { reponses_manquantes_part: 0.2, run_incomplet: false },
+    });
+  });
+
+  it("un mode déclaré sans aucune réponse API lève, le seuil n'y étant pas décidable", () => {
+    const outils = [outil({ outil_id: "outil-alpha", modes: ["web_activee", "web_desactivee"] })];
+    const jeu = reponses(4, 1, "outil-alpha", "web_desactivee");
+
+    expect(() => parModeDuRun(outils, jeu)).toThrow(/décidable/);
+  });
+
+  it("une réponse API d'un couple non déclaré par un assistant inclus lève", () => {
+    const outils = [outil({ outil_id: "outil-alpha", modes: ["web_desactivee"] })];
+    const jeu = [...reponses(4, 1, "outil-alpha", "web_desactivee"), ...reponses(2, 0, "outil-alpha", "web_activee")];
+
+    expect(() => parModeDuRun(outils, jeu)).toThrow(/outil-alpha\/web_activee/);
+  });
+
+  it("une réponse API d'un outil exclu ou comparateur lève aussi, aucun n'ayant de couple déclaré", () => {
+    const outils = [outil({ outil_id: "outil-alpha", inclus: false, modes: ["web_desactivee"] })];
+    const jeu = reponses(4, 0, "outil-alpha", "web_desactivee");
+
+    expect(() => parModeDuRun(outils, jeu)).toThrow(/hors périmètre/);
+  });
+
+  it("son résultat, inséré dans un run publié de fixture, valide contre run.schema.json", () => {
+    const jeu = [...reponses(9, 1, "outil-alpha", "web_activee"), ...reponses(19, 1, "outil-alpha", "web_desactivee")];
+    const outils = [outil({ outil_id: "outil-alpha", modes: ["web_activee", "web_desactivee"] })];
+    const resultat = parModeDuRun(outils, jeu);
+
+    const exemple = JSON.parse(readFileSync(EXEMPLE_RUN, "utf8")) as Record<string, unknown> & {
+      perimetre: { outils: Record<string, unknown>[] };
+    };
+    const outilsExemple = exemple.perimetre.outils.map((o) =>
+      o["outil_id"] === "outil-alpha" ? { ...o, par_mode: resultat.get("outil-alpha") } : o,
+    );
+    const runFixture = { ...exemple, perimetre: { ...exemple.perimetre, outils: outilsExemple } };
+
+    expect(() => valider("run", runFixture, "fixture de test")).not.toThrow();
   });
 });
 

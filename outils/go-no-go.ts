@@ -4,9 +4,10 @@
  *
  *   pnpm go-no-go runs/2026-12-01
  *
- * Écrit `go_no_go`, les kappas de l'échantillon humain et, si la décision est provisoire,
- * `motif_provisoire` dans `run.json`, et `checklist.json` sans contreseing. Ne touche jamais
- * `statut` et ne publie rien. Relancée sur un run déjà décidé à l'identique, n'écrit rien et le dit.
+ * Écrit `go_no_go`, les kappas de l'échantillon humain, `perimetre.outils[].par_mode` de chaque
+ * assistant inclus (D55 (7)) et, si la décision est provisoire, `motif_provisoire` dans `run.json`,
+ * et `checklist.json` sans contreseing. Ne touche jamais `statut` et ne publie rien. Relancée sur
+ * un run déjà décidé à l'identique, n'écrit rien et le dit.
  *
  * Codes de sortie : 0, la décision est écrite ou déjà là à l'identique ; 2, la commande est mal
  * appelée, le run est refusé (symétrie rouge, invalide, planifié), un fichier est illisible ou non

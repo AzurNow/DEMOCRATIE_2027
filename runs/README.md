@@ -386,9 +386,12 @@ Les sept critères du §12 et la décision qui en découle (D24, `pipeline/go-no
 `metriques/`. Écrit dans `run.json` `go_no_go`, le kappa de l'échantillon humain de chaque juge
 retenu (`kappa_echantillon_humain`, ou son motif d'indéfinition), le nombre de réponses de
 l'échantillon à note humaine indéterminée, écartées de ce kappa (`indeterminees_echantillon_humain`,
-D25), et `motif_provisoire` si la décision
+D25), `perimetre.outils[].par_mode` de chaque assistant inclus (D55 (7), `analysis/seuils.ts:parModeDuRun`,
+seul calcul de ce champ, recoupé à la lecture par `analysis/lecture-run.ts:lireRun`), et
+`motif_provisoire` si la décision
 est provisoire ; écrit `checklist.json` sans contreseing. Ne touche jamais `statut`. Refuse un run
-`invalide`, `planifie`, à symétrie rouge, ou qui porte une `invalidation` (D51 (2)) ; un go/no-go déjà écrit et différent du recalcul est une
+`invalide`, `planifie`, à symétrie rouge, ou qui porte une `invalidation` (D51 (2)) ; un go/no-go déjà
+écrit (ou un `par_mode`) différent du recalcul est une
 erreur, identique un no-op. `metriques/` présent arrête la commande : aucun format n'y est encore
 défini. Sortie 0 ou 2.
 

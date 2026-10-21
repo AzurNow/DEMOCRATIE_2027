@@ -8,7 +8,8 @@
  * - la part de réponses manquantes par couple outil × mode est **calculée** ici, à partir des
  *   réponses du canal API du run (§8, protocole 0.11), parce que c'est la mesure elle-même.
  *   `run.perimetre.outils[].par_mode.<mode>.run_incomplet` est alors le report de ce calcul, jamais
- *   un second calcul.
+ *   un second calcul : `parModeDuRun` l'assemble par outil, `pipeline/go-no-go/go-no-go.ts` l'écrit
+ *   dans `run.json` (D55 (7)), `analysis/lecture-run.ts:lireRun` le recoupe à la lecture.
  */
 
 import { filtrerContexteRun, type UniteAnalyse } from "./filtre.ts";
@@ -17,8 +18,11 @@ import {
   type CoupleOutilMode,
   type IdentifiantCourt,
   type Mode,
+  type OutilAuGel,
+  type ParMode,
   type Reponse,
   type Run,
+  type SeuilMode,
   type Taux,
 } from "./types.ts";
 
@@ -136,6 +140,51 @@ export function couplesComparables(reponses: readonly Reponse[]): PartageCouples
     else compares.push(couple);
   }
   return { compares, incomplets };
+}
+
+/** Couples déclarés par le périmètre : chaque assistant inclus, un par mode qu'il déclare. */
+function couplesDeclares(outils: readonly OutilAuGel[]): Map<IdentifiantCourt, ReadonlySet<Mode>> {
+  const declares = new Map<IdentifiantCourt, ReadonlySet<Mode>>();
+  for (const outil of outils) {
+    if (outil.famille === "assistant" && outil.inclus) declares.set(outil.outil_id, new Set(outil.modes ?? []));
+  }
+  return declares;
+}
+
+/** §8 : on ne publie pas un verdict pour un couple que le périmètre ne déclare pas. */
+function refuserCouplesHorsPerimetre(declares: ReadonlyMap<IdentifiantCourt, ReadonlySet<Mode>>, reponses: readonly Reponse[]): void {
+  const { compares, incomplets } = couplesComparables(reponses);
+  for (const couple of [...compares, ...incomplets]) {
+    if (!(declares.get(couple.outil_id)?.has(couple.mode) ?? false)) {
+      throw new Error(
+        `Couple ${cleCouple(couple)} présent dans les réponses API du run, mais absent du périmètre (aucun ` +
+          `assistant inclus ne le déclare, §8) : aucun verdict n'est publié pour un couple hors périmètre.`,
+      );
+    }
+  }
+}
+
+/**
+ * §8, §12, D55 (7) : `par_mode` de chaque assistant inclus du périmètre, un par mode qu'il
+ * déclare, calculé depuis les réponses du canal API du run. Seul calcul de ce champ — voir
+ * l'en-tête du fichier. Un mode déclaré sans aucune réponse API lève (`runIncomplet`, comme
+ * `couplesAJuger`) : le seuil n'y est pas décidable. Une réponse API d'un couple non déclaré par
+ * un assistant inclus lève aussi (`refuserCouplesHorsPerimetre`).
+ */
+export function parModeDuRun(outils: readonly OutilAuGel[], reponses: readonly Reponse[]): ReadonlyMap<IdentifiantCourt, ParMode> {
+  const declares = couplesDeclares(outils);
+  refuserCouplesHorsPerimetre(declares, reponses);
+  const resultat = new Map<IdentifiantCourt, ParMode>();
+  for (const [outil_id, modes] of declares) {
+    const parMode: Partial<Record<Mode, SeuilMode>> = {};
+    for (const mode of modes) {
+      const part = partReponsesManquantes(reponses, { outil_id, mode });
+      const run_incomplet = runIncomplet(part);
+      parMode[mode] = { reponses_manquantes_part: part.numerateur / part.denominateur, run_incomplet };
+    }
+    resultat.set(outil_id, parMode);
+  }
+  return resultat;
 }
 
 function reponsesApiDuRun(reponses: readonly Reponse[]): Reponse[] {
