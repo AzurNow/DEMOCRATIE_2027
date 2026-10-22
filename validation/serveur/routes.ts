@@ -13,12 +13,7 @@
 
 import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { diagnostiquerLot } from "../domaine/analyse-lot.ts";
-import {
-  construireAnnulation,
-  construireDecision,
-  construireRetrait,
-  type SoumissionDecision,
-} from "../domaine/decision.ts";
+import { construireAnnulation, construireDecision, construireRetrait } from "../domaine/decision.ts";
 import { validerCorrections } from "../domaine/corrections.ts";
 import { RACCOURCIS, TOUCHES_DECISION, TOUCHE_CONFIRMATION, TOUCHES_REPONSE } from "../domaine/interaction.ts";
 import {
@@ -47,7 +42,9 @@ import type { Contexte } from "./contexte.ts";
 import { accesTexteCorrections, emplacement } from "./emplacements.ts";
 import { GESTIONNAIRES_FORMULATIONS } from "./formulations.ts";
 import type { Reponse } from "./http.ts";
+import { lireRequeteAnnulation, lireRequeteDecision } from "./lecture-requetes.ts";
 import { construireVueItem, construireVueLot, projeterLot } from "./vues.ts";
+import { erreursBrouillon, type Brouillon } from "../io/brouillons.ts";
 
 export type { Reponse } from "./http.ts";
 
@@ -284,13 +281,12 @@ function ecrireRetraitsEnAttente(contexte: Contexte, lot: Lot, etat: EtatAnnotat
 
 /* -------------------------------------------------------------- décisions */
 
-interface RequeteDecision extends SoumissionDecision {
-  readonly lot_id: string;
-}
-
 function enregistrerDecision(contexte: Contexte, _params: readonly string[], corps: unknown): Reponse {
-  const requete = corps as Partial<RequeteDecision>;
-  const cadre = resoudre(contexte, requete.lot_id ?? "", requete.item_id ?? "");
+  const lecture = lireRequeteDecision(corps);
+  if (!lecture.ok) return { statut: 400, corps: { ok: false, erreurs: lecture.erreurs } };
+  const requete = lecture.requete;
+
+  const cadre = resoudre(contexte, requete.lot_id, requete.item_id);
   if ("erreur" in cadre) return cadre.erreur;
 
   const { lot, item } = cadre;
@@ -305,7 +301,7 @@ function enregistrerDecision(contexte: Contexte, _params: readonly string[], cor
 
   const etat = rejouer(contexte.journal.lire(lot.lot_id));
   const construite = construireDecision(
-    { ...(requete as RequeteDecision), corrections: corrections.corrections },
+    { ...requete, corrections: corrections.corrections },
     {
       annotateur_id: contexte.annotateur_id,
       lot_id: lot.lot_id,
@@ -369,8 +365,11 @@ function accesCorrections(contexte: Contexte, item: Item) {
 
 /** Annuler, c'est écrire une entrée de plus. Rien n'est effacé, jamais. */
 function annuler(contexte: Contexte, _params: readonly string[], corps: unknown): Reponse {
-  const requete = corps as { lot_id?: string; commentaire?: string | null };
-  const lot = contexte.lot(requete.lot_id ?? "");
+  const lecture = lireRequeteAnnulation(corps);
+  if (!lecture.ok) return { statut: 400, corps: { ok: false, erreurs: lecture.erreurs } };
+  const requete = lecture.requete;
+
+  const lot = contexte.lot(requete.lot_id);
   if (lot === null) return { statut: 404, corps: { erreur: "Lot inconnu" } };
 
   const verrou = refuserSiLotTermine(contexte, lot);
@@ -404,7 +403,9 @@ function lireBrouillon(contexte: Contexte): Reponse {
 }
 
 function ecrireBrouillon(contexte: Contexte, _params: readonly string[], corps: unknown): Reponse {
-  contexte.brouillons.ecrire(corps as never);
+  const erreurs = erreursBrouillon(corps);
+  if (erreurs.length > 0) return { statut: 400, corps: { ok: false, erreurs } };
+  contexte.brouillons.ecrire(corps as Brouillon);
   return { statut: 204 };
 }
 
