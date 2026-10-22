@@ -26,7 +26,7 @@
  */
 
 import { identitesEngendrees } from "./engendrement.ts";
-import { concerneLeRun } from "./tirage.ts";
+import { concerneLeRun } from "./tirabilite.ts";
 import type { Item, Question, RunAuGel, Tirage } from "./types.ts";
 
 /** Le jeu reçu ne contient pas toutes les questions engendrées au gel : la barrière ne juge pas. */

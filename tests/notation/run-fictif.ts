@@ -28,7 +28,7 @@ import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "../../
 import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
-import { entreesPour } from "../../pipeline/questions/tirage.ts";
+import { entreesPour } from "../../pipeline/questions/entrees-tirage.ts";
 import type { CandidatNomme, GraineTirage, Item, Question, RunAuGel } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { GRILLE_TOUT_VRAI } from "../aides/fabriques.ts";

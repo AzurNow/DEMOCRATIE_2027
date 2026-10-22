@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { engendrer } from "../pipeline/questions/engendrement.ts";
-import { entreesPour } from "../pipeline/questions/tirage.ts";
+import { entreesPour } from "../pipeline/questions/entrees-tirage.ts";
 import type { CandidatNomme, Item, Mesure, Question, RunAuGel, Tirage } from "../pipeline/questions/types.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { GRILLE_TOUT_VRAI } from "./aides/fabriques.ts";

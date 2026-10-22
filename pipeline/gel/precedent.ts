@@ -8,7 +8,7 @@
  *
  * Partie pure : `choisirPrecedent` (le choix, sur des `run.json` déjà lus) et `tiragePrecedentVerifie`
  * (des octets de son `tirage.json` et de son `questions.json` au `TiragePrecedent` que
- * `tirage.ts:tirer` reçoit, par `fichiersDuRunVerifies`). Partie lue, mince : `lirePrecedent`, par
+ * `tirage.ts:tirer` reçoit (type défini dans `entrees-tirage.ts`), par `fichiersDuRunVerifies`). Partie lue, mince : `lirePrecedent`, par
  * `lireFichiersDuRun`. Ces deux-là vérifient aussi le run gelé que `pnpm run:dry --run` interroge
  * (`pipeline/interrogation/run-gele.ts`) : une seule vérification dans le dépôt.
  *
@@ -41,8 +41,8 @@ import { join } from "node:path";
 import { ErreurSchema, validerFragment, valider } from "../../outils/schemas/valider.ts";
 import type { PointeurDeSchema } from "../../outils/schemas/valider.ts";
 import { lireInstant } from "../interrogation/heure-paris.ts";
-import { tiragePrecedentDepuis } from "../questions/tirage.ts";
-import type { TiragePrecedent } from "../questions/tirage.ts";
+import { tiragePrecedentDepuis } from "../questions/entrees-tirage.ts";
+import type { TiragePrecedent } from "../questions/entrees-tirage.ts";
 import type { Question, Tirage } from "../questions/types.ts";
 import { STATUT_PUBLIE, STATUT_PUBLIE_PROVISOIRE, TYPE_PILOTE } from "../run/types.ts";
 import type { StatutRun, TypeRun } from "../run/types.ts";

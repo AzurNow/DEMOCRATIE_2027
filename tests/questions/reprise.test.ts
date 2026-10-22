@@ -14,7 +14,8 @@ import { describe, expect, it } from "vitest";
 import { questionsCommunes } from "../../analysis/tendance.ts";
 import type { Question as QuestionAnalyse } from "../../analysis/types.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
-import { PART_REPRISE, tiragePrecedentDe, tirer } from "../../pipeline/questions/tirage.ts";
+import { PART_REPRISE, tirer } from "../../pipeline/questions/tirage.ts";
+import { tiragePrecedentDe } from "../../pipeline/questions/entrees-tirage.ts";
 import type { Question } from "../../pipeline/questions/types.ts";
 import { candidat, graine, jeu, run } from "./fabriques.ts";
 

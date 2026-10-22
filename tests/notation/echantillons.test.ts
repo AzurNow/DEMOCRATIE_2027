@@ -14,7 +14,7 @@ import {
   tirerEchantillonHumain,
   tirerSousEnsembleContrefactuel,
 } from "../../pipeline/notation/echantillons.ts";
-import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../pipeline/questions/tirage.ts";
+import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../pipeline/questions/graine.ts";
 import type { GraineTirage } from "../../pipeline/questions/types.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
 

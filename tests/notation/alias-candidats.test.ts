@@ -13,7 +13,7 @@ import {
   inverserTable,
   tableAliasCandidats,
 } from "../../pipeline/notation/alias-candidats.ts";
-import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../pipeline/questions/tirage.ts";
+import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../pipeline/questions/graine.ts";
 import type { GraineTirage } from "../../pipeline/questions/types.ts";
 import { CANDIDATS_DU_RUN } from "./fabriques.ts";
 

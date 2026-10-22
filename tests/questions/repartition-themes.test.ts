@@ -14,7 +14,8 @@
 import { describe, expect, it } from "vitest";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { conditionDeSymetrie, verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
-import { entreesPour, tirer } from "../../pipeline/questions/tirage.ts";
+import { tirer } from "../../pipeline/questions/tirage.ts";
+import { entreesPour } from "../../pipeline/questions/entrees-tirage.ts";
 import type { CodeGabarit, Item, Mesure, Question, Theme, Tirage } from "../../pipeline/questions/types.ts";
 import { candidat, completer, graine, identifiant, itemP, mesure, perimetre, quotas, run } from "./fabriques.ts";
 

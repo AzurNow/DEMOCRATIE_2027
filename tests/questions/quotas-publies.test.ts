@@ -9,8 +9,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { tirer, tiragePrecedentDe } from "../../pipeline/questions/tirage.ts";
+import { tirer } from "../../pipeline/questions/tirage.ts";
 import type { DemandeTirage, ParametresTirage } from "../../pipeline/questions/tirage.ts";
+import { tiragePrecedentDe } from "../../pipeline/questions/entrees-tirage.ts";
 import type { Tirage } from "../../pipeline/questions/types.ts";
 import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { candidat, graine, jeu, run } from "./fabriques.ts";

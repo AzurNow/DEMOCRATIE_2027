@@ -21,7 +21,6 @@ import { decisionAvantGel, decisionReintegre } from "./contestation.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import { nomsCherchesEnAttribution, trouverLibelle } from "./libelles.ts";
 import type {
-  CandidatAuGel,
   CodeCondition,
   CompensationTirage,
   ConditionSymetrie,
@@ -38,7 +37,7 @@ import type {
 } from "./types.ts";
 import { REGISTRES } from "./types.ts";
 import type { CodeGabarit, Mesure, Theme } from "./types.ts";
-import { cleStrateCandidat, tirablesParStrate } from "./tirage.ts";
+import { cleStrateCandidat, estCompare, tirablesParStrate } from "./tirabilite.ts";
 
 /** §5 : les items d'absence et fictifs constituent au moins 20 % des questions de chaque run. */
 export const PART_MINIMALE_ITEMS_A_F = 0.2;
@@ -135,14 +134,6 @@ function memoriser<T>(calcul: () => T): () => T {
     valeur ??= { resultat: calcul() };
     return valeur.resultat;
   };
-}
-
-/**
- * §4 : « les candidats sous le seuil de couverture sont traités à part ». Seule définition du
- * candidat comparé : le tirage la lit pour la compensation des strates (§5, protocole 0.9).
- */
-export function estCompare(candidat: Pick<CandidatAuGel, "interroge" | "sous_seuil">): boolean {
-  return candidat.interroge && !candidat.sous_seuil;
 }
 
 function agreger(conditions: readonly ConditionSymetrie[]): StatutSymetrie {
@@ -388,8 +379,8 @@ function tirablesDe(tirables: ReadonlyMap<string, number>, candidat: string, str
  * d'autres thèmes de ce candidat. » Une compensation inscrite est donc refusée si elle ne désigne pas
  * une entrée du candidat, du même gabarit, venue d'un autre thème, ou si la strate qu'elle compense
  * n'avait pas de déficit à combler — ou moins qu'elle n'en reçoit. Le déficit se recalcule ici depuis
- * les questions tirables, sans lire `tirage.ts` : la barrière doit attraper un tirage fautif d'où
- * qu'il vienne (conformité 2026-09-29, n° 8).
+ * les questions tirables, sans relire les compensations que `tirage.ts` a inscrites : la barrière
+ * doit attraper un tirage fautif d'où qu'il vienne (conformité 2026-09-29, n° 8).
  */
 function compensationsInjustifiees(contexte: Contexte): readonly string[] {
   if (contexte.compensations.length === 0) return [];

@@ -23,7 +23,7 @@ import { issueDeJuge, type CadreNotationJuge, type IdentiteJuge, type SortieJuge
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain } from "../../pipeline/notation/types.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
-import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/graine.ts";
 import type { GraineTirage } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";

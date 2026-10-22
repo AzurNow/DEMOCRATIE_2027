@@ -17,7 +17,8 @@ import {
   PremisseNonNotee,
   premisseFausseAuGel,
 } from "../../pipeline/questions/reponse-attendue.ts";
-import { entreesPour, tirer } from "../../pipeline/questions/tirage.ts";
+import { tirer } from "../../pipeline/questions/tirage.ts";
+import { entreesPour } from "../../pipeline/questions/entrees-tirage.ts";
 import type { CodeGabarit, Item, Mesure, Position, Question } from "../../pipeline/questions/types.ts";
 import {
   candidat,
