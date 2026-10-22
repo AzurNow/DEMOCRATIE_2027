@@ -20,7 +20,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
-import { entreesPour, questionsTirables } from "../../pipeline/questions/tirage.ts";
+import { entreesPour } from "../../pipeline/questions/entrees-tirage.ts";
+import { questionsTirables } from "../../pipeline/questions/tirabilite.ts";
 import type { Item, Question, Symetrie } from "../../pipeline/questions/types.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import {

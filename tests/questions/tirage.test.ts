@@ -15,13 +15,15 @@ import {
   ArbitrageSansDecision,
   DecisionPanelPosterieureAuGel,
   DecisionsPanelSimultanees,
-  empreinteNeutre,
   PART_REPRISE,
   tirer,
+} from "../../pipeline/questions/tirage.ts";
+import {
+  empreinteNeutre,
   tiragePrecedentDe,
   tiragePrecedentDepuis,
-} from "../../pipeline/questions/tirage.ts";
-import type { TiragePrecedent } from "../../pipeline/questions/tirage.ts";
+} from "../../pipeline/questions/entrees-tirage.ts";
+import type { TiragePrecedent } from "../../pipeline/questions/entrees-tirage.ts";
 import type { Item, Question } from "../../pipeline/questions/types.ts";
 import { candidat, contestation, graine, jeu, run, THEMES_DE_TEST } from "./fabriques.ts";
 

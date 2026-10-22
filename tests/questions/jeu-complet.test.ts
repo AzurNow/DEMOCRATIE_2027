@@ -22,7 +22,8 @@ import { describe, expect, it } from "vitest";
 import { JeuDeQuestionsIncomplet, questionsExigees, TirageDUnAutreRun } from "../../pipeline/questions/completude.ts";
 import { engendrer, identitesEngendrees } from "../../pipeline/questions/engendrement.ts";
 import { conditionDeSymetrie, verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
-import { entreesPour, tirer } from "../../pipeline/questions/tirage.ts";
+import { tirer } from "../../pipeline/questions/tirage.ts";
+import { entreesPour } from "../../pipeline/questions/entrees-tirage.ts";
 import type { CodeGabarit, Item, Mesure, Question, Theme, Tirage } from "../../pipeline/questions/types.ts";
 import {
   candidat,

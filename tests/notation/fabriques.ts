@@ -10,7 +10,7 @@ import { RACINE_PROJET } from "../aides/depot.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
 import { notationParRegle } from "../../pipeline/notation/regle-refus.ts";
-import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/graine.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
 import type { CandidatDuRun, LienNotation, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "../../pipeline/notation/types.ts";
 import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";

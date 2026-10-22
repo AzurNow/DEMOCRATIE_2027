@@ -17,7 +17,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { GENERATEUR_DU_TIRAGE } from "../pipeline/questions/tirage.ts";
+import { GENERATEUR_DU_TIRAGE } from "../pipeline/questions/graine.ts";
 import { erreurDeSchema } from "../outils/schemas/valider.ts";
 
 type Objet = Record<string, unknown>;

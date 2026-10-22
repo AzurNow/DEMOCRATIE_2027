@@ -42,7 +42,7 @@
 
 import { graineDerivee } from "../../analysis/graines.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
-import { verifierGraine } from "../questions/tirage.ts";
+import { verifierGraine } from "../questions/graine.ts";
 import type { GraineTirage } from "../questions/types.ts";
 import type { TauxEchantillonHumain } from "./types.ts";
 

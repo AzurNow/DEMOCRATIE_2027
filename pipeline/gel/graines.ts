@@ -8,14 +8,14 @@
  * La sixième, `alias_candidats` (protocole 0.20, D55 (9)), amorce la table alias aveugle de candidat
  * (`pipeline/notation/alias-candidats.ts`).
  *
- * Les six graines déclarent le générateur du tirage (`tirage.ts:GENERATEUR_DU_TIRAGE`,
+ * Les six graines déclarent le générateur du tirage (`graine.ts:GENERATEUR_DU_TIRAGE`,
  * SplitMix64 amorcé par sha256) : `run.schema.json` l'impose à l'échantillon humain, au
  * contrefactuel et à l'alias des candidats, `tirage.ts` le vérifie pour le tirage, et
  * `analysis/graines.ts` dérive les graines du bootstrap et de la permutation avec le même
  * algorithme.
  */
 
-import { GENERATEUR_DU_TIRAGE } from "../questions/tirage.ts";
+import { GENERATEUR_DU_TIRAGE } from "../questions/graine.ts";
 import type { GraineTirage } from "../questions/types.ts";
 
 export const NOMS_GRAINES = ["tirage", "echantillon_humain", "bootstrap", "permutation", "contrefactuel", "alias_candidats"] as const;

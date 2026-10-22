@@ -561,8 +561,8 @@ function ouiSiOppose(contexte: Contexte, position: Position): ReponseAttendue {
 
 /**
  * Une liste d'attribution non définie au gel lève `ReponseAttendueIndecidable` : la règle de
- * tirabilité (`tirage.ts`) l'attrape avant le tirage et compte la question à part (§5, protocole
- * 0.9). Y répondre serait une décision de mesure prise en silence.
+ * tirabilité (`tirabilite.ts`) l'attrape avant le tirage et compte la question à part (§5,
+ * protocole 0.9). Y répondre serait une décision de mesure prise en silence.
  */
 function candidatsAttendus(contexte: Contexte): readonly string[] {
   const gel = { date_gel: contexte.temporelle.date_gel, interroges: contexte.interroges };

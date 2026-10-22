@@ -12,7 +12,8 @@
 
 import { describe, expect, it } from "vitest";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
-import { questionsTirables, tirer } from "../../pipeline/questions/tirage.ts";
+import { tirer } from "../../pipeline/questions/tirage.ts";
+import { questionsTirables } from "../../pipeline/questions/tirabilite.ts";
 import type { CodeGabarit, Item, Question } from "../../pipeline/questions/types.ts";
 import { candidat, completerSur, graine, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
 import { valider } from "../../outils/schemas/valider.ts";

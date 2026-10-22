@@ -35,7 +35,7 @@
 
 import { graineDerivee } from "../../analysis/graines.ts";
 import { generateur, melanger, type GenerateurAleatoire } from "../../validation/domaine/alea.ts";
-import { verifierGraine } from "../questions/tirage.ts";
+import { verifierGraine } from "../questions/graine.ts";
 import type { GraineTirage } from "../questions/types.ts";
 import { comparerChaines } from "./echantillons.ts";
 import type { CandidatDuRun } from "./types.ts";

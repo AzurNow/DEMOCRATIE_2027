@@ -19,7 +19,8 @@ import {
   ReponseAttendueIndecidable,
   reponseAttendue,
 } from "../../pipeline/questions/reponse-attendue.ts";
-import { questionsTirables, tirer } from "../../pipeline/questions/tirage.ts";
+import { tirer } from "../../pipeline/questions/tirage.ts";
+import { questionsTirables } from "../../pipeline/questions/tirabilite.ts";
 import type { CandidatAuGel, Item, Position, QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { candidat, completer, graine, itemF, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
 

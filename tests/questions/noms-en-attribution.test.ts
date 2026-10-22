@@ -16,7 +16,7 @@ import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { gabaritParCode, remplirTexteNeutre } from "../../pipeline/questions/gabarits.ts";
 import { nomsCherchesEnAttribution } from "../../pipeline/questions/libelles.ts";
 import { verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
-import { entreesPour } from "../../pipeline/questions/tirage.ts";
+import { entreesPour } from "../../pipeline/questions/entrees-tirage.ts";
 import type { CandidatAuGel, Item, Question, StatutSymetrie } from "../../pipeline/questions/types.ts";
 import { controlerSortie, SortieRejetee } from "../../pipeline/reformulation/controle.ts";
 import { demandeDe } from "../../pipeline/reformulation/demande.ts";

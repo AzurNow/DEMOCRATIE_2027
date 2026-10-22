@@ -10,8 +10,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { FormulationAuSensChange, tirer } from "../../pipeline/questions/tirage.ts";
+import { tirer } from "../../pipeline/questions/tirage.ts";
 import type { DemandeTirage } from "../../pipeline/questions/tirage.ts";
+import { FormulationAuSensChange } from "../../pipeline/questions/tirabilite.ts";
 import type { Question } from "../../pipeline/questions/types.ts";
 import { candidat, graine, jeu, run } from "./fabriques.ts";
 

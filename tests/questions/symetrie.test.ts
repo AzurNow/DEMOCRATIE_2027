@@ -7,7 +7,8 @@
 
 import { describe, expect, it } from "vitest";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
-import { ArbitrageSansDecision, entreesPour } from "../../pipeline/questions/tirage.ts";
+import { ArbitrageSansDecision } from "../../pipeline/questions/tirage.ts";
+import { entreesPour } from "../../pipeline/questions/entrees-tirage.ts";
 import { verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
 import type {
   CodeCondition,
