@@ -2,6 +2,8 @@
 
 import type {
   Brouillon,
+  Correction,
+  Decision,
   Diagnostic,
   ListeFormulations,
   Raccourcis,
@@ -11,6 +13,31 @@ import type {
   VueItem,
   VueLot,
 } from "./types.ts";
+
+/**
+ * Ce que `app.ts:soumettre()` construit et envoie à `/api/decisions` — pas ce que le serveur
+ * accepterait dans l'absolu. Typer `charge` avec cette interface, au lieu de `unknown`, fait
+ * échouer `pnpm check` si une clé est ajoutée ici sans l'être aussi dans `CHAMPS_DECISION`
+ * (`validation/serveur/lecture-requetes.ts`) : sans ce garde-fou, une clé ajoutée d'un seul
+ * côté ferait refuser chaque décision en 400 (relecture du Lot 8d). L'accord des deux listes de
+ * clés est confronté par `tests/accord-decision-client-serveur.test.ts`, sur le modèle de
+ * `tests/grille-client.test.ts` pour `CLES_GRILLE`.
+ */
+export interface RequeteDecision {
+  readonly lot_id: string;
+  readonly item_id: string;
+  readonly decision: Decision;
+  readonly reponses_grille?: Record<string, boolean | null>;
+  readonly reponses_par_etat?: {
+    readonly anterieur: Record<string, boolean | null>;
+    readonly posterieur: Record<string, boolean | null>;
+  };
+  readonly questions_specifiques: Record<string, boolean>;
+  readonly corrections: readonly Correction[];
+  readonly commentaire: string | null;
+  readonly duree_affichage_ms: number;
+  readonly duree_active_ms: number;
+}
 
 /** Réponse HTTP en erreur : le statut et le corps renvoyés par le serveur, tels quels. */
 export class EchecApi extends Error {
@@ -39,7 +66,7 @@ export const api = {
   diagnostic: (lot_id: string) => demander<Diagnostic>(`/api/lots/${encodeURIComponent(lot_id)}/diagnostic`),
   item: (lot_id: string, item_id: string) =>
     demander<VueItem>(`/api/lots/${encodeURIComponent(lot_id)}/items/${encodeURIComponent(item_id)}`),
-  decider: (charge: unknown) =>
+  decider: (charge: RequeteDecision) =>
     demander<{ ok: true; id: string }>("/api/decisions", {
       method: "POST",
       headers: { "content-type": "application/json" },

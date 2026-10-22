@@ -17,7 +17,7 @@ import { creerServeur as creerServeurValidation } from "../validation/serveur/pr
 import { POLITIQUE_SECURITE, servirStatique } from "../validation/serveur/http.ts";
 import type { Item } from "../validation/domaine/types.ts";
 import { creerBac, lotDe, mesurePour, type Bac } from "./aides/bac.ts";
-import { decision, GRILLE_TOUT_VRAI, itemP } from "./aides/fabriques.ts";
+import { decision, GRILLE_TOUT_VRAI, itemO, itemP, source } from "./aides/fabriques.ts";
 import { monter, type Monde } from "./notation-humaine/fixture.ts";
 import { VERSION_VUE_ANNOTATEUR } from "../pipeline/notation/vue-annotateur.ts";
 
@@ -40,9 +40,11 @@ async function ecouter(serveur: Server): Promise<string> {
   return `http://${ADRESSE}:${(serveur.address() as AddressInfo).port}`;
 }
 
-function bacAvecLot(lot_id: string): { bac: Bac; item: Item } {
+function bacAvecLot(
+  lot_id: string,
+  item: Item = itemP({ id: "01JBANCESSA100000001TEM0A1", candidat_id: "demo-alpha" }),
+): { bac: Bac; item: Item } {
   const b = creerBac();
-  const item = itemP({ id: "01JBANCESSA100000001TEM0A1", candidat_id: "demo-alpha" });
   b.ecrireItem(item);
   b.ecrireMesure(mesurePour(item));
   b.ecrireLot(lotDe(lot_id, [item]));
@@ -357,6 +359,138 @@ describe("corps des POST contrôlé avant écriture (revue du 2026-10-12, consta
 
     const annulationReponse = await poster(base, "/api/annulations", { lot_id: "lot-001" });
     expect(annulationReponse.status).toBe(201);
+  });
+
+  /**
+   * Le chemin nominal du vrai client n'était pas prouvé : `api.decider(charge: unknown)`
+   * (`validation/client/api.ts`) n'était pas typé, et seule `charge` construite littéralement
+   * dans les tests ci-dessus passait. Ces corps reproduisent exactement ceux que construisent
+   * `app.ts:soumettre()`, `app.ts:enregistrerBrouillon()` et `api.ts:annuler()`, pour prouver
+   * que le lecteur les accepte réellement (relecture Lot 8d).
+   */
+  it("(h) le corps exact de soumettre() pour un item non-O, grille avec des null", async () => {
+    const itemSansQuantification = itemP({
+      assertion: {
+        position: "pour",
+        paraphrase: "Ramener la TVA sur les produits énergétiques de 20 % à 5,5 %.",
+        citation_verbatim: "Nous ramènerons la TVA sur l'énergie à 5,5 %.",
+        source: source(),
+      },
+    });
+    const posee = bacAvecLot("lot-h", itemSansQuantification);
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-h",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: {
+        citation_fidele: true,
+        paraphrase_exacte: true,
+        position_univoque: true,
+        theme_correct: true,
+        quantification_correcte: null,
+      },
+      questions_specifiques: {},
+      corrections: [],
+      commentaire: null,
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(reponse.status).toBe(201);
+  });
+
+  it("(i) le corps exact pour un item O (reponses_par_etat), grilles avec des null", async () => {
+    const posee = bacAvecLot("lot-i", itemO());
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-i",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_par_etat: {
+        anterieur: {
+          citation_fidele: true,
+          paraphrase_exacte: true,
+          position_univoque: true,
+          theme_correct: null,
+          quantification_correcte: null,
+        },
+        posterieur: {
+          citation_fidele: true,
+          paraphrase_exacte: true,
+          position_univoque: true,
+          theme_correct: true,
+          quantification_correcte: null,
+        },
+      },
+      questions_specifiques: { changement_explicite: true, transcription_ecoutee: true },
+      corrections: [],
+      commentaire: null,
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(reponse.status).toBe(201);
+  });
+
+  it('(j) le corps exact d\'une correction au format du client (decision: "corriger")', async () => {
+    const posee = bacAvecLot("lot-j");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-j",
+      item_id: posee.item.id,
+      decision: "corriger",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      questions_specifiques: {},
+      corrections: [
+        {
+          cible: "item",
+          chemin: "/assertion/paraphrase",
+          ancienne_valeur: "Ramener la TVA sur les produits énergétiques de 20 % à 5,5 %.",
+          nouvelle_valeur: "Ramener la TVA sur l'énergie de 20 % à 5,5 %.",
+        },
+      ],
+      commentaire: null,
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(reponse.status).toBe(201);
+  });
+
+  it("(k) le brouillon exact tel qu'écrit par enregistrerBrouillon()", async () => {
+    bac = creerBac();
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/brouillon", {
+      lot_id: "lot-001",
+      item_id: "x",
+      reponses: { citation_fidele: true },
+      reponses_par_etat: { anterieur: {}, posterieur: {} },
+      questions_specifiques: {},
+      commentaire: "",
+      duree_affichage_ms: 10,
+      duree_active_ms: 9,
+    });
+    expect(reponse.status).toBe(204);
+  });
+
+  it("(l) l'annulation exacte envoyée par api.annuler() ({ lot_id })", async () => {
+    const posee = bacAvecLot("lot-l");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const decisionReponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-l",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(decisionReponse.status).toBe(201);
+
+    const reponse = await poster(base, "/api/annulations", { lot_id: "lot-l" });
+    expect(reponse.status).toBe(201);
   });
 });
 

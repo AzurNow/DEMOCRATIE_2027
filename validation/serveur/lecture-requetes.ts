@@ -100,7 +100,7 @@ function erreursCorrections(valeur: unknown): readonly string[] {
 
 /* -------------------------------------------------------------- /api/decisions */
 
-const CHAMPS_DECISION = [
+export const CHAMPS_DECISION = [
   "lot_id",
   "item_id",
   "decision",
