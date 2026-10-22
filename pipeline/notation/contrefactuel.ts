@@ -53,6 +53,16 @@ import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillon
 /** §7 : « au-delà de 3 % », en fraction exacte. */
 export const SEUIL_RETRAIT = { numerateur: 3, denominateur: 100 } as const;
 
+/**
+ * §7 : « au-delà de 3 % », en entiers stricts (constat 16 de la revue du 2026-10-12) :
+ * `n × 100 > 3 × d`. Seule définition de la comparaison au seuil de retrait ; `controle-croise.ts`
+ * et `go-no-go/criteres-juges.ts` l'appellent, pour qu'une copie qui passerait à `>=` ne diverge
+ * jamais des deux autres.
+ */
+export function depasseSeuilRetrait(n: number, d: number): boolean {
+  return n * SEUIL_RETRAIT.denominateur > SEUIL_RETRAIT.numerateur * d;
+}
+
 export interface PaireContrefactuelle {
   /** La réponse d'origine, membre du sous-ensemble. */
   readonly reponse_id: Ulid;
@@ -296,7 +306,7 @@ function resultatDuJuge(
   if (comptees.length === 0) return { juge_id, motif_indefini_contrefactuel: "toutes_paires_ecartees", paires_ecartees_contrefactuel, retire: false };
   const changements = comptees.filter((paire) => change(paire, juge_id, notations)).length;
   const taux = { numerateur: changements, denominateur: comptees.length, valeur: changements / comptees.length };
-  const retire = changements * SEUIL_RETRAIT.denominateur > SEUIL_RETRAIT.numerateur * comptees.length;
+  const retire = depasseSeuilRetrait(changements, comptees.length);
   return {
     juge_id,
     taux,

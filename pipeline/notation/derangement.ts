@@ -35,8 +35,9 @@
 
 import { graineDerivee } from "../../analysis/graines.ts";
 import { generateur, melanger, type GenerateurAleatoire } from "../../validation/domaine/alea.ts";
+import { verifierGraine } from "../questions/tirage.ts";
 import type { GraineTirage } from "../questions/types.ts";
-import { comparerChaines, verifierGraine } from "./echantillons.ts";
+import { comparerChaines } from "./echantillons.ts";
 import type { CandidatDuRun } from "./types.ts";
 
 /**
@@ -70,7 +71,7 @@ export function tirerDerangement(interroges: readonly CandidatDuRun[], perimetre
   if (interroges.length < 2) {
     throw new Error(`Dérangement impossible : ${interroges.length} candidat(s) interrogé(s) au run, il en faut au moins deux candidats interrogés (§7).`);
   }
-  verifierGraine(graine);
+  verifierGraine(graine, "du dérangement");
   const idsInterroges = new Set(interroges.map((candidat) => candidat.candidat_id));
   const hors_derangement = perimetre
     .filter((candidat) => !idsInterroges.has(candidat.candidat_id))

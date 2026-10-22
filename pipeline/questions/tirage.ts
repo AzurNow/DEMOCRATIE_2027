@@ -871,9 +871,9 @@ export const GENERATEUR_DU_TIRAGE: Omit<GraineTirage, "valeur"> = {
 
 /** Une graine dont la déclaration ne désigne pas le générateur employé. */
 export class GraineNonConforme extends Error {
-  constructor(champ: keyof typeof GENERATEUR_DU_TIRAGE, declare: string, attendu: string) {
+  constructor(objet: string, champ: keyof typeof GENERATEUR_DU_TIRAGE, declare: string, attendu: string) {
     super(
-      `Graine du tirage non conforme : ${champ} « ${declare} » déclaré, alors que le tirage emploie ` +
+      `Graine ${objet} non conforme : ${champ} « ${declare} » déclaré, alors que le tirage emploie ` +
         `${attendu} (${GENERATEUR_DU_TIRAGE.algorithme}, ${GENERATEUR_DU_TIRAGE.bibliotheque}, ` +
         `version ${GENERATEUR_DU_TIRAGE.version}). Un tiers qui rejouerait avec le générateur déclaré ` +
         `obtiendrait un autre tirage (§5, §9).`,
@@ -882,10 +882,19 @@ export class GraineNonConforme extends Error {
   }
 }
 
-function verifierGraine(graine: GraineTirage): void {
+/**
+ * Une graine qui déclare un autre générateur que celui du tirage promet un tirage non rejouable
+ * (constat 18 de la revue du 2026-10-12 : seule définition, partagée par tous les tirages de
+ * notation). `objet` nomme ce que la graine vérifiée désigne dans le message de refus — « du
+ * tirage » pour celle de `tirer`, « de l'échantillon », « du dérangement » ou « de la table
+ * d'alias » pour celles de `pipeline/notation/` — et est obligatoire : un message qui dirait
+ * toujours « du tirage » pour une graine d'échantillon, de dérangement ou d'alias nommerait le
+ * mauvais objet vérifié (relecture du 2026-10-21 du constat 18).
+ */
+export function verifierGraine(graine: GraineTirage, objet: string): void {
   for (const champ of ["algorithme", "bibliotheque", "version"] as const) {
     const attendu = GENERATEUR_DU_TIRAGE[champ];
-    if (graine[champ] !== attendu) throw new GraineNonConforme(champ, graine[champ], `« ${attendu} »`);
+    if (graine[champ] !== attendu) throw new GraineNonConforme(objet, champ, graine[champ], `« ${attendu} »`);
   }
 }
 
@@ -907,7 +916,7 @@ function quotasPublies(parametres: ParametresTirage): ParametresTirage {
 }
 
 export function tirer(demande: DemandeTirage): ResultatTirage {
-  verifierGraine(demande.graine);
+  verifierGraine(demande.graine, "du tirage");
   verifierQuota(demande.parametres.questions_par_strate, "questions_par_strate", "par strate");
   verifierQuota(
     demande.parametres.questions_attribution_par_theme,

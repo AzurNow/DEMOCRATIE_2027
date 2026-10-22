@@ -61,6 +61,11 @@ describe("dérangement des candidats", () => {
     expect(() => tirerDerangement(candidats(3), candidats(3), { ...graine(1), version: "0.0.0" })).toThrow(GraineNonConforme);
   });
 
+  it("nomme le dérangement, pas le tirage, dans le message de refus (constat 18 de la revue du 2026-10-12)", () => {
+    const autre: GraineTirage = { ...graine(1), algorithme: "mt19937" };
+    expect(() => tirerDerangement(candidats(3), candidats(3), autre)).toThrow(/Graine du dérangement non conforme/);
+  });
+
   it("un seul candidat interrogé, ou aucun, lève : il n'a aucun dérangement", () => {
     expect(() => tirerDerangement(candidats(1), candidats(1), graine(1))).toThrow(/au moins deux candidats interrogés/);
     expect(() => tirerDerangement([], [], graine(1))).toThrow(/au moins deux candidats interrogés/);

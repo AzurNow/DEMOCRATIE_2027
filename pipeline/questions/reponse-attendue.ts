@@ -631,6 +631,13 @@ const RESOLVEURS: ReadonlyMap<string, Resolveur> = new Map<string, Resolveur>([
 ]);
 
 /**
+ * Les couples gabarit × type que `RESOLVEURS` admet (constat 19 de la revue du 2026-10-12) :
+ * exportés pour le test d'égalité avec `types_admis` de `prompts/gabarits-1.0.0.json`, seule
+ * confrontation entre les deux écritures du même ensemble.
+ */
+export const COUPLES_RESOLUS: ReadonlySet<string> = new Set(RESOLVEURS.keys());
+
+/**
  * « Est-il vrai que X propose [mesure] ? » sur un item obsolète. Avant le changement, la
  * prémisse est vraie et la réponse attendue est « oui » ; après, l'annexe B attend « non, avec
  * correction ». Une position conditionnelle en vigueur ne tranche ni l'un ni l'autre ; depuis la

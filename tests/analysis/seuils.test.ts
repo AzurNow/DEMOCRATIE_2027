@@ -22,6 +22,7 @@ import {
   partReponsesManquantes,
   repartirParCandidat,
   runIncomplet,
+  SEUIL_RUN_INCOMPLET,
 } from "../../analysis/seuils.ts";
 import type { Canal, Mode } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -83,6 +84,11 @@ describe("seuil de couverture par candidat", () => {
 });
 
 describe("seuil de réponses manquantes par couple outil × mode (conformité n° 84, protocole 0.11)", () => {
+  it("SEUIL_RUN_INCOMPLET vaut exactement 20 %, en fraction entière (constat 16 de la revue du 2026-10-12)", () => {
+    expect(SEUIL_RUN_INCOMPLET).toEqual({ numerateur: 1, denominateur: 5 });
+    expect(SEUIL_RUN_INCOMPLET.numerateur / SEUIL_RUN_INCOMPLET.denominateur).toBe(0.2);
+  });
+
   it("laisse un couple à 20 % exactement dans les comparaisons, et exclut celui qui dépasse", () => {
     // §8 dit « plus de 20 % ». Comparaison entière (5·manquantes > total) : 2/10 ne déclenche
     // pas, 3/10 déclenche. Le flottant 0,2 ne décide rien.

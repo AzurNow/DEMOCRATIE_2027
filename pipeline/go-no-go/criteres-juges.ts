@@ -7,7 +7,7 @@
  * deux juges retirés rendent le run invalide (D16 (3)), que `pnpm go-no-go` refuse avant d'en arriver là.
  */
 
-import { SEUIL_RETRAIT } from "../notation/contrefactuel.ts";
+import { depasseSeuilRetrait, SEUIL_RETRAIT } from "../notation/contrefactuel.ts";
 import type { ChangementsContrefactuel, JugeDuRun } from "../notation/types.ts";
 import { SEUIL_KAPPA_ECHANTILLON, type KappaDeJuge } from "./kappa-echantillon.ts";
 import { AUCUN_JUGE_RETENU, type Critere } from "./types.ts";
@@ -31,9 +31,9 @@ export function critereKappaJugesHumains(kappas: readonly KappaDeJuge[]): Criter
   return { ...socle, statut: kappas.every((k) => k.atteint_seuil) ? "vert" : "rouge", valeur: Math.min(...valeurs) };
 }
 
-/** §7 : « au-delà de 3 % » ; en entiers, comme `controle-croise.ts` : n × 100 > 3 × d. */
+/** §7 : « au-delà de 3 % », comme `controle-croise.ts` : `depasseSeuilRetrait` de `contrefactuel.ts`. */
 function depasse(changements: ChangementsContrefactuel): boolean {
-  return changements.numerateur * SEUIL_RETRAIT.denominateur > SEUIL_RETRAIT.numerateur * changements.denominateur;
+  return depasseSeuilRetrait(changements.numerateur, changements.denominateur);
 }
 
 /**

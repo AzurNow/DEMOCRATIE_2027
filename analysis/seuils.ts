@@ -92,6 +92,13 @@ export function partReponsesManquantes(reponses: readonly Reponse[], couple: Cou
 }
 
 /**
+ * §8 : « plus de 20 % », en fraction exacte (constat 16 de la revue du 2026-10-12). Forme entière,
+ * cohérente avec le test de `runIncomplet` (`5 × manquantes > total`) : `numerateur / denominateur`
+ * vaut exactement 0,2, publié tel quel par `pipeline/go-no-go/criteres-run.ts`.
+ */
+export const SEUIL_RUN_INCOMPLET = { numerateur: 1, denominateur: 5 } as const;
+
+/**
  * §8 : « plus de 20 % ». Le test est entier — `5 × manquantes > total` — pour que l'égalité à un
  * cinquième soit décidée par l'arithmétique et non par la représentation flottante de 0,2.
  * Un couple sans aucune réponse API n'est pas « complet » : il n'est pas qualifiable, donc il lève.
@@ -100,7 +107,7 @@ export function runIncomplet(part: Taux): boolean {
   if (part.denominateur === 0) {
     throw new Error("Couple outil × mode sans aucune réponse API dans le run : le seuil de 20 % n'est pas décidable.");
   }
-  return 5 * part.numerateur > part.denominateur;
+  return part.numerateur * SEUIL_RUN_INCOMPLET.denominateur > SEUIL_RUN_INCOMPLET.numerateur * part.denominateur;
 }
 
 export interface PartageCouples {

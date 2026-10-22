@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ContrefactuelIncoherent,
+  depasseSeuilRetrait,
   testerContrefactuel,
   type EntreeContrefactuel,
   type PaireContrefactuelle,
@@ -104,6 +105,20 @@ function juge(resultat: ResultatContrefactuel, juge_id: string): Extract<Resulta
   if (!("taux" in trouve)) throw new Error(`juge ${juge_id} : taux indéfini`);
   return trouve;
 }
+
+describe("depasseSeuilRetrait (constat 16 de la revue du 2026-10-12)", () => {
+  it("6 sur 200 : 3 % tout juste, pas dépassé", () => {
+    expect(depasseSeuilRetrait(6, 200)).toBe(false);
+  });
+
+  it("7 sur 200 : au-delà de 3 %, dépassé", () => {
+    expect(depasseSeuilRetrait(7, 200)).toBe(true);
+  });
+
+  it("0 sur 0 : dénominateur nul, pas dépassé (comportement actuel, inchangé)", () => {
+    expect(depasseSeuilRetrait(0, 0)).toBe(false);
+  });
+});
 
 describe("taux de changement et seuil de 3 %", () => {
   it("6 changements sur 200 : 3 % tout juste, pas retiré", () => {
