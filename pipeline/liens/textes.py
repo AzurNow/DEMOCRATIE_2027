@@ -171,6 +171,8 @@ def _extraire(copie: Copie, octets: bytes, deps: Dependances) -> Extraction:
 
 
 def fiche_extraite(sha256_contenu: str, extraction: Extraction, date: str) -> dict[str, object]:
+    if extraction.vtt_sha256 is not None:
+        raise ValueError(f"extraction {extraction.outil} avec vtt_sha256 : une page citée n'est jamais un .vtt")
     return {
         "sha256_contenu": sha256_contenu,
         "issue": "extrait",
@@ -220,10 +222,11 @@ def extraire_copie(copie: Copie, repertoire_liens: Path, deps: Dependances) -> R
     except ExtractionRefusee as refus:
         ecrire_atomiquement(fiche, serialiser(fiche_refusee(copie.sha256, refus.motif, date)))
         return Refuse(copie.sha256, refus.motif)
+    contenu_fiche = serialiser(fiche_extraite(copie.sha256, extraction, date))
     erreur = _ecrire_texte(copie.sha256, extraction, repertoire_liens)
     if erreur is not None:
         return erreur
-    ecrire_atomiquement(fiche, serialiser(fiche_extraite(copie.sha256, extraction, date)))
+    ecrire_atomiquement(fiche, contenu_fiche)
     return Extrait(copie.sha256, extraction.texte.sha256, extraction.outil)
 
 

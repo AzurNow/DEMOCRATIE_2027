@@ -14,6 +14,8 @@ from pathlib import Path
 import pymupdf
 import pytest
 
+from pipeline.collecte.textes.canonique import TexteCanonique
+from pipeline.collecte.textes.fiche import Extraction as ExtractionFiche
 from pipeline.collecte.textes.page_html import extraire_html
 from pipeline.collecte.textes.pdf import extraire_pdf
 from pipeline.liens import textes
@@ -217,6 +219,22 @@ def test_bloc_specifique_partage_avec_fiche_py() -> None:
     from pipeline.collecte.textes import fiche
 
     assert textes._bloc_specifique is fiche.bloc_specifique
+
+
+def _extracteur_vtt_factice(octets: bytes, type_contenu: str | None) -> ExtractionFiche:
+    return ExtractionFiche(TexteCanonique("texte factice"), "factice", "1", {}, vtt_sha256="a" * 64)
+
+
+def test_extraction_avec_vtt_sha256_refusee_rien_ecrit(liens: Path) -> None:
+    """`schema/extraction-page-lien.schema.json` n'admet pas `vtt_sha256` (une page citée n'est ni
+    audio ni vidéo) : une extraction qui en porte un ne doit jamais produire de fiche, même si un
+    extracteur injecté en renvoie un par erreur."""
+    deps_vtt = Dependances(HorlogeFactice(), extraire_pdf, _extracteur_vtt_factice)
+    sha = _existe(liens, "a", HTML, ".html", "text/html; charset=utf-8")
+    with pytest.raises(ValueError, match="vtt_sha256"):
+        extraire_tout(liens, deps_vtt)
+    assert not (liens / chemin_fiche(sha)).exists()
+    assert not (liens / "textes").exists()
 
 
 def test_resultat_avec_empreinte_sans_copie_refuse_le_passage(liens: Path, deps: Dependances) -> None:

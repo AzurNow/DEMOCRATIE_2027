@@ -142,6 +142,26 @@ def test_contact_sans_statut_au_gel_declare_n_a_pas_de_valeur_none() -> None:
     assert contact == Contact("demo-a", None)
 
 
+def test_entree_reelle_de_outils_contacts_ts_avec_statut_au_gel_lue_sans_erreur() -> None:
+    """`outils/contacts.ts` émet toujours `statut_au_gel` (forme exacte de la fonction `candidat`
+    dans `tests/contacts.test.ts`) : retiré de `Contact` (constat 41), ce champ connu doit rester
+    lisible sans erreur, sans être stocké."""
+    preuve = {"url": "https://demo.invalid/contact", "date": "2026-09-01", "sha256": "a" * 64, "archive_url": "https://archive.invalid/contact"}
+    entree = json.dumps(
+        {
+            "candidats": [
+                {
+                    "candidat_id": "demo-a",
+                    "statut_au_gel": "actif",
+                    "contact_notification": {"adresse": "contact@demo-a.invalid", "preuve": preuve},
+                }
+            ]
+        }
+    )
+    contact = lire_contacts(entree)["demo-a"]
+    assert contact == Contact("demo-a", "contact@demo-a.invalid")
+
+
 @pytest.mark.parametrize("code_smtp", [451, 550])
 def test_un_echec_est_journalise_et_relance_a_l_execution_suivante(bac: Bac, code_smtp: int) -> None:
     bac.dues(A1)
