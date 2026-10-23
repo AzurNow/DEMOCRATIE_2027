@@ -6,7 +6,7 @@
  * deux serveurs servent le même en-tête `content-security-policy`, tiré du même module.
  */
 
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -17,7 +17,7 @@ import { creerServeur as creerServeurValidation } from "../validation/serveur/pr
 import { POLITIQUE_SECURITE, servirStatique } from "../validation/serveur/http.ts";
 import type { Item } from "../validation/domaine/types.ts";
 import { creerBac, lotDe, mesurePour, type Bac } from "./aides/bac.ts";
-import { decision, itemP } from "./aides/fabriques.ts";
+import { decision, GRILLE_TOUT_VRAI, itemO, itemP, source } from "./aides/fabriques.ts";
 import { monter, type Monde } from "./notation-humaine/fixture.ts";
 import { VERSION_VUE_ANNOTATEUR } from "../pipeline/notation/vue-annotateur.ts";
 
@@ -40,9 +40,11 @@ async function ecouter(serveur: Server): Promise<string> {
   return `http://${ADRESSE}:${(serveur.address() as AddressInfo).port}`;
 }
 
-function bacAvecLot(lot_id: string): { bac: Bac; item: Item } {
+function bacAvecLot(
+  lot_id: string,
+  item: Item = itemP({ id: "01JBANCESSA100000001TEM0A1", candidat_id: "demo-alpha" }),
+): { bac: Bac; item: Item } {
   const b = creerBac();
-  const item = itemP({ id: "01JBANCESSA100000001TEM0A1", candidat_id: "demo-alpha" });
   b.ecrireItem(item);
   b.ecrireMesure(mesurePour(item));
   b.ecrireLot(lotDe(lot_id, [item]));
@@ -155,6 +157,340 @@ describe("une seule politique de sécurité pour les deux serveurs (constat 20, 
     expect(reponse.status).toBe(204);
     expect(reponse.headers.get("content-type")).toBeNull();
     expect(await reponse.text()).toBe("");
+  });
+});
+
+describe("corps des POST contrôlé avant écriture (revue du 2026-10-12, constat 12, Lot 8d)", () => {
+  async function poster(base: string, chemin: string, corps: unknown): Promise<Response> {
+    return fetch(`${base}${chemin}`, { method: "POST", body: JSON.stringify(corps) });
+  }
+
+  it("(a) un corps vide répond 400 avec la liste des champs en cause, pas 500", async () => {
+    bac = creerBac();
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", null);
+    expect(reponse.status).toBe(400);
+    const corps = (await reponse.json()) as { ok: boolean; erreurs: string[] };
+    expect(corps.ok).toBe(false);
+    expect(corps.erreurs.length).toBeGreaterThan(0);
+    expect(corps.erreurs[0]).toContain("objet JSON");
+  });
+
+  it("(b) lot_id absent répond 400, jamais « Lot inconnu »", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: 1,
+      duree_active_ms: 1,
+    });
+    expect(reponse.status).toBe(400);
+    const corps = (await reponse.json()) as { erreurs: string[] };
+    expect(corps.erreurs.some((e) => e.includes("lot_id"))).toBe(true);
+    expect(JSON.stringify(corps)).not.toContain("Lot inconnu");
+  });
+
+  it("(c) lot_id avec remontée de répertoire (../…) répond 400, rien n'est lu hors de validation/lots", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const cheminSecret = join(bac.racine, "validation", "secret.json");
+    writeFileSync(
+      cheminSecret,
+      JSON.stringify({
+        lot_id: "secret-fuite",
+        nature: "reel",
+        graine_maitresse: "g",
+        algorithme_ordre: "ordre-annotateur-v1",
+        date_creation: "2026-01-01T00:00:00+01:00",
+        annotateurs: ["a1", "a2"],
+        items: [],
+      }),
+      "utf8",
+    );
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "../secret",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: 1,
+      duree_active_ms: 1,
+    });
+    expect(reponse.status).toBe(400);
+    const texte = await reponse.text();
+    expect(texte).not.toContain("secret-fuite");
+    expect(existsSync(cheminSecret)).toBe(true);
+  });
+
+  it("(c bis) lot_id absolu ou à séparateur Windows répond 400 lui aussi", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    for (const lot_id of ["/etc/passwd", "a\\b"]) {
+      const reponse = await poster(base, "/api/decisions", {
+        lot_id,
+        item_id: posee.item.id,
+        decision: "accepter",
+        reponses_grille: GRILLE_TOUT_VRAI,
+        corrections: [],
+        duree_affichage_ms: 1,
+        duree_active_ms: 1,
+      });
+      expect(reponse.status, `lot_id ${lot_id}`).toBe(400);
+    }
+  });
+
+  it("(d) un champ de mauvais type (reponses_grille: null) répond 400, pas une TypeError en 500", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-001",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: null,
+      corrections: [],
+      duree_affichage_ms: 1,
+      duree_active_ms: 1,
+    });
+    expect(reponse.status).toBe(400);
+    const corps = (await reponse.json()) as { erreurs: string[] };
+    expect(corps.erreurs.some((e) => e.includes("reponses_grille"))).toBe(true);
+  });
+
+  it("(d bis) l'annulation refuse elle aussi un lot_id invalide, 400 et non 404", async () => {
+    bac = creerBac();
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/annulations", { lot_id: "../x" });
+    expect(reponse.status).toBe(400);
+  });
+
+  it("(e) un brouillon à durée non numérique répond 400, rien n'est écrit", async () => {
+    bac = creerBac();
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/brouillon", {
+      lot_id: "lot-001",
+      item_id: "x",
+      duree_affichage_ms: "pas un nombre",
+      duree_active_ms: 1,
+    });
+    expect(reponse.status).toBe(400);
+    const chemin = join(bac.racine, "validation/brouillons", "a1.json");
+    expect(existsSync(chemin)).toBe(false);
+  });
+
+  it("(e bis) un brouillon à durée négative répond 400, rien n'est écrit", async () => {
+    bac = creerBac();
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/brouillon", {
+      lot_id: "lot-001",
+      item_id: "x",
+      duree_affichage_ms: -1,
+      duree_active_ms: 1,
+    });
+    expect(reponse.status).toBe(400);
+    const chemin = join(bac.racine, "validation/brouillons", "a1.json");
+    expect(existsSync(chemin)).toBe(false);
+  });
+
+  it("(f) un brouillon déjà mal formé sur disque est ignoré à la lecture, sans être supprimé", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const chemin = join(bac.racine, "validation/brouillons", "a1.json");
+    mkdirSync(join(bac.racine, "validation/brouillons"), { recursive: true });
+    const brouillonMalForme = JSON.stringify({
+      lot_id: "lot-001",
+      item_id: posee.item.id,
+      duree_affichage_ms: "pas un nombre",
+      duree_active_ms: 1,
+    });
+    writeFileSync(chemin, `${brouillonMalForme}\n`, "utf8");
+
+    const espion = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+      const lecture = await fetch(`${base}/api/brouillon`);
+      expect(lecture.status).toBe(200);
+      expect(await lecture.json()).toBeNull();
+
+      const vue = await fetch(`${base}/api/lots/lot-001/items/${posee.item.id}`);
+      expect(vue.status).toBe(200);
+      const corpsVue = (await vue.json()) as { brouillon: unknown };
+      expect(corpsVue.brouillon).toBeNull();
+
+      const ecrit = espion.mock.calls.map((appel) => String(appel[0])).join("");
+      expect(ecrit).toContain(chemin);
+    } finally {
+      espion.mockRestore();
+    }
+    // Le fichier n'est jamais supprimé automatiquement : il reste la preuve de ce qui a été écrit.
+    expect(existsSync(chemin)).toBe(true);
+    expect(readFileSync(chemin, "utf8")).toBe(`${brouillonMalForme}\n`);
+  });
+
+  it("(g) le chemin nominal des décisions, annulations et brouillons reste inchangé", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+
+    const brouillon = await poster(base, "/api/brouillon", {
+      lot_id: "lot-001",
+      item_id: posee.item.id,
+      duree_affichage_ms: 10,
+      duree_active_ms: 9,
+    });
+    expect(brouillon.status).toBe(204);
+
+    const decisionReponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-001",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(decisionReponse.status).toBe(201);
+
+    const annulationReponse = await poster(base, "/api/annulations", { lot_id: "lot-001" });
+    expect(annulationReponse.status).toBe(201);
+  });
+
+  /**
+   * Le chemin nominal du vrai client n'était pas prouvé : `api.decider(charge: unknown)`
+   * (`validation/client/api.ts`) n'était pas typé, et seule `charge` construite littéralement
+   * dans les tests ci-dessus passait. Ces corps reproduisent exactement ceux que construisent
+   * `app.ts:soumettre()`, `app.ts:enregistrerBrouillon()` et `api.ts:annuler()`, pour prouver
+   * que le lecteur les accepte réellement (relecture Lot 8d).
+   */
+  it("(h) le corps exact de soumettre() pour un item non-O, grille avec des null", async () => {
+    const itemSansQuantification = itemP({
+      assertion: {
+        position: "pour",
+        paraphrase: "Ramener la TVA sur les produits énergétiques de 20 % à 5,5 %.",
+        citation_verbatim: "Nous ramènerons la TVA sur l'énergie à 5,5 %.",
+        source: source(),
+      },
+    });
+    const posee = bacAvecLot("lot-h", itemSansQuantification);
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-h",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: {
+        citation_fidele: true,
+        paraphrase_exacte: true,
+        position_univoque: true,
+        theme_correct: true,
+        quantification_correcte: null,
+      },
+      questions_specifiques: {},
+      corrections: [],
+      commentaire: null,
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(reponse.status).toBe(201);
+  });
+
+  it("(i) le corps exact pour un item O (reponses_par_etat), grilles avec des null", async () => {
+    const posee = bacAvecLot("lot-i", itemO());
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-i",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_par_etat: {
+        anterieur: {
+          citation_fidele: true,
+          paraphrase_exacte: true,
+          position_univoque: true,
+          theme_correct: null,
+          quantification_correcte: null,
+        },
+        posterieur: {
+          citation_fidele: true,
+          paraphrase_exacte: true,
+          position_univoque: true,
+          theme_correct: true,
+          quantification_correcte: null,
+        },
+      },
+      questions_specifiques: { changement_explicite: true, transcription_ecoutee: true },
+      corrections: [],
+      commentaire: null,
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(reponse.status).toBe(201);
+  });
+
+  it('(j) le corps exact d\'une correction au format du client (decision: "corriger")', async () => {
+    const posee = bacAvecLot("lot-j");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-j",
+      item_id: posee.item.id,
+      decision: "corriger",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      questions_specifiques: {},
+      corrections: [
+        {
+          cible: "item",
+          chemin: "/assertion/paraphrase",
+          ancienne_valeur: "Ramener la TVA sur les produits énergétiques de 20 % à 5,5 %.",
+          nouvelle_valeur: "Ramener la TVA sur l'énergie de 20 % à 5,5 %.",
+        },
+      ],
+      commentaire: null,
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(reponse.status).toBe(201);
+  });
+
+  it("(k) le brouillon exact tel qu'écrit par enregistrerBrouillon()", async () => {
+    bac = creerBac();
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/brouillon", {
+      lot_id: "lot-001",
+      item_id: "x",
+      reponses: { citation_fidele: true },
+      reponses_par_etat: { anterieur: {}, posterieur: {} },
+      questions_specifiques: {},
+      commentaire: "",
+      duree_affichage_ms: 10,
+      duree_active_ms: 9,
+    });
+    expect(reponse.status).toBe(204);
+  });
+
+  it("(l) l'annulation exacte envoyée par api.annuler() ({ lot_id })", async () => {
+    const posee = bacAvecLot("lot-l");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const decisionReponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-l",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+    expect(decisionReponse.status).toBe(201);
+
+    const reponse = await poster(base, "/api/annulations", { lot_id: "lot-l" });
+    expect(reponse.status).toBe(201);
   });
 });
 

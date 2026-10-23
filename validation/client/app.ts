@@ -7,7 +7,7 @@
  * autre, cela se verrait à l'écran avant même que le test ne tombe.
  */
 
-import { api, urlSource } from "./api.ts";
+import { api, urlSource, type RequeteDecision } from "./api.ts";
 import { champsEditables, corrections, type ChampEditable } from "./edition.ts";
 import { CLES_GRILLE } from "../domaine/grille.ts";
 import { ouvrirRelectureFormulations } from "./formulations.ts";
@@ -574,7 +574,7 @@ async function soumettre(): Promise<void> {
   const decision = etat.decision;
   if (decision === null) return;
 
-  const charge = {
+  const charge: RequeteDecision = {
     lot_id: vue.lot_id,
     item_id: vue.item.id,
     decision,
@@ -596,7 +596,16 @@ async function soumettre(): Promise<void> {
   await ouvrirLot(vue.lot_id);
 }
 
-function grillesSoumises(vue: VueItem): Record<string, unknown> {
+type ReponsesSoumises =
+  | { reponses_grille: Record<string, boolean | null> }
+  | {
+      reponses_par_etat: {
+        anterieur: Record<string, boolean | null>;
+        posterieur: Record<string, boolean | null>;
+      };
+    };
+
+function grillesSoumises(vue: VueItem): ReponsesSoumises {
   if (vue.item.type !== "O") return { reponses_grille: grilleComplete(null) };
   return {
     reponses_par_etat: {
