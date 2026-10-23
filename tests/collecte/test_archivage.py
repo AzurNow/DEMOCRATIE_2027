@@ -9,7 +9,14 @@ from pathlib import Path, PurePosixPath
 import pytest
 
 from pipeline.collecte import archivage
-from pipeline.collecte.archivage import chemin_archive, ecrire_atomiquement, empreinte, extension_pour
+from pipeline.collecte.archivage import (
+    blocs_fichier,
+    chemin_archive,
+    ecrire_atomiquement,
+    empreinte,
+    empreinte_fichier,
+    extension_pour,
+)
 
 BOM_CRLF = b"\xef\xbb\xbfLigne une\r\nLigne deux\r\n"
 
@@ -85,3 +92,33 @@ def test_ecriture_atomique_refuse_d_ecraser(tmp_path: Path) -> None:
 
     assert cible.read_bytes() == b"original"
     assert os.listdir(tmp_path) == ["fichier.bin"]
+
+
+# ------------------------------------------------------------------- constat 36 (2026-10-12)
+
+
+def test_blocs_fichier_rend_les_octets_exacts_sur_plusieurs_blocs(tmp_path: Path) -> None:
+    contenu = b"abcdefghij" * 5  # 50 octets, 4 blocs de 13 avec le découpage ci-dessous
+    cible = tmp_path / "fichier.bin"
+    cible.write_bytes(contenu)
+
+    blocs = list(blocs_fichier(cible, taille_bloc=13))
+
+    assert len(blocs) > 1
+    assert b"".join(blocs) == contenu
+
+
+def test_empreinte_fichier_egale_sha256_du_contenu_entier_sur_plusieurs_blocs(tmp_path: Path) -> None:
+    contenu = os.urandom(10_000)
+    cible = tmp_path / "fichier.bin"
+    cible.write_bytes(contenu)
+
+    assert empreinte_fichier(cible, taille_bloc=64) == empreinte(contenu)
+
+
+def test_poids_et_transcription_partagent_blocs_fichier() -> None:
+    """Constat 36 (2026-10-12) : une seule fonction de lecture par blocs, pas une par appelant."""
+    from pipeline.collecte.transcription import poids, transcription
+
+    assert poids.blocs_fichier is archivage.blocs_fichier
+    assert transcription.empreinte_fichier is archivage.empreinte_fichier

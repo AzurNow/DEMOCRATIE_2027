@@ -315,6 +315,24 @@ def test_wayback_recoit_l_url_listee_et_non_l_url_finale(racine: Path, horloge: 
     assert b.archiveur.urls == [URL_PDF]
 
 
+def test_constat_7_url_non_ascii_convertie_avant_telechargement_et_archivage(
+    racine: Path, horloge: HorlogeFactice
+) -> None:
+    """Constat 7 (2026-10-12) : une IRI citée part convertie (RFC 3987 §3.1) vers le téléchargement
+    et Save Page Now ; `url_soumise` et le rapport gardent la chaîne exacte listée par l'auteur."""
+    iri = "https://example.org/élections.pdf"
+    envoyee = "https://example.org/%C3%A9lections.pdf"
+    sha256 = hashlib.sha256(PDF).hexdigest()
+    b = banc(racine, horloge, {envoyee: reponse(200, PDF, content_type="application/pdf")})
+
+    resultats = collecter([source(url=iri)], b.dependances())
+
+    chemin_local = f"archives/{sha256[:2]}/{sha256}.pdf"
+    assert resultats == [Collectee(url=iri, sha256=sha256, chemin_local=chemin_local, archive_url=INSTANTANE)]
+    assert manifeste(racine, sha256)["url_soumise"] == iri
+    assert b.archiveur.urls == [envoyee]
+
+
 # --------------------------------------------------------------------------- échecs
 
 
@@ -352,6 +370,31 @@ def test_un_echec_n_arrete_pas_le_lot(racine: Path, horloge: HorlogeFactice) -> 
     resultats = collecter([source("https://example.org/absent"), source()], b.dependances())
 
     assert [type(resultat) for resultat in resultats] == [Refusee, Collectee]
+    assert code_de_sortie(resultats) != 0
+
+
+def test_iri_inconvertible_est_refusee_sans_toucher_au_reseau_et_n_arrete_pas_le_lot(
+    racine: Path, horloge: HorlogeFactice
+) -> None:
+    """Relecture du constat 7 (12/10) : un hôte IDNA trop long ne se convertit pas en URI (D22). La
+    source échoue proprement, sans jamais atteindre le transport ni l'archiveur, et la source
+    suivante est collectée normalement."""
+    inconvertible = "https://" + "ü" * 64 + ".example/"
+    b = banc(racine, horloge, {URL_PDF: reponse(200, PDF, content_type="application/pdf")})
+
+    resultats = collecter([source(url=inconvertible), source()], b.dependances())
+
+    assert isinstance(resultats[0], Refusee)
+    assert resultats[0].url == inconvertible
+    assert "inconvertible" in resultats[0].motif
+    assert inconvertible not in b.transport.urls()
+    assert b.archiveur.urls == [URL_PDF]
+    assert resultats[1] == Collectee(
+        url=URL_PDF,
+        sha256=SHA_PDF,
+        chemin_local=f"archives/{SHA_PDF[:2]}/{SHA_PDF}.pdf",
+        archive_url=INSTANTANE,
+    )
     assert code_de_sortie(resultats) != 0
 
 

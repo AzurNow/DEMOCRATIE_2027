@@ -55,6 +55,43 @@ def test_hote_injoignable_leve_une_erreur_reseau() -> None:
         TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/rien", {})
 
 
+# --------------------------------------------------------------------- constat 7 (2026-10-12)
+
+
+def test_url_non_ascii_leve_une_erreur_reseau_nommee_pas_une_unicodeencodeerror() -> None:
+    """`http.client` encode la ligne de requête en ASCII avant toute connexion : une URL non ASCII
+    y échoue sans jamais parler au réseau. Ne doit jamais remonter brute (constat 7)."""
+    with pytest.raises(ErreurReseau, match="URL non encodable"):
+        TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/élection", {})
+
+
+def test_caractere_de_controle_reste_une_erreur_reseau() -> None:
+    """Un caractère de contrôle est déjà une `http.client.HTTPException` (`InvalidURL`), rattrapée
+    avant ce correctif ; reste vrai après, par l'autre branche."""
+    with pytest.raises(ErreurReseau):
+        TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/contr\x01le", {})
+
+
+# ---------------------------------------------------------------- relecture du 12/10 (constat 36)
+
+
+def test_url_error_a_raison_chaine_garde_le_message_de_la_chaine() -> None:
+    """Un schéma que l'ouvreur ne gère pas (ici `gopher`) échoue avant toute connexion, avec une
+    `URLError` dont la raison est une chaîne, pas une exception : le message doit rester celui de
+    la chaîne (« str: … »), jamais celui de l'`URLError` qui l'enveloppe."""
+    with pytest.raises(ErreurReseau, match=r"^erreur réseau : str: unknown url type: gopher$"):
+        TransportUrllib(delai_s=1).envoyer("gopher://127.0.0.1:1/x", {})
+
+
+def test_url_error_a_raison_exception_garde_le_message_de_la_cause() -> None:
+    """Raison déjà une exception (ici une connexion refusée) : le message cite la cause, pas
+    l'`URLError`, identique avant et après le partage de l'extraction avec `classe_d_erreur_reseau`."""
+    with pytest.raises(
+        ErreurReseau, match=r"^erreur réseau : ConnectionRefusedError: .*Connection refused$"
+    ):
+        TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/rien", {})
+
+
 # --------------------------------------------------------------------- relire_location (D55 (2))
 
 

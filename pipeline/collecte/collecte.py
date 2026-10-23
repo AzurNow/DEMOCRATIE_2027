@@ -31,6 +31,7 @@ from pipeline.collecte.manifeste import (
 from pipeline.collecte.politesse import EchecCollecte, Telechargement
 from pipeline.collecte.sources import Source
 from pipeline.collecte.wayback import ArchivageReussi, Archiveur, Resultat
+from pipeline.liens.iri import IriInconvertible, iri_vers_uri
 
 
 class Telechargeur(Protocol):
@@ -137,15 +138,16 @@ def _resultat_ecrit(source: Source, sha256: str, chemin_local: str, archivage: R
 
 
 def _archiver_nouveau_contenu(
-    source: Source, telechargement: Telechargement, sha256: str, date_collecte: str, deps: Dependances
+    source: Source, telechargement: Telechargement, sha256: str, date_collecte: str, uri: str, deps: Dependances
 ) -> ResultatSource:
     """Archive, Wayback, manifeste, puis fiche : la fiche vient en dernier, pour qu'une fiche
-    n'existe jamais sans le manifeste qu'elle pointe."""
+    n'existe jamais sans le manifeste qu'elle pointe. `uri` : l'URI envoyée à Save Page Now (D22) ;
+    le manifeste garde `url_soumise` = `source.url`, jamais l'URI."""
     chemin_local = chemin_archive(sha256, extension_pour(telechargement.type_contenu))
     # Archive déjà présente sans manifeste (lot interrompu) : mêmes octets par construction.
     if not (deps.racine / chemin_local).exists():
         ecrire_atomiquement(deps.racine / chemin_local, telechargement.corps)
-    archivage = deps.archiveur.sauvegarder(source.url)
+    archivage = deps.archiveur.sauvegarder(uri)
     manifeste = construire_manifeste(telechargement, sha256, chemin_local, date_collecte, source.url, archivage)
     _ecrire(deps, chemin_manifeste(sha256), manifeste)
     _ecrire_fiche(source, telechargement, sha256, date_collecte, deps)
@@ -161,10 +163,10 @@ def _ecrire_fiche_si_absente(
     return True
 
 
-def _reprendre_archivage(source: Source, sha256: str, fiche_ajoutee: bool, deps: Dependances) -> ResultatSource:
+def _reprendre_archivage(source: Source, sha256: str, fiche_ajoutee: bool, uri: str, deps: Dependances) -> ResultatSource:
     """N'est appelée que si les octets servis aujourd'hui ont le SHA-256 d'un manifeste en échec :
     un instantané pris maintenant correspond alors au document archivé."""
-    archivage = deps.archiveur.sauvegarder(source.url)
+    archivage = deps.archiveur.sauvegarder(uri)
     if not isinstance(archivage, ArchivageReussi):
         return RepriseManquee(source.url, sha256, archivage.motif, fiche_ajoutee)
     date_reprise = instant_iso(deps.horloge.maintenant())
@@ -173,21 +175,23 @@ def _reprendre_archivage(source: Source, sha256: str, fiche_ajoutee: bool, deps:
 
 
 def _consigner_contenu_connu(
-    source: Source, telechargement: Telechargement, sha256: str, date_collecte: str, deps: Dependances
+    source: Source, telechargement: Telechargement, sha256: str, date_collecte: str, uri: str, deps: Dependances
 ) -> ResultatSource:
     fiche_ajoutee = _ecrire_fiche_si_absente(source, telechargement, sha256, date_collecte, deps)
     if archive_url_de(deps.racine, sha256) is None:
-        return _reprendre_archivage(source, sha256, fiche_ajoutee, deps)
+        return _reprendre_archivage(source, sha256, fiche_ajoutee, uri, deps)
     if fiche_ajoutee:
         return FicheAjoutee(source.url, sha256)
     return DejaCollectee(source.url, sha256)
 
 
-def _consigner(source: Source, telechargement: Telechargement, date_collecte: str, deps: Dependances) -> ResultatSource:
+def _consigner(
+    source: Source, telechargement: Telechargement, date_collecte: str, uri: str, deps: Dependances
+) -> ResultatSource:
     sha256 = empreinte(telechargement.corps)
     if (deps.racine / chemin_manifeste(sha256)).exists():
-        return _consigner_contenu_connu(source, telechargement, sha256, date_collecte, deps)
-    return _archiver_nouveau_contenu(source, telechargement, sha256, date_collecte, deps)
+        return _consigner_contenu_connu(source, telechargement, sha256, date_collecte, uri, deps)
+    return _archiver_nouveau_contenu(source, telechargement, sha256, date_collecte, uri, deps)
 
 
 def _telechargeur(source: Source, deps: Dependances) -> Telechargeur:
@@ -199,12 +203,18 @@ def _telechargeur(source: Source, deps: Dependances) -> Telechargeur:
 
 
 def collecter_source(source: Source, deps: Dependances) -> ResultatSource:
+    """D22 : l'URI convertie pour l'envoi, comme `pipeline.preuve.traitement`. Une IRI inconvertible
+    refuse la source avant tout appel réseau, jamais une exception qui arrête le lot."""
     try:
-        telechargement = _telechargeur(source, deps).telecharger(source.url)
+        uri = iri_vers_uri(source.url)
+    except IriInconvertible as erreur:
+        return Refusee(source.url, f"IRI inconvertible en URI : {erreur}")
+    try:
+        telechargement = _telechargeur(source, deps).telecharger(uri)
     except EchecCollecte as echec:
         return Refusee(source.url, echec.motif)
     date_collecte = instant_iso(deps.horloge.maintenant())
-    return _consigner(source, telechargement, date_collecte, deps)
+    return _consigner(source, telechargement, date_collecte, uri, deps)
 
 
 def collecter(sources: Sequence[Source], deps: Dependances) -> list[ResultatSource]:

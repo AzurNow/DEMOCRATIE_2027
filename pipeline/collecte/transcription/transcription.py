@@ -22,7 +22,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pipeline.collecte.archivage import ecrire_atomiquement
+from pipeline.collecte.archivage import ecrire_atomiquement, empreinte_fichier
 from pipeline.collecte.horloge import Horloge, instant_iso
 from pipeline.collecte.manifeste import serialiser
 from pipeline.collecte.textes.extraction import Contenu, contenus_collectes
@@ -34,8 +34,6 @@ from pipeline.collecte.transcription.fiche import (
 )
 from pipeline.collecte.transcription.modele import Transcripteur
 from pipeline.collecte.transcription.webvtt import SegmentInvalide, TranscriptionVide, VttEcrit, ecrire_vtt
-
-TAILLE_BLOC = 1 << 20
 
 
 @dataclass
@@ -83,21 +81,13 @@ class TranscriptionRefusee(Exception):
         self.motif = motif
 
 
-def _empreinte_du_fichier(chemin: Path) -> str:
-    empreinte = hashlib.sha256()
-    with chemin.open("rb") as flux:
-        for bloc in iter(lambda: flux.read(TAILLE_BLOC), b""):
-            empreinte.update(bloc)
-    return empreinte.hexdigest()
-
-
 def _copie_verifiee(contenu: Contenu, racine: Path) -> Path:
     """Chemin de la copie locale, après vérification de son empreinte, lue par blocs (un média pèse
     vite plusieurs centaines de mégaoctets)."""
     chemin = racine / contenu.chemin_local
     if not chemin.is_file():
         raise TranscriptionRefusee(f"copie locale absente : {contenu.chemin_local}")
-    if _empreinte_du_fichier(chemin) != contenu.sha256:
+    if empreinte_fichier(chemin) != contenu.sha256:
         raise TranscriptionRefusee(f"copie locale altérée : {contenu.chemin_local} n'a plus l'empreinte {contenu.sha256}")
     return chemin
 

@@ -111,8 +111,12 @@ def tester(url: str, deps: Dependances) -> list[Tentative]:
 
 
 def _copie_existe(ctx: _Contexte) -> Copie:
+    """D22 : Save Page Now reçoit l'URI convertie par la règle de la table, comme la sonde qui a
+    obtenu le verdict `existe` pour `ctx.url` (même règle, même chaîne) : jamais `IriInconvertible`
+    ici, une IRI qui ne se convertit pas est `url_malformee`, donc jamais `existe`."""
     sha256, page = conserver_page(ctx.repertoire, ctx.tentatives[-1].constat)
-    archivage = ctx.deps.archiveur.sauvegarder(ctx.url)
+    uri = CONVERSIONS_IRI[ctx.deps.table.conversion_iri](ctx.url)
+    archivage = ctx.deps.archiveur.sauvegarder(uri)
     if isinstance(archivage, ArchivageReussi):
         wayback: dict[str, object] = {"operation": SERVICE, "issue": "reussi", "archive_url": archivage.archive_url}
         return Copie(wayback=wayback, page=page, sha256_contenu=sha256, archive_url=archivage.archive_url)
