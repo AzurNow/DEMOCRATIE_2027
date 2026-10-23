@@ -42,7 +42,7 @@ from pipeline.collecte.archivage import ecrire_atomiquement, empreinte, type_med
 from pipeline.collecte.horloge import Horloge, HorlogeSysteme, instant_iso
 from pipeline.collecte.manifeste import serialiser
 from pipeline.collecte.textes.extraction import GENRE_PDF, GENRES
-from pipeline.collecte.textes.fiche import Extraction
+from pipeline.collecte.textes.fiche import Extraction, bloc_specifique as _bloc_specifique
 from pipeline.collecte.textes.refus import ExtractionRefusee
 
 REPERTOIRE_EXTRACTIONS = "extractions"
@@ -170,14 +170,6 @@ def _extraire(copie: Copie, octets: bytes, deps: Dependances) -> Extraction:
     return deps.extraire_html(octets, copie.type_contenu)
 
 
-def _bloc_specifique(extraction: Extraction) -> dict[str, object]:
-    if extraction.pages is not None:
-        return {"pages": [{"numero": p.numero, "debut": p.debut, "fin": p.fin} for p in extraction.pages]}
-    if extraction.encodage is not None:
-        return {"encodage": {"nom": extraction.encodage.nom, "origine": extraction.encodage.origine}}
-    raise ValueError(f"extraction {extraction.outil} sans pages ni encodage")
-
-
 def fiche_extraite(sha256_contenu: str, extraction: Extraction, date: str) -> dict[str, object]:
     return {
         "sha256_contenu": sha256_contenu,
@@ -204,13 +196,13 @@ def _octets_verifies(copie: Copie, repertoire_liens: Path) -> bytes | EnErreur:
     return octets
 
 
-def _ecrire_texte(extraction: Extraction, repertoire_liens: Path) -> EnErreur | None:
+def _ecrire_texte(sha256_contenu: str, extraction: Extraction, repertoire_liens: Path) -> EnErreur | None:
     chemin = repertoire_liens / chemin_texte(extraction.texte.sha256)
     if not chemin.exists():
         ecrire_atomiquement(chemin, extraction.texte.octets)
         return None
     if chemin.read_bytes() != extraction.texte.octets:
-        return EnErreur(extraction.texte.sha256, f"texte existant altéré : {chemin_texte(extraction.texte.sha256)}")
+        return EnErreur(sha256_contenu, f"texte existant altéré : {chemin_texte(extraction.texte.sha256)}")
     return None
 
 
@@ -228,7 +220,7 @@ def extraire_copie(copie: Copie, repertoire_liens: Path, deps: Dependances) -> R
     except ExtractionRefusee as refus:
         ecrire_atomiquement(fiche, serialiser(fiche_refusee(copie.sha256, refus.motif, date)))
         return Refuse(copie.sha256, refus.motif)
-    erreur = _ecrire_texte(extraction, repertoire_liens)
+    erreur = _ecrire_texte(copie.sha256, extraction, repertoire_liens)
     if erreur is not None:
         return erreur
     ecrire_atomiquement(fiche, serialiser(fiche_extraite(copie.sha256, extraction, date)))

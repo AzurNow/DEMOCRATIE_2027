@@ -50,7 +50,6 @@ class Transport(Protocol):
 @dataclass(frozen=True)
 class Contact:
     candidat_id: str
-    statut_au_gel: str
     adresse: str | None
 
 
@@ -65,7 +64,7 @@ def _contact(brut: object) -> Contact:
     adresse = None if declare is None else declare.get("adresse")
     if adresse is not None and not isinstance(adresse, str):
         raise ContactsInvalides(f"{brut['candidat_id']} : adresse mal formée")
-    return Contact(brut["candidat_id"], str(brut.get("statut_au_gel")), adresse)
+    return Contact(brut["candidat_id"], adresse)
 
 
 def lire_contacts(texte: str) -> dict[str, Contact]:

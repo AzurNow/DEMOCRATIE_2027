@@ -180,6 +180,22 @@ def test_copie_absente_erreur(liens: Path, deps: Dependances) -> None:
     assert isinstance(resultat, EnErreur)
 
 
+def test_texte_existant_altere_empreinte_de_la_copie_et_motif_nomme_le_texte(liens: Path, deps: Dependances) -> None:
+    """`EnErreur.sha256_contenu` est toujours l'empreinte de la copie (constat 35 (b) du 2026-10-12),
+    jamais celle du texte, que le motif nomme déjà via `chemin_texte(...)`."""
+    sha = _existe(liens, "a", HTML, ".html", "text/html; charset=utf-8")
+    texte_attendu = "Programme\nLe candidat propose la mesure."
+    texte_sha = _sha(texte_attendu.encode())
+    chemin = liens / chemin_texte(texte_sha)
+    chemin.parent.mkdir(parents=True, exist_ok=True)
+    chemin.write_bytes(b"texte altere, different de l'extraction")
+    [resultat] = extraire_tout(liens, deps)
+    assert isinstance(resultat, EnErreur)
+    assert resultat.sha256_contenu == sha
+    assert str(chemin_texte(texte_sha)) in resultat.motif
+    assert not (liens / chemin_fiche(sha)).exists()
+
+
 def test_relance_ne_reecrit_rien(liens: Path, deps: Dependances) -> None:
     sha = _existe(liens, "a", HTML, ".html", "text/html; charset=utf-8")
     extraire_tout(liens, deps)
@@ -193,6 +209,14 @@ def test_deux_liens_meme_copie_une_seule_fiche(liens: Path, deps: Dependances) -
     _existe(liens, "a", HTML, ".html", "text/html; charset=utf-8")
     _existe(liens, "a-bis", HTML, ".html", "text/html; charset=utf-8")
     assert len(extraire_tout(liens, deps)) == 1
+
+
+def test_bloc_specifique_partage_avec_fiche_py() -> None:
+    """Constat 35 (a) du 2026-10-12 : une seule définition de `_bloc_specifique`, pas une recopie
+    de `pipeline/collecte/textes/fiche.py`."""
+    from pipeline.collecte.textes import fiche
+
+    assert textes._bloc_specifique is fiche.bloc_specifique
 
 
 def test_resultat_avec_empreinte_sans_copie_refuse_le_passage(liens: Path, deps: Dependances) -> None:
