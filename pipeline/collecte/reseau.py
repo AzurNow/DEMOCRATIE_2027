@@ -106,6 +106,8 @@ class TransportUrllib:
             raise DelaiDepasse(f"délai dépassé ({self._delai_s:g} s)") from erreur
         except (OSError, http.client.HTTPException) as erreur:
             raise classe_d_erreur_reseau(erreur)(_motif_reseau(erreur, self._delai_s)) from erreur
+        except ValueError as erreur:
+            raise ErreurReseau(f"URL non encodable pour l'envoi : {erreur}") from erreur
 
     def _reponse_d_erreur(self, erreur: urllib.error.HTTPError) -> ReponseHttp:
         """4xx, 5xx et 3xx non suivis : ce sont des réponses, pas des pannes du réseau."""
@@ -137,9 +139,9 @@ def classe_d_erreur_reseau(erreur: BaseException) -> type[ErreurReseau]:
 
 
 def _motif_reseau(erreur: BaseException, delai_s: float) -> str:
-    """`URLError` enveloppe la cause dans `reason` ; les autres erreurs sont leur propre cause."""
-    raison = erreur.reason if isinstance(erreur, urllib.error.URLError) else None
-    if isinstance(raison, (TimeoutError, socket.timeout)):
+    """Même cause que `classe_d_erreur_reseau` (`_cause`), pour que la classe et le message
+    s'accordent toujours sur ce qui a échoué."""
+    detail = _cause(erreur)
+    if isinstance(detail, (TimeoutError, socket.timeout)):
         return f"délai dépassé ({delai_s:g} s)"
-    detail = raison if raison is not None else erreur
     return f"erreur réseau : {type(detail).__name__}: {detail}"

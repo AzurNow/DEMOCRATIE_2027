@@ -26,11 +26,12 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from pipeline.collecte.archivage import blocs_fichier
+
 ALIAS = "large-v3-turbo"
 DEPOT = "dropbox-dash/faster-whisper-large-v3-turbo"
 REVISION = "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf"
 REPERTOIRE_MODELES = "modeles"
-TAILLE_BLOC = 1 << 20
 
 
 @dataclass(frozen=True)
@@ -77,10 +78,9 @@ def _empreintes(chemin: Path, taille: int) -> tuple[str, str]:
     """SHA-256 et identifiant Git, lus en un seul passage par blocs (le modèle pèse 1,6 Go)."""
     sha256 = hashlib.sha256()
     git = hashlib.sha1(f"blob {taille}\0".encode(), usedforsecurity=False)
-    with chemin.open("rb") as flux:
-        for bloc in iter(lambda: flux.read(TAILLE_BLOC), b""):
-            sha256.update(bloc)
-            git.update(bloc)
+    for bloc in blocs_fichier(chemin):
+        sha256.update(bloc)
+        git.update(bloc)
     return sha256.hexdigest(), git.hexdigest()
 
 

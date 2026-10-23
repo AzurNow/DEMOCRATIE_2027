@@ -315,6 +315,24 @@ def test_wayback_recoit_l_url_listee_et_non_l_url_finale(racine: Path, horloge: 
     assert b.archiveur.urls == [URL_PDF]
 
 
+def test_constat_7_url_non_ascii_convertie_avant_telechargement_et_archivage(
+    racine: Path, horloge: HorlogeFactice
+) -> None:
+    """Constat 7 (2026-10-12) : une IRI citée part convertie (RFC 3987 §3.1) vers le téléchargement
+    et Save Page Now ; `url_soumise` et le rapport gardent la chaîne exacte listée par l'auteur."""
+    iri = "https://example.org/élections.pdf"
+    envoyee = "https://example.org/%C3%A9lections.pdf"
+    sha256 = hashlib.sha256(PDF).hexdigest()
+    b = banc(racine, horloge, {envoyee: reponse(200, PDF, content_type="application/pdf")})
+
+    resultats = collecter([source(url=iri)], b.dependances())
+
+    chemin_local = f"archives/{sha256[:2]}/{sha256}.pdf"
+    assert resultats == [Collectee(url=iri, sha256=sha256, chemin_local=chemin_local, archive_url=INSTANTANE)]
+    assert manifeste(racine, sha256)["url_soumise"] == iri
+    assert b.archiveur.urls == [envoyee]
+
+
 # --------------------------------------------------------------------------- échecs
 
 

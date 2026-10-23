@@ -505,7 +505,7 @@ def test_d21_cas_5_iri_envoyee_encodee_url_citee_et_nom_de_fichier_intacts(tmp_p
     assert resultat["url_finale"] == envoyee
     assert resultat["verdict_existence"] == "existe"
     assert b.transport.urls() == [ROBOTS, envoyee]
-    assert b.archiveur.urls == [iri]
+    assert b.archiveur.urls == [envoyee]
 
 
 def test_d21_cas_5_iri_inconvertible_non_testable(tmp_path: Path) -> None:

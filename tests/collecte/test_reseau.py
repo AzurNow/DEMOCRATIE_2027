@@ -55,6 +55,23 @@ def test_hote_injoignable_leve_une_erreur_reseau() -> None:
         TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/rien", {})
 
 
+# --------------------------------------------------------------------- constat 7 (2026-10-12)
+
+
+def test_url_non_ascii_leve_une_erreur_reseau_nommee_pas_une_unicodeencodeerror() -> None:
+    """`http.client` encode la ligne de requête en ASCII avant toute connexion : une URL non ASCII
+    y échoue sans jamais parler au réseau. Ne doit jamais remonter brute (constat 7)."""
+    with pytest.raises(ErreurReseau, match="URL non encodable"):
+        TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/élection", {})
+
+
+def test_caractere_de_controle_reste_une_erreur_reseau() -> None:
+    """Un caractère de contrôle est déjà une `http.client.HTTPException` (`InvalidURL`), rattrapée
+    avant ce correctif ; reste vrai après, par l'autre branche."""
+    with pytest.raises(ErreurReseau):
+        TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/contr\x01le", {})
+
+
 # --------------------------------------------------------------------- relire_location (D55 (2))
 
 
