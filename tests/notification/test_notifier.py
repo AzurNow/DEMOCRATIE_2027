@@ -8,7 +8,9 @@ adresse ; simulation qui n'écrit rien ; `--envoyer` refusé sans variables ou s
 
 from __future__ import annotations
 
+import json
 import smtplib
+from dataclasses import fields
 from email import message_from_bytes
 from pathlib import Path
 
@@ -16,6 +18,7 @@ import pytest
 
 from pipeline.notification.__main__ import principal
 from pipeline.notification.journal import envoi_id
+from pipeline.notification.notifier import Contact, lire_contacts
 from pipeline.notification.transport import EchecEnvoi, ParametresSmtp, TransportSmtp
 from tests.notification.doubles import ENV, Bac, Horloge, ServeurSmtpLocal, TransportFactice, contacts, due
 
@@ -128,6 +131,35 @@ def test_candidat_retire_notifie_s_il_a_encore_une_adresse(bac: Bac) -> None:
     transport = TransportFactice()
     lancer(bac, "--envoyer", transport=transport, entree=contacts(("demo-b", "presse@demo-b.invalid", "retire")))
     assert len(transport.envois) == 1
+
+
+def test_contact_sans_statut_au_gel_declare_n_a_pas_de_valeur_none() -> None:
+    """Constat 41 du 2026-10-12 : `statut_au_gel` n'était lu nulle part et valait la chaîne
+    littérale "None" quand il manquait de l'entrée standard."""
+    assert "statut_au_gel" not in {champ.name for champ in fields(Contact)}
+    entree = json.dumps({"candidats": [{"candidat_id": "demo-a", "contact_notification": None}]})
+    contact = lire_contacts(entree)["demo-a"]
+    assert contact == Contact("demo-a", None)
+
+
+def test_entree_reelle_de_outils_contacts_ts_avec_statut_au_gel_lue_sans_erreur() -> None:
+    """`outils/contacts.ts` émet toujours `statut_au_gel` (forme exacte de la fonction `candidat`
+    dans `tests/contacts.test.ts`) : retiré de `Contact` (constat 41), ce champ connu doit rester
+    lisible sans erreur, sans être stocké."""
+    preuve = {"url": "https://demo.invalid/contact", "date": "2026-09-01", "sha256": "a" * 64, "archive_url": "https://archive.invalid/contact"}
+    entree = json.dumps(
+        {
+            "candidats": [
+                {
+                    "candidat_id": "demo-a",
+                    "statut_au_gel": "actif",
+                    "contact_notification": {"adresse": "contact@demo-a.invalid", "preuve": preuve},
+                }
+            ]
+        }
+    )
+    contact = lire_contacts(entree)["demo-a"]
+    assert contact == Contact("demo-a", "contact@demo-a.invalid")
 
 
 @pytest.mark.parametrize("code_smtp", [451, 550])

@@ -61,7 +61,10 @@ def chemin_fiche_extraction(sha256_source: str, texte_sha256: str) -> PurePosixP
     return REPERTOIRE_EXTRACTIONS / sha256_source / f"{texte_sha256}.json"
 
 
-def _bloc_specifique(extraction: Extraction) -> dict[str, object]:
+def bloc_specifique(extraction: Extraction) -> dict[str, object]:
+    """Le bloc propre au genre de l'extraction : pages (PDF), encodage (HTML) ou empreinte du
+    `.vtt` d'origine (audio, vidéo). Partagée avec `pipeline/liens/textes.py`, qui n'extrait jamais
+    de `vtt_sha256`, cette troisième branche ne change rien à son résultat."""
     if extraction.pages is not None:
         return {"pages": [{"numero": p.numero, "debut": p.debut, "fin": p.fin} for p in extraction.pages]}
     if extraction.encodage is not None:
@@ -78,5 +81,5 @@ def construire_fiche_extraction(sha256_source: str, extraction: Extraction, date
         "longueur": extraction.texte.longueur,
         "date_extraction": date_extraction,
         "extracteur": {"outil": extraction.outil, "version": extraction.version, "options": extraction.options},
-        **_bloc_specifique(extraction),
+        **bloc_specifique(extraction),
     }
