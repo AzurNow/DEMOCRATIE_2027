@@ -118,9 +118,18 @@ class TransportUrllib:
         return ReponseHttp(erreur.code, _en_tetes(erreur.headers), corps)
 
 
-def _cause(erreur: BaseException) -> BaseException:
-    """`URLError` enveloppe la cause dans `reason` ; les autres erreurs sont leur propre cause."""
+def _raison(erreur: BaseException) -> object:
+    """`URLError` enveloppe la cause dans `reason`, qui peut être une exception ou une chaîne (par
+    exemple un schéma non géré) ; les autres erreurs sont leur propre cause. Seule extraction de la
+    cause, partagée par `_cause` (classement) et `_motif_reseau` (message)."""
     raison = erreur.reason if isinstance(erreur, urllib.error.URLError) else None
+    return raison if raison is not None else erreur
+
+
+def _cause(erreur: BaseException) -> BaseException:
+    """La cause utilisable pour classer l'erreur : une raison qui n'est pas une exception (une
+    chaîne) ne correspond à aucune classe reconnue, `erreur` convient alors tout aussi bien."""
+    raison = _raison(erreur)
     return raison if isinstance(raison, BaseException) else erreur
 
 
@@ -139,9 +148,10 @@ def classe_d_erreur_reseau(erreur: BaseException) -> type[ErreurReseau]:
 
 
 def _motif_reseau(erreur: BaseException, delai_s: float) -> str:
-    """Même cause que `classe_d_erreur_reseau` (`_cause`), pour que la classe et le message
-    s'accordent toujours sur ce qui a échoué."""
-    detail = _cause(erreur)
+    """Même cause que `classe_d_erreur_reseau` (`_raison`), pour que la classe et le message
+    s'accordent toujours sur ce qui a échoué. Garde la raison brute (chaîne ou exception), jamais
+    l'`URLError` qui l'enveloppe."""
+    detail = _raison(erreur)
     if isinstance(detail, (TimeoutError, socket.timeout)):
         return f"délai dépassé ({delai_s:g} s)"
     return f"erreur réseau : {type(detail).__name__}: {detail}"

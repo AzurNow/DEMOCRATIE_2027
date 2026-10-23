@@ -202,18 +202,13 @@ def _telechargeur(source: Source, deps: Dependances) -> Telechargeur:
     return deps.client
 
 
-def _uri_a_envoyer(url: str) -> str:
-    """D22 : l'URI convertie pour l'envoi, comme `pipeline.preuve.traitement`. Une IRI inconvertible
-    part telle quelle : la source échoue alors proprement au transport (`EchecCollecte`), jamais une
-    exception qui arrête la collecte."""
-    try:
-        return iri_vers_uri(url)
-    except IriInconvertible:
-        return url
-
-
 def collecter_source(source: Source, deps: Dependances) -> ResultatSource:
-    uri = _uri_a_envoyer(source.url)
+    """D22 : l'URI convertie pour l'envoi, comme `pipeline.preuve.traitement`. Une IRI inconvertible
+    refuse la source avant tout appel réseau, jamais une exception qui arrête le lot."""
+    try:
+        uri = iri_vers_uri(source.url)
+    except IriInconvertible as erreur:
+        return Refusee(source.url, f"IRI inconvertible en URI : {erreur}")
     try:
         telechargement = _telechargeur(source, deps).telecharger(uri)
     except EchecCollecte as echec:

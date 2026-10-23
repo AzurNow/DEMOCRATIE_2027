@@ -373,6 +373,31 @@ def test_un_echec_n_arrete_pas_le_lot(racine: Path, horloge: HorlogeFactice) -> 
     assert code_de_sortie(resultats) != 0
 
 
+def test_iri_inconvertible_est_refusee_sans_toucher_au_reseau_et_n_arrete_pas_le_lot(
+    racine: Path, horloge: HorlogeFactice
+) -> None:
+    """Relecture du constat 7 (12/10) : un hôte IDNA trop long ne se convertit pas en URI (D22). La
+    source échoue proprement, sans jamais atteindre le transport ni l'archiveur, et la source
+    suivante est collectée normalement."""
+    inconvertible = "https://" + "ü" * 64 + ".example/"
+    b = banc(racine, horloge, {URL_PDF: reponse(200, PDF, content_type="application/pdf")})
+
+    resultats = collecter([source(url=inconvertible), source()], b.dependances())
+
+    assert isinstance(resultats[0], Refusee)
+    assert resultats[0].url == inconvertible
+    assert "inconvertible" in resultats[0].motif
+    assert inconvertible not in b.transport.urls()
+    assert b.archiveur.urls == [URL_PDF]
+    assert resultats[1] == Collectee(
+        url=URL_PDF,
+        sha256=SHA_PDF,
+        chemin_local=f"archives/{SHA_PDF[:2]}/{SHA_PDF}.pdf",
+        archive_url=INSTANTANE,
+    )
+    assert code_de_sortie(resultats) != 0
+
+
 # --------------------------------------------------------------------------- ligne de commande
 
 
