@@ -3514,17 +3514,20 @@
       "section": "6",
       "citation": "| Température et autres paramètres d'échantillonnage | Valeurs par défaut de l'API | Idem ; les valeurs effectives sont enregistrées |",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "pipeline/interrogation/executer.ts (parametres_effectifs)",
-        "pipeline/interrogation/editeur.ts:Adaptateur"
+        "pipeline/interrogation/editeur.ts:Adaptateur",
+        "schema/reponse.schema.json (allOf, canal api obtenue : metadonnees.parametres_effectifs requis)"
       ],
       "tests": [
-        "tests/interrogation/executer.test.ts « le corps porte le texte de la formulation seul : aucune instruction système, 2 048 tokens »"
+        "tests/interrogation/executer.test.ts « le corps porte le texte de la formulation seul : aucune instruction système, 2 048 tokens »",
+        "tests/interrogation/parametres-effectifs.test.ts « une réponse obtenue sans metadonnees.parametres_effectifs est refusée par le schéma »",
+        "tests/interrogation/parametres-effectifs.test.ts « réponse ordinaire : parametres_effectifs égale exactement ce que l'adaptateur déclare pour la requête enregistrée »"
       ],
       "lot": null,
-      "constat": 10,
-      "note": "Aucun paramètre d'échantillonnage n'est envoyé (corps comparé exactement) ; l'enregistrement des valeurs effectives n'est gardé par aucun test, et le schéma ne l'exige pas."
+      "constat": null,
+      "note": "Aucun paramètre d'échantillonnage n'est envoyé (corps comparé exactement) ; les valeurs effectives sont requises par le schéma pour toute réponse obtenue du canal api (refus de modération compris) et l'interrogation simulée les écrit. Gardé sur l'adaptateur simulé ; chaque adaptateur réel devra porter le même test."
     },
     {
       "id": "§6.05",
@@ -4075,14 +4078,16 @@
       "section": "7",
       "citation": "et n'est jamais invité à donner son propre avis sur la position.",
       "nature": "code",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "prompts/judge-1.0.0.md"
       ],
-      "tests": [],
+      "tests": [
+        "tests/prompt-juge-annexe-d.test.ts « le prompt porte les variables, l'ordre des blocs et la phrase d'ouverture du squelette »"
+      ],
       "lot": null,
-      "constat": 5,
-      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
+      "constat": null,
+      "note": "Phrase d'ouverture du squelette de l'annexe D recopiée mot pour mot dans prompts/judge-1.0.0.md, comparée par tests/prompt-juge-annexe-d.test.ts (conformité 2026-11-01, n° 5)."
     },
     {
       "id": "§7.16",
@@ -7045,14 +7050,16 @@
       "section": "D",
       "citation": "Tu notes la conformité d'une réponse à une référence. Tu ne donnes pas ton avis sur la position.",
       "nature": "code",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "prompts/judge-1.0.0.md"
       ],
-      "tests": [],
+      "tests": [
+        "tests/prompt-juge-annexe-d.test.ts « le prompt porte les variables, l'ordre des blocs et la phrase d'ouverture du squelette »"
+      ],
       "lot": null,
-      "constat": 5,
-      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
+      "constat": null,
+      "note": "Phrase d'ouverture du squelette de l'annexe D recopiée mot pour mot dans prompts/judge-1.0.0.md, comparée par tests/prompt-juge-annexe-d.test.ts (conformité 2026-11-01, n° 5)."
     },
     {
       "id": "D.02",
@@ -7108,14 +7115,16 @@
       "section": "D",
       "citation": "(version complète dans le dépôt ; toute modification est un amendement)",
       "nature": "processus",
-      "statut": "sans-test",
+      "statut": "partielle",
       "code": [
         "prompts/judge-1.0.0.md"
       ],
-      "tests": [],
+      "tests": [
+        "tests/prompt-juge-annexe-d.test.ts « le prompt porte les variables, l'ordre des blocs et la phrase d'ouverture du squelette »"
+      ],
       "lot": null,
       "constat": 5,
-      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
+      "note": "La part « version complète dans le dépôt » est gardée : variables, ordre des blocs et phrase d'ouverture du squelette sont confrontés au prompt. « Toute modification est un amendement » est une règle de processus, sans test."
     },
     {
       "id": "E.01",

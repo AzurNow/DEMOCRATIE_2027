@@ -383,8 +383,9 @@ describe("exemples de schema/exemples/", () => {
   // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
   // 324 → 325 : relecture de D55 (3), réannotation exigée dans les deux sens, un invalide de lot (ordinaire portant reannote).
   // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
-  it("charge les 328 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(328);
+  // 328 → 329 : conformité 2026-11-01, n° 10, invalide-18 (réponse du canal api sans parametres_effectifs).
+  it("charge les 329 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(329);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
