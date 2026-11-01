@@ -1,0 +1,17 @@
+{
+  "pdf": {
+    "outil": "pymupdf",
+    "version": "1.28.2",
+    "options": { "mode": "text", "drapeaux": 67, "separateur_pages": "\f" }
+  },
+  "html": {
+    "outil": "html.parser",
+    "version": { "interpreteur": "python" },
+    "options": { "regle": "blocs-1" }
+  },
+  "transcription": {
+    "outil": "webvtt",
+    "version": { "interpreteur": "python" },
+    "options": { "regle": "vtt-1" }
+  }
+}

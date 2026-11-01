@@ -26,6 +26,7 @@ import {
   TEXTE,
   cheminsSous,
   compteurUlid,
+  enServiceHtml,
   corpsAnthropic,
   corpsMistral,
   instantane,
@@ -427,7 +428,8 @@ async function incoherente(racine: string, attendu: RegExp): Promise<void> {
 
 describe("cas 11 : aucune ou plusieurs fiches de l'extracteur épinglé", () => {
   it("aucune fiche de l'épinglé ⇒ AucunTexteEpingle, rien d'écrit", async () => {
-    await incoherente(racineDeTest({ epingle: { ...HTML, options: { regle: "blocs-2" } } }), /Aucune fiche d'extraction produite par l'extracteur épinglé/u);
+    const racine = racineDeTest({ epingle: { ...HTML, options: { regle: "blocs-2" } }, en_service: enServiceHtml({ options: { regle: "blocs-2" } }) });
+    await incoherente(racine, /Aucune fiche d'extraction produite par l'extracteur épinglé/u);
   });
 
   it("deux fiches de l'épinglé ⇒ PlusieursTextesEpingles, rien d'écrit", async () => {
@@ -447,31 +449,71 @@ describe("cas 11 : aucune ou plusieurs fiches de l'extracteur épinglé", () => 
   });
 });
 
-describe("constat 4 : épinglage périmé après une montée de version de l'extracteur de texte", () => {
-  it("une fiche plus récente d'un autre épinglage existe ⇒ EpinglageExtracteurPerime, rien d'écrit", async () => {
-    const racine = racineDeTest({
-      fiches: [HTML, { ...HTML, version: "3.11.0" }],
-      dates_extraction: ["2026-10-01T09:00:00+02:00", "2026-10-10T09:00:00+02:00"],
-    });
-    await incoherente(racine, /EpinglageExtracteurPerime|n'est plus celui du code|a changé depuis que cette/u);
-  });
+describe("D56 (3) : l'épinglage de l'entrée comparé à celui que le code a en service", () => {
+  const AVANT = "2026-10-01T09:00:00+02:00";
+  const APRES = "2026-10-10T09:00:00+02:00";
+  const RECENT = { ...HTML, version: "3.13.0" };
 
-  it("l'épinglage de l'entrée est celui de la fiche la plus récente ⇒ toujours accepté", async () => {
-    const racine = racineDeTest({
-      fiches: [{ ...HTML, version: "3.11.0" }, HTML],
-      dates_extraction: ["2026-10-01T09:00:00+02:00", "2026-10-10T09:00:00+02:00"],
-      epingle: HTML,
-    });
+  it("épinglage en service = celui de l'entrée et du texte ⇒ accepté", async () => {
+    const racine = racineDeTest({ en_service: enServiceHtml({ version: HTML.version }) });
     const execution = await lancer(reel(racine));
     expect(execution.code).toBe(0);
     expect(journal(join(racine, "staging")).issue.statut).toBe("extraite");
   });
 
-  it("deux fiches de même date d'extraction (aucune montée de version) ⇒ toujours accepté", async () => {
+  it("en service plus récent, aucune fiche plus récente (pnpm textes pas relancé) ⇒ EpinglageExtracteurPerime, rien d'écrit", async () => {
+    const racine = racineDeTest({ en_service: enServiceHtml({ version: RECENT.version }) });
+    await incoherente(racine, /extracteur de texte en service dans le code est .*3\.13\.0/u);
+  });
+
+  it("options en service différentes de celles de l'entrée ⇒ EpinglageExtracteurPerime, même sans version écrite", async () => {
+    await incoherente(racineDeTest({ en_service: enServiceHtml({ options: { regle: "blocs-2" } }) }), /extracteur de texte en service dans le code/u);
+  });
+
+  it("retour arrière : en service plus ancien que la fiche la plus récente, fiche à l'épinglage en service ⇒ elle est choisie", async () => {
+    const racine = racineDeTest({ fiches: [HTML, RECENT], dates_extraction: [AVANT, APRES], en_service: enServiceHtml({ version: HTML.version }) });
+    const execution = await lancer(reel(racine));
+    expect(execution.code).toBe(0);
+    expect(journal(join(racine, "staging")).texte_sha256).toBe(sha256(TEXTE));
+  });
+
+  it("retour arrière : l'entrée épingle encore la version abandonnée ⇒ EpinglageExtracteurPerime", async () => {
+    const racine = racineDeTest({
+      fiches: [HTML, RECENT],
+      dates_extraction: [AVANT, APRES],
+      epingle: RECENT,
+      en_service: enServiceHtml({ version: HTML.version }),
+    });
+    await incoherente(racine, /l'entrée épingle .*3\.13\.0.*en service dans le code est .*3\.12\.7/u);
+  });
+
+  it("retour arrière sans fiche à l'épinglage en service ⇒ AucunTexteEpingle, jamais de repli sur la plus récente", async () => {
+    const racine = racineDeTest({ fiches: [RECENT], en_service: enServiceHtml({ version: HTML.version }) });
+    await incoherente(racine, /Aucune fiche d'extraction produite par l'extracteur épinglé .*3\.12\.7/u);
+  });
+
+  it("deux fiches de même date d'extraction, une seule de l'épinglé ⇒ accepté", async () => {
     const racine = racineDeTest({ fiches: [HTML, { ...HTML, version: "3.11.0" }] });
     const execution = await lancer(reel(racine));
     expect(execution.code).toBe(0);
   });
+
+  for (const [cas, en_service, attendu] of [
+    ["absent", null, /EpinglageEnServiceIllisible|épinglage des extracteurs de texte absent/u],
+    ["qui n'est pas du JSON", "{ pas du json", /JSON illisible/u],
+    ["non conforme", { html: { outil: "html.parser", version: "", options: {} } }, /non conforme/u],
+  ] as const) {
+    it(`fichier d'épinglage ${cas} ⇒ refus nommé, code 1, aucun appel, rien d'écrit`, async () => {
+      const racine = racineDeTest({ en_service });
+      const avant = instantane(racine);
+      const execution = await lancer(reel(racine));
+      expect(execution.code).toBe(1);
+      expect(execution.envois).toEqual([]);
+      expect(execution.sortie).toMatch(attendu);
+      expect(execution.sortie).not.toMatch(/^\s+at /mu);
+      expect(instantane(racine)).toEqual(avant);
+    });
+  }
 });
 
 describe("cas 12 : texte canonique altéré", () => {
