@@ -31,6 +31,9 @@ runs/<date>/
     tentatives/<empreinte>.jsonl    le journal des tentatives d'une requête
     tentatives/<empreinte>.<n>.octets
                                     octets reçus de la n-ième tentative, gardés avant interprétation
+    tentatives/<empreinte>.<n>.reception.json
+                                    statut HTTP, instants et empreinte de ces octets, gardés avant eux
+                                    (reponse.schema.json#/$defs/reception, §6 0.21)
     notations/<id>.json             une notation individuelle par fichier (schema/notation.schema.json)
     reponses-contrefactuelles/<id>.json
                                     les réponses permutées du test contrefactuel (§7), contexte ≠ run
@@ -277,6 +280,16 @@ C'est ce journal qui fait tenir le plafond de trois tentatives du §6 après un 
   à son tour, l'erreur d'origine remonte seule et la relance lira un `debut` sans suite comme une
   tentative interrompue ordinaire : limite connue, non résolue (`pipeline/interrogation/journal.ts`,
   en-tête).
+- **Réception gardée, et stockage par l'opérateur (§6, 0.21).** Avant les octets, la même écriture
+  atomique et exclusive garde `<empreinte>.<numero>.reception.json` : statut HTTP, instants d'envoi
+  et de réception (ms, horloge du run), SHA-256 des octets. Un arrêt entre les deux laisse une
+  réception sans octets, relue comme une tentative interrompue ; des octets sans réception (volume
+  plus ancien) sont refusés à l'opérateur sous `sans_metadonnees`. Une fois la cause corrigée,
+  `pnpm interrogation:stocker --run=<répertoire> [--requete=<empreinte>]` relit octets et réception
+  et passe par le chemin de stockage du run : réponse obtenue à l'instant de réception d'origine,
+  ou, si l'adaptateur la classe en échec (503…), une ligne `echec` de la même tentative après
+  `recue_non_stockee` — seul événement admis à cette place —, et la relance ordinaire la retente si
+  le §6 le permet. Code 2 tant qu'une requête reste en attente (`outils/interrogation-stocker.ts`).
 
 ## `volume/liens/` — `pnpm liens <repertoire_run>`
 

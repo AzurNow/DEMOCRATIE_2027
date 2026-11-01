@@ -29,8 +29,22 @@
  * `recue_non_stockee`) laisse un `debut` sans suite dont les octets existent : la réponse a été
  * reçue. `reprise()` le rend comme `octets_sans_suite`, jamais comme une tentative interrompue :
  * la requête n'est pas renvoyée et le compteur de tentatives ne bouge pas (§6, 0.19). L'exécution
- * conclut alors la ligne par `recue_non_stockee` (`executer.ts`), sans relire les octets : le
- * journal ne garde ni le statut HTTP ni l'instant de réception, qu'une réponse stockée exigerait.
+ * conclut alors la ligne par `recue_non_stockee` (`executer.ts`), sans relire les octets.
+ *
+ * Réception (§6, 0.21) : avant ses octets, chaque réponse HTTP reçue laisse ses métadonnées de
+ * réception — statut HTTP, instants d'envoi et de réception, empreinte des octets — dans
+ * `<clé>.<n>.reception.json` (`garderReception`, schéma `reponse#/$defs/reception`), écrit de la
+ * même façon atomique et exclusive. Cet ordre ne laisse jamais, après un arrêt, des octets sans leur
+ * réception : un arrêt entre les deux laisse une réception sans octets, et la tentative est alors
+ * relue comme interrompue, comme avant (la réponse n'a pas été gardée, elle ne peut être stockée).
+ * Des octets sans réception ne viennent donc que d'un volume antérieur à cette garde, ou d'une
+ * intervention extérieure : l'opérateur les refuse sous un motif nommé (`stocker.ts`).
+ *
+ * L'opérateur stocke une réponse en attente depuis ses octets et sa réception (`stocker.ts`), par le
+ * même chemin que l'exécution. Si l'adaptateur la classe en échec (un 503 gardé, par exemple), la
+ * tentative est conclue comme au chemin normal, par un `echec` inscrit après `recue_non_stockee` —
+ * le seul événement admis à cette place, et pour la même tentative : elle redevient une tentative
+ * de l'outil, comptée, et la requête est retentée par la relance ordinaire si le §6 le permet.
  *
  * Le journal ne consigne pas les réussites stockées : une requête aboutie a sa réponse écrite
  * (`stockage.ts`), et c'est elle qui fait sauter la requête à la relance.
@@ -91,6 +105,31 @@ export function nomJournal(cle: CleRequete): string {
 /** Octets bruts d'une tentative d'une requête, gardés avant toute interprétation (§6, D55 (5)). */
 export function nomOctets(cle: CleRequete, numero: number): string {
   return `${sha256(canoniser(cle))}.${numero}.octets`;
+}
+
+/** Métadonnées de réception d'une tentative, gardées avant ses octets (§6, 0.21). */
+export function nomReception(cle: CleRequete, numero: number): string {
+  return `${sha256(canoniser(cle))}.${numero}.reception.json`;
+}
+
+/** `reponse.schema.json#/$defs/reception` : ce qu'il faut, avec les octets, pour stocker sans rien inventer. */
+export interface Reception {
+  readonly numero: number;
+  readonly statut_http: number;
+  /** Instant de l'envoi (début de la tentative), en ms, horloge du run. */
+  readonly debut_ms: number;
+  /** Instant de la réception de la réponse HTTP, en ms, horloge du run. */
+  readonly reception_ms: number;
+  /** SHA-256 des octets gardés, tels que reçus. */
+  readonly octets_sha256: string;
+}
+
+/** Une réception gardée illisible : JSON, schéma, ou numéro autre que celui de son nom de fichier. */
+export class ReceptionIllisible extends Error {
+  constructor(chemin: string, raison: string) {
+    super(`${chemin} : ${raison}. La réception n'est ni réparée ni ignorée.`);
+    this.name = "ReceptionIllisible";
+  }
 }
 
 /** Écrit la totalité du tampon : `writeSync` peut n'en écrire qu'une partie en un seul appel. */
@@ -208,10 +247,13 @@ function interrompue(debut: LigneDebut): Tentative {
   return { numero: debut.numero, horodatage: debut.horodatage, erreur: { type: "autre", message: MESSAGE_INTERROMPUE } };
 }
 
+/** Une ligne `recue_non_stockee`, avec l'horodatage du `debut` qu'elle conclut. */
+type RecueLue = LigneRecueNonStockee & { readonly horodatage: string };
+
 interface Lecture {
   readonly tentatives: Tentative[];
   enCours: LigneDebut | null;
-  recueNonStockee: LigneRecueNonStockee | null;
+  recueNonStockee: RecueLue | null;
 }
 
 function appliquerDebut(lecture: Lecture, ligne: LigneDebut, cle: string): void {
@@ -221,15 +263,29 @@ function appliquerDebut(lecture: Lecture, ligne: LigneDebut, cle: string): void 
   lecture.enCours = ligne;
 }
 
+/**
+ * Après `recue_non_stockee`, seul l'`echec` de la même tentative est admis : l'opérateur a stocké la
+ * réponse gardée et l'adaptateur l'a classée en échec (`stocker.ts`, §6, 0.21). La tentative est
+ * alors comptée comme au chemin normal, et la séquence reprend.
+ */
+function appliquerApresAttente(lecture: Lecture, recue: RecueLue, ligne: Ligne): void {
+  if (ligne.evenement !== "echec" || ligne.numero !== recue.numero) {
+    throw new Error(
+      "ligne après « recue_non_stockee » autre que l'échec de la même tentative conclu par l'opérateur : " +
+        "cette requête n'est pas retentée (§6, D55 (5))",
+    );
+  }
+  lecture.tentatives.push({ numero: ligne.numero, horodatage: recue.horodatage, erreur: ligne.erreur });
+  lecture.recueNonStockee = null;
+}
+
 /** Applique une ligne à la séquence ; lève si elle la contredit. */
 function appliquer(lecture: Lecture, ligne: Ligne, cle: string): void {
-  if (lecture.recueNonStockee !== null) {
-    throw new Error("ligne après « recue_non_stockee » : cette requête n'est plus retentée (§6, D55 (5))");
-  }
+  if (lecture.recueNonStockee !== null) return appliquerApresAttente(lecture, lecture.recueNonStockee, ligne);
   if (ligne.evenement === "debut") return appliquerDebut(lecture, ligne, cle);
   if (lecture.enCours?.numero !== ligne.numero) throw new Error(`${ligne.evenement} de la tentative ${ligne.numero} sans son début`);
   if (ligne.evenement === "recue_non_stockee") {
-    lecture.recueNonStockee = ligne;
+    lecture.recueNonStockee = { ...ligne, horodatage: lecture.enCours.horodatage };
     lecture.enCours = null;
     return;
   }
@@ -247,12 +303,20 @@ function lignesDe(chemin: string): readonly string[] {
 
 /**
  * Ce que la relecture du journal d'une requête rend : ses tentatives, une requête en attente, ou
- * une réponse reçue et gardée dont la ligne n'a pas été conclue (arrêt après `garderOctets`).
+ * une réponse reçue et gardée dont la ligne n'a pas été conclue (arrêt après `garderOctets`). Dans
+ * ces deux derniers cas, `tentatives` porte les tentatives closes qui précèdent la tentative
+ * `numero` : celles que la réponse obtenue gardera si l'opérateur la stocke (§6, 0.21).
  */
 export type Reprise =
   | { readonly genre: "tentatives"; readonly tentatives: readonly Tentative[] }
-  | { readonly genre: "recue_non_stockee"; readonly numero: number; readonly chemin_octets: string | null; readonly cause: string }
-  | { readonly genre: "octets_sans_suite"; readonly numero: number; readonly chemin_octets: string };
+  | {
+      readonly genre: "recue_non_stockee";
+      readonly numero: number;
+      readonly chemin_octets: string | null;
+      readonly cause: string;
+      readonly tentatives: readonly Tentative[];
+    }
+  | { readonly genre: "octets_sans_suite"; readonly numero: number; readonly chemin_octets: string; readonly tentatives: readonly Tentative[] };
 
 /* ------------------------------------------------------------------ journal */
 
@@ -290,7 +354,7 @@ export class JournalRequete {
     });
     if (lecture.recueNonStockee !== null) {
       const { numero, chemin_octets, cause } = lecture.recueNonStockee;
-      return { genre: "recue_non_stockee", numero, chemin_octets, cause };
+      return { genre: "recue_non_stockee", numero, chemin_octets, cause, tentatives: lecture.tentatives };
     }
     if (lecture.enCours === null) return { genre: "tentatives", tentatives: lecture.tentatives };
     return this.repriseDeLaTentativeOuverte(lecture.tentatives, lecture.enCours);
@@ -303,7 +367,7 @@ export class JournalRequete {
    */
   private repriseDeLaTentativeOuverte(closes: readonly Tentative[], ouverte: LigneDebut): Reprise {
     const nom = nomOctets(this.cleOriginale, ouverte.numero);
-    if (existsSync(join(this.repertoire, nom))) return { genre: "octets_sans_suite", numero: ouverte.numero, chemin_octets: nom };
+    if (existsSync(join(this.repertoire, nom))) return { genre: "octets_sans_suite", numero: ouverte.numero, chemin_octets: nom, tentatives: closes };
     return { genre: "tentatives", tentatives: [...closes, interrompue(ouverte)] };
   }
 
@@ -329,4 +393,34 @@ export class JournalRequete {
   inscrireRecueNonStockee(numero: number, chemin_octets: string | null, cause: string): void {
     ajouterLigne(this.chemin, { evenement: "recue_non_stockee", numero, chemin_octets, cause });
   }
+
+  /**
+   * Garde la réception de la tentative `reception.numero`, validée, avant ses octets (§6, 0.21) :
+   * atomique et exclusive comme eux (`OctetsDejaGardes` si le nom est pris, sans écrire).
+   */
+  garderReception(reception: Reception): void {
+    const nom = nomReception(this.cleOriginale, reception.numero);
+    validerReception(reception, `${nom} avant écriture`);
+    ecrireOctetsExclusif(this.repertoire, nom, new TextEncoder().encode(`${JSON.stringify(reception)}\n`));
+  }
+
+  /** La réception gardée de la tentative `numero`, validée ; `null` si aucune n'a été gardée. */
+  lireReception(numero: number): Reception | null {
+    const chemin = join(this.repertoire, nomReception(this.cleOriginale, numero));
+    if (!existsSync(chemin)) return null;
+    const lecture = lireJson(readFileSync(chemin, "utf8"));
+    if (!lecture.lisible) throw new ReceptionIllisible(chemin, `JSON illisible (${lecture.raison})`);
+    const reception = validerReception(lecture.valeur, chemin);
+    if (reception.numero !== numero) throw new ReceptionIllisible(chemin, `numéro ${reception.numero} au lieu de ${numero}`);
+    return reception;
+  }
+
+  /** Les octets gardés sous `chemin_octets`, nom relatif relu du journal (jamais un chemin absolu). */
+  lireOctets(chemin_octets: string): Uint8Array {
+    return readFileSync(join(this.repertoire, exigerCheminOctetsOuNul(chemin_octets) as string));
+  }
+}
+
+function validerReception(valeur: unknown, provenance: string): Reception {
+  return validerFragment<Reception>("reponse", "#/$defs/reception", valeur, provenance);
 }

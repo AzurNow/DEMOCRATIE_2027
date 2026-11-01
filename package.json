@@ -22,6 +22,7 @@
     "validate": "pnpm run build:client && node --experimental-strip-types validation/serveur/principal.ts",
     "symmetry": "node --experimental-strip-types outils/symmetry.ts",
     "run:dry": "node --experimental-strip-types outils/run-dry.ts",
+    "interrogation:stocker": "node --experimental-strip-types outils/interrogation-stocker.ts",
     "run:invalider": "node --experimental-strip-types outils/run-invalider.ts",
     "reformuler": "node --experimental-strip-types outils/reformuler.ts",
     "extraire": "node --experimental-strip-types outils/extraire.ts",

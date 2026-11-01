@@ -66,7 +66,12 @@ export function empreinteOctets(octets: Uint8Array): string {
   return createHash("sha256").update(octets).digest("hex");
 }
 
-function conclureHttp(reponse: ReponseHttp, adaptateur: Adaptateur): Conclusion {
+/**
+ * Ce que l'adaptateur conclut d'une réponse HTTP reçue : le seul classement, au run comme quand
+ * l'opérateur stocke une réponse gardée (§6, 0.21, `stocker.ts`). Lève si le corps ne peut être lu
+ * (`CorpsNonUtf8`, par exemple) : c'est alors une réponse reçue que le banc ne peut stocker.
+ */
+export function conclureHttp(reponse: ReponseHttp, adaptateur: Adaptateur): Conclusion {
   const brut_octets_sha256 = empreinteOctets(reponse.corps);
   const classement = adaptateur.classer(reponse);
   switch (classement.issue) {
@@ -79,14 +84,13 @@ function conclureHttp(reponse: ReponseHttp, adaptateur: Adaptateur): Conclusion 
   }
 }
 
-export function conclure(envoi: Envoi, adaptateur: Adaptateur): Conclusion {
+/** L'échec d'un envoi qui n'a reçu aucune réponse HTTP : réseau ou délai dépassé. */
+export function erreurSansReponse(envoi: Exclude<Envoi, { readonly genre: "http" }>): ErreurTentative {
   switch (envoi.genre) {
-    case "http":
-      return conclureHttp(envoi.reponse, adaptateur);
     case "reseau":
-      return { genre: "echec", erreur: { type: "reseau", message: envoi.message } };
+      return { type: "reseau", message: envoi.message };
     case "timeout":
-      return { genre: "echec", erreur: { type: "timeout", message: MESSAGE_TIMEOUT } };
+      return { type: "timeout", message: MESSAGE_TIMEOUT };
     case "abandonne":
       throw new Error("Envoi abandonné avant d'avoir été attendu : course entre envoi et minuterie incohérente.");
   }
