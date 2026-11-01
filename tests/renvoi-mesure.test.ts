@@ -16,7 +16,7 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { erreurDeSchema } from "../outils/schemas/valider.ts";
+import { erreurDeSchema, JsonIllisible } from "../outils/schemas/valider.ts";
 import type { DecisionCorrectionMesure } from "../validation/domaine/corrections-mesure.ts";
 import { empreinteContenuNotant } from "../validation/domaine/empreinte.ts";
 import {
@@ -249,6 +249,21 @@ describe("reecrireItemStaging : l'écriture du renvoi dans staging/", () => {
         ItemStagingModifie,
       );
       expect(lireStaging(bac, Y)).toBe(avant);
+    } finally {
+      bac.detruire();
+    }
+  });
+
+  it("un item de staging illisible lève JsonIllisible qui nomme son chemin, et n'écrit rien (constat 26)", () => {
+    const bac = creerBac();
+    try {
+      const chemin = join(bac.racine, "staging/items", `${Y.id}.json`);
+      writeFileSync(chemin, "{ pas du json", "utf8");
+      const appel = (): void => reecrireItemStaging(join(bac.racine, "staging"), Y, repinglerSurMesure(Y, MESURE_V2, TRACE));
+      expect(appel).toThrow(JsonIllisible);
+      expect(appel).toThrow(chemin);
+      expect(readFileSync(chemin, "utf8")).toBe("{ pas du json");
+      expect(readdirSync(join(bac.racine, "staging/items"))).toEqual([`${Y.id}.json`]);
     } finally {
       bac.detruire();
     }
