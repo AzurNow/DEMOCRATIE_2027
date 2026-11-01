@@ -13,6 +13,7 @@ export const STATUT_PLANIFIE = "planifie" satisfies StatutRun;
 export const STATUT_EN_COURS = "en_cours" satisfies StatutRun;
 export const STATUT_PUBLIE = "publie" satisfies StatutRun;
 export const STATUT_PUBLIE_PROVISOIRE = "publie_provisoire" satisfies StatutRun;
+export const STATUT_INVALIDE = "invalide" satisfies StatutRun;
 
 export const TYPES_RUN = [
   "pilote",

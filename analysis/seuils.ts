@@ -149,51 +149,86 @@ export function couplesComparables(reponses: readonly Reponse[]): PartageCouples
   return { compares, incomplets };
 }
 
-/** Couples déclarés par le périmètre : chaque assistant inclus, un par mode qu'il déclare. */
-function couplesDeclares(outils: readonly OutilAuGel[]): Map<IdentifiantCourt, ReadonlySet<Mode>> {
-  const declares = new Map<IdentifiantCourt, ReadonlySet<Mode>>();
-  for (const outil of outils) {
-    if (outil.famille === "assistant" && outil.inclus) declares.set(outil.outil_id, new Set(outil.modes ?? []));
+/** Ce que la définition des couples déclarés lit d'un outil du périmètre au gel. */
+export type OutilDeclarable = Pick<OutilAuGel, "outil_id" | "famille" | "inclus" | "modes">;
+
+/** `run.schema.json` exige `modes` d'un assistant inclus : absent, ses couples ne sont pas connus. */
+export class AssistantInclusSansModes extends Error {
+  constructor(outil_id: IdentifiantCourt) {
+    super(
+      `Assistant inclus ${outil_id} sans modes déclarés (§6, run.schema.json) : ses couples outil × mode ne sont ` +
+        `pas connus, et aucune liste vide n'en tient lieu.`,
+    );
+    this.name = "AssistantInclusSansModes";
   }
+}
+
+/** §8 : une réponse API d'un couple que le périmètre ne déclare pas. */
+export class CoupleHorsPerimetre extends Error {
+  constructor(couple: CoupleOutilMode) {
+    super(
+      `Couple ${cleCouple(couple)} présent dans les réponses API du run, mais absent du périmètre (aucun ` +
+        `assistant inclus ne le déclare, §8) : aucun verdict n'est publié pour un couple hors périmètre.`,
+    );
+    this.name = "CoupleHorsPerimetre";
+  }
+}
+
+function estAssistantInclus(outil: OutilDeclarable): boolean {
+  return outil.famille === "assistant" && outil.inclus;
+}
+
+function modesDeclares(outil: OutilDeclarable): readonly Mode[] {
+  if (outil.modes === undefined) throw new AssistantInclusSansModes(outil.outil_id);
+  return outil.modes;
+}
+
+/**
+ * Seule définition des couples déclarés par le périmètre (Lot 10 (a)) : chaque assistant inclus,
+ * un couple par mode qu'il déclare, dans l'ordre du périmètre. Lue par `parModeDuRun`, par
+ * `pipeline/go-no-go/criteres-run.ts` et, à travers `parModeDuRun`, par `analysis/lecture-run.ts`.
+ */
+export function couplesDeclares(outils: readonly OutilDeclarable[]): readonly CoupleOutilMode[] {
+  return outils
+    .filter(estAssistantInclus)
+    .flatMap((outil) => modesDeclares(outil).map((mode) => ({ outil_id: outil.outil_id, mode })));
+}
+
+/**
+ * Les couples déclarés, après refus de toute réponse API d'un couple hors périmètre
+ * (`CoupleHorsPerimetre`, §8). Un couple déclaré sans réponse reste dans la liste : c'est le seuil
+ * (`runIncomplet`) qui refuse de le décider, pas cette fonction.
+ */
+export function couplesDuRun(outils: readonly OutilDeclarable[], reponses: readonly Reponse[]): readonly CoupleOutilMode[] {
+  const declares = couplesDeclares(outils);
+  const cles = new Set(declares.map(cleCouple));
+  const hors = couplesPresents(reponses).find((couple) => !cles.has(cleCouple(couple)));
+  if (hors !== undefined) throw new CoupleHorsPerimetre(hors);
   return declares;
 }
 
-/** §8 : on ne publie pas un verdict pour un couple que le périmètre ne déclare pas. */
-function refuserCouplesHorsPerimetre(declares: ReadonlyMap<IdentifiantCourt, ReadonlySet<Mode>>, reponses: readonly Reponse[]): void {
-  const { compares, incomplets } = couplesComparables(reponses);
-  for (const couple of [...compares, ...incomplets]) {
-    if (!(declares.get(couple.outil_id)?.has(couple.mode) ?? false)) {
-      throw new Error(
-        `Couple ${cleCouple(couple)} présent dans les réponses API du run, mais absent du périmètre (aucun ` +
-          `assistant inclus ne le déclare, §8) : aucun verdict n'est publié pour un couple hors périmètre.`,
-      );
-    }
+function seuilDuCouple(reponses: readonly Reponse[], couple: CoupleOutilMode): SeuilMode {
+  const part = partReponsesManquantes(reponses, couple);
+  if (part.denominateur === 0) {
+    throw new Error(`Couple ${cleCouple(couple)} sans aucune réponse API dans le run : le seuil de 20 % n'est pas décidable.`);
   }
+  return { reponses_manquantes_part: part.numerateur / part.denominateur, run_incomplet: runIncomplet(part) };
 }
 
 /**
  * §8, §12, D55 (7) : `par_mode` de chaque assistant inclus du périmètre, un par mode qu'il
  * déclare, calculé depuis les réponses du canal API du run. Seul calcul de ce champ — voir
  * l'en-tête du fichier. Un mode déclaré sans aucune réponse API lève (`runIncomplet`, comme
- * `couplesAJuger`) : le seuil n'y est pas décidable. Une réponse API d'un couple non déclaré par
- * un assistant inclus lève aussi (`refuserCouplesHorsPerimetre`).
+ * `critereReponsesManquantes`) : le seuil n'y est pas décidable. Une réponse API d'un couple non
+ * déclaré par un assistant inclus lève aussi (`CoupleHorsPerimetre`, par `couplesDuRun`).
  */
-export function parModeDuRun(outils: readonly OutilAuGel[], reponses: readonly Reponse[]): ReadonlyMap<IdentifiantCourt, ParMode> {
-  const declares = couplesDeclares(outils);
-  refuserCouplesHorsPerimetre(declares, reponses);
+export function parModeDuRun(outils: readonly OutilDeclarable[], reponses: readonly Reponse[]): ReadonlyMap<IdentifiantCourt, ParMode> {
+  const couples = couplesDuRun(outils, reponses);
   const resultat = new Map<IdentifiantCourt, ParMode>();
-  for (const [outil_id, modes] of declares) {
+  for (const outil of outils.filter(estAssistantInclus)) {
     const parMode: Partial<Record<Mode, SeuilMode>> = {};
-    for (const mode of modes) {
-      const couple = { outil_id, mode };
-      const part = partReponsesManquantes(reponses, couple);
-      if (part.denominateur === 0) {
-        throw new Error(`Couple ${cleCouple(couple)} sans aucune réponse API dans le run : le seuil de 20 % n'est pas décidable.`);
-      }
-      const run_incomplet = runIncomplet(part);
-      parMode[mode] = { reponses_manquantes_part: part.numerateur / part.denominateur, run_incomplet };
-    }
-    resultat.set(outil_id, parMode);
+    for (const couple of couples.filter((c) => c.outil_id === outil.outil_id)) parMode[couple.mode] = seuilDuCouple(reponses, couple);
+    resultat.set(outil.outil_id, parMode);
   }
   return resultat;
 }

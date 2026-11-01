@@ -15,9 +15,13 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  AssistantInclusSansModes,
   candidatsComparables,
   cleCouple,
+  CoupleHorsPerimetre,
   couplesComparables,
+  couplesDeclares,
+  couplesDuRun,
   parModeDuRun,
   partReponsesManquantes,
   repartirParCandidat,
@@ -275,6 +279,60 @@ describe("par_mode du run (D55 (7), constat 17 de la revue du 2026-10-12)", () =
     const runFixture = { ...exemple, perimetre: { ...exemple.perimetre, outils: outilsExemple } };
 
     expect(() => valider("run", runFixture, "fixture de test")).not.toThrow();
+  });
+});
+
+describe("couples outil × mode déclarés : une seule définition (Lot 10 (a), PR #178)", () => {
+  it("un couple par mode déclaré d'un assistant inclus, dans l'ordre du périmètre ; rien pour l'exclu ni le comparateur", () => {
+    const outils = [
+      outil({ outil_id: "outil-alpha", modes: ["web_activee", "web_desactivee"] }),
+      outil({ outil_id: "outil-exclu", inclus: false, modes: ["web_activee"] }),
+      outil({ outil_id: "comparateur-un", famille: "comparateur", mode_de_tete: undefined }),
+      outil({ outil_id: "outil-beta", modes: ["web_desactivee"] }),
+    ];
+
+    expect(couplesDeclares(outils)).toEqual([
+      { outil_id: "outil-alpha", mode: "web_activee" },
+      { outil_id: "outil-alpha", mode: "web_desactivee" },
+      { outil_id: "outil-beta", mode: "web_desactivee" },
+    ]);
+  });
+
+  it("un assistant inclus sans modes : refus nommé, jamais une liste vide par défaut", () => {
+    const outils = [outil({ outil_id: "outil-alpha", modes: undefined })];
+
+    expect(() => couplesDeclares(outils)).toThrow(AssistantInclusSansModes);
+    expect(() => couplesDeclares(outils)).toThrow(/outil-alpha/);
+    expect(() => parModeDuRun(outils, reponses(4, 1))).toThrow(AssistantInclusSansModes);
+  });
+
+  it("couplesDuRun : un couple présent dans les réponses API mais non déclaré lève CoupleHorsPerimetre", () => {
+    const outils = [outil({ outil_id: "outil-alpha", modes: ["web_desactivee"] })];
+    const jeu = [...reponses(4, 1, "outil-alpha", "web_desactivee"), ...reponses(2, 0, "outil-alpha", "web_activee")];
+
+    expect(() => couplesDuRun(outils, jeu)).toThrow(CoupleHorsPerimetre);
+    expect(() => couplesDuRun(outils, jeu)).toThrow(/outil-alpha\/web_activee/);
+    expect(() => parModeDuRun(outils, jeu)).toThrow(CoupleHorsPerimetre);
+  });
+
+  it("couplesDuRun : les couples déclarés, même sans réponse (le seuil en décidera), quand rien n'est hors périmètre", () => {
+    const outils = [outil({ outil_id: "outil-alpha", modes: ["web_activee", "web_desactivee"] })];
+
+    expect(couplesDuRun(outils, reponses(4, 1, "outil-alpha", "web_desactivee"))).toEqual([
+      { outil_id: "outil-alpha", mode: "web_activee" },
+      { outil_id: "outil-alpha", mode: "web_desactivee" },
+    ]);
+  });
+
+  it("couplesDuRun : une réponse du canal application ou hors contexte run n'est jamais un couple hors périmètre", () => {
+    const outils = [outil({ outil_id: "outil-alpha", modes: ["web_desactivee"] })];
+    const jeu = [
+      ...reponses(4, 1, "outil-alpha", "web_desactivee"),
+      ...reponses(3, 0, "outil-beta", "web_activee", "application"),
+      reponse({ id: ulid("cf-beta"), outil_id: "outil-beta", mode: "web_activee", contexte: "contrefactuel_candidat" }),
+    ];
+
+    expect(couplesDuRun(outils, jeu)).toEqual([{ outil_id: "outil-alpha", mode: "web_desactivee" }]);
   });
 });
 

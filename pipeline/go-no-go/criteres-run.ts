@@ -11,7 +11,7 @@
  *   imprimé »), `pnpm symmetry` laisse partir le run, et le §12 n'oppose aux tests « restés verts »
  *   que le run invalide, que seule une symétrie rouge produit. La valeur publiée garde
  *   `ecart_tolere`, visible. Lecture confirmée par l'auteur (D25 (4)).
- * - `reponses_manquantes` : `analysis/seuils.ts` (`partReponsesManquantes`, `runIncomplet`), seule
+ * - `reponses_manquantes` : `analysis/seuils.ts` (`couplesDuRun`, `partReponsesManquantes`, `runIncomplet`), seule
  *   définition du seuil de 20 % (en entiers : 5 × manquantes > total, donc 20 % exactement passe).
  * - `erreurs_graves_revues` : un verdict `erreur_grave` sans revue humaine effectuée, ou une réponse
  *   obtenue encore sans verdict dont une notation comptée porte un drapeau grave, est une erreur
@@ -21,8 +21,8 @@
  */
 
 import { graineHexadecimale } from "../../analysis/graines.ts";
-import { couplesComparables, cleCouple, partReponsesManquantes, runIncomplet, SEUIL_RUN_INCOMPLET } from "../../analysis/seuils.ts";
-import type { CoupleOutilMode, Mode, Reponse, Ulid } from "../../analysis/types.ts";
+import { couplesDuRun, partReponsesManquantes, runIncomplet, SEUIL_RUN_INCOMPLET, type OutilDeclarable } from "../../analysis/seuils.ts";
+import type { Reponse, Ulid } from "../../analysis/types.ts";
 import { conditionDeSymetrie } from "../questions/symetrie.ts";
 import type { Symetrie } from "../questions/types.ts";
 import { porteDrapeauGrave } from "../notation/note-retenue.ts";
@@ -47,33 +47,16 @@ export function critereTestsSymetrie(symetrie: Pick<Symetrie, "statut_global">):
 
 /* ------------------------------------------------------------------ réponses manquantes */
 
-/** Ce que le critère lit d'un outil du périmètre au gel. */
-export interface OutilDeclare {
-  readonly outil_id: string;
-  readonly famille: "assistant" | "comparateur";
-  readonly inclus: boolean;
-  readonly modes?: readonly Mode[];
-}
-
-/**
- * Les couples outil × mode à juger : ceux que le périmètre déclare (assistant inclus, chacun de ses
- * modes), puis ceux qu'on trouve dans les réponses API du run. Un couple déclaré sans aucune
- * réponse API fait lever `runIncomplet` : le seuil n'y est pas décidable, et ce n'est pas un vert.
- */
-function couplesAJuger(outils: readonly OutilDeclare[], reponses: readonly Reponse[]): readonly CoupleOutilMode[] {
-  const declares = outils
-    .filter((outil) => outil.famille === "assistant" && outil.inclus)
-    .flatMap((outil) => (outil.modes === undefined ? [] : outil.modes.map((mode) => ({ outil_id: outil.outil_id, mode }))));
-  const presents = couplesComparables(reponses);
-  const tous = new Map<string, CoupleOutilMode>();
-  for (const couple of [...declares, ...presents.compares, ...presents.incomplets]) tous.set(cleCouple(couple), couple);
-  return [...tous.values()];
-}
+/** Ce que le critère lit d'un outil du périmètre au gel : la part que lit `analysis/seuils.ts:couplesDeclares`. */
+export type OutilDeclare = OutilDeclarable;
 
 /** §12 : « au plus 20 % de réponses manquantes par outil et par mode » (canal API, §8). */
 export function critereReponsesManquantes(outils: readonly OutilDeclare[], reponses: readonly Reponse[]): Critere {
   const socle = { code: "reponses_manquantes", seuil: SEUIL_RUN_INCOMPLET.numerateur / SEUIL_RUN_INCOMPLET.denominateur } as const;
-  const couples = couplesAJuger(outils, reponses);
+  // Les couples déclarés (`analysis/seuils.ts:couplesDuRun`, seule définition, Lot 10 (a)) : un couple
+  // présent dans les réponses API mais non déclaré lève `CoupleHorsPerimetre`, comme `parModeDuRun` ;
+  // un couple déclaré sans aucune réponse API fait lever `runIncomplet` : ce n'est pas un vert.
+  const couples = couplesDuRun(outils, reponses);
   if (couples.length === 0) return { ...socle, statut: "rouge", valeur: "aucun couple outil × mode à juger" };
   const parts = couples.map((couple) => partReponsesManquantes(reponses, couple));
   const incomplet = parts.map(runIncomplet).some(Boolean);

@@ -1,15 +1,16 @@
 /**
  * Constat 10 (revue du 2026-10-17) : la règle « formulation en vigueur » est écrite à la fois dans
  * la reprise de `pnpm reformuler` (`reprise.ts`, par `executer.ts:trier`) et dans la relecture
- * (`relecture.ts:propositionRelisible`, `promotionEnVigueur`). Ce test les confronte sur un même
- * jeu de cas : la reprise ne saute une question (« deja_acceptee » ou « deja_validee ») QUE si la
- * relecture la montre déjà relisible (une proposition acceptée en vigueur) ou déjà en vigueur (une
- * promotion dans `data/formulations/`), et réciproquement.
+ * (`relecture.ts:questionsARelire`, ce que l'écran de relecture montre). Ce test les confronte sur
+ * un même jeu de cas : la reprise ne saute une question (« deja_acceptee » ou « deja_validee ») QUE
+ * si la relecture la montre déjà relisible (une proposition acceptée en vigueur) ou la tient déjà
+ * pour promue en vigueur (une promotion dans `data/formulations/`), et réciproquement.
  *
- * Écrit avant la refonte du constat 10 : il passe sur les quatre copies actuelles de la règle
- * (elles concordent) et n'est pas modifié par la refonte, qui ne change aucun comportement
- * observable. Il passe par `trier` (Tache, `EtatReprise`) plutôt que par `EtatQuestion` : cette
- * frontière ne change pas, que `reprise.ts` réimplémente la règle ou délègue à `relecture.ts`.
+ * Lot 10 (c) : l'oracle était `promotionEnVigueur` et `propositionRelisible`, exactement le code
+ * qu'appelle `deciderReprise` — le test était tautologique. Il passe désormais, des deux côtés, par
+ * les vrais points d'entrée : `trier` pour la reprise (Tache, `EtatReprise`), `questionsARelire`
+ * pour la relecture (ce que `validation/serveur/formulations.ts` sert à l'écran). Une divergence
+ * introduite dans `questionsARelire` (refus ignorés, promotion non filtrée…) le fait échouer.
  */
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -20,7 +21,7 @@ import { sha256 } from "../../validation/domaine/empreinte.ts";
 import type { Tache } from "../../pipeline/reformulation/entrees.ts";
 import type { EtatReprise } from "../../pipeline/reformulation/executer.ts";
 import { trier } from "../../pipeline/reformulation/executer.ts";
-import { promotionEnVigueur, propositionRelisible, type ClePromotion } from "../../pipeline/reformulation/relecture.ts";
+import { questionsARelire, type ClePromotion } from "../../pipeline/reformulation/relecture.ts";
 import { ecrireProposition, type PropositionFormulation } from "../../pipeline/reformulation/staging.ts";
 import { jeu, jeuO, proposition, questionDe, surAutreTexte } from "./fabriques-relecture.ts";
 
@@ -52,6 +53,8 @@ interface Cas {
 }
 
 const AUCUN_REFUS: ReadonlySet<string> = new Set();
+/** Identifiant de la proposition sonde : jamais celui d'une proposition du jeu de cas. */
+const SONDE = "01JA0000000000000000000099";
 
 function cle(tache: Tache, position = tache.demande.position_affirmee): ClePromotion {
   return { empreinte_texte_neutre: sha256(tache.question.texte_neutre), position };
@@ -159,24 +162,49 @@ const CAS: readonly Cas[] = [
   },
 ];
 
-function visibleDeLaRelecture(cas: Cas): boolean {
-  if (promotionEnVigueur(cas.validee ?? undefined, cas.tache)) return true;
-  return propositionRelisible(cas.tache, cas.propositions, cas.refus) !== null;
+/** Ce que l'écran de relecture montre pour cette question, par son seul point d'entrée. */
+function montreeParLaRelecture(cas: Cas, propositions: readonly PropositionFormulation[]): boolean {
+  const promues = new Map<string, ClePromotion>(cas.validee === null ? [] : [[cas.tache.question.id, cas.validee]]);
+  const refus = [...cas.refus].map((proposition_id) => ({ proposition_id }));
+  return questionsARelire([cas.tache], propositions, refus, promues).length > 0;
+}
+
+/**
+ * La relecture tient la validée pour promue en vigueur : une proposition sonde, acceptée sur le
+ * texte neutre et la position courants (donc relisible), n'est pas montrée — `questionsARelire`
+ * ne retient plus une question dont la promotion est en vigueur.
+ */
+function promueSelonLaRelecture(cas: Cas): boolean {
+  if (cas.validee === null) return false;
+  const sonde = proposition(cas.tache, { cle: "sonde", id: SONDE });
+  return !montreeParLaRelecture(cas, [sonde]);
+}
+
+type Issue = "a_appeler" | "deja_validee" | "deja_acceptee";
+
+/** La règle : promue en vigueur ⇒ déjà validée ; sinon montrée ⇒ déjà acceptée ; sinon à appeler. */
+function issueSelonLaRelecture(cas: Cas): Issue {
+  if (promueSelonLaRelecture(cas)) return "deja_validee";
+  return montreeParLaRelecture(cas, cas.propositions) ? "deja_acceptee" : "a_appeler";
+}
+
+function issueDeLaReprise(cas: Cas): Issue {
+  const chemin = staging();
+  ecrire(chemin, cas.propositions);
+  const reprise: EtatReprise = { validee: () => cas.validee, refus: cas.refus };
+  const triage = trier([cas.tache], chemin, reprise);
+  if (triage.a_appeler.length === 1) return "a_appeler";
+  return triage.deja_validees === 1 ? "deja_validee" : "deja_acceptee";
 }
 
 describe("accord reprise ↔ relecture (constat 10)", () => {
   it.each(CAS.map((cas) => [cas.intitule, cas] as const))("%s", (_intitule, cas) => {
-    const chemin = staging();
-    ecrire(chemin, cas.propositions);
-    const reprise: EtatReprise = { validee: () => cas.validee, refus: cas.refus };
-    const triage = trier([cas.tache], chemin, reprise);
-    const sautee = triage.a_appeler.length === 0;
-    expect(sautee).toBe(visibleDeLaRelecture(cas));
-    if (sautee) {
-      expect(triage.deja_validees === 1 ? "deja_validee" : "deja_acceptee").toBe(
-        promotionEnVigueur(cas.validee ?? undefined, cas.tache) ? "deja_validee" : "deja_acceptee",
-      );
-    }
+    expect(issueDeLaReprise(cas)).toBe(issueSelonLaRelecture(cas));
+  });
+
+  it("le jeu de cas couvre les trois issues (sinon l'accord serait vide)", () => {
+    const issues = new Set(CAS.map(issueSelonLaRelecture));
+    expect([...issues].sort()).toEqual(["a_appeler", "deja_acceptee", "deja_validee"]);
   });
 
   it("validée en vigueur l'emporte sur une acceptée en vigueur (même ordre que la relecture)", () => {

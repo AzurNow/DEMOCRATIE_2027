@@ -24,6 +24,7 @@ import { resolusAuGel, type QuestionPosee, type ReferenceSoumise, type ResoluAuG
 import type { RunDeNotation } from "../../pipeline/notation/types.ts";
 import type { PerimetreDeNotation } from "../../pipeline/notation/notation-humaine.ts";
 import type { EntreeTirage, Question } from "../../pipeline/questions/types.ts";
+import { TYPE_PILOTE } from "../../pipeline/run/types.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 
 export class RepertoireDeRunIllisible extends Error {
@@ -129,7 +130,7 @@ export function chargerRun(repertoire_run: string, repertoire_items: string): Do
     run,
     run_note,
     perimetre: { candidats: run_note.candidats, interroges: run.perimetre.candidats.filter((c) => c.interroge).map((c) => c.candidat_id) },
-    jeu_or: run.type_run === "pilote" ? tirerJeuOr(reponses.map((r) => r.reponse.id), run_note.graines.echantillon_humain) : null,
+    jeu_or: run.type_run === TYPE_PILOTE ? tirerJeuOr(reponses.map((r) => r.reponse.id), run_note.graines.echantillon_humain) : null,
     reponses,
   };
 }

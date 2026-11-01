@@ -308,7 +308,18 @@ function joindreMesure(avant: string, gabarit: Gabarit, mesure: string): string 
   if (!PREPOSITION_A_EN_FIN.test(avant)) return avant + mesure;
   const contractee = mesureContractee(gabarit, mesure);
   if (contractee === null) return avant + mesure;
-  return avant.slice(0, -PREPOSITION_A.length) + contractee;
+  return avant.slice(0, -PREPOSITION_A.length) + avecCasseDeLaPreposition(avant, contractee);
+}
+
+/**
+ * Lot 10 (e) : le remplissage garde la casse écrite dans le gabarit. « À [mesure] » en tête de
+ * phrase donne « Au budget », jamais « au budget » ; la détection (`PREPOSITION_A_EN_FIN`) reste
+ * la même pour le remplissage et pour le contrôle des reformulations.
+ */
+function avecCasseDeLaPreposition(avant: string, contractee: string): string {
+  const preposition = avant.charAt(avant.length - PREPOSITION_A.length);
+  if (preposition !== "À") return contractee;
+  return contractee.charAt(0).toUpperCase() + contractee.slice(1);
 }
 
 /** Chaque `[mesure]` est substitué à son tour, la contraction lisant le texte qui le précède. */

@@ -22,6 +22,7 @@ import {
   lireRunJson,
   lireVerdicts,
   ParModeDivergent,
+  ParModeHorsPerimetre,
   runDeNotationDe,
   VolumeAbsent,
 } from "../../analysis/lecture-run.ts";
@@ -211,6 +212,21 @@ describe("10. par_mode recoupé à la lecture (constat 17, D55 (7))", () => {
     expect(erreur).toBeInstanceOf(ParModeDivergent);
     expect(erreur.message).toContain("outil-alpha");
     expect(erreur.message).toContain("web_desactivee");
+  });
+
+  it("un par_mode écrit pour un outil sans couple déclaré (comparateur) : refus nommé, jamais un recalcul vide par défaut", () => {
+    const run = runNote();
+    const chemin = dispositionRunNote(run.repertoire_run).run_json;
+    const objet = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown> & { perimetre: { outils: Record<string, unknown>[] } };
+    const par_mode = { web_desactivee: { reponses_manquantes_part: 0, run_incomplet: false } };
+    const outils = objet.perimetre.outils.map((outil) =>
+      outil["famille"] === "comparateur" ? { ...outil, modes: ["web_desactivee"], par_mode } : outil,
+    );
+    rmSync(chemin);
+    ecrireJson(chemin, { ...objet, perimetre: { ...objet.perimetre, outils } });
+    const erreur = erreurDe(() => lire(run));
+    expect(erreur).toBeInstanceOf(ParModeHorsPerimetre);
+    expect(erreur.message).toContain("comparateur-gamma");
   });
 
   it("un run sans par_mode (en cours) n'est pas une erreur de lireRun", () => {

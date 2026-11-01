@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 import { graineHexadecimale } from "../../analysis/graines.ts";
+import { AssistantInclusSansModes, CoupleHorsPerimetre, parModeDuRun } from "../../analysis/seuils.ts";
 import { critereTestContrefactuel } from "../../pipeline/go-no-go/criteres-juges.ts";
 import {
   critereAnalysesExecutees,
@@ -111,6 +112,22 @@ describe("au plus 20 % de réponses manquantes par outil et par mode (analysis/s
 
   it("aucun couple à juger : rouge", () => {
     expect(critereReponsesManquantes([], []).statut).toBe("rouge");
+  });
+
+  it("un couple présent dans les réponses API mais non déclaré : la même erreur nommée que parModeDuRun (Lot 10 (a))", () => {
+    const reponses = [
+      ...reponsesApi("outil-a", "web_desactivee", 0, 10),
+      ...reponsesApi("outil-a", "web_activee", 0, 10),
+      ...reponsesApi("outil-b", "web_activee", 0, 10),
+    ];
+    expect(() => critereReponsesManquantes([OUTIL], reponses)).toThrow(CoupleHorsPerimetre);
+    expect(() => critereReponsesManquantes([OUTIL], reponses)).toThrow(/outil-b\/web_activee/);
+    expect(() => parModeDuRun([OUTIL], reponses)).toThrow(CoupleHorsPerimetre);
+  });
+
+  it("un assistant inclus sans modes : refus nommé, pas une liste vide de couples (Lot 10 (a))", () => {
+    const sansModes: OutilDeclare = { outil_id: "outil-a", famille: "assistant", inclus: true };
+    expect(() => critereReponsesManquantes([sansModes], reponsesApi("outil-a", "web_desactivee", 0, 10))).toThrow(AssistantInclusSansModes);
   });
 });
 
