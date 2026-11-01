@@ -42,9 +42,10 @@ import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, Taux
 import type { GraineTirage } from "../pipeline/questions/types.ts";
 import type { StatutRun, TypeRun } from "../pipeline/run/types.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
-import type { EntreesAnalyse } from "./filtre.ts";
+import { accordHumainsEchantillon, accordPublie, type AccordHumainsPublie } from "./accord-humains.ts";
+import { estDuRun, type EntreesAnalyse } from "./filtre.ts";
 import { parModeDuRun, type RequeteDuPlan } from "./seuils.ts";
-import type { CandidatAuGel, EntreeTirage, Item, Mode, ParMode, Question, ReferenceItem, Reponse, Run, SeuilMode } from "./types.ts";
+import type { CandidatAuGel, EntreeTirage, Item, Mode, ParMode, Question, ReferenceItem, Reponse, Run, SeuilMode, Ulid } from "./types.ts";
 import { candidatsInterroges as candidatsInterrogesAuRun } from "./candidats-interroges.ts";
 
 /* ------------------------------------------------------------------ disposition */
@@ -166,6 +167,20 @@ export class ParModeDivergent extends Error {
   }
 }
 
+/** §7.30 : `accord_humains_echantillon` écrit dans `run.json` diverge du recalcul sur les notations lues. */
+export class AccordHumainsDivergent extends Error {
+  readonly chemin: string;
+
+  constructor(chemin: string, ecrit: AccordHumainsPublie, recalcule: AccordHumainsPublie) {
+    super(
+      `${chemin}#/accord_humains_echantillon : écrit ${canoniser(ecrit)}, recalculé ${canoniser(recalcule)} depuis ` +
+        `l'échantillon humain rejoué et les notations du volume (§7, analysis/accord-humains.ts). Rien n'est lu.`,
+    );
+    this.name = "AccordHumainsDivergent";
+    this.chemin = chemin;
+  }
+}
+
 /**
  * Lot 10 (a) : `par_mode` écrit pour un outil qui n'a aucun couple déclaré (comparateur, assistant
  * exclu) — `parModeDuRun` ne le calcule pas, il n'y a rien à quoi le recouper.
@@ -241,6 +256,8 @@ export interface RunLu extends Run {
   readonly contrefactuel_candidats?: { readonly taille: number };
   /** D51 (2) : posée par `pnpm run:invalider` ou par la notation en D16 (3) ; le run n'est alors plus noté ni décidé. */
   readonly invalidation?: { readonly motif: string; readonly date: string; readonly run_remplacant_id?: string };
+  /** §7.30 : l'accord des deux humains de l'échantillon, écrit par `pnpm go-no-go`, recoupé par `lireRun`. */
+  readonly accord_humains_echantillon?: AccordHumainsPublie;
 }
 
 export interface TirageLu {
@@ -527,6 +544,13 @@ export function verifierArchive(run: RunLu, chemin: string | undefined): Verific
  */
 export type PlanDuRun = (repertoire_run: string, run: RunLu) => readonly RequeteDuPlan[];
 
+/**
+ * Le tirage de l'échantillon humain d'un run lu, depuis ses réponses obtenues de contexte run (§7).
+ * Injecté par l'appelant — `pipeline/notation/echantillons.ts:echantillonHumainDuRun` — comme
+ * `PlanDuRun` ; appelé seulement s'il y a un `accord_humains_echantillon` à recouper.
+ */
+export type EchantillonHumainDuRun = (run: RunLu, obtenues: readonly Ulid[]) => readonly Ulid[];
+
 export interface OptionsLectureRun {
   /** `data/items/`, dans le dépôt Git qui porte `run.versions.donnees_commit`. */
   readonly items: string;
@@ -534,6 +558,8 @@ export interface OptionsLectureRun {
   readonly archive?: string;
   /** Le plan d'interrogation du run, sur lequel se recompte `par_mode` (D55 (7), protocole 0.21). */
   readonly plan_du_run: PlanDuRun;
+  /** Le tirage de l'échantillon humain, sur lequel se recompte `accord_humains_echantillon` (§7.30). */
+  readonly echantillon_humain: EchantillonHumainDuRun;
 }
 
 export interface RunPourAnalyse {
@@ -563,6 +589,20 @@ function verifierParMode(repertoire_run: string, run: RunLu, reponses: readonly 
   }
 }
 
+/**
+ * §7.30 : un `accord_humains_echantillon` présent dans `run.json` doit être celui que recalculent
+ * l'échantillon humain rejoué et les notations du volume (`analysis/accord-humains.ts`, seul calcul).
+ * Absent (run sans go/no-go), rien n'est recoupé : le schéma l'exige déjà de tout go/no-go.
+ */
+function verifierAccordHumains(repertoire_run: string, run: RunLu, reponses: readonly Reponse[], echantillon_humain: EchantillonHumainDuRun): void {
+  const ecrit = run.accord_humains_echantillon;
+  if (ecrit === undefined) return;
+  const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
+  const { notations } = lireNotationsDuRun(repertoire_run, run.id);
+  const recalcule = accordPublie(accordHumainsEchantillon(echantillon_humain(run, obtenues), notations));
+  if (canoniser(ecrit) !== canoniser(recalcule)) throw new AccordHumainsDivergent(dispositionRunNote(repertoire_run).run_json, ecrit, recalcule);
+}
+
 /** `runs/README.md`, « Ce que l'analyse lira » : l'`EntreesAnalyse` d'un run enregistré. */
 export function lireRun(repertoire_run: string, options: OptionsLectureRun): RunPourAnalyse {
   const run = lireRunJson(repertoire_run);
@@ -572,6 +612,7 @@ export function lireRun(repertoire_run: string, options: OptionsLectureRun): Run
   const items = lireItemsEpingles(questions, options.items, run.versions.donnees_commit, dispositionRunNote(repertoire_run).questions);
   const reponses = lireReponses(repertoire_run, run.id);
   verifierParMode(repertoire_run, run, reponses, options.plan_du_run);
+  verifierAccordHumains(repertoire_run, run, reponses, options.echantillon_humain);
   return {
     entrees: {
       run,

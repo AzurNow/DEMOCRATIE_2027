@@ -131,6 +131,9 @@ function runDuJeu(commit: string, tirage_sha256: string): Record<string, unknown
     alias_candidats,
     perimetre: { ...exemple.perimetre, candidats: [candidat], outils: outilsDuJeu(exemple.perimetre.outils) },
     tirage: { chemin: `runs/${DATE_DU_RUN}/tirage.json`, sha256: tirage_sha256, nombre_questions: 2 },
+    // §7.30, recoupé par lireRun : deux réponses obtenues, un échantillon de ⌈10 % × 2⌉ = 1 réponse,
+    // que les deux humains de `noter` notent à l'identique. L'exemple porte une valeur d'exemple.
+    accord_humains_echantillon: { reponses_doublement_notees: 1, accords: 1, part: 1 },
   };
 }
 

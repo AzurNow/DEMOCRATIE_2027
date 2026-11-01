@@ -131,6 +131,17 @@ export function tirerEchantillonHumain(
   return ordreEchantillonHumain(reponse_ids, graine).slice(0, taille);
 }
 
+/**
+ * L'échantillon humain d'un run, sous sa graine et son taux publiés : l'`EchantillonHumainDuRun` que
+ * `analysis/lecture-run.ts:lireRun` reçoit pour recouper `accord_humains_echantillon` (§7.30).
+ */
+export function echantillonHumainDuRun(
+  run: { readonly graines: { readonly echantillon_humain: GraineTirage }; readonly taux_echantillon_humain: TauxEchantillonHumain },
+  obtenues: readonly string[],
+): readonly string[] {
+  return tirerEchantillonHumain(obtenues, run.graines.echantillon_humain, run.taux_echantillon_humain);
+}
+
 /** Le sous-ensemble contrefactuel, tiré parmi les réponses éligibles reçues. */
 export function tirerSousEnsembleContrefactuel(
   eligibles: readonly string[],

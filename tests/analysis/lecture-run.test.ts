@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { assembler } from "../../analysis/filtre.ts";
 import {
+  AccordHumainsDivergent,
   AliasCandidatsDivergent,
   dispositionRunNote,
   EmpreinteDivergente,
@@ -30,6 +31,7 @@ import { GitInaccessible } from "../../outils/executer-git.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
 import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
+import { echantillonHumainDuRun, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { commiterTout } from "../aides/depot.ts";
 import { ecrireJson, ITEM_P, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
 
@@ -63,7 +65,12 @@ function erreurDe(lire: () => unknown): Error {
 }
 
 function lire(run: RunFictif, archive?: string) {
-  return lireRun(run.repertoire_run, { items: run.items, plan_du_run: requetesDuPlanDuRun, ...(archive === undefined ? {} : { archive }) });
+  return lireRun(run.repertoire_run, {
+    items: run.items,
+    plan_du_run: requetesDuPlanDuRun,
+    echantillon_humain: echantillonHumainDuRun,
+    ...(archive === undefined ? {} : { archive }),
+  });
 }
 
 describe("4. un fichier illisible, invalide ou mal nommé est une erreur qui cite son chemin", () => {
@@ -163,19 +170,22 @@ describe("5. volume absent, volume vide", () => {
     // Modifié ouvertement (constat 17 de la revue du 2026-10-12) : ce cas portait par_mode (exigé
     // par le schéma d'un run publié) jusqu'à ce que zéro réponse API le rende indécidable (cas
     // suivant). Il isole ici le comportement « volume vide » d'origine en retirant aussi le
-    // par_mode déclaré, pour qu'il n'y ait rien à recouper.
+    // par_mode déclaré, pour qu'il n'y ait rien à recouper. Modifié ouvertement (§7.30, constat 8
+    // de la conformité du 2026-11-01) : pour la même raison, l'accord des humains de l'échantillon,
+    // recoupé lui aussi, est retiré avec le go/no-go qui l'exige.
     const run = runNote();
     const reponses = dispositionRunNote(run.repertoire_run).reponses;
     for (const reponse of run.reponses) rmSync(join(reponses, `${reponse.id}.json`));
     const chemin = dispositionRunNote(run.repertoire_run).run_json;
-    const objet = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown> & { perimetre: { outils: Record<string, unknown>[] } };
-    const outils = objet.perimetre.outils.map((outil) => {
+    const lu = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown> & { perimetre: { outils: Record<string, unknown>[] } };
+    const { accord_humains_echantillon: _a, go_no_go: _g, ...objet } = lu;
+    const outils = lu.perimetre.outils.map((outil) => {
       if (outil["outil_id"] !== "outil-alpha") return outil;
       const { par_mode: _p, ...sansParMode } = outil;
       return sansParMode;
     });
     rmSync(chemin);
-    ecrireJson(chemin, { ...objet, statut: "en_cours", perimetre: { ...objet.perimetre, outils } });
+    ecrireJson(chemin, { ...objet, statut: "en_cours", perimetre: { ...lu.perimetre, outils } });
     const { entrees } = lire(run);
     expect(entrees.reponses).toEqual([]);
     expect(entrees.verdicts).toHaveLength(2);
@@ -258,6 +268,54 @@ describe("10. par_mode recoupé à la lecture (constat 17, D55 (7))", () => {
   });
 });
 
+describe("§7.30 : accord_humains_echantillon recoupé à la lecture, comme par_mode", () => {
+  function poserAccord(run: RunFictif, accord: Record<string, unknown>): void {
+    const chemin = dispositionRunNote(run.repertoire_run).run_json;
+    const objet = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown>;
+    rmSync(chemin);
+    ecrireJson(chemin, { ...objet, accord_humains_echantillon: accord });
+  }
+
+  it("le run fictif a des réponses doublement notées dans son échantillon (le recoupement porte sur quelque chose)", () => {
+    const run = runNote();
+    const lu = lireRunJson(run.repertoire_run);
+    const echantillon = tirerEchantillonHumain(run.reponses.map((r) => r.id), lu.graines.echantillon_humain, lu.taux_echantillon_humain);
+    expect(echantillon.length).toBeGreaterThan(0);
+  });
+
+  it("un accord concordant avec l'échantillon rejoué et les notations passe", () => {
+    const run = runNote();
+    // Les deux humains du run fictif notent à l'identique chaque réponse de son échantillon.
+    poserAccord(run, { reponses_doublement_notees: 1, accords: 1, part: 1 });
+    expect(() => lire(run)).not.toThrow();
+  });
+
+  it("un accord qui contredit les notations lève AccordHumainsDivergent, avec l'écrit et le recalcul", () => {
+    const run = runNote();
+    poserAccord(run, { reponses_doublement_notees: 1, accords: 0, part: 0 });
+    const erreur = erreurDe(() => lire(run));
+    expect(erreur).toBeInstanceOf(AccordHumainsDivergent);
+    expect(erreur.message).toContain('"accords":0');
+    expect(erreur.message).toContain('"accords":1');
+  });
+
+  it("une part indéfinie écrite alors que des réponses sont doublement notées : AccordHumainsDivergent", () => {
+    const run = runNote();
+    poserAccord(run, { reponses_doublement_notees: 0, accords: 0 });
+    expect(() => lire(run)).toThrow(AccordHumainsDivergent);
+  });
+
+  it("un run sans accord_humains_echantillon (en cours, sans go/no-go) n'est pas recoupé", () => {
+    const run = runNote();
+    const chemin = dispositionRunNote(run.repertoire_run).run_json;
+    const objet = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown>;
+    const { accord_humains_echantillon: _a, go_no_go: _g, ...sansGoNoGo } = objet;
+    rmSync(chemin);
+    ecrireJson(chemin, { ...sansGoNoGo, statut: "en_cours" });
+    expect(() => lire(run)).not.toThrow();
+  });
+});
+
 describe("6. items à la version épinglée, au commit du gel", () => {
   it("data/items modifié après le gel : la version épinglée est lue, pas la version courante", () => {
     const run = runNote();
@@ -296,7 +354,7 @@ describe("6. items à la version épinglée, au commit du gel", () => {
 
   it("répertoire d'items inexistant : ItemsDuGelIllisibles nommé, jamais GitInaccessible ni TypeError (constat 37 de la revue du 2026-10-12)", () => {
     const run = runNote();
-    const erreur = erreurDe(() => lireRun(run.repertoire_run, { items: "/nulle-part-xyz", plan_du_run: requetesDuPlanDuRun }));
+    const erreur = erreurDe(() => lireRun(run.repertoire_run, { items: "/nulle-part-xyz", plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun }));
     expect(erreur).toBeInstanceOf(ItemsDuGelIllisibles);
     expect(erreur.message).not.toContain("git introuvable");
     expect(erreur.message).toMatch(/inexistant/);

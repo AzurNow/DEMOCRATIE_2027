@@ -4,7 +4,8 @@
  * C'est l'orchestration du vrai run. Deux éléments seulement lui sont injectés : les juges (le port
  * `juge.ts`) et le fournisseur d'existences des liens (`fournisseur-existences.ts`). Elle ne sait
  * pas si l'un ou l'autre est simulé, et ne branche jamais là-dessus ; elle refuse seulement un juge
- * dont l'identité n'est pas celle que déclare `run.json` (`JugesNonConformes`).
+ * dont l'identité n'est pas celle que déclare `run.json` (`JugesNonConformes`), et un run qui déclare
+ * deux juges de la même famille ou un juge sans famille (§7.12, `familles-juges.ts`).
  *
  * **Ordre du §7 (D14 (1)).** Le test contrefactuel passe avant la notation de masse :
  *
@@ -71,6 +72,7 @@ import { tirerEchantillonHumain, tirerSousEnsembleContrefactuel } from "./echant
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";
+import { exigerFamillesDistinctes } from "./familles-juges.ts";
 import { issueDeJuge, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
 import { pagesCitees, type PageCitee } from "./pages-citees.ts";
 import { nommeUnInterroge } from "./permutation.ts";
@@ -272,10 +274,14 @@ interface JugeDeclare {
   readonly version_prompt: string;
 }
 
-/** Les juges injectés sont exactement ceux du run, sous l'identité que `run.json` déclare. */
+/**
+ * Les juges que déclare `run.json` sont de familles différentes (§7.12, `familles-juges.ts`), et les
+ * juges injectés sont exactement ceux du run, sous l'identité que `run.json` déclare.
+ */
 function verifierJuges(run: RunLu, juges: readonly Juge[]): void {
   // `lireRunJson` a validé run.json contre son schéma, qui exige ces quatre champs de chaque juge.
   const declares = run.juges as unknown as readonly JugeDeclare[];
+  exigerFamillesDistinctes(declares);
   const recus = juges.map((juge) => juge.identite.juge_id).sort(comparerChaines);
   const ids = declares.map((juge) => juge.juge_id).sort(comparerChaines);
   if (recus.join("\u0000") !== ids.join("\u0000")) {
