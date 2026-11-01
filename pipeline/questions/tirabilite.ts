@@ -18,6 +18,8 @@
  * Une formulation dont la relecture conclut à un sens changé (`relecture.sens_preserve: false`)
  * n'est jamais interrogée (§5, conformité n° 58) : si sa question est tirable, `separer` lève
  * `FormulationAuSensChange` avant tout usage de la graine.
+ * Une question tirable dont l'item principal est celui d'un candidat non interrogé est refusée de
+ * même (§7, protocole 0.21) : `PrincipalNonInterrogeAuTirage`.
  *
  * `concerneLeRun` est la seule définition des questions que le tirage examine, lue aussi par la
  * complétude du jeu (`completude.ts`). `estCompare` est la seule définition du candidat comparé
@@ -110,7 +112,11 @@ type LectureAuGel =
   | { readonly sorte: "exclue"; readonly exclusion: MotifEtDetail }
   | { readonly sorte: "admise"; readonly items: readonly ItemDeQuestion[] };
 
-export function interrogesDe(run: GelDuRun): ReadonlySet<string> {
+/**
+ * `run.perimetre.candidats[].interroge` : les candidats interrogés au run. Seule définition, lue par
+ * la tirabilité et par la notation (`notation/preparation.ts:interrogesDuRun`).
+ */
+export function interrogesDe(run: Pick<GelDuRun, "perimetre">): ReadonlySet<string> {
   return new Set(run.perimetre.candidats.filter((c) => c.interroge).map((c) => c.candidat_id));
 }
 
@@ -323,6 +329,7 @@ export function separer(
     // le tirage avant tout usage de la graine, qu'elle eût été tirée ou non.
     premisseFausseAuGel(question, items, run.date_gel);
     verifierRelecture(question);
+    verifierPrincipalInterroge(question, index.items, interroges);
     tirables.push(question);
   }
   return { tirables, exclusions: exclusions.sort((a, b) => comparer(a.question_id, b.question_id)) };
@@ -349,6 +356,44 @@ export class FormulationAuSensChange extends Error {
 function verifierRelecture(question: Question): void {
   const fautive = question.formulations.find((formulation) => !formulation.relecture.sens_preserve);
   if (fautive !== undefined) throw new FormulationAuSensChange(question, fautive);
+}
+
+/**
+ * §7 (protocole 0.21, D56 (1)) : « Le juge ne reçoit que les items des candidats interrogés au run. »
+ * La notation écarte la référence d'un non-interrogé, mais l'item principal ne s'écarte pas : sans
+ * lui, la question n'a plus d'objet, et `preparation.ts` le refuse (`ItemPrincipalNonInterroge`),
+ * arrêtant la notation de tout le run. Seule une question d'attribution peut l'atteindre — elle ne
+ * nomme personne, `concerneLeRun` l'examine toujours —, quand l'item F principal d'une mesure fictive
+ * est celui d'un candidat retiré. Le tirage la refuse en la nommant, avant tout usage de la graine,
+ * plutôt que de l'exclure : le protocole n'écrit pas cette exclusion, qui changerait la population
+ * tirée. La règle vaut pour toute question tirable ; un item non principal d'un non-interrogé reste
+ * admis, la notation l'écarte. `interroges` est celui du tirage, `interrogesDe` (une seule définition).
+ */
+export class PrincipalNonInterrogeAuTirage extends Error {
+  readonly question_id: string;
+  readonly item_id: string;
+  readonly candidat_id: string;
+
+  constructor(question: Pick<Question, "id" | "gabarit">, item: Pick<Item, "id" | "candidat_id">) {
+    super(
+      `Question ${question.id} (${question.gabarit}) : son item principal ${item.id} est celui du candidat ` +
+        `${item.candidat_id}, non interrogé au run. Le juge ne reçoit que les items des candidats interrogés ` +
+        `(§7) : la notation de cette question serait refusée. Retirer l'item du jeu ou interroger le candidat ` +
+        `avant le tirage.`,
+    );
+    this.name = "PrincipalNonInterrogeAuTirage";
+    this.question_id = question.id;
+    this.item_id = item.id;
+    this.candidat_id = item.candidat_id;
+  }
+}
+
+function verifierPrincipalInterroge(question: Question, items: ReadonlyMap<string, Item>, interroges: ReadonlySet<string>): void {
+  const horsRun = question.items
+    .filter((entree) => entree.role === "principal")
+    .map((entree) => itemDe(entree.reference.item_id, items))
+    .find((item) => !interroges.has(item.candidat_id));
+  if (horsRun !== undefined) throw new PrincipalNonInterrogeAuTirage(question, horsRun);
 }
 
 /**
