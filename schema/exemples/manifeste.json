@@ -1,5 +1,5 @@
 {
-  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants. Décision de l'auteur du 2026-10-02 (conformité 2026-09-29, n° 23) : chaque declaration_candidature d'un exemple de run porte sa preuve archivée (sha256, archive_url), et chaque assistant inclus sa preuve_inclusion, ajoutées ouvertement à tous les exemples de run existants ; aucun verdict ni aucune erreur attendue ne change. Décision D42 (2) de l'auteur du 2026-10-15 : la formulation neutre de chaque exemple de question porte production {gabarits} au lieu de {modele, version_prompt}, changée ouvertement dans tous les exemples de question existants ; aucun verdict attendu ne change. Revue du 2026-10-12, constat 22 : chaque exemple invalide déclare sa règle visée (erreur_visee : mot-clé ajv et chemin d'instance de l'erreur attendue) et ne réussit que si cette erreur figure parmi celles du validateur ; un exemple valide n'en déclare pas. Un exemple peut porter d'autres erreurs que la règle visée quand elles sont inséparables (branches if, oneOf, anyOf et contains d'ajv). Constat n° 8 de la mise à jour de conformité du 2026-11-01 (§7.30) : accord_humains_echantillon ({reponses_doublement_notees: 10, accords: 9, part: 0.9}, valeurs d'exemple non recalculées des notations) ajouté ouvertement, juste avant go_no_go, à tous les exemples de run existants qui portent un go/no-go ; aucun verdict ni aucune erreur attendue ne change.",
+  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants. Décision de l'auteur du 2026-10-02 (conformité 2026-09-29, n° 23) : chaque declaration_candidature d'un exemple de run porte sa preuve archivée (sha256, archive_url), et chaque assistant inclus sa preuve_inclusion, ajoutées ouvertement à tous les exemples de run existants ; aucun verdict ni aucune erreur attendue ne change. Décision D42 (2) de l'auteur du 2026-10-15 : la formulation neutre de chaque exemple de question porte production {gabarits} au lieu de {modele, version_prompt}, changée ouvertement dans tous les exemples de question existants ; aucun verdict attendu ne change. Revue du 2026-10-12, constat 22 : chaque exemple invalide déclare sa règle visée (erreur_visee : mot-clé ajv et chemin d'instance de l'erreur attendue) et ne réussit que si cette erreur figure parmi celles du validateur ; un exemple valide n'en déclare pas. Un exemple peut porter d'autres erreurs que la règle visée quand elles sont inséparables (branches if, oneOf, anyOf et contains d'ajv). Constat n° 8 de la mise à jour de conformité du 2026-11-01 (§7.30) : accord_humains_echantillon ({reponses_doublement_notees: 10, accords: 9, part: 0.9}, valeurs d'exemple non recalculées des notations) ajouté ouvertement, juste avant go_no_go, à tous les exemples de run existants qui portent un go/no-go ; aucun verdict ni aucune erreur attendue ne change. Protocole 0.23 (D58), §7 « Annotateurs humains » : le kappa des deux humains (kappa: 0.8, valeur d'exemple non recalculée des notations, ou motif_indefini_kappa: aucune_reponse_comparable sur un dénominateur nul) ajouté ouvertement à l'accord_humains_echantillon de tous les exemples de run qui en portent un ; aucun verdict ni aucune erreur attendue ne change.",
   "exemples": [
     {
       "objet": "item",
@@ -2770,6 +2770,79 @@
       }
     },
     {
+      "objet": "run",
+      "fichier": "run/invalide-60-un-seul-juge.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 qui ne déclare qu'un juge : un run déclare exactement deux juges, la combinaison des notes n'étant écrite que pour deux.",
+      "regle_protocole": "§7 (protocole 0.23, D58) : « Un run déclare exactement deux juges, ni plus ni moins »",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/juges"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-61-trois-juges.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 qui déclare un troisième juge : un run déclare exactement deux juges, ni plus ni moins.",
+      "regle_protocole": "§7 (protocole 0.23, D58) : « Un run déclare exactement deux juges, ni plus ni moins »",
+      "erreur_visee": {
+        "keyword": "maxItems",
+        "instance_path": "/juges"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-13-accord-humains-kappa-indefini.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01 dont les deux humains donnent partout la même catégorie primaire : l'accord attendu est maximal, le kappa des deux humains est absent avec le motif accord_attendu_maximal, ni 0, ni 1, ni null ; la part, définie, vaut 1.",
+      "regle_protocole": "§7 « Annotateurs humains » (protocole 0.23, D58) : « le kappa de Cohen de leurs deux notes sur la catégorie primaire, non pondéré, publié absent avec son motif quand il n'est pas défini, comme au §4 »"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-62-accord-humains-sans-kappa.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont l'accord ne publie ni kappa ni motif : le kappa des deux humains est publié avec l'accord, ou son absence motivée.",
+      "regle_protocole": "§7 « Annotateurs humains » (protocole 0.23, D58) : « le kappa de Cohen de leurs deux notes sur la catégorie primaire, non pondéré, publié absent avec son motif quand il n'est pas défini, comme au §4 »",
+      "erreur_visee": {
+        "keyword": "oneOf",
+        "instance_path": "/accord_humains_echantillon"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-63-accord-humains-kappa-et-motif.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont l'accord publie à la fois un kappa et un motif d'absence : l'un des deux exactement.",
+      "regle_protocole": "§7 « Annotateurs humains » (protocole 0.23, D58) : « le kappa de Cohen de leurs deux notes sur la catégorie primaire, non pondéré, publié absent avec son motif quand il n'est pas défini, comme au §4 »",
+      "erreur_visee": {
+        "keyword": "oneOf",
+        "instance_path": "/accord_humains_echantillon"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-64-accord-humains-kappa-sur-zero.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont l'accord publie un kappa de 0 sur zéro réponse doublement notée : un kappa indéfini est absent, jamais remplacé par 0.",
+      "regle_protocole": "§7 « Annotateurs humains » (protocole 0.23, D58) : « le kappa de Cohen de leurs deux notes sur la catégorie primaire, non pondéré, publié absent avec son motif quand il n'est pas défini, comme au §4 »",
+      "erreur_visee": {
+        "keyword": "false schema",
+        "instance_path": "/accord_humains_echantillon/kappa"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-65-accord-humains-kappa-motif-sur-zero.json",
+      "attendu": "invalide",
+      "motif": "Zéro réponse doublement notée avec le motif accord_attendu_maximal : sans réponse comparable, le motif est aucune_reponse_comparable.",
+      "regle_protocole": "§7 « Annotateurs humains » (protocole 0.23, D58) : « le kappa de Cohen de leurs deux notes sur la catégorie primaire, non pondéré, publié absent avec son motif quand il n'est pas défini, comme au §4 »",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/accord_humains_echantillon/motif_indefini_kappa"
+      }
+    },
+    {
       "objet": "notation",
       "fichier": "notation/valide-10-humain-refus-sans-extrait.json",
       "attendu": "valide",
@@ -2936,6 +3009,28 @@
       "erreur_visee": {
         "keyword": "pattern",
         "instance_path": "/fenetre_debut"
+      }
+    },
+    {
+      "objet": "config-gel",
+      "fichier": "config-gel/invalide-04-un-seul-juge.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 qui ne déclare qu'un juge : le gel le refuse à la lecture de config/gel.json, avant d'écrire run.json.",
+      "regle_protocole": "§7 (protocole 0.23, D58) : « Un run déclare exactement deux juges, ni plus ni moins »",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/juges"
+      }
+    },
+    {
+      "objet": "config-gel",
+      "fichier": "config-gel/invalide-05-trois-juges.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 qui déclare trois juges : le gel le refuse à la lecture de config/gel.json, avant d'écrire run.json.",
+      "regle_protocole": "§7 (protocole 0.23, D58) : « Un run déclare exactement deux juges, ni plus ni moins »",
+      "erreur_visee": {
+        "keyword": "maxItems",
+        "instance_path": "/juges"
       }
     },
     {

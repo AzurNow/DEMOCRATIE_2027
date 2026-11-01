@@ -4211,14 +4211,21 @@
       "nature": "code",
       "statut": "partielle",
       "code": [
-        "pipeline/notation/echantillons.ts:tirerJeuOr"
+        "pipeline/notation/echantillons.ts:tirerJeuOr",
+        "analysis/kappa-jeu-or.ts:kappasJeuOr",
+        "analysis/kappa-categorie-primaire.ts:categorieHumaineRetenue",
+        "analysis/kappa-categorie-primaire.ts:kappaDeLaPaire"
       ],
       "tests": [
-        "tests/notation/jeu-or.test.ts « 300 parmi 1000 : sans doublon, sans sous-effectif »"
+        "tests/notation/jeu-or.test.ts « 300 parmi 1000 : sans doublon, sans sous-effectif »",
+        "tests/analysis/kappa-jeu-or.test.ts « un juge parfait et l'autre faible : la paire vaut le kappa du faible (un juge faible ne se cache pas) »",
+        "tests/analysis/kappa-jeu-or.test.ts « toutes les notes retenues indéterminées : exclues et comptées, aucune réponse comparable »",
+        "tests/analysis/kappa-jeu-or.test.ts « une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1 ; la paire aussi »",
+        "tests/analysis/kappa-jeu-or.test.ts « le juge retiré n'a pas de kappa ; la paire est celle du juge restant, même si le retiré était faible »"
       ],
       "lot": null,
       "constat": 7,
-      "note": "Le jeu d'or est tiré ; aucun code ne calcule sur lui l'accord juge-humain par juge, et le « kappa de la paire » n'est défini nulle part."
+      "note": "Lot D58 (protocole 0.23) : le kappa de chaque juge sur le jeu d'or (contre la note humaine retenue, catégorie primaire, non pondéré, indéterminées exclues et comptées) et celui de la paire (le plus faible) sont calculés par une fonction pure, analysis/kappa-jeu-or.ts, qui partage la note humaine retenue et le noyau du kappa avec l'échantillon. Reste partielle : aucun format de fichier n'assemble le jeu d'or, aucun motif n'existe pour son troisième humain, et aucune commande n'écrit kappa_juge_humain ni kappa_paire_juges dans run.json."
     },
     {
       "id": "§7.23",
@@ -4227,14 +4234,16 @@
       "nature": "code",
       "statut": "partielle",
       "code": [
-        "pipeline/go-no-go/criteres-juges.ts:critereKappaJugesHumains"
+        "pipeline/go-no-go/criteres-juges.ts:critereKappaJugesHumains",
+        "analysis/kappa-categorie-primaire.ts:kappaDeLaPaire"
       ],
       "tests": [
-        "tests/go-no-go/kappa-echantillon.test.ts « kappa exactement 0,75 : vert (« ≥ 0,75 ») »"
+        "tests/go-no-go/kappa-echantillon.test.ts « kappa exactement 0,75 : vert (« ≥ 0,75 ») »",
+        "tests/analysis/kappa-jeu-or.test.ts « un seul kappa indéfini : la paire est absente, avec le motif de ce juge, jamais le kappa de l'autre »"
       ],
       "lot": null,
       "constat": 7,
-      "note": "Le seuil de 0,75 est appliqué à chaque juge sur l'échantillon de 10 % (§12) ; le kappa « de la paire » du §7, sur le jeu d'or, n'est ni défini ni calculé."
+      "note": "Le seuil de 0,75 est appliqué à chaque juge sur l'échantillon de 10 % (§12). Lot D58 (protocole 0.23) : le kappa de la paire sur le jeu d'or est défini et calculé (analysis/kappa-categorie-primaire.ts:kappaDeLaPaire, le plus faible des deux, absent dès qu'un kappa l'est) ; il n'est encore ni écrit dans run.json ni comparé au seuil pour la mention « provisoire »."
     },
     {
       "id": "§7.24",
@@ -4350,11 +4359,14 @@
         "tests/analysis/accord-humains.test.ts « arbitrage d'un troisième humain : l'accord porte sur les deux premiers, l'arbitre n'en fait pas un accord »",
         "tests/analysis/accord-humains.test.ts « réponse notée par un seul humain : exclue du numérateur et du dénominateur (ni accord ni désaccord) »",
         "tests/go-no-go/commande.test.ts « §7.30 : écrit accord_humains_echantillon, compté sur l'échantillon rejoué ; un accord déjà écrit différent du recalcul : refus, run.json inchangé à l'octet »",
-        "tests/analysis/lecture-run.test.ts « un accord qui contredit les notations lève AccordHumainsDivergent, avec l'écrit et le recalcul »"
+        "tests/analysis/lecture-run.test.ts « un accord qui contredit les notations lève AccordHumainsDivergent, avec l'écrit et le recalcul »",
+        "tests/analysis/accord-humains.test.ts « non pondéré, sur les quatre catégories de la grille (annexe C) : 3 accords sur 4, κ = 7/11 »",
+        "tests/analysis/accord-humains.test.ts « une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1 »",
+        "tests/analysis/lecture-run.test.ts « D58 : un kappa des deux humains écrit qui contredit le recalcul (1 au lieu d'absent) : AccordHumainsDivergent »"
       ],
       "lot": null,
       "constat": 8,
-      "note": "Corrigé (PR à venir) : l'aveugle est gardé ; l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14, notationsConcordent), est publié dans run.json#/accord_humains_echantillon (réponses doublement notées, accords, part ; part absente sur zéro réponse), exigé de tout go/no-go et recoupé par lireRun. Aucun kappa humain-humain : le protocole n'en définit pas."
+      "note": "Corrigé : l'aveugle est gardé ; l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14, notationsConcordent), est publié dans run.json#/accord_humains_echantillon (réponses doublement notées, accords, part ; part absente sur zéro réponse), exigé de tout go/no-go et recoupé par lireRun. Lot D58 (protocole 0.23) : le kappa de Cohen des deux humains sur la catégorie primaire, non pondéré, y est publié (kappa, ou motif_indefini_kappa quand il est indéfini), diagnostic lu par aucun critère du go/no-go."
     },
     {
       "id": "§7.31",

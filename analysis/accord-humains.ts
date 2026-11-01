@@ -7,7 +7,19 @@
  * lisent les métriques primaires, sinon un troisième humain arbitre. » La règle est
  * `note-lue.ts:notationsConcordent`, seule égalité du dépôt, réutilisée ici telle quelle. Sont
  * publiés : le nombre de réponses de l'échantillon notées par les deux humains, le nombre où ils
- * s'accordent, et la part qui en résulte. Aucun kappa humain-humain : le protocole n'en définit pas.
+ * s'accordent, la part qui en résulte, et (protocole 0.23, D58) « le kappa de Cohen de leurs deux notes
+ * sur la catégorie primaire, non pondéré, publié absent avec son motif quand il n'est pas défini, comme
+ * au §4. Ce kappa est un diagnostic, pas un critère de la section 12 » : aucun critère du go/no-go ne
+ * le lit.
+ *
+ * **Kappa des deux humains.** Sur les mêmes réponses doublement notées que la part, la catégorie
+ * primaire du premier humain contre celle du second, sur les quatre catégories de la grille (annexe C :
+ * exacte, inexacte, non-réponse, indéterminée), fixées a priori. « indeterminee » y est une catégorie
+ * comme les autres : le §7 n'écarte les notes indéterminées que du kappa des juges, où la référence est
+ * la note retenue et où un juge ne peut pas la rendre. Indéfini : `aucune_reponse_comparable` sans
+ * réponse doublement notée, `accord_attendu_maximal` quand l'accord attendu vaut 1 (une seule
+ * catégorie partout) — jamais 0 ni 1. Les notes des juges n'y entrent pas : le retrait d'un juge n'y
+ * change rien. Noyau et motifs : `kappa-categorie-primaire.ts`, partagés avec les kappas des juges.
  *
  * **Ce qui est compté.**
  *
@@ -32,6 +44,7 @@
  * n'y a donc pas de notation « supersédée » à écarter.
  */
 
+import { CATEGORIES_PRIMAIRES, kappaCategoriePrimaire, type MotifKappaIndefini } from "./kappa-categorie-primaire.ts";
 import { notationsConcordent } from "./note-lue.ts";
 import type { Notation, Ulid } from "./types.ts";
 
@@ -42,12 +55,21 @@ export interface AccordHumainsEchantillon {
   readonly accords: number;
   /** `accords / reponses_doublement_notees` ; `null` quand le dénominateur est nul. */
   readonly part: number | null;
+  /** Kappa de Cohen des deux humains sur la catégorie primaire ; `null` quand il n'est pas défini. */
+  readonly kappa: number | null;
+  /** Pourquoi le kappa est absent ; `null` quand il est défini. */
+  readonly motif_indefini_kappa: MotifKappaIndefini | null;
 }
 
-/** `schema/run.schema.json#/properties/accord_humains_echantillon` : la part indéfinie est absente. */
-export type AccordHumainsPublie =
+/** Le kappa publié : sa valeur, ou son motif d'absence, jamais les deux. */
+type KappaPublie = { readonly kappa: number } | { readonly motif_indefini_kappa: MotifKappaIndefini };
+
+/** `schema/run.schema.json#/properties/accord_humains_echantillon` : la part et le kappa indéfinis sont absents. */
+export type AccordHumainsPublie = (
   | { readonly reponses_doublement_notees: number; readonly accords: number; readonly part: number }
-  | { readonly reponses_doublement_notees: 0; readonly accords: 0 };
+  | { readonly reponses_doublement_notees: 0; readonly accords: 0 }
+) &
+  KappaPublie;
 
 export class DoubleNotationHumaineIncoherente extends Error {
   constructor(reponse_id: Ulid, detail: string) {
@@ -85,14 +107,29 @@ export function accordHumainsEchantillon(echantillon: readonly Ulid[], notations
     .map(([id, siennes]) => paireDe(id, siennes))
     .filter((paire): paire is readonly [Notation, Notation] => paire !== null);
   const accords = paires.filter(([a, b]) => notationsConcordent(a, b)).length;
-  return { reponses_doublement_notees: paires.length, accords, part: paires.length === 0 ? null : accords / paires.length };
+  const kappa = kappaCategoriePrimaire(paires.map(([a, b]) => ({ a: a.categorie, b: b.categorie })), CATEGORIES_PRIMAIRES);
+  return {
+    reponses_doublement_notees: paires.length,
+    accords,
+    part: paires.length === 0 ? null : accords / paires.length,
+    kappa: kappa.kappa,
+    motif_indefini_kappa: kappa.motif_indefini,
+  };
 }
 
-/** La forme publiée dans `run.json` : une part indéfinie n'y est pas, ni sous 0, ni sous 1, ni sous null. */
+/** La forme publiée dans `run.json` : une part ou un kappa indéfinis n'y sont pas, ni sous 0, ni sous 1, ni sous null. */
 export function accordPublie(accord: AccordHumainsEchantillon): AccordHumainsPublie {
+  const kappa = kappaPublie(accord);
   if (accord.part === null) {
     if (accord.reponses_doublement_notees !== 0 || accord.accords !== 0) throw new Error(`Accord des humains incohérent : part indéfinie sur ${accord.reponses_doublement_notees} réponse(s).`);
-    return { reponses_doublement_notees: 0, accords: 0 };
+    return { reponses_doublement_notees: 0, accords: 0, ...kappa };
   }
-  return { reponses_doublement_notees: accord.reponses_doublement_notees, accords: accord.accords, part: accord.part };
+  return { reponses_doublement_notees: accord.reponses_doublement_notees, accords: accord.accords, part: accord.part, ...kappa };
+}
+
+function kappaPublie(accord: AccordHumainsEchantillon): KappaPublie {
+  const { kappa, motif_indefini_kappa } = accord;
+  if (kappa !== null && motif_indefini_kappa === null) return { kappa };
+  if (kappa === null && motif_indefini_kappa !== null) return { motif_indefini_kappa };
+  throw new Error(`Accord des humains incohérent : kappa ${String(kappa)} et motif ${String(motif_indefini_kappa)} (l'un des deux exactement).`);
 }

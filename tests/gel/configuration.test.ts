@@ -62,6 +62,24 @@ describe("cas 9 : config/gel.json", () => {
     expect(erreur.message).toContain("juges");
   });
 
+  // §7, protocole 0.23 (D58) : « Un run déclare exactement deux juges, ni plus ni moins ». Le refus
+  // tombe à la lecture de config/gel.json, première étape de pnpm geler, avant toute écriture.
+  it("D58 : un seul juge déclaré ⇒ refus du schéma qui nomme juges, avant toute écriture", () => {
+    const [premier] = CONFIGURATION_GEL.juges;
+    const erreur = erreurDe(() => validerConfigurationGel(texte({ ...CONFIGURATION_GEL, juges: [premier] }), "essai"));
+    expect(erreur).toBeInstanceOf(ErreurSchema);
+    expect(erreur.message).toContain("/juges");
+    expect(erreur.message).toContain("must NOT have fewer than 2 items");
+  });
+
+  it("D58 : trois juges déclarés ⇒ refus du schéma qui nomme juges, avant toute écriture", () => {
+    const troisieme = { juge_id: "juge-3", famille_modele: "famille-z", modele: "famille-z/modele-juge-3", version_prompt: "prompts/judge-primaire-1.0.0" };
+    const erreur = erreurDe(() => validerConfigurationGel(texte({ ...CONFIGURATION_GEL, juges: [...CONFIGURATION_GEL.juges, troisieme] }), "essai"));
+    expect(erreur).toBeInstanceOf(ErreurSchema);
+    expect(erreur.message).toContain("/juges");
+    expect(erreur.message).toContain("must NOT have more than 2 items");
+  });
+
   it("une clé inconnue est refusée par le schéma, jamais ignorée", () => {
     const erreur = erreurDe(() => validerConfigurationGel(texte({ ...CONFIGURATION_GEL, taux_echantillon_humain: 0.1 }), "essai"));
     expect(erreur).toBeInstanceOf(ErreurSchema);

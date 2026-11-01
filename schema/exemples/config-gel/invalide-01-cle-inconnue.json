@@ -7,6 +7,12 @@
       "famille_modele": "famille-x",
       "modele": "famille-x/modele-juge-1",
       "version_prompt": "prompts/judge-primaire-1.0.0"
+    },
+    {
+      "juge_id": "juge-2",
+      "famille_modele": "famille-y",
+      "modele": "famille-y/modele-juge-2",
+      "version_prompt": "prompts/judge-primaire-1.0.0"
     }
   ],
   "alias_aveugles": {

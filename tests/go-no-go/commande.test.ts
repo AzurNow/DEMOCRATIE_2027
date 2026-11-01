@@ -165,14 +165,15 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
 
       const resultat = goNoGo(run);
       // Les aides posent deux notations humaines identiques sur chaque réponse de l'échantillon,
-      // refus de l'API compris (D32) : toutes sont doublement notées, toutes concordent.
-      const attendu = { reponses_doublement_notees: taille, accords: taille, part: 1 };
-      expect(resultat.accord_humains).toEqual(attendu);
+      // refus de l'API compris (D32) : toutes sont doublement notées, toutes concordent. Les notes
+      // recopiées couvrent plusieurs catégories primaires : le kappa des deux humains (D58) vaut 1.
+      const attendu = { reponses_doublement_notees: taille, accords: taille, part: 1, kappa: 1 };
+      expect(resultat.accord_humains).toEqual({ ...attendu, motif_indefini_kappa: null });
       const ecrit = valider<Record<string, unknown>>("run", lireObjet(join(run, "run.json")), "run.json écrit");
       expect(ecrit["accord_humains_echantillon"]).toEqual(attendu);
       expect(ecrit["go_no_go"]).not.toHaveProperty("accord_humains_echantillon");
 
-      modifierRun(run, (r) => ({ ...r, accord_humains_echantillon: { reponses_doublement_notees: taille, accords: taille - 1, part: (taille - 1) / taille } }));
+      modifierRun(run, (r) => ({ ...r, accord_humains_echantillon: { reponses_doublement_notees: taille, accords: taille - 1, part: (taille - 1) / taille, kappa: 1 } }));
       const avant = [octets(run, "run.json"), octets(run, "checklist.json")];
       expect(() => goNoGo(run)).toThrow(GoNoGoDivergent);
       expect([octets(run, "run.json"), octets(run, "checklist.json")]).toEqual(avant);
