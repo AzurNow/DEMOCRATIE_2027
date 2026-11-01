@@ -10,7 +10,10 @@
  * **Candidats.** Le dérangement se tire sur les seuls candidats interrogés au run
  * (`run.perimetre.candidats` filtré sur `interroge`, la même définition que `candidatsInterroges`
  * d'`analysis/lecture-run.ts`) : un candidat non interrogé n'a pas d'image, son libellé et son nom
- * seul ne sont jamais remplacés (`reponse-contrefactuelle.ts`). L'unicité des formes
+ * seul ne sont jamais remplacés (`reponse-contrefactuelle.ts`). Ses formes participent en revanche à
+ * la recherche des occurrences (`permutation.ts`) : le dérangement les transporte
+ * (`hors_derangement`), pour que le nom d'un non-interrogé qui contient le nom seul d'un interrogé
+ * ne soit jamais réécrit en partie. L'unicité des formes
  * (`verifierCandidats`) se vérifie en revanche sur tout le périmètre, interrogés et non interrogés
  * ensemble : une forme non blanche, deux à deux distincte, servant de libellé à l'un et de nom seul
  * à l'autre rendrait le remplacement ambigu même si l'un des deux candidats n'est pas interrogé.
@@ -55,11 +58,12 @@ export interface Derangement {
   /** Une paire par candidat, dans l'ordre croissant des `candidat_id` des sources. */
   readonly paires: readonly PaireDuDerangement[];
   /**
-   * Les `candidat_id` du périmètre non interrogés au run, triés par `comparerChaines` (D55 (4)) :
-   * ni source ni image d'aucune paire, mais au périmètre, donc un identifiant que
-   * `reponse-contrefactuelle.ts` garde inchangé plutôt que de le rejeter comme hors périmètre.
+   * Les candidats du périmètre non interrogés au run, triés par `candidat_id` (`comparerChaines`,
+   * D55 (4)) : ni source ni image d'aucune paire, mais au périmètre, donc un identifiant que
+   * `reponse-contrefactuelle.ts` garde inchangé plutôt que de le rejeter comme hors périmètre, et
+   * des formes que `permutation.ts` cherche sans jamais les remplacer.
    */
-  readonly hors_derangement: readonly string[];
+  readonly hors_derangement: readonly CandidatDuRun[];
 }
 
 /**
@@ -75,8 +79,7 @@ export function tirerDerangement(interroges: readonly CandidatDuRun[], perimetre
   const idsInterroges = new Set(interroges.map((candidat) => candidat.candidat_id));
   const hors_derangement = perimetre
     .filter((candidat) => !idsInterroges.has(candidat.candidat_id))
-    .map((candidat) => candidat.candidat_id)
-    .sort(comparerChaines);
+    .sort((a, b) => comparerChaines(a.candidat_id, b.candidat_id));
   const ranges = [...interroges].sort((a, b) => comparerChaines(a.candidat_id, b.candidat_id));
   const images = melangeSansPointFixe(ranges, generateur(graineDerivee(graine.valeur, CLE_DERANGEMENT_CANDIDATS)));
   return { paires: ranges.map((source, rang) => ({ source, image: exiger(images, rang) })), hors_derangement };

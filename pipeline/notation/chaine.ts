@@ -53,7 +53,7 @@ import { lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe, type Ru
 import type { Instant, Ulid } from "../../analysis/types.ts";
 import type { ReponseObtenue } from "../interrogation/types.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
-import { nommeUnCandidat, textesNommables } from "./candidats.ts";
+import { textesNommables } from "./candidats.ts";
 import { construireCharge, type DemandeCharge, type QuestionPosee, type ReferenceSoumise, type ResoluAuGel } from "./charge-juge.ts";
 import { testerContrefactuel, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
 import { decider, type MotifAttente } from "./decision.ts";
@@ -64,6 +64,7 @@ import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";
 import { issueDeJuge, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
 import { pagesCitees, type PageCitee } from "./pages-citees.ts";
+import { nommeUnInterroge } from "./permutation.ts";
 import { publierContrefactuel } from "./publication-contrefactuel.ts";
 import { notationParRegle, REGLE_REFUS_API } from "./regle-refus.ts";
 import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle.ts";
@@ -419,11 +420,13 @@ function runAvantLeTest(run: RunDeNotation): RunDeNotation {
 
 /**
  * D55 (4), §7 (0.19) : éligibilité restreinte aux candidats interrogés, ceux que le dérangement
- * permute. Exportée (signature réduite à ce qu'elle lit) pour un test unitaire direct.
+ * permute ; les formes de tout le périmètre sont cherchées, pour qu'un nom de non-interrogé qui
+ * contient celui d'un interrogé ne compte pas (`permutation.ts:nommeUnInterroge`). Exportée
+ * (signature réduite à ce qu'elle lit) pour un test unitaire direct.
  */
-export function estEligible(r: Pick<ReponseANoter, "reponse" | "references">, interroges: readonly CandidatDuRun[]): boolean {
+export function estEligible(r: Pick<ReponseANoter, "reponse" | "references">, interroges: readonly CandidatDuRun[], perimetre: readonly CandidatDuRun[]): boolean {
   if (r.reponse.normalise.refus_api) return false;
-  return nommeUnCandidat(textesNommables(r.reponse.normalise.texte, r.references.map((reference) => reference.item)), interroges);
+  return nommeUnInterroge(textesNommables(r.reponse.normalise.texte, r.references.map((reference) => reference.item)), interroges, perimetre);
 }
 
 /** Les candidats du périmètre interrogés au run, ceux que le dérangement permute (D55 (4)). */
@@ -434,7 +437,7 @@ function candidatsInterroges(etat: Etat, run: RunDeNotation): readonly CandidatD
 async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
   const run = runAvantLeTest(runDeNotationDe(etat.run));
   const interroges = candidatsInterroges(etat, run);
-  const eligibles = etat.reponses.filter((r) => estEligible(r, interroges)).map((r) => r.reponse.id);
+  const eligibles = etat.reponses.filter((r) => estEligible(r, interroges, run.candidats)).map((r) => r.reponse.id);
   const sous_ensemble = tirerSousEnsembleContrefactuel(eligibles, run.graines.contrefactuel);
   const attendent = sous_ensemble.reponse_ids.filter((id) => exigerPreparee(etat, id).liens === null);
   if (attendent.length > 0) return { statut: "en_attente_test_liens", reponse_ids: attendent };

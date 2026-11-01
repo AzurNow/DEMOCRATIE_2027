@@ -18,6 +18,7 @@ import { describe, expect, it } from "vitest";
 import { testerContrefactuel, type PaireContrefactuelle } from "../../pipeline/notation/contrefactuel.ts";
 import { tirerDerangement, type Derangement } from "../../pipeline/notation/derangement.ts";
 import type { SousEnsembleContrefactuel } from "../../pipeline/notation/echantillons.ts";
+import { permuterTexte } from "../../pipeline/notation/permutation.ts";
 import { reponseContrefactuelle } from "../../pipeline/notation/reponse-contrefactuelle.ts";
 import { issueDeJuge, type CadreNotationJuge, type IdentiteJuge, type SortieJuge } from "../../pipeline/notation/juge.ts";
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain } from "../../pipeline/notation/types.ts";
@@ -162,5 +163,58 @@ describe("cas construit D55 (4) : le dérangement contrefactuel ne porte que sur
       expect(juge.paires_ecartees_contrefactuel).toBe(0);
       expect(juge.retire).toBe(false);
     }
+  });
+});
+
+/**
+ * Le nom d'un candidat non interrogé n'est jamais réécrit en partie (§7, D55 (4)). Après #171, les
+ * formes des non-interrogés ne participaient plus à la recherche « la plus longue occurrence
+ * gagne » : un nom de non-interrogé qui contient le nom seul d'un interrogé voyait ce nom seul
+ * remplacé (« Selon Marion Maréchal Le Pen » devenait « Selon Marion Maréchal Bardella », sans
+ * mention résiduelle). La recherche lit désormais tout le périmètre ; seul le remplacement est
+ * restreint aux interrogés. Noms fictifs, même structure : « Maxime Le Brun » et « Lou Garnier »
+ * interrogés, « Inès Morel Le Brun » (nom seul « Morel Le Brun ») et « Jo Brun » non interrogés.
+ */
+describe("un nom de non-interrogé qui contient le nom seul d'un interrogé reste intact", () => {
+  const LE_BRUN: CandidatDuRun = { candidat_id: "le-brun", libelle: "Maxime Le Brun", nom: "Le Brun" };
+  const GARNIER: CandidatDuRun = { candidat_id: "garnier", libelle: "Lou Garnier", nom: "Garnier" };
+  const MOREL: CandidatDuRun = { candidat_id: "morel", libelle: "Inès Morel Le Brun", nom: "Morel Le Brun" };
+  const BRUN: CandidatDuRun = { candidat_id: "brun", libelle: "Jo Brun", nom: "Brun" };
+  /** Deux interrogés : le dérangement est l'échange, quelle que soit la graine. */
+  const ECHANGE = tirerDerangement([LE_BRUN, GARNIER], [LE_BRUN, GARNIER, MOREL, BRUN], GRAINE_DU_CAS);
+
+  it("le libellé et le nom seul du non-interrogé restent intacts, aucune mention comptée", () => {
+    for (const texte of ["Selon Inès Morel Le Brun, la TVA baissera.", "Selon Morel Le Brun, la TVA baissera."]) {
+      expect(permuterTexte(texte, ECHANGE)).toEqual({ texte, remplacements: 0, mentions_residuelles: 0 });
+    }
+  });
+
+  it("dans le même texte, seules les occurrences de l'interrogé sont remplacées", () => {
+    expect(permuterTexte("Selon Morel Le Brun, oui ; Le Brun dit non, Maxime Le Brun aussi.", ECHANGE)).toEqual({
+      texte: "Selon Morel Le Brun, oui ; Garnier dit non, Lou Garnier aussi.",
+      remplacements: 2,
+      mentions_residuelles: 0,
+    });
+  });
+
+  it("chevauchement inverse : la forme d'un interrogé, plus longue, contient celle d'un non-interrogé, l'interrogé gagne", () => {
+    expect(permuterTexte("Le Brun répond à Brun.", ECHANGE)).toEqual({ texte: "Garnier répond à Brun.", remplacements: 1, mentions_residuelles: 0 });
+  });
+
+  it("apostrophe typographique et casse : même normalisation de la recherche qu'avant", () => {
+    expect(permuterTexte("Le programme d’Inès Morel Le Brun et l’avis de Le Brun.", ECHANGE).texte).toBe(
+      "Le programme d’Inès Morel Le Brun et l’avis de Garnier.",
+    );
+    // En capitales, le remplacement exact ne voit rien ; la recherche sans casse attribue la mention
+    // au non-interrogé (la plus longue), donc elle n'est pas résiduelle.
+    expect(permuterTexte("Selon MOREL LE BRUN, oui.", ECHANGE)).toEqual({ texte: "Selon MOREL LE BRUN, oui.", remplacements: 0, mentions_residuelles: 0 });
+    // Une mention en capitales de l'interrogé seul reste, elle, résiduelle.
+    expect(permuterTexte("Selon MOREL LE BRUN, oui ; LE BRUN, non.", ECHANGE).mentions_residuelles).toBe(1);
+  });
+
+  it("de bout en bout : la réponse contrefactuelle garde le nom du non-interrogé et ne compte aucune mention résiduelle", () => {
+    const { reponse, mentions_residuelles } = reponseContrefactuelle(reponseDeTest("Selon Inès Morel Le Brun, la TVA baissera."), CONTREFACTUELLE_ID, ECHANGE);
+    expect(reponse.normalise.texte).toBe("Selon Inès Morel Le Brun, la TVA baissera.");
+    expect(mentions_residuelles).toBe(0);
   });
 });

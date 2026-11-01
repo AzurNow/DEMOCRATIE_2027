@@ -12,17 +12,29 @@
  * « Le Brun »), la plus longue gagne ; à longueur égale, la première dans le texte. Les positions
  * sont en unités UTF-16 du texte reçu, comme celles d'`occurrencesDeNom`.
  *
+ * **Candidats non interrogés** (§7, D55 (4)). Ils n'ont pas d'image, mais leurs formes participent
+ * à la recherche, avec la même règle de chevauchement : une occurrence qui leur revient (« Inès
+ * Morel Le Brun », non interrogée, contient « Le Brun », interrogé) est laissée intacte, et n'est
+ * comptée ni comme remplacement, ni comme mention résiduelle, ni pour l'éligibilité. Sans elles, le
+ * nom d'un non-interrogé serait réécrit en partie (« Inès Morel Garnier »). Seul le remplacement
+ * est restreint aux interrogés ; le dérangement lui-même n'en dépend pas.
+ *
+ * **Éligibilité** (`nommeUnInterroge`). Une réponse est éligible au sous-ensemble exactement quand
+ * cette recherche y trouve une occurrence d'un interrogé, donc quelque chose à remplacer.
+ *
  * **Mentions résiduelles** (`docs/DETTE.md`, 2026-10-05, point 3). Une mention que le remplacement
  * exact ne voit pas (« LE BRUN », « MAXIME Le Brun ») reste en clair dans le texte permuté. Elle est
  * comptée, pas remplacée : les formes sont recherchées sans tenir compte de la casse
  * (`toLocaleLowerCase("fr")` du texte et de chaque forme, mêmes bornes de mot), avec la même règle
  * de chevauchement ; une mention ainsi trouvée est résiduelle sauf si une occurrence remplacée
- * couvre exactement le même intervalle du texte d'origine. Ce compte est un diagnostic publié avec
+ * couvre exactement le même intervalle du texte d'origine, ou si elle revient à un non-interrogé
+ * (la plus longue, sans égard à la casse, est la sienne). Ce compte est un diagnostic publié avec
  * le résultat du test : il ne change ni le texte permuté ni le taux de changement.
  */
 
-import { occurrencesDeNom, type Occurrence } from "./candidats.ts";
-import type { Derangement } from "./derangement.ts";
+import { occurrencesDeNom, type NomsDeCandidat, type Occurrence } from "./candidats.ts";
+import { verifierCandidats, type Derangement } from "./derangement.ts";
+import type { CandidatDuRun } from "./types.ts";
 
 export interface TextePermute {
   readonly texte: string;
@@ -34,16 +46,22 @@ export interface TextePermute {
 
 interface Forme {
   readonly forme: string;
-  readonly remplacant: string;
+  /** `null` : forme d'un candidat non interrogé, cherchée mais jamais remplacée (D55 (4)). */
+  readonly remplacant: string | null;
 }
 
 interface Trouvee extends Occurrence {
+  readonly remplacant: string | null;
+}
+
+/** Une occurrence d'un candidat interrogé, la seule qui se remplace. */
+interface Remplacee extends Occurrence {
   readonly remplacant: string;
 }
 
 export function permuterTexte(texte: string, derangement: Derangement): TextePermute {
   const formes = formesDe(derangement);
-  const remplacees = sansChevauchement(trouver(texte, formes));
+  const remplacees = occurrencesDInterroges(texte, formes);
   return {
     texte: remplacer(texte, remplacees),
     remplacements: remplacees.length,
@@ -51,16 +69,56 @@ export function permuterTexte(texte: string, derangement: Derangement): TextePer
   };
 }
 
-/** Pour chaque paire, le libellé vers le libellé de l'image, le nom seul vers son nom seul. */
+/**
+ * Un des textes nomme-t-il un candidat interrogé, une fois retirées les occurrences qui reviennent
+ * à un non-interrogé ? `perimetre` : tout le périmètre du run, interrogés compris, dont l'unicité
+ * des formes est vérifiée comme au tirage du dérangement (`verifierCandidats`).
+ */
+export function nommeUnInterroge(textes: readonly string[], interroges: readonly CandidatDuRun[], perimetre: readonly CandidatDuRun[]): boolean {
+  verifierCandidats(perimetre);
+  const ids = new Set(interroges.map((candidat) => candidat.candidat_id));
+  // Le remplaçant d'un interrogé n'a pas d'importance ici : seule compte l'occurrence.
+  const formes = perimetre.flatMap((candidat) => (ids.has(candidat.candidat_id) ? formesIdentiques(candidat) : formesIntactes(candidat)));
+  return textes.some((texte) => occurrencesDInterroges(texte, formes).length > 0);
+}
+
+/**
+ * Pour chaque paire, le libellé vers le libellé de l'image, le nom seul vers son nom seul ; puis les
+ * formes des non-interrogés, sans remplaçant.
+ */
 function formesDe(derangement: Derangement): readonly Forme[] {
-  return derangement.paires.flatMap(({ source, image }) => [
+  const permutees = derangement.paires.flatMap(({ source, image }) => [
     { forme: source.libelle, remplacant: image.libelle },
     { forme: source.nom, remplacant: image.nom },
   ]);
+  return [...permutees, ...derangement.hors_derangement.flatMap(formesIntactes)];
+}
+
+function formesIntactes(candidat: NomsDeCandidat): readonly Forme[] {
+  return [
+    { forme: candidat.libelle, remplacant: null },
+    { forme: candidat.nom, remplacant: null },
+  ];
+}
+
+function formesIdentiques(candidat: NomsDeCandidat): readonly Forme[] {
+  return [
+    { forme: candidat.libelle, remplacant: candidat.libelle },
+    { forme: candidat.nom, remplacant: candidat.nom },
+  ];
+}
+
+/** Toutes les formes cherchées, la plus longue gagne ; puis les seules occurrences d'interrogés. */
+function occurrencesDInterroges(texte: string, formes: readonly Forme[]): Remplacee[] {
+  return dInterroges(sansChevauchement(trouver(texte, formes)));
 }
 
 function trouver(texte: string, formes: readonly Forme[]): Trouvee[] {
   return formes.flatMap(({ forme, remplacant }) => occurrencesDeNom(texte, forme).map((o) => ({ ...o, remplacant })));
+}
+
+function dInterroges(trouvees: readonly Trouvee[]): Remplacee[] {
+  return trouvees.flatMap(({ debut, fin, remplacant }) => (remplacant === null ? [] : [{ debut, fin, remplacant }]));
 }
 
 /** La plus longue d'abord, puis la première ; une occurrence qui chevauche une retenue est écartée. */
@@ -83,7 +141,7 @@ function seChevauchent(a: Occurrence, b: Occurrence): boolean {
 }
 
 /** Les occurrences sont rangées et disjointes : le texte se recompose d'un seul passage. */
-function remplacer(texte: string, occurrences: readonly Trouvee[]): string {
+function remplacer(texte: string, occurrences: readonly Remplacee[]): string {
   let sortie = "";
   let curseur = 0;
   for (const occurrence of occurrences) {
@@ -122,11 +180,11 @@ function enMinuscules(texte: string): Minuscules {
 
 function mentionsResiduelles(texte: string, formes: readonly Forme[], remplacees: readonly Occurrence[]): number {
   const bas = enMinuscules(texte);
-  const mentions = formes.flatMap(({ forme }) =>
-    occurrencesDeNom(bas.texte, forme.toLocaleLowerCase("fr")).map((o) => versOrigine(o, bas)),
+  const mentions = formes.flatMap(({ forme, remplacant }) =>
+    occurrencesDeNom(bas.texte, forme.toLocaleLowerCase("fr")).map((o) => ({ ...versOrigine(o, bas), remplacant })),
   );
   const couvertes = new Set(remplacees.map(cle));
-  return sansChevauchement(mentions).filter((mention) => !couvertes.has(cle(mention))).length;
+  return dInterroges(sansChevauchement(mentions)).filter((mention) => !couvertes.has(cle(mention))).length;
 }
 
 function versOrigine(occurrence: Occurrence, bas: Minuscules): Occurrence {

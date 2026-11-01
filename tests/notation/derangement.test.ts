@@ -117,6 +117,24 @@ describe("dérangement des candidats", () => {
     }
   });
 
+  it("valeur de référence figée avec des non-interrogés au périmètre : la recherche sur tout le périmètre ne change pas le tirage (non-régression)", () => {
+    const perimetre = candidats(6);
+    // Figé le 2026-11-01 sur le code d'avant le correctif (recherche restreinte aux interrogés).
+    expect(correspondancesDe(tirerDerangement(perimetre.slice(0, 4), perimetre, graine(20261202)))).toEqual({
+      "cand-00": "cand-02",
+      "cand-01": "cand-03",
+      "cand-02": "cand-00",
+      "cand-03": "cand-01",
+    });
+  });
+
+  it("les non-interrogés sont transportés avec leurs formes (libellé, nom seul), triés par identifiant, pour la recherche des occurrences", () => {
+    const perimetre = candidats(6);
+    const desordre = [perimetre[5], perimetre[0], perimetre[4], perimetre[1], perimetre[2], perimetre[3]] as CandidatDuRun[];
+    const { hors_derangement } = tirerDerangement(perimetre.slice(0, 4), desordre, graine(20261202));
+    expect(hors_derangement).toEqual([perimetre[4], perimetre[5]]);
+  });
+
   it("moins de deux candidats interrogés au périmètre, même avec d'autres non interrogés, lève", () => {
     const perimetre = candidats(4);
     expect(() => tirerDerangement(perimetre.slice(0, 1), perimetre, graine(1))).toThrow(/au moins deux candidats interrogés/);
