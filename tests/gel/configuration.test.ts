@@ -13,6 +13,7 @@ import {
   ConfigurationGelIllisible,
   validerConfigurationGel,
 } from "../../pipeline/gel/configuration.ts";
+import { FamilleDeJugeAbsente, JugesDeMemeFamille } from "../../pipeline/notation/familles-juges.ts";
 import { CONFIGURATION_GEL } from "./fixtures.ts";
 
 const LIVRE = resolve(import.meta.dirname, "../../config/gel.json");
@@ -78,5 +79,37 @@ describe("cas 9 : config/gel.json", () => {
     const erreur = erreurDe(() => validerConfigurationGel("{ pas du JSON", "config/gel.json"));
     expect(erreur).toBeInstanceOf(ConfigurationGelIllisible);
     expect(erreur.message).toContain("config/gel.json");
+  });
+});
+
+describe("§7.12 : familles de juges, refusées au gel", () => {
+  const [premier, second] = CONFIGURATION_GEL.juges;
+  if (premier === undefined || second === undefined) throw new Error("fixture sans deux juges");
+  const avec = (juges: readonly unknown[]) => texte({ ...CONFIGURATION_GEL, juges });
+
+  it("même famille ⇒ JugesDeMemeFamille", () => {
+    const erreur = erreurDe(() => validerConfigurationGel(avec([premier, { ...second, famille_modele: premier.famille_modele }]), "essai"));
+    expect(erreur).toBeInstanceOf(JugesDeMemeFamille);
+  });
+
+  it("même famille à la casse et aux espaces de bord près ⇒ JugesDeMemeFamille", () => {
+    const erreur = erreurDe(() =>
+      validerConfigurationGel(avec([{ ...premier, famille_modele: "Anthropic" }, { ...second, famille_modele: " anthropic " }]), "essai"),
+    );
+    expect(erreur).toBeInstanceOf(JugesDeMemeFamille);
+  });
+
+  it.each(["   ", "\t"])("famille faite d'espaces %j ⇒ FamilleDeJugeAbsente", (famille) => {
+    const erreur = erreurDe(() => validerConfigurationGel(avec([premier, { ...second, famille_modele: famille }]), "essai"));
+    expect(erreur).toBeInstanceOf(FamilleDeJugeAbsente);
+  });
+
+  it("famille vide ⇒ refusée par le schéma (minLength 1), avant la règle", () => {
+    const erreur = erreurDe(() => validerConfigurationGel(avec([premier, { ...second, famille_modele: "" }]), "essai"));
+    expect(erreur).toBeInstanceOf(ErreurSchema);
+  });
+
+  it("deux familles distinctes ⇒ accepté", () => {
+    expect(validerConfigurationGel(avec([premier, second]), "essai").juges).toEqual([premier, second]);
   });
 });

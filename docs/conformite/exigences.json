@@ -4025,6 +4025,7 @@
       "statut": "testee",
       "code": [
         "pipeline/notation/chaine.ts:verifierJuges",
+        "pipeline/gel/configuration.ts:validerConfigurationGel",
         "pipeline/notation/familles-juges.ts:exigerFamillesDistinctes",
         "pipeline/notation/familles-juges.ts:cleDeFamille"
       ],
@@ -4033,7 +4034,9 @@
         "tests/notation/familles-juges.test.ts « même famille à la casse près ⇒ JugesDeMemeFamille »",
         "tests/notation/familles-juges.test.ts « famille faite d'espaces dans run.json (le schéma n'exige qu'un caractère) ⇒ FamilleDeJugeAbsente »",
         "tests/notation/familles-juges.test.ts « deux familles différentes ⇒ la notation se déroule comme avant »",
-        "tests/notation/familles-juges.test.ts « après le retrait d'un juge, le juge restant seul ne déclenche pas le refus : la règle porte sur les juges déclarés, retirés compris »"
+        "tests/notation/familles-juges.test.ts « après le retrait d'un juge, le juge restant seul ne déclenche pas le refus : la règle porte sur les juges déclarés, retirés compris »",
+        "tests/gel/geler.test.ts « §7.12 : familles de juges au gel » (même famille à la casse près, famille vide ou d'espaces, deux familles distinctes ; rien écrit)",
+        "tests/gel/configuration.test.ts « §7.12 : familles de juges, refusées au gel »"
       ],
       "lot": null,
       "constat": 6,

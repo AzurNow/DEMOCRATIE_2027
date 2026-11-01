@@ -6,8 +6,10 @@
  * dans `run.json` (`run.schema.json#/properties/juges`) et dans `config/gel.json`. Elle n'est jamais
  * déduite d'un nom de modèle, et aucune famille n'est nommée dans le code.
  *
- * **Refus.** La chaîne de notation (`chaine.ts:verifierJuges`) appelle `exigerFamillesDistinctes`
- * sur les juges que déclare `run.json`, avant toute écriture :
+ * **Refus.** Deux appelants, la même fonction, avant toute écriture : la chaîne de notation
+ * (`chaine.ts:verifierJuges`) sur les juges que déclare `run.json`, et le gel
+ * (`gel/configuration.ts:validerConfigurationGel`) sur les juges de `config/gel.json`, lus avant tout
+ * autre contrôle du gel. Un gel ne fige donc plus une composition que la notation refuserait :
  *
  * - une famille absente, vide ou faite seulement d'espaces lève `FamilleDeJugeAbsente` ; aucune
  *   famille n'est supposée ;
