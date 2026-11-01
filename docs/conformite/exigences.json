@@ -7569,7 +7569,7 @@
       ],
       "lot": null,
       "constat": 1,
-      "note": "Codé par #200. Un item principal d'un non-interrogé est refusé au tirage (#209) : règle non écrite (constat n° 1)."
+      "note": "Codé par #200. Un item principal d'un non-interrogé était refusé au tirage (#209), règle non écrite (constat n° 1 du 2026-11-01) ; depuis D57 (1) (protocole 0.22, §5), la question est exclue du tirage, motif principal_non_interroge (pipeline/questions/tirabilite.ts:principalNonInterroge, tests/questions/principal-non-interroge.test.ts). Le refus de preparation.ts reste, pour un tirage construit à la main."
     },
     {
       "id": "§7.44",

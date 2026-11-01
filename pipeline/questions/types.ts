@@ -242,13 +242,15 @@ export interface GraineTirage {
  * 2026-09-29 (conformité n° 2 et 3) : `attribution_contestee` : l'item vérifié d'un candidat
  * interrogé sur la mesure d'une question d'attribution est contesté au gel ;
  * `mesure_version_depassee` : un item définissant de la question épingle une version de sa mesure qui
- * n'est plus la version courante.
+ * n'est plus la version courante. D57 (1), protocole 0.22 : `principal_non_interroge` : l'item
+ * principal de la question est celui d'un candidat non interrogé au run.
  */
 export const MOTIFS_EXCLUSION = [
   "hors_validite",
   "reponse_attendue_indecidable",
   "attribution_contestee",
   "mesure_version_depassee",
+  "principal_non_interroge",
 ] as const;
 export type MotifExclusion = (typeof MOTIFS_EXCLUSION)[number];
 

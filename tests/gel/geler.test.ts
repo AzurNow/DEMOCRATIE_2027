@@ -28,7 +28,6 @@ import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
 import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
 import { identifiantAttribution } from "../../pipeline/questions/engendrement.ts";
-import { PrincipalNonInterrogeAuTirage } from "../../pipeline/questions/tirabilite.ts";
 import type { GraineTirage, Item, Mesure } from "../../pipeline/questions/types.ts";
 import { head, RACINE_PROJET } from "../aides/depot.ts";
 import {
@@ -334,9 +333,10 @@ describe("cas 6 et 7 : formulations relues", () => {
 });
 
 /**
- * Lot V3-1 (§7, protocole 0.21) : une Q-ATT de mesure fictive dont l'item F principal est celui d'un
- * candidat non interrogé est refusée au gel, en nommant la question et le candidat, avant toute
- * écriture : sinon `ItemPrincipalNonInterroge` arrêterait la notation du run, bien après le gel.
+ * Lot V3-1 (§7, protocole 0.21), puis D57 (1) (§5, protocole 0.22) : une Q-ATT de mesure fictive dont
+ * l'item F principal est celui d'un candidat non interrogé n'est pas tirée. Jusqu'à la 0.21 (#209) elle
+ * faisait refuser tout le gel ; depuis la 0.22 elle est exclue, motif `principal_non_interroge`, et le
+ * gel s'écrit. `ItemPrincipalNonInterroge` (notation) ne la voit donc jamais.
  */
 describe("V3-1 : item principal d'un candidat non interrogé", () => {
   const FICTIVE_RETIRE = mesureFictive("gel-fictive-retire", "immigration");
@@ -348,18 +348,21 @@ describe("V3-1 : item principal d'un candidat non interrogé", () => {
     return { ...nominal, retires: [BETA], items: [...nominal.items, ...items], mesures: [...nominal.mesures, ...mesures] };
   }
 
-  it("V3-1 : Q-ATT fictive, item F principal d'un candidat retiré ⇒ PrincipalNonInterrogeAuTirage, rien écrit", async () => {
-    const racine = depot(avecRetire([F_RETIRE], [FICTIVE_RETIRE]));
-    const sortie = temporaire("banc-gel-sortie-");
-    const erreur = await refusDe(optionsGel(racine, sortie));
-    expect(erreur).toBeInstanceOf(PrincipalNonInterrogeAuTirage);
-    const refus = erreur as PrincipalNonInterrogeAuTirage;
-    expect({ question_id: refus.question_id, item_id: refus.item_id, candidat_id: refus.candidat_id }).toEqual({
-      question_id: identifiantAttribution(FICTIVE_RETIRE.id, "Q-ATT"),
-      item_id: F_RETIRE.id,
-      candidat_id: BETA.candidat_id,
-    });
-    expect(arborescence(sortie)).toEqual([]);
+  // D57 (1), protocole 0.22 : ce cas attendait le refus du gel (PrincipalNonInterrogeAuTirage, #209).
+  // Réécrit, pas supprimé : « elle est exclue et comptée à part dans le rapport du run, avec ce motif ».
+  it("D57 (1) : Q-ATT fictive, item F principal d'un candidat retiré ⇒ gel écrit, la Q-ATT exclue (principal_non_interroge), non tirée", async () => {
+    const { run } = await gelNominal(avecRetire([F_RETIRE], [FICTIVE_RETIRE]));
+    const tirage = json(run, "tirage.json") as {
+      entrees: { question_id: string }[];
+      exclusions: { question_id: string; motif: string; detail: string; candidat_id?: string }[];
+    };
+    const question_id = identifiantAttribution(FICTIVE_RETIRE.id, "Q-ATT");
+    expect(tirage.entrees.map((entree) => entree.question_id)).not.toContain(question_id);
+    const exclusion = tirage.exclusions.find((une) => une.question_id === question_id);
+    expect(exclusion?.motif).toBe("principal_non_interroge");
+    expect(exclusion?.candidat_id).toBeUndefined();
+    expect(exclusion?.detail).toContain(F_RETIRE.id);
+    expect(exclusion?.detail).toContain(BETA.candidat_id);
   });
 
   it("V3-1 : la même Q-ATT, item F principal d'un candidat interrogé ⇒ gel écrit, la Q-ATT tirée", async () => {
