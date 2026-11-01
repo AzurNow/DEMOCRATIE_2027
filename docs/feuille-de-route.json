@@ -790,12 +790,25 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. (1), (2) et (3) écrits en 0.22, PR à part, avant le code de (1) et (2) ; (4) sans texte ni code.",
       "date_decision": "2026-11-01"
+    },
+    {
+      "id": "D58",
+      "statut": "tranchee",
+      "question": "Trois trous du §7 laissés par la matrice du 2026-11-01 (constats n° 6, 7 et reliquat du 8) : définition du kappa de la paire sur le jeu d'or ; kappa entre les deux humains de l'échantillon ; nombre de juges déclarés (run.schema.json n'en exige qu'un).",
+      "contexte": "La paire ne produit une note automatique que quand les deux juges s'accordent ; la référence du jeu d'or quand ses deux humains divergent n'était pas écrite. #223 publie compte et part de l'accord humain-humain sans kappa. minItems: 1 laisse passer un run à un juge.",
+      "options": [
+        "(1) kappa de la paire = minimum des deux kappas juge-humain, référence = note humaine retenue (troisième humain si désaccord), catégorie primaire, indéterminées exclues ; (2) kappa de Cohen humain-humain sur la catégorie primaire, diagnostic non critère, indéfini publié absent ; (3) exactement deux juges déclarés.",
+        "Variantes : (1) kappa du verdict combiné sur les réponses où les juges s'accordent (biaisé vers les cas faciles), ou moyenne des deux (incohérente avec le §12) ; (2) part d'accord seule ; (3) au moins deux juges (combinaison non écrite pour trois)."
+      ],
+      "recommandation": "Option 1 sur les trois points.",
+      "retenu": "Option 1 sur les trois points. Écrits en 0.23, PR à part ; code (analysis/ pour les kappas, run.schema.json minItems/maxItems 2) dans une PR suivante.",
+      "date_decision": "2026-11-01"
     }
   ],
   "lots": [
     {
       "id": "protocole",
-      "titre": "Protocole (0.22 au 2026-11-01), à geler en v1.0",
+      "titre": "Protocole (0.23 au 2026-11-01), à geler en v1.0",
       "jalon": "J1",
       "niveau": "T1",
       "agent": "auteur",
