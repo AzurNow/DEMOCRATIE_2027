@@ -5,7 +5,7 @@
  * trois registres plutôt que d'inventer un schéma de test.
  */
 
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -13,8 +13,10 @@ import { validerEntreeRegistre, type DecisionCorrectionMesure } from "../validat
 import {
   ajouterAuRegistreGenerique,
   lireRegistreGenerique,
+  cheminVerrou,
   poserRegistreAjoutSeul,
   RegistreModifieDepuisLecture,
+  RegistreVerrouille,
   texteDuRegistre,
   validerEntreeRegistreGenerique,
   type DefinitionRegistre,
@@ -119,5 +121,92 @@ describe("validerEntreeRegistreGenerique", () => {
 
   it("lève sans rien lire ni écrire quand l'entrée est non conforme", () => {
     expect(() => validerEntreeRegistreGenerique(entree({ decision: "refusee" }), "test", DEFINITION)).toThrow();
+  });
+});
+
+/*
+ * Exclusion entre écritures concurrentes (revue du 2026-10-17, constat 9) : le contrôle de
+ * modification seul laisse une fenêtre entre la relecture et le renommage, où deux écritures
+ * lancées sur le même état passent toutes deux et la seconde efface la première. Un verrou
+ * `<registre>.verrou`, posé avant la lecture et retiré après, ferme cette fenêtre.
+ */
+describe("ajouterAuRegistreGenerique : verrou exclusif par registre", () => {
+  it("une seconde écriture lancée pendant la première est refusée nommément, et rien n'est perdu", () => {
+    const premiere = entree({ theme_demande: "sante" });
+    const concurrente = entree();
+    const existante = entree({ theme_demande: "education" });
+    writeFileSync(chemin, `${JSON.stringify([existante], null, 2)}\n`, "utf8");
+    let refus: unknown = null;
+    // La première écriture relit les entrées existantes sous verrou : c'est là qu'on lance la seconde.
+    const pendantLaPremiere: DefinitionRegistre<DecisionCorrectionMesure> = {
+      ...DEFINITION,
+      validerEntree: (valeur, provenance) => {
+        if (provenance.endsWith("entrée 1") && refus === null) {
+          try {
+            ajouterAuRegistreGenerique(chemin, concurrente, DEFINITION);
+            refus = "aucun refus";
+          } catch (erreur) {
+            refus = erreur;
+          }
+        }
+        return DEFINITION.validerEntree(valeur, provenance);
+      },
+    };
+    ajouterAuRegistreGenerique(chemin, premiere, pendantLaPremiere);
+    expect(refus).toBeInstanceOf(RegistreVerrouille);
+    expect((refus as Error).message).toContain(cheminVerrou(chemin));
+    expect(lireRegistreGenerique(chemin, DEFINITION)).toEqual([existante, premiere]);
+    expect(existsSync(cheminVerrou(chemin))).toBe(false);
+  });
+
+  it("le verrou est retiré après une écriture réussie", () => {
+    ajouterAuRegistreGenerique(chemin, entree(), DEFINITION);
+    expect(existsSync(cheminVerrou(chemin))).toBe(false);
+    expect(readdirSync(repertoire).sort()).toEqual(["registre.json"]);
+  });
+
+  it("le verrou est retiré après un échec au milieu de l'écriture (registre illisible)", () => {
+    writeFileSync(chemin, "{ pas du json", "utf8");
+    expect(() => ajouterAuRegistreGenerique(chemin, entree(), DEFINITION)).toThrow(IllisibleDeTest);
+    expect(existsSync(cheminVerrou(chemin))).toBe(false);
+    expect(readFileSync(chemin, "utf8")).toBe("{ pas du json");
+  });
+
+  it("le verrou est retiré après une exception levée par le validateur de domaine sous verrou", () => {
+    writeFileSync(chemin, `${JSON.stringify([entree()], null, 2)}\n`, "utf8");
+    const enPanne: DefinitionRegistre<DecisionCorrectionMesure> = {
+      ...DEFINITION,
+      validerEntree: (valeur, provenance) => {
+        if (provenance.endsWith("entrée 1")) throw new Error("panne simulée");
+        return DEFINITION.validerEntree(valeur, provenance);
+      },
+    };
+    expect(() => ajouterAuRegistreGenerique(chemin, entree({ theme_demande: "sante" }), enPanne)).toThrow("panne simulée");
+    expect(existsSync(cheminVerrou(chemin))).toBe(false);
+    expect(lireRegistreGenerique(chemin, DEFINITION)).toEqual([entree()]);
+  });
+
+  it("un verrou orphelin bloque l'écriture par un refus qui nomme le verrou, sans le voler ni toucher au registre", () => {
+    writeFileSync(chemin, "[]\n", "utf8");
+    writeFileSync(cheminVerrou(chemin), "pid 99999\n", "utf8");
+    const appel = (): unknown => ajouterAuRegistreGenerique(chemin, entree(), DEFINITION);
+    expect(appel).toThrow(RegistreVerrouille);
+    expect(appel).toThrow(cheminVerrou(chemin));
+    expect(appel).toThrow(/supprimer/);
+    expect(readFileSync(cheminVerrou(chemin), "utf8")).toBe("pid 99999\n");
+    expect(readFileSync(chemin, "utf8")).toBe("[]\n");
+  });
+
+  it("le verrou se pose aussi quand le répertoire du registre n'existe pas encore", () => {
+    const profond = join(repertoire, "sous", "dossier", "registre.json");
+    ajouterAuRegistreGenerique(profond, entree(), DEFINITION);
+    expect(lireRegistreGenerique(profond, DEFINITION)).toEqual([entree()]);
+    expect(existsSync(cheminVerrou(profond))).toBe(false);
+  });
+
+  it("le contrôle de modification reste actif sans verrou (défense en profondeur)", () => {
+    writeFileSync(chemin, "[]\n", "utf8");
+    expect(() => poserRegistreAjoutSeul(chemin, null, [entree()])).toThrow(RegistreModifieDepuisLecture);
+    expect(readFileSync(chemin, "utf8")).toBe("[]\n");
   });
 });

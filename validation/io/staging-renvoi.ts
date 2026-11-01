@@ -13,7 +13,7 @@
 import { randomBytes } from "node:crypto";
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { valider } from "../../outils/schemas/valider.ts";
+import { jsonDe, valider } from "../../outils/schemas/valider.ts";
 import type { Item } from "../domaine/types.ts";
 
 export class ItemStagingModifie extends Error {
@@ -32,7 +32,7 @@ function memeEtat(lu: Item, avant: Item): boolean {
 }
 
 function verifierInchange(chemin: string, avant: Item): void {
-  const lu = valider<Item>("item", JSON.parse(readFileSync(chemin, "utf8")) as unknown, chemin);
+  const lu = valider<Item>("item", jsonDe(readFileSync(chemin, "utf8"), chemin), chemin);
   if (!memeEtat(lu, avant)) throw new ItemStagingModifie(chemin);
 }
 

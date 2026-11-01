@@ -70,3 +70,6 @@ secrets*.json
 # règle que archives/ et /scratch/perimetre/preuves/. Les notes et index de relevé restent suivis.
 /scratch/perimetre/releves-*/*.html
 /scratch/perimetre/releves-*/*.gz
+
+# Verrou d’un registre à ajout seul (validation/io/registre-ajout-seul.ts) : orphelin après un arrêt brutal, à supprimer à la main.
+*.verrou
