@@ -41,7 +41,8 @@ import { itemsEffectifs, statutContestationEffectif } from "../io/items-effectif
 import type { Contexte } from "./contexte.ts";
 import { accesTexteCorrections, emplacement } from "./emplacements.ts";
 import { GESTIONNAIRES_FORMULATIONS } from "./formulations.ts";
-import type { Reponse } from "./http.ts";
+import type { ControleParametre, Reponse } from "./http.ts";
+import { erreurIdentifiant, erreurIdentifiantLot } from "../domaine/identifiant.ts";
 import { lireRequeteAnnulation, lireRequeteDecision } from "./lecture-requetes.ts";
 import { construireVueItem, construireVueLot, projeterLot } from "./vues.ts";
 import { erreursBrouillon, type Brouillon } from "../io/brouillons.ts";
@@ -52,6 +53,8 @@ export interface Route {
   readonly nom: string;
   readonly methode: "GET" | "POST";
   readonly motif: RegExp;
+  /** Contrôle d'identifiant de chaque paramètre capturé par `motif` (voir `http.ts:executerRoute`). */
+  readonly parametres?: readonly (ControleParametre | null)[];
   readonly gestionnaire: (contexte: Contexte, params: readonly string[], corps: unknown) => Reponse;
 }
 
@@ -260,7 +263,9 @@ function ecrireRetrait(contexte: Contexte, lot: Lot, item_id: string, statut: st
 
 /**
  * Les retirés effectifs (`retiresEffectifs`) qu'un GET a montrés sans les journaliser (constat 13)
- * s'écrivent ici, dans l'ordre d'affichage, une seule fois chacun. Un item contesté que cet
+ * s'écrivent ici, dans l'ordre d'affichage, une seule fois chacun. L'entrée `retrait_item` constate
+ * qu'une contestation a retiré l'item de la file de cet annotateur, horodaté à cette écriture (que
+ * l'item ait été atteint ou non) ; le kappa lit le statut de contestation au calcul, pas elle. Un item contesté que cet
  * annotateur a déjà décidé n'en fait pas partie : une contestation reçue après coup ne défait pas
  * la décision. Appelée seulement après le verrou (`refuserSiLotTermine`) et juste avant l'écriture
  * qu'elle précède : un refus plus tard dans la route (corrections invalides, schéma non conforme)
@@ -506,19 +511,24 @@ function resoudre(contexte: Contexte, lot_id: string, item_id: string): Cadre | 
 
 /* --------------------------------------------------------------- la table */
 
+const LOT: ControleParametre = { nom: "lot_id", erreur: erreurIdentifiantLot };
+const ITEM: ControleParametre = { nom: "item_id", erreur: erreurIdentifiant };
+
 export const ROUTES: readonly Route[] = [
   { nom: "session", methode: "GET", motif: /^\/api\/session$/, gestionnaire: session },
-  { nom: "lot", methode: "GET", motif: /^\/api\/lots\/([^/]+)$/, gestionnaire: vueLot },
+  { nom: "lot", methode: "GET", motif: /^\/api\/lots\/([^/]+)$/, parametres: [LOT], gestionnaire: vueLot },
   {
     nom: "diagnostic",
     methode: "GET",
     motif: /^\/api\/lots\/([^/]+)\/diagnostic$/,
+    parametres: [LOT],
     gestionnaire: diagnostic,
   },
   {
     nom: "item",
     methode: "GET",
     motif: /^\/api\/lots\/([^/]+)\/items\/([^/]+)$/,
+    parametres: [LOT, ITEM],
     gestionnaire: refuserTexteAltere(vueItem),
   },
   {
@@ -535,6 +545,7 @@ export const ROUTES: readonly Route[] = [
     nom: "source",
     methode: "GET",
     motif: /^\/api\/lots\/([^/]+)\/items\/([^/]+)\/source\/([^/]+)$/,
+    parametres: [LOT, ITEM],
     gestionnaire: servirSource,
   },
   // Relecture des formulations (D39, D42) : voir `formulations.ts`.

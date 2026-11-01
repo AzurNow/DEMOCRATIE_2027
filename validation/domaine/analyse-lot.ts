@@ -137,8 +137,9 @@ export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
 
 /**
  * Les items du lot qu'une contestation vise **au calcul**, lus sur l'item tel qu'il est chargé
- * maintenant, jamais sur le journal : l'entrée `retrait_item` dit quand un annotateur a rencontré
- * l'item contesté, ce qui dépend de sa navigation (constat 9 du 2026-09-24). Les décisions déjà
+ * maintenant, jamais sur le journal : l'entrée `retrait_item` constate qu'une contestation a retiré
+ * l'item de la file de l'annotateur, à la première écriture de celui-ci qui suit (qu'il l'ait
+ * atteint ou non) : un horodatage qui dépend de sa navigation (constat 9 du 2026-09-24). Les décisions déjà
  * portées sur un item exclu restent au journal ; elles ne sont simplement pas appariées.
  */
 function exclusPourContestation(entree: Pick<EntreeDiagnostic, "lot" | "items">): ReadonlySet<string> {

@@ -51,6 +51,18 @@ export class ParametreMalEncode extends Error {
   }
 }
 
+/**
+ * Un paramètre de route identifiant (`lot_id`, `item_id`) qui ne passe pas la validation
+ * d'identifiant du domaine : 400 nommé, avant tout accès disque. Un décodage pourcent-encodé
+ * (`..%2F`) rend sinon un séparateur de chemin au gestionnaire.
+ */
+export class ParametreInvalide extends Error {
+  constructor(detail: string) {
+    super(`Paramètre de route invalide : ${detail}`);
+    this.name = "ParametreInvalide";
+  }
+}
+
 export async function lireCorps(requete: IncomingMessage): Promise<unknown> {
   const morceaux: Buffer[] = [];
   for await (const morceau of requete) morceaux.push(morceau as Buffer);
@@ -126,13 +138,28 @@ export function erreurInattendue(erreur: unknown): Reponse {
   return { statut: 500, corps: { erreur: nom, detail: "Voir la console du serveur." } };
 }
 
+/** Le contrôle d'un paramètre de route, dans l'ordre de ses captures ; `null` quand il n'en demande aucun. */
+export interface ControleParametre {
+  readonly nom: string;
+  readonly erreur: (valeur: unknown, nom: string) => string | null;
+}
+
 export interface RouteAvecGestionnaire<Contexte> {
+  /** Un contrôle par paramètre capturé, appliqué après le décodage et avant le gestionnaire. */
+  readonly parametres?: readonly (ControleParametre | null)[];
   readonly gestionnaire: (contexte: Contexte, params: readonly string[], corps: unknown) => Reponse;
 }
 
 export interface RouteTrouvee<Contexte> {
   readonly route: RouteAvecGestionnaire<Contexte>;
   readonly params: readonly string[];
+}
+
+function verifierParametres(controles: readonly (ControleParametre | null)[] | undefined, params: readonly string[]): void {
+  (controles ?? []).forEach((controle, rang) => {
+    const erreur = controle?.erreur(params[rang], controle.nom) ?? null;
+    if (erreur !== null) throw new ParametreInvalide(erreur);
+  });
 }
 
 /**
@@ -148,10 +175,11 @@ export async function executerRoute<Contexte>(
 ): Promise<Reponse> {
   try {
     const params = decoderParametres(trouvee.params);
+    verifierParametres(trouvee.route.parametres, params);
     const corps = methode === "POST" ? await lireCorps(requete) : null;
     return trouvee.route.gestionnaire(contexte, params, corps);
   } catch (erreur) {
-    if (erreur instanceof CorpsIllisible || erreur instanceof ParametreMalEncode) {
+    if (erreur instanceof CorpsIllisible || erreur instanceof ParametreMalEncode || erreur instanceof ParametreInvalide) {
       return { statut: 400, corps: { erreur: erreur.name, detail: erreur.message } };
     }
     throw erreur;

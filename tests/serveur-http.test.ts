@@ -92,6 +92,60 @@ describe("erreur inattendue : seul le nom sort, message et chemin restent au ser
   });
 });
 
+describe("paramètres de route identifiants (revue du 2026-10-12, constat 12, Lot 4)", () => {
+  it("un lot_id qui remonte le répertoire, encodé ou non, répond 400 nommé sans lire hors de lots/", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    // Un manifeste valide hors du répertoire des lots : il ne doit jamais être servi.
+    const horsLots = join(bac.racine, "validation", "hors-lots");
+    mkdirSync(horsLots, { recursive: true });
+    writeFileSync(
+      join(horsLots, "lot-001.json"),
+      JSON.stringify({ ...lotDe("lot-001", [posee.item]), lot_id: "secret-fuite" }),
+      "utf8",
+    );
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    for (const lot of ["..%2Fx", "%2e%2e%2Fhors-lots%2Flot-001", "lot%00", "a%5Cb", "%2Fetc%2Fpasswd", "A", "a".repeat(65)]) {
+      for (const suffixe of ["", "/diagnostic"]) {
+        const reponse = await fetch(`${base}/api/lots/${lot}${suffixe}`);
+        const texte = await reponse.text();
+        expect(reponse.status, `${lot}${suffixe}`).toBe(400);
+        expect(JSON.parse(texte).erreur).toBe("ParametreInvalide");
+        expect(texte).not.toContain("secret-fuite");
+      }
+    }
+  });
+
+  it("un item_id invalide répond 400 nommé, sur la vue comme sur la source", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    for (const item of ["a%2Fb", "a%2F..%2Fb", "x%00", "a".repeat(65), "a%20b"]) {
+      const reponse = await fetch(`${base}/api/lots/lot-001/items/${item}`);
+      expect(reponse.status, item).toBe(400);
+      expect(((await reponse.json()) as { erreur: string }).erreur).toBe("ParametreInvalide");
+    }
+    const source = await fetch(`${base}/api/lots/lot-001/items/a%2Fb/source/assertion`);
+    expect(source.status).toBe(400);
+  });
+
+  it("un identifiant vide ne correspond à aucune route de l'API", async () => {
+    bac = creerBac();
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await fetch(`${base}/api/lots//diagnostic`);
+    expect(reponse.status).not.toBe(200);
+    expect(reponse.status).toBeLessThan(500);
+  });
+
+  it("un identifiant valide ordinaire est inchangé", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    expect((await fetch(`${base}/api/lots/lot-001`)).status).toBe(200);
+    expect((await fetch(`${base}/api/lots/lot-001/items/${posee.item.id}`)).status).toBe(200);
+  });
+});
+
 describe("paramètre de route mal encodé (D55 (8))", () => {
   it("la validation répond 400 nommé, pas un URIError en 500", async () => {
     bac = creerBac();
@@ -331,6 +385,52 @@ describe("corps des POST contrôlé avant écriture (revue du 2026-10-12, consta
     // Le fichier n'est jamais supprimé automatiquement : il reste la preuve de ce qui a été écrit.
     expect(existsSync(chemin)).toBe(true);
     expect(readFileSync(chemin, "utf8")).toBe(`${brouillonMalForme}\n`);
+  });
+
+  it("(f bis) un brouillon tronqué sur disque répond comme un brouillon absent, le reste fonctionne", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const chemin = join(bac.racine, "validation/brouillons", "a1.json");
+    mkdirSync(join(bac.racine, "validation/brouillons"), { recursive: true });
+    writeFileSync(chemin, '{"lot_id":"lot-0', "utf8");
+
+    const espion = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+      const lecture = await fetch(`${base}/api/brouillon`);
+      expect(lecture.status).toBe(200);
+      expect(await lecture.json()).toBeNull();
+      const vue = await fetch(`${base}/api/lots/lot-001/items/${posee.item.id}`);
+      expect(vue.status).toBe(200);
+      expect(((await vue.json()) as { brouillon: unknown }).brouillon).toBeNull();
+      expect((await fetch(`${base}/api/lots/lot-001`)).status).toBe(200);
+      const ecriture = await poster(base, "/api/brouillon", {
+        lot_id: "lot-001",
+        item_id: posee.item.id,
+        duree_affichage_ms: 1,
+        duree_active_ms: 1,
+      });
+      expect(ecriture.status).toBe(204);
+      expect(await (await fetch(`${base}/api/brouillon`)).json()).not.toBeNull();
+    } finally {
+      espion.mockRestore();
+    }
+  });
+
+  it("(e ter) une décision à durée négative répond 400, plus 422", async () => {
+    const posee = bacAvecLot("lot-001");
+    bac = posee.bac;
+    const base = await ecouter(creerServeurValidation(bac.contexte("a1"), bac.racine));
+    const reponse = await poster(base, "/api/decisions", {
+      lot_id: "lot-001",
+      item_id: posee.item.id,
+      decision: "accepter",
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: -1,
+      duree_active_ms: 1,
+    });
+    expect(reponse.status).toBe(400);
   });
 
   it("(g) le chemin nominal des décisions, annulations et brouillons reste inchangé", async () => {

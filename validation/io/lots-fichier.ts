@@ -7,7 +7,7 @@
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { ErreurSchema, jsonDe, valider } from "../../outils/schemas/valider.ts";
 import type { Lot, NatureLot } from "../domaine/types.ts";
 
@@ -96,8 +96,27 @@ export function lireLots(repertoire: string): readonly Lot[] {
     .map((nom) => lireEtValiderLot(join(repertoire, nom)));
 }
 
+/**
+ * Un `lot_id` dont le manifeste résoudrait hors du répertoire des lots. Les routes valident déjà
+ * l'identifiant (`domaine/identifiant.ts`) ; cette garde est la seconde, pour qu'un appelant qui
+ * l'oublierait ne lise jamais un fichier étranger aux lots, ni n'en révèle l'existence.
+ */
+export class LotHorsRepertoire extends Error {
+  constructor(lot_id: string) {
+    super(`Identifiant de lot refusé : ${JSON.stringify(lot_id)} désigne un fichier hors du répertoire des lots.`);
+    this.name = "LotHorsRepertoire";
+  }
+}
+
+function cheminDuLot(repertoire: string, lot_id: string): string {
+  const racine = resolve(repertoire);
+  const chemin = resolve(racine, `${lot_id}.json`);
+  if (!chemin.startsWith(racine + sep)) throw new LotHorsRepertoire(lot_id);
+  return chemin;
+}
+
 export function lireLot(repertoire: string, lot_id: string): Lot | null {
-  const chemin = join(repertoire, `${lot_id}.json`);
+  const chemin = cheminDuLot(repertoire, lot_id);
   if (!existsSync(chemin)) return null;
   return lireEtValiderLot(chemin);
 }
@@ -139,7 +158,7 @@ function verifierAvantEcriture(repertoire: string, lots: readonly Lot[]): readon
       );
     }
     vus.add(lot.lot_id);
-    const chemin = join(repertoire, `${lot.lot_id}.json`);
+    const chemin = cheminDuLot(repertoire, lot.lot_id);
     if (existsSync(chemin)) throw new LotDejaExistant(lot.lot_id);
     return chemin;
   });
