@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   estSous,
+  LienEnBoucle,
   estSousRuns,
   exigerHorsDeRuns,
   exigerHorsDesZonesProtegees,
@@ -110,6 +111,21 @@ describe("constat 6 du 2026-10-17 : comparaison insensible à la casse, après N
     const lien = join(temporaire(), "raccourci");
     symlinkSync(join(depot, "DATA"), lien);
     expect(() => exigerHorsDesZonesProtegees(join(lien, "x"), depot)).toThrow(SimuleSousZoneProtegee);
+  });
+
+  it("refuse un lien symbolique vers <dépôt>/DATA quand data/ n'existe pas encore (lien qui ne mène à rien)", () => {
+    const depot = temporaire();
+    const lien = join(temporaire(), "raccourci");
+    symlinkSync(join(depot, "DATA"), lien);
+    expect(() => exigerHorsDesZonesProtegees(join(lien, "x"), depot)).toThrow(SimuleSousZoneProtegee);
+  });
+
+  it("une boucle de liens symboliques lève LienEnBoucle, sans récursion infinie", () => {
+    const depot = temporaire();
+    const ailleurs = temporaire();
+    symlinkSync(join(ailleurs, "b"), join(ailleurs, "a"));
+    symlinkSync(join(ailleurs, "a"), join(ailleurs, "b"));
+    expect(() => exigerHorsDesZonesProtegees(join(ailleurs, "a", "x"), depot)).toThrow(LienEnBoucle);
   });
 
   it("refuse la zone elle-même en casse différente (<dépôt>/DATA, égalité)", () => {

@@ -18,18 +18,49 @@
  * rend en outre la casse inscrite sur le disque pour la partie existante.
  */
 
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, readlinkSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
 
 /** `runs/` du dépôt qui porte ce code. */
 export const RUNS_DU_DEPOT = resolve(import.meta.dirname, "../runs");
 
-/** Le chemin réel de la plus longue partie existante (casse du disque), suivi du reste tel quel. */
-export function cheminReel(absolu: string): string {
+/** Nombre de liens symboliques suivis au plus pour résoudre un chemin, comme `SYMLOOP_MAX` (Linux : 40). */
+const SAUTS_MAX = 40;
+
+export class LienEnBoucle extends Error {
+  constructor(chemin: string) {
+    super(`${chemin} : plus de ${SAUTS_MAX} liens symboliques à suivre, boucle probable ; aucune écriture n'y est tentée.`);
+    this.name = "LienEnBoucle";
+  }
+}
+
+/**
+ * Le chemin réel de la plus longue partie existante (casse du disque), suivi du reste tel quel. Un
+ * lien symbolique dont la cible n'existe pas encore est suivi aussi : sur un disque sensible à la
+ * casse, un lien vers `<dépôt>/DATA` ne mène à rien d'existant, mais une écriture à travers lui
+ * créerait `DATA/`, que la comparaison sans casse doit voir.
+ */
+export function cheminReel(absolu: string, sauts = 0): string {
   if (existsSync(absolu)) return realpathSync.native(absolu);
+  if (estLienSymbolique(absolu)) return cheminReel(cibleDuLien(absolu, sauts), sauts + 1);
   const parent = dirname(absolu);
   if (parent === absolu) return absolu;
-  return join(cheminReel(parent), basename(absolu));
+  return join(cheminReel(parent, sauts), basename(absolu));
+}
+
+/** Le système lève ELOOP quand une boucle de liens traverse un répertoire du chemin : refus nommé. */
+function estLienSymbolique(chemin: string): boolean {
+  try {
+    return lstatSync(chemin, { throwIfNoEntry: false })?.isSymbolicLink() === true;
+  } catch (erreur) {
+    if ((erreur as NodeJS.ErrnoException).code === "ELOOP") throw new LienEnBoucle(chemin);
+    throw erreur;
+  }
+}
+
+function cibleDuLien(lien: string, sauts: number): string {
+  if (sauts >= SAUTS_MAX) throw new LienEnBoucle(lien);
+  return resolve(dirname(lien), readlinkSync(lien));
 }
 
 /** La forme comparée d'un chemin : réel, en NFC, en minuscules. */
