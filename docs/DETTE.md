@@ -28,7 +28,7 @@ dans la notation avec un classement faux, et rien ne le signale.
 **Ce qu'il faut faire.** Avant `pnpm run:live`, faire lire à la commande les profils du run gelé, pas
 la fixture ; un test qui refuse tout chemin `tests/` dans un module d'`outils/` le garderait.
 
-### 2. La règle « candidat interrogé » s'écrit encore en ligne à plusieurs endroits — *haute*
+### ~~2. La règle « candidat interrogé » s'écrit encore en ligne à plusieurs endroits~~ — réglé le 2026-11-01 : une seule lecture du drapeau, `analysis/candidats-interroges.ts` (`estInterroge`, `candidatsInterroges`, `candidatsNonInterroges`, `idsInterroges`), appelée par les dix sites ; `tests/candidats-interroges.test.ts` refuse toute autre lecture dans le code de production, hors la validation de saisie de `charger-perimetre.ts`
 
 Le filtre `candidat.interroge` est réécrit dans une dizaine de modules : `pipeline/questions/`
 (`tirage.ts`, `tirabilite.ts`, `completude.ts`, `reponse-attendue.ts`), `pipeline/notation/`

@@ -53,6 +53,7 @@ import type { GrainesDuRun, ValeursDesGraines } from "./graines.ts";
 import { exigerFenetreApresDateGel } from "./instants.ts";
 import type { PrecedentDuGel } from "./precedent.ts";
 import { STATUT_PLANIFIE } from "../run/types.ts";
+import { candidatsInterroges } from "../../analysis/candidats-interroges.ts";
 
 /** Le statut d'un run qui vient d'être gelé : il n'est ni lancé ni publié. */
 export const STATUT_AU_GEL = STATUT_PLANIFIE;
@@ -178,7 +179,7 @@ interface TextesEngages {
 
 /** §7 (protocole 0.20), D55 (9) : les mêmes candidats interrogés que le dérangement du test contrefactuel. */
 function candidatsInterrogesAuGel(prepare: GelPrepare): readonly { readonly candidat_id: string }[] {
-  return prepare.perimetre.perimetre.candidats.filter((candidat) => candidat.interroge);
+  return candidatsInterroges(prepare.perimetre.perimetre.candidats);
 }
 
 function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta: MetaDuRun, textes: TextesEngages): unknown {

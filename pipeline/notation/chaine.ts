@@ -81,6 +81,7 @@ import { DepotNotation } from "./stockage.ts";
 import { TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
 import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
+import { candidatsInterroges as candidatsInterrogesDuRun } from "../../analysis/candidats-interroges.ts";
 
 /** Une réponse obtenue du run, avec sa question posée, ses items épinglés et ce que le tirage a résolu au gel. */
 export interface ReponseANoter {
@@ -233,7 +234,7 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
     env,
     run,
     candidats: runDeNotationDe(run).candidats,
-    interroges: run.perimetre.candidats.filter((candidat) => candidat.interroge).map((candidat) => candidat.candidat_id),
+    interroges: candidatsInterrogesDuRun(run.perimetre.candidats).map((candidat) => candidat.candidat_id),
     depot,
     reponses: preparees,
     parId: indexerReponses(preparees, run.id),
