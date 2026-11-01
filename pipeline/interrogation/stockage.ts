@@ -11,24 +11,26 @@
  * fichier définitif partiel. Si l'écriture ou la synchronisation du temporaire échoue et que ce
  * processus rattrape l'erreur (disque plein, par exemple), le temporaire qu'il vient de créer est
  * supprimé avant que l'erreur d'origine ne remonte : la relance qui suit écrit normalement. Seul un
- * arrêt brutal (processus tué, qui ne rattrape rien) laisse un `.partiel` orphelin, que la relance
- * refuse (`TemporaireOrphelin`, `pipeline/run/ecriture.ts`) plutôt que d'écraser ou de supprimer
- * d'elle-même, car il peut aussi signaler un écrivain concurrent. Comme l'identifiant d'une réponse
- * est opaque et neuf à chaque écriture, l'exclusivité du nom de fichier ne suffit pas à empêcher deux
- * réponses pour une même requête : le dépôt tient aussi l'index des requêtes déjà écrites, et refuse
- * la seconde.
+ * arrêt brutal (processus tué, qui ne rattrape rien) laisse un `.partiel` orphelin. Comme
+ * l'identifiant d'une réponse est opaque et neuf à chaque écriture, la relance n'écrit jamais sous le
+ * même nom : `ecrire` ne rencontre donc pas cet orphelin (le `TemporaireOrphelin` de
+ * `pipeline/run/ecriture.ts` n'y couvre qu'un identifiant rejoué). C'est `toutes()`, donc
+ * `DepotReponses.ouvrir`, qui le trouve dans le répertoire et le refuse en `TemporaireOrphelin`,
+ * plutôt que de l'écraser ou de le supprimer d'elle-même, car il peut aussi signaler un écrivain
+ * concurrent. L'exclusivité du nom de fichier ne suffisant pas à empêcher deux réponses pour une même
+ * requête, le dépôt tient aussi l'index des requêtes déjà écrites, et refuse la seconde.
  *
  * À l'ouverture, toutes les réponses déjà écrites sont relues et validées : c'est ce qui permet à
  * une relance de sauter ce qui est fait, et ce qui fait apparaître un fichier abîmé. Un `.partiel`
- * resté là n'est jamais lu comme une réponse : il ne porte pas l'extension `.json`, et tombe donc
- * dans le refus déjà en place pour tout fichier étranger du répertoire, jamais dans un `JSON.parse`.
+ * n'est jamais lu comme une réponse (il ne porte pas l'extension `.json`, jamais de `JSON.parse`) :
+ * il lève `TemporaireOrphelin`. Tout autre fichier étranger du répertoire lève `FichierEtranger`.
  */
 
 import { closeSync, existsSync, fsyncSync, linkSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeSync } from "node:fs";
 import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
-import { ouvrirTemporaireExclusif, type EcritureTemporaire } from "../run/ecriture.ts";
+import { ouvrirTemporaireExclusif, TemporaireOrphelin, type EcritureTemporaire } from "../run/ecriture.ts";
 import { dateParis, lireInstant } from "./heure-paris.ts";
 import { cleDe, type ReponseEcrite } from "./types.ts";
 
@@ -61,6 +63,16 @@ export class ReponseDejaEcrite extends Error {
     this.name = "ReponseDejaEcrite";
   }
 }
+
+/** `repertoire` contient un fichier qui n'est ni une réponse (`.json`) ni un temporaire `.partiel`. */
+export class FichierEtranger extends Error {
+  constructor(repertoire: string, noms: readonly string[]) {
+    super(`${repertoire} : fichiers qui ne sont pas des réponses, ni lus ni ignorés : ${noms.join(", ")}`);
+    this.name = "FichierEtranger";
+  }
+}
+
+const SUFFIXE_PARTIEL = ".partiel";
 
 function cleCanonique(reponse: ReponseEcrite): string {
   return canoniser(cleDe(reponse));
@@ -149,10 +161,13 @@ export class DepotReponses {
   toutes(): readonly ReponseEcrite[] {
     if (!existsSync(this.repertoire)) return [];
     const noms = readdirSync(this.repertoire).sort();
-    const etrangers = noms.filter((nom) => !nom.endsWith(".json"));
-    if (etrangers.length > 0) {
-      throw new Error(`${this.repertoire} : fichiers qui ne sont pas des réponses, ni lus ni ignorés : ${etrangers.join(", ")}`);
+    const orphelin = noms.find((nom) => nom.endsWith(`.json${SUFFIXE_PARTIEL}`));
+    if (orphelin !== undefined) {
+      const temporaire = join(this.repertoire, orphelin);
+      throw new TemporaireOrphelin(temporaire, temporaire.slice(0, -SUFFIXE_PARTIEL.length), "reponse");
     }
+    const etrangers = noms.filter((nom) => !nom.endsWith(".json"));
+    if (etrangers.length > 0) throw new FichierEtranger(this.repertoire, etrangers);
     return noms.map((nom) => lireReponse(join(this.repertoire, nom)));
   }
 }

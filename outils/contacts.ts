@@ -21,6 +21,7 @@ import { resolve } from "node:path";
 import { parse } from "yaml";
 import { DATE_CIVILE } from "../validation/domaine/validateurs-champ.ts";
 import { analyserArguments, texte } from "./arguments.ts";
+import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const OPTIONS: readonly string[] = ["perimetre"];
 
@@ -112,7 +113,8 @@ if (process.argv[1] !== undefined && resolve(process.argv[1]) === resolve(import
   try {
     principal();
   } catch (erreur) {
-    process.stderr.write(`${erreur instanceof Error ? erreur.message : String(erreur)}\n`);
-    process.exitCode = 1;
+    if (!estUnRefusAttendu(erreur)) throw erreur;
+    process.stderr.write(`${erreur.message}\n`);
+    process.exitCode = 2;
   }
 }

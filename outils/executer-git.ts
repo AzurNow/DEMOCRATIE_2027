@@ -8,8 +8,10 @@
  *
  * Git qui s'exécute et rend un code de sortie non nul (par exemple `cat-file -e` sur un commit
  * absent) n'est pas une panne : l'appelant le lit dans `ok` et décide. Seule l'impossibilité de
- * lancer `git` lui-même (binaire absent, droits refusés…) lève `GitInaccessible`, nommée, avec le
- * chemin interrogé, le commit visé s'il y en a un, et la cause rendue par Node.
+ * lancer `git` lui-même (`ENOENT` : binaire absent ; `EACCES` : droits refusés) lève `GitInaccessible`,
+ * nommée, avec le chemin interrogé, le commit visé s'il y en a un, et la cause rendue par Node. Tout
+ * autre échec de lancement (`ENOBUFS` : sortie au-delà de `maxBuffer` ; `ENOTDIR` : le répertoire est
+ * un fichier…) lève `GitEchecLancement`, qui porte le code et le message d'origine.
  *
  * `spawnSync` rend aussi `ENOENT`, indistinguable de « git introuvable » dans son `error`, quand
  * `repertoire` lui-même n'existe pas (relecture du 2026-10-21 du constat 37) : la vérification
@@ -38,14 +40,44 @@ export class GitInaccessible extends Error {
   }
 }
 
+/**
+ * `git` a été lancé (ou aurait pu l'être) mais `spawnSync` a échoué pour une autre raison que
+ * l'inaccessibilité du binaire : sortie plus grande que `maxBuffer` (`ENOBUFS`), répertoire qui est
+ * un fichier (`ENOTDIR`)… Dire « git est inaccessible » serait faux ; le code et le message d'origine
+ * de Node sont conservés.
+ */
+export class GitEchecLancement extends Error {
+  readonly code: string | undefined;
+
+  constructor(repertoire: string, commit: string | undefined, origine: NodeJS.ErrnoException) {
+    super(
+      `le lancement de git a échoué pour ${repertoire}${commit === undefined ? "" : ` au commit ${commit}`} : ` +
+        `${origine.code === undefined ? "" : `${origine.code} — `}${origine.message}.`,
+    );
+    this.name = "GitEchecLancement";
+    this.code = origine.code;
+  }
+}
+
+/** Les codes de `spawnSync` qui disent que le binaire `git` lui-même est introuvable ou inexécutable. */
+const CODES_BINAIRE_INACCESSIBLE: ReadonlySet<string> = new Set(["ENOENT", "EACCES"]);
+
 function causeDuLancement(erreur: NodeJS.ErrnoException): string {
-  return erreur.code === "ENOENT" ? "git introuvable" : `sortie d'erreur du lancement de git (${erreur.message})`;
+  return erreur.code === "ENOENT" ? "git introuvable" : `droit d'exécution refusé sur git (${erreur.message})`;
+}
+
+/** `GitInaccessible` pour `ENOENT`/`EACCES` du binaire ; toute autre erreur de lancement, `GitEchecLancement`. */
+export function erreurDeLancement(repertoire: string, commit: string | undefined, erreur: NodeJS.ErrnoException): Error {
+  if (erreur.code !== undefined && CODES_BINAIRE_INACCESSIBLE.has(erreur.code)) {
+    return new GitInaccessible(repertoire, commit, causeDuLancement(erreur));
+  }
+  return new GitEchecLancement(repertoire, commit, erreur);
 }
 
 /** `commit`, s'il est connu, ne nomme que le message d'erreur : il n'est jamais passé à Git ici. */
 export function executerGit(repertoire: string, arguments_: readonly string[], commit?: string): SortieGit {
   if (!existsSync(repertoire)) return { ok: false, sortie: "", erreur: `répertoire ${repertoire} inexistant` };
   const resultat = spawnSync("git", arguments_, { cwd: repertoire, encoding: "utf8", maxBuffer: 1 << 26 });
-  if (resultat.error !== undefined) throw new GitInaccessible(repertoire, commit, causeDuLancement(resultat.error));
+  if (resultat.error !== undefined) throw erreurDeLancement(repertoire, commit, resultat.error);
   return { ok: resultat.status === 0, sortie: resultat.stdout, erreur: resultat.stderr.trim() };
 }

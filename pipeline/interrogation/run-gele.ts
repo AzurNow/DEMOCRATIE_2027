@@ -1,5 +1,5 @@
 /**
- * Le run gelé que `pnpm run:dry --run <répertoire>` interroge (lot gel, PR 4 ; décision D51 (1)) :
+ * Le run gelé que `pnpm run:dry --run=<répertoire>` interroge (lot gel, PR 4 ; décision D51 (1)) :
  * un répertoire écrit par `pnpm geler --sortie` (`<sortie>/<date>/`, `pipeline/gel/destination.ts`),
  * jamais un répertoire de `runs/` du dépôt — un run simulé n'est pas un run.
  *
