@@ -28,7 +28,7 @@ import {
 } from "../../analysis/lecture-run.ts";
 import { GitInaccessible } from "../../outils/executer-git.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
-import { requetesDuPlanDuRun } from "../../pipeline/go-no-go/plan-du-run.ts";
+import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { commiterTout } from "../aides/depot.ts";
 import { ecrireJson, ITEM_P, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";

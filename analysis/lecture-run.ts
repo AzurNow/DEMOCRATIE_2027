@@ -429,7 +429,7 @@ export function lireTirage(repertoire_run: string, run: RunLu): TirageLu {
 /**
  * `questions.json` : le jeu complet des questions engendrées au gel, un tableau, chaque question
  * validée contre `question.schema.json`. `T` : la vue qu'en prend l'appelant (le plan
- * d'interrogation lit aussi le texte des formulations, `pipeline/go-no-go/plan-du-run.ts`).
+ * d'interrogation lit aussi le texte des formulations, `pipeline/interrogation/plan-du-run.ts`).
  */
 export function lireQuestions<T extends Question = Question>(repertoire_run: string): readonly T[] {
   const chemin = dispositionRunNote(repertoire_run).questions;
@@ -520,7 +520,7 @@ export function verifierArchive(run: RunLu, chemin: string | undefined): Verific
 
 /**
  * Le plan d'interrogation d'un run lu, à plat (§8, protocole 0.21). Injecté par l'appelant —
- * `pipeline/go-no-go/plan-du-run.ts:requetesDuPlanDuRun` — pour que `analysis/` n'importe pas
+ * `pipeline/interrogation/plan-du-run.ts:requetesDuPlanDuRun` — pour que `analysis/` n'importe pas
  * `pipeline/interrogation/plan.ts` (flux à sens unique, CLAUDE.md) ; appelé après les lectures du
  * run, et seulement s'il y a un `par_mode` à recouper.
  */

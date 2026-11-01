@@ -8,7 +8,8 @@ résultats déjà écrits sans les retester ni les réécrire, et teste les autr
 Codes de sortie : 0 si chaque URL a son verdict (un échec Wayback est consigné, il ne compte pas) ;
 1 si au moins une URL n'a pas de verdict (résultat hors de la table) ou si un résultat est refusé
 (non conforme au schéma, déjà écrit mais incohérent) ; 2 si le passage est refusé avant toute
-requête (table refusée, run ou réponse illisible, fenêtre d'interrogation encore ouverte).
+requête (table refusée, run ou réponse illisible, fenêtre d'interrogation encore ouverte, réponse
+qui attend l'opérateur — §6, protocole 0.22 : `pnpm interrogation:attente`, garde introuvable).
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from pipeline.collecte.horloge import HorlogeSysteme
 from pipeline.collecte.politesse import Cadence
 from pipeline.collecte.reseau import LECTURES_LOCATION, Transport, TransportUrllib
 from pipeline.collecte.wayback import ArchiveurWayback
+from pipeline.liens.attente import AttenteOperateur, GardeImpossible, exiger_aucune_attente
 from pipeline.liens.entree import EntreeRefusee, liens_cites, lire_run
 from pipeline.liens.instantanes import ChercheurInstantanes
 from pipeline.liens.iri import CONVERSIONS_IRI
@@ -71,6 +73,7 @@ def _arguments(arguments: Sequence[str]) -> argparse.Namespace:
 def principal(
     arguments: Sequence[str],
     construire: Callable[[TableLiens], Dependances] = dependances_reelles,
+    garde: Callable[[Path], None] = exiger_aucune_attente,
 ) -> int:
     options = _arguments(arguments)
     try:
@@ -79,8 +82,9 @@ def principal(
         maintenant = deps.horloge.maintenant()
         if maintenant < run.fin_fenetre:
             raise FenetreOuverte(f"la fenêtre d'interrogation ferme le {run.fin_fenetre.isoformat()}")
+        garde(options.repertoire_run)
         liens = liens_cites(options.repertoire_run, run)
-    except (TableInvalide, EntreeRefusee, FenetreOuverte) as refus:
+    except (TableInvalide, EntreeRefusee, FenetreOuverte, AttenteOperateur, GardeImpossible) as refus:
         print(f"passage refusé, aucune requête envoyée — {type(refus).__name__} :", file=sys.stderr)
         print(f"  {refus}", file=sys.stderr)
         return CODE_PASSAGE_REFUSE
