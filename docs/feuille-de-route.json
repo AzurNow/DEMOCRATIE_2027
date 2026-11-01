@@ -803,12 +803,38 @@
       "recommandation": "Option 1 sur les trois points.",
       "retenu": "Option 1 sur les trois points. Écrits en 0.23, PR à part ; code (analysis/ pour les kappas, run.schema.json minItems/maxItems 2) dans une PR suivante.",
       "date_decision": "2026-11-01"
+    },
+    {
+      "id": "D59",
+      "statut": "tranchee",
+      "question": "Vingt et un trous laissés par la matrice de conformité du 2026-11-01 sur des exigences à implémenter : règles de décision de H1, H2 (strate « moins de 60 jours ») et H4 ; corrélation exploratoire (§2.07) ; écart API / application (§6.18) ; intervalles de « tous les taux » (§8.18) ; seuils des recalculs de robustesse (§8.61) ; renvoi à la réextraction (§4.17) ; recherche d'une absence et nouvelle source T1 (§4.69, §4.70) ; sous-échantillon de l'application (§6.16, §6.17) ; contrefactuel d'outil (§7.27) ; écart du juge sur le produit de son éditeur (§7.28) ; notation des lectures de comparateur (§6.21) ; appels de l'interrogation (§9.14) ; nombres de réponses publiés (§5.50) ; en-tête du prompt de juge (charge v3 annoncée, v5 au code) ; rendu d'un champ absent de la charge (annexe D) ; refus et renvois dans le kappa du jeu d'or, kappa sans réponse comparable (§7) ; catégories du kappa humain-humain (§7).",
+      "contexte": "Ces exigences sont « a-implementer » dans docs/conformite/exigences.json, mais le texte ne dit pas ce que le code doit calculer : aucune règle de décision des hypothèses, aucune date d'item pour H2, aucune taille ni règle de tirage du sous-échantillon de l'application, aucune définition de la recherche d'une absence ni de la notation d'un comparateur. Le prompt judge-1.0.0 annonce charge-juge-v3 ; v4 (alias aveugle de candidat) et v5 (normalisation retirée) n'ont pas changé le texte envoyé au juge.",
+      "options": [
+        "(1) date = valide_du de l'item principal (date_changement pour un item O), gel − 60 j ≤ date ≤ gel, F et Q-ATT hors strate ; (2) H2 confirmée pour un outil si la différence web désactivée − web activée sur l'exactitude globale est établie et négative, strate < 60 j en secondaire ; (3) H1 vraie pour un outil si un de ses couples comparés a une borne inférieure > 0, globale si vraie pour tous, « sans objet » sans couple comparé ; (4) H4 : p corrigé < 0,05 strict, « indécidable » sans test ; (5) Spearman entre 1 − exactitude et items P vérifiés, par couple comparé, sans intervalle, non calculé sous trois candidats ; (6) mode de tête, exactitude, appariement par question, clé <outil>:api-application, exploratoire ; (7) tous les taux, secondaires compris, strates global, candidat:, theme:, gabarit:, registre: ; (8) partage des couples et candidats du calcul principal, seuils non réappliqués ; (9) motif de rejet « texte extrait erroné », items validés sur l'ancien texte suspendus ; (10) aucun item P ni O vérifié et double extraction négative ; (11) source collectée après la dernière revérification, un seul annotateur ; (12) 5 questions × candidats interrogés, tourniquet des gabarits, neutre, échantillon 1, deux testeurs sur tout, texte copié, capture en preuve, compte dédié, données personnelles masquées ; (13) 200 réponses nommant un outil, dérangement, libellé et éditeur, diagnostic sans retrait ; (14) écart signé contre la moyenne des écarts sur les autres produits, intervalle bootstrap, signalé s'il exclut 0 ; (15) double notation humaine et arbitrage, sans juge automatique ; (16) docs/APPELS-INTERROGATION.md engendré depuis le code ; (17) réponses prévues au gel et obtenues après l'interrogation ; (18) en-tête seul corrigé si le corps n'a pas à changer ; (19) annexe D : un champ facultatif absent (prémisse hors formulation orientée, citations non jointes) est rendu ABSENT, l'absence de tout autre champ interdit le rendu. ; (20) jeu d'or : refus de l'API et Q-ATT renvoyée à un humain hors du kappa et comptés, comme pour l'échantillon (D32, D31 (2)), kappa sans réponse comparable publié absent avec ce motif ; (21) kappa des deux humains sur les quatre catégories de l'annexe C, « indéterminée » comprise, deux « indéterminée » s'accordent.",
+        "Variantes : (1) date de collecte de la source, ou strate glissante par run ; (2) décision sur la seule strate < 60 j ; (3) H1 sur tous les modes ; (4) seuil non strict ; (5) Pearson, ou corrélation avec intervalle ; (6) tous les modes de l'API ; (9) renvoi sur tout rejet ; (12) un testeur par moitié ; (13) retrait de juge au-delà de 3 % ; (14) écart non signé ; (15) juge automatique sur un prompt de comparateur à écrire ; (16) appels décrits dans le protocole même ; (19) tout champ absent rendu ABSENT ; (20) refus compté comme non-réponse dans le kappa du jeu d'or ; (21) « indéterminée » exclue du kappa humain-humain, comme au jeu d'or."
+      ],
+      "recommandation": "Option 1 sur les vingt et un points.",
+      "retenu": "Option 1 sur les vingt et un points. Écrits en 0.24, PR à part, empilée sur la 0.23 (#225), sauf la seconde moitié de (9) (suspension des items validés sur l'ancien texte), arrêtée sur une contradiction avec le §4 (un item publié ne change que par la contestation et le panel ; liste fermée des sept statuts) ; code dans des PR suivantes.",
+      "date_decision": "2026-11-01"
+    },
+    {
+      "id": "D60",
+      "statut": "tranchee",
+      "question": "Onze points laissés ouverts par la rédaction de la 0.24 : seconde moitié de D59 (9), cas non tranchés de H1 et H2, clés de graine non nommées, Spearman, écart API / application, empreinte de la capture masquée, compte du testeur, tourniquet, signe de la différence des modes, D31 (2) à écrire pour l'échantillon.",
+      "contexte": "(9b) suspendre les items validés sur un texte faux contredit le §4 (item publié changé seulement par contestation et panel ; sept statuts fermés). Les autres points sont des précisions que la 0.24 laisse implicites ; (j) differenceAppariee calcule activée − désactivée alors que H2 est écrite sur désactivée − activée.",
+      "options": [
+        "(9b) item non publié remis en attente et revalidé, item publié contesté par l'auteur comme après une correction de thème ; (b) H2 « sans objet » pour un outil sans modes comparés, pas de verdict H2 global ; (c) H1 globale sur les seuls outils à couple comparé ; (d) clés `recents:60j`, `contrefactuel_outil`, `<juge>:propre-editeur` ; (e) Spearman à rangs moyens, candidats sans exactitude exclus avant le compte de trois ; (f) côté API formulation neutre et échantillon 1, les deux testeurs comme deux unités d'une même grappe ; (g) empreintes de la capture d'origine et de la capture masquée ; (h) sans compte quand c'est possible, sinon compte dédié au banc, jamais personnel ; (i) question choisie dans l'ordre trié des identifiants à l'intérieur du gabarit ; (j) le code de H2 lit le signe écrit au protocole ; (k) écrire D31 (2) pour l'échantillon.",
+        "Variantes : (9b) statut « suspendu » ajouté aux sept statuts et à l'annexe A ; (c) exiger tous les outils ; (g) capture masquée seule."
+      ],
+      "recommandation": "Option 1 sur tous les points.",
+      "retenu": "Option 1 sur tous les points (consigne durable de l'auteur : option recommandée). Texte à écrire en 0.25, PR à part, avant le code qui en dépend.",
+      "date_decision": "2026-11-01"
     }
   ],
   "lots": [
     {
       "id": "protocole",
-      "titre": "Protocole (0.23 au 2026-11-01), à geler en v1.0",
+      "titre": "Protocole (0.24 au 2026-11-01), à geler en v1.0",
       "jalon": "J1",
       "niveau": "T1",
       "agent": "auteur",
