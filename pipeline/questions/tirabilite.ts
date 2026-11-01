@@ -51,6 +51,7 @@ import type {
   RunAuGel,
   Theme,
 } from "./types.ts";
+import { estInterroge, idsInterroges } from "../../analysis/candidats-interroges.ts";
 
 /**
  * Ce que la tirabilité et la résolution lisent du run : l'instant du gel et le périmètre (qui est
@@ -115,11 +116,11 @@ type LectureAuGel =
   | { readonly sorte: "admise"; readonly items: readonly ItemDeQuestion[] };
 
 /**
- * `run.perimetre.candidats[].interroge` : les candidats interrogés au run. Seule définition, lue par
- * la tirabilité et par la notation (`notation/preparation.ts:interrogesDuRun`).
+ * Les candidats interrogés au run, d'après la seule définition (`analysis/candidats-interroges.ts`),
+ * lue aussi par la notation (`notation/preparation.ts:interrogesDuRun`).
  */
 export function interrogesDe(run: Pick<GelDuRun, "perimetre">): ReadonlySet<string> {
-  return new Set(run.perimetre.candidats.filter((c) => c.interroge).map((c) => c.candidat_id));
+  return idsInterroges(run.perimetre.candidats);
 }
 
 function estDansLaListe(entree: ItemDeQuestion): boolean {
@@ -411,5 +412,5 @@ function exclusionDe(question: Question, index: Index, exclusion: MotifEtDetail)
  * candidat comparé : le tirage la lit pour la compensation des strates (§5, protocole 0.9).
  */
 export function estCompare(candidat: Pick<CandidatAuGel, "interroge" | "sous_seuil">): boolean {
-  return candidat.interroge && !candidat.sous_seuil;
+  return estInterroge(candidat) && !candidat.sous_seuil;
 }

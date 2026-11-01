@@ -45,6 +45,7 @@ import { canoniser } from "../validation/domaine/empreinte.ts";
 import type { EntreesAnalyse } from "./filtre.ts";
 import { parModeDuRun, type RequeteDuPlan } from "./seuils.ts";
 import type { CandidatAuGel, EntreeTirage, Item, Mode, ParMode, Question, ReferenceItem, Reponse, Run, SeuilMode } from "./types.ts";
+import { candidatsInterroges as candidatsInterrogesAuRun } from "./candidats-interroges.ts";
 
 /* ------------------------------------------------------------------ disposition */
 
@@ -269,7 +270,7 @@ function lireObjet<T>(nom: NomSchema, chemin: string): T {
 
 /** §7 (protocole 0.20), D55 (9) : les candidats interrogés au run, la même définition que le dérangement. */
 function candidatsInterroges(run: RunLu): readonly { readonly candidat_id: string }[] {
-  return run.perimetre.candidats.filter((candidat) => candidat.interroge);
+  return candidatsInterrogesAuRun(run.perimetre.candidats);
 }
 
 /** La table publiée doit être exactement celle que la graine et les candidats interrogés recalculent. */

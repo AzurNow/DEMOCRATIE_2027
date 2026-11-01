@@ -51,6 +51,7 @@ import type {
   Theme,
   Tirage,
 } from "./types.ts";
+import { candidatsInterroges, candidatsNonInterroges } from "../../analysis/candidats-interroges.ts";
 
 /** §5 : 80 % des questions sont reprises du run précédent, 20 % sont neuves. */
 export const PART_REPRISE = 0.8;
@@ -399,7 +400,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
   );
 
   const index = indexer(demande.items, demande.mesures);
-  const interroges = demande.run.perimetre.candidats.filter((candidat) => candidat.interroge);
+  const interroges = candidatsInterroges(demande.run.perimetre.candidats);
   const separation = separer(
     demande.questions,
     demande.items,
@@ -436,9 +437,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
     rapport: {
       strates_vides: resultats.flatMap((resultat) => resultat.strates_vides),
       candidats_a_part: interroges.filter((c) => c.sous_seuil).map((c) => c.candidat_id),
-      candidats_non_interroges: demande.run.perimetre.candidats
-        .filter((candidat) => !candidat.interroge)
-        .map((candidat) => candidat.candidat_id),
+      candidats_non_interroges: candidatsNonInterroges(demande.run.perimetre.candidats).map((candidat) => candidat.candidat_id),
     },
   };
 }

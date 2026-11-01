@@ -28,6 +28,7 @@
 import { identitesEngendrees } from "./engendrement.ts";
 import { concerneLeRun } from "./tirabilite.ts";
 import type { Item, Question, RunAuGel, Tirage } from "./types.ts";
+import { idsInterroges } from "../../analysis/candidats-interroges.ts";
 
 /** Le jeu reçu ne contient pas toutes les questions engendrées au gel : la barrière ne juge pas. */
 export class JeuDeQuestionsIncomplet extends Error {
@@ -73,9 +74,7 @@ export function exigerTirageDuRun(tirage: Pick<Tirage, "run_id" | "date_gel">, r
 
 /** Les identifiants que le jeu doit contenir, triés. */
 export function questionsExigees(tirage: Tirage, items: readonly Item[], run: RunAuGel): readonly string[] {
-  const interroges = new Set(
-    run.perimetre.candidats.filter((candidat) => candidat.interroge).map((candidat) => candidat.candidat_id),
-  );
+  const interroges = idsInterroges(run.perimetre.candidats);
   const engendrees = identitesEngendrees(items).filter((identite) => concerneLeRun(identite, interroges));
   const exigees = new Set([
     ...tirage.entrees.map((entree) => entree.question_id),

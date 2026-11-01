@@ -18,6 +18,7 @@
  */
 
 import type { CandidatAuGel, IdentifiantCourt, LectureComparateur, Run, Ulid } from "./types.ts";
+import { candidatsInterroges } from "./candidats-interroges.ts";
 
 /** Ce que le run fige de la liste de référence se contredit : la mesure ne part pas d'une base fausse. */
 export class ItemsPDeReferenceIncoherents extends Error {
@@ -59,7 +60,7 @@ function fautesDuCandidat(candidat: CandidatAuGel): string[] {
 export function itemsPDeReference(run: Run): ReadonlySet<Ulid> {
   const fautes = run.perimetre.candidats.flatMap(fautesDuCandidat);
   const reference = new Set<Ulid>();
-  for (const candidat of run.perimetre.candidats.filter((c) => c.interroge)) {
+  for (const candidat of candidatsInterroges(run.perimetre.candidats)) {
     // Un doublon interne au candidat est déjà une faute de `fautesDuCandidat` : on ne le compte pas deux fois.
     for (const id of new Set(candidat.items_p_au_gel)) {
       if (reference.has(id)) fautes.push(`item ${id} listé pour deux candidats interrogés`);

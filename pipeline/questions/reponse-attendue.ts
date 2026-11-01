@@ -37,6 +37,7 @@ import { POSITIONS } from "./types.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import { dateCivileValide } from "../../validation/domaine/validateurs-champ.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import { idsInterroges } from "../../analysis/candidats-interroges.ts";
 
 export class ItemIntrouvable extends Error {
   constructor(item_id: string) {
@@ -375,7 +376,7 @@ export type ListeAuGel =
 export type CandidatDuPerimetre = Pick<CandidatAuGel, "candidat_id" | "interroge">;
 
 function candidatsInterroges(perimetre: readonly CandidatDuPerimetre[]): ReadonlySet<string> {
-  return new Set(perimetre.filter((candidat) => candidat.interroge).map((candidat) => candidat.candidat_id));
+  return idsInterroges(perimetre);
 }
 
 /** Les seules positions qui décident de la présence dans la liste : « pour » (présent), « contre » (absent). */
