@@ -16,6 +16,7 @@
 
 import { contresignerFichier, type Declaration } from "../pipeline/go-no-go/contreseing.ts";
 import { analyserArguments, multiples, obligatoire } from "./arguments.ts";
+import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const USAGE = 'usage : pnpm go-no-go:contresigner <repertoire_run> --nom="<nom>" --case=<rang>:faite|--case=<rang>:non_faite:<motif> …';
 
@@ -44,7 +45,7 @@ function principal(): void {
     const signee = contresignerFichier(repertoire, { nom, declarations: multiples(bruts, "case").map(declarationDe), date: new Date().toISOString() });
     process.stdout.write(`Checklist de l'annexe F contresignée par ${nom} le ${String(signee.contreseing?.date)} — ${repertoire}/checklist.json\n`);
   } catch (erreur) {
-    if (!(erreur instanceof Error)) throw erreur;
+    if (!estUnRefusAttendu(erreur)) throw erreur;
     process.stderr.write(`Contreseing non exécuté — ${erreur.name} :\n  ${erreur.message}\n`);
     process.exitCode = 2;
   }

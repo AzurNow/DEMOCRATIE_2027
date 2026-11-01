@@ -5,8 +5,11 @@
  * place, et le comportement nominal (git présent) ne change pas.
  */
 
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { executerGit, GitInaccessible } from "../outils/executer-git.ts";
+import { erreurDeLancement, executerGit, GitEchecLancement, GitInaccessible } from "../outils/executer-git.ts";
 
 function sansGit<T>(appel: () => T): T {
   const path_avant = process.env["PATH"];
@@ -57,5 +60,69 @@ describe("executerGit", () => {
   it("comportement nominal inchangé : un code de sortie non nul n'est pas une panne Git", () => {
     const resultat = executerGit(".", ["cat-file", "-e", "0000000000000000000000000000000000000000^{commit}"]);
     expect(resultat.ok).toBe(false);
+  });
+});
+
+function capter(appel: () => void): unknown {
+  try {
+    appel();
+  } catch (erreur) {
+    return erreur;
+  }
+  throw new Error("l'appel n'a pas levé");
+}
+
+describe("executerGit, erreurs de lancement autres que « git introuvable » (Lot 6 de la vague du 2026-11-01)", () => {
+  it("un répertoire qui est un fichier (ENOTDIR) : GitEchecLancement avec le code et le message d'origine, jamais « git est inaccessible »", () => {
+    const repertoire = mkdtempSync(join(tmpdir(), "banc-executer-git-"));
+    try {
+      const fichier = join(repertoire, "pas-un-repertoire");
+      writeFileSync(fichier, "x", "utf8");
+      const erreur = capter(() => executerGit(fichier, ["rev-parse", "--show-prefix"], "abcdef0"));
+      expect((erreur as Error).constructor).toBe(GitEchecLancement);
+      expect((erreur as Error).name).toBe("GitEchecLancement");
+      expect((erreur as GitEchecLancement).code).toBe("ENOTDIR");
+      expect((erreur as Error).message).toContain("ENOTDIR");
+      expect((erreur as Error).message).toContain(fichier);
+      expect((erreur as Error).message).toContain("au commit abcdef0");
+      expect((erreur as Error).message).not.toContain("git est inaccessible");
+    } finally {
+      rmSync(repertoire, { recursive: true, force: true });
+    }
+  });
+
+  it("sortie plus grande que maxBuffer (ENOBUFS) : GitEchecLancement, qui nomme le code, pas « git est inaccessible »", () => {
+    const origine = Object.assign(new Error("spawnSync git ENOBUFS"), { code: "ENOBUFS" });
+    const erreur = erreurDeLancement("/tmp", undefined, origine);
+    expect(erreur.constructor).toBe(GitEchecLancement);
+    expect((erreur as GitEchecLancement).code).toBe("ENOBUFS");
+    expect(erreur.message).toContain("spawnSync git ENOBUFS");
+    expect(erreur.message).not.toContain("git est inaccessible");
+  });
+
+  it("binaire sans droit d'exécution (EACCES) : GitInaccessible, comme git introuvable", () => {
+    const repertoire = mkdtempSync(join(tmpdir(), "banc-executer-git-"));
+    try {
+      writeFileSync(join(repertoire, "git"), "#!/bin/sh\n", { mode: 0o644 });
+      const erreur = (() => {
+        const path_avant = process.env["PATH"];
+        process.env["PATH"] = repertoire;
+        try {
+          return capter(() => executerGit("/tmp", ["rev-parse", "--show-prefix"]));
+        } finally {
+          process.env["PATH"] = path_avant;
+        }
+      })();
+      expect((erreur as Error).constructor).toBe(GitInaccessible);
+    } finally {
+      rmSync(repertoire, { recursive: true, force: true });
+    }
+  });
+
+  it("erreurDeLancement : ENOENT et EACCES du binaire donnent GitInaccessible", () => {
+    for (const code of ["ENOENT", "EACCES"]) {
+      const erreur = erreurDeLancement("/tmp", undefined, Object.assign(new Error(`spawnSync git ${code}`), { code }));
+      expect(erreur.constructor).toBe(GitInaccessible);
+    }
   });
 });

@@ -19,6 +19,7 @@ import { join, resolve } from "node:path";
 import { MOTIFS_DU_BILAN, type BilanNotation } from "../pipeline/notation/bilan-notation.ts";
 import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
 import { lancerNotationSimulee, lireParametresNotationSimulee } from "../pipeline/notation/notation-simulee.ts";
+import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const FIXTURES_INTERROGATION = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
 const FIXTURES_NOTATION = resolve(import.meta.dirname, "../tests/notation/fixtures/notation-dry");
@@ -84,7 +85,7 @@ async function principal(): Promise<void> {
     const resultat = await lancerNotationSimulee({ sortie, fixtures_interrogation: FIXTURES_INTERROGATION, fixtures_notation: FIXTURES_NOTATION }, parametres);
     imprimerBilan(resultat.repertoire_run, resultat.bilan);
   } catch (erreur) {
-    if (!(erreur instanceof Error)) throw erreur;
+    if (!estUnRefusAttendu(erreur)) throw erreur;
     process.stderr.write(`Notation simulée non exécutée — ${erreur.name} :\n  ${erreur.message}\n`);
     process.exitCode = 2;
   }

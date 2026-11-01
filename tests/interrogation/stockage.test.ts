@@ -7,7 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
-import { DepotReponses, ReponseDejaEcrite } from "../../pipeline/interrogation/stockage.ts";
+import { DepotReponses, FichierEtranger, ReponseDejaEcrite } from "../../pipeline/interrogation/stockage.ts";
 import type { ReponseEcrite } from "../../pipeline/interrogation/types.ts";
 import { TemporaireOrphelin, type EcritureTemporaire } from "../../pipeline/run/ecriture.ts";
 import { empreinteDe } from "../../validation/domaine/empreinte.ts";
@@ -139,9 +139,10 @@ describe("écriture atomique de reponses/<id>.json (temporaire .partiel), Lot 8 
     expect(existsSync(`${chemin}.partiel`)).toBe(false);
   });
 
-  it("un .partiel orphelin, sans rapport avec l'écriture en cours, fait lever DepotReponses.ouvrir, jamais un SyntaxError", async () => {
+  it("un .partiel orphelin, sans rapport avec l'écriture en cours (identifiant différent, relance après kill), fait lever DepotReponses.ouvrir TemporaireOrphelin, classe exacte, jamais un SyntaxError ni une Error nue", async () => {
     const { b, reponse } = await uneReponseEcrite();
-    writeFileSync(join(b.reponses, `${reponse.id}.json.partiel`), '{"id": "tronque', "utf8");
+    const partiel = join(b.reponses, `${reponse.id}.json.partiel`);
+    writeFileSync(partiel, '{"id": "tronque', "utf8");
     let erreur: unknown;
     try {
       DepotReponses.ouvrir(b.reponses);
@@ -149,7 +150,23 @@ describe("écriture atomique de reponses/<id>.json (temporaire .partiel), Lot 8 
       erreur = e;
     }
     expect(erreur).not.toBeInstanceOf(SyntaxError);
-    expect(erreur).toBeInstanceOf(Error);
+    expect((erreur as Error).constructor).toBe(TemporaireOrphelin);
+    expect((erreur as Error).name).toBe("TemporaireOrphelin");
     expect((erreur as Error).message).toContain(`${reponse.id}.json.partiel`);
+    expect(readFileSync(partiel, "utf8")).toBe('{"id": "tronque');
+  });
+
+  it("un autre fichier étranger (ni .json ni .partiel) fait lever FichierEtranger, nommée, qui le désigne", async () => {
+    const { b } = await uneReponseEcrite();
+    writeFileSync(join(b.reponses, "notes.txt"), "pas une réponse", "utf8");
+    let erreur: unknown;
+    try {
+      DepotReponses.ouvrir(b.reponses);
+    } catch (e) {
+      erreur = e;
+    }
+    expect((erreur as Error).constructor).toBe(FichierEtranger);
+    expect((erreur as Error).name).toBe("FichierEtranger");
+    expect((erreur as Error).message).toContain("notes.txt");
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Lot gel, PR 4 (décision D51 (1)) : `pnpm run:dry --run <répertoire>` interroge en simulé un run
+ * Lot gel, PR 4 (décision D51 (1)) : `pnpm run:dry --run=<répertoire>` interroge en simulé un run
  * produit par `pnpm geler --sortie`, et écrit `statut: en_cours` dans son `run.json` avant la
  * première tentative. Chaque cas limite du brief a son test, nommé « run gelé, cas n ».
  *

@@ -17,6 +17,7 @@
 
 import { goNoGo, type ResultatGoNoGo } from "../pipeline/go-no-go/go-no-go.ts";
 import { analyserArguments } from "./arguments.ts";
+import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const USAGE = "usage : pnpm go-no-go <repertoire_run>";
 
@@ -49,7 +50,7 @@ function principal(): void {
     const repertoire = repertoireDemande(process.argv.slice(2));
     imprimer(repertoire, goNoGo(repertoire));
   } catch (erreur) {
-    if (!(erreur instanceof Error)) throw erreur;
+    if (!estUnRefusAttendu(erreur)) throw erreur;
     process.stderr.write(`Go/no-go non exécuté — ${erreur.name} :\n  ${erreur.message}\n`);
     process.exitCode = 2;
   }
