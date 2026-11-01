@@ -13,6 +13,81 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-01 — Relecture des PR de l'absence, D56, protocole 0.21 et lots de correction (PR #187 à #213 : `pipeline/`, `validation/`, `notation-humaine/`, `outils/`, `analysis/`)
+
+### 1. `pnpm interrogation:stocker` classe une réponse avec les adaptateurs d'une fixture de test — *haute*
+
+`outils/interrogation-stocker.ts` lit `tests/interrogation/fixtures/run-gele/profils-simules.json`
+pour retrouver l'adaptateur qui classe et normalise une réponse en attente de l'opérateur (#202). Le
+seul éditeur exercé à ce jour est simulé ; aucun profil réel n'existe.
+
+**Pourquoi ça casse.** Au premier run réel, une réponse stockée par l'opérateur serait normalisée par
+l'adaptateur d'un outil fictif. Si les formes se ressemblent assez pour ne pas lever, la réponse entre
+dans la notation avec un classement faux, et rien ne le signale.
+
+**Ce qu'il faut faire.** Avant `pnpm run:live`, faire lire à la commande les profils du run gelé, pas
+la fixture ; un test qui refuse tout chemin `tests/` dans un module d'`outils/` le garderait.
+
+### 2. La règle « candidat interrogé » s'écrit encore en ligne à plusieurs endroits — *haute*
+
+Le filtre `candidat.interroge` est réécrit dans une dizaine de modules : `pipeline/questions/`
+(`tirage.ts`, `tirabilite.ts`, `completude.ts`, `reponse-attendue.ts`), `pipeline/notation/`
+(`preparation.ts`, `alias-candidats.ts`, `chaine.ts`), `pipeline/gel/assemblage.ts` et
+`analysis/lecture-run.ts` ; #200 et #209 en ont ajouté, au lieu d'une seule fonction.
+
+**Pourquoi ça casse.** Que l'un d'eux change (un statut de candidat ajouté, un retrait en cours de
+run) sans les autres, et le tirage, la complétude et la liste attendue du juge ne portent plus sur les
+mêmes candidats : la note « liste attendue » d'une Q-ATT devient fausse sans qu'un test échoue.
+
+**Ce qu'il faut faire.** Une fonction unique dans `analysis/` (exception d'import admise), appelée
+par tous ; lot suivant, déjà annoncé dans #209.
+
+### 3. Un `Location` latin-1 qui forme de l'UTF-8 valide est lu en UTF-8 — *haute*
+
+`table-liens-v3` (#180, D55 (2), §7 0.21) relit en UTF-8 un `Location` dont l'aller-retour latin-1
+réussit, comme `requests`.
+
+**Pourquoi ça casse.** Une redirection vraiment latin-1 dont les octets forment par hasard de l'UTF-8
+valide est suivie vers une autre URL : le verdict d'existence du lien peut changer, en silence. Le
+cas est rare (il faut deux octets latin-1 consécutifs de la forme `Ã` + ponctuation haute).
+
+**Ce qu'il faut faire.** Rien avant le premier run ; au premier test des liens réel, compter les
+redirections relues en UTF-8 et en vérifier quelques-unes à la main.
+
+### 4. L'ordre unique des chaînes n'est gardé que contre les formes connues — *moyenne*
+
+`comparerChaines` (`outils/ordre-chaines.ts`, #213) remplace tous les `localeCompare` ; un test
+structurel repère les formes connues de comparaison dépendante de la locale.
+
+**Pourquoi ça casse.** Un `Intl.Collator` ou un tri par défaut sur des chaînes accentuées passerait
+le test : l'ordre des diagnostics ou des sorties dépendrait de la machine, et une réexécution
+publique ne retrouverait pas les mêmes empreintes. On le verrait à la réexécution, pas avant.
+
+**Ce qu'il faut faire.** Étendre le test au premier contournement rencontré ; rien d'autre.
+
+### 5. Un arrêt brutal laisse un verrou ou un temporaire à supprimer à la main — *basse*
+
+Le registre à ajout seul (#197, verrou exclusif) et l'écriture par renommage (#181,
+`TemporaireOrphelin`) s'arrêtent sur ce qu'un arrêt brutal a laissé, par choix : rien n'est supprimé
+automatiquement.
+
+**Pourquoi ça casse.** Friction : la relance échoue avec une erreur nommée tant que l'opérateur n'a
+pas supprimé le fichier. Une réponse 5xx gardée juste avant un arrêt attend aussi l'opérateur au lieu
+d'être retentée (#196).
+
+**Ce qu'il faut faire.** Le dire dans la procédure d'un run réel (`docs/CONTROLE-MANUEL.md`).
+
+### 6. Les deux `dom-type.ts` des clients navigateur doivent évoluer ensemble — *basse*
+
+`validation/client/` et `notation-humaine/client/` ont chacun leur `dom-type.ts` (#205), et le texte
+des messages d'erreur du client de validation est figé par les tests contre la forme du corps
+d'erreur du serveur (#212).
+
+**Pourquoi ça casse.** Un changement de forme d'erreur côté serveur ou d'un identifiant de page casse
+un client au premier accès ; visible tout de suite.
+
+**Ce qu'il faut faire.** Rien ; les tests le signalent.
+
 ## 2026-10-19 — Lot 5, extraction et reprise : relance sans doublon, épinglage périmé, échec de transport, `modele_different` (constats 2 à 4 et 17 de `docs/revues/2026-10-17.md`, PR #161 et #167 : `pipeline/extraction/`)
 
 ### 1. `staging/identifiants-extraction/` n'est jamais purgé — *basse*
@@ -186,7 +261,7 @@ liste. Une réécriture d'item qui l'oublierait laisserait un lot juger encore u
 
 **Ce qu'il faut faire.** Le rappeler à toute PR qui ajoute une écriture dans `staging-renvoi.ts`.
 
-### 4. `poserRegistreAjoutSeul` vit dans `relectures-fichier.ts` et sert aux deux registres — *basse*
+### ~~4. `poserRegistreAjoutSeul` vit dans `relectures-fichier.ts` et sert aux deux registres~~ — réglé par le lot 2 de la revue du 2026-10-17, #160 (module partagé `validation/io/registre-ajout-seul.ts`, verrou exclusif ajouté par #197)
 
 Déplacer ou renommer ce module casse aussi celui des rattachements.
 
