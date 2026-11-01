@@ -22,12 +22,12 @@
  *   proposition du même `id`, que la relance ne rappelle jamais (constat 24 du 2026-10-17).
  */
 
-import { randomBytes } from "node:crypto";
-import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import type { ObjetJson } from "../interrogation/types.ts";
+import { ecrireUneFois as ecrireUneFoisPartage } from "../run/ecriture.ts";
 import type { CodeGabarit } from "../questions/types.ts";
 import type { MotifRejet } from "./controle.ts";
 import type { PositionAffirmable, PositionDemandee } from "./position-affirmee.ts";
@@ -93,24 +93,14 @@ export function cheminProposition(staging: string, proposition: Pick<Proposition
 }
 
 /**
- * Écrit `contenu` sous `<repertoire>/<nom>`, une fois, de façon atomique : un temporaire caché du
- * même répertoire, puis un lien vers le nom final, qui échoue si ce nom existe déjà
- * (`PropositionDejaEcrite`). Une seule écriture pour les propositions, les octets reçus et leur cause.
+ * Écrit `contenu` sous `<repertoire>/<nom>`, une fois, de façon atomique, le répertoire créé au
+ * besoin : `pipeline/run/ecriture.ts:ecrireUneFois`, la seule écriture « une fois » du dépôt. Un nom
+ * déjà pris lève `PropositionDejaEcrite`. Une seule écriture pour les propositions, les octets reçus
+ * et leur cause.
  */
 function ecrireUneFois(repertoire: string, nom: string, contenu: string | Uint8Array): string {
-  const chemin = join(repertoire, nom);
   mkdirSync(repertoire, { recursive: true });
-  const tmp = join(repertoire, `.${nom}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
-  writeFileSync(tmp, contenu, { flag: "wx" });
-  try {
-    linkSync(tmp, chemin);
-  } catch (erreur) {
-    if ((erreur as NodeJS.ErrnoException).code === "EEXIST") throw new PropositionDejaEcrite(chemin);
-    throw erreur;
-  } finally {
-    rmSync(tmp, { force: true });
-  }
-  return chemin;
+  return ecrireUneFoisPartage(repertoire, nom, contenu, (chemin) => new PropositionDejaEcrite(chemin));
 }
 
 /** Valide puis écrit une fois ; lève `ErreurSchema` ou `PropositionDejaEcrite`, sans rien écrire alors. */

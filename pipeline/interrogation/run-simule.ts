@@ -159,7 +159,7 @@ async function executerSimulation(simulee: Simulee): Promise<ResultatRunSimule> 
     repertoire_tentatives: disposition.tentatives,
     editeurs,
   });
-  return { disposition, execution, bilan: bilanParCouple(depot.toutes()) };
+  return { disposition, execution, bilan: bilanParCouple(depot.toutes(), [...plan.values()].flat()) };
 }
 
 export interface OptionsRunSimule {

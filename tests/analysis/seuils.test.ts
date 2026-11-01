@@ -24,7 +24,6 @@ import {
   couplesDeclares,
   couplesDuRun,
   parModeDuRun,
-  partReponsesManquantes,
   partReponsesManquantesDuPlan,
   PlanIncoherent,
   repartirParCandidat,
@@ -33,11 +32,20 @@ import {
   runIncomplet,
   SEUIL_RUN_INCOMPLET,
 } from "../../analysis/seuils.ts";
-import type { Canal, Mode } from "../../analysis/types.ts";
+import { taux, type Canal, type Mode } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { candidat, idQuestion, outil, planCouvrant, reponse, reponseDe, requetesPlanifiees, run, ulid, unite } from "./fabriques.ts";
 
 const ALPHA_DESACTIVEE = { outil_id: "outil-alpha", mode: "web_desactivee" } as const;
+
+/**
+ * La part d'un couple sur le plan d'un run complet (`planCouvrant`) : chaque réponse API de contexte
+ * run enregistrée répond à sa requête. Report des cas de l'ancienne `partReponsesManquantes` (sur les
+ * seules réponses enregistrées), retirée quand le bilan d'interrogation est passé au plan (lot V3-2).
+ */
+function partSurRunComplet(jeu: Parameters<typeof planCouvrant>[0], couple: Parameters<typeof partReponsesManquantesDuPlan>[2]) {
+  return partReponsesManquantesDuPlan(jeu, planCouvrant(jeu), couple);
+}
 
 /**
  * `obtenues` réponses obtenues et `manquantes` réponses manquantes d'un couple. Le canal
@@ -104,21 +112,21 @@ describe("seuil de réponses manquantes par couple outil × mode (conformité n�
   it("laisse un couple à 20 % exactement dans les comparaisons, et exclut celui qui dépasse", () => {
     // §8 dit « plus de 20 % ». Comparaison entière (5·manquantes > total) : 2/10 ne déclenche
     // pas, 3/10 déclenche. Le flottant 0,2 ne décide rien.
-    const pile = partReponsesManquantes(reponses(8, 2), ALPHA_DESACTIVEE);
+    const pile = partSurRunComplet(reponses(8, 2), ALPHA_DESACTIVEE);
     expect(pile).toEqual({ numerateur: 2, denominateur: 10, valeur: 0.2 });
     expect(runIncomplet(pile)).toBe(false);
 
-    const dessus = partReponsesManquantes(reponses(7, 3), ALPHA_DESACTIVEE);
+    const dessus = partSurRunComplet(reponses(7, 3), ALPHA_DESACTIVEE);
     expect(dessus).toEqual({ numerateur: 3, denominateur: 10, valeur: 0.3 });
     expect(runIncomplet(dessus)).toBe(true);
   });
 
   it("laisse comparable un couple à un cinquième exact, sur 1/5 comme sur 2/10", () => {
-    const unSurCinq = partReponsesManquantes(reponses(4, 1), ALPHA_DESACTIVEE);
+    const unSurCinq = partSurRunComplet(reponses(4, 1), ALPHA_DESACTIVEE);
     expect(unSurCinq).toEqual({ numerateur: 1, denominateur: 5, valeur: 0.2 });
     expect(runIncomplet(unSurCinq)).toBe(false);
 
-    expect(runIncomplet(partReponsesManquantes(reponses(8, 2), ALPHA_DESACTIVEE))).toBe(false);
+    expect(runIncomplet(partSurRunComplet(reponses(8, 2), ALPHA_DESACTIVEE))).toBe(false);
     expect(couplesComparables(reponses(4, 1), planCouvrant(reponses(4, 1)))).toEqual({ compares: [ALPHA_DESACTIVEE], incomplets: [] });
     expect(couplesComparables(reponses(8, 2), planCouvrant(reponses(8, 2)))).toEqual({ compares: [ALPHA_DESACTIVEE], incomplets: [] });
   });
@@ -131,12 +139,12 @@ describe("seuil de réponses manquantes par couple outil × mode (conformité n�
       ...reponses(19, 1, "outil-alpha", "web_desactivee"),
     ];
 
-    expect(partReponsesManquantes(jeu, { outil_id: "outil-alpha", mode: "web_activee" })).toEqual({
+    expect(partSurRunComplet(jeu, { outil_id: "outil-alpha", mode: "web_activee" })).toEqual({
       numerateur: 6,
       denominateur: 20,
       valeur: 0.3,
     });
-    expect(partReponsesManquantes(jeu, ALPHA_DESACTIVEE)).toEqual({
+    expect(partSurRunComplet(jeu, ALPHA_DESACTIVEE)).toEqual({
       numerateur: 1,
       denominateur: 20,
       valeur: 0.05,
@@ -153,7 +161,7 @@ describe("seuil de réponses manquantes par couple outil × mode (conformité n�
     // outil : les compter ferait passer la part à 11/15, bien au-delà du seuil.
     const jeu = [...reponses(4, 1), ...reponses(0, 10, "outil-alpha", "web_desactivee", "application")];
 
-    expect(partReponsesManquantes(jeu, ALPHA_DESACTIVEE)).toEqual({
+    expect(partSurRunComplet(jeu, ALPHA_DESACTIVEE)).toEqual({
       numerateur: 1,
       denominateur: 5,
       valeur: 0.2,
@@ -162,17 +170,13 @@ describe("seuil de réponses manquantes par couple outil × mode (conformité n�
   });
 
   it("ne qualifie pas un couple sans aucune réponse API plutôt que de le déclarer complet", () => {
-    const aucune = partReponsesManquantes([], { outil_id: "outil-absent", mode: "web_activee" });
-    expect(aucune.denominateur).toBe(0);
-    expect(() => runIncomplet(aucune)).toThrow(/aucune réponse/);
+    expect(() => runIncomplet(taux(0, 0))).toThrow(/aucune réponse/);
+    expect(() => partSurRunComplet([], { outil_id: "outil-absent", mode: "web_activee" })).toThrow(CoupleSansRequetePlanifiee);
 
     // Des réponses du seul canal application ne rendent pas le couple API décidable.
-    const applicationSeule = partReponsesManquantes(
-      reponses(3, 0, "outil-alpha", "web_desactivee", "application"),
-      ALPHA_DESACTIVEE,
+    expect(() => partSurRunComplet(reponses(3, 0, "outil-alpha", "web_desactivee", "application"), ALPHA_DESACTIVEE)).toThrow(
+      CoupleSansRequetePlanifiee,
     );
-    expect(applicationSeule.denominateur).toBe(0);
-    expect(() => runIncomplet(applicationSeule)).toThrow(/aucune réponse/);
   });
 
   it("sépare les couples comparables des couples marqués run incomplet, outil par outil", () => {
@@ -197,7 +201,7 @@ describe("seuil de réponses manquantes par couple outil × mode (conformité n�
       reponse({ id: ulid("cf"), statut_reponse: "manquante", normalise: undefined, contexte: "contrefactuel_candidat" }),
     ];
 
-    expect(partReponsesManquantes(jeu, ALPHA_DESACTIVEE)).toEqual({
+    expect(partSurRunComplet(jeu, ALPHA_DESACTIVEE)).toEqual({
       numerateur: 1,
       denominateur: 2,
       valeur: 0.5,
@@ -236,7 +240,7 @@ describe("par_mode du run (D55 (7), constat 17 de la revue du 2026-10-12)", () =
     expect(resultat.has("comparateur-un")).toBe(false);
   });
 
-  it("ignore les réponses hors contexte run et hors canal api, comme partReponsesManquantes", () => {
+  it("ignore les réponses hors contexte run et hors canal api, comme partReponsesManquantesDuPlan", () => {
     const outils = [outil({ outil_id: "outil-alpha", modes: ["web_desactivee"] })];
     const jeu = [
       ...reponses(4, 1, "outil-alpha", "web_desactivee"),
@@ -308,8 +312,9 @@ describe("réponses manquantes comptées sur le plan d'interrogation (§8, proto
     const plan = requetesPlanifiees("outil-alpha", "web_desactivee", 100);
     const jeu = enregistrer(plan, 75, 0);
 
-    // L'ancien dénominateur, les seules réponses enregistrées, ne voyait aucune manquante.
-    expect(partReponsesManquantes(jeu, ALPHA_DESACTIVEE)).toEqual({ numerateur: 0, denominateur: 75, valeur: 0 });
+    // L'ancien dénominateur, les seules réponses enregistrées (75), ne voyait aucune manquante.
+    expect(jeu).toHaveLength(75);
+    expect(jeu.filter((r) => r.statut_reponse === "manquante")).toEqual([]);
 
     const part = partReponsesManquantesDuPlan(jeu, plan, ALPHA_DESACTIVEE);
     expect(part).toEqual({ numerateur: 25, denominateur: 100, valeur: 0.25 });
@@ -393,11 +398,11 @@ describe("réponses manquantes comptées sur le plan d'interrogation (§8, proto
   it("run complet : la part sur le plan est exactement celle d'avant, sur les réponses enregistrées", () => {
     const jeu = [...reponses(7, 3), ...reponses(19, 1, "outil-alpha", "web_activee"), ...reponses(4, 1, "outil-beta")];
     const plan = planCouvrant(jeu);
-    const couples = [ALPHA_DESACTIVEE, { outil_id: "outil-alpha", mode: "web_activee" }, { outil_id: "outil-beta", mode: "web_desactivee" }] as const;
 
-    for (const couple of couples) {
-      expect(partReponsesManquantesDuPlan(jeu, plan, couple)).toEqual(partReponsesManquantes(jeu, couple));
-    }
+    // Manquantes écrites / réponses enregistrées du couple, comptées à la main.
+    expect(partReponsesManquantesDuPlan(jeu, plan, ALPHA_DESACTIVEE)).toEqual(taux(3, 10));
+    expect(partReponsesManquantesDuPlan(jeu, plan, { outil_id: "outil-alpha", mode: "web_activee" })).toEqual(taux(1, 20));
+    expect(partReponsesManquantesDuPlan(jeu, plan, { outil_id: "outil-beta", mode: "web_desactivee" })).toEqual(taux(1, 5));
     expect(requetesSansReponse(jeu, plan)).toEqual([]);
   });
 
