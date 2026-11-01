@@ -27,6 +27,29 @@
       "publication": "publique"
     }
   },
+  "absence": {
+    "source_couverture_theme": {
+      "tier": "T1",
+      "url": "https://exemple-candidat.fr/programme-2027.pdf",
+      "type_document": "programme_pdf",
+      "format": "pdf",
+      "page": 14,
+      "sha256": "2c6ed1182b4176016ebb10fdc541e61c92c45c8d37e04ec8481a5d398b6e460e",
+      "archive_url": "https://web.archive.org/web/20260901120000/https://exemple-candidat.fr/programme-2027.pdf",
+      "date_source": "2026-09-01",
+      "date_collecte": "2026-09-03T09:12:00+02:00",
+      "publication": "publique"
+    },
+    "corpus_examine": [
+      {
+        "url": "https://exemple-candidat.fr/programme-2027.pdf",
+        "sha256": "2c6ed1182b4176016ebb10fdc541e61c92c45c8d37e04ec8481a5d398b6e460e",
+        "tier": "T1"
+      }
+    ],
+    "date_examen": "2026-09-05T09:00:00+02:00",
+    "reverifications": []
+  },
   "validations": [
     {
       "annotateur_id": "a1",

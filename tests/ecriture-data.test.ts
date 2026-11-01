@@ -5,7 +5,7 @@
  * (schéma, ajout seul, empreinte du fichier lu) : `validation/io/data-items.ts` pour `data/items`,
  * `validation/io/data-mesures.ts` pour `data/mesures`, `validation/io/data-formulations.ts` pour
  * `data/formulations` (décision D39). Aucun autre fichier de `outils/`,
- * `pipeline/`, `validation/` ni `analysis/` ne combine une écriture disque et le chemin d'un
+ * `pipeline/`, `validation/`, `analysis/` ni `notation-humaine/` ne combine une écriture disque et le chemin d'un
  * répertoire protégé, et un écrivain n'est autorisé que pour le sien. Ajouter un répertoire
  * protégé, c'est ajouter une ligne à `PROTEGES`.
  *
@@ -13,12 +13,19 @@
  * morceau par morceau. C'est un filet, pas une preuve ; la preuve reste la relecture.
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const RACINE = resolve(import.meta.dirname, "..");
-const REPERTOIRES = ["outils", "pipeline", "validation", "analysis"];
+/**
+ * Tout le code de production de l'arborescence de `CLAUDE.md` (revue du 2026-10-12, constat 23 :
+ * `notation-humaine/` lit `data/items` et n'était pas balayé). `scratch/` et `tests/` sont exclus.
+ */
+const REPERTOIRES = ["outils", "pipeline", "validation", "analysis", "notation-humaine"];
+/** Répertoires de premier niveau qui ne sont pas du code de production, même s'ils contiennent du .ts ou du .py. */
+const HORS_PRODUCTION = new Set(["scratch", "tests", "node_modules", "docs", "schema", "config", "prompts", "runs"]);
 const IGNORES = new Set(["node_modules", "dist", "__pycache__"]);
 
 interface Protege {
@@ -52,6 +59,23 @@ function fichiersSources(repertoire: string): readonly string[] {
     else if (/\.(ts|py)$/.test(nom)) trouves.push(chemin);
   }
   return trouves;
+}
+
+/** Les répertoires de premier niveau (hors cachés) qui portent des sources .ts ou .py de production. */
+function repertoiresDeCode(racine: string): readonly string[] {
+  return readdirSync(racine)
+    .filter((nom) => !nom.startsWith(".") && !HORS_PRODUCTION.has(nom) && !IGNORES.has(nom))
+    .filter((nom) => statSync(join(racine, nom)).isDirectory())
+    .filter((nom) => fichiersSources(join(racine, nom)).length > 0);
+}
+
+/** Les fichiers de ces répertoires, relatifs à `racine`, qui écrivent dans un répertoire protégé sans en être l'écrivain. */
+function fautifsDans(racine: string, repertoires: readonly string[]) {
+  return repertoires
+    .flatMap((repertoire) => fichiersSources(join(racine, repertoire)))
+    .map((chemin) => relative(racine, chemin))
+    .map((chemin) => ({ chemin, ecrits: ecrituresInterdites(chemin, readFileSync(join(racine, chemin), "utf8")) }))
+    .filter(({ ecrits }) => ecrits.length > 0);
 }
 
 /** Les répertoires protégés que ce contenu écrit (écriture disque et chemin du répertoire). */
@@ -131,6 +155,11 @@ describe("règle 3 : un seul module écrit dans chaque répertoire de data/", ()
     expect(fichiers.length).toBeGreaterThan(50);
     const relatifs = fichiers.map((chemin) => relative(RACINE, chemin));
     for (const { ecrivain } of PROTEGES) expect(relatifs).toContain(ecrivain);
+    expect(relatifs.some((chemin) => chemin.startsWith("notation-humaine/"))).toBe(true);
+  });
+
+  it("le balayage couvre tout répertoire de code de production (scratch/ et tests/ exclus)", () => {
+    expect([...repertoiresDeCode(RACINE)].sort()).toEqual([...REPERTOIRES].sort());
   });
 
   it.each(PROTEGES)("l'écrivain de $repertoire écrit bien sur disque vers $repertoire", (protege) => {
@@ -139,10 +168,22 @@ describe("règle 3 : un seul module écrit dans chaque répertoire de data/", ()
   });
 
   it("aucun fichier n'écrit dans un répertoire protégé sans en être l'écrivain", () => {
-    const fautifs = fichiers
-      .map((chemin) => relative(RACINE, chemin))
-      .map((chemin) => ({ chemin, ecrits: ecrituresInterdites(chemin, readFileSync(join(RACINE, chemin), "utf8")) }))
-      .filter(({ ecrits }) => ecrits.length > 0);
-    expect(fautifs).toEqual([]);
+    expect(fautifsDans(RACINE, REPERTOIRES)).toEqual([]);
+  });
+
+  it("cas limite : une écriture vers data/ simulée dans notation-humaine/ est attrapée (test du test)", () => {
+    const racine = mkdtempSync(join(tmpdir(), "banc-essai-ecriture-"));
+    try {
+      mkdirSync(join(racine, "notation-humaine", "serveur"), { recursive: true });
+      writeFileSync(
+        join(racine, "notation-humaine", "serveur", "simulation.ts"),
+        'import { writeFileSync } from "node:fs";\nwriteFileSync(join("data/items", nom), texte);\n',
+      );
+      expect(fautifsDans(racine, ["notation-humaine"])).toEqual([
+        { chemin: "notation-humaine/serveur/simulation.ts", ecrits: ["data/items"] },
+      ]);
+    } finally {
+      rmSync(racine, { recursive: true, force: true });
+    }
   });
 });

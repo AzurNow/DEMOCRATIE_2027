@@ -45,7 +45,8 @@ describe("test verbatim", () => {
   });
 
   it("trouve une citation dont les guillemets diffèrent de ceux de la source", () => {
-    // Source en guillemets français avec espaces fines insécables, citation retapée en ASCII.
+    // Source en guillemets français sans espace intérieure, citation retapée en guillemets ASCII.
+    // Les espaces fines insécables sont couvertes par le test suivant.
     const avecGuillemets = "Le candidat a dit : «ce sera 62 ans».";
     const resultat = testerVerbatim('"ce sera 62 ans"', avecGuillemets);
     expect(resultat.passe).toBe(true);
