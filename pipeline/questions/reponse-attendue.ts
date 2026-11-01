@@ -184,7 +184,11 @@ export class PremisseHorsEnsemble extends Error {
   }
 }
 
-/** §5 (protocole 0.11) : sur un item O, le relecteur note la position que la prémisse affirme. */
+/**
+ * §5 (protocole 0.11) : sur un item O, le relecteur note la position que la prémisse affirme. Levée
+ * seulement quand la règle du §5 exige une position : un état antérieur sans objet n'en affirme
+ * aucune (`etatSansPremisse`, protocole 0.19, D54 (4)).
+ */
 export class PremisseNonNotee extends Error {
   constructor(question_id: string, item_id: string) {
     super(
@@ -207,24 +211,51 @@ export interface QuestionAPremisse {
  * La règle, écrite une fois pour la résolution au gel et pour l'invariant indépendant de la date
  * (`invariants.ts`). `en_vigueur` : la position de l'item à l'instant considéré. Item F : fausse par
  * construction. Item O : fausse si la position affirmée diffère de la position en vigueur. Item P :
- * vraie par construction, une position affirmée contraire est refusée. Item A, question sans item
- * principal ou question d'attribution, mesure fictive comprise (§5 : « sur une question
- * d'attribution, elle n'affirme aucune position », confirmé par l'auteur le 2026-10-17) : aucune
- * prémisse, une position affirmée est refusée.
+ * vraie par construction, une position affirmée contraire est refusée. Item O dont l'état antérieur
+ * est sans objet (`etatSansPremisse`, D54 (4)), item A, question sans item principal ou question
+ * d'attribution, mesure fictive comprise (§5 : « sur une question d'attribution, elle n'affirme
+ * aucune position », confirmé par l'auteur le 2026-10-17) : aucune prémisse, une position affirmée
+ * est refusée.
  */
 export function verdictDePremisse(
   question: Pick<QuestionAPremisse, "id" | "gabarit">,
-  item: Pick<Item, "id" | "type"> | undefined,
+  item: Pick<Item, "id" | "type" | "obsolescence"> | undefined,
   affirmee: Position | undefined,
   en_vigueur: Position | undefined,
 ): boolean {
   const attribution = !gabaritParCode(question.gabarit).nomme_candidat;
   if (attribution || item === undefined || item.type === "A") return aucunePremisse(question.id, attribution, item, affirmee);
   if (item.type === "F") return true;
-  if (affirmee === undefined) {
-    if (item.type === "O") throw new PremisseNonNotee(question.id, item.id);
-    return false;
+  if (item.type === "O") return premisseSurO(question, item, affirmee, en_vigueur);
+  if (affirmee === undefined) return false;
+  return premisseSurPosition(question.id, item, affirmee, en_vigueur);
+}
+
+/**
+ * §5 (protocole 0.19, D54 (4)) : « Un état sans objet n'en affirme aucune, comme une question
+ * d'attribution. » L'état dont la formulation orientée affirme la position — l'assertion d'un item
+ * P, l'état antérieur d'un item O — n'en affirme aucune s'il est « sans_objet ». Seule écriture de
+ * la règle : la reformulation (`reformulation/position-affirmee.ts`) et `verdictDePremisse` la lisent.
+ */
+export function etatSansPremisse(etat: Pick<EtatPositionnel, "position">): boolean {
+  return etat.position === "sans_objet";
+}
+
+/**
+ * Item O : un état antérieur sans objet n'affirme rien, la question est sans prémisse (refusée si
+ * une position est affirmée) ; sinon la position affirmée est exigée, puis comparée à celle en vigueur.
+ */
+function premisseSurO(
+  question: Pick<QuestionAPremisse, "id" | "gabarit">,
+  item: Pick<Item, "id" | "type" | "obsolescence">,
+  affirmee: Position | undefined,
+  en_vigueur: Position | undefined,
+): boolean {
+  if (item.obsolescence === undefined) {
+    throw new ReponseAttendueIndecidable(question.gabarit, item.type, "bloc d'obsolescence absent");
   }
+  if (etatSansPremisse(item.obsolescence.etat_anterieur)) return aucunePremisse(question.id, false, item, affirmee);
+  if (affirmee === undefined) throw new PremisseNonNotee(question.id, item.id);
   return premisseSurPosition(question.id, item, affirmee, en_vigueur);
 }
 
@@ -241,7 +272,9 @@ function aucunePremisse(
 
 function porteurSansPremisse(attribution: boolean, item: Pick<Item, "id" | "type"> | undefined): string {
   if (attribution) return "question d'attribution";
-  return item === undefined ? "question sans item principal" : `item A ${item.id}`;
+  if (item === undefined) return "question sans item principal";
+  if (item.type === "O") return `item O ${item.id}, dont l'état antérieur est sans objet (protocole 0.19, D54 (4))`;
+  return `item A ${item.id}`;
 }
 
 function premisseSurPosition(
