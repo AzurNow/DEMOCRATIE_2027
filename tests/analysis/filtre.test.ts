@@ -16,8 +16,8 @@ import {
   VerdictEnDouble,
 } from "../../analysis/filtre.ts";
 import { confirmationPremisse, exactitude, sourcageValide, tauxNonReponse } from "../../analysis/metriques.ts";
-import { partReponsesManquantes } from "../../analysis/seuils.ts";
-import { entreeTirage, idQuestion, item, question, reponse, run, ulid, verdict } from "./fabriques.ts";
+import { partReponsesManquantesDuPlan } from "../../analysis/seuils.ts";
+import { entreeTirage, idQuestion, item, planCouvrant, question, reponse, run, ulid, verdict } from "./fabriques.ts";
 
 /** Jeu commun : une question, un item P, et ce que l'appelant veut y mettre. */
 function entrees(reponses: ReturnType<typeof reponse>[], verdicts: ReturnType<typeof verdict>[]) {
@@ -77,10 +77,11 @@ describe("filtre de contexte", () => {
     // Deux réponses obtenues (une exacte, une non-réponse) et une manquante, sans verdict.
     // Exactitude : 1/1. Taux de non-réponse : 1/2 (dénominateur = réponses obtenues).
     // Part de manquantes de l'outil : 1/3.
-    const manquante = reponse({ id: ulid("r-manq"), statut_reponse: "manquante", normalise: undefined });
+    // Un échantillon chacune : trois requêtes distinctes du plan (§8, protocole 0.21).
+    const manquante = reponse({ id: ulid("r-manq"), statut_reponse: "manquante", normalise: undefined, echantillon: 3 });
     const reponses = [
-      reponse({ id: ulid("r-ok") }),
-      reponse({ id: ulid("r-nr") }),
+      reponse({ id: ulid("r-ok"), echantillon: 1 }),
+      reponse({ id: ulid("r-nr"), echantillon: 2 }),
       manquante,
     ];
     const verdicts = [
@@ -98,8 +99,9 @@ describe("filtre de contexte", () => {
     expect(exactitude(unites)).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
     expect(tauxNonReponse(unites)).toEqual({ numerateur: 1, denominateur: 2, valeur: 0.5 });
     // Conformité n° 84, protocole 0.11 : la part se calcule par couple outil × mode (canal API).
-    // Les réponses de ce jeu sont toutes du couple outil-alpha / web_desactivee de la fabrique.
-    expect(partReponsesManquantes(reponses, { outil_id: "outil-alpha", mode: "web_desactivee" })).toEqual({
+    // Les réponses de ce jeu sont toutes du couple outil-alpha / web_desactivee de la fabrique ;
+    // depuis le protocole 0.21, la part se compte sur le plan, ici celui d'un run complet.
+    expect(partReponsesManquantesDuPlan(reponses, planCouvrant(reponses), { outil_id: "outil-alpha", mode: "web_desactivee" })).toEqual({
       numerateur: 1,
       denominateur: 3,
       valeur: 1 / 3,

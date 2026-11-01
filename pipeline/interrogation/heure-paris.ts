@@ -7,6 +7,7 @@
  * heure d'été comme d'hiver. Aucune bibliothèque : `Intl` porte la base des fuseaux du moteur.
  */
 
+import { dateCivileValide } from "../../validation/domaine/validateurs-champ.ts";
 import { FUSEAU_DU_RUN } from "./conditions.ts";
 
 export interface HeureCivile {
@@ -84,11 +85,33 @@ export function instantParis(ms: number): string {
 /** Motif de `commun.schema.json#/$defs/instant` : le décalage est obligatoire. */
 const MOTIF_INSTANT = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?([+-][0-9]{2}:[0-9]{2}|Z)$/;
 
-/** Lit un instant à décalage explicite ; refuse un instant sans fuseau ou illisible. */
-export function lireInstant(instant: string, contexte: string): number {
-  const ms = Date.parse(instant);
-  if (!MOTIF_INSTANT.test(instant) || Number.isNaN(ms)) {
-    throw new Error(`${contexte} : « ${instant} » n'est pas un instant à décalage explicite (commun#/$defs/instant).`);
+/**
+ * Instant dont la date civile écrite est impossible (`2027-02-29T10:00:00+01:00`) : `Date.parse`
+ * la ferait glisser au 1er mars sans lever. Même règle que `DateCivileInvalide`
+ * (`pipeline/questions/reponse-attendue.ts`), `dateCivileValide`, une seule dans le dépôt ; erreur
+ * propre pour porter le contexte de lecture (`date_gel`, `run.json#/fenetre/fin`…).
+ */
+export class InstantImpossible extends Error {
+  readonly instant: string;
+
+  constructor(instant: string, contexte: string) {
+    super(`${contexte} : « ${instant} » porte une date civile impossible (jour réel du calendrier attendu).`);
+    this.name = "InstantImpossible";
+    this.instant = instant;
   }
+}
+
+function instantIllisible(instant: string, contexte: string): Error {
+  return new Error(`${contexte} : « ${instant} » n'est pas un instant à décalage explicite (commun#/$defs/instant).`);
+}
+
+/** Lit un instant à décalage explicite ; refuse un instant sans fuseau, illisible ou à date impossible. */
+export function lireInstant(instant: string, contexte: string): number {
+  if (!MOTIF_INSTANT.test(instant)) throw instantIllisible(instant, contexte);
+  // La date civile écrite (dans le fuseau porté par l'instant) suit la règle des dates civiles,
+  // avant `Date.parse` : un mois 13 y serait illisible, il est impossible.
+  if (!dateCivileValide(instant.slice(0, 10))) throw new InstantImpossible(instant, contexte);
+  const ms = Date.parse(instant);
+  if (Number.isNaN(ms)) throw instantIllisible(instant, contexte);
   return ms;
 }
