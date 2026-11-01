@@ -11,8 +11,9 @@
  * schéma (`analysis/lecture-run.ts`).
  *
  * Ce qui est écrit : dans `run.json`, `go_no_go`, `kappa_echantillon_humain` ou
- * `motif_indefini_kappa_echantillon_humain` de chaque juge retenu, `motif_provisoire` quand la
- * décision est provisoire, et `perimetre.outils[].par_mode` de chaque assistant inclus (D55 (7),
+ * `motif_indefini_kappa_echantillon_humain` de chaque juge retenu, `accord_humains_echantillon` (§7.30 :
+ * l'accord des deux humains de l'échantillon, `analysis/accord-humains.ts`, seul calcul de ce champ),
+ * `motif_provisoire` quand la décision est provisoire, et `perimetre.outils[].par_mode` de chaque assistant inclus (D55 (7),
  * `analysis/seuils.ts:parModeDuRun`, seul calcul de ce champ) ; `checklist.json`, sans contreseing.
  * `statut` n'est JAMAIS touché : le gel et la publication ne sont pas l'affaire de cette commande.
  *
@@ -33,6 +34,7 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { accordHumainsEchantillon, accordPublie, type AccordHumainsEchantillon } from "../../analysis/accord-humains.ts";
 import { estDuRun } from "../../analysis/filtre.ts";
 import {
   cheminDuTirage,
@@ -123,6 +125,8 @@ export interface ResultatGoNoGo {
   readonly kappas: readonly KappaDeJuge[];
   readonly indeterminees: number;
   readonly refus_api: number;
+  /** §7.30 : l'accord des deux humains de l'échantillon (`analysis/accord-humains.ts`). */
+  readonly accord_humains: AccordHumainsEchantillon;
   readonly checklist: Checklist;
   readonly par_mode: ReadonlyMap<IdentifiantCourt, ParMode>;
   readonly run_json: IssueEcriture;
@@ -138,6 +142,8 @@ interface Calcul {
   readonly renvois: number;
   /** D32 : refus de l'API de l'échantillon, notés par règle, écartés du kappa de chaque juge. */
   readonly refus_api: number;
+  /** §7.30 : l'accord des deux humains de l'échantillon (`analysis/accord-humains.ts`). */
+  readonly accord_humains: AccordHumainsEchantillon;
   readonly checklist: Checklist;
   /** D55 (7) : `par_mode` de chaque assistant inclus, par `outil_id` (`analysis/seuils.ts:parModeDuRun`). */
   readonly par_mode: ReadonlyMap<IdentifiantCourt, ParMode>;
@@ -203,6 +209,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     indeterminees,
     renvois: renvois.filter((r) => r.contexte === "run").length,
     refus_api,
+    accord_humains: accordHumainsEchantillon(echantillon, notations),
     checklist: construireChecklist(run.id, go_no_go.criteres, constats),
     par_mode: parModeDuRun(vue.perimetre.outils, reponses, plan),
   };
@@ -249,6 +256,7 @@ function fusionner(brut: Objet, calcul: Calcul): Objet {
     indeterminees_echantillon_humain: calcul.indeterminees,
     renvois_attribution_indecidable: calcul.renvois,
     refus_api_echantillon_humain: calcul.refus_api,
+    accord_humains_echantillon: accordPublie(calcul.accord_humains),
     go_no_go: calcul.go_no_go,
   };
 }
@@ -263,6 +271,7 @@ function partEcrite(run: Objet): string {
     indeterminees_echantillon_humain: run["indeterminees_echantillon_humain"],
     renvois_attribution_indecidable: run["renvois_attribution_indecidable"],
     refus_api_echantillon_humain: run["refus_api_echantillon_humain"],
+    accord_humains_echantillon: run["accord_humains_echantillon"],
     juges: Array.isArray(juges)
       ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"], juge["renvois_ecartes_kappa_echantillon"]])
       : null,
@@ -283,7 +292,7 @@ function issueRun(chemin: string, actuel: Objet, fusionne: Objet): IssueEcriture
   const ecrite = partEcrite(actuel);
   if (ecrite === partVide(actuel)) return null;
   if (ecrite === partEcrite(fusionne)) return "inchange";
-  throw new GoNoGoDivergent(chemin, "un go/no-go, un kappa d'échantillon ou un motif provisoire");
+  throw new GoNoGoDivergent(chemin, "un go/no-go, un kappa d'échantillon, un accord des humains ou un motif provisoire");
 }
 
 /* ------------------------------------------------------------------ checklist.json */

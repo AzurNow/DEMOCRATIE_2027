@@ -4022,14 +4022,22 @@
       "section": "7",
       "citation": "Deux juges de familles différentes (par exemple un modèle Anthropic et un modèle Mistral) notent chaque réponse indépendamment.",
       "nature": "processus",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/notation/chaine.ts:verifierJuges"
+        "pipeline/notation/chaine.ts:verifierJuges",
+        "pipeline/notation/familles-juges.ts:exigerFamillesDistinctes",
+        "pipeline/notation/familles-juges.ts:cleDeFamille"
       ],
-      "tests": [],
+      "tests": [
+        "tests/notation/familles-juges.test.ts « deux juges déclarés de la même famille ⇒ JugesDeMemeFamille, aucun juge appelé, rien écrit sous le run »",
+        "tests/notation/familles-juges.test.ts « même famille à la casse près ⇒ JugesDeMemeFamille »",
+        "tests/notation/familles-juges.test.ts « famille faite d'espaces dans run.json (le schéma n'exige qu'un caractère) ⇒ FamilleDeJugeAbsente »",
+        "tests/notation/familles-juges.test.ts « deux familles différentes ⇒ la notation se déroule comme avant »",
+        "tests/notation/familles-juges.test.ts « après le retrait d'un juge, le juge restant seul ne déclenche pas le refus : la règle porte sur les juges déclarés, retirés compris »"
+      ],
       "lot": null,
       "constat": 6,
-      "note": "Deux juges notent chaque réponse ; rien ne vérifie que leurs familles de modèle diffèrent."
+      "note": "Corrigé (PR à venir) : la notation refuse, avant toute écriture, deux juges déclarés de la même famille (JugesDeMemeFamille) ou un juge sans famille (FamilleDeJugeAbsente). La famille est la donnée famille_modele déjà déclarée ; la comparaison ignore la casse, les espaces de bord et la forme Unicode. Le nombre de juges n'est pas gardé : run.schema.json#/properties/juges n'exige qu'un juge (minItems 1)."
     },
     {
       "id": "§7.13",
@@ -4323,16 +4331,27 @@
       "section": "7",
       "citation": "travaillant à l'aveugle (sans voir l'outil, ni l'autre annotateur). Leur accord est publié par run.",
       "nature": "processus",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/notation/vue-annotateur.ts"
+        "pipeline/notation/vue-annotateur.ts",
+        "analysis/accord-humains.ts:accordHumainsEchantillon",
+        "analysis/accord-humains.ts:accordPublie",
+        "pipeline/go-no-go/go-no-go.ts:fusionner",
+        "analysis/lecture-run.ts:verifierAccordHumains",
+        "schema/run.schema.json:accord_humains_echantillon"
       ],
       "tests": [
-        "tests/notation/vue-annotateur.test.ts « aucun champ d'outil : aucune valeur d'identité de l'outil dans la vue sérialisée »"
+        "tests/notation/vue-annotateur.test.ts « aucun champ d'outil : aucune valeur d'identité de l'outil dans la vue sérialisée »",
+        "tests/analysis/accord-humains.test.ts « mixte : 1 accord sur 4 »",
+        "tests/analysis/accord-humains.test.ts « échantillon vide : aucune réponse doublement notée, part absente (null), jamais 0 ni 1 »",
+        "tests/analysis/accord-humains.test.ts « arbitrage d'un troisième humain : l'accord porte sur les deux premiers, l'arbitre n'en fait pas un accord »",
+        "tests/analysis/accord-humains.test.ts « réponse notée par un seul humain : exclue du numérateur et du dénominateur (ni accord ni désaccord) »",
+        "tests/go-no-go/commande.test.ts « §7.30 : écrit accord_humains_echantillon, compté sur l'échantillon rejoué ; un accord déjà écrit différent du recalcul : refus, run.json inchangé à l'octet »",
+        "tests/analysis/lecture-run.test.ts « un accord qui contredit les notations lève AccordHumainsDivergent, avec l'écrit et le recalcul »"
       ],
       "lot": null,
       "constat": 8,
-      "note": "L'aveugle est gardé ; l'accord entre les deux humains de l'échantillon n'est publié dans aucun fichier du run."
+      "note": "Corrigé (PR à venir) : l'aveugle est gardé ; l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14, notationsConcordent), est publié dans run.json#/accord_humains_echantillon (réponses doublement notées, accords, part ; part absente sur zéro réponse), exigé de tout go/no-go et recoupé par lireRun. Aucun kappa humain-humain : le protocole n'en définit pas."
     },
     {
       "id": "§7.31",

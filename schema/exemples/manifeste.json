@@ -1,5 +1,5 @@
 {
-  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants. Décision de l'auteur du 2026-10-02 (conformité 2026-09-29, n° 23) : chaque declaration_candidature d'un exemple de run porte sa preuve archivée (sha256, archive_url), et chaque assistant inclus sa preuve_inclusion, ajoutées ouvertement à tous les exemples de run existants ; aucun verdict ni aucune erreur attendue ne change. Décision D42 (2) de l'auteur du 2026-10-15 : la formulation neutre de chaque exemple de question porte production {gabarits} au lieu de {modele, version_prompt}, changée ouvertement dans tous les exemples de question existants ; aucun verdict attendu ne change. Revue du 2026-10-12, constat 22 : chaque exemple invalide déclare sa règle visée (erreur_visee : mot-clé ajv et chemin d'instance de l'erreur attendue) et ne réussit que si cette erreur figure parmi celles du validateur ; un exemple valide n'en déclare pas. Un exemple peut porter d'autres erreurs que la règle visée quand elles sont inséparables (branches if, oneOf, anyOf et contains d'ajv).",
+  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants. Décision de l'auteur du 2026-10-02 (conformité 2026-09-29, n° 23) : chaque declaration_candidature d'un exemple de run porte sa preuve archivée (sha256, archive_url), et chaque assistant inclus sa preuve_inclusion, ajoutées ouvertement à tous les exemples de run existants ; aucun verdict ni aucune erreur attendue ne change. Décision D42 (2) de l'auteur du 2026-10-15 : la formulation neutre de chaque exemple de question porte production {gabarits} au lieu de {modele, version_prompt}, changée ouvertement dans tous les exemples de question existants ; aucun verdict attendu ne change. Revue du 2026-10-12, constat 22 : chaque exemple invalide déclare sa règle visée (erreur_visee : mot-clé ajv et chemin d'instance de l'erreur attendue) et ne réussit que si cette erreur figure parmi celles du validateur ; un exemple valide n'en déclare pas. Un exemple peut porter d'autres erreurs que la règle visée quand elles sont inséparables (branches if, oneOf, anyOf et contains d'ajv). Constat n° 8 de la mise à jour de conformité du 2026-11-01 (§7.30) : accord_humains_echantillon ({reponses_doublement_notees: 10, accords: 9, part: 0.9}, valeurs d'exemple non recalculées des notations) ajouté ouvertement, juste avant go_no_go, à tous les exemples de run existants qui portent un go/no-go ; aucun verdict ni aucune erreur attendue ne change.",
   "exemples": [
     {
       "objet": "item",
@@ -2727,6 +2727,46 @@
       "erreur_visee": {
         "keyword": "false schema",
         "instance_path": "/contrefactuel_candidats/correspondances"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-12-accord-humains-indefini.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01 dont aucune réponse de l'échantillon n'est notée par les deux humains : accord_humains_echantillon publie un dénominateur nul et zéro accord, et la part est absente, ni 0, ni 1, ni null.",
+      "regle_protocole": "§7 (exigence §7.30) : « Leur accord est publié par run » ; accord au sens du §7 (révision 0.14) ; constat n° 8 de la conformité du 2026-11-01"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-57-go-no-go-sans-accord-humains.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 sans accord_humains_echantillon : l'accord des deux humains de l'échantillon est publié avec tout go/no-go.",
+      "regle_protocole": "§7 (exigence §7.30) : « Leur accord est publié par run » ; accord au sens du §7 (révision 0.14) ; constat n° 8 de la conformité du 2026-11-01",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": ""
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-58-accord-humains-part-sur-zero.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont l'accord publie une part de 0 sur zéro réponse doublement notée : une part indéfinie est absente, jamais remplacée par 0.",
+      "regle_protocole": "§7 (exigence §7.30) : « Leur accord est publié par run » ; accord au sens du §7 (révision 0.14) ; constat n° 8 de la conformité du 2026-11-01",
+      "erreur_visee": {
+        "keyword": "false schema",
+        "instance_path": "/accord_humains_echantillon/part"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-59-accord-humains-sans-part.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont l'accord publie dix réponses doublement notées et neuf accords sans la part : une part définie est publiée.",
+      "regle_protocole": "§7 (exigence §7.30) : « Leur accord est publié par run » ; accord au sens du §7 (révision 0.14) ; constat n° 8 de la conformité du 2026-11-01",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/accord_humains_echantillon"
       }
     },
     {

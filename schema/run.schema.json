@@ -956,6 +956,50 @@
       "minimum": 0,
       "description": "Décision D32 de l'auteur (2026-10-10) : nombre de réponses de l'échantillon humain refusées par l'API (reponse.normalise.refus_api), qu'aucun juge ne note (la règle d12-refus-api les note non-réponse, notation.schema.json). Sans note de juge, elles sont écartées du kappa de l'échantillon de chaque juge (juges[].kappa_echantillon_humain), par la raison de D31 (2), et leur nombre est publié ici, une fois pour le run, comme indeterminees_echantillon_humain. Écrit par pnpm go-no-go ; exigé d'un run qui porte un go/no-go."
     },
+    "accord_humains_echantillon": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reponses_doublement_notees",
+        "accords"
+      ],
+      "description": "§7 (exigence §7.30) : « Leur accord est publié par run » — l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14) : leurs notations sont identiques sur tout ce que lisent les métriques primaires (analysis/note-lue.ts:notationsConcordent). Calculé par analysis/accord-humains.ts, écrit par pnpm go-no-go, recoupé à la lecture du run (analysis/lecture-run.ts:lireRun). reponses_doublement_notees : réponses de l'échantillon portant exactement deux notations humaines echantillon_aleatoire_10, de deux annotateurs distincts ; une réponse notée par un seul humain n'y entre pas. L'arbitrage du troisième humain n'entre pas dans l'accord. accords : parmi elles, celles où les deux concordent. part : accords / reponses_doublement_notees ; absente quand le dénominateur est nul, jamais remplacée par 0, par 1 ni par null. Aucun kappa humain-humain : le protocole n'en définit pas. Exigé d'un run qui porte un go/no-go.",
+      "properties": {
+        "reponses_doublement_notees": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accords": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "part": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "if": {
+        "properties": {
+          "reponses_doublement_notees": {
+            "const": 0
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "accords": {
+            "const": 0
+          },
+          "part": false
+        }
+      },
+      "else": {
+        "required": [
+          "part"
+        ]
+      }
+    },
     "indeterminees_echantillon_humain": {
       "type": "integer",
       "minimum": 0,
@@ -1810,11 +1854,12 @@
         ]
       },
       "then": {
-        "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui. D32 : les refus de l'API de l'échantillon aussi.",
+        "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui. D32 : les refus de l'API de l'échantillon aussi. §7.30 : l'accord des deux humains de l'échantillon aussi.",
         "required": [
           "indeterminees_echantillon_humain",
           "renvois_attribution_indecidable",
-          "refus_api_echantillon_humain"
+          "refus_api_echantillon_humain",
+          "accord_humains_echantillon"
         ],
         "properties": {
           "juges": {

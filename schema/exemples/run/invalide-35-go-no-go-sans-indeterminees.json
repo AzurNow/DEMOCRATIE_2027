@@ -443,6 +443,7 @@
       "date_reception": "2026-12-02T15:20:00+01:00"
     }
   ],
+  "accord_humains_echantillon": { "reponses_doublement_notees": 10, "accords": 9, "part": 0.9 },
   "go_no_go": {
     "criteres": [
       {

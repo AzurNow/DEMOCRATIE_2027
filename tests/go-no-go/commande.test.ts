@@ -15,6 +15,7 @@ import { ReponsesEnAttenteOperateur } from "../../pipeline/interrogation/attente
 import type { Checklist } from "../../pipeline/go-no-go/checklist.ts";
 import { FormatMetriquesNonDefini, GoNoGoDivergent, GoNoGoRefuse, goNoGo } from "../../pipeline/go-no-go/go-no-go.ts";
 import { PlanNonReconstructible } from "../../pipeline/interrogation/plan-du-run.ts";
+import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { JournalRequete, nomJournal } from "../../pipeline/interrogation/journal.ts";
 import type { CleRequete } from "../../pipeline/interrogation/types.ts";
 import { ulid } from "../analysis/fabriques.ts";
@@ -149,6 +150,32 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
       const avant2 = [octets(run, "run.json"), octets(run, "checklist.json")];
       expect(() => goNoGo(run)).toThrow(GoNoGoDivergent);
       expect([octets(run, "run.json"), octets(run, "checklist.json")]).toEqual(avant2);
+    },
+    TEMPS,
+  );
+
+  it(
+    "§7.30 : écrit accord_humains_echantillon, compté sur l'échantillon rejoué ; un accord déjà écrit différent du recalcul : refus, run.json inchangé à l'octet",
+    async () => {
+      const run = await runSimuleNote();
+      const lu = lireRunJson(run);
+      const obtenues = lireReponses(run, lu.id).filter((r) => r.contexte === "run" && r.statut_reponse === "obtenue").map((r) => r.id);
+      const taille = tirerEchantillonHumain(obtenues, lu.graines.echantillon_humain, lu.taux_echantillon_humain).length;
+      expect(taille).toBeGreaterThan(0);
+
+      const resultat = goNoGo(run);
+      // Les aides posent deux notations humaines identiques sur chaque réponse de l'échantillon,
+      // refus de l'API compris (D32) : toutes sont doublement notées, toutes concordent.
+      const attendu = { reponses_doublement_notees: taille, accords: taille, part: 1 };
+      expect(resultat.accord_humains).toEqual(attendu);
+      const ecrit = valider<Record<string, unknown>>("run", lireObjet(join(run, "run.json")), "run.json écrit");
+      expect(ecrit["accord_humains_echantillon"]).toEqual(attendu);
+      expect(ecrit["go_no_go"]).not.toHaveProperty("accord_humains_echantillon");
+
+      modifierRun(run, (r) => ({ ...r, accord_humains_echantillon: { reponses_doublement_notees: taille, accords: taille - 1, part: (taille - 1) / taille } }));
+      const avant = [octets(run, "run.json"), octets(run, "checklist.json")];
+      expect(() => goNoGo(run)).toThrow(GoNoGoDivergent);
+      expect([octets(run, "run.json"), octets(run, "checklist.json")]).toEqual(avant);
     },
     TEMPS,
   );

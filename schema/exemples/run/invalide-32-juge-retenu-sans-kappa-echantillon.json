@@ -444,6 +444,7 @@
   "indeterminees_echantillon_humain": 0,
   "renvois_attribution_indecidable": 0,
   "refus_api_echantillon_humain": 0,
+  "accord_humains_echantillon": { "reponses_doublement_notees": 10, "accords": 9, "part": 0.9 },
   "go_no_go": {
     "criteres": [
       {
