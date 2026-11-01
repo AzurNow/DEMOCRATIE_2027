@@ -1,13 +1,13 @@
 {
   "$commentaire": "Matrice de conformité code ↔ docs/PROTOCOLE.md. Tenue par la compétence conformite-protocole ; ne pas éditer hors d'une passe.",
   "protocole": {
-    "version": "0.19",
-    "sha256": "4e1ce3a213e42e35f8e162eb804e1eab47ea8e9a666be00e1af0eade2e697069"
+    "version": "0.21",
+    "sha256": "6f0c5988e65c6993722adda4f8bdfd7affed0bdda49e9e691207b2c466e0f379"
   },
   "passe": {
-    "date": "2026-10-19",
-    "commit": "5cd4d61",
-    "rapport": "docs/conformite/2026-10-19.md"
+    "date": "2026-11-01",
+    "commit": "19a5b96",
+    "rapport": "docs/conformite/2026-11-01.md"
   },
   "exigences": [
     {
@@ -263,7 +263,7 @@
       "statut": "testee",
       "code": [
         "schema/run.schema.json:perimetre.candidats[].allOf:retire ⇒ interroge=false",
-        "pipeline/questions/tirage.ts:concerneLeRun",
+        "pipeline/questions/tirabilite.ts:concerneLeRun",
         "pipeline/questions/reponse-attendue.ts:candidatsInterroges"
       ],
       "tests": [
@@ -1394,7 +1394,7 @@
       "statut": "testee",
       "code": [
         "validation/domaine/lot.ts:preparerReannotation",
-        "validation/io/lots-fichier.ts:validerReannotation"
+        "validation/io/lots-fichier.ts:validerManifeste"
       ],
       "tests": [
         "tests/reannotation.test.ts « 3. porte exactement les mêmes items que le lot d'origine »",
@@ -1758,7 +1758,7 @@
         "pipeline/questions/contestation.ts:contestationPermetLeTirage"
       ],
       "tests": [
-        "tests/interface.test.ts « sort du lot dès l'affichage, et le retrait est journalisé une seule fois »",
+        "tests/interface.test.ts « refuse aussi la décision sur un item contesté, et journalise son retrait une seule fois »",
         "tests/questions/engendrement.test.ts « n'engendre rien pour un item contesté (§5 : aucun item contesté dans le tirage) »"
       ],
       "lot": null,
@@ -2657,7 +2657,7 @@
       "statut": "a-implementer",
       "code": [
         "schema/question.schema.json:formulations[].production, formulations[].relecture",
-        "pipeline/questions/tirage.ts:verifierRelecture"
+        "pipeline/questions/tirabilite.ts:verifierRelecture"
       ],
       "tests": [
         "tests/questions/sens-preserve.test.ts « une formulation sens_preserve: false est refusée au tirage, en nommant la question »",
@@ -2879,7 +2879,7 @@
       "code": [
         "pipeline/questions/symetrie.ts:repartitionThemes",
         "pipeline/questions/symetrie.ts:retardsEvitables",
-        "pipeline/questions/tirage.ts:tirablesParStrate",
+        "pipeline/questions/tirabilite.ts:tirablesParStrate",
         "outils/symmetry.ts:imprimerSymetrie",
         "schema/tirage.schema.json:$defs.entree_tirage.required (theme, grappe_id)"
       ],
@@ -2900,7 +2900,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/questions/tirage.ts:juger",
+        "pipeline/questions/tirabilite.ts:juger",
         "pipeline/questions/engendrement.ts:itemEngendreDesQuestions",
         "pipeline/questions/contestation.ts:contestationPermetLeTirage",
         "pipeline/questions/symetrie.ts:aucunItemContesteOuEnAttente"
@@ -3089,7 +3089,7 @@
       "code": [
         "pipeline/questions/reponse-attendue.ts:listeAttendueAuGel",
         "pipeline/questions/reponse-attendue.ts:positionNonTranchee",
-        "pipeline/questions/tirage.ts:motifDExclusion"
+        "pipeline/questions/tirabilite.ts:motifDExclusion"
       ],
       "tests": [
         "tests/questions/attribution-au-gel.test.ts « aucune graine ne tire ces Q-ATT, et aucune ne fait échouer le tirage »",
@@ -3254,7 +3254,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/questions/tirage.ts:motifDExclusion",
+        "pipeline/questions/tirabilite.ts:motifDExclusion",
         "pipeline/questions/tirage.ts:separer",
         "pipeline/questions/reponse-attendue.ts:ReponseNonDefinieAuGel",
         "schema/tirage.schema.json:exclusions"
@@ -3566,7 +3566,7 @@
       "statut": "testee",
       "code": [
         "schema/reponse.schema.json:statut_reponse, conditionnelle manquante",
-        "analysis/seuils.ts:partReponsesManquantes"
+        "analysis/seuils.ts:partReponsesManquantesDuPlan"
       ],
       "tests": [
         "schema/exemples/reponse/invalide-01-manquante-avec-contenu.json",
@@ -3999,12 +3999,20 @@
       "section": "7",
       "citation": "Désaccord : notation humaine, qui tranche.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/file-humaine.ts:construireFile",
+        "pipeline/notation/decision.ts:decider",
+        "schema/verdict.schema.json"
+      ],
+      "tests": [
+        "tests/notation/file-humaine.test.ts « désaccord des juges : tâche desaccord_juges, une place »",
+        "tests/notation/file-humaine.test.ts « chaque tâche ouverte, une fois notée sous son motif, donne un verdict de decider »",
+        "schema/exemples/verdict/invalide-03-desaccord-une-seule-source.json"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "verdict : desaccord_juges ⇒ au moins deux notations sources (schema/exemples/verdict/invalide-03-desaccord-une-seule-source.json) ; la présence d'un humain n'est pas imposée."
+      "note": null
     },
     {
       "id": "§7.20",
@@ -4076,24 +4084,40 @@
       "section": "7",
       "citation": "À chaque run, un sous-ensemble de 200 réponses est renoté après permutation des noms de candidats dans la réponse et dans l'item de référence",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/echantillons.ts:tirerSousEnsembleContrefactuel",
+        "pipeline/notation/echantillons.ts:TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL",
+        "pipeline/notation/chaine.ts:estEligible",
+        "pipeline/notation/permutation.ts:permuterTexte"
+      ],
+      "tests": [
+        "tests/notation/echantillons.test.ts « prend 200 réponses parmi plus de 200 éligibles, sans doublon »",
+        "tests/notation/echantillons.test.ts « moins de 200 éligibles : toutes, et le sous-effectif est signalé »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "reponse.permutation et contexte contrefactuel_candidat existent (schema/exemples/reponse/invalide-03-contrefactuel-sans-derivation.json) ; le filtre analysis/filtre.ts:filtrerContexteRun les tient hors des métriques."
+      "note": null
     },
     {
       "id": "§7.26",
       "section": "7",
       "citation": "Le taux de changement est publié ; au-delà de 3 %, le juge concerné est retiré du run et l'échantillon humain passe à 25 %.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
-      "constat": 18,
-      "note": "run.juges[].retire et taux_echantillon_humain ∈ {0,10 ; 0,25} existent ; le lien entre retrait et 25 % n'est pas imposé. verdict.mode_resolution admet juge_unique_apres_retrait, règle non écrite (constat n° 18)."
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/contrefactuel.ts:testerContrefactuel",
+        "pipeline/notation/contrefactuel.ts:depasseSeuilRetrait",
+        "pipeline/notation/inscription-contrefactuel.ts"
+      ],
+      "tests": [
+        "tests/notation/contrefactuel.test.ts « 6 changements sur 200 : 3 % tout juste, pas retiré »",
+        "tests/notation/contrefactuel.test.ts « 7 changements sur 200 : au-delà de 3 %, retiré avec son motif »",
+        "tests/notation/contrefactuel.test.ts « un juge retiré : échantillon humain à 25 % »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
     },
     {
       "id": "§7.27",
@@ -4258,12 +4282,19 @@
       "section": "7",
       "citation": "Un extrait justificatif qui ne figure pas dans la réponse ou dans la référence, vérifié par la même comparaison de chaînes que le test verbatim, invalide la notation du juge ; la réponse est alors notée par un humain.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/extrait.ts:controlerExtrait",
+        "pipeline/notation/file-humaine.ts:construireFile"
+      ],
+      "tests": [
+        "tests/notation/extrait.test.ts « invalide un extrait absent de la réponse et de la référence »",
+        "tests/notation/extrait.test.ts « valide un extrait à guillemets typographiques et espace insécable, présent après normalisation »",
+        "tests/notation/file-humaine.test.ts « extrait invalide d'un juge : tâche extrait_invalide »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "Protocole révisé en 0.9 (constat 51). notation.extrait_justificatif.provenance et verifie_deterministe existent ; ni la vérification ni l'appel à l'humain ne sont écrits."
+      "note": null
     },
     {
       "id": "§7.38",
@@ -4312,12 +4343,20 @@
       "section": "7",
       "citation": "chacun avec sa graine dérivée de la graine publiée et d'une clé lisible, comme en section 8.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/echantillons.ts:tirerEchantillonHumain",
+        "pipeline/notation/echantillons.ts:tirerSousEnsembleContrefactuel",
+        "analysis/graines.ts:graineDerivee"
+      ],
+      "tests": [
+        "tests/notation/echantillons.test.ts « sa graine est distincte de celle de l'échantillon humain, même entier publié »",
+        "tests/notation/echantillons.test.ts « rejoue la règle publiée : tri croissant, Fisher-Yates amorcé par la graine dérivée »",
+        "tests/notation/echantillons.test.ts « refuse une graine qui déclare un autre générateur »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "Aucun code ne tire l'échantillon humain ni le sous-ensemble contrefactuel ; analysis/graines.ts:graineDerivee est réutilisable."
+      "note": null
     },
     {
       "id": "§8.01",
@@ -5014,25 +5053,34 @@
     {
       "id": "§8.43",
       "section": "8",
-      "citation": "Aucune statistique pour un outil dans un mode si plus de 20 % des réponses du canal API de ce run sont manquantes pour ce couple : il est alors marqué « run incomplet » et exclu des comparaisons de ce run, l'autre mode de l'outil restant publié s'il passe le seuil.",
+      "citation": "Aucune statistique pour un outil dans un mode si plus de 20 % des réponses du canal API de ce run sont manquantes pour ce couple, comptées sur les requêtes que prévoit le plan d'interrogation du run pour ce couple — chaque question tirée, dans chaque formulation et chaque échantillon —, et non sur les réponses enregistrées : il est alors marqué « run incomplet » et exclu des comparaisons de ce run, l'autre mode de l'outil restant publié s'il passe le seuil.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "analysis/seuils.ts:partReponsesManquantes",
+        "analysis/seuils.ts:partReponsesManquantesDuPlan",
         "analysis/seuils.ts:runIncomplet",
         "analysis/seuils.ts:couplesComparables",
+        "analysis/seuils.ts:etatDesCouples",
+        "pipeline/interrogation/plan.ts:planifier",
+        "pipeline/go-no-go/plan-du-run.ts:requetesDuPlanDuRun",
+        "analysis/metriques.ts (etatDesCouples)",
+        "analysis/conditions.ts (etatDesCouples)",
+        "analysis/tendance.ts (etatDesCouples)",
         "analysis/permutation.ts:corrigerFamilleAsymetrie",
         "schema/run.schema.json:$defs/seuil_mode"
       ],
       "tests": [
+        "tests/analysis/seuils.test.ts « 100 requêtes planifiées, 75 réponses enregistrées dont 0 manquante écrite : 25 %, run incomplet (avant : 0 %) »",
+        "tests/analysis/seuils.test.ts « un couple déclaré et planifié sans aucune réponse enregistrée : 100 % manquantes, décidé, run incomplet »",
         "tests/analysis/seuils.test.ts « laisse un couple à 20 % exactement dans les comparaisons, et exclut celui qui dépasse »",
         "tests/analysis/seuils.test.ts « décide chaque mode d'un outil à part : 30 % en web activée l'exclut, 5 % en web désactivée reste comparable »",
-        "tests/analysis/seuils.test.ts « sépare les couples comparables des couples marqués run incomplet, outil par outil »",
-        "tests/analysis/permutation.test.ts « sort de la famille un couple marqué run incomplet, et le rapporte à part »"
+        "tests/analysis/metriques.test.ts « ne calcule aucune métrique pour un couple marqué run incomplet, et le rapporte à part »",
+        "tests/analysis/conditions.test.ts « ne compare pas les deux modes d'un outil dont un mode est incomplet, et nomme la paire exclue »",
+        "tests/go-no-go/commande.test.ts « une manquante écrite retirée du volume, sans journal en attente : toujours comptée manquante, par_mode inchangé (dénominateur = plan) »"
       ],
       "lot": null,
-      "constat": 12,
-      "note": "Le seuil et la famille de Holm suivent la 0.11 (constat 84) ; parOutilEtMode, pairesParMode, pairesParFormulation et tendanceParOutilEtMode ignorent le partage des couples (constat n° 12)."
+      "constat": null,
+      "note": "Texte révisé en 0.21 (D56 (2)), codé par #201. Constat n° 12 du 2026-09-29 réglé : metriques.ts, conditions.ts et tendance.ts lisent le partage des couples par etatDesCouples (seule porte)."
     },
     {
       "id": "§8.44",
@@ -5921,12 +5969,19 @@
       "section": "11",
       "citation": "Une erreur d'obsolescence est dite fraîche quand la date de gel du run est strictement antérieure à la date du changement plus 14 jours",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
-      "constat": 32,
-      "note": "Aucun code ne calcule obsolescence_fraiche ; la description de notation.obsolescence_fraiche et la docstring de metriques.ts:tauxObsolescenceFraiche citent encore l'ancienne formule (constat n° 32)."
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/fraicheur.ts:obsolescenceFraiche",
+        "pipeline/notation/fraicheur.ts:fraicheurDesItems"
+      ],
+      "tests": [
+        "tests/notation/fraicheur.test.ts « gel à J+14 pile, minuit UTC : non fraîche (« strictement antérieure ») »",
+        "tests/notation/fraicheur.test.ts « gel à J+13 : fraîche »",
+        "tests/notation/fraicheur.test.ts « deux items O de dates différentes : ambiguë, jamais une date choisie »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "La date du changement est lue à minuit UTC (instantDeDateCivile) ; la date de gel porte son décalage."
     },
     {
       "id": "§12.01",
@@ -6041,22 +6096,36 @@
       "section": "12",
       "citation": "le kappa juges-humains de l'échantillon de 10 % est ≥ 0,75",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/criteres-juges.ts:critereKappaJugesHumains",
+        "pipeline/go-no-go/kappa-echantillon.ts:kappasEchantillon",
+        "pipeline/go-no-go/kappa-echantillon.ts:SEUIL_KAPPA_ECHANTILLON"
+      ],
+      "tests": [
+        "tests/go-no-go/kappa-echantillon.test.ts « kappa exactement 0,75 : vert (« ≥ 0,75 ») »",
+        "tests/go-no-go/kappa-echantillon.test.ts « kappa juste en dessous de 0,75 (50/67) : rouge »",
+        "tests/go-no-go/kappa-echantillon.test.ts « un juge à 0,9 et l'autre à 0,7 : rouge, valeur 0,7 (le plus petit) »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "run.go_no_go.criteres[].code = kappa_juges_humains existe."
+      "note": null
     },
     {
       "id": "§12.11",
       "section": "12",
       "citation": "le test contrefactuel est ≤ 3 % pour chaque juge retenu",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/criteres-juges.ts:critereTestContrefactuel"
+      ],
+      "tests": [
+        "tests/go-no-go/criteres.test.ts « exactement 3 % (6/200) : vert »",
+        "tests/go-no-go/criteres.test.ts « 7/200 : rouge, valeur le plus grand taux »",
+        "tests/go-no-go/criteres.test.ts « un juge retiré n'entre pas dans le critère »"
+      ],
+      "lot": null,
       "constat": null,
       "note": null
     },
@@ -6100,21 +6169,22 @@
     {
       "id": "§12.14",
       "section": "12",
-      "citation": "au plus 20 % de réponses manquantes par outil et par mode",
+      "citation": "au plus 20 % de réponses manquantes par outil et par mode, comptées comme en section 8",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "analysis/seuils.ts:runIncomplet",
-        "analysis/seuils.ts:couplesComparables",
+        "pipeline/go-no-go/criteres-run.ts:critereReponsesManquantes",
+        "analysis/seuils.ts:partReponsesManquantesDuPlan",
+        "pipeline/go-no-go/decision.ts:deciderPublication",
         "schema/run.schema.json:perimetre.outils[].par_mode"
       ],
       "tests": [
-        "tests/analysis/seuils.test.ts « laisse un couple à 20 % exactement dans les comparaisons, et exclut celui qui dépasse »",
-        "tests/analysis/seuils.test.ts « décide chaque mode d'un outil à part : 30 % en web activée l'exclut, 5 % en web désactivée reste comparable »"
+        "tests/go-no-go/criteres.test.ts « 100 requêtes planifiées, 75 réponses enregistrées sans manquante écrite : 25 %, rouge (avant : 0 %, vert) »",
+        "tests/go-no-go/criteres.test.ts « 100 requêtes planifiées, 80 réponses enregistrées : exactement 20 %, vert »"
       ],
       "lot": null,
-      "constat": 15,
-      "note": "Le seuil par couple est calculé et testé ; rien ne relie un couple au-delà de 20 % au critère go/no-go reponses_manquantes ni à la mention provisoire (n° 15)."
+      "constat": null,
+      "note": "Texte révisé en 0.21. Constat n° 15 du 2026-09-29 réglé : le critère reponses_manquantes est calculé sur le plan et entre dans deciderPublication."
     },
     {
       "id": "§12.15",
@@ -7021,7 +7091,7 @@
       "statut": "testee",
       "code": [
         "pipeline/questions/symetrie.ts:aucunItemContesteOuEnAttente",
-        "pipeline/questions/tirage.ts:juger"
+        "pipeline/questions/tirabilite.ts:juger"
       ],
       "tests": [
         "tests/questions/symetrie.test.ts « passe au rouge à la première occurrence et nomme l'item »"
@@ -7115,10 +7185,17 @@
       "section": "F",
       "citation": "Kappa juges-humains ≥ 0,75 ; test contrefactuel ≤ 3 %",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/criteres-juges.ts:critereKappaJugesHumains",
+        "pipeline/go-no-go/criteres-juges.ts:critereTestContrefactuel"
+      ],
+      "tests": [
+        "tests/go-no-go/kappa-echantillon.test.ts « kappa exactement 0,75 : vert (« ≥ 0,75 ») »",
+        "tests/go-no-go/criteres.test.ts « exactement 3 % (6/200) : vert »",
+        "tests/go-no-go/criteres.test.ts « 7/200 : rouge, valeur le plus grand taux »"
+      ],
+      "lot": null,
       "constat": null,
       "note": null
     },
@@ -7227,7 +7304,7 @@
         "pipeline/interrogation/journal.ts:reprise",
         "pipeline/interrogation/executer.ts:tenter",
         "pipeline/interrogation/executer.ts:garderOctetsOuSignaler",
-        "pipeline/interrogation/executer.ts:ecrireObtenue",
+        "pipeline/interrogation/executer.ts:stockerRecue",
         "pipeline/interrogation/executer.ts:executerRequete",
         "pipeline/interrogation/operateur.ts:messageAttenteOperateur"
       ],
@@ -7292,6 +7369,321 @@
       "lot": null,
       "constat": 5,
       "note": "D55 (9), revue du 2026-10-12 constat 24, codé (option 1 : alias calculé par le code depuis la graine alias_candidats et les candidats interrogés au run, jamais saisi par l'auteur ; forme écrite au protocole 0.20, #166). ItemSoumis.candidat_id et reponse_attendue.candidats_attendus portent désormais l'alias (charge-juge-v4), jamais l'identifiant réel ; la table est publiée dans run.json#/alias_candidats et vérifiée recalculable à la relecture."
+    },
+    {
+      "id": "§5.52",
+      "section": "5",
+      "citation": "Elles sont dérivées de la balise publique d'aléa drand, sur sa chaîne quicknet, dont l'empreinte est publiée avec le code, au premier tour émis à l'instant de gel ou après.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/balise.ts"
+      ],
+      "tests": [
+        "tests/gel/balise.test.ts « quicknet : empreinte, genèse, période, schéma »",
+        "tests/gel/balise.test.ts « balise, cas 1 : date_gel exactement sur l'émission d'un tour ⇒ ce tour »",
+        "tests/gel/balise.test.ts « balise, cas 1 : 1 ms après l'émission ⇒ le tour suivant »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
+    },
+    {
+      "id": "§5.53",
+      "section": "5",
+      "citation": "La réponse de ce tour est lue sur deux relais indépendants, qui doivent rendre la même réponse ; elle est archivée avec le run telle que reçue.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/balise.ts",
+        "pipeline/gel/reseau.ts"
+      ],
+      "tests": [
+        "tests/gel/balise.test.ts « deux relais d'accord ⇒ la balise, l'aléa recalculé, les deux réponses archivées telles quelles »",
+        "tests/gel/balise.test.ts « balise, cas 3 : les deux relais diffèrent par la signature ⇒ refus »",
+        "tests/gel/balise.test.ts « balise, cas 4 : un relais injoignable ⇒ refus, l'autre n'est pas retenu seul »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
+    },
+    {
+      "id": "§5.54",
+      "section": "5",
+      "citation": "L'aléa est l'empreinte SHA-256 de sa signature.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/balise.ts"
+      ],
+      "tests": [
+        "tests/gel/balise.test.ts « aléa = SHA-256(octets de la signature) sur le vecteur réel du tour 1000 »",
+        "tests/gel/balise.test.ts « balise, cas 5 : randomness ≠ SHA-256(signature) ⇒ refus »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
+    },
+    {
+      "id": "§5.55",
+      "section": "5",
+      "citation": "Pour n'ajouter aucune dépendance, le projet ne vérifie pas lui-même la signature cryptographique ; la procédure est documentée pour qu'un tiers la fasse.",
+      "nature": "hors-code",
+      "statut": "hors-code",
+      "code": [],
+      "tests": [],
+      "lot": null,
+      "constat": null,
+      "note": "Procédure écrite dans runs/README.md (« Vérifier par un tiers »)."
+    },
+    {
+      "id": "§5.56",
+      "section": "5",
+      "citation": "Chaque graine publiée (tirage, échantillon humain, test contrefactuel, bootstrap, permutation, alias des candidats) est dérivée de l'aléa par une clé lisible, publiée avec elle.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/graines.ts:NOMS_GRAINES",
+        "pipeline/gel/balise.ts (clés lisibles des graines)"
+      ],
+      "tests": [
+        "tests/gel/balise.test.ts « balise, cas 2 : les six graines d'un aléa connu, calculées à la main »",
+        "tests/gel/balise.test.ts « balise, cas 2 : chaque graine est dérivée par une clé lisible, son nom »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "La clé « alias_candidats » est ajoutée par la 0.20."
+    },
+    {
+      "id": "§5.57",
+      "section": "5",
+      "citation": "On prend l'empreinte SHA-256 de l'aléa écrit en hexadécimal, suivi d'un octet nul puis de la clé. On lit ses 8 premiers octets comme un entier gros-boutiste, que l'on décale de 11 bits vers la droite : c'est la graine, un entier de 53 bits.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/balise.ts"
+      ],
+      "tests": [
+        "tests/gel/balise.test.ts « balise, cas 2 : les six graines d'un aléa connu, calculées à la main »",
+        "tests/gel/balise.test.ts « balise, cas 2 : la borne 2^53 − 1 est tenue, et 0 est atteint »",
+        "tests/gel/balise.test.ts « une graine ne se dérive que de 8 octets exactement »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
+    },
+    {
+      "id": "§5.58",
+      "section": "5",
+      "citation": "L'identifiant du run est dérivé de même, par la clé « run_id ».",
+      "nature": "code",
+      "statut": "partielle",
+      "code": [
+        "pipeline/gel/balise.ts:CLE_IDENTIFIANT",
+        "validation/domaine/ulid.ts:ulidDe"
+      ],
+      "tests": [
+        "tests/gel/balise.test.ts « balise, cas 2 : la partie aléatoire de l'ULID, 80 premiers bits, calculée à la main »"
+      ],
+      "lot": null,
+      "constat": 3,
+      "note": "Même hachage, mais l'identifiant est un ULID (horodatage date_gel, 80 premiers bits), pas l'entier de 53 bits que « de même » désigne (constat n° 3)."
+    },
+    {
+      "id": "§6.26",
+      "section": "6",
+      "citation": "L'opérateur la stocke depuis ses octets gardés, tels que reçus, une fois la cause corrigée ; elle est alors une réponse obtenue dans la fenêtre.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/stocker.ts",
+        "pipeline/interrogation/executer.ts:stockerRecue",
+        "outils/interrogation-stocker.ts"
+      ],
+      "tests": [
+        "tests/interrogation/stocker.test.ts « réponse 200 non stockable puis cause corrigée : réponse obtenue identique, octet pour octet (identifiant opaque mis à part), à celle du chemin normal »",
+        "tests/interrogation/stocker.test.ts « la réponse brute n'est jamais modifiée : octets gardés et réception intacts, empreinte stockée égale à celle des octets »",
+        "tests/interrogation/stocker.test.ts « octets qui ne correspondent pas à l'empreinte de leur réception : refus nommé reception_incoherente, rien d'écrit »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Codé par #202 : la réponse est datée de sa réception d'origine."
+    },
+    {
+      "id": "§6.27",
+      "section": "6",
+      "citation": "Tant qu'une réponse attend l'opérateur, le go/no-go du run ne se prononce pas (section 12).",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/attente-operateur.ts:exigerAucuneAttenteOperateur",
+        "pipeline/go-no-go/go-no-go.ts"
+      ],
+      "tests": [
+        "tests/go-no-go/commande.test.ts « une requête en attente de l'opérateur (recue_non_stockee) : refus nommé qui la liste, rien n'est écrit »"
+      ],
+      "lot": null,
+      "constat": 2,
+      "note": "Codé par #201. Rien n'empêche le test des liens ni la notation de commencer pendant l'attente (constat n° 2)."
+    },
+    {
+      "id": "§12.22",
+      "section": "12",
+      "citation": "aucune réponse n'attend l'opérateur (section 6), faute de quoi le go/no-go ne se prononce pas",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/attente-operateur.ts:exigerAucuneAttenteOperateur",
+        "pipeline/go-no-go/attente-operateur.ts:requetesEnAttenteOperateur"
+      ],
+      "tests": [
+        "tests/go-no-go/commande.test.ts « une requête en attente de l'opérateur (recue_non_stockee) : refus nommé qui la liste, rien n'est écrit »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
+    },
+    {
+      "id": "§7.43",
+      "section": "7",
+      "citation": "Le juge ne reçoit que les items des candidats interrogés au run : comme pour la liste attendue d'une question d'attribution, l'item d'un candidat non interrogé ne lui est pas transmis.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/preparation.ts:preparerANoter",
+        "pipeline/notation/preparation.ts:interrogesDuRun",
+        "pipeline/questions/tirabilite.ts:interrogesDe"
+      ],
+      "tests": [
+        "tests/notation/preparation.test.ts « Q-ATT sur une mesure portée par un interrogé et un non-interrogé ⇒ la notation passe, la charge ne porte que l'item de l'interrogé »",
+        "tests/notation/preparation.test.ts « règle générale, pas de cas Q-ATT : le distracteur d'un non-interrogé sur une Q-DIR est écarté aussi »",
+        "tests/notation/preparation.test.ts « même cas en notation humaine ⇒ l'humain voit exactement les références que reçoit le juge »"
+      ],
+      "lot": null,
+      "constat": 1,
+      "note": "Codé par #200. Un item principal d'un non-interrogé est refusé au tirage (#209) : règle non écrite (constat n° 1)."
+    },
+    {
+      "id": "§7.44",
+      "section": "7",
+      "citation": "L'alias d'un candidat est formé de la lettre « C » suivie d'un rang, de 1 à n, n étant le nombre de candidats interrogés au run.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/alias-candidats.ts:tableAliasCandidats"
+      ],
+      "tests": [
+        "tests/notation/alias-candidats.test.ts « forme C1 à Cn, n = le nombre de candidats reçus (les interrogés, jamais plus) »",
+        "tests/notation/alias-candidats.test.ts « un candidat non interrogé, non reçu par la fonction, n'a pas d'alias »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
+    },
+    {
+      "id": "§7.45",
+      "section": "7",
+      "citation": "L'ordre des rangs est tiré avec une graine dérivée de l'aléa par la clé « alias_candidats », comme les autres graines du run, sans aucune saisie de l'auteur : les identifiants des candidats interrogés sont rangés dans l'ordre croissant des chaînes, puis mélangés par Fisher-Yates, du dernier au premier, avec le générateur SplitMix64 amorcé comme en section 8 par cette graine et la clé « alias_candidats » ; le candidat au rang k du mélange, compté à partir de 1, reçoit l'alias « C » suivi de k.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/alias-candidats.ts:tableAliasCandidats",
+        "pipeline/notation/alias-candidats.ts:CLE_ALIAS_CANDIDATS",
+        "outils/ordre-chaines.ts:comparerChaines",
+        "validation/domaine/alea.ts:melanger"
+      ],
+      "tests": [
+        "tests/notation/alias-candidats.test.ts « valeur de référence figée : la graine et la table ne doivent pas bouger »",
+        "tests/notation/alias-candidats.test.ts « l'ordre d'entrée des candidats est indifférent »",
+        "tests/notation/alias-candidats.test.ts « aucune saisie de l'auteur : seules la liste des candidats et la graine entrent dans le calcul »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "candidat_id est ASCII (commun.schema.json:identifiant_court) : unités UTF-16 et points de code donnent le même ordre."
+    },
+    {
+      "id": "§7.46",
+      "section": "7",
+      "citation": "La table qui associe chaque alias à son candidat est publiée avec le run.",
+      "nature": "donnee",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/assemblage.ts:runDuGel",
+        "schema/run.schema.json:alias_candidats",
+        "analysis/lecture-run.ts:verifierAliasCandidats"
+      ],
+      "tests": [
+        "tests/gel/geler.test.ts « §7 (protocole 0.20), D55 (9) : run.json porte la table alias aveugle des candidats interrogés, recalculée de la graine »",
+        "tests/analysis/lecture-run.test.ts « §7 (protocole 0.20), D55 (9) : alias_candidats altéré à la relecture ⇒ AliasCandidatsDivergent »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
+    },
+    {
+      "id": "§7.47",
+      "section": "7",
+      "citation": "Il en va de même de l'adresse d'une redirection : elle est relue en UTF-8 quand le serveur l'a envoyée en octets UTF-8 et que cette lecture réussit, sinon prise telle quelle, puis envoyée sous sa forme encodée standard ; la collecte (section 6) suit la même règle, dont la forme exacte est dans la table publiée.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/collecte/reseau.py:relire_location",
+        "pipeline/collecte/reseau.py:LECTURES_LOCATION",
+        "pipeline/liens/sonde.py (lire_location)",
+        "pipeline/liens/table.py (lecture_location)",
+        "pipeline/collecte/politesse.py:_cible_de_redirection",
+        "pipeline/liens/iri.py:iri_vers_uri",
+        "config/test-liens.toml (v3)"
+      ],
+      "tests": [
+        "tests/liens/test_sonde.py « test_d55_2_redirection_location_utf8_brut_relue_avant_conversion_iri »",
+        "tests/liens/test_sonde.py « test_d55_2_location_qui_n_est_pas_de_l_utf8_gardee_puis_convertie »",
+        "tests/collecte/test_politesse.py « test_d55_2_redirection_location_utf8_brut_relue_en_utf8 »",
+        "tests/collecte/test_reseau.py « test_d55_2_location_latin1_qui_n_est_pas_de_l_utf8_inchangee »"
+      ],
+      "lot": null,
+      "constat": 4,
+      "note": "La collecte appelle relire_location directement, sans lire la clé lecture_location de la table (constat n° 4)."
+    },
+    {
+      "id": "§7.48",
+      "section": "7",
+      "citation": "les occurrences sont cherchées parmi les libellés et noms seuls de tous les candidats du périmètre, interrogés ou non, la plus longue l'emportant, et seule l'occurrence d'un candidat interrogé est remplacée, de sorte que le nom d'un candidat non interrogé n'est jamais réécrit en partie.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/permutation.ts:permuterTexte",
+        "pipeline/notation/permutation.ts:nommeUnInterroge",
+        "pipeline/notation/derangement.ts:tirerDerangement",
+        "pipeline/notation/chaine.ts:estEligible"
+      ],
+      "tests": [
+        "tests/notation/contrefactuel-attribution-interroges.test.ts « le libellé et le nom seul du non-interrogé restent intacts, aucune mention comptée »",
+        "tests/notation/contrefactuel-attribution-interroges.test.ts « chevauchement inverse : la forme d'un interrogé, plus longue, contient celle d'un non-interrogé, l'interrogé gagne »",
+        "tests/notation/contrefactuel-attribution-interroges.test.ts « dans le même texte, seules les occurrences de l'interrogé sont remplacées »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Codé par #191."
+    },
+    {
+      "id": "§7.49",
+      "section": "7",
+      "citation": "Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/chaine.ts:inscrireFauteDInterroges",
+        "pipeline/notation/derangement.ts:tirerDerangement",
+        "schema/run.schema.json:contrefactuel_candidats (motif_indefini)"
+      ],
+      "tests": [
+        "tests/notation/chaine-moins-de-deux-interroges.test.ts « 1 candidat interrogé : notation complète, contrefactuel absent avec le motif moins_de_deux_interroges, aucun appel de juge pour lui »",
+        "tests/notation/derangement.test.ts « moins de deux candidats interrogés au périmètre, même avec d'autres non interrogés, lève »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Codé par #203 et #211."
     }
   ]
 }
