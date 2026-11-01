@@ -70,8 +70,8 @@ export interface OptionsSource {
 /** L'épinglage en service par défaut, de la forme du fichier du dépôt, accordé à `HTML` (D56 (3)). */
 export const EPINGLAGE_EN_SERVICE = {
   pdf: { outil: "pymupdf", version: "1.28.2", options: { mode: "text", drapeaux: 67, separateur_pages: "\f" } },
-  html: { outil: HTML.outil, version: { interpreteur: "python" }, options: HTML.options },
-  transcription: { outil: "webvtt", version: { interpreteur: "python" }, options: { regle: "vtt-1" } },
+  html: { outil: HTML.outil, version: HTML.version, options: HTML.options },
+  transcription: { outil: "webvtt", version: HTML.version, options: { regle: "vtt-1" } },
 };
 
 /** `EPINGLAGE_EN_SERVICE` dont la déclaration de html.parser est complétée ou remplacée champ à champ. */
