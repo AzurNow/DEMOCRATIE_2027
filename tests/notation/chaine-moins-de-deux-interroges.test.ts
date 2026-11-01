@@ -13,7 +13,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { dispositionRunNote, lireRunJson } from "../../analysis/lecture-run.ts";
 import { critereTestContrefactuel } from "../../pipeline/go-no-go/criteres-juges.ts";
 import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
-import { bilanNotation } from "../../pipeline/notation/bilan-notation.ts";
+import { bilanNotation, texteContrefactuelInscrit } from "../../pipeline/notation/bilan-notation.ts";
 import { noterRun, type ReponseANoter } from "../../pipeline/notation/chaine.ts";
 import { environnementSimule, preparerNotationSimulee } from "../../pipeline/notation/notation-simulee.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
@@ -106,6 +106,34 @@ describe("§7 (0.21) : test contrefactuel indéfini sous deux candidats interrog
 
     // §12 : un test indéfini ne satisfait pas son critère, sans code propre au motif.
     expect(critereTestContrefactuel(run.juges)).toMatchObject({ code: "test_contrefactuel", statut: "rouge" });
+  });
+
+  it("bilan d'un run à 1 interrogé : le motif est porté, aucun éligible ni sous-effectif, texte en clair", async () => {
+    const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
+    nInterroger(prepare.repertoire_run, ["demo-alpha"]);
+    const reponses = reponsesDAlpha(prepare.reponses);
+    const resultat = await noterRun(reponses, environnementSimule(prepare.repertoire_run, parametresDeReference()));
+    const bilan = bilanNotation(prepare.repertoire_run, resultat, reponses.map((r) => r.reponse.id));
+
+    expect(bilan.contrefactuel_inscrit).toEqual({
+      test: "non_joue_faute_d_interroges",
+      etat: "indefini",
+      motif_indefini: "moins_de_deux_interroges",
+      taille_visee: 200,
+      taille: 0,
+    });
+    // Aucune clé absente rendue visible comme undefined, ni éligibles ni sous-effectif.
+    const serialise = JSON.stringify(bilan);
+    expect(serialise).not.toContain("undefined");
+    expect(serialise).not.toContain("eligibles");
+    expect(serialise).not.toContain("sous_effectif");
+    expect(bilan.contrefactuel_inscrit).toBeDefined();
+    if (bilan.contrefactuel_inscrit === undefined) return;
+    const texte = texteContrefactuelInscrit(bilan.contrefactuel_inscrit);
+    expect(texte).toContain("non joué faute de deux candidats interrogés");
+    expect(texte).toContain("rouge");
+    expect(texte).not.toContain("éligible");
+    expect(texte).not.toContain("sous-effectif");
   });
 
   it("1 candidat interrogé, relancé : reprise, rien n'est réécrit ni redemandé", async () => {

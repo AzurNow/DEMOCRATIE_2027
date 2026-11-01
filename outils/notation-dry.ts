@@ -16,7 +16,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { MOTIFS_DU_BILAN, type BilanNotation } from "../pipeline/notation/bilan-notation.ts";
+import { MOTIFS_DU_BILAN, texteContrefactuelInscrit, type BilanNotation } from "../pipeline/notation/bilan-notation.ts";
 import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
 import { lancerNotationSimulee, lireParametresNotationSimulee } from "../pipeline/notation/notation-simulee.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
@@ -75,7 +75,7 @@ function imprimerBilan(repertoire_run: string, bilan: BilanNotation): void {
 function contrefactuelInscrit(bilan: BilanNotation): string {
   const inscrit = bilan.contrefactuel_inscrit;
   if (inscrit === undefined) return "";
-  return ` (${inscrit.etat}, ${inscrit.taille} réponse(s) tirée(s) parmi ${inscrit.eligibles} éligible(s)${inscrit.sous_effectif ? ", sous-effectif" : ""})`;
+  return texteContrefactuelInscrit(inscrit);
 }
 
 async function principal(): Promise<void> {
