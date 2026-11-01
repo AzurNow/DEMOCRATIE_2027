@@ -173,6 +173,7 @@ function garderOctetsOuSignaler(course: Course, recue: Recue): string {
       debut_ms: recue.debut_ms,
       reception_ms: recue.fin_ms,
       octets_sha256: empreinteOctets(reponse.corps),
+      normalisation: { fonction: course.adaptateur.normalisation.fonction, version: course.adaptateur.normalisation.version },
     });
     return course.journal.garderOctets(numero, reponse.corps);
   } catch (erreurGarde) {

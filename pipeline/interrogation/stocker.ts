@@ -18,6 +18,9 @@
  *   - `sans_octets` : la garde des octets a elle-même échoué, il n'y a rien à stocker ;
  *   - `sans_metadonnees` : octets gardés sans leur réception (volume antérieur à cette garde, ou
  *     intervention extérieure) — les stocker exigerait d'inventer statut et instants ;
+ *   - `adaptateur_different` : l'adaptateur donné n'est pas celui qui a reçu les octets (fonction
+ *     ou version de normalisation autre que celle de la réception) — des octets d'un éditeur ne sont
+ *     jamais classés par l'adaptateur d'un autre, simulé compris ;
  *   - `reception_incoherente` : les octets n'ont pas l'empreinte que leur réception déclare ;
  *   - `stockage_impossible` : le chemin du run lève encore (la cause n'est pas corrigée).
  * Les octets et la réception gardés ne sont jamais modifiés (règle 7). Relancer ne refait rien :
@@ -37,7 +40,12 @@ export interface ContexteStockage extends ContexteEcriture {
   readonly adaptateurs: ReadonlyMap<string, Adaptateur>;
 }
 
-export type MotifRefusStockage = "sans_octets" | "sans_metadonnees" | "reception_incoherente" | "stockage_impossible";
+export type MotifRefusStockage =
+  | "sans_octets"
+  | "sans_metadonnees"
+  | "adaptateur_different"
+  | "reception_incoherente"
+  | "stockage_impossible";
 
 export type IssueStockage =
   | { readonly genre: "stockee"; readonly requete: CleRequete; readonly numero: number }
@@ -90,8 +98,14 @@ function causeDe(erreur: unknown): string {
   return erreur instanceof Error ? erreur.message : String(erreur);
 }
 
+type Normalisation = Adaptateur["normalisation"];
+
+function memeNormalisation(a: Normalisation, b: Normalisation): boolean {
+  return a.fonction === b.fonction && a.version === b.version;
+}
+
 /** Relit octets et réception gardés ; tout manque est un refus nommé, jamais une valeur supposée. */
-function lireGardee(journal: JournalRequete, attente: Attente): LectureGardee {
+function lireGardee(journal: JournalRequete, attente: Attente, adaptateur: Adaptateur): LectureGardee {
   if (attente.chemin_octets === null) {
     return { genre: "refus", motif: "sans_octets", cause: "la garde des octets a elle-même échoué : il n'y a rien à stocker" };
   }
@@ -101,6 +115,16 @@ function lireGardee(journal: JournalRequete, attente: Attente): LectureGardee {
       genre: "refus",
       motif: "sans_metadonnees",
       cause: "octets gardés sans leur réception (statut HTTP, instants) : les stocker exigerait d'en inventer",
+    };
+  }
+  const recu_par = reception.normalisation;
+  if (!memeNormalisation(recu_par, adaptateur.normalisation)) {
+    return {
+      genre: "refus",
+      motif: "adaptateur_different",
+      cause:
+        `octets reçus par l'adaptateur ${recu_par.fonction} ${recu_par.version}, ` +
+        `adaptateur donné ${adaptateur.normalisation.fonction} ${adaptateur.normalisation.version}`,
     };
   }
   const corps = journal.lireOctets(attente.chemin_octets);
@@ -115,9 +139,10 @@ function lireGardee(journal: JournalRequete, attente: Attente): LectureGardee {
 function stockerAttente(requete: RequetePlanifiee, journal: JournalRequete, attente: Attente, contexte: ContexteStockage): IssueStockage {
   const cle = cleDe(requete);
   const { numero } = attente;
-  const lue = lireGardee(journal, attente);
+  const adaptateur = adaptateurDe(contexte, requete.outil_id);
+  const lue = lireGardee(journal, attente, adaptateur);
   if (lue.genre === "refus") return { genre: "refusee", requete: cle, numero, motif: lue.motif, cause: lue.cause };
-  const course = courseDe(requete, adaptateurDe(contexte, requete.outil_id), journal, contexte);
+  const course = courseDe(requete, adaptateur, journal, contexte);
   try {
     const issue = stockerRecue(course, lue.recue, attente.tentatives);
     if (issue.genre === "ecrite") return { genre: "stockee", requete: cle, numero };

@@ -15,7 +15,7 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ## 2026-11-01 — Relecture des PR de l'absence, D56, protocole 0.21 et lots de correction (PR #187 à #213 : `pipeline/`, `validation/`, `notation-humaine/`, `outils/`, `analysis/`)
 
-### 1. `pnpm interrogation:stocker` classe une réponse avec les adaptateurs d'une fixture de test — *haute*
+### ~~1. `pnpm interrogation:stocker` classe une réponse avec les adaptateurs d'une fixture de test~~ — réglé le 2026-11-01 : chaque réception gardée nomme l'adaptateur qui a reçu ses octets (`normalisation`, `reponse#/$defs/reception`), et le stockage refuse tout autre adaptateur (`adaptateur_different`). La commande reste branchée sur les profils simulés : avec un éditeur réel, elle refusera bruyamment au lieu de mal classer, jusqu'à ce que les vrais adaptateurs y soient branchés
 
 `outils/interrogation-stocker.ts` lit `tests/interrogation/fixtures/run-gele/profils-simules.json`
 pour retrouver l'adaptateur qui classe et normalise une réponse en attente de l'opérateur (#202). Le

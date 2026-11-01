@@ -122,6 +122,8 @@ export interface Reception {
   readonly reception_ms: number;
   /** SHA-256 des octets gardés, tels que reçus. */
   readonly octets_sha256: string;
+  /** L'adaptateur qui a reçu ces octets (`Adaptateur.normalisation`) : seul admis à les classer. */
+  readonly normalisation: { readonly fonction: string; readonly version: string };
 }
 
 /** Une réception gardée illisible : JSON, schéma, ou numéro autre que celui de son nom de fichier. */
