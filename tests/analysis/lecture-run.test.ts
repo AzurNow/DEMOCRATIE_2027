@@ -28,6 +28,7 @@ import {
 } from "../../analysis/lecture-run.ts";
 import { GitInaccessible } from "../../outils/executer-git.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
+import { requetesDuPlanDuRun } from "../../pipeline/go-no-go/plan-du-run.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { commiterTout } from "../aides/depot.ts";
 import { ecrireJson, ITEM_P, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
@@ -62,7 +63,7 @@ function erreurDe(lire: () => unknown): Error {
 }
 
 function lire(run: RunFictif, archive?: string) {
-  return lireRun(run.repertoire_run, { items: run.items, ...(archive === undefined ? {} : { archive }) });
+  return lireRun(run.repertoire_run, { items: run.items, plan_du_run: requetesDuPlanDuRun, ...(archive === undefined ? {} : { archive }) });
 }
 
 describe("4. un fichier illisible, invalide ou mal nommé est une erreur qui cite son chemin", () => {
@@ -181,13 +182,18 @@ describe("5. volume absent, volume vide", () => {
     expect(() => assembler(entrees)).toThrow(/réponse notée introuvable/);
   });
 
-  it("reponses/ vide, par_mode toujours déclaré : constat 17, le seuil n'est plus décidable", () => {
-    // Un run publié qui déclare par_mode mais dont il ne reste aucune réponse API pour le
-    // recalculer n'est plus « lu tel quel » : la recoupe de D55 (7) refuse avant d'y arriver.
+  it("reponses/ vide, par_mode toujours déclaré : constat 17, le par_mode écrit ne concorde plus", () => {
+    // Un run publié qui déclare par_mode mais dont il ne reste aucune réponse API n'est plus « lu
+    // tel quel » : la recoupe de D55 (7) refuse avant d'y arriver. Modifié ouvertement (protocole
+    // 0.21, D56 (2)) : ce cas attendait « pas décidable », faute de réponse enregistrée ; la part
+    // se compte désormais sur le plan d'interrogation (12 requêtes), elle vaut 12/12 et contredit
+    // le 10/12 écrit — refus nommé, plus spécifique que le message d'avant.
     const run = runNote();
     const reponses = dispositionRunNote(run.repertoire_run).reponses;
     for (const reponse of run.reponses) rmSync(join(reponses, `${reponse.id}.json`));
-    expect(() => lire(run)).toThrow(/décidable/);
+    const erreur = erreurDe(() => lire(run));
+    expect(erreur).toBeInstanceOf(ParModeDivergent);
+    expect(erreur.message).toContain('"reponses_manquantes_part":1');
   });
 });
 
@@ -203,6 +209,14 @@ describe("10. par_mode recoupé à la lecture (constat 17, D55 (7))", () => {
   it("un par_mode concordant avec les réponses passe", () => {
     const run = runNote();
     expect(() => lire(run)).not.toThrow();
+  });
+
+  it("protocole 0.21 : un par_mode compté sur les seules réponses enregistrées (0 manquante sur 2) contredit le plan (10 sur 12) : refus nommé", () => {
+    const run = runNote();
+    remplacerParModeAlpha(run, { web_desactivee: { reponses_manquantes_part: 0, run_incomplet: false } });
+    const erreur = erreurDe(() => lire(run));
+    expect(erreur).toBeInstanceOf(ParModeDivergent);
+    expect(erreur.message).toContain(JSON.stringify({ reponses_manquantes_part: 10 / 12, run_incomplet: true }));
   });
 
   it("un par_mode qui contredit les réponses lève une erreur nommée", () => {
@@ -282,7 +296,7 @@ describe("6. items à la version épinglée, au commit du gel", () => {
 
   it("répertoire d'items inexistant : ItemsDuGelIllisibles nommé, jamais GitInaccessible ni TypeError (constat 37 de la revue du 2026-10-12)", () => {
     const run = runNote();
-    const erreur = erreurDe(() => lireRun(run.repertoire_run, { items: "/nulle-part-xyz" }));
+    const erreur = erreurDe(() => lireRun(run.repertoire_run, { items: "/nulle-part-xyz", plan_du_run: requetesDuPlanDuRun }));
     expect(erreur).toBeInstanceOf(ItemsDuGelIllisibles);
     expect(erreur.message).not.toContain("git introuvable");
     expect(erreur.message).toMatch(/inexistant/);

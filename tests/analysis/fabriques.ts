@@ -21,8 +21,8 @@ import type {
   Verdict,
 } from "../../analysis/types.ts";
 import type { UniteAnalyse } from "../../analysis/filtre.ts";
-import type { PartageCouples } from "../../analysis/seuils.ts";
-import type { CoupleOutilMode } from "../../analysis/types.ts";
+import type { PartageCouples, RequeteDuPlan } from "../../analysis/seuils.ts";
+import type { CoupleOutilMode, Mode } from "../../analysis/types.ts";
 
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
@@ -129,6 +129,47 @@ export function reponse(partiel: Partiel<Reponse> = {}): Reponse {
     statut_reponse: "obtenue",
     normalise: { texte: "texte", liens: [], troncature: false },
   }, partiel);
+}
+
+/**
+ * Le plan d'interrogation d'un run complet : une requête par réponse API de contexte run, à sa
+ * clé (outil, mode, question, formulation, échantillon). Ce que `pipeline/interrogation/plan.ts`
+ * aurait planifié si chaque requête avait reçu sa réponse ; une réponse sans mode n'y entre pas.
+ */
+export function planCouvrant(reponses: readonly Reponse[]): RequeteDuPlan[] {
+  return reponses
+    .filter((r) => r.contexte === "run" && r.canal === "api")
+    .flatMap((r) =>
+      r.mode === undefined
+        ? []
+        : [{ outil_id: r.outil_id, mode: r.mode, question_id: r.question_id, formulation_id: r.formulation_id, echantillon: r.echantillon }],
+    );
+}
+
+/** `nombre` requêtes planifiées d'un couple, chacune sur sa propre question. */
+export function requetesPlanifiees(outil_id: string, mode: Mode, nombre: number): RequeteDuPlan[] {
+  return Array.from({ length: nombre }, (_, rang) => ({
+    outil_id,
+    mode,
+    question_id: idQuestion(`plan-${outil_id}-${mode}-${rang}`),
+    formulation_id: ulid("formulation-neutre"),
+    echantillon: 1,
+  }));
+}
+
+/** La réponse API de contexte run d'une requête du plan, au statut voulu. */
+export function reponseDe(requete: RequeteDuPlan, statut_reponse: Reponse["statut_reponse"]): Reponse {
+  const cle = `${requete.outil_id}-${requete.mode}-${requete.question_id}-${requete.formulation_id}-${requete.echantillon}`;
+  return reponse({
+    id: ulid(`reponse-du-plan-${cle}`),
+    outil_id: requete.outil_id,
+    mode: requete.mode,
+    question_id: requete.question_id,
+    formulation_id: requete.formulation_id,
+    echantillon: requete.echantillon,
+    statut_reponse,
+    normalise: statut_reponse === "manquante" ? undefined : { texte: "texte", liens: [], troncature: false },
+  });
 }
 
 export function question(partiel: Partiel<Question> = {}): Question {

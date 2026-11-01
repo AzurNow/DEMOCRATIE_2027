@@ -11,8 +11,9 @@
  *   imprimé »), `pnpm symmetry` laisse partir le run, et le §12 n'oppose aux tests « restés verts »
  *   que le run invalide, que seule une symétrie rouge produit. La valeur publiée garde
  *   `ecart_tolere`, visible. Lecture confirmée par l'auteur (D25 (4)).
- * - `reponses_manquantes` : `analysis/seuils.ts` (`couplesDuRun`, `partReponsesManquantes`, `runIncomplet`), seule
- *   définition du seuil de 20 % (en entiers : 5 × manquantes > total, donc 20 % exactement passe).
+ * - `reponses_manquantes` : `analysis/seuils.ts` (`partsDuRun`, `runIncomplet`), seule définition du
+ *   seuil de 20 % (en entiers : 5 × manquantes > total, donc 20 % exactement passe), comptée sur le
+ *   plan d'interrogation du run (§8, protocole 0.21 ; `plan-du-run.ts`).
  * - `erreurs_graves_revues` : un verdict `erreur_grave` sans revue humaine effectuée, ou une réponse
  *   obtenue encore sans verdict dont une notation comptée porte un drapeau grave, est une erreur
  *   grave non revue.
@@ -21,7 +22,7 @@
  */
 
 import { graineHexadecimale } from "../../analysis/graines.ts";
-import { couplesDuRun, partReponsesManquantes, runIncomplet, SEUIL_RUN_INCOMPLET, type OutilDeclarable } from "../../analysis/seuils.ts";
+import { partsDuRun, runIncomplet, SEUIL_RUN_INCOMPLET, type OutilDeclarable, type RequeteDuPlan } from "../../analysis/seuils.ts";
 import type { Reponse, Ulid } from "../../analysis/types.ts";
 import { conditionDeSymetrie } from "../questions/symetrie.ts";
 import type { Symetrie } from "../questions/types.ts";
@@ -50,17 +51,17 @@ export function critereTestsSymetrie(symetrie: Pick<Symetrie, "statut_global">):
 /** Ce que le critère lit d'un outil du périmètre au gel : la part que lit `analysis/seuils.ts:couplesDeclares`. */
 export type OutilDeclare = OutilDeclarable;
 
-/** §12 : « au plus 20 % de réponses manquantes par outil et par mode » (canal API, §8). */
-export function critereReponsesManquantes(outils: readonly OutilDeclare[], reponses: readonly Reponse[]): Critere {
+/** §12 : « au plus 20 % de réponses manquantes par outil et par mode, comptées comme en section 8 » (protocole 0.21). */
+export function critereReponsesManquantes(outils: readonly OutilDeclare[], reponses: readonly Reponse[], plan: readonly RequeteDuPlan[]): Critere {
   const socle = { code: "reponses_manquantes", seuil: SEUIL_RUN_INCOMPLET.numerateur / SEUIL_RUN_INCOMPLET.denominateur } as const;
-  // Les couples déclarés (`analysis/seuils.ts:couplesDuRun`, seule définition, Lot 10 (a)) : un couple
-  // présent dans les réponses API mais non déclaré lève `CoupleHorsPerimetre`, comme `parModeDuRun` ;
-  // un couple déclaré sans aucune réponse API fait lever `runIncomplet` : ce n'est pas un vert.
-  const couples = couplesDuRun(outils, reponses);
-  if (couples.length === 0) return { ...socle, statut: "rouge", valeur: "aucun couple outil × mode à juger" };
-  const parts = couples.map((couple) => partReponsesManquantes(reponses, couple));
-  const incomplet = parts.map(runIncomplet).some(Boolean);
-  return { ...socle, statut: incomplet ? "rouge" : "vert", valeur: Math.max(...parts.map((p) => p.numerateur / p.denominateur)) };
+  // La part de chaque couple déclaré, comptée sur le plan d'interrogation du run
+  // (`analysis/seuils.ts:partsDuRun`, seul calcul, celui de `parModeDuRun`) : un couple présent dans
+  // les réponses API mais non déclaré lève `CoupleHorsPerimetre` ; une réponse hors plan,
+  // `ReponseHorsPlan` ; un couple déclaré sans requête planifiée, `CoupleSansRequetePlanifiee`.
+  const parts = partsDuRun(outils, reponses, plan);
+  if (parts.length === 0) return { ...socle, statut: "rouge", valeur: "aucun couple outil × mode à juger" };
+  const incomplet = parts.some(({ part }) => runIncomplet(part));
+  return { ...socle, statut: incomplet ? "rouge" : "vert", valeur: Math.max(...parts.map(({ part }) => part.numerateur / part.denominateur)) };
 }
 
 /* ------------------------------------------------------------------ erreurs graves */

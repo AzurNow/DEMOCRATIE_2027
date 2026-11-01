@@ -101,14 +101,16 @@ function lireExemple(chemin: string): Record<string, unknown> {
  * Constat 17 (revue du 2026-10-12) : l'exemple déclare `par_mode` pour deux modes (0,04 et 0,02),
  * un chiffre que rien ne recoupait. `reponseObtenue` ne produit que des réponses outil-alpha en
  * web_desactivee (ci-dessous) : `modes` et `par_mode` sont réduits à ce seul mode, à la part que
- * ces deux réponses obtenues recalculent (0 manquante sur 2), pour que `lireRun` (D55 (7)) trouve
- * un `par_mode` concordant plutôt qu'un second énoncé contredit par le run fictif lui-même.
+ * le run fictif recalcule, pour que `lireRun` (D55 (7)) trouve un `par_mode` concordant plutôt
+ * qu'un second énoncé contredit par le run fictif lui-même. Protocole 0.21 (§8) : la part se compte
+ * sur le plan d'interrogation — 2 questions tirées × 3 formulations × 2 échantillons = 12 requêtes,
+ * dont 10 sans réponse : 10/12, run incomplet (avant 0.21 : 0 manquante sur les 2 enregistrées).
  */
+const PAR_MODE_DU_JEU = { web_desactivee: { reponses_manquantes_part: 10 / 12, run_incomplet: true } };
+
 function outilsDuJeu(outils: readonly Record<string, unknown>[]): Record<string, unknown>[] {
   return outils.map((outil) =>
-    outil["outil_id"] === "outil-alpha"
-      ? { ...outil, modes: ["web_desactivee"], mode_de_tete: "web_desactivee", par_mode: { web_desactivee: { reponses_manquantes_part: 0, run_incomplet: false } } }
-      : outil,
+    outil["outil_id"] === "outil-alpha" ? { ...outil, modes: ["web_desactivee"], mode_de_tete: "web_desactivee", par_mode: PAR_MODE_DU_JEU } : outil,
   );
 }
 
