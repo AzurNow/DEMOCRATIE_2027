@@ -7100,15 +7100,19 @@
       "section": "D",
       "citation": "DATE DU RUN : {date_run} QUESTION : gabarit {question.gabarit} ; registre {question.registre} ; prémisse fausse {question.premisse_fausse} ; texte {question.texte} RÉPONSE ATTENDUE, déjà résolue à la date du run : {reponse_attendue} RÉPONSE À NOTER : texte {reponse.texte} ; liens {reponse.liens} ; citations {reponse.citations} ; tronquée {reponse.troncature} ; refus de l'API {reponse.refus_api} TEXTE DES PAGES CITÉES […] : {pages_citees} RÉFÉRENCE : items, dans l'ordre : {references}",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
         "prompts/judge-1.0.0.md",
-        "pipeline/notation/charge-juge.ts:construireCharge"
+        "pipeline/notation/charge-juge.ts:construireCharge",
+        "pipeline/notation/rendu-prompt-juge.ts:rendrePromptJuge"
       ],
-      "tests": [],
+      "tests": [
+        "tests/notation/rendu-prompt-juge.test.ts",
+        "tests/prompt-juge-annexe-d.test.ts"
+      ],
       "lot": "notation",
       "constat": null,
-      "note": "Citation réextraite (texte de la 0.16). Le prompt porte ces variables ; aucun vrai juge ne le rend encore depuis la charge (seul le juge simulé existe)."
+      "note": "Citation réextraite (texte de la 0.16). Le 2026-11-01 : rendrePromptJuge rend le bloc « Texte du prompt » du fichier versionné depuis la charge, en une passe ; refus nommés pour une version de charge discordante, un fichier qui n'est pas celui de charge.prompt (chemin et version), une variable inconnue, un champ de charge non rendu et un champ absent non optionnel. Champ absent (décision du 2026-11-01, option a) : rendu par le marqueur que déclare le prompt (« ABSENT » dans 1.0.0), sur les seuls champs dont sa ligne de variable le cite (premisse_fausse, citations), lus dans le prompt. Reste partielle : aucun vrai juge réseau ne l'appelle encore (seul le juge simulé existe), et l'en-tête de prompts/judge-1.0.0.md annonce charge-juge-v3 (code en v5) : le vrai prompt est refusé tant que la PR de protocole ne l'a pas aligné."
     },
     {
       "id": "D.03",
