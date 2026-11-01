@@ -13,6 +13,7 @@
 
 import { readFileSync } from "node:fs";
 import { valider } from "../../outils/schemas/valider.ts";
+import { exigerFamillesDistinctes } from "../notation/familles-juges.ts";
 import { premiereCleDupliquee } from "../reformulation/cles-dupliquees.ts";
 
 /** `config-gel#/$defs/juge` : ce qu'un juge porte au gel. */
@@ -93,6 +94,8 @@ export function validerConfigurationGel(texte: string, provenance: string): Conf
   const nuls = champs.filter(([, valeur]) => valeur === null).map(([nom]) => nom);
   const complete = sansNull(saisie);
   if (nuls.length > 0 || complete === null) throw new ConfigurationGelIncomplete(provenance, nuls);
+  // §7.12 : la même règle que la notation (`chaine.ts:verifierJuges`), refusée ici avant tout gel.
+  exigerFamillesDistinctes(complete.juges);
   return complete;
 }
 

@@ -26,6 +26,7 @@ import { geler, GelBloque } from "../../pipeline/gel/geler.ts";
 import { OrdreDesInstantsRefuse } from "../../pipeline/gel/instants.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
+import { FamilleDeJugeAbsente, JugesDeMemeFamille } from "../../pipeline/notation/familles-juges.ts";
 import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
 import { identifiantAttribution } from "../../pipeline/questions/engendrement.ts";
 import type { GraineTirage, Item, Mesure } from "../../pipeline/questions/types.ts";
@@ -288,6 +289,34 @@ describe("cas 5 : validité au gel", () => {
     const exclues = tirage.exclusions.filter((exclusion) => surItem.includes(exclusion.question_id));
     expect(exclues.map((exclusion) => exclusion.question_id).sort()).toEqual([...surItem].sort());
     expect(new Set(exclues.map((exclusion) => exclusion.motif))).toEqual(new Set(["hors_validite"]));
+  });
+});
+
+describe("§7.12 : familles de juges au gel", () => {
+  const [premier, second] = CONFIGURATION_GEL.juges;
+  if (premier === undefined || second === undefined) throw new Error("fixture sans deux juges");
+
+  async function refusAvecJuges(juges: readonly unknown[]): Promise<{ erreur: Error; sortie: string }> {
+    const racine = depot({ ...jeuNominal(), configuration: { ...CONFIGURATION_GEL, juges } });
+    const sortie = temporaire("banc-gel-sortie-");
+    return { erreur: await refusDe(optionsGel(racine, sortie)), sortie };
+  }
+
+  it("deux juges de la même famille (casse différente) ⇒ JugesDeMemeFamille, rien écrit", async () => {
+    const { erreur, sortie } = await refusAvecJuges([{ ...premier, famille_modele: "Anthropic" }, { ...second, famille_modele: "anthropic" }]);
+    expect(erreur).toBeInstanceOf(JugesDeMemeFamille);
+    expect(arborescence(sortie)).toEqual([]);
+  });
+
+  it.each(["   ", "\t"])("famille faite d'espaces %j ⇒ FamilleDeJugeAbsente, rien écrit", async (famille) => {
+    const { erreur, sortie } = await refusAvecJuges([premier, { ...second, famille_modele: famille }]);
+    expect(erreur).toBeInstanceOf(FamilleDeJugeAbsente);
+    expect(arborescence(sortie)).toEqual([]);
+  });
+
+  it("deux familles distinctes ⇒ le gel s'écrit", async () => {
+    const { run } = await gelNominal();
+    expect(existsSync(join(run, "run.json"))).toBe(true);
   });
 });
 
