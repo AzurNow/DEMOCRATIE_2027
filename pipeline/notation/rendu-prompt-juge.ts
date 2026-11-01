@@ -76,7 +76,11 @@ const VARIABLE = /\{([a-z_]+(?:\.[a-z_]+)*)\}/g;
 const LIGNE_CHARGE = /^\| Charge \| `([^`]+)`/gm;
 const LIGNE_VERSION = /^\| Version \| `([^`]+)`/gm;
 const TITRE_VERSIONNE = /^# .* — version (\S+)$/gm;
-const PHRASE_MARQUEUR = /^Un champ absent de la charge est rendu par le mot `([^`]+)`/gm;
+/**
+ * La phrase qui déclare le marqueur : « Un champ [facultatif] absent de la charge [(précision, sur
+ * plusieurs lignes)] est rendu par le mot `…` ». Les deux formes : prompt avant et après la 0.24.
+ */
+const PHRASE_MARQUEUR = /^Un champ (?:facultatif )?absent de la charge(?:\s*\([^)]*\))?\s+est rendu par le mot `([^`]+)`/gm;
 /** Une ligne du tableau des variables : `| \`{variable}\` | champ | rendu |`. */
 const LIGNE_VARIABLE = /^\| `\{([a-z_]+(?:\.[a-z_]+)*)\}` \|[^|\n]*\|([^\n]*)\|$/gm;
 /** Le premier bloc ```text de la section « ## Texte du prompt », avant tout autre bloc ou titre. */

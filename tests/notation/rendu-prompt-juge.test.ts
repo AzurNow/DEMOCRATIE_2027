@@ -281,6 +281,17 @@ describe("champ absent : le marqueur que déclare le prompt, sur ses seuls champ
     expect(reel).toContain("- Citations jointes par l'outil : ABSENT\n");
   });
 
+  it("la phrase du marqueur sous sa forme 0.24 (« facultatif », précision entre parenthèses sur deux lignes) est reconnue", () => {
+    const forme024 = source().replace(
+      "Un champ absent de la charge est rendu par le mot",
+      "Un champ facultatif absent de la charge (`question.premisse_fausse` hors formulation orientée,\n`reponse.citations` quand l'outil n'en joint pas) est rendu par le mot",
+    );
+    expect(forme024).not.toBe(source());
+    const rendu = rendrePromptJuge(forme024, charge(demandeNeutreSansCitations()));
+    expect(ligne(rendu, "PREMISSE")).toBe("ABSENT");
+    expect(ligne(rendu, "CITATIONS")).toBe("ABSENT");
+  });
+
   it("un champ que le prompt ne déclare pas optionnel, absent : refus nommé champ_absent", () => {
     const c = charge();
     const { texte: _texte, ...question } = c.question;
