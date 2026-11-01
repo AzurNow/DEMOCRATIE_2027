@@ -21,6 +21,8 @@
  *    fixtures, validés contre `schema/item.schema.json`, et chacun doit porter l'identifiant, la
  *    version et l'empreinte qu'épingle sa question (`ItemEpingleIntrouvable` sinon), comme
  *    `lireItemsEpingles` l'exige au commit du gel pour un vrai run.
+ *    Chaque réponse est préparée par `preparation.ts:preparerANoter`, la fonction que la notation
+ *    humaine emploie aussi (constat 21, D18).
  * 5. **Notation** (`noterRun`), puis **bilan** relu du disque (`bilan-notation.ts`).
  *
  * Les paramètres (`notation-simulee.json` des fixtures) sont lus et contrôlés à la frontière :
@@ -41,10 +43,11 @@ import type { ReponseEcrite, ReponseObtenue } from "../interrogation/types.ts";
 import type { EntreeTirage, Question } from "../questions/types.ts";
 import { bilanNotation, type BilanNotation } from "./bilan-notation.ts";
 import { noterRun, type EnvironnementChaine, type ReponseANoter, type ResultatChaine } from "./chaine.ts";
-import { resolusAuGel, type ResoluAuGel } from "./charge-juge.ts";
+import { resolusAuGel } from "./charge-juge.ts";
 import { fournisseurSimule, type TexteSimule } from "./fournisseur-simule.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import { CHAMPS_DU_TEST } from "./inscription-contrefactuel.ts";
+import { interrogesDuRun, preparerANoter, type GelDeNotation } from "./preparation.ts";
 import { jugesSimules, type BiaisSimule, type JugeSimuleDeclare, type ParametresJugeSimule } from "./juge-simule.ts";
 import type { ExistenceEtablie } from "./vue-annotateur.ts";
 
@@ -153,13 +156,14 @@ function lireReponsesANoter(repertoire_run: string, repertoire_items: string): r
   const disposition = dispositionRunNote(repertoire_run);
   const questions = lireQuestions(disposition.questions);
   const items = lireItemsDesFixtures(questions, repertoire_items);
-  const parId = new Map(questions.map((q) => [q.id, q]));
   // `lireTirage` a validé tirage.json contre son schéma, qui exige reponse_attendue et premisse_fausse de chaque entrée.
   const resolus = resolusAuGel(lireTirage(repertoire_run, run).entrees as unknown as readonly EntreeTirage[]);
+  const gel: GelDeNotation = { questions: new Map(questions.map((q) => [q.id, q])), items, resolus, interroges: interrogesDuRun(run) };
   const obtenue = (r: ReponseEcrite): r is ReponseObtenue => estDuRun(r) && r.statut_reponse === "obtenue";
+  // La préparation partagée avec la notation humaine (constat 21, D18) : items des seuls interrogés (§7, D56 (1)).
   return lireDossier<ReponseEcrite>(disposition.reponses, "reponse", run.id)
     .filter(obtenue)
-    .map((reponse) => reponseANoter(reponse, parId, items, resolus));
+    .map((reponse) => preparerANoter(reponse, gel));
 }
 
 function lireQuestions(chemin: string): readonly Question[] {
@@ -181,27 +185,6 @@ function lireItemsDesFixtures(questions: readonly Question[], repertoire_items: 
     items.set(item.id, item);
   }
   return items;
-}
-
-function reponseANoter(
-  reponse: ReponseObtenue,
-  questions: ReadonlyMap<string, Question>,
-  items: ReadonlyMap<string, Item>,
-  resolus: ReadonlyMap<string, ResoluAuGel>,
-): ReponseANoter {
-  const question = questions.get(reponse.question_id);
-  const formulation = question?.formulations.find((f) => f.id === reponse.formulation_id);
-  if (question === undefined || formulation === undefined) {
-    throw new ParametresSimulesInvalides(reponse.id, `question ${reponse.question_id} ou formulation ${reponse.formulation_id} absente de questions.json.`);
-  }
-  const resolu_au_gel = resolus.get(question.id);
-  if (resolu_au_gel === undefined) throw new ParametresSimulesInvalides(reponse.id, `question ${question.id} absente du tirage du run.`);
-  const references = question.items.map(({ reference, role }) => {
-    const item = items.get(reference.item_id);
-    if (item === undefined) throw new ItemEpingleIntrouvable(reference, "absent des items lus");
-    return { item, role };
-  });
-  return { reponse, question: { gabarit: question.gabarit, registre: formulation.registre, texte: formulation.texte }, references, resolu_au_gel };
 }
 
 /* ------------------------------------------------------------------ paramètres */

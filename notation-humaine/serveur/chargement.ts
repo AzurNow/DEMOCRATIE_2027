@@ -21,6 +21,7 @@ import { exigerNotable } from "../../pipeline/notation/chaine.ts";
 import { citationsDeReference, type TextesDeVerification } from "../../pipeline/notation/extrait.ts";
 import { tirerJeuOr, type JeuOr } from "../../pipeline/notation/echantillons.ts";
 import { resolusAuGel, type QuestionPosee, type ReferenceSoumise, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
+import { interrogesDuRun, preparerANoter, type GelDeNotation } from "../../pipeline/notation/preparation.ts";
 import type { RunDeNotation } from "../../pipeline/notation/types.ts";
 import type { PerimetreDeNotation } from "../../pipeline/notation/notation-humaine.ts";
 import type { EntreeTirage, Question } from "../../pipeline/questions/types.ts";
@@ -79,31 +80,15 @@ function lireItems(questions: readonly Question[], run: RunLu, repertoire_items:
   return new Map(items.map((item) => [item.id, item]));
 }
 
-function referencesDe(question: Question, items: ReadonlyMap<string, Item>): readonly ReferenceSoumise[] {
-  return question.items.map(({ reference, role }) => {
-    const item = items.get(reference.item_id);
-    if (item === undefined) throw new RunSansDonnee(`la question ${question.id} épingle l'item ${reference.item_id}, introuvable au gel.`);
-    return { item, role };
-  });
-}
-
-function preparer(reponse: ReponseObtenue, questions: ReadonlyMap<string, Question>, items: ReadonlyMap<string, Item>, resolus: ReadonlyMap<string, ResoluAuGel>): ReponsePreparee {
-  const question = questions.get(reponse.question_id);
-  if (question === undefined) throw new RunSansDonnee(`la réponse ${reponse.id} porte sur la question ${reponse.question_id}, absente de questions.json.`);
-  const formulation = question.formulations.find((f) => f.id === reponse.formulation_id);
-  if (formulation === undefined) throw new RunSansDonnee(`la réponse ${reponse.id} porte sur la formulation ${reponse.formulation_id}, absente de la question ${question.id}.`);
-  const resolu_au_gel = resolus.get(question.id);
-  if (resolu_au_gel === undefined) throw new RunSansDonnee(`la réponse ${reponse.id} porte sur la question ${question.id}, absente du tirage du run.`);
-  const references = referencesDe(question, items);
-  const itemsDeLaReponse = references.map((r) => r.item);
-  return {
-    reponse,
-    question: { gabarit: question.gabarit, registre: formulation.registre, texte: formulation.texte },
-    references,
-    resolu_au_gel,
-    items: itemsDeLaReponse,
-    textes: { reponse: reponse.normalise.texte, citations_reference: citationsDeReference(itemsDeLaReponse) },
-  };
+/**
+ * La préparation du juge (`pipeline/notation/preparation.ts`, constat 21, D18), complétée de ce que
+ * la vue et le contrôle d'une notation lisent : les items des références et les textes du contrôle
+ * de l'extrait. Rien n'est préparé ici à part : l'humain voit les références que reçoit le juge.
+ */
+export function preparerPourHumain(reponse: ReponseObtenue, gel: GelDeNotation): ReponsePreparee {
+  const prep = preparerANoter(reponse, gel);
+  const items = prep.references.map((r) => r.item);
+  return { ...prep, items, textes: { reponse: reponse.normalise.texte, citations_reference: citationsDeReference(items) } };
 }
 
 function lireReponsesObtenues(repertoire_run: string, run_id: string): readonly ReponseObtenue[] {
@@ -120,16 +105,17 @@ export function chargerRun(repertoire_run: string, repertoire_items: string): Do
   const chemin_questions = dispositionRunNote(repertoire_run).questions;
   const questions = lireQuestions(chemin_questions);
   const items = lireItems(questions, run, repertoire_items, chemin_questions);
-  const parId = new Map(questions.map((q) => [q.id, q]));
   // `lireTirage` a validé tirage.json contre son schéma, qui exige reponse_attendue et premisse_fausse de chaque entrée.
   const resolus = resolusAuGel(lireTirage(repertoire_run, run).entrees as unknown as readonly EntreeTirage[]);
-  const reponses = lireReponsesObtenues(repertoire_run, run.id).map((r) => preparer(r, parId, items, resolus));
+  const interroges = interrogesDuRun(run);
+  const gel: GelDeNotation = { questions: new Map(questions.map((q) => [q.id, q])), items, resolus, interroges };
+  const reponses = lireReponsesObtenues(repertoire_run, run.id).map((r) => preparerPourHumain(r, gel));
   const run_note = runDeNotationDe(run);
   return {
     repertoire_run,
     run,
     run_note,
-    perimetre: { candidats: run_note.candidats, interroges: run.perimetre.candidats.filter((c) => c.interroge).map((c) => c.candidat_id) },
+    perimetre: { candidats: run_note.candidats, interroges: [...interroges] },
     jeu_or: run.type_run === TYPE_PILOTE ? tirerJeuOr(reponses.map((r) => r.reponse.id), run_note.graines.echantillon_humain) : null,
     reponses,
   };
