@@ -7,8 +7,10 @@
  * comme dans les écrans de validation des items.
  */
 
-import { api, EchecApi } from "./api.ts";
+import { api } from "./api.ts";
 import { elementParId } from "./dom-type.ts";
+import { messagesDErreur } from "./erreurs.ts";
+import { lancer } from "./signalement.ts";
 import { actionsPermises, etatInitial, libellePremisse, relectureDe, type EtatCases } from "./cases-formulations.ts";
 import type { ResumeFormulations, VueFormulations } from "./types.ts";
 
@@ -57,7 +59,7 @@ function tableau(questions: readonly ResumeFormulations[], retour: () => void): 
       texte("td", question.mesure),
     );
     const cellule = element("td");
-    cellule.append(bouton("Relire", () => void ouvrirQuestion(question.question_id, retour)));
+    cellule.append(bouton("Relire", () => lancer(ouvrirQuestion(question.question_id, retour))));
     ligne.append(cellule);
     table.append(ligne);
   }
@@ -147,9 +149,9 @@ function champCommentaire(relecture: Relecture): HTMLElement {
 
 function actions(relecture: Relecture): HTMLElement {
   const bloc = element("div", "actions-formulations");
-  const promouvoir = bouton("Promouvoir les trois formulations", () => void envoyer("promouvoir", relecture));
+  const promouvoir = bouton("Promouvoir les trois formulations", () => lancer(envoyer("promouvoir", relecture)));
   promouvoir.id = "bouton-promouvoir";
-  const refuser = bouton("Refuser la proposition", () => void envoyer("refuser", relecture));
+  const refuser = bouton("Refuser la proposition", () => lancer(envoyer("refuser", relecture)));
   refuser.id = "bouton-refuser";
   bloc.append(promouvoir, refuser);
   appliquer(actionsPermises(relecture.etat), promouvoir, refuser);
@@ -184,14 +186,11 @@ async function envoyer(action: "promouvoir" | "refuser", relecture: Relecture): 
 /* ------------------------------------------------------------ fabriques */
 
 function retourALaListe(retour: () => void): HTMLButtonElement {
-  return bouton("Retour à la liste", () => void ouvrirRelectureFormulations(retour));
+  return bouton("Retour à la liste", () => lancer(ouvrirRelectureFormulations(retour)));
 }
 
 function messageDEchec(echec: unknown): string {
-  if (!(echec instanceof EchecApi)) return String(echec);
-  const corps = echec.corps as { erreur?: unknown } | null;
-  const erreur = corps === null ? undefined : corps.erreur;
-  return `Erreur ${echec.statut} : ${typeof erreur === "string" ? erreur : JSON.stringify(echec.corps)}`;
+  return messagesDErreur(echec).join(" ; ");
 }
 
 function element(balise: string, classe?: string): HTMLElement {

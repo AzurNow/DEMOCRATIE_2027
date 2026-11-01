@@ -12,6 +12,8 @@ import { elementFacultatif, elementParId } from "./dom-type.ts";
 import { champsEditables, corrections, type ChampEditable } from "./edition.ts";
 import { CLES_GRILLE } from "../domaine/grille.ts";
 import { ouvrirRelectureFormulations } from "./formulations.ts";
+import { brancherAlerte, lancer } from "./signalement.ts";
+import { messagesDErreur } from "./erreurs.ts";
 import { rendreSource } from "./source.ts";
 import type {
   Brouillon,
@@ -73,7 +75,8 @@ async function demarrer(): Promise<void> {
   elementParId("fermer-aide", HTMLButtonElement).addEventListener("click", () =>
     elementParId("aide", HTMLDialogElement).close(),
   );
-  void rendreAccueil();
+  brancherAlerte();
+  await rendreAccueil();
 }
 
 function rendreBandeau(fil: string, avancement: string): void {
@@ -120,7 +123,7 @@ function accesFormulations(): HTMLElement {
   bouton.textContent = "Relire les formulations";
   bouton.addEventListener("click", () => {
     rendreBandeau("Formulations", "");
-    void ouvrirRelectureFormulations(() => void rendreAccueil());
+    lancer(ouvrirRelectureFormulations(() => lancer(rendreAccueil())));
   });
   section.append(bouton);
   return section;
@@ -157,7 +160,7 @@ function celluleAction(lot: Session["lots"][number]): HTMLElement {
   const bouton = element("button") as HTMLButtonElement;
   bouton.textContent = lot.progression.termine ? "Voir le bilan" : "Reprendre";
   bouton.addEventListener("click", () => {
-    void ouvrirLot(lot.lot_id);
+    lancer(ouvrirLot(lot.lot_id));
   });
   cellule.append(bouton);
   return cellule;
@@ -193,7 +196,7 @@ async function traiterEchecItem(lot_id: string, echec: unknown): Promise<void> {
     await ouvrirLot(lot_id);
     return;
   }
-  etat.message = `Erreur ${detail.statut ?? "?"} : ${JSON.stringify(detail.corps)}`;
+  etat.message = messagesDErreur(echec).join(" ; ");
   await rendreAccueil();
 }
 
@@ -500,7 +503,7 @@ function blocConfirmation(vue: VueItem): HTMLElement {
   const bouton = element("button") as HTMLButtonElement;
   bouton.textContent = `Confirmer « ${etat.decision} » (Entrée)`;
   bouton.addEventListener("click", () => {
-    void soumettre();
+    lancer(soumettre());
   });
   bloc.append(bouton);
   return bloc;
@@ -590,7 +593,7 @@ async function soumettre(): Promise<void> {
   try {
     await api.decider(charge);
   } catch (echec) {
-    etat.message = messageDEchec(echec);
+    etat.message = messagesDErreur(echec).join(" ; ");
     rendreItem();
     return;
   }
@@ -630,17 +633,6 @@ function grilleComplete(prefixe: string | null): Record<string, boolean | null> 
   return grille;
 }
 
-function messageDEchec(echec: unknown): string {
-  const detail = echec as { statut?: number; corps?: { manquements?: unknown; refus?: unknown } };
-  if (detail.corps?.refus !== undefined) {
-    return `Correction refusée : ${JSON.stringify(detail.corps.refus)}`;
-  }
-  if (detail.corps?.manquements !== undefined) {
-    return `Décision incomplète : ${JSON.stringify(detail.corps.manquements)}`;
-  }
-  return `Erreur ${detail.statut ?? "?"}`;
-}
-
 /* ------------------------------------------------------------ fin de lot */
 
 async function rendreFinDeLot(lot_id: string): Promise<void> {
@@ -663,7 +655,7 @@ async function rendreFinDeLot(lot_id: string): Promise<void> {
   const retour = element("button") as HTMLButtonElement;
   retour.textContent = "Retour aux lots";
   retour.addEventListener("click", () => {
-    void rendreAccueil();
+    lancer(rendreAccueil());
   });
   bloc.append(retour);
   ecran().replaceChildren(bloc);
@@ -728,7 +720,7 @@ function auClavier(evenement: KeyboardEvent): void {
   }
   if (evenement.ctrlKey && evenement.key.toLowerCase() === "z") {
     evenement.preventDefault();
-    void annulerDerniere();
+    lancer(annulerDerniere());
     return;
   }
   if (etat.vue === null) return;
@@ -752,7 +744,7 @@ function traiterToucheItem(evenement: KeyboardEvent): void {
   }
   if (touche === raccourcis.touche_confirmation && etat.decision !== null) {
     evenement.preventDefault();
-    void soumettre();
+    lancer(soumettre());
     return;
   }
   traiterNavigation(evenement);
@@ -797,8 +789,8 @@ async function annulerDerniere(): Promise<void> {
     const resultat = await api.annuler(etat.lot_id);
     etat.message = `Décision annulée. Une entrée d'annulation a été ajoutée au journal ; l'ancienne y reste.`;
     await ouvrirItem(etat.lot_id, resultat.item_id);
-  } catch {
-    etat.message = "Aucune décision à annuler dans ce lot.";
+  } catch (echec) {
+    etat.message = messagesDErreur(echec).join(" ; ");
     rendreItem();
   }
 }
@@ -834,7 +826,8 @@ function enregistrerBrouillon(): void {
   if (vue === null) return;
   window.clearTimeout(minuterieBrouillon);
   minuterieBrouillon = window.setTimeout(() => {
-    void api.ecrireBrouillon({
+    lancer(
+      api.ecrireBrouillon({
       item_id: vue.item.id,
       lot_id: vue.lot_id,
       reponses: Object.fromEntries([...etat.reponses].filter(([cle]) => !cle.includes("."))),
@@ -846,7 +839,9 @@ function enregistrerBrouillon(): void {
       commentaire: etat.commentaire,
       duree_affichage_ms: Math.round(performance.now() - etat.chrono.debut),
       duree_active_ms: Math.round(dureeActive()),
-    });
+    }),
+      "Brouillon non enregistré",
+    );
   }, 400);
 }
 
@@ -955,6 +950,6 @@ function ligneEntetes(textes: readonly string[]): HTMLElement {
   return ligne;
 }
 
-void demarrer();
+lancer(demarrer());
 
 export { urlSource };
