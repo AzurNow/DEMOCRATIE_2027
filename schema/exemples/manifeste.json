@@ -2701,14 +2701,22 @@
       "fichier": "run/invalide-55-moins-de-deux-interroges-avec-deux-interroges.json",
       "attendu": "invalide",
       "motif": "Copie de valide-11 dont cand-b est de nouveau interrogé : le motif moins_de_deux_interroges est publié alors que deux candidats sont interrogés au périmètre. Le schéma recoupe le motif avec perimetre.candidats[].interroge.",
-      "regle_protocole": "§7 (protocole 0.21), test contrefactuel : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini » ; §12"
+      "regle_protocole": "§7 (protocole 0.21), test contrefactuel : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini » ; §12",
+      "erreur_visee": {
+        "keyword": "contains",
+        "instance_path": "/perimetre/candidats"
+      }
     },
     {
       "objet": "run",
       "fichier": "run/invalide-56-moins-de-deux-interroges-avec-derangement.json",
       "attendu": "invalide",
       "motif": "Copie de valide-11 dont le bloc publie aussi des correspondances : un test non joué faute de deux candidats interrogés n'a pas de dérangement.",
-      "regle_protocole": "§7 (protocole 0.21), test contrefactuel : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini » ; §12"
+      "regle_protocole": "§7 (protocole 0.21), test contrefactuel : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini » ; §12",
+      "erreur_visee": {
+        "keyword": "false schema",
+        "instance_path": "/contrefactuel_candidats/correspondances"
+      }
     },
     {
       "objet": "notation",
