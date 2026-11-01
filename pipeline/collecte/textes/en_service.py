@@ -8,12 +8,12 @@ version, options). Python le lit ici pour écrire les entrées de `pnpm extraire
 relit (`pipeline/extraction/epinglage-en-service.ts`) et refuse toute entrée d'un autre épinglage,
 qu'une fiche plus récente existe ou non (D56 (3)).
 
-La version d'un extracteur est soit écrite en clair (pymupdf, épinglé aussi par `uv.lock`), soit
-`{"interpreteur": "python"}` : `html.parser` et `webvtt` n'ont d'autre version que celle de Python
-qui les exécute, et aucun fichier du dépôt n'épingle le correctif de Python (`.python-version` dit
-« 3.12 »). Elle se lit alors à l'exécution, comme dans les fiches. Conséquence voulue : un correctif
-de Python différent entre `pnpm textes` et `pnpm extraction:entrees` rend un épinglage qu'aucune
-fiche ne porte, et la source est refusée (`AucunTexteEpingle`), jamais repliée sur l'ancienne fiche.
+La version d'un extracteur est toujours écrite en clair. Pour pymupdf, c'est celle qu'épingle aussi
+`uv.lock` ; pour `html.parser` et `webvtt`, qui n'ont d'autre version que celle de Python qui les
+exécute, c'est le correctif de Python épinglé par `.python-version` (l'ancienne forme
+`{"interpreteur": "python"}`, résolue à l'exécution, est retirée et refusée comme non conforme).
+Conséquence voulue : `pnpm textes` lancé sous un autre correctif inscrit dans ses fiches une version
+qu'aucune entrée n'épingle, et la source est refusée (`AucunTexteEpingle`), jamais repliée.
 
 Le fichier dit ce qui est en service ; chaque module (`pdf.py`, `page_html.py`,
 `transcription_vtt.py`) inscrit dans ses fiches ce qu'il a réellement exécuté. Leur accord est testé
@@ -27,7 +27,6 @@ n'est pas du JSON ou dont la forme diffère lève `EpinglageIllisible` : aucune 
 from __future__ import annotations
 
 import json
-import platform
 from pathlib import Path
 
 from pipeline.collecte.textes.extraction import GENRE_HTML, GENRE_PDF, GENRE_TRANSCRIPTION, genre_de
@@ -36,7 +35,6 @@ from pipeline.collecte.textes.fiche import Extracteur
 CHEMIN_EPINGLAGE = Path(__file__).resolve().with_name("epinglage.json")
 GENRES_EPINGLES = frozenset({GENRE_PDF, GENRE_HTML, GENRE_TRANSCRIPTION})
 CLES_DECLARATION = frozenset({"outil", "version", "options"})
-VERSION_INTERPRETEUR = {"interpreteur": "python"}
 
 
 class EpinglageIllisible(Exception):
@@ -48,11 +46,9 @@ def _non_conforme(chemin: Path, detail: str) -> EpinglageIllisible:
 
 
 def _version(chemin: Path, genre: str, version: object) -> str:
-    if version == VERSION_INTERPRETEUR:
-        return platform.python_version()
     if isinstance(version, str) and version != "":
         return version
-    raise _non_conforme(chemin, f"{genre}.version doit être une chaîne non vide ou {json.dumps(VERSION_INTERPRETEUR)}")
+    raise _non_conforme(chemin, f"{genre}.version doit être une chaîne non vide")
 
 
 def _extracteur(chemin: Path, genre: str, declaration: object) -> Extracteur:
@@ -78,7 +74,7 @@ def _lire_json(chemin: Path) -> object:
 
 
 def lire_epinglage(chemin: Path = CHEMIN_EPINGLAGE) -> dict[str, Extracteur]:
-    """L'extracteur en service de chaque genre, versions d'interpréteur résolues."""
+    """L'extracteur en service de chaque genre, tel que le fichier le déclare."""
     contenu = _lire_json(chemin)
     if not isinstance(contenu, dict) or set(contenu) != GENRES_EPINGLES:
         raise _non_conforme(chemin, f"un objet aux genres exactement {sorted(GENRES_EPINGLES)} est attendu")

@@ -9,14 +9,22 @@
  *    et l'autre est annulé. Un échec de transport, ou un délai écoulé sans réponse (l'envoi est
  *    alors interrompu), n'écrit rien et compte comme échec de transport : seule une réponse HTTP
  *    reçue s'écrit (règle 7) ;
- * 3. l'empreinte des octets du corps est prise avant toute lecture ; le corps est lu tel quel —
- *    objet JSON dans `brut`, sinon texte UTF-8 dans `brut_texte` ; un corps qui n'est pas de
- *    l'UTF-8 valide lève `CorpsNonUtf8` et arrête la commande sans rien écrire (même règle que
- *    l'interrogation) ;
+ * 3. les octets du corps sont gardés tels quels, avant toute lecture, sous
+ *    `octets-recus/<question_id>/<id>.octets` (`staging.ts:garderOctetsRecus`, D55 (5), constat 24
+ *    du 2026-10-17) ; leur empreinte est prise, puis le corps est lu tel quel — objet JSON dans
+ *    `brut`, sinon texte UTF-8 dans `brut_texte` ;
  * 4. issue : statut hors 2xx ⇒ `echec_http`, rien contrôlé ; 2xx dont l'enveloppe ne donne pas le
  *    texte du modèle ⇒ `rejetee`, `corps_illisible` ; sinon le texte du modèle passe le contrôle
  *    déterministe (`controle.ts`) ⇒ `acceptee`, sortie recopiée, ou `rejetee` avec son motif ;
  * 5. la proposition est validée contre son schéma, puis écrite une fois.
+ *
+ * Une réponse reçue (donc payée) que le banc ne peut pas stocker — corps qui n'est pas de l'UTF-8
+ * valide (`CorpsNonUtf8`), proposition hors schéma (`ErreurSchema`), toute autre erreur entre la
+ * garde des octets et l'écriture — n'est pas réparée : aucune proposition n'est écrite, la cause est
+ * consignée à côté des octets (`consignerNonStockee`) et signalée, et la commande passe à la question
+ * suivante (même règle que l'interrogation, `recue_non_stockee`). À la relance, des octets gardés
+ * sans proposition du même identifiant (`recuesNonStockees`) retirent la question des appels : elle
+ * attend l'opérateur, jamais un second paiement.
  *
  * Le plafond borne le nombre d'envois, échecs de transport compris : atteint, la commande s'arrête
  * proprement et compte les questions restées sans appel.
@@ -37,7 +45,7 @@ import type { Tache } from "./entrees.ts";
 import { rendrePrompt, VERSION_PROMPT_REFORMULATION } from "./prompt.ts";
 import type { ClePromotion } from "./relecture.ts";
 import { deciderReprise, type DecisionReprise, type EtatQuestion } from "./reprise.ts";
-import { ecrireProposition, lirePropositions } from "./staging.ts";
+import { consignerNonStockee, ecrireProposition, garderOctetsRecus, lirePropositions, recuesNonStockees } from "./staging.ts";
 import type { CorpsStocke, IssueProposition, MotifProposition, PropositionFormulation } from "./staging.ts";
 
 export interface ContexteExecution {
@@ -71,6 +79,10 @@ export interface Bilan {
   readonly sautees_deja_acceptees: number;
   readonly sautees_deja_validees: number;
   readonly non_appelees_plafond: number;
+  /** Réponses reçues dans ce passage, octets gardés, sans proposition écrite. */
+  readonly recues_non_stockees: number;
+  /** Questions non appelées : une réponse déjà reçue n'a pas été stockée, elle attend l'opérateur. */
+  readonly en_attente_operateur: number;
   /** Chemins écrits, dans l'ordre. */
   readonly ecrits: readonly string[];
 }
@@ -83,10 +95,17 @@ export interface EtatReprise {
   readonly refus: ReadonlySet<string>;
 }
 
+/** Une question dont une réponse reçue n'a pas été stockée : ses octets gardés, à examiner. */
+export interface EnAttenteOperateur {
+  readonly question_id: string;
+  readonly octets: readonly string[];
+}
+
 export interface Triage {
   readonly a_appeler: readonly Tache[];
   readonly deja_acceptees: number;
   readonly deja_validees: number;
+  readonly en_attente_operateur: readonly EnAttenteOperateur[];
 }
 
 function decisionPour(tache: Tache, staging: string, reprise: EtatReprise): DecisionReprise {
@@ -102,10 +121,15 @@ function decisionPour(tache: Tache, staging: string, reprise: EtatReprise): Deci
 /** Lit tout l'état de reprise avant le premier appel : un fichier illisible arrête tout ici. */
 export function trier(taches: readonly Tache[], staging: string, reprise: EtatReprise): Triage {
   const decisions = taches.map((tache) => ({ tache, decision: decisionPour(tache, staging, reprise) }));
+  const a_reprendre = decisions.filter((entree) => entree.decision === "a_appeler").map((entree) => entree.tache);
+  const attentes = a_reprendre.map((tache) => ({ tache, octets: recuesNonStockees(staging, tache.question.id) }));
   return {
-    a_appeler: decisions.filter((entree) => entree.decision === "a_appeler").map((entree) => entree.tache),
+    a_appeler: attentes.filter((entree) => entree.octets.length === 0).map((entree) => entree.tache),
     deja_acceptees: decisions.filter((entree) => entree.decision === "deja_acceptee").length,
     deja_validees: decisions.filter((entree) => entree.decision === "deja_validee").length,
+    en_attente_operateur: attentes
+      .filter((entree) => entree.octets.length > 0)
+      .map((entree) => ({ question_id: entree.tache.question.id, octets: entree.octets })),
   };
 }
 
@@ -141,6 +165,8 @@ function corpsStocke(contenu: Contenu): CorpsStocke {
 interface Reception {
   readonly reponse: ReponseHttp;
   readonly instant: number;
+  /** L'identifiant de la proposition, et le nom des octets gardés. */
+  readonly id: string;
 }
 
 function propositionDe(tache: Tache, reception: Reception, adaptateur: AdaptateurReformulation, contexte: ContexteExecution): PropositionFormulation {
@@ -148,7 +174,7 @@ function propositionDe(tache: Tache, reception: Reception, adaptateur: Adaptateu
   const contenu = lireContenu(reception.reponse);
   const { texte_neutre: _envoye_a_part, ...demande } = variablesDuPrompt(tache.demande);
   return {
-    id: ulid(reception.instant),
+    id: reception.id,
     question_id: tache.question.id,
     texte_neutre: tache.question.texte_neutre,
     empreinte_texte_neutre: sha256(tache.question.texte_neutre),
@@ -167,7 +193,10 @@ function propositionDe(tache: Tache, reception: Reception, adaptateur: Adaptateu
 
 /* ------------------------------------------------------------------ appels */
 
-type IssueAppel = { readonly genre: "ecrite"; readonly chemin: string; readonly issue: IssueProposition } | { readonly genre: "transport" };
+type IssueAppel =
+  | { readonly genre: "ecrite"; readonly chemin: string; readonly issue: IssueProposition }
+  | { readonly genre: "transport" }
+  | { readonly genre: "non_stockee" };
 
 type Envoi =
   | { readonly genre: "http"; readonly reponse: ReponseHttp }
@@ -233,14 +262,39 @@ async function recevoir(tache: Tache, contexte: ContexteExecution): Promise<Rece
     contexte.signaler(`Question ${tache.question.id} : ${issue} Aucun fichier écrit.`);
     return null;
   }
-  return { reponse: issue, instant: contexte.maintenant() };
+  const instant = contexte.maintenant();
+  return { reponse: issue, instant, id: ulid(instant) };
+}
+
+/** Lit, contrôle et écrit la proposition d'une réponse dont les octets sont déjà gardés. */
+function stocker(tache: Tache, reception: Reception, contexte: ContexteExecution): IssueAppel {
+  const proposition = propositionDe(tache, reception, contexte.editeur.adaptateur, contexte);
+  return { genre: "ecrite", chemin: ecrireProposition(contexte.staging, proposition), issue: proposition.issue };
+}
+
+/**
+ * La réponse est reçue et ses octets gardés, mais elle n'a pas pu être stockée : rien n'est réparé,
+ * la cause est consignée à côté des octets et signalée (D55 (5)). La question attend l'opérateur.
+ */
+function signalerNonStockee(tache: Tache, reception: Reception, chemin_octets: string, erreur: unknown, contexte: ContexteExecution): IssueAppel {
+  const cause = erreur instanceof Error ? `${erreur.name} : ${erreur.message}` : String(erreur);
+  consignerNonStockee(contexte.staging, tache.question.id, reception.id, cause);
+  contexte.signaler(
+    `Question ${tache.question.id} : réponse HTTP ${reception.reponse.statut} reçue et non stockée (${cause}). ` +
+      `Octets gardés tels quels sous ${chemin_octets} ; aucune proposition écrite, la question ne sera pas rappelée.`,
+  );
+  return { genre: "non_stockee" };
 }
 
 async function appeler(tache: Tache, contexte: ContexteExecution): Promise<IssueAppel> {
   const reception = await recevoir(tache, contexte);
   if (reception === null) return { genre: "transport" };
-  const proposition = propositionDe(tache, reception, contexte.editeur.adaptateur, contexte);
-  return { genre: "ecrite", chemin: ecrireProposition(contexte.staging, proposition), issue: proposition.issue };
+  const chemin_octets = garderOctetsRecus(contexte.staging, tache.question.id, reception.id, reception.reponse.corps);
+  try {
+    return stocker(tache, reception, contexte);
+  } catch (erreur) {
+    return signalerNonStockee(tache, reception, chemin_octets, erreur, contexte);
+  }
 }
 
 /* ------------------------------------------------------------------- bilan */
@@ -251,6 +305,7 @@ interface Compteurs {
   readonly rejetees: Map<MotifProposition, number>;
   echecs_http: number;
   echecs_transport: number;
+  recues_non_stockees: number;
   readonly ecrits: string[];
 }
 
@@ -272,12 +327,26 @@ function compterIssue(compteurs: Compteurs, issue: IssueProposition): void {
 
 function compter(compteurs: Compteurs, issue: IssueAppel): void {
   compteurs.appels += 1;
-  if (issue.genre === "transport") {
-    compteurs.echecs_transport += 1;
-    return;
+  switch (issue.genre) {
+    case "transport":
+      compteurs.echecs_transport += 1;
+      return;
+    case "non_stockee":
+      compteurs.recues_non_stockees += 1;
+      return;
+    case "ecrite":
+      compteurs.ecrits.push(issue.chemin);
+      compterIssue(compteurs, issue.issue);
   }
-  compteurs.ecrits.push(issue.chemin);
-  compterIssue(compteurs, issue.issue);
+}
+
+/** Ce que l'opérateur doit faire d'une question dont une réponse reçue n'a pas été stockée. */
+function messageAttente(attente: EnAttenteOperateur): string {
+  return (
+    `Question ${attente.question_id} : non appelée, une réponse déjà reçue (et payée) n'a pas été stockée — ` +
+    `octets gardés : ${attente.octets.join(", ")}. Action de l'opérateur requise : examiner ces octets et leur ` +
+    `cause (.cause.txt à côté) ; pour autoriser un nouvel appel, déplacer ces fichiers hors du staging, à la main.`
+  );
 }
 
 function plafondAtteint(compteurs: Compteurs, plafond: number | null): boolean {
@@ -286,7 +355,8 @@ function plafondAtteint(compteurs: Compteurs, plafond: number | null): boolean {
 
 /** Appelle chaque question triée, dans l'ordre, jusqu'au plafond. */
 export async function executer(triage: Triage, contexte: ContexteExecution): Promise<Bilan> {
-  const compteurs: Compteurs = { appels: 0, acceptees: 0, rejetees: new Map(), echecs_http: 0, echecs_transport: 0, ecrits: [] };
+  const compteurs: Compteurs = { appels: 0, acceptees: 0, rejetees: new Map(), echecs_http: 0, echecs_transport: 0, recues_non_stockees: 0, ecrits: [] };
+  triage.en_attente_operateur.forEach((attente) => contexte.signaler(messageAttente(attente)));
   let rang = 0;
   for (const tache of triage.a_appeler) {
     if (plafondAtteint(compteurs, contexte.plafond)) break;
@@ -298,5 +368,6 @@ export async function executer(triage: Triage, contexte: ContexteExecution): Pro
     sautees_deja_acceptees: triage.deja_acceptees,
     sautees_deja_validees: triage.deja_validees,
     non_appelees_plafond: triage.a_appeler.length - rang,
+    en_attente_operateur: triage.en_attente_operateur.length,
   };
 }

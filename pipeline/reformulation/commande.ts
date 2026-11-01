@@ -26,7 +26,9 @@
  * - 1 : refus de partir ou erreur, avant ou pendant les appels ;
  * - 2 : la commande est allée au bout, bilan imprimé en entier, mais au moins un appel a fini en
  *   échec de transport (délai dépassé compris) ou en échec HTTP : des questions restent sans
- *   proposition lisible et seront rappelées au prochain passage.
+ *   proposition lisible et seront rappelées au prochain passage ; ou bien une réponse reçue n'a pas
+ *   été stockée (octets gardés sous `octets-recus/`), dans ce passage ou un précédent : la question
+ *   attend l'opérateur et ne sera pas rappelée (D55 (5)).
  */
 
 import { join, resolve } from "node:path";
@@ -159,7 +161,9 @@ function lignesBilan(mode: Mode, total: number, bilan: Bilan): readonly string[]
     `  rejetées : ${nombre_rejetees}${detail.length === 0 ? "" : ` (${detail})`}`,
     `  échecs HTTP : ${bilan.echecs_http}`,
     `  échecs de transport : ${bilan.echecs_transport}`,
+    `  reçues et non stockées (octets gardés) : ${bilan.recues_non_stockees}`,
     `Questions non appelées, plafond atteint : ${bilan.non_appelees_plafond}`,
+    `Questions non appelées, en attente de l'opérateur (réponse reçue non stockée) : ${bilan.en_attente_operateur}`,
   ];
 }
 
@@ -189,11 +193,12 @@ async function derouler(argv: readonly string[], dependances: Dependances, impri
   return bilan;
 }
 
-/** Bilan complet, mais au moins un appel sans réponse HTTP 2xx (voir l'en-tête). */
+/** Bilan complet, mais au moins un appel sans réponse HTTP 2xx, ou une réponse non stockée (voir l'en-tête). */
 const CODE_ECHECS_APPEL = 2;
 
 function codeDuBilan(bilan: Bilan): number {
-  return bilan.echecs_transport > 0 || bilan.echecs_http > 0 ? CODE_ECHECS_APPEL : 0;
+  const echecs = [bilan.echecs_transport, bilan.echecs_http, bilan.recues_non_stockees, bilan.en_attente_operateur];
+  return echecs.some((nombre) => nombre > 0) ? CODE_ECHECS_APPEL : 0;
 }
 
 /** Retire la clé de tout texte imprimé, quelle que soit son origine. */

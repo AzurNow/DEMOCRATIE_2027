@@ -4,14 +4,20 @@
  * `checklist.json` conformes à leur schéma ; refus et idempotence.
  */
 
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { lireReponses, lireRunJson } from "../../analysis/lecture-run.ts";
+import { ReponseHorsPlan } from "../../analysis/seuils.ts";
 import type { Mode, Reponse } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
+import { ReponsesEnAttenteOperateur } from "../../pipeline/go-no-go/attente-operateur.ts";
 import type { Checklist } from "../../pipeline/go-no-go/checklist.ts";
 import { FormatMetriquesNonDefini, GoNoGoDivergent, GoNoGoRefuse, goNoGo } from "../../pipeline/go-no-go/go-no-go.ts";
+import { PlanNonReconstructible } from "../../pipeline/go-no-go/plan-du-run.ts";
+import { JournalRequete, nomJournal } from "../../pipeline/interrogation/journal.ts";
+import type { CleRequete } from "../../pipeline/interrogation/types.ts";
+import { ulid } from "../analysis/fabriques.ts";
 import { executerOutil } from "../aides/depot.ts";
 import { ecrireObjet, lireObjet, nettoyerReference, nettoyerRepertoires, runSimuleNote } from "./aides.ts";
 
@@ -266,6 +272,131 @@ describe("pnpm go-no-go, refus", () => {
       const avant = octets(run, "run.json");
       expect(() => goNoGo(run)).toThrow(FormatMetriquesNonDefini);
       expect(octets(run, "run.json")).toEqual(avant);
+    },
+    TEMPS,
+  );
+});
+
+describe("pnpm go-no-go : plan d'interrogation et attente de l'opérateur (§6, §8, §12, protocole 0.21)", () => {
+  function cleDeReponse(reponse: Reponse): CleRequete {
+    if (reponse.mode === undefined) throw new Error(`réponse ${reponse.id} sans mode`);
+    const { outil_id, question_id, formulation_id, echantillon } = reponse;
+    return { outil_id, question_id, mode: reponse.mode, formulation_id, echantillon };
+  }
+
+  function reponsesDuRun(run: string): readonly Reponse[] {
+    return lireReponses(run, lireRunJson(run).id).filter((r) => r.contexte === "run" && r.canal === "api");
+  }
+
+  function premiereManquante(run: string): Reponse {
+    const manquante = reponsesDuRun(run).find((r) => r.statut_reponse === "manquante");
+    if (manquante === undefined) throw new Error("le run simulé n'a aucune réponse manquante");
+    return manquante;
+  }
+
+  function retirerReponse(run: string, reponse: Reponse): void {
+    rmSync(join(run, "volume", "reponses", `${reponse.id}.json`));
+  }
+
+  /** Le journal de la requête, réécrit à neuf : une tentative reçue, non stockée (§6, D55 (5)). */
+  function journalNeuf(run: string, reponse: Reponse): JournalRequete {
+    const repertoire = join(run, "volume", "tentatives");
+    const cle = cleDeReponse(reponse);
+    rmSync(join(repertoire, nomJournal(cle)), { force: true });
+    const journal = new JournalRequete(repertoire, cle);
+    journal.inscrireDebut(1, "2026-12-01T06:00:00+01:00", cle);
+    return journal;
+  }
+
+  it(
+    "une manquante écrite retirée du volume, sans journal en attente : toujours comptée manquante, par_mode inchangé (dénominateur = plan)",
+    async () => {
+      const run = await runSimuleNote();
+      const avant = reponsesDuRun(run);
+      const manquante = premiereManquante(run);
+      if (manquante.mode === undefined) throw new Error("manquante sans mode");
+      const attendu = seuilModeAttendu(avant, manquante.outil_id, manquante.mode);
+      retirerReponse(run, manquante);
+
+      const resultat = goNoGo(run);
+
+      expect(resultat.par_mode.get(manquante.outil_id)?.[manquante.mode]).toEqual(attendu);
+    },
+    TEMPS,
+  );
+
+  it(
+    "une requête en attente de l'opérateur (recue_non_stockee) : refus nommé qui la liste, rien n'est écrit",
+    async () => {
+      const run = await runSimuleNote();
+      const manquante = premiereManquante(run);
+      retirerReponse(run, manquante);
+      journalNeuf(run, manquante).inscrireRecueNonStockee(1, null, "décodage non UTF-8");
+      const avant = octets(run, "run.json");
+
+      expect(() => goNoGo(run)).toThrow(ReponsesEnAttenteOperateur);
+      expect(() => goNoGo(run)).toThrow(manquante.question_id);
+      expect(octets(run, "run.json")).toEqual(avant);
+      expect(octets(run, "checklist.json")).toBeNull();
+    },
+    TEMPS,
+  );
+
+  it(
+    "une réponse reçue dont les octets sont gardés sans suite (octets_sans_suite) : même refus, rien n'est écrit",
+    async () => {
+      const run = await runSimuleNote();
+      const manquante = premiereManquante(run);
+      retirerReponse(run, manquante);
+      journalNeuf(run, manquante).garderOctets(1, new TextEncoder().encode("{"));
+      const avant = octets(run, "run.json");
+
+      expect(() => goNoGo(run)).toThrow(ReponsesEnAttenteOperateur);
+      expect(octets(run, "run.json")).toEqual(avant);
+      expect(octets(run, "checklist.json")).toBeNull();
+    },
+    TEMPS,
+  );
+
+  it(
+    "une requête dont l'opérateur a stocké la réponse n'attend plus : le go/no-go se prononce",
+    async () => {
+      const run = await runSimuleNote();
+      const manquante = premiereManquante(run);
+      journalNeuf(run, manquante).inscrireRecueNonStockee(1, null, "décodage non UTF-8");
+
+      expect(goNoGo(run).run_json).toBe("ecrit");
+    },
+    TEMPS,
+  );
+
+  it(
+    "une réponse enregistrée hors plan (échantillon que le plan ne prévoit pas) : refus nommé, rien n'est écrit",
+    async () => {
+      const run = await runSimuleNote();
+      const manquante = premiereManquante(run);
+      const horsPlan = { ...manquante, id: ulid("reponse-hors-plan"), echantillon: 3 };
+      ecrireObjet(join(run, "volume", "reponses", `${horsPlan.id}.json`), horsPlan);
+      const avant = octets(run, "run.json");
+
+      expect(() => goNoGo(run)).toThrow(ReponseHorsPlan);
+      expect(() => goNoGo(run)).toThrow(horsPlan.id);
+      expect(octets(run, "run.json")).toEqual(avant);
+      expect(octets(run, "checklist.json")).toBeNull();
+    },
+    TEMPS,
+  );
+
+  it(
+    "tirage.json absent : le plan n'est pas reconstructible, refus nommé, rien n'est écrit",
+    async () => {
+      const run = await runSimuleNote();
+      rmSync(join(run, "tirage.json"));
+      const avant = octets(run, "run.json");
+
+      expect(() => goNoGo(run)).toThrow(PlanNonReconstructible);
+      expect(octets(run, "run.json")).toEqual(avant);
+      expect(octets(run, "checklist.json")).toBeNull();
     },
     TEMPS,
   );

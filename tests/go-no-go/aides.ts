@@ -13,7 +13,7 @@ import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts"
 import { lancerNotationSimulee } from "../../pipeline/notation/notation-simulee.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
-import { ulid } from "../analysis/fabriques.ts";
+import { idQuestion, ulid } from "../analysis/fabriques.ts";
 import { inexacte, notationHumaine, notationJuge } from "../notation/fabriques.ts";
 import { options, parametresDeReference } from "../notation/simulation.ts";
 import { VERSION_CHARGE_JUGE } from "../../pipeline/notation/charge-juge.ts";
@@ -58,7 +58,10 @@ export function fois(nombre: number, ligne: LigneEchantillon): readonly LigneEch
 
 let rangReponse = 0;
 
-/** Une réponse API minimale de contexte run, ce que lit `analysis/seuils.ts`. */
+/**
+ * Une réponse API minimale de contexte run, ce que lit `analysis/seuils.ts`. Chacune sur sa propre
+ * question : deux réponses ne répondent jamais à la même requête du plan (protocole 0.21).
+ */
 export function reponseApi(outil_id: string, mode: Mode, statut_reponse: Reponse["statut_reponse"]): Reponse {
   rangReponse += 1;
   return {
@@ -68,7 +71,7 @@ export function reponseApi(outil_id: string, mode: Mode, statut_reponse: Reponse
     canal: "api",
     outil_id,
     mode,
-    question_id: "q_00000000000000000000000000000000",
+    question_id: idQuestion(`reponse-api-${rangReponse}`),
     formulation_id: ulid("formulation"),
     echantillon: 1,
     statut_reponse,

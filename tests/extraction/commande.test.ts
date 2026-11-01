@@ -443,9 +443,10 @@ describe("cas 11 : aucune ou plusieurs fiches de l'extracteur épinglé", () => 
     expect(journal(join(racine, "staging")).texte_sha256).toBe(sha256(TEXTE));
   });
 
-  it("patch de Python différent entre pnpm textes et pnpm extraction:entrees ⇒ AucunTexteEpingle, jamais de repli", async () => {
-    const racine = racineDeTest({ epingle: { ...HTML, version: "3.12.8" } });
-    await incoherente(racine, /AucunTexteEpingle|Aucune fiche d'extraction produite par l'extracteur épinglé .*3\.12\.8/u);
+  it("pnpm textes lancé sous un autre correctif de Python que celui de .python-version ⇒ AucunTexteEpingle, jamais de repli", async () => {
+    // L'entrée épingle le correctif du fichier (3.12.7 ici) ; la seule fiche porte celui qui a tourné.
+    const racine = racineDeTest({ fiches: [{ ...HTML, version: "3.12.8" }] });
+    await incoherente(racine, /Aucune fiche d'extraction produite par l'extracteur épinglé .*3\.12\.7/u);
   });
 });
 

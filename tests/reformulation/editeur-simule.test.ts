@@ -29,7 +29,7 @@ async function avecIssue(issue: IssueSimulee): Promise<readonly PropositionFormu
   repertoires.push(staging);
   const editeur = editeurSimule(TEXTE_PROMPT, TACHES.map((tache) => tache.demande), () => issue);
   await executer(
-    { a_appeler: TACHES, deja_acceptees: 0, deja_validees: 0 },
+    { a_appeler: TACHES, deja_acceptees: 0, deja_validees: 0, en_attente_operateur: [] },
     {
       editeur,
       texte_prompt: TEXTE_PROMPT,

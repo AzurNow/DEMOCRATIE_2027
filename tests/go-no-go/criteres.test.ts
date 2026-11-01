@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 import { graineHexadecimale } from "../../analysis/graines.ts";
-import { AssistantInclusSansModes, CoupleHorsPerimetre, parModeDuRun } from "../../analysis/seuils.ts";
+import { AssistantInclusSansModes, CoupleHorsPerimetre, CoupleSansRequetePlanifiee, parModeDuRun, ReponseHorsPlan } from "../../analysis/seuils.ts";
 import { critereTestContrefactuel } from "../../pipeline/go-no-go/criteres-juges.ts";
 import {
   critereAnalysesExecutees,
@@ -19,7 +19,7 @@ import {
 import { AUCUN_JUGE_RETENU } from "../../pipeline/go-no-go/types.ts";
 import type { JugeDuRun, VerdictProduit } from "../../pipeline/notation/types.ts";
 import type { ConditionSymetrie, Symetrie } from "../../pipeline/questions/types.ts";
-import { ulid } from "../analysis/fabriques.ts";
+import { planCouvrant, reponseDe, requetesPlanifiees, ulid } from "../analysis/fabriques.ts";
 import { inexacte, notationHumaine, notationJuge } from "../notation/fabriques.ts";
 import { reponsesApi } from "./aides.ts";
 
@@ -96,22 +96,23 @@ const OUTIL: OutilDeclare = { outil_id: "outil-a", famille: "assistant", inclus:
 describe("au plus 20 % de réponses manquantes par outil et par mode (analysis/seuils.ts)", () => {
   it("exactement 20 % sur un seul couple : vert", () => {
     const reponses = [...reponsesApi("outil-a", "web_desactivee", 2, 10), ...reponsesApi("outil-a", "web_activee", 0, 10)];
-    expect(critereReponsesManquantes([OUTIL], reponses)).toEqual({ code: "reponses_manquantes", statut: "vert", valeur: 0.2, seuil: 0.2 });
+    expect(critereReponsesManquantes([OUTIL], reponses, planCouvrant(reponses))).toEqual({ code: "reponses_manquantes", statut: "vert", valeur: 0.2, seuil: 0.2 });
   });
 
   it("juste au-dessus de 20 % sur un seul couple (3/14) : rouge", () => {
     const reponses = [...reponsesApi("outil-a", "web_desactivee", 3, 14), ...reponsesApi("outil-a", "web_activee", 0, 10)];
-    const critere = critereReponsesManquantes([OUTIL], reponses);
+    const critere = critereReponsesManquantes([OUTIL], reponses, planCouvrant(reponses));
     expect(critere.statut).toBe("rouge");
     expect(critere.valeur).toBe(3 / 14);
   });
 
   it("un couple déclaré sans aucune réponse API : erreur visible, pas un vert", () => {
-    expect(() => critereReponsesManquantes([OUTIL], reponsesApi("outil-a", "web_desactivee", 0, 10))).toThrow(/sans aucune réponse API/);
+    const reponses = reponsesApi("outil-a", "web_desactivee", 0, 10);
+    expect(() => critereReponsesManquantes([OUTIL], reponses, planCouvrant(reponses))).toThrow(/sans aucune réponse API/);
   });
 
   it("aucun couple à juger : rouge", () => {
-    expect(critereReponsesManquantes([], []).statut).toBe("rouge");
+    expect(critereReponsesManquantes([], [], planCouvrant([])).statut).toBe("rouge");
   });
 
   it("un couple présent dans les réponses API mais non déclaré : la même erreur nommée que parModeDuRun (Lot 10 (a))", () => {
@@ -120,14 +121,44 @@ describe("au plus 20 % de réponses manquantes par outil et par mode (analysis/s
       ...reponsesApi("outil-a", "web_activee", 0, 10),
       ...reponsesApi("outil-b", "web_activee", 0, 10),
     ];
-    expect(() => critereReponsesManquantes([OUTIL], reponses)).toThrow(CoupleHorsPerimetre);
-    expect(() => critereReponsesManquantes([OUTIL], reponses)).toThrow(/outil-b\/web_activee/);
-    expect(() => parModeDuRun([OUTIL], reponses)).toThrow(CoupleHorsPerimetre);
+    expect(() => critereReponsesManquantes([OUTIL], reponses, planCouvrant(reponses))).toThrow(CoupleHorsPerimetre);
+    expect(() => critereReponsesManquantes([OUTIL], reponses, planCouvrant(reponses))).toThrow(/outil-b\/web_activee/);
+    expect(() => parModeDuRun([OUTIL], reponses, planCouvrant(reponses))).toThrow(CoupleHorsPerimetre);
   });
 
   it("un assistant inclus sans modes : refus nommé, pas une liste vide de couples (Lot 10 (a))", () => {
     const sansModes: OutilDeclare = { outil_id: "outil-a", famille: "assistant", inclus: true };
-    expect(() => critereReponsesManquantes([sansModes], reponsesApi("outil-a", "web_desactivee", 0, 10))).toThrow(AssistantInclusSansModes);
+    const reponses = reponsesApi("outil-a", "web_desactivee", 0, 10);
+    expect(() => critereReponsesManquantes([sansModes], reponses, planCouvrant(reponses))).toThrow(AssistantInclusSansModes);
+  });
+});
+
+describe("réponses manquantes comptées sur le plan d'interrogation (§12 « comptées comme en section 8 », protocole 0.21)", () => {
+  const SEUL: OutilDeclare = { outil_id: "outil-a", famille: "assistant", inclus: true, modes: ["web_desactivee"] };
+
+  it("100 requêtes planifiées, 75 réponses enregistrées sans manquante écrite : 25 %, rouge (avant : 0 %, vert)", () => {
+    const plan = requetesPlanifiees("outil-a", "web_desactivee", 100);
+    const reponses = plan.slice(0, 75).map((r) => reponseDe(r, "obtenue"));
+    expect(critereReponsesManquantes([SEUL], reponses, plan)).toEqual({ code: "reponses_manquantes", statut: "rouge", valeur: 0.25, seuil: 0.2 });
+  });
+
+  it("100 requêtes planifiées, 80 réponses enregistrées : exactement 20 %, vert", () => {
+    const plan = requetesPlanifiees("outil-a", "web_desactivee", 100);
+    const reponses = plan.slice(0, 80).map((r) => reponseDe(r, "obtenue"));
+    expect(critereReponsesManquantes([SEUL], reponses, plan)).toEqual({ code: "reponses_manquantes", statut: "vert", valeur: 0.2, seuil: 0.2 });
+  });
+
+  it("zéro requête planifiée pour un couple déclaré : refus nommé", () => {
+    const plan = requetesPlanifiees("outil-a", "web_desactivee", 10);
+    const reponses = plan.map((r) => reponseDe(r, "obtenue"));
+    expect(() => critereReponsesManquantes([OUTIL], reponses, plan)).toThrow(CoupleSansRequetePlanifiee);
+  });
+
+  it("une réponse enregistrée hors plan : refus nommé", () => {
+    const plan = requetesPlanifiees("outil-a", "web_desactivee", 10);
+    const [premiere] = reponsesApi("outil-a", "web_desactivee", 0, 1);
+    if (premiere === undefined) throw new Error("aucune réponse fabriquée");
+    expect(() => critereReponsesManquantes([SEUL], [premiere], plan)).toThrow(ReponseHorsPlan);
   });
 });
 

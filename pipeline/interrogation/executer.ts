@@ -8,8 +8,9 @@
  * journalisées comptent (`journal.ts`), et l'exécution reprend à la suivante, après l'attente qui
  * la précède. Relancer un run complet ne fait donc rien.
  *
- * Réponse reçue, non stockée (§6, D55 (5)) : dès qu'une réponse HTTP est reçue, ses octets sont
- * gardés sous `volume/` avant toute interprétation (`journal.ts:garderOctets`). Si le décodage
+ * Réponse reçue, non stockée (§6, D55 (5)) : dès qu'une réponse HTTP est reçue, sa réception
+ * (statut, instants, empreinte : `journal.ts:garderReception`) puis ses octets sont gardés sous
+ * `volume/` avant toute interprétation (`journal.ts:garderOctets`). Si le décodage
  * (UTF-8, forme JSON attendue), la normalisation ou l'écriture de la réponse structurée échoue
  * ensuite, ce n'est pas une tentative de l'outil : le journal reçoit un événement
  * `recue_non_stockee` qui conclut la ligne, aucune réponse n'est écrite, et la requête n'est plus
@@ -22,6 +23,11 @@
  * interrompue : la relance conclut la ligne par `recue_non_stockee` sans rien renvoyer
  * (`conclureOctetsSansSuite`, §6, 0.19).
  *
+ * Une réponse reçue, au run comme quand l'opérateur la stocke depuis ses octets gardés (§6, 0.21,
+ * `stocker.ts`), suit un seul chemin, `stockerRecue` : classement par l'adaptateur, puis réponse
+ * obtenue écrite, ou échec inscrit au journal. Seule diffère la suite d'une erreur de ce chemin :
+ * le run conclut la ligne par `recue_non_stockee`, l'opérateur laisse la requête en attente.
+ *
  * Une erreur qui n'est pas un échec de tentative ni une réponse reçue non stockée (par exemple une
  * incohérence de programme pendant l'envoi lui-même) arrête la file de son outil ; les autres
  * files vont au bout, puis l'erreur remonte. Sa tentative reste journalisée sans résultat.
@@ -32,14 +38,14 @@ import { join } from "node:path";
 import { empreinteDe } from "../../validation/domaine/empreinte.ts";
 import { ulid } from "../../validation/domaine/ulid.ts";
 import { attenteAvantTentative, TENTATIVES_MAX } from "./conditions.ts";
-import { entetesEnregistrables, type Adaptateur, type Contenu, type Editeur, type RequeteHttp } from "./editeur.ts";
+import { entetesEnregistrables, type Adaptateur, type Contenu, type Editeur, type ReponseHttp, type RequeteHttp } from "./editeur.ts";
 import { tentativePeutDemarrer, type Fenetre } from "./fenetre.ts";
 import { instantParis } from "./heure-paris.ts";
 import type { Horloge } from "./horloge.ts";
 import { JournalRequete, MESSAGE_OCTETS_SANS_SUITE, type Reprise } from "./journal.ts";
 import type { PlanInterrogation } from "./plan.ts";
 import type { DepotReponses } from "./stockage.ts";
-import { conclure, envoyerSousDelai } from "./tentatives.ts";
+import { conclureHttp, empreinteOctets, envoyerSousDelai, erreurSansReponse } from "./tentatives.ts";
 import {
   cleDe,
   type BrutStocke,
@@ -63,6 +69,9 @@ export interface ContexteRun {
   /** L'éditeur de chaque outil du plan. Un outil sans éditeur lève avant tout envoi. */
   readonly editeurs: ReadonlyMap<string, Editeur>;
 }
+
+/** Ce qu'écrire une réponse exige, au run comme chez l'opérateur (`stocker.ts`) : ni fenêtre ni transport. */
+export type ContexteEcriture = Pick<ContexteRun, "run_id" | "horloge" | "depot" | "repertoire_tentatives">;
 
 /**
  * Une requête dont la réponse reçue n'a pas pu être stockée : elle attend l'opérateur (§6).
@@ -92,13 +101,30 @@ export class RunHorsFenetre extends Error {
 }
 
 /** Ce qu'une requête traverse, de son premier envoi à sa réponse écrite. */
-interface Course {
+export interface Course {
   readonly requete: RequetePlanifiee;
   readonly http: RequeteHttp;
-  readonly editeur: Editeur;
+  readonly adaptateur: Adaptateur;
   readonly journal: JournalRequete;
-  readonly contexte: ContexteRun;
+  readonly contexte: ContexteEcriture;
 }
+
+/** La course d'une requête : sa requête HTTP, construite par l'adaptateur de son éditeur. */
+export function courseDe(requete: RequetePlanifiee, adaptateur: Adaptateur, journal: JournalRequete, contexte: ContexteEcriture): Course {
+  const http = adaptateur.construireRequete({ texte: requete.texte, mode: requete.mode, modele_demande: requete.modele_demande });
+  return { requete, http, adaptateur, journal, contexte };
+}
+
+/** Une réponse HTTP reçue à la tentative `numero`, avec les instants d'envoi et de réception. */
+export interface Recue {
+  readonly numero: number;
+  readonly debut_ms: number;
+  readonly fin_ms: number;
+  readonly reponse: ReponseHttp;
+}
+
+/** Ce que devient une réponse reçue et stockée : obtenue et écrite, ou tentative en échec journalisée. */
+export type IssueRecue = { readonly genre: "ecrite" } | { readonly genre: "echec"; readonly tentative: Tentative };
 
 /** Ce qu'une réponse reçue, mais que le banc n'a pas pu stocker, porte pour l'opérateur. */
 interface RecueNonStockee {
@@ -109,33 +135,11 @@ interface RecueNonStockee {
 }
 
 type Aboutissement =
-  | {
-      readonly genre: "obtenue";
-      readonly numero: number;
-      readonly chemin_octets: string;
-      readonly tentatives: readonly Tentative[];
-      readonly contenu: Contenu;
-      readonly refus_api: boolean;
-      readonly brut_octets_sha256: string;
-      readonly debut_ms: number;
-      readonly fin_ms: number;
-    }
+  | { readonly genre: "ecrite" }
   | { readonly genre: "manquante"; readonly motif: MotifManquante; readonly tentatives: readonly Tentative[] }
   | RecueNonStockee;
 
-type Essai =
-  | {
-      readonly genre: "obtenue";
-      readonly numero: number;
-      readonly chemin_octets: string;
-      readonly contenu: Contenu;
-      readonly refus_api: boolean;
-      readonly brut_octets_sha256: string;
-      readonly debut_ms: number;
-      readonly fin_ms: number;
-    }
-  | { readonly genre: "echec"; readonly tentative: Tentative }
-  | RecueNonStockee;
+type Essai = IssueRecue | RecueNonStockee;
 
 /** Le message d'une erreur, sans secret : celle-ci vient du code du banc, jamais du corps reçu. */
 function causeDe(erreur: unknown): string {
@@ -154,15 +158,23 @@ async function attendreSonTour(numero: number, contexte: ContexteRun): Promise<b
 }
 
 /**
- * Garde les octets reçus ; si la garde elle-même échoue (collision, erreur disque), la réponse a
- * pourtant été reçue : une inscription `recue_non_stockee` sans octets est tentée avant de relever
- * l'erreur d'origine, pour que la file s'arrête bruyamment comme avant (§6, D55 (5)). Si cette
- * inscription échoue à son tour, l'erreur d'origine remonte seule — limite connue, documentée en
- * tête de `journal.ts`.
+ * Garde la réception puis les octets reçus (§6, 0.21 : jamais des octets sans leur réception) ; si
+ * la garde elle-même échoue (collision, erreur disque), la réponse a pourtant été reçue : une
+ * inscription `recue_non_stockee` sans octets est tentée avant de relever l'erreur d'origine, pour
+ * que la file s'arrête bruyamment comme avant (§6, D55 (5)). Si cette inscription échoue à son tour,
+ * l'erreur d'origine remonte seule — limite connue, documentée en tête de `journal.ts`.
  */
-function garderOctetsOuSignaler(numero: number, course: Course, octets: Uint8Array): string {
+function garderOctetsOuSignaler(course: Course, recue: Recue): string {
+  const { numero, reponse } = recue;
   try {
-    return course.journal.garderOctets(numero, octets);
+    course.journal.garderReception({
+      numero,
+      statut_http: reponse.statut,
+      debut_ms: recue.debut_ms,
+      reception_ms: recue.fin_ms,
+      octets_sha256: empreinteOctets(reponse.corps),
+    });
+    return course.journal.garderOctets(numero, reponse.corps);
   } catch (erreurGarde) {
     try {
       course.journal.inscrireRecueNonStockee(numero, null, `octets non gardés : ${causeDe(erreurGarde)}`);
@@ -174,43 +186,58 @@ function garderOctetsOuSignaler(numero: number, course: Course, octets: Uint8Arr
 }
 
 /**
- * Classe l'envoi reçu (`conclure`, `tentatives.ts`). Si la classification elle-même échoue
- * (décodage non UTF-8, forme inattendue) après qu'un corps a été reçu, les octets déjà gardés
- * (`chemin_octets`) permettent de conclure la ligne par `recue_non_stockee` plutôt que de laisser
- * remonter l'erreur (§6, D55 (5)). Une erreur avant toute réception (`chemin_octets` nul) reste une
- * incohérence de programme, non rattrapée ici.
+ * Le chemin unique d'une réponse reçue (§6) : classée par l'adaptateur (`conclureHttp`), elle est
+ * écrite comme réponse obtenue, ou sa tentative est inscrite en échec au journal. `passees` : les
+ * tentatives closes qui la précèdent, gardées dans la réponse obtenue. Lève si le banc ne peut la
+ * stocker (corps illisible, normalisation ou écriture en échec) ; l'appelant décide de la suite —
+ * `recue_non_stockee` au run, requête laissée en attente chez l'opérateur (`stocker.ts`).
  */
-async function tenter(numero: number, course: Course): Promise<Essai> {
+export function stockerRecue(course: Course, recue: Recue, passees: readonly Tentative[]): IssueRecue {
+  const conclusion = conclureHttp(recue.reponse, course.adaptateur);
+  if (conclusion.genre === "echec") {
+    course.journal.inscrireEchec(recue.numero, conclusion.erreur);
+    return { genre: "echec", tentative: { numero: recue.numero, horodatage: instantParis(recue.debut_ms), erreur: conclusion.erreur } };
+  }
+  course.contexte.depot.ecrire(reponseObtenue(course, { ...conclusion, debut_ms: recue.debut_ms, fin_ms: recue.fin_ms, tentatives: passees }));
+  return { genre: "ecrite" };
+}
+
+/**
+ * Un envoi sans réponse HTTP (réseau, délai) est un échec de tentative. Une réponse reçue est
+ * gardée, puis stockée par `stockerRecue` ; si ce stockage lève, les octets déjà gardés permettent
+ * de conclure la ligne par `recue_non_stockee` plutôt que de laisser remonter l'erreur (§6, D55 (5)).
+ * L'instant de réception est pris dès la réponse rendue, avant la garde et le classement.
+ */
+async function tenter(numero: number, course: Course, editeur: Editeur, passees: readonly Tentative[]): Promise<Essai> {
   const { horloge } = course.contexte;
   const debut_ms = horloge.maintenant();
   const horodatage = instantParis(debut_ms);
   course.journal.inscrireDebut(numero, horodatage, cleDe(course.requete));
-  const envoi = await envoyerSousDelai(course.editeur, course.http, horloge);
-  const chemin_octets = envoi.genre === "http" ? garderOctetsOuSignaler(numero, course, envoi.reponse.corps) : null;
+  const envoi = await envoyerSousDelai(editeur, course.http, horloge);
+  const fin_ms = horloge.maintenant();
+  if (envoi.genre !== "http") {
+    const erreur = erreurSansReponse(envoi);
+    course.journal.inscrireEchec(numero, erreur);
+    return { genre: "echec", tentative: { numero, horodatage, erreur } };
+  }
+  const recue: Recue = { numero, debut_ms, fin_ms, reponse: envoi.reponse };
+  const chemin_octets = garderOctetsOuSignaler(course, recue);
   try {
-    const conclusion = conclure(envoi, course.editeur.adaptateur);
-    if (conclusion.genre === "echec") {
-      course.journal.inscrireEchec(numero, conclusion.erreur);
-      return { genre: "echec", tentative: { numero, horodatage, erreur: conclusion.erreur } };
-    }
-    // `chemin_octets` est non nul ici : seul un envoi "http" conclut "obtenue" (`conclureHttp`).
-    return { ...conclusion, debut_ms, fin_ms: horloge.maintenant(), numero, chemin_octets: chemin_octets as string };
+    return stockerRecue(course, recue, passees);
   } catch (erreur) {
-    if (chemin_octets === null) throw erreur;
     const cause = causeDe(erreur);
     course.journal.inscrireRecueNonStockee(numero, chemin_octets, cause);
     return { genre: "recue_non_stockee", numero, chemin_octets, cause };
   }
 }
 
-async function poursuivre(course: Course, passees: readonly Tentative[]): Promise<Aboutissement> {
+async function poursuivre(course: Course, editeur: Editeur, contexte: ContexteRun, passees: readonly Tentative[]): Promise<Aboutissement> {
   const tentatives = [...passees];
   while (tentatives.length < TENTATIVES_MAX) {
     const numero = tentatives.length + 1;
-    if (!(await attendreSonTour(numero, course.contexte))) return { genre: "manquante", motif: "hors_fenetre", tentatives };
-    const essai = await tenter(numero, course);
-    if (essai.genre === "obtenue") return { ...essai, tentatives };
-    if (essai.genre === "recue_non_stockee") return essai;
+    if (!(await attendreSonTour(numero, contexte))) return { genre: "manquante", motif: "hors_fenetre", tentatives };
+    const essai = await tenter(numero, course, editeur, [...tentatives]);
+    if (essai.genre !== "echec") return essai;
     tentatives.push(essai.tentative);
   }
   return { genre: "manquante", motif: "echecs", tentatives };
@@ -236,10 +263,10 @@ function brutStocke(contenu: Contenu): BrutStocke {
  * retrait autorisé). `sha256` couvre la forme canonique du corps seul.
  */
 function requeteEnregistree(course: Course, horodatage: string): ReponseEcrite["requete"] {
-  const { http, editeur } = course;
+  const { http, adaptateur } = course;
   return {
     corps: http.corps,
-    entetes: entetesEnregistrables(http.entetes, editeur.adaptateur.entetes_authentification),
+    entetes: entetesEnregistrables(http.entetes, adaptateur.entetes_authentification),
     sha256: empreinteDe(http.corps),
     endpoint: http.endpoint,
     horodatage,
@@ -263,8 +290,18 @@ function commun(course: Course, horodatage_requete: string) {
   } as const;
 }
 
-function reponseObtenue(course: Course, fin: Extract<Aboutissement, { genre: "obtenue" }>): ReponseObtenue {
-  const { adaptateur } = course.editeur;
+/** Une réponse classée obtenue, avec ses instants et les tentatives closes qui la précèdent. */
+interface Obtenue {
+  readonly contenu: Contenu;
+  readonly refus_api: boolean;
+  readonly brut_octets_sha256: string;
+  readonly debut_ms: number;
+  readonly fin_ms: number;
+  readonly tentatives: readonly Tentative[];
+}
+
+function reponseObtenue(course: Course, fin: Obtenue): ReponseObtenue {
+  const { adaptateur } = course;
   const renvoyees = adaptateur.metadonnees(fin.contenu);
   const tokens = renvoyees.tokens === undefined ? {} : { tokens: renvoyees.tokens };
   const tentatives = fin.tentatives.length === 0 ? {} : { tentatives: fin.tentatives };
@@ -324,23 +361,6 @@ function enAttente(
 }
 
 /**
- * Écrit la réponse obtenue. Si l'écriture échoue (normalisation en échec, schéma refusé, écriture
- * de la réponse structurée en échec), les octets reçus à la tentative `fin.numero` sont déjà
- * gardés : la ligne ouverte par `inscrireDebut` est conclue par `recue_non_stockee` plutôt que
- * d'arrêter la file (§6, D55 (5)).
- */
-function ecrireObtenue(course: Course, fin: Extract<Aboutissement, { genre: "obtenue" }>): IssueRequete {
-  try {
-    course.contexte.depot.ecrire(reponseObtenue(course, fin));
-    return "ecrite";
-  } catch (erreur) {
-    const cause = causeDe(erreur);
-    course.journal.inscrireRecueNonStockee(fin.numero, fin.chemin_octets, cause);
-    return enAttente(course.requete, course.contexte.repertoire_tentatives, { numero: fin.numero, chemin_octets: fin.chemin_octets, cause });
-  }
-}
-
-/**
  * Une réponse reçue et gardée avant un arrêt brutal, sans suite au journal (§6, 0.19) : la ligne est
  * conclue par `recue_non_stockee`, comme au chemin normal, et la requête attend l'opérateur. La
  * relance suivante relit cet événement : rien n'est renvoyé ni réinscrit.
@@ -361,19 +381,11 @@ async function executerRequete(requete: RequetePlanifiee, editeur: Editeur, cont
   const reprise = journal.reprise();
   if (reprise.genre === "recue_non_stockee") return enAttente(requete, contexte.repertoire_tentatives, reprise);
   if (reprise.genre === "octets_sans_suite") return conclureOctetsSansSuite(requete, journal, contexte.repertoire_tentatives, reprise);
-  const http = editeur.adaptateur.construireRequete({
-    texte: requete.texte,
-    mode: requete.mode,
-    modele_demande: requete.modele_demande,
-  });
-  const course: Course = { requete, http, editeur, journal, contexte };
-  const fin = await poursuivre(course, reprise.tentatives);
+  const course = courseDe(requete, editeur.adaptateur, journal, contexte);
+  const fin = await poursuivre(course, editeur, contexte, reprise.tentatives);
   if (fin.genre === "recue_non_stockee") return enAttente(requete, contexte.repertoire_tentatives, fin);
-  if (fin.genre === "manquante") {
-    contexte.depot.ecrire(reponseManquante(course, fin));
-    return "ecrite";
-  }
-  return ecrireObtenue(course, fin);
+  if (fin.genre === "manquante") contexte.depot.ecrire(reponseManquante(course, fin));
+  return "ecrite";
 }
 
 async function executerFile(requetes: readonly RequetePlanifiee[], editeur: Editeur, contexte: ContexteRun): Promise<IssueRequete[]> {

@@ -267,6 +267,19 @@
           }
         }
       }
+    },
+    "reception": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numero", "statut_http", "debut_ms", "reception_ms", "octets_sha256"],
+      "description": "Métadonnées de réception d'une réponse HTTP, gardées sous volume/tentatives/<clé>.<n>.reception.json avant ses octets (<clé>.<n>.octets), pour que l'opérateur puisse la stocker depuis ces octets sans rien inventer (§6, 0.21). Le transport ne rend que le statut et le corps : aucun en-tête de réponse n'est gardé. Les instants sont en millisecondes depuis l'époque Unix, ceux de l'horloge du run.",
+      "properties": {
+        "numero": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "statut_http": { "type": "integer", "minimum": 100, "maximum": 599 },
+        "debut_ms": { "type": "integer", "minimum": 0 },
+        "reception_ms": { "type": "integer", "minimum": 0 },
+        "octets_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+      }
     }
   },
 

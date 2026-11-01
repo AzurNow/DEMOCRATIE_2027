@@ -158,7 +158,7 @@ test:py` si du Python a bougé. Tu les lances toi-même, tu ne demandes pas si t
 
 Prérequis : Git, Node **22.23.3** (`.nvmrc` ; plancher `>=22.6.0`, car tous les outils tournent par
 `node --experimental-strip-types`), pnpm **10.34.5** via corepack (champ `packageManager`), Python
-**3.12** (`.python-version`) et uv **0.12.17**. Rien d'autre : pas de base de données, pas de
+**3.12.14** (`.python-version`) et uv **0.12.17**. Rien d'autre : pas de base de données, pas de
 Docker, pas de ffmpeg système (yt-dlp et `av` s'en passent).
 
 Sur une machine Linux neuve (Debian/Ubuntu), avant le bloc ci-dessous : `sudo apt install git

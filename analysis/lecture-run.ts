@@ -42,7 +42,7 @@ import type { GraineTirage } from "../pipeline/questions/types.ts";
 import type { StatutRun, TypeRun } from "../pipeline/run/types.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import type { EntreesAnalyse } from "./filtre.ts";
-import { parModeDuRun } from "./seuils.ts";
+import { parModeDuRun, type RequeteDuPlan } from "./seuils.ts";
 import type { CandidatAuGel, EntreeTirage, Item, Mode, ParMode, Question, ReferenceItem, Reponse, Run, SeuilMode } from "./types.ts";
 
 /* ------------------------------------------------------------------ disposition */
@@ -157,7 +157,7 @@ export class ParModeDivergent extends Error {
   constructor(chemin: string, outil_id: string, mode: Mode, ecrit: SeuilMode, recalcule: SeuilMode | undefined) {
     super(
       `${chemin}#/perimetre/outils (${outil_id}, ${mode}) : par_mode écrit ${JSON.stringify(ecrit)}, recalculé ` +
-        `${JSON.stringify(recalcule)} depuis les réponses du run (D55 (7)). Rien n'est lu.`,
+        `${JSON.stringify(recalcule)} depuis les réponses et le plan d'interrogation du run (D55 (7), §8). Rien n'est lu.`,
     );
     this.name = "ParModeDivergent";
     this.chemin = chemin;
@@ -425,12 +425,16 @@ export function lireTirage(repertoire_run: string, run: RunLu): TirageLu {
   return tirage;
 }
 
-/** `questions.json` : le jeu complet des questions engendrées au gel, un tableau. */
-function lireQuestions(repertoire_run: string): readonly Question[] {
+/**
+ * `questions.json` : le jeu complet des questions engendrées au gel, un tableau, chaque question
+ * validée contre `question.schema.json`. `T` : la vue qu'en prend l'appelant (le plan
+ * d'interrogation lit aussi le texte des formulations, `pipeline/go-no-go/plan-du-run.ts`).
+ */
+export function lireQuestions<T extends Question = Question>(repertoire_run: string): readonly T[] {
   const chemin = dispositionRunNote(repertoire_run).questions;
   const brut = lireJson(chemin, readFileSync(chemin, "utf8"));
   if (!Array.isArray(brut)) throw new FichierDeRunRefuse(chemin, "pas_un_tableau", "un tableau JSON de questions est attendu");
-  return brut.map((valeur: unknown, rang) => valider<Question>("question", valeur, `${chemin}, élément ${rang}`));
+  return brut.map((valeur: unknown, rang) => valider<T>("question", valeur, `${chemin}, élément ${rang}`));
 }
 
 /* ------------------------------------------------------------------ items au gel */
@@ -513,11 +517,21 @@ export function verifierArchive(run: RunLu, chemin: string | undefined): Verific
 
 /* ------------------------------------------------------------------ le run entier */
 
+/**
+ * Le plan d'interrogation d'un run lu, à plat (§8, protocole 0.21). Injecté par l'appelant —
+ * `pipeline/go-no-go/plan-du-run.ts:requetesDuPlanDuRun` — pour que `analysis/` n'importe pas
+ * `pipeline/interrogation/plan.ts` (flux à sens unique, CLAUDE.md) ; appelé après les lectures du
+ * run, et seulement s'il y a un `par_mode` à recouper.
+ */
+export type PlanDuRun = (repertoire_run: string, run: RunLu) => readonly RequeteDuPlan[];
+
 export interface OptionsLectureRun {
   /** `data/items/`, dans le dépôt Git qui porte `run.versions.donnees_commit`. */
   readonly items: string;
   /** Un fichier d'archive Zenodo du run à vérifier ; absent, rien n'est vérifié. */
   readonly archive?: string;
+  /** Le plan d'interrogation du run, sur lequel se recompte `par_mode` (D55 (7), protocole 0.21). */
+  readonly plan_du_run: PlanDuRun;
 }
 
 export interface RunPourAnalyse {
@@ -527,13 +541,14 @@ export interface RunPourAnalyse {
 
 /**
  * D55 (7), constat 17 : un `par_mode` présent dans `run.json` doit être celui que les réponses du
- * run recalculent, mode par mode. Un `par_mode` absent (run en cours) n'est pas une erreur ici :
- * le schéma l'exige déjà d'un run publié.
+ * run recalculent, mode par mode, sur le plan d'interrogation du run (protocole 0.21). Un
+ * `par_mode` absent (run en cours) n'est pas une erreur ici : le schéma l'exige déjà d'un run publié.
  */
-function verifierParMode(run: RunLu, reponses: readonly Reponse[], chemin: string): void {
+function verifierParMode(repertoire_run: string, run: RunLu, reponses: readonly Reponse[], plan_du_run: PlanDuRun): void {
+  const chemin = dispositionRunNote(repertoire_run).run_json;
   const declarent = run.perimetre.outils.filter((outil): outil is typeof outil & { par_mode: ParMode } => outil.par_mode !== undefined);
   if (declarent.length === 0) return;
-  const recalcule = parModeDuRun(run.perimetre.outils, reponses);
+  const recalcule = parModeDuRun(run.perimetre.outils, reponses, plan_du_run(repertoire_run, run));
   for (const outil of declarent) {
     const attendu = recalcule.get(outil.outil_id);
     if (attendu === undefined) throw new ParModeHorsPerimetre(chemin, outil.outil_id);
@@ -554,7 +569,7 @@ export function lireRun(repertoire_run: string, options: OptionsLectureRun): Run
   const questions = lireQuestions(repertoire_run);
   const items = lireItemsEpingles(questions, options.items, run.versions.donnees_commit, dispositionRunNote(repertoire_run).questions);
   const reponses = lireReponses(repertoire_run, run.id);
-  verifierParMode(run, reponses, dispositionRunNote(repertoire_run).run_json);
+  verifierParMode(repertoire_run, run, reponses, options.plan_du_run);
   return {
     entrees: {
       run,

@@ -7,13 +7,13 @@
 import { api, EchecApi } from "./api.ts";
 import { afficherVue } from "./affichage.ts";
 import { el, liste, vider } from "./dom.ts";
+import { elementParId } from "./dom-type.ts";
+import { messagesDErreur } from "./erreurs.ts";
 import { afficherErreurs, construireFormulaire } from "./formulaire.ts";
 import type { FileDeTravail, MotifRefus, Session } from "./types.ts";
 
 function cible(id: string): HTMLElement {
-  const noeud = document.getElementById(id);
-  if (noeud === null) throw new Error(`Élément #${id} absent de la page.`);
-  return noeud;
+  return elementParId(id, HTMLElement);
 }
 
 function afficherComptes(file: FileDeTravail): void {
@@ -22,15 +22,6 @@ function afficherComptes(file: FileDeTravail): void {
     `en attente du test des liens : ${file.en_attente_test_des_liens} · ` +
     `en attente d'un juge : ${file.attend_juge} · ` +
     `sans motif admis : ${file.sans_motif_admis}`;
-}
-
-/** Ce que le serveur a répondu en échec, dit en clair : un refus de grille liste tous ses motifs. */
-function messagesDeLEchec(echec: EchecApi): readonly string[] {
-  const corps = echec.corps as { motifs?: readonly MotifRefus[]; erreur?: string; detail?: string | readonly string[] } | null;
-  if (corps === null) return [`Échec HTTP ${echec.statut}.`];
-  if (corps.motifs !== undefined) return corps.motifs.map((m) => `${m.code} — ${m.detail}`);
-  const detail = corps.detail === undefined ? [] : [corps.detail].flat();
-  return [`${corps.erreur === undefined ? `HTTP ${echec.statut}` : corps.erreur} — ${detail.join(" ; ")}`];
 }
 
 /** D30 (2) : le serveur demande à l'humain de décider la note d'une Q-ATT indécidable. */
@@ -63,11 +54,16 @@ async function afficherTache(session: Session, reponse_id: string): Promise<void
   formulaire.racine.append(retour);
   formulaire.racine.addEventListener("submit", (evenement) => {
     evenement.preventDefault();
-    void soumettre(session, reponse_id, formulaire, retour);
+    soumettre(session, reponse_id, formulaire, retour).catch((erreur: unknown) => afficherPanne(retour, erreur));
   });
   const ecran = cible("ecran");
   vider(ecran);
   ecran.append(el("div", { class: "volets" }, afficherVue(vue), formulaire.racine));
+}
+
+/** Une panne après l'enregistrement (file suivante illisible) ou hors formulaire : dite à l'écran, jamais avalée. */
+function afficherPanne(zone: HTMLElement, erreur: unknown): void {
+  zone.append(el("p", { class: "alerte", role: "alert" }, messagesDErreur(erreur).join(" ")));
 }
 
 async function soumettre(session: Session, reponse_id: string, formulaire: ReturnType<typeof construireFormulaire>, retour: HTMLElement): Promise<void> {
@@ -80,9 +76,8 @@ async function soumettre(session: Session, reponse_id: string, formulaire: Retur
   try {
     await api.noter(reponse_id, lecture.saisie);
   } catch (erreur) {
-    if (!(erreur instanceof EchecApi)) throw erreur;
-    if (exigeNoteDecidee(erreur)) formulaire.revelerNoteDecidee();
-    retour.append(afficherErreurs(messagesDeLEchec(erreur)));
+    if (erreur instanceof EchecApi && exigeNoteDecidee(erreur)) formulaire.revelerNoteDecidee();
+    retour.append(afficherErreurs(messagesDErreur(erreur)));
     return;
   }
   await suivante(session);
@@ -105,5 +100,5 @@ async function demarrer(): Promise<void> {
 demarrer().catch((erreur: unknown) => {
   const ecran = cible("ecran");
   vider(ecran);
-  ecran.append(el("p", { class: "alerte", role: "alert" }, `Erreur : ${erreur instanceof Error ? erreur.message : String(erreur)}`));
+  afficherPanne(ecran, erreur);
 });

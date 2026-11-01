@@ -8,6 +8,8 @@ erreur, jamais une autorisation implicite.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit
 from urllib.robotparser import RobotFileParser
@@ -52,6 +54,11 @@ class Cadence:
             reste = self._intervalle_s - (self._horloge.monotone() - self._dernieres[hote])
             if reste > 0:
                 self._horloge.dormir(reste)
+        self._dernieres[hote] = self._horloge.monotone()
+
+    def marquer(self, hote: str) -> None:
+        """L'hôte vient d'être sollicité hors de ce client (fin d'un téléchargement yt-dlp) : le
+        prochain créneau part de maintenant."""
         self._dernieres[hote] = self._horloge.monotone()
 
 
@@ -148,6 +155,17 @@ class ClientPoli:
             return self._transport.envoyer(url, {"User-Agent": self._agent})
         except ErreurReseau as erreur:
             raise EchecCollecte(str(erreur)) from erreur
+
+    @contextmanager
+    def creneau(self, url: str) -> Iterator[None]:
+        """Pour un téléchargement qui ne passe pas par ce client (yt-dlp, `media.py`) : attend le
+        créneau de l'hôte avant, et le compte sollicité jusqu'à la fin, échec compris."""
+        nom = hote(url)
+        self._cadence.attendre(nom)
+        try:
+            yield
+        finally:
+            self._cadence.marquer(nom)
 
     def verifier_robots(self, url: str) -> None:
         """Lève `EchecCollecte` si `robots.txt` interdit l'URL ou n'a pas pu être lu. Public pour les
