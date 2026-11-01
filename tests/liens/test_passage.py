@@ -405,6 +405,31 @@ def test_cas_17_relance_resultat_present_ni_reteste_ni_reecrit(tmp_path: Path) -
     assert code_de_sortie(bilans) == 0
 
 
+def test_relance_resultat_ecrit_avec_une_autre_version_de_table_refuse_sans_reecriture(tmp_path: Path) -> None:
+    """Lot 5 (c) : un passage ne mélange pas deux tables. Un résultat écrit avec `table-liens-v2`,
+    repris sous la table chargée (v3), est refusé nommément : ni repris, ni retesté, ni réécrit."""
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: [reponse(404)]})
+    _bilans, repertoire = _passer(b, tmp_path, A)
+    chemin = repertoire / nom_resultat(A)
+    resultat = _resultat(repertoire, A)
+    assert resultat["version_table"] == b.deps.table.version
+    resultat["version_table"] = "table-liens-v2"
+    chemin.write_text(json.dumps(resultat), encoding="utf-8")
+    avant = chemin.read_bytes()
+
+    relance = banc({})
+    bilans, _repertoire = _passer(relance, tmp_path, A)
+
+    assert relance.transport.urls() == []
+    assert chemin.read_bytes() == avant
+    assert [(x.etat, x.verdict) for x in bilans] == [("refuse", None)]
+    motif = bilans[0].motif
+    assert motif is not None
+    assert "table-liens-v2" in motif and relance.deps.table.version in motif
+    assert "recommencer le passage" in motif
+    assert code_de_sortie(bilans) == 1
+
+
 def test_cas_17_resultat_present_mais_incoherent_refuse(tmp_path: Path) -> None:
     repertoire = tmp_path / "liens"
     repertoire.mkdir()

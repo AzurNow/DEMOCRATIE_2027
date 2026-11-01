@@ -65,6 +65,16 @@ def test_url_non_ascii_leve_une_erreur_reseau_nommee_pas_une_unicodeencodeerror(
         TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/élection", {})
 
 
+def test_value_error_sans_rapport_avec_l_encodage_n_est_pas_etiquetee_non_encodable() -> None:
+    """Lot 5 (d) : seule une URL non ASCII est « non encodable ». Une autre `ValueError` d'urllib ou
+    de `http.client` (ici une valeur d'en-tête contenant un saut de ligne, refusée avant toute
+    connexion) remonte avec son propre message, jamais rangée sous l'étiquette d'encodage."""
+    with pytest.raises(ValueError, match="Invalid header value") as erreur:
+        TransportUrllib(delai_s=1).envoyer("http://127.0.0.1:1/doc", {"User-Agent": "a\nb"})
+    assert not isinstance(erreur.value, ErreurReseau)
+    assert "non encodable" not in str(erreur.value)
+
+
 def test_caractere_de_controle_reste_une_erreur_reseau() -> None:
     """Un caractère de contrôle est déjà une `http.client.HTTPException` (`InvalidURL`), rattrapée
     avant ce correctif ; reste vrai après, par l'autre branche."""

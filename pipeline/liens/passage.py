@@ -221,18 +221,27 @@ def _echec_wayback(wayback: Mapping[str, object]) -> str | None:
     return None
 
 
-def _reprendre(chemin: Path, url: str) -> Bilan:
+def _reprendre(chemin: Path, url: str, version_table: str) -> Bilan:
+    """Un résultat écrit sous une autre version de table que celle chargée est refusé, jamais repris
+    ni réécrit : un passage ne mélange pas deux tables."""
     try:
         resultat = lire_resultat(chemin, url)
     except ResultatNonConforme as refus:
         return Bilan(url, "refuse", motif=f"résultat déjà écrit mais non conforme : {refus}")
+    if resultat["version_table"] != version_table:
+        motif = (
+            f"résultat déjà écrit avec la table {resultat['version_table']!r}, table chargée {version_table!r} : "
+            "un passage ne mélange pas deux tables, recommencer le passage avec une seule version "
+            f"(déplacer les résultats de {chemin.parent} avant de relancer)"
+        )
+        return Bilan(url, "refuse", motif=motif)
     return Bilan(url, "repris", verdict=str(resultat["verdict_existence"]))
 
 
 def traiter(url: str, instant_reference: datetime, repertoire: Path, deps: Dependances) -> Bilan:
     chemin = repertoire / nom_resultat(url)
     if chemin.exists():
-        return _reprendre(chemin, url)
+        return _reprendre(chemin, url, deps.table.version)
     ctx = _Contexte(url, instant_reference, repertoire, deps, tester(url, deps))
     finale = ctx.tentatives[-1].constat
     verdict = deps.table.verdict(finale)
