@@ -70,6 +70,12 @@ indices) suffisait à reconnaître l'éditeur, donc l'outil noté. La fuite, sig
 choix en attente, a été fermée par D15 (projection sur `{ url, texte }`). Un objet ouvert (`ObjetJson`) recopié dans une
 structure aveugle annule l'aveuglement ; chaque niveau doit être projeté.
 
+**Compter un dénominateur sur le plan, jamais sur les fichiers présents.** Une réponse reçue mais
+non stockée (#170) n'avait pas de fichier de réponse : elle sortait du dénominateur des manquantes,
+donc du seuil des 20 % et de `par_mode`, sans un message. La relecture du 2026-11-01 l'a vue ; D56 (2)
+et #201 comptent désormais sur le plan d'interrogation. Tout ce qui manque doit rester compté comme
+manquant.
+
 ## Tests
 
 **Les exemples invalides sont les vrais tests.** Un exemple valide vérifie qu'on n'a rien oublié ;
@@ -222,6 +228,11 @@ v2, points ouverts). Un `--force` sur la foi du nom perdait un texte, une copie 
 remplaçait le prompt validé. `git status --porcelain` puis `cmp` fichier par fichier, et archiver
 plutôt que supprimer.
 
+**Comparer des chemins comme le disque les compare.** Sur macOS (APFS insensible à la casse),
+`Data/items/` passait la garde de sortie de `data/` (règle 3) : `realpathSync` non natif rend la casse
+demandée, pas celle du disque. #189 compare après NFC et sans casse ; la règle n'est sûre que pour
+refuser, jamais pour admettre.
+
 ## Méthode
 
 **Clôturer chaque session, et écrire dans chaque PR ce qui pourrait casser.** Du 7 au 10 octobre,
@@ -230,6 +241,12 @@ jamais ce qui pourrait casser. Le 12, le tri a dû repartir de 21 000 lignes de 
 seulement qu'est apparu le biais de sourçage des pages tronquées (DETTE 2026-10-12, point 1), créé
 par D27 le 9. La ligne « ce qui pourrait casser » de la définition de terminé va dans le corps de
 la PR, pas seulement dans la conversation.
+
+**Porter le jour même à la feuille de route une question qu'une PR laisse ouverte.** Le choix (A)/(B)
+de l'épinglage de l'extracteur, posé dans le corps de #161 le 19 octobre, et la question sans option
+recommandée de #168 sont restés sans réponse jusqu'à la relecture du 1er novembre, alors que le code
+fusionné appliquait déjà l'option contraire au §4 pour la première. Une question qui n'est que dans le
+corps d'une PR fusionnée n'est plus lue par personne : elle entre comme décision Dn ou n'existe pas.
 
 **Une autorisation en mémoire ne lève pas une garde de l'outil.** Le 2026-10-12, `gh pr merge` a été
 refusé par le contrôle automatique de Claude Code malgré l'autorisation de fusion du 2026-10-02.
