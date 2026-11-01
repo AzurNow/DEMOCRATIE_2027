@@ -773,8 +773,9 @@
     },
     "juges": {
       "type": "array",
-      "minItems": 1,
-      "description": "§7 : deux juges de familles différentes ; au-delà de 3 % de changement au test contrefactuel, le juge est retiré du run et l'échantillon humain passe à 25 %. Cet événement change la composition du run : il doit être une donnée, pas une décision manuelle non tracée.",
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "§7 : deux juges de familles différentes ; « Un run déclare exactement deux juges, ni plus ni moins, la combinaison des notes n'étant écrite que pour deux ; le retrait d'un juge au test contrefactuel ne change pas les juges déclarés » (protocole 0.23, D58) : un juge retiré reste déclaré, avec retire: true ; au-delà de 3 % de changement au test contrefactuel, le juge est retiré du run et l'échantillon humain passe à 25 %. Cet événement change la composition du run : il doit être une donnée, pas une décision manuelle non tracée.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -963,7 +964,7 @@
         "reponses_doublement_notees",
         "accords"
       ],
-      "description": "§7 (exigence §7.30) : « Leur accord est publié par run » — l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14) : leurs notations sont identiques sur tout ce que lisent les métriques primaires (analysis/note-lue.ts:notationsConcordent). Calculé par analysis/accord-humains.ts, écrit par pnpm go-no-go, recoupé à la lecture du run (analysis/lecture-run.ts:lireRun). reponses_doublement_notees : réponses de l'échantillon portant exactement deux notations humaines echantillon_aleatoire_10, de deux annotateurs distincts ; une réponse notée par un seul humain n'y entre pas. L'arbitrage du troisième humain n'entre pas dans l'accord. accords : parmi elles, celles où les deux concordent. part : accords / reponses_doublement_notees ; absente quand le dénominateur est nul, jamais remplacée par 0, par 1 ni par null. Aucun kappa humain-humain : le protocole n'en définit pas. Exigé d'un run qui porte un go/no-go.",
+      "description": "§7 (exigence §7.30) : « Leur accord est publié par run » — l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14) : leurs notations sont identiques sur tout ce que lisent les métriques primaires (analysis/note-lue.ts:notationsConcordent). Calculé par analysis/accord-humains.ts, écrit par pnpm go-no-go, recoupé à la lecture du run (analysis/lecture-run.ts:lireRun). reponses_doublement_notees : réponses de l'échantillon portant exactement deux notations humaines echantillon_aleatoire_10, de deux annotateurs distincts ; une réponse notée par un seul humain n'y entre pas. L'arbitrage du troisième humain n'entre pas dans l'accord. accords : parmi elles, celles où les deux concordent. part : accords / reponses_doublement_notees ; absente quand le dénominateur est nul, jamais remplacée par 0, par 1 ni par null. kappa (§7 « Annotateurs humains », protocole 0.23, D58) : kappa de Cohen des deux humains sur la catégorie primaire, non pondéré, sur les mêmes réponses doublement notées, les quatre catégories de la grille (annexe C) fixées a priori ; diagnostic, lu par aucun critère du go/no-go (§12). Absent quand il n'est pas défini, jamais remplacé par 0, par 1 ni par null : c'est alors motif_indefini_kappa qui est présent, aucune_reponse_comparable sans réponse doublement notée, accord_attendu_maximal sinon. Exigé d'un run qui porte un go/no-go.",
       "properties": {
         "reponses_doublement_notees": {
           "type": "integer",
@@ -977,8 +978,28 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "kappa": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "motif_indefini_kappa": {
+          "$ref": "#/$defs/motif_kappa_echantillon_indefini"
         }
       },
+      "oneOf": [
+        {
+          "required": [
+            "kappa"
+          ]
+        },
+        {
+          "required": [
+            "motif_indefini_kappa"
+          ]
+        }
+      ],
       "if": {
         "properties": {
           "reponses_doublement_notees": {
@@ -991,13 +1012,22 @@
           "accords": {
             "const": 0
           },
-          "part": false
+          "part": false,
+          "kappa": false,
+          "motif_indefini_kappa": {
+            "const": "aucune_reponse_comparable"
+          }
         }
       },
       "else": {
         "required": [
           "part"
-        ]
+        ],
+        "properties": {
+          "motif_indefini_kappa": {
+            "const": "accord_attendu_maximal"
+          }
+        }
       }
     },
     "indeterminees_echantillon_humain": {

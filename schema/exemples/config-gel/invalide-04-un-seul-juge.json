@@ -1,0 +1,15 @@
+{
+  "version_protocole": "1.0",
+  "fenetre_debut": "2026-12-01T06:00:00+01:00",
+  "juges": [
+    {
+      "juge_id": "juge-1",
+      "famille_modele": "famille-x",
+      "modele": "famille-x/modele-juge-1",
+      "version_prompt": "prompts/judge-primaire-1.0.0"
+    }
+  ],
+  "alias_aveugles": {
+    "outil-alpha": "O07"
+  }
+}

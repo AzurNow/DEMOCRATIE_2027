@@ -133,12 +133,14 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
   // 328 → 329 : conformité 2026-11-01, n° 10, invalide-18 (réponse du canal api sans parametres_effectifs).
   // 329 → 333 : §7.30 (conformité du 2026-11-01, constat 8), accord des deux humains de l'échantillon, un valide et trois invalides de run.
-  it("1. les 333 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 333 → 337 : §7, protocole 0.23 (D58), exactement deux juges : un et trois juges, invalides de run et de config-gel.
+  // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
+  it("1. les 342 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(333);
+    expect(manifeste.exemples).toHaveLength(342);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -386,7 +388,9 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
   // 328 → 329 : conformité 2026-11-01, n° 10, invalide-18 (réponse du canal api sans parametres_effectifs).
   // 329 → 333 : §7.30 (conformité du 2026-11-01, constat 8), accord des deux humains de l'échantillon, un valide et trois invalides de run.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 333 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(333);
+  // 333 → 337 : §7, protocole 0.23 (D58), exactement deux juges : un et trois juges, invalides de run et de config-gel.
+  // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 342 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(342);
   });
 });

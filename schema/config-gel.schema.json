@@ -20,8 +20,8 @@
       "anyOf": [{ "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }, { "type": "null" }]
     },
     "juges": {
-      "description": "Recopiés dans run.juges, chacun avec retire: false : aucun juge n'est retiré au gel, le retrait suit le test contrefactuel (§7).",
-      "anyOf": [{ "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/juge" } }, { "type": "null" }]
+      "description": "Recopiés dans run.juges, chacun avec retire: false : aucun juge n'est retiré au gel, le retrait suit le test contrefactuel (§7). Exactement deux (§7, protocole 0.23, D58 : « Un run déclare exactement deux juges, ni plus ni moins ») : le gel refuse un ou trois juges à la lecture de ce fichier, avant toute écriture.",
+      "anyOf": [{ "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/juge" } }, { "type": "null" }]
     },
     "alias_aveugles": {
       "description": "outil_id → alias aveugle (§7), fourni à pipeline/questions/charger-perimetre.ts, qui exige un alias pour chaque assistant inclus, refuse un alias d'un outil absent du périmètre et un alias attribué à deux outils.",

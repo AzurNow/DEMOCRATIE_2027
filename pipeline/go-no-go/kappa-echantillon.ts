@@ -37,19 +37,25 @@
  * notation ou un renvoi de juge sur un tel refus lève `RefusNoteParUnJuge`.
  */
 
-import { notationsConcordent } from "../../analysis/note-lue.ts";
+import {
+  CATEGORIES_DE_JUGE,
+  categorieHumaineRetenue,
+  kappaCategoriePrimaire,
+  type CategorieDeJuge,
+  type MotifKappaIndefini,
+} from "../../analysis/kappa-categorie-primaire.ts";
 import type { CategorieRetenue, MotifNotation, Ulid } from "../../analysis/types.ts";
-import { comptesKappa, kappaCohen, type PaireCategories } from "../../validation/domaine/kappa.ts";
+import { comptesKappa, type PaireCategories } from "../../validation/domaine/kappa.ts";
 import { JugeIndetermine } from "../notation/decision.ts";
 import { estNotationParRegle } from "../notation/regle-refus.ts";
 import type { JugeDuRun, NotationIndividuelle, RenvoiHumain } from "../notation/types.ts";
 
-/** Les trois catégories primaires qu'un juge peut rendre (§7), dans un ordre figé. */
-export const CATEGORIES_KAPPA_ECHANTILLON = ["exacte", "inexacte", "non_reponse"] as const;
-export type CategorieKappaEchantillon = (typeof CATEGORIES_KAPPA_ECHANTILLON)[number];
+/** Les trois catégories primaires qu'un juge peut rendre (§7), dans un ordre figé : celles de `analysis/`. */
+export const CATEGORIES_KAPPA_ECHANTILLON = CATEGORIES_DE_JUGE;
+export type CategorieKappaEchantillon = CategorieDeJuge;
 
 /** `schema/run.schema.json#/$defs/motif_kappa_echantillon_indefini`. */
-export type MotifKappaEchantillonIndefini = "accord_attendu_maximal" | "aucune_reponse_comparable";
+export type MotifKappaEchantillonIndefini = MotifKappaIndefini;
 
 /** §12 : « ≥ 0,75 », en fraction exacte ; 0,75 exactement passe. */
 export const SEUIL_KAPPA_ECHANTILLON = { numerateur: 3, denominateur: 4 } as const;
@@ -169,7 +175,8 @@ export function referenceHumaine(reponse_id: Ulid, notations: readonly NotationI
   if (premiere === undefined || seconde === undefined || double.length !== 2) {
     throw new ReferenceHumaineIndefinie(reponse_id, `${double.length} notation(s) humaine(s) d'échantillon au lieu de deux (double notation incomplète).`);
   }
-  if (notationsConcordent(premiere, seconde)) return premiere.categorie;
+  const retenue = categorieHumaineRetenue(premiere, seconde, null);
+  if (retenue !== null) return retenue;
   return arbitreDe(reponse_id, notations).categorie;
 }
 
@@ -211,12 +218,8 @@ function categorieDuJuge(juge_id: string, reponse_id: Ulid, notations: readonly 
 }
 
 function kappaDuJuge(juge_id: string, paires: readonly PaireCategories<CategorieKappaEchantillon>[]): Omit<KappaDeJuge, "renvois_ecartes"> {
-  const resultat = kappaCohen(paires, CATEGORIES_KAPPA_ECHANTILLON);
-  if (resultat.kappa === null) {
-    const motif = resultat.n === 0 ? "aucune_reponse_comparable" : "accord_attendu_maximal";
-    return { juge_id, kappa: null, motif_indefini: motif, atteint_seuil: false, n: resultat.n };
-  }
-  return { juge_id, kappa: resultat.kappa, motif_indefini: null, atteint_seuil: atteintSeuil(paires), n: resultat.n };
+  const resultat = kappaCategoriePrimaire(paires, CATEGORIES_KAPPA_ECHANTILLON);
+  return { juge_id, ...resultat, atteint_seuil: resultat.kappa !== null && atteintSeuil(paires) };
 }
 
 /**

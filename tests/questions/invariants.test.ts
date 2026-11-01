@@ -385,8 +385,10 @@ describe("exemples de schema/exemples/", () => {
   // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
   // 328 → 329 : conformité 2026-11-01, n° 10, invalide-18 (réponse du canal api sans parametres_effectifs).
   // 329 → 333 : §7.30 (conformité du 2026-11-01, constat 8), accord des deux humains de l'échantillon, un valide et trois invalides de run.
-  it("charge les 333 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(333);
+  // 333 → 337 : §7, protocole 0.23 (D58), exactement deux juges : un et trois juges, invalides de run et de config-gel.
+  // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
+  it("charge les 342 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(342);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

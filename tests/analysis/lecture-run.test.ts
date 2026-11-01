@@ -286,13 +286,22 @@ describe("§7.30 : accord_humains_echantillon recoupé à la lecture, comme par_
   it("un accord concordant avec l'échantillon rejoué et les notations passe", () => {
     const run = runNote();
     // Les deux humains du run fictif notent à l'identique chaque réponse de son échantillon.
-    poserAccord(run, { reponses_doublement_notees: 1, accords: 1, part: 1 });
+    // Une seule réponse doublement notée : une seule catégorie, kappa des deux humains indéfini (D58).
+    poserAccord(run, { reponses_doublement_notees: 1, accords: 1, part: 1, motif_indefini_kappa: "accord_attendu_maximal" });
     expect(() => lire(run)).not.toThrow();
+  });
+
+  it("D58 : un kappa des deux humains écrit qui contredit le recalcul (1 au lieu d'absent) : AccordHumainsDivergent", () => {
+    const run = runNote();
+    poserAccord(run, { reponses_doublement_notees: 1, accords: 1, part: 1, kappa: 1 });
+    const erreur = erreurDe(() => lire(run));
+    expect(erreur).toBeInstanceOf(AccordHumainsDivergent);
+    expect(erreur.message).toContain('"motif_indefini_kappa":"accord_attendu_maximal"');
   });
 
   it("un accord qui contredit les notations lève AccordHumainsDivergent, avec l'écrit et le recalcul", () => {
     const run = runNote();
-    poserAccord(run, { reponses_doublement_notees: 1, accords: 0, part: 0 });
+    poserAccord(run, { reponses_doublement_notees: 1, accords: 0, part: 0, kappa: 0 });
     const erreur = erreurDe(() => lire(run));
     expect(erreur).toBeInstanceOf(AccordHumainsDivergent);
     expect(erreur.message).toContain('"accords":0');
@@ -301,7 +310,7 @@ describe("§7.30 : accord_humains_echantillon recoupé à la lecture, comme par_
 
   it("une part indéfinie écrite alors que des réponses sont doublement notées : AccordHumainsDivergent", () => {
     const run = runNote();
-    poserAccord(run, { reponses_doublement_notees: 0, accords: 0 });
+    poserAccord(run, { reponses_doublement_notees: 0, accords: 0, motif_indefini_kappa: "aucune_reponse_comparable" });
     expect(() => lire(run)).toThrow(AccordHumainsDivergent);
   });
 
