@@ -16,6 +16,10 @@
  *   lecture : il n'est ni lu ni ignoré, sauf `.DS_Store` seul (D54 (8)), liste fermée en données —
  *   un `.tmp` ou tout autre fichier parasite reste un refus nommé. Seul lecteur du staging : la
  *   relecture de l'interface de validation passe aussi par ici.
+ * - `garderOctetsRecus` garde sous `octets-recus/<question_id>/<id>.octets` les octets de chaque
+ *   réponse HTTP reçue, avant toute lecture (D55 (5)) ; `consignerNonStockee` y ajoute la cause
+ *   quand la proposition n'a pas pu être écrite ; `recuesNonStockees` rend les octets sans
+ *   proposition du même `id`, que la relance ne rappelle jamais (constat 24 du 2026-10-17).
  */
 
 import { randomBytes } from "node:crypto";
@@ -88,14 +92,16 @@ export function cheminProposition(staging: string, proposition: Pick<Proposition
   return join(repertoireQuestion(staging, proposition.question_id), `${proposition.id}.json`);
 }
 
-/** Valide puis écrit une fois ; lève `ErreurSchema` ou `PropositionDejaEcrite`, sans rien écrire alors. */
-export function ecrireProposition(staging: string, proposition: PropositionFormulation): string {
-  const chemin = cheminProposition(staging, proposition);
-  const texte = `${JSON.stringify(valider<PropositionFormulation>("proposition-formulation", proposition, `proposition à écrire dans ${chemin}`), null, 2)}\n`;
-  const repertoire = repertoireQuestion(staging, proposition.question_id);
+/**
+ * Écrit `contenu` sous `<repertoire>/<nom>`, une fois, de façon atomique : un temporaire caché du
+ * même répertoire, puis un lien vers le nom final, qui échoue si ce nom existe déjà
+ * (`PropositionDejaEcrite`). Une seule écriture pour les propositions, les octets reçus et leur cause.
+ */
+function ecrireUneFois(repertoire: string, nom: string, contenu: string | Uint8Array): string {
+  const chemin = join(repertoire, nom);
   mkdirSync(repertoire, { recursive: true });
-  const tmp = join(repertoire, `.${proposition.id}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
-  writeFileSync(tmp, texte, { encoding: "utf8", flag: "wx" });
+  const tmp = join(repertoire, `.${nom}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
+  writeFileSync(tmp, contenu, { flag: "wx" });
   try {
     linkSync(tmp, chemin);
   } catch (erreur) {
@@ -105,6 +111,73 @@ export function ecrireProposition(staging: string, proposition: PropositionFormu
     rmSync(tmp, { force: true });
   }
   return chemin;
+}
+
+/** Valide puis écrit une fois ; lève `ErreurSchema` ou `PropositionDejaEcrite`, sans rien écrire alors. */
+export function ecrireProposition(staging: string, proposition: PropositionFormulation): string {
+  const chemin = cheminProposition(staging, proposition);
+  const texte = `${JSON.stringify(valider<PropositionFormulation>("proposition-formulation", proposition, `proposition à écrire dans ${chemin}`), null, 2)}\n`;
+  return ecrireUneFois(repertoireQuestion(staging, proposition.question_id), `${proposition.id}.json`, texte);
+}
+
+/* ------------------------------------------------------------ octets reçus */
+
+/**
+ * `<staging>/octets-recus/<question_id>/` : les octets de chaque réponse HTTP reçue, gardés tels
+ * quels avant toute interprétation, sous l'identifiant de la proposition qu'ils deviendront (D55 (5),
+ * constat 24 du 2026-10-17). Ce nom ne peut pas être celui d'une question (`q_<hex>`).
+ */
+export const REPERTOIRE_OCTETS_RECUS = "octets-recus";
+
+const SUFFIXE_OCTETS = ".octets";
+const SUFFIXE_CAUSE = ".cause.txt";
+const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+
+function repertoireOctets(staging: string, question_id: string): string {
+  return join(staging, REPERTOIRE_OCTETS_RECUS, question_id);
+}
+
+/** Garde les octets reçus, avant toute lecture ; rend leur chemin. Jamais réécrits (règle 7). */
+export function garderOctetsRecus(staging: string, question_id: string, id: string, octets: Uint8Array): string {
+  return ecrireUneFois(repertoireOctets(staging, question_id), `${id}${SUFFIXE_OCTETS}`, octets);
+}
+
+/**
+ * Consigne pourquoi la réponse `id`, reçue et gardée, n'a pas été stockée : texte pour l'opérateur,
+ * jamais relu par le code (la relance se fonde sur des octets sans proposition, `recuesNonStockees`).
+ */
+export function consignerNonStockee(staging: string, question_id: string, id: string, cause: string): string {
+  return ecrireUneFois(repertoireOctets(staging, question_id), `${id}${SUFFIXE_CAUSE}`, `${cause}\n`);
+}
+
+/** L'identifiant d'un fichier d'octets ou de cause, ou `null` pour tout autre nom. */
+function idDuFichier(nom: string): string | null {
+  const suffixe = [SUFFIXE_OCTETS, SUFFIXE_CAUSE].find((candidat) => nom.endsWith(candidat));
+  if (suffixe === undefined) return null;
+  const id = nom.slice(0, -suffixe.length);
+  return ULID.test(id) ? id : null;
+}
+
+/**
+ * Les octets gardés d'une question sans proposition du même identifiant : réponses reçues (et
+ * payées) que le banc n'a pas stockées — corps non UTF-8, proposition hors schéma, arrêt entre la
+ * garde et l'écriture. Une telle question n'est jamais rappelée : elle attend l'opérateur. Un
+ * fichier étranger arrête la lecture (`StagingFormulationsIllisible`), il n'est ni lu ni ignoré.
+ */
+export function recuesNonStockees(staging: string, question_id: string): readonly string[] {
+  const repertoire = repertoireOctets(staging, question_id);
+  if (!existsSync(repertoire)) return [];
+  const noms = readdirSync(repertoire)
+    .filter((nom) => !FICHIERS_IGNORES.has(nom))
+    .sort();
+  const etrangers = noms.filter((nom) => idDuFichier(nom) === null);
+  if (etrangers.length > 0) {
+    throw new StagingFormulationsIllisible(repertoire, `fichiers qui ne sont ni des octets reçus ni leur cause : ${etrangers.join(", ")}.`);
+  }
+  return noms
+    .filter((nom) => nom.endsWith(SUFFIXE_OCTETS))
+    .filter((nom) => !existsSync(cheminProposition(staging, { question_id, id: nom.slice(0, -SUFFIXE_OCTETS.length) })))
+    .map((nom) => join(repertoire, nom));
 }
 
 function lireFichier(chemin: string, question_id: string, nom: string): PropositionFormulation {

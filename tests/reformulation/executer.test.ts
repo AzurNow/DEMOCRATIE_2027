@@ -4,18 +4,18 @@
  */
 
 import { createHash } from "node:crypto";
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { CorpsNonUtf8, ErreurReseau } from "../../pipeline/interrogation/editeur.ts";
+import { ErreurReseau } from "../../pipeline/interrogation/editeur.ts";
 import { adaptateurMistral } from "../../pipeline/reformulation/editeur-mistral.ts";
 import type { Tache } from "../../pipeline/reformulation/entrees.ts";
 import { tachesDe } from "../../pipeline/reformulation/entrees.ts";
 import { executer } from "../../pipeline/reformulation/executer.ts";
 import type { Bilan, ContexteExecution } from "../../pipeline/reformulation/executer.ts";
 import { chargerPromptReformulation, VERSION_PROMPT_REFORMULATION } from "../../pipeline/reformulation/prompt.ts";
-import { lirePropositions } from "../../pipeline/reformulation/staging.ts";
+import { lirePropositions, REPERTOIRE_OCTETS_RECUS } from "../../pipeline/reformulation/staging.ts";
 import type { PropositionFormulation } from "../../pipeline/reformulation/staging.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import {
@@ -86,7 +86,7 @@ async function essayer(taches: readonly Tache[], repondre: (rang: number) => Rep
     attendre: jamaisEcoulee,
     signaler: (message) => signalements.push(message),
   };
-  const bilan = await executer({ a_appeler: taches, deja_acceptees: 0, deja_validees: 0 }, contexte);
+  const bilan = await executer({ a_appeler: taches, deja_acceptees: 0, deja_validees: 0, en_attente_operateur: [] }, contexte);
   const propositions = taches.flatMap((une) => lirePropositions(repertoire, une.question.id));
   return { bilan, transport, propositions, signalements, staging: repertoire };
 }
@@ -192,22 +192,16 @@ describe("cas limite 4 : statut hors 2xx", () => {
 });
 
 describe("cas limite 5 : corps qui n'est pas de l'UTF-8 valide", () => {
-  it("erreur explicite, aucun fichier écrit", async () => {
-    const repertoire = staging();
-    const transport = new TransportFactice(() => reponse(200, new Uint8Array([0x7b, 0xff, 0x7d])));
-    const contexte: ContexteExecution = {
-      editeur: { adaptateur: adaptateurMistral(CONFIGURATION, "cle-factice"), transport },
-      texte_prompt: TEXTE_PROMPT,
-      perimetre: CANDIDATS,
-      staging: repertoire,
-      plafond: null,
-      maintenant: () => INSTANT,
-      delai_abandon_ms: CONFIGURATION.delai_abandon_ms,
-      attendre: jamaisEcoulee,
-      signaler: () => undefined,
-    };
-    await expect(executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0 }, contexte)).rejects.toThrow(CorpsNonUtf8);
-    expect(readdirSync(repertoire)).toEqual([]);
+  it("cause CorpsNonUtf8 consignée, aucune proposition : seuls les octets reçus et leur cause sont écrits (D55 (5))", async () => {
+    const essai = await essayer([NOMMEE], () => reponse(200, new Uint8Array([0x7b, 0xff, 0x7d])));
+    expect(readdirSync(essai.staging)).toEqual([REPERTOIRE_OCTETS_RECUS]);
+    const gardes = join(essai.staging, REPERTOIRE_OCTETS_RECUS, NOMMEE.question.id);
+    const noms = readdirSync(gardes).sort();
+    expect(noms).toHaveLength(2);
+    const cause = noms.find((nom) => nom.endsWith(".cause.txt"));
+    if (cause === undefined) throw new Error("cause absente");
+    expect(readFileSync(join(gardes, cause), "utf8")).toMatch(/^CorpsNonUtf8 : /);
+    expect(essai.bilan.recues_non_stockees).toBe(1);
   });
 });
 
@@ -247,7 +241,7 @@ describe("dette du 2026-10-15, point 2 : délai d'abandon par appel", () => {
     const demandes: number[] = [];
     const signalements: string[] = [];
     const contexte = contexteAvec(transport, attenteAuTourSuivant(demandes), 1234, signalements);
-    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0 }, contexte);
+    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0, en_attente_operateur: [] }, contexte);
     expect(bilan).toMatchObject({ appels: 1, acceptees: 0, echecs_http: 0, echecs_transport: 1, ecrits: [] });
     expect(demandes).toEqual([1234]);
     expect(transport.interrompus).toBe(1);
@@ -263,7 +257,7 @@ describe("dette du 2026-10-15, point 2 : délai d'abandon par appel", () => {
       envoyer: (requete, signal) => (rang++ === 0 ? muet.envoyer(requete, signal) : factice.envoyer(requete)),
     };
     const contexte = contexteAvec(transport, attenteAuTourSuivant(), 1000, []);
-    const bilan = await executer({ a_appeler: [NOMMEE, SUR_A], deja_acceptees: 0, deja_validees: 0 }, contexte);
+    const bilan = await executer({ a_appeler: [NOMMEE, SUR_A], deja_acceptees: 0, deja_validees: 0, en_attente_operateur: [] }, contexte);
     expect(bilan).toMatchObject({ appels: 2, acceptees: 1, echecs_transport: 1 });
     expect(lirePropositions(contexte.staging, NOMMEE.question.id)).toEqual([]);
     expect(lirePropositions(contexte.staging, SUR_A.question.id)).toHaveLength(1);
@@ -277,7 +271,7 @@ describe("dette du 2026-10-15, point 2 : délai d'abandon par appel", () => {
     };
     const transport = new TransportFactice(() => reponse(200, corpsChat(sortieConforme(NOMMEE.demande))));
     const contexte = contexteAvec(transport, attendre, 1000, []);
-    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0 }, contexte);
+    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0, en_attente_operateur: [] }, contexte);
     expect(bilan).toMatchObject({ appels: 1, acceptees: 1, echecs_transport: 0 });
     expect(signaux).toHaveLength(1);
     expect(signaux[0]?.aborted).toBe(true);
@@ -287,7 +281,7 @@ describe("dette du 2026-10-15, point 2 : délai d'abandon par appel", () => {
     const demandes: number[] = [];
     const transport = new TransportFactice(() => reponse(200, corpsChat(sortieConforme(NOMMEE.demande))));
     const contexte = contexteAvec(transport, attenteAuTourSuivant(demandes), null, []);
-    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0 }, contexte);
+    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0, en_attente_operateur: [] }, contexte);
     expect(bilan).toMatchObject({ appels: 1, acceptees: 1 });
     expect(demandes).toEqual([]);
   });

@@ -35,6 +35,7 @@ import type {
 } from "./types.ts";
 import { POSITIONS } from "./types.ts";
 import { gabaritParCode } from "./gabarits.ts";
+import { dateCivileValide } from "../../validation/domaine/validateurs-champ.ts";
 
 export class ItemIntrouvable extends Error {
   constructor(item_id: string) {
@@ -116,11 +117,29 @@ export class PositionsContradictoires extends Error {
 
 /* ----------------------------------------------------------------- instants */
 
-/** Une date civile est ramenée à minuit UTC : voir la convention en tête de module. */
+/**
+ * Date civile impossible ou non canonique (`2027-02-29`, `2026-04-31`, `2026-1-1`), lue dans un
+ * item ou un run (revue du 2026-10-12, constat 11) : `Date.parse` la ferait glisser au mois
+ * suivant sans lever. Refus, jamais de glissement : une borne de validité déplacée d'un jour
+ * change la réponse attendue.
+ */
+export class DateCivileInvalide extends Error {
+  readonly date: string;
+
+  constructor(date: string) {
+    super(`Date civile illisible ou impossible : « ${date} » (forme AAAA-MM-JJ, jour réel du calendrier attendu).`);
+    this.name = "DateCivileInvalide";
+    this.date = date;
+  }
+}
+
+/**
+ * Une date civile est ramenée à minuit UTC : voir la convention en tête de module. La règle de
+ * date réelle est celle des registres (`dateCivileValide`), une seule dans le dépôt.
+ */
 export function instantDeDateCivile(date: string): number {
-  const millisecondes = Date.parse(`${date}T00:00:00Z`);
-  if (Number.isNaN(millisecondes)) throw new Error(`Date civile illisible : ${date}`);
-  return millisecondes;
+  if (!dateCivileValide(date)) throw new DateCivileInvalide(date);
+  return Date.parse(`${date}T00:00:00Z`);
 }
 
 /**
@@ -134,6 +153,8 @@ export function instantDe(horodatage: string): number {
   if (!INSTANT_AVEC_DECALAGE.test(horodatage)) {
     throw new Error(`Instant sans décalage horaire explicite, ou mal formé : ${horodatage}`);
   }
+  // La date civile écrite (dans le fuseau porté par l'instant) suit la même règle que les bornes.
+  if (!dateCivileValide(horodatage.slice(0, 10))) throw new DateCivileInvalide(horodatage.slice(0, 10));
   const millisecondes = Date.parse(horodatage);
   if (Number.isNaN(millisecondes)) throw new Error(`Instant illisible : ${horodatage}`);
   return millisecondes;

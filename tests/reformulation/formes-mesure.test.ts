@@ -18,10 +18,11 @@ const Q_FER = gabaritParCode("Q-FER");
 
 describe("formes admises de la mesure (D42 (4))", () => {
   it("Q-NEG place « à » devant la mesure : canonique et contractée", () => {
-    expect(formesAdmisesDeMesure(Q_NEG, "le budget")).toEqual({ canonique: "le budget", contractee: "au budget" });
+    expect(formesAdmisesDeMesure(Q_NEG, "le budget")).toEqual({ canonique: "le budget", contractee: "au budget", contractee_en_tete: null });
     expect(formesAdmisesDeMesure(Q_NEG, "les retraites")).toEqual({
       canonique: "les retraites",
       contractee: "aux retraites",
+      contractee_en_tete: null,
     });
   });
 
@@ -33,11 +34,11 @@ describe("formes admises de la mesure (D42 (4))", () => {
   });
 
   it("article qui ne se contracte pas (« la ») : canonique seule, même derrière « à »", () => {
-    expect(formesAdmisesDeMesure(Q_NEG, "la retraite")).toEqual({ canonique: "la retraite", contractee: null });
+    expect(formesAdmisesDeMesure(Q_NEG, "la retraite")).toEqual({ canonique: "la retraite", contractee: null, contractee_en_tete: null });
   });
 
   it("gabarit sans « à » devant la mesure : canonique seule", () => {
-    expect(formesAdmisesDeMesure(Q_FER, "le budget")).toEqual({ canonique: "le budget", contractee: null });
+    expect(formesAdmisesDeMesure(Q_FER, "le budget")).toEqual({ canonique: "le budget", contractee: null, contractee_en_tete: null });
   });
 
   it("article en majuscule derrière « à » : même refus qu'au remplissage du texte neutre", () => {
@@ -87,6 +88,37 @@ describe("cas limite 9 : la mesure figure sous une forme admise", () => {
 
   it("mesure absente du texte ⇒ faux", () => {
     expect(mesureFigureSousFormeAdmise("X s'oppose à quoi ?", Q_NEG, "le budget")).toBe(false);
+  });
+});
+
+describe("« À [mesure] » en tête de phrase : la forme « Au … » du remplissage est admise (suite du lot 10 (e))", () => {
+  const EN_TETE = { ...Q_NEG, texte_neutre: "À [mesure], [candidat] s'oppose-t-il ou elle ?" };
+
+  it("formes admises : la contractée et sa majuscule initiale, celle qu'écrit le remplissage", () => {
+    expect(formesAdmisesDeMesure(EN_TETE, "le budget")).toEqual({
+      canonique: "le budget",
+      contractee: "au budget",
+      contractee_en_tete: "Au budget",
+    });
+    expect(formesAdmisesDeMesure(EN_TETE, "les retraites")).toMatchObject({ contractee_en_tete: "Aux retraites" });
+    expect(formesAdmisesDeMesure(EN_TETE, "la retraite")).toMatchObject({ contractee: null, contractee_en_tete: null });
+  });
+
+  it("le texte neutre rempli « Au budget, … » est admis par le contrôle", () => {
+    const neutre = remplirTexteNeutre(EN_TETE, { libelle_candidat: "X", formulation_mesure: "le budget" });
+    expect(neutre).toBe("Au budget, X s'oppose-t-il ou elle ?");
+    expect(mesureFigureSousFormeAdmise(neutre, EN_TETE, "le budget")).toBe(true);
+    expect(mesureFigureSousFormeAdmise("Aux retraites, X dit non ?", EN_TETE, "les retraites")).toBe(true);
+  });
+
+  it("la forme minuscule reste admise ; « À le budget » et « AU budget » restent refusés", () => {
+    expect(mesureFigureSousFormeAdmise("X s'oppose-t-il au budget ?", EN_TETE, "le budget")).toBe(true);
+    expect(mesureFigureSousFormeAdmise("À le budget, X s'oppose ?", EN_TETE, "le budget")).toBe(false);
+    expect(mesureFigureSousFormeAdmise("AU budget, X s'oppose ?", EN_TETE, "le budget")).toBe(false);
+  });
+
+  it("aucun gabarit actuel n'admet « Au budget » en tête : comportement inchangé", () => {
+    expect(mesureFigureSousFormeAdmise("Au budget, X s'oppose ?", Q_NEG, "le budget")).toBe(false);
   });
 });
 
