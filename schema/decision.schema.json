@@ -29,7 +29,7 @@
     "type_entree": {
       "type": "string",
       "enum": ["decision", "annulation", "retrait_item"],
-      "description": "annulation : l'annotateur revient sur sa dernière décision. L'entrée annulée reste dans le fichier — c'est la définition d'un journal append-only. retrait_item : trace que l'annotateur a rencontré l'item contesté ; le kappa lit le statut de contestation de l'item au calcul, pas cette entrée."
+      "description": "annulation : l'annotateur revient sur sa dernière décision. L'entrée annulée reste dans le fichier — c'est la définition d'un journal append-only. retrait_item : constat qu'une contestation a retiré l'item de la file de l'annotateur, horodaté à la première écriture de cet annotateur qui suit (que l'item ait été atteint ou non) ; le kappa lit le statut de contestation de l'item au calcul, pas cette entrée."
     },
 
     "annotateur_id": {

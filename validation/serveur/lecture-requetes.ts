@@ -9,25 +9,21 @@
  * `requete.lot_id ?? ""` transformait un corps vide en `TypeError` ou en « lot inconnu »).
  */
 
-import { erreurIdentifiant } from "../domaine/identifiant.ts";
+import { erreurIdentifiant, erreurIdentifiantLot } from "../domaine/identifiant.ts";
 import type { SoumissionDecision } from "../domaine/decision.ts";
-import { CLES_GRILLE } from "../domaine/grille.ts";
+import {
+  champsInconnus,
+  erreurDuree,
+  erreursGrille,
+  erreursGrilleParEtat,
+  erreursQuestionsSpecifiques,
+  estObjet,
+  type Objet,
+} from "../domaine/forme-requetes.ts";
 
 export type Lecture<T> =
   | { readonly ok: true; readonly requete: T }
   | { readonly ok: false; readonly erreurs: readonly string[] };
-
-type Objet = Readonly<Record<string, unknown>>;
-
-function estObjet(valeur: unknown): valeur is Objet {
-  return typeof valeur === "object" && valeur !== null && !Array.isArray(valeur);
-}
-
-function champsInconnus(objet: Objet, connus: readonly string[], chemin: string): readonly string[] {
-  return Object.keys(objet)
-    .filter((cle) => !connus.includes(cle))
-    .map((cle) => `${chemin}.${cle} : champ inconnu`);
-}
 
 function exigerChaine(objet: Objet, cle: string, chemin: string): readonly string[] {
   return typeof objet[cle] === "string" ? [] : [`${chemin}.${cle} : une chaîne est attendue`];
@@ -36,45 +32,6 @@ function exigerChaine(objet: Objet, cle: string, chemin: string): readonly strin
 function chaineOuNulleSiPresente(objet: Objet, cle: string, chemin: string): readonly string[] {
   if (objet[cle] === undefined || objet[cle] === null) return [];
   return typeof objet[cle] === "string" ? [] : [`${chemin}.${cle} : une chaîne ou null est attendue`];
-}
-
-function erreurDuree(objet: Objet, cle: string): string | null {
-  const valeur = objet[cle];
-  return typeof valeur === "number" && Number.isFinite(valeur) ? null : `${cle} : un nombre est attendu`;
-}
-
-/* ------------------------------------------------------------------ grille */
-
-const CLES_GRILLE_CONNUES = CLES_GRILLE as readonly string[];
-
-/** Forme seule : chaque clé connue vaut un booléen ou `null` ; la complétude est au domaine. */
-function erreursGrille(valeur: unknown, chemin: string): readonly string[] {
-  if (valeur === undefined) return [];
-  if (!estObjet(valeur)) return [`${chemin} : un objet est attendu`];
-  return [
-    ...champsInconnus(valeur, CLES_GRILLE_CONNUES, chemin),
-    ...CLES_GRILLE_CONNUES.filter((cle) => valeur[cle] !== undefined && typeof valeur[cle] !== "boolean" && valeur[cle] !== null).map(
-      (cle) => `${chemin}.${cle} : un booléen ou null est attendu`,
-    ),
-  ];
-}
-
-function erreursGrilleParEtat(valeur: unknown): readonly string[] {
-  if (valeur === undefined) return [];
-  if (!estObjet(valeur)) return ["reponses_par_etat : un objet est attendu"];
-  return [
-    ...champsInconnus(valeur, ["anterieur", "posterieur"], "reponses_par_etat"),
-    ...erreursGrille(valeur["anterieur"], "reponses_par_etat.anterieur"),
-    ...erreursGrille(valeur["posterieur"], "reponses_par_etat.posterieur"),
-  ];
-}
-
-function erreursQuestionsSpecifiques(valeur: unknown): readonly string[] {
-  if (valeur === undefined) return [];
-  if (!estObjet(valeur)) return ["questions_specifiques : un objet est attendu"];
-  return Object.entries(valeur)
-    .filter(([, bit]) => typeof bit !== "boolean")
-    .map(([cle]) => `questions_specifiques.${cle} : un booléen est attendu`);
 }
 
 /* --------------------------------------------------------------- corrections */
@@ -119,7 +76,7 @@ export interface RequeteDecisionLue extends SoumissionDecision {
 
 function erreursRequeteDecision(corps: Objet): readonly string[] {
   const erreurs: string[] = [...champsInconnus(corps, CHAMPS_DECISION, "corps")];
-  const lot_id = erreurIdentifiant(corps["lot_id"], "lot_id");
+  const lot_id = erreurIdentifiantLot(corps["lot_id"], "lot_id");
   if (lot_id !== null) erreurs.push(lot_id);
   const item_id = erreurIdentifiant(corps["item_id"], "item_id");
   if (item_id !== null) erreurs.push(item_id);
@@ -154,7 +111,7 @@ export interface RequeteAnnulationLue {
 
 function erreursRequeteAnnulation(corps: Objet): readonly string[] {
   const erreurs: string[] = [...champsInconnus(corps, CHAMPS_ANNULATION, "corps")];
-  const lot_id = erreurIdentifiant(corps["lot_id"], "lot_id");
+  const lot_id = erreurIdentifiantLot(corps["lot_id"], "lot_id");
   if (lot_id !== null) erreurs.push(lot_id);
   erreurs.push(...chaineOuNulleSiPresente(corps, "commentaire", "corps"));
   return erreurs;
