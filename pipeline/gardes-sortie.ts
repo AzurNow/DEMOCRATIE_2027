@@ -11,6 +11,11 @@
  * `cheminReel` (le chemin réel de la plus longue partie existante, suivi du reste tel quel) et
  * `estSous` sont la seule implémentation de la comparaison : un lien symbolique posé hors d'une
  * zone interdite qui y mène est refusé comme le chemin direct.
+ *
+ * La comparaison ignore la casse et la normalisation Unicode (NFC), quel que soit le disque
+ * (constat 6 du 2026-10-17) : sur APFS, `DATA/` est `data/` ; ailleurs, refuser `DATA/` est un
+ * sur-refus sans coût, et la règle ne dépend pas du système de fichiers. `realpathSync.native`
+ * rend en outre la casse inscrite sur le disque pour la partie existante.
  */
 
 import { existsSync, realpathSync } from "node:fs";
@@ -19,18 +24,26 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 /** `runs/` du dépôt qui porte ce code. */
 export const RUNS_DU_DEPOT = resolve(import.meta.dirname, "../runs");
 
-/** Le chemin réel de la plus longue partie existante, suivi du reste tel quel. */
+/** Le chemin réel de la plus longue partie existante (casse du disque), suivi du reste tel quel. */
 export function cheminReel(absolu: string): string {
-  if (existsSync(absolu)) return realpathSync(absolu);
+  if (existsSync(absolu)) return realpathSync.native(absolu);
   const parent = dirname(absolu);
   if (parent === absolu) return absolu;
   return join(cheminReel(parent), basename(absolu));
 }
 
-/** Vrai si `chemin` est `repertoire`, ou en dessous, une fois les liens symboliques résolus. */
+/** La forme comparée d'un chemin : réel, en NFC, en minuscules. */
+function cleDeComparaison(chemin: string): string {
+  return cheminReel(resolve(chemin)).normalize("NFC").toLowerCase();
+}
+
+/**
+ * Vrai si `chemin` est `repertoire`, ou en dessous, une fois les liens symboliques résolus, sans
+ * égard à la casse ni à la normalisation Unicode.
+ */
 export function estSous(chemin: string, repertoire: string): boolean {
-  const reel = cheminReel(resolve(chemin));
-  const reference = cheminReel(resolve(repertoire));
+  const reel = cleDeComparaison(chemin);
+  const reference = cleDeComparaison(repertoire);
   return reel === reference || reel.startsWith(`${reference}${sep}`);
 }
 

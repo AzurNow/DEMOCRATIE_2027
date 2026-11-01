@@ -3,7 +3,7 @@
  * refus avant tout appel, reprise, plafond, secret de la clé, déterminisme du mode simulé.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -481,6 +481,15 @@ describe("mode simulé", () => {
       const execution = await lancer(["--simule", `--racine=${racine()}`, `--sortie=${join(depot, "data", "formulations")}`], echouer, {}, jamaisEcoulee, depot);
       expect(execution.code).toBe(1);
       expect(execution.sortie).toMatch(/jamais écrite/u);
+    });
+
+    it("refuse d'écrire sous Data/ du dépôt : la casse ne contourne pas la garde", async () => {
+      const depot = depotJetable();
+      const sortie = join(depot, "Data", "formulations");
+      const execution = await lancer(["--simule", `--racine=${racine()}`, `--sortie=${sortie}`], echouer, {}, jamaisEcoulee, depot);
+      expect(execution.code).toBe(1);
+      expect(execution.sortie).toMatch(/jamais écrite/u);
+      expect(existsSync(sortie)).toBe(false);
     });
 
     it("refuse d'écrire sous runs/ du dépôt", async () => {

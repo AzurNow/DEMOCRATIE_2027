@@ -5,7 +5,7 @@
 
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   estSous,
@@ -77,6 +77,81 @@ describe("exigerHorsDesZonesProtegees", () => {
   it("accepte une sortie temporaire hors du dépôt", () => {
     const depot = temporaire();
     expect(() => exigerHorsDesZonesProtegees(temporaire(), depot)).not.toThrow();
+  });
+});
+
+describe("constat 6 du 2026-10-17 : comparaison insensible à la casse, après NFC", () => {
+  const casses = [
+    ["DATA", "x"],
+    ["Data", "formulations"],
+    ["RUNS", "x"],
+    ["Staging", "x"],
+  ] as const;
+
+  it.each(casses)("refuse <dépôt>/%s/%s quand la zone existe en minuscules", (zone, feuille) => {
+    const depot = temporaire();
+    mkdirSync(join(depot, zone.toLowerCase()));
+    expect(() => exigerHorsDesZonesProtegees(join(depot, zone, feuille), depot)).toThrow(SimuleSousZoneProtegee);
+  });
+
+  it.each(casses)("refuse <dépôt>/%s/%s quand la zone n'existe pas encore", (zone, feuille) => {
+    const depot = temporaire();
+    expect(() => exigerHorsDesZonesProtegees(join(depot, zone, feuille), depot)).toThrow(SimuleSousZoneProtegee);
+  });
+
+  it("refuse <dépôt>/Data/x alors que data/ n'existe pas : le dépôt verrait Data/ comme un autre nom", () => {
+    const depot = temporaire();
+    expect(() => exigerHorsDesZonesProtegees(join(depot, "Data", "x"), depot)).toThrow(SimuleSousZoneProtegee);
+  });
+
+  it("refuse un lien symbolique dont la cible est écrite DATA/ et mène à data/", () => {
+    const depot = temporaire();
+    mkdirSync(join(depot, "data"));
+    const lien = join(temporaire(), "raccourci");
+    symlinkSync(join(depot, "DATA"), lien);
+    expect(() => exigerHorsDesZonesProtegees(join(lien, "x"), depot)).toThrow(SimuleSousZoneProtegee);
+  });
+
+  it("refuse la zone elle-même en casse différente (<dépôt>/DATA, égalité)", () => {
+    const depot = temporaire();
+    mkdirSync(join(depot, "data"));
+    expect(() => exigerHorsDesZonesProtegees(join(depot, "DATA"), depot)).toThrow(SimuleSousZoneProtegee);
+    expect(() => exigerHorsDesZonesProtegees(join(depot, "data"), depot)).toThrow(SimuleSousZoneProtegee);
+  });
+
+  it.each(["data-bis", "database", "Data-bis", "DATABASE"])("accepte <dépôt>/%s/x : aucun faux positif par préfixe", (voisin) => {
+    const depot = temporaire();
+    mkdirSync(join(depot, "data"));
+    expect(() => exigerHorsDesZonesProtegees(join(depot, voisin, "x"), depot)).not.toThrow();
+  });
+
+  it("un parent non ASCII du dépôt écrit en NFD d'un côté et en NFC de l'autre ne casse pas la comparaison", () => {
+    const parent = temporaire();
+    const nfd = join(parent, "Démocratie");
+    mkdirSync(nfd);
+    const nfc = join(parent, "Démocratie");
+    expect(() => exigerHorsDesZonesProtegees(join(nfd, "Data", "x"), nfc)).toThrow(SimuleSousZoneProtegee);
+    expect(() => exigerHorsDesZonesProtegees(join(nfc, "data", "x"), nfd)).toThrow(SimuleSousZoneProtegee);
+    expect(() => exigerHorsDesZonesProtegees(join(nfd, "database", "x"), nfc)).not.toThrow();
+  });
+
+  it("estSous ignore la casse et la normalisation Unicode, quel que soit le disque", () => {
+    const racine = temporaire();
+    expect(estSous(join(racine, "ZONE", "x"), join(racine, "zone"))).toBe(true);
+    expect(estSous(join(racine, "Zône"), join(racine, "zône"))).toBe(true);
+    expect(estSous(join(racine, "zone-bis"), join(racine, "ZONE"))).toBe(false);
+  });
+
+  it("exigerHorsDeRuns et estSousRuns refusent Runs/ et RUNS/ du dépôt", () => {
+    const depot = dirname(RUNS_DU_DEPOT);
+    expect(estSousRuns(join(depot, "Runs", "2026-10-17"))).toBe(true);
+    expect(() => exigerHorsDeRuns(join(depot, "RUNS", "x"))).toThrow(SimuleSousRuns);
+    expect(() => exigerHorsDeRuns(join(depot, "RUNS"))).toThrow(SimuleSousRuns);
+  });
+
+  it("accepte runs-bis/ voisin de runs/ du dépôt, en toute casse", () => {
+    const depot = dirname(RUNS_DU_DEPOT);
+    expect(estSousRuns(join(depot, "Runs-bis", "x"))).toBe(false);
   });
 });
 
