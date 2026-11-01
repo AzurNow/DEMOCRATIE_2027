@@ -19,6 +19,7 @@
  */
 
 import { gabaritParCode } from "../questions/gabarits.ts";
+import { etatSansPremisse } from "../questions/reponse-attendue.ts";
 import type { CodeGabarit, EtatPositionnel, Item, TypeItem } from "../questions/types.ts";
 
 /** Rendu de « aucune prémisse » dans le prompt (variable `{position_affirmee}`). */
@@ -60,9 +61,9 @@ function estAffirmable(position: string): position is PositionAffirmable {
   return (POSITIONS_AFFIRMABLES as readonly string[]).includes(position);
 }
 
-/** Un état « sans_objet » n'affirme aucune position, comme une question d'attribution (§5). */
+/** Un état « sans_objet » n'affirme aucune position, comme une question d'attribution (§5) : `etatSansPremisse`. */
 function affirmable(item: ItemLu, etat: EtatPositionnel): PositionDemandee {
-  if (etat.position === "sans_objet") return AUCUNE;
+  if (etatSansPremisse(etat)) return AUCUNE;
   if (!estAffirmable(etat.position)) throw new PositionNonAffirmable(item, etat.position);
   return etat.position;
 }
