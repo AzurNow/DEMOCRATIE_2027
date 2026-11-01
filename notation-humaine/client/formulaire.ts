@@ -8,6 +8,7 @@
 import { champ, el, liste } from "./dom.ts";
 import { extraitDemande } from "./extrait.ts";
 import { nomsParLigne } from "./noms.ts";
+import { erreurDeProvenance, valeurChoisie } from "./provenance.ts";
 import { motifSansSoutien, soutiensAdmis } from "./soutiens.ts";
 import type { Existence, Grille, Saisie, SaisieAttribution, Vue } from "./types.ts";
 
@@ -45,11 +46,6 @@ function choisi(racine: HTMLElement, nom: string): string | null {
 
 function cochees(racine: HTMLElement, nom: string): readonly string[] {
   return [...racine.querySelectorAll<HTMLInputElement>(`input[name="${nom}"]:checked`)].map((c) => c.value);
-}
-
-/** « — choisir — » vaut absence de choix, jamais une valeur. */
-function valeurChoisie(s: HTMLSelectElement): string | null {
-  return s.value === "" ? null : s.value;
 }
 
 interface Controles {
@@ -124,8 +120,15 @@ function blocLiens(vue: Vue, grille: Grille): { readonly noeud: HTMLElement; rea
  * D33 : sur un refus de l'API, l'extrait n'est ni demandé ni envoyé.
  */
 function lireExtrait(c: Controles, categorie: string | null, vue: Vue): Pick<Saisie, "extrait"> {
-  if (!extraitDemande(vue) || categorie === "exacte" || c.extrait.value.length === 0) return {};
-  return { extrait: { texte: c.extrait.value, provenance: c.provenance.value } };
+  const provenance = valeurChoisie(c.provenance);
+  if (!extraitDemande(vue) || categorie === "exacte" || c.extrait.value.length === 0 || provenance === null) return {};
+  return { extrait: { texte: c.extrait.value, provenance } };
+}
+
+/** Un extrait saisi sans provenance choisie n'est jamais envoyé avec une provenance devinée. */
+function erreursDExtrait(racine: HTMLElement, c: Controles): readonly string[] {
+  const erreur = erreurDeProvenance(c.extrait.value, valeurChoisie(c.provenance));
+  return erreur === null || choisi(racine, "categorie") === "exacte" ? [] : [erreur];
 }
 
 function erreursDeChoix(racine: HTMLElement, c: Controles): readonly string[] {
@@ -135,6 +138,7 @@ function erreursDeChoix(racine: HTMLElement, c: Controles): readonly string[] {
     ...(c.decidee !== null && !c.decidee.bloc.hidden && choisi(racine, "decidee_categorie") === null ? ["Décidez la catégorie du cas indécidable."] : []),
     ...(choisi(racine, "cite") === null ? ["Dites si la réponse cite une source."] : []),
     ...(c.soutiens.some((s) => valeurChoisie(s) === null) ? ["Choisissez un soutien pour chaque lien."] : []),
+    ...erreursDExtrait(racine, c),
   ];
 }
 
@@ -191,7 +195,7 @@ export function construireFormulaire(vue: Vue, grille: Grille): Formulaire {
     soutiens: liens.soutiens,
     motif: selection(grille.motifs_inexactitude),
     extrait: el("textarea", { rows: "3" }),
-    provenance: el("select", {}, ...grille.provenances.map((p) => el("option", { value: p }, p))),
+    provenance: selection(grille.provenances),
     noms: vue.question.gabarit === "Q-ATT" ? el("textarea", { rows: "4" }) : null,
     decidee,
   };

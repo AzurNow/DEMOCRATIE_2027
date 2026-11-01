@@ -8,6 +8,7 @@
  */
 
 import { api, urlSource, type RequeteDecision } from "./api.ts";
+import { elementFacultatif, elementParId } from "./dom-type.ts";
 import { champsEditables, corrections, type ChampEditable } from "./edition.ts";
 import { CLES_GRILLE } from "../domaine/grille.ts";
 import { ouvrirRelectureFormulations } from "./formulations.ts";
@@ -58,7 +59,7 @@ const etat: Etat = {
   message: null,
 };
 
-const ecran = () => document.getElementById("ecran") as HTMLElement;
+const ecran = () => elementParId("ecran", HTMLElement);
 
 /* ------------------------------------------------------------- démarrage */
 
@@ -68,18 +69,18 @@ async function demarrer(): Promise<void> {
   remplirAide();
   suivreActivite();
   document.addEventListener("keydown", auClavier);
-  (document.getElementById("bouton-aide") as HTMLButtonElement).addEventListener("click", ouvrirAide);
-  (document.getElementById("fermer-aide") as HTMLButtonElement).addEventListener("click", () =>
-    (document.getElementById("aide") as HTMLDialogElement).close(),
+  elementParId("bouton-aide", HTMLButtonElement).addEventListener("click", ouvrirAide);
+  elementParId("fermer-aide", HTMLButtonElement).addEventListener("click", () =>
+    elementParId("aide", HTMLDialogElement).close(),
   );
   void rendreAccueil();
 }
 
 function rendreBandeau(fil: string, avancement: string): void {
   const session = etat.session as Session;
-  (document.getElementById("identite") as HTMLElement).textContent = `Annotateur ${session.annotateur_id}`;
-  (document.getElementById("fil") as HTMLElement).textContent = fil;
-  (document.getElementById("avancement") as HTMLElement).textContent = avancement;
+  elementParId("identite", HTMLElement).textContent = `Annotateur ${session.annotateur_id}`;
+  elementParId("fil", HTMLElement).textContent = fil;
+  elementParId("avancement", HTMLElement).textContent = avancement;
 }
 
 /* --------------------------------------------------------------- accueil */
@@ -769,7 +770,7 @@ function traiterNavigation(evenement: KeyboardEvent): void {
     document.getElementById("citation-surlignee")?.scrollIntoView({ block: "center" });
   } else if (evenement.key === "k") {
     evenement.preventDefault();
-    (document.getElementById("commentaire") as HTMLTextAreaElement | null)?.focus();
+    elementFacultatif("commentaire", HTMLTextAreaElement)?.focus();
   } else if (evenement.key === "s") {
     etat.source = (etat.source + 1) % Math.max(vue.sources.length, 1);
     rendreItem();
@@ -876,7 +877,7 @@ function champCommentaire(): HTMLElement {
 /* ------------------------------------------------------------------- aide */
 
 function ouvrirAide(): void {
-  (document.getElementById("aide") as HTMLDialogElement).showModal();
+  elementParId("aide", HTMLDialogElement).showModal();
 }
 
 function remplirAide(): void {
@@ -887,7 +888,7 @@ function remplirAide(): void {
     ligne.append(cellule(raccourci.touche), cellule(raccourci.libelle));
     table.append(ligne);
   }
-  (document.getElementById("table-raccourcis") as HTMLElement).replaceChildren(table);
+  elementParId("table-raccourcis", HTMLElement).replaceChildren(table);
 }
 
 /* ------------------------------------------------------------- fabriques */
