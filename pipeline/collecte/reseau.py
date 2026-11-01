@@ -96,6 +96,11 @@ class TransportUrllib:
         self._ouvreur = urllib.request.build_opener(_SansRedirection)
 
     def envoyer(self, url: str, en_tetes: dict[str, str]) -> ReponseHttp:
+        """Une URL non ASCII est refusée avant toute connexion : `http.client` encode la ligne de
+        requête en ASCII, la conversion IRI → URI se fait plus haut (`pipeline.liens.iri`). Toute
+        autre `ValueError` d'urllib ou de `http.client` remonte avec son propre message."""
+        if not url.isascii():
+            raise ErreurReseau(f"URL non encodable pour l'envoi (caractère non ASCII, IRI non convertie) : {url}")
         requete = urllib.request.Request(url, headers=en_tetes, method="GET")
         try:
             with self._ouvreur.open(requete, timeout=self._delai_s) as flux:
@@ -106,8 +111,6 @@ class TransportUrllib:
             raise DelaiDepasse(f"délai dépassé ({self._delai_s:g} s)") from erreur
         except (OSError, http.client.HTTPException) as erreur:
             raise classe_d_erreur_reseau(erreur)(_motif_reseau(erreur, self._delai_s)) from erreur
-        except ValueError as erreur:
-            raise ErreurReseau(f"URL non encodable pour l'envoi : {erreur}") from erreur
 
     def _reponse_d_erreur(self, erreur: urllib.error.HTTPError) -> ReponseHttp:
         """4xx, 5xx et 3xx non suivis : ce sont des réponses, pas des pannes du réseau."""

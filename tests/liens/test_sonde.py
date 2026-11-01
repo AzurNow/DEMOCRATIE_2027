@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from itertools import pairwise
 
+import pytest
+
 from pipeline.collecte.politesse import Cadence
 from pipeline.collecte.reseau import (
     ConnexionRefusee,
@@ -315,6 +317,27 @@ def test_d55_2_bout_en_bout_serveur_local_transport_urllib(horloge: HorlogeFacti
     assert (constat.issue, constat.code_http) == ("reponse_http", 200)
     assert constat.url_finale == f"{serveur_local.base}/caf%C3%A9"
     assert serveur_local.vus == ["/robots.txt", "/ancien", "/caf%C3%A9"]
+
+
+@pytest.mark.parametrize(
+    ("cas", "location", "envoyee"),
+    [("latin1_legitime", "/café", "/caf%C3%A9"), ("octets_invalides_ni_utf8_ni_texte", "/\xff\xfe", "/%C3%BF%C3%BE")],
+)
+def test_d55_2_location_qui_n_est_pas_de_l_utf8_gardee_puis_convertie(
+    horloge: HorlogeFactice, serveur_local: ServeurLocal, cas: str, location: str, envoyee: str
+) -> None:
+    """Lot 5 (b) : un `Location` en latin-1 légitime (octet `\\xe9`) ou en octets invalides
+    (`\\xff\\xfe`) échoue à l'aller-retour UTF-8 ; la valeur relue en latin-1 est gardée telle quelle
+    (D55 (2)), puis convertie en URI (RFC 3987 §3.1). Fixe l'URL réellement reçue par le serveur."""
+    serveur_local.routes["/robots.txt"] = RouteLocale(200, b"User-agent: *\nAllow: /\n")
+    serveur_local.routes["/ancien"] = RouteLocale(301, b"", (("Location", location),))
+    serveur_local.routes[envoyee] = RouteLocale(200, b"ok")
+    sonde = SondeLiens(TransportUrllib(delai_s=5), Cadence(horloge, intervalle_s=0.0), iri_vers_uri, relire_location)
+
+    constat = sonde.sonder(f"{serveur_local.base}/ancien")
+
+    assert (constat.issue, constat.code_http) == ("reponse_http", 200), cas
+    assert serveur_local.vus == ["/robots.txt", "/ancien", envoyee]
 
 
 def test_cas_19_deux_url_du_meme_hote_au_moins_une_seconde_entre_les_debuts(horloge: HorlogeFactice) -> None:
