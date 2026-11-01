@@ -34,7 +34,8 @@
 
 import type { ContrefactuelFauteDInterroges, ResultatContrefactuel, ResultatJuge } from "./contrefactuel.ts";
 import { CLE_DERANGEMENT_CANDIDATS, correspondancesDe, type Derangement } from "./derangement.ts";
-import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, comparerChaines, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL, type SousEnsembleContrefactuel } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL, type SousEnsembleContrefactuel } from "./echantillons.ts";
 import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { ChangementsContrefactuel, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
 

@@ -61,7 +61,8 @@ import { construireCharge, type DemandeCharge, type QuestionPosee, type Referenc
 import { testerContrefactuel, type ContrefactuelFauteDInterroges, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
 import { decider, type MotifAttente } from "./decision.ts";
 import { MINIMUM_INTERROGES_DERANGEMENT, tirerDerangement, type Derangement } from "./derangement.ts";
-import { comparerChaines, tirerEchantillonHumain, tirerSousEnsembleContrefactuel } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import { tirerEchantillonHumain, tirerSousEnsembleContrefactuel } from "./echantillons.ts";
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";

@@ -33,6 +33,7 @@ import { createHash } from "node:crypto";
 import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync } from "node:fs";
 import { basename, join } from "node:path";
 import { executerGit } from "../outils/executer-git.ts";
+import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import type { NomSchema } from "../outils/schemas/noms.ts";
 import { dateParis, lireInstant } from "../pipeline/interrogation/heure-paris.ts";
@@ -453,7 +454,7 @@ function epingles(questions: readonly Question[], chemin: string): readonly Refe
     }
     parItem.set(reference.item_id, reference);
   }
-  return [...parItem.values()].sort((a, b) => (a.item_id < b.item_id ? -1 : 1));
+  return [...parItem.values()].sort((a, b) => comparerChaines(a.item_id, b.item_id));
 }
 
 /** Lit dans Git, au commit du gel : `<prefixe>` est le chemin de `repertoire_items` dans son dépôt. */

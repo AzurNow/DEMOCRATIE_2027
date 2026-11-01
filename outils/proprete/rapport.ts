@@ -3,6 +3,7 @@
  * (production, tests) et détaillés pour la production. Déterministe : aucun horodatage, ordre par
  * fichier puis par ligne, pour que deux rapports se comparent par un simple diff.
  */
+import { comparerChaines } from "../ordre-chaines.ts";
 import { signauxPython } from "./python.ts";
 import { GENRES, SEUIL_FICHIER_LIGNES, TITRES, type Genre, type Signal } from "./signaux.ts";
 import { signauxTypeScript } from "./typescript.ts";
@@ -52,7 +53,7 @@ export function estUnTest(chemin: string): boolean {
 }
 
 function ordre(a: Signal, b: Signal): number {
-  if (a.fichier !== b.fichier) return a.fichier < b.fichier ? -1 : 1;
+  if (a.fichier !== b.fichier) return comparerChaines(a.fichier, b.fichier);
   return a.ligne - b.ligne;
 }
 

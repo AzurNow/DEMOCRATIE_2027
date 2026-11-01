@@ -6,7 +6,7 @@
 
 import { sourcageDeNotation } from "../../analysis/note-lue.ts";
 import { DRAPEAUX, type Drapeau, type Instant, type ObjetNote, type SourcageRetenu, type Ulid } from "../../analysis/types.ts";
-import { comparerChaines } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import {
   DRAPEAUX_GRAVES,
   type ModeResolution,

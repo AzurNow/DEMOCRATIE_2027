@@ -41,6 +41,7 @@
  */
 
 import { graineDerivee } from "../../analysis/graines.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
 import { verifierGraine } from "../questions/graine.ts";
 import type { GraineTirage } from "../questions/types.ts";
@@ -171,10 +172,4 @@ function rangerSansDoublon(ids: readonly string[]): string[] {
     if (ranges[i] === ranges[i - 1]) throw new Error(`Identifiant en double dans un tirage de notation : ${String(ranges[i])}.`);
   }
   return ranges;
-}
-
-/** Ordre croissant des chaînes en unités UTF-16, celui de `<` : l'ordre de rangement publié. */
-export function comparerChaines(a: string, b: string): number {
-  if (a < b) return -1;
-  return a > b ? 1 : 0;
 }

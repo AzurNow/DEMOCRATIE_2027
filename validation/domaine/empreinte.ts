@@ -15,6 +15,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { normaliser } from "./normalisation.ts";
 import type { EtatPositionnel, Item, Mesure } from "./types.ts";
 
@@ -26,9 +27,7 @@ export function canoniser(valeur: unknown): string {
 function trierRecursivement(valeur: unknown): unknown {
   if (Array.isArray(valeur)) return valeur.map(trierRecursivement);
   if (valeur === null || typeof valeur !== "object") return valeur;
-  const entrees = Object.entries(valeur as Record<string, unknown>).sort(([a], [b]) =>
-    a < b ? -1 : a > b ? 1 : 0,
-  );
+  const entrees = Object.entries(valeur as Record<string, unknown>).sort(([a], [b]) => comparerChaines(a, b));
   const trie: Record<string, unknown> = {};
   for (const [cle, sousValeur] of entrees) trie[cle] = trierRecursivement(sousValeur);
   return trie;

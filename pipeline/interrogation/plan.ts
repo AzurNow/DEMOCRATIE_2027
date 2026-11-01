@@ -13,6 +13,7 @@
  */
 
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { ECHANTILLONS } from "./conditions.ts";
 import type { Mode, RequetePlanifiee } from "./types.ts";
 
@@ -57,12 +58,6 @@ function exigerInterrogeable(outil: OutilDeRun): OutilInterroge {
     throw new OutilNonInterrogeable(outil.outil_id, manques(outil));
   }
   return { outil_id: outil.outil_id, alias_aveugle, modele_demande, modes };
-}
-
-/** Comparaison par unités de code, indépendante de la locale. */
-export function comparerChaines(a: string, b: string): number {
-  if (a === b) return 0;
-  return a < b ? -1 : 1;
 }
 
 interface Combinaison {

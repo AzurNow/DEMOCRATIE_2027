@@ -39,7 +39,7 @@ import type { ObjetJson, ReponseEcrite, ReponseObtenue } from "../interrogation/
 import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
 import type { DemandeCharge, ReferenceSoumise, ResoluAuGel } from "./charge-juge.ts";
 import { correspondancesDe, type Derangement } from "./derangement.ts";
-import { comparerChaines } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import { permuterTexte } from "./permutation.ts";
 

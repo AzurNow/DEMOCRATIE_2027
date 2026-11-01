@@ -27,6 +27,7 @@
  */
 
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
 import { itemsPContestesAuGel } from "./couverture.ts";
 import { entreeDe, precedenteSiReprise } from "./entrees-tirage.ts";
@@ -120,10 +121,6 @@ function cleStrate(theme: Theme, gabarit: CodeGabarit): string {
   return `${theme}|${gabarit}`;
 }
 
-function comparer(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
 /**
  * Univers des strates : tous les couples thème × gabarit observés dans le groupe, tous candidats
  * confondus. Une strate absente chez un candidat mais présente chez un autre est donc une strate
@@ -137,7 +134,7 @@ function universDesStrates(questions: readonly Question[], index: Index): readon
   }
   // Les clés sont triées avant tout tirage : l'ordre d'itération d'une Map suit l'ordre
   // d'insertion, donc l'ordre des fichiers lus, ce qui rendrait le tirage non reproductible.
-  return [...couples.entries()].sort(([a], [b]) => comparer(a, b)).map(([, couple]) => couple);
+  return [...couples.entries()].sort(([a], [b]) => comparerChaines(a, b)).map(([, couple]) => couple);
 }
 
 function strates(univers: readonly Couple[], questions: readonly Question[], index: Index): readonly Strate[] {
@@ -156,7 +153,7 @@ function strates(univers: readonly Couple[], questions: readonly Question[], ind
 }
 
 function parIdentifiant(a: Question, b: Question): number {
-  return comparer(a.id, b.id);
+  return comparerChaines(a.id, b.id);
 }
 
 /**
@@ -455,7 +452,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
 function contestesAuGel(demande: DemandeTirage, interroges: readonly CandidatAuGel[]): readonly ContestesAuGel[] {
   return interroges
     .map((candidat) => candidat.candidat_id)
-    .sort(comparer)
+    .sort(comparerChaines)
     .map((candidat_id) => ({
       candidat_id,
       item_ids: itemsPContestesAuGel(demande.items, candidat_id, demande.run.date_gel, demande.mesures),

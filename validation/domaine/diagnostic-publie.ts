@@ -12,7 +12,7 @@
  * et son kappa — celui qui a motivé la réannotation — serait retenu sans que rien ne tombe.
  */
 
-import { comparerChaines } from "../../pipeline/interrogation/plan.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import type { DiagnosticLot } from "./analyse-lot.ts";
 import { canoniser } from "./empreinte.ts";
 import { CLES_GRILLE } from "./grille.ts";

@@ -28,6 +28,7 @@
  */
 
 import { epingleLaVersionCourante, gabaritsPourItem, mesureDe, themeDe } from "./engendrement.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { effetSurAttribution, placeAuGel } from "./place-au-gel.ts";
 import {
   ItemHorsValidite,
@@ -293,10 +294,6 @@ export function tirablesParStrate(
   return comptes;
 }
 
-function comparer(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
 interface Separation {
   readonly tirables: readonly Question[];
   readonly exclusions: readonly ExclusionTirage[];
@@ -332,7 +329,7 @@ export function separer(
     verifierPrincipalInterroge(question, index.items, interroges);
     tirables.push(question);
   }
-  return { tirables, exclusions: exclusions.sort((a, b) => comparer(a.question_id, b.question_id)) };
+  return { tirables, exclusions: exclusions.sort((a, b) => comparerChaines(a.question_id, b.question_id)) };
 }
 
 /**

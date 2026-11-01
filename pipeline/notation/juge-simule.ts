@@ -58,7 +58,7 @@ import type { CategorieRetenue, Drapeau, VerdictSoutien } from "../../analysis/t
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { generateur } from "../../validation/domaine/alea.ts";
 import type { ChargeJuge } from "./charge-juge.ts";
-import { comparerChaines } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { Juge, SortieJuge } from "./juge.ts";
 import type { MotifInexactitude } from "./types.ts";

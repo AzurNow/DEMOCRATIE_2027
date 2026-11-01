@@ -52,7 +52,7 @@
 
 import { notationsConcordent } from "../../analysis/note-lue.ts";
 import type { Instant, MotifNotation, ObjetNote, Ulid } from "../../analysis/types.ts";
-import { comparerChaines } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
 import { construireVerdict, noteCommune, noteDe, porteDrapeauGrave, type NoteRetenue, type Resolution } from "./note-retenue.ts";
 import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, VerdictProduit } from "./types.ts";

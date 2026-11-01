@@ -19,7 +19,7 @@ import { dispositionRunNote, lireNotationsDuRun, lireRunJson, lireVerdicts } fro
 import type { Ulid } from "../../analysis/types.ts";
 import type { Attente, MotifEnAttente, ResultatChaine } from "./chaine.ts";
 import { MOTIFS_ATTENTE } from "./decision.ts";
-import { comparerChaines } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import type { ChangementsContrefactuel } from "./types.ts";
 
 /** L'ordre d'impression des motifs : ceux de `decider`, puis ceux qui empêchent d'y arriver. */
