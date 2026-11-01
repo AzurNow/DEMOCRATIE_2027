@@ -42,7 +42,7 @@ const ECHANGE_AVEC_NON_INTERROGE: Derangement = {
     { source: candidat("demo-alpha"), image: candidat("demo-beta") },
     { source: candidat("demo-beta"), image: candidat("demo-alpha") },
   ],
-  hors_derangement: ["demo-gamma"],
+  hors_derangement: [candidat("demo-gamma")],
 };
 
 const TEXTE = "Alix Martinez propose de ramener la TVA à 5,5 %, LE BRUN s'y oppose.";

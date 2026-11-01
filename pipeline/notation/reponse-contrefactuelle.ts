@@ -191,7 +191,7 @@ function resoluPermute(resolu: ResoluAuGel, derangement: Derangement): ResoluAuG
 function imageDeItem(candidat_id: string, derangement: Derangement, item_id: string): string {
   const paire = derangement.paires.find((p) => p.source.candidat_id === candidat_id);
   if (paire !== undefined) return paire.image.candidat_id;
-  if (derangement.hors_derangement.includes(candidat_id)) return candidat_id;
+  if (derangement.hors_derangement.some((candidat) => candidat.candidat_id === candidat_id)) return candidat_id;
   throw new Error(`Item ${item_id} : le candidat ${candidat_id} n'est pas un candidat du périmètre du run.`);
 }
 
