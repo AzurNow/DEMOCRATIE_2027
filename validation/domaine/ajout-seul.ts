@@ -18,7 +18,7 @@
  *   si, le contenu notant a changé (§4 : la paraphrase en est exclue).
  */
 
-import { canoniser, empreinteContenuNotant } from "./empreinte.ts";
+import { canoniser, empreinteApresModification } from "./empreinte.ts";
 import { cheminModifiable } from "./promotion.ts";
 import type { Item } from "./types.ts";
 
@@ -199,8 +199,7 @@ function motifsContenu(avant: Item, apres: Item, autorisation: AutorisationReecr
 function motifsVersion(avant: Item, apres: Item): readonly string[] {
   const corrige = !identiques(valeursCorrigeables(avant), valeursCorrigeables(apres));
   const versionAttendue = corrige ? avant.version + 1 : avant.version;
-  const notantChange = empreinteContenuNotant(avant) !== empreinteContenuNotant(apres);
-  const empreinteAttendue = notantChange ? empreinteContenuNotant(apres) : avant.empreinte;
+  const empreinteAttendue = empreinteApresModification(avant, apres);
   const motifs: string[] = [];
   if (apres.version !== versionAttendue) motifs.push(`version ${apres.version}, ${versionAttendue} attendue`);
   if (apres.empreinte !== empreinteAttendue) motifs.push("empreinte non conforme au contenu notant");

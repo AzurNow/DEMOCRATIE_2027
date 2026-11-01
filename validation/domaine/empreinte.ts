@@ -89,6 +89,16 @@ export function empreinteContenuNotant(item: Item): string {
   });
 }
 
+/**
+ * Règle unique de l'empreinte après une modification (§4) : elle n'est recalculée que si le contenu
+ * notant a changé, sinon celle de `avant` est conservée. Recalculer sur un contenu intact
+ * remplacerait l'empreinte contre laquelle les décisions ont été épinglées.
+ */
+export function empreinteApresModification(avant: Item, apres: Item): string {
+  const notantApres = empreinteContenuNotant(apres);
+  return empreinteContenuNotant(avant) === notantApres ? avant.empreinte : notantApres;
+}
+
 function etatNotant(etat: EtatPositionnel): unknown {
   return {
     position: etat.position,

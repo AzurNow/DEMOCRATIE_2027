@@ -16,7 +16,9 @@ import { ErreurSchema } from "../outils/schemas/valider.ts";
 import { publierDiagnostics, type Chemins } from "../outils/diagnostics/publier.ts";
 import {
   CalculsSimultanes,
+  derniersCalculs,
   DiagnosticPerime,
+  memeCalcul,
   kappasRetenusSection12,
   type DiagnosticPublie,
   type KappaPublie,
@@ -421,5 +423,47 @@ describe("pnpm diagnostics", () => {
     expect(resultat.status).toBe(0);
     expect(resultat.stdout).toContain("lot-003");
     expect(fichiers("lot-003")).toHaveLength(1);
+  });
+});
+
+describe("ordre canonique des diagnostics (indépendant de la locale)", () => {
+  const base = (lot_id: string): DiagnosticPublie => ({
+    lot_id,
+    nature: "reel",
+    date_calcul: T1,
+    kappa: 0.8,
+    accord_observe: 0.9,
+    n: 50,
+    kappa_par_question: KAPPA_PAR_QUESTION,
+    exclus_contestation: 0,
+    taille_lot: 50,
+    taille_attendue: 50,
+    taille_conforme: true,
+    reannote: null,
+    date_calibration: null,
+    supersede_par: null,
+  });
+
+  it("accentué : « lot-f » précède « lot-é » (UTF-16), alors que localeCompare fr donne l'inverse", () => {
+    expect("lot-é".localeCompare("lot-f", "fr")).toBeLessThan(0);
+    expect(derniersCalculs([base("lot-é"), base("lot-f")]).map((d) => d.lot_id)).toEqual(["lot-f", "lot-é"]);
+  });
+
+  it("casse mixte : les majuscules précèdent les minuscules", () => {
+    expect("a".localeCompare("B", "fr")).toBeLessThan(0);
+    expect(derniersCalculs([base("lot-a"), base("lot-B")]).map((d) => d.lot_id)).toEqual(["lot-B", "lot-a"]);
+  });
+
+  it("identifiants égaux : un seul calcul retenu, le plus récent", () => {
+    const recent = { ...base("lot-x"), date_calcul: T2 };
+    expect(derniersCalculs([base("lot-x"), recent])).toEqual([recent]);
+  });
+
+  it("memeCalcul ignore l'instant et l'ordre des clés, et voit une différence de valeur", () => {
+    const a = base("lot-x");
+    const decale = { ...a, date_calcul: T3 };
+    const melange = Object.fromEntries(Object.entries(decale).reverse()) as unknown as DiagnosticPublie;
+    expect(memeCalcul(a, melange)).toBe(true);
+    expect(memeCalcul(a, { ...a, n: 51 })).toBe(false);
   });
 });

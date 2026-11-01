@@ -373,6 +373,22 @@ describe("réintégration après un retrait ou une non-évaluabilité du panel (
     expect(() => valider("item", maintenu, "item maintenu après retrait")).not.toThrow();
   });
 
+  it("une correction de la seule paraphrase incrémente la version et garde l'empreinte (§4)", () => {
+    const publie = itemPromu();
+    // Empreinte posée à la main : la recalculer en produirait une autre, donc la règle se voit.
+    const avant = conteste({ ...publie, empreinte: "e".repeat(64) });
+    const paraphrase: Correction = {
+      cible: "item",
+      chemin: "/assertion/paraphrase",
+      ancienne_valeur: publie.assertion?.paraphrase,
+      nouvelle_valeur: "Une autre façon de dire la même chose.",
+    };
+    const { item } = appliquerDecisionPanel(avant, decisionPanel({ decision: "correction", corrections: [paraphrase] }), TRACE_DECISION, ACCES);
+    expect(item.version).toBe(avant.version + 1);
+    expect(item.empreinte).toBe(avant.empreinte);
+    expect(item.assertion?.paraphrase).toBe("Une autre façon de dire la même chose.");
+  });
+
   it("correction après un retrait : l'item reprend son statut antérieur, version + 1", () => {
     const retire = suite(itemPromu(), [RETRAIT]);
     const correction: Correction = {
