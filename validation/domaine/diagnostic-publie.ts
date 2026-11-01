@@ -12,7 +12,9 @@
  * et son kappa — celui qui a motivé la réannotation — serait retenu sans que rien ne tombe.
  */
 
+import { comparerChaines } from "../../pipeline/interrogation/plan.ts";
 import type { DiagnosticLot } from "./analyse-lot.ts";
+import { canoniser } from "./empreinte.ts";
 import { CLES_GRILLE } from "./grille.ts";
 import type { MotifIndefini, ResultatKappa } from "./kappa.ts";
 import { supersediteurDe, trouverLot } from "./lot.ts";
@@ -140,11 +142,7 @@ export function projeterDiagnostic(
 export function memeCalcul(a: DiagnosticPublie, b: DiagnosticPublie): boolean {
   const { date_calcul: _a, ...resteA } = a;
   const { date_calcul: _b, ...resteB } = b;
-  return JSON.stringify(trier(resteA)) === JSON.stringify(trier(resteB));
-}
-
-function trier(objet: Readonly<Record<string, unknown>>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(objet).sort(([x], [y]) => x.localeCompare(y)));
+  return canoniser(resteA) === canoniser(resteB);
 }
 
 /** Le calcul le plus récent de chaque lot, par instant réel (les décalages sont comparés). */
@@ -154,7 +152,7 @@ export function derniersCalculs(diagnostics: readonly DiagnosticPublie[]): reado
     const retenu = parLot.get(diagnostic.lot_id);
     if (retenu === undefined || plusRecent(diagnostic, retenu)) parLot.set(diagnostic.lot_id, diagnostic);
   }
-  return [...parLot.values()].sort((x, y) => x.lot_id.localeCompare(y.lot_id));
+  return [...parLot.values()].sort((x, y) => comparerChaines(x.lot_id, y.lot_id));
 }
 
 function plusRecent(candidat: DiagnosticPublie, retenu: DiagnosticPublie): boolean {

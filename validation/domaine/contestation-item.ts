@@ -26,7 +26,7 @@ import { DecisionsPanelSimultanees } from "../../pipeline/questions/contestation
 import { instantDe } from "../../pipeline/questions/reponse-attendue.ts";
 import { ancienneteEnJours } from "./corrections-mesure.ts";
 import { validerCorrections, type AccesTexte, type RefusCorrection } from "./corrections.ts";
-import { canoniser, empreinteContenuNotant } from "./empreinte.ts";
+import { canoniser, empreinteApresModification } from "./empreinte.ts";
 import { appliquerCorrections } from "./promotion.ts";
 import type { AutorisationReecriture } from "./ajout-seul.ts";
 import type { Correction, Item, Source } from "./types.ts";
@@ -243,7 +243,7 @@ function motifsCorrections(item: Item, decision: DecisionDuPanel, acces: AccesTe
 function contenuDecide(item: Item, decision: DecisionDuPanel): Item {
   if (decision.decision !== "correction") return item;
   const corrige = appliquerCorrections(item, decision.corrections);
-  return { ...corrige, version: item.version + 1, empreinte: empreinteContenuNotant(corrige) };
+  return { ...corrige, version: item.version + 1, empreinte: empreinteApresModification(item, corrige) };
 }
 
 /**
