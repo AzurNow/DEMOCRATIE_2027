@@ -60,9 +60,35 @@ export interface OptionsSource {
   readonly dates_extraction?: readonly string[];
   /** Octets écrits sous le nom du texte, s'ils diffèrent du texte. */
   readonly texte_ecrit?: string;
+  /**
+   * Contenu de `pipeline/collecte/textes/epinglage.json` sous la racine : un objet sérialisé, une
+   * chaîne écrite telle quelle, ou `null` pour ne pas l'écrire. Par défaut `EPINGLAGE_EN_SERVICE`.
+   */
+  readonly en_service?: unknown;
 }
 
-/** Une racine de test : `staging/` d'une source HTML prête, et `config/extraction.json` complète. */
+/** L'épinglage en service par défaut, de la forme du fichier du dépôt, accordé à `HTML` (D56 (3)). */
+export const EPINGLAGE_EN_SERVICE = {
+  pdf: { outil: "pymupdf", version: "1.28.2", options: { mode: "text", drapeaux: 67, separateur_pages: "\f" } },
+  html: { outil: HTML.outil, version: { interpreteur: "python" }, options: HTML.options },
+  transcription: { outil: "webvtt", version: { interpreteur: "python" }, options: { regle: "vtt-1" } },
+};
+
+/** `EPINGLAGE_EN_SERVICE` dont la déclaration de html.parser est complétée ou remplacée champ à champ. */
+export function enServiceHtml(html: Readonly<Record<string, unknown>>): unknown {
+  return { ...EPINGLAGE_EN_SERVICE, html: { ...EPINGLAGE_EN_SERVICE.html, ...html } };
+}
+
+function ecrireEnService(racine: string, contenu: unknown): void {
+  if (contenu === null) return;
+  const texte = typeof contenu === "string" ? contenu : `${JSON.stringify(contenu, null, 2)}\n`;
+  ecrire(join(racine, "pipeline", "collecte", "textes", "epinglage.json"), texte);
+}
+
+/**
+ * Une racine de test : `staging/` d'une source HTML prête, `config/extraction.json` complète et
+ * l'épinglage des extracteurs de texte en service.
+ */
 export function racineDeTest(options: OptionsSource = {}): string {
   const racine = temporaire("banc-extraire-racine-");
   const texte = options.texte ?? TEXTE;
@@ -84,6 +110,7 @@ export function racineDeTest(options: OptionsSource = {}): string {
   const entree = { cle_source: CLE_SOURCE, sha256_source: SHA_SOURCE, candidat_id: CANDIDAT, extracteur_epingle: options.epingle ?? HTML, sources };
   ecrire(join(staging, "entrees-extraction", CLE_SOURCE, `${SHA_SOURCE}.json`), `${JSON.stringify(entree, null, 2)}\n`);
   ecrire(join(racine, "config", "extraction.json"), `${JSON.stringify(CONFIGURATION_COMPLETE, null, 2)}\n`);
+  ecrireEnService(racine, options.en_service === undefined ? EPINGLAGE_EN_SERVICE : options.en_service);
   return racine;
 }
 

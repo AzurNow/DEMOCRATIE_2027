@@ -44,6 +44,7 @@ import { AucunTexteEpingle, FicheDUneAutreSource, PlusieursTextesEpingles } from
 import type { ConfigurationExtraction } from "./configuration.ts";
 import { appelerExtracteur, estEchecTransportHttp, lectureDe, type EditeurExtraction, type LectureTexteModele } from "./editeur.ts";
 import { EntreeExtractionIncoherente, EpinglageExtracteurPerime, lireEntree, materiauDe, type EntreeLue, type Materiau } from "./entrees.ts";
+import type { EpinglageEnService } from "./epinglage-en-service.ts";
 import {
   extraireSource,
   PagesAbsentes,
@@ -75,6 +76,8 @@ import {
 export interface ContexteExtraction {
   /** `staging/` du dépôt : entrées, fiches, textes, transcriptions, en lecture seule. */
   readonly staging: string;
+  /** L'épinglage des extracteurs de texte en service (`epinglage-en-service.ts`, D56 (3)). */
+  readonly epinglage: EpinglageEnService;
   /** Où écrire : `staging/` du dépôt en mode réel, hors du dépôt en mode simulé. */
   readonly sortie: string;
   /** Le texte du prompt (`chargerPromptExtraction`), variables non remplacées. */
@@ -346,7 +349,7 @@ function exigerOrdre(editeurs: readonly EditeurExtraction[], configuration: Conf
 }
 
 async function traiterLue(lue: EntreeLue, contexte: ContexteExtraction, compteurs: Compteurs): Promise<IssueSource> {
-  const materiau = materiauDe(contexte.staging, lue);
+  const materiau = materiauDe(contexte.staging, lue, contexte.epinglage);
   const variables = variablesDe(lue, materiau);
   const prompt = rendrePromptExtraction(contexte.texte_prompt, variables);
   const demande: Demande = { lue, prompt, prompt_sha256: sha256(prompt) };

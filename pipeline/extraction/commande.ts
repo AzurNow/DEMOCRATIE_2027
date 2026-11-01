@@ -20,7 +20,9 @@
  * (`gardes-sortie.ts`) — un item simulé y serait relu comme un vrai. `--plafond` y est facultatif ;
  * un arbre sale y est admis.
  *
- * `--racine=<chemin>` (tests) : où lire `config/` et `staging/`. Par défaut, le dépôt.
+ * `--racine=<chemin>` (tests) : où lire `config/`, `staging/` et l'épinglage des extracteurs de
+ * texte en service (`pipeline/collecte/textes/epinglage.json`, D56 (3)). Par défaut, le dépôt. Un
+ * épinglage absent ou illisible arrête la commande avant toute source (code 1).
  *
  * Code de sortie :
  * - 0 : chaque source est traitée (extraite ou refusée, D53 (2)) ou l'était déjà ;
@@ -48,6 +50,7 @@ import { transportSousDelai } from "./delai.ts";
 import { EDITEURS, type EditeurExtraction, type NomEditeur } from "./editeur.ts";
 import { editeurSimule, MODELE_SIMULE_ANTHROPIC, MODELE_SIMULE_MISTRAL, type Choix } from "./editeur-simule.ts";
 import { listerEntrees } from "./entrees.ts";
+import { EpinglageEnServiceIllisible, lireEpinglageEnService } from "./epinglage-en-service.ts";
 import { executer, type Bilan, type ContexteExtraction } from "./executer.ts";
 import { chargerPromptExtraction, VERSION_PROMPT_EXTRACTION, type VariablesExtraction } from "./prompt.ts";
 
@@ -80,7 +83,7 @@ export interface Dependances {
   readonly choixSimule: (enveloppe: NomEditeur) => Choix;
 }
 
-const REFUS_ATTENDUS = [RefusDePartir, ConfigurationEditeursRefusee, OptionsInconnues, SimuleSousZoneProtegee];
+const REFUS_ATTENDUS = [RefusDePartir, ConfigurationEditeursRefusee, OptionsInconnues, SimuleSousZoneProtegee, EpinglageEnServiceIllisible];
 
 /* ------------------------------------------------------------------- modes */
 
@@ -190,10 +193,12 @@ async function derouler(argv: readonly string[], dependances: Dependances, impri
   const racine = resolve(texte(table, "racine", dependances.depot));
   const mode = drapeau(table, "simule") ? modeSimule(table, dependances) : modeReel(table, racine, dependances);
   const staging = join(racine, "staging");
+  const epinglage = lireEpinglageEnService(racine);
   const cles = filtrer(listerEntrees(staging), table.get("source"));
   const texte_prompt = chargerPromptExtraction();
   const bilan = await executer(cles, {
     staging,
+    epinglage,
     sortie: mode.sortie,
     texte_prompt,
     configuration: mode.configuration,
