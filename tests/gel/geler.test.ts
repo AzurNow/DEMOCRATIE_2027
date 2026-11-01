@@ -27,16 +27,22 @@ import { OrdreDesInstantsRefuse } from "../../pipeline/gel/instants.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
 import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
-import type { GraineTirage } from "../../pipeline/questions/types.ts";
+import { identifiantAttribution } from "../../pipeline/questions/engendrement.ts";
+import { PrincipalNonInterrogeAuTirage } from "../../pipeline/questions/tirabilite.ts";
+import type { GraineTirage, Item, Mesure } from "../../pipeline/questions/types.ts";
 import { head, RACINE_PROJET } from "../aides/depot.ts";
 import {
+  ALPHA,
+  BETA,
   CONFIGURATION_GEL,
   depotDuJeu,
   engagementDe,
   GEL,
   GEL_MINUIT_TRENTE,
   HORODATAGE_ENGAGEMENT,
+  itemFDeData,
   itemPDeData,
+  mesureFictive,
   optionsGel,
   PROTOCOLE_DE_FIXTURE,
   recommiter,
@@ -324,6 +330,51 @@ describe("cas 6 et 7 : formulations relues", () => {
     expect(motifs.length).toBeGreaterThan(0);
     expect(new Set(motifs)).toEqual(new Set(["position_perimee"]));
     expect(arborescence(sortie)).toEqual([]);
+  });
+});
+
+/**
+ * Lot V3-1 (§7, protocole 0.21) : une Q-ATT de mesure fictive dont l'item F principal est celui d'un
+ * candidat non interrogé est refusée au gel, en nommant la question et le candidat, avant toute
+ * écriture : sinon `ItemPrincipalNonInterroge` arrêterait la notation du run, bien après le gel.
+ */
+describe("V3-1 : item principal d'un candidat non interrogé", () => {
+  const FICTIVE_RETIRE = mesureFictive("gel-fictive-retire", "immigration");
+  const F_RETIRE = itemFDeData({ cle: "gel-f-retire", candidat_id: BETA.candidat_id, mesure: FICTIVE_RETIRE });
+  const P_RETIRE = itemPDeData({ cle: "gel-p-retire", candidat_id: BETA.candidat_id, mesure: MESURE_FISC_1 });
+
+  function avecRetire(items: readonly Item[], mesures: readonly Mesure[]): Jeu {
+    const nominal = jeuNominal();
+    return { ...nominal, retires: [BETA], items: [...nominal.items, ...items], mesures: [...nominal.mesures, ...mesures] };
+  }
+
+  it("V3-1 : Q-ATT fictive, item F principal d'un candidat retiré ⇒ PrincipalNonInterrogeAuTirage, rien écrit", async () => {
+    const racine = depot(avecRetire([F_RETIRE], [FICTIVE_RETIRE]));
+    const sortie = temporaire("banc-gel-sortie-");
+    const erreur = await refusDe(optionsGel(racine, sortie));
+    expect(erreur).toBeInstanceOf(PrincipalNonInterrogeAuTirage);
+    const refus = erreur as PrincipalNonInterrogeAuTirage;
+    expect({ question_id: refus.question_id, item_id: refus.item_id, candidat_id: refus.candidat_id }).toEqual({
+      question_id: identifiantAttribution(FICTIVE_RETIRE.id, "Q-ATT"),
+      item_id: F_RETIRE.id,
+      candidat_id: BETA.candidat_id,
+    });
+    expect(arborescence(sortie)).toEqual([]);
+  });
+
+  it("V3-1 : la même Q-ATT, item F principal d'un candidat interrogé ⇒ gel écrit, la Q-ATT tirée", async () => {
+    const nominal = jeuNominal();
+    const fInterroge = itemFDeData({ cle: "gel-f-interroge", candidat_id: ALPHA.candidat_id, mesure: FICTIVE_RETIRE });
+    const { run } = await gelNominal({ ...nominal, items: [...nominal.items, fInterroge], mesures: [...nominal.mesures, FICTIVE_RETIRE] });
+    const tirage = json(run, "tirage.json") as { entrees: { question_id: string }[] };
+    expect(tirage.entrees.map((entree) => entree.question_id)).toContain(identifiantAttribution(FICTIVE_RETIRE.id, "Q-ATT"));
+  });
+
+  it("V3-1 : seul un item non principal d'un retiré (liste d'une Q-ATT réelle) ⇒ gel écrit, l'item figé dans la liste", async () => {
+    const { run } = await gelNominal(avecRetire([P_RETIRE], []));
+    const tirage = json(run, "tirage.json") as { entrees: { question_id: string; items_au_gel: { reference: { item_id: string }; role: string }[] }[] };
+    const entree = tirage.entrees.find((une) => une.question_id === identifiantAttribution(MESURE_FISC_1.id, "Q-ATT"));
+    expect(entree?.items_au_gel.find((item) => item.reference.item_id === P_RETIRE.id)?.role).toBe("attendu_dans_liste");
   });
 });
 
