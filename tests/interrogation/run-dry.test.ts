@@ -7,9 +7,15 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { lancerRunSimule } from "../../pipeline/interrogation/run-simule.ts";
 import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
+
+// Tests de bout en bout (lancements et écritures réels, ~3 s chacun seuls) : la limite par défaut de
+// 5 s échoue en « Test timed out » dès que la machine est chargée, sans rapport avec le code testé.
+// Une limite explicite et large garde la détection d'un blocage sans faux rouge ; aucune assertion
+// n'en dépend.
+vi.setConfig({ testTimeout: 60_000 });
 
 const RACINE = resolve(import.meta.dirname, "../..");
 const FIXTURES = join(import.meta.dirname, "fixtures/run-simule");

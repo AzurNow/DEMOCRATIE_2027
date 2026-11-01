@@ -13,7 +13,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { ErreurSchema, erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { geler } from "../../pipeline/gel/geler.ts";
 import { ECHANTILLONS } from "../../pipeline/interrogation/conditions.ts";
@@ -26,6 +26,12 @@ import { TransitionRefusee } from "../../pipeline/run/statut.ts";
 import type { Question, Tirage } from "../../pipeline/questions/types.ts";
 import { depotDuJeu, optionsGel } from "../gel/fixtures.ts";
 import { jeuNominal } from "../gel/jeux.ts";
+
+// Tests de bout en bout (lancements et écritures réels, ~3 s chacun seuls) : la limite par défaut de
+// 5 s échoue en « Test timed out » dès que la machine est chargée, sans rapport avec le code testé.
+// Une limite explicite et large garde la détection d'un blocage sans faux rouge ; aucune assertion
+// n'en dépend.
+vi.setConfig({ testTimeout: 60_000 });
 
 type Objet = Record<string, unknown>;
 
