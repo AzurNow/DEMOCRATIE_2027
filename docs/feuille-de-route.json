@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-19",
+  "date_maj": "2026-11-01",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -764,6 +764,19 @@
       "recommandation": "Option 1 sur les onze points.",
       "retenu": "Option 1 sur les onze points. (4) précise le §7 (« un dérangement des candidats interrogés au run »), (5) le §6, (9) le §7 (alias aveugles des candidats dans la charge du juge) : à écrire à la prochaine révision (TACHES-AUTEUR). (1), (2), (9) et (10) avant le premier appel réel ou le premier tirage réel ; (7) avant le premier run publié.",
       "date_decision": "2026-10-17"
+    },
+    {
+      "id": "D56",
+      "statut": "tranchee",
+      "question": "Quatre décisions laissées par la relecture du 2026-11-01 des PR fusionnées pendant l'absence de l'auteur (#157 à #186) : items d'un candidat non interrogé dans la charge du juge d'une Q-ATT ; réponse en attente de l'opérateur au go/no-go ; référence de l'épinglage de l'extracteur de texte ; sens publié de retrait_item.",
+      "contexte": "(1) #168 : une Q-ATT transmet au juge les items de tous les candidats qui ont une position sur la mesure ; un candidat non interrogé n'a pas d'alias, CandidatSansAlias arrête toute la notation du run (et la notation humaine) ; la liste attendue ignore déjà les non-interrogés (décision du 2026-09-24) ; le protocole 0.20 est muet. (2) #170 : une réponse reçue non stockée n'a pas de fichier de réponse et sort en silence du dénominateur des manquantes (seuil des 20 %, par_mode) ; rien ne compare les réponses au plan d'interrogation ; le §6 (0.19) ne dit pas ce qu'elle devient à la clôture. (3) #161 (D54 (3), constat 4 du 2026-10-17) : pnpm extraire compare l'épinglage de l'entrée à la fiche de texte la plus récente, pas à l'épinglage en service dans le code, contrairement au §4 ; montée de version sans pnpm textes ⇒ texte périmé accepté ; retour arrière ⇒ refus à tort ; le choix (A)/(B) posé par la PR était resté sans réponse. (4) #177 : retrait_item s'écrit à la prochaine écriture de l'annotateur pour tous les items contestés de son lot, atteints ou non, et jamais si aucune écriture ne suit ; schema/decision.schema.json dit encore « trace que l'annotateur a rencontré l'item contesté » ; sans effet sur le kappa.",
+      "options": [
+        "(1) le juge ne reçoit que les items des candidats interrogés au run, comme la liste attendue ; révision du §7 ; (2) le go/no-go refuse de se prononcer tant qu'une question attend l'opérateur, l'opérateur la stocke depuis ses octets gardés une fois la cause corrigée, et le dénominateur des manquantes est le plan d'interrogation, pas les fichiers présents ; révision du §6 ; (3) comparer à l'épinglage en service dans le code (extracteur_en_service, Python), exposé au TypeScript ; (4) description du schéma et commentaires réécrits : constat qu'une contestation a retiré l'item de la file de l'annotateur, horodaté à sa première écriture qui suit ; texte seul.",
+        "Variantes : (1) alias distinct pour les non-interrogés, ou Q-ATT exclue du tirage ; (2) manquante motif « non stockée » à la clôture, ou dénominateur seul ; (3) garder la fiche la plus récente et l'écrire au protocole ; (4) retrait écrit seulement pour les items atteints, ou retrait_item supprimé."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. (1) précise le §7 et (2) le §6 : à écrire dans une révision 0.21, PR à part, avant le code qui les applique. (3) et (4) sans révision : (3) applique la lettre du §4, (4) ne change que du texte.",
+      "date_decision": "2026-11-01"
     }
   ],
   "lots": [
