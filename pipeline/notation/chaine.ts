@@ -8,6 +8,9 @@
  *
  * **Ordre du §7 (D14 (1)).** Le test contrefactuel passe avant la notation de masse :
  *
+ * 0. **Moins de deux candidats interrogés** (§7, protocole 0.21) : le test est indéfini. Il est
+ *    inscrit tel quel (`publierFauteDInterroges`), avant tout tirage, sans éligibilité ni appel de
+ *    juge, et la notation de masse suit.
  * 1. **Sous-ensemble.** Les réponses éligibles (D55 (4), §7 (0.19) : la réponse ou l'item nomme un
  *    candidat interrogé au run, `candidats.ts`), hors refus de l'API, que `reponse-contrefactuelle.ts`
  *    refuse de permuter faute de texte, sont tirées (`tirerSousEnsembleContrefactuel`) ; le
@@ -55,9 +58,9 @@ import type { ReponseObtenue } from "../interrogation/types.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { textesNommables } from "./candidats.ts";
 import { construireCharge, type DemandeCharge, type QuestionPosee, type ReferenceSoumise, type ResoluAuGel } from "./charge-juge.ts";
-import { testerContrefactuel, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
+import { testerContrefactuel, type ContrefactuelFauteDInterroges, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
 import { decider, type MotifAttente } from "./decision.ts";
-import { tirerDerangement, type Derangement } from "./derangement.ts";
+import { MINIMUM_INTERROGES_DERANGEMENT, tirerDerangement, type Derangement } from "./derangement.ts";
 import { comparerChaines, tirerEchantillonHumain, tirerSousEnsembleContrefactuel } from "./echantillons.ts";
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
@@ -65,10 +68,11 @@ import { inscrireContrefactuel, type IssueInscription } from "./inscription-cont
 import { issueDeJuge, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
 import { pagesCitees, type PageCitee } from "./pages-citees.ts";
 import { nommeUnInterroge } from "./permutation.ts";
-import { publierContrefactuel } from "./publication-contrefactuel.ts";
+import { publierContrefactuel, publierFauteDInterroges } from "./publication-contrefactuel.ts";
 import { notationParRegle, REGLE_REFUS_API } from "./regle-refus.ts";
 import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle.ts";
 import { DepotNotation } from "./stockage.ts";
+import { TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
 import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
 
@@ -98,7 +102,7 @@ export interface Attente {
 }
 
 export type EtatContrefactuel =
-  | { readonly statut: IssueInscription; readonly resultat: ResultatContrefactuel }
+  | { readonly statut: IssueInscription; readonly resultat: ResultatContrefactuel | ContrefactuelFauteDInterroges }
   | { readonly statut: "en_attente_test_liens"; readonly reponse_ids: readonly Ulid[] }
   | { readonly statut: "run_invalide"; readonly raison: string; readonly resultat: ResultatContrefactuel; readonly inscription: IssueInscription };
 
@@ -437,6 +441,7 @@ function candidatsInterroges(etat: Etat, run: RunDeNotation): readonly CandidatD
 async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
   const run = runAvantLeTest(runDeNotationDe(etat.run));
   const interroges = candidatsInterroges(etat, run);
+  if (interroges.length < MINIMUM_INTERROGES_DERANGEMENT) return inscrireFauteDInterroges(etat, run);
   const eligibles = etat.reponses.filter((r) => estEligible(r, interroges, run.candidats)).map((r) => r.reponse.id);
   const sous_ensemble = tirerSousEnsembleContrefactuel(eligibles, run.graines.contrefactuel);
   const attendent = sous_ensemble.reponse_ids.filter((id) => exigerPreparee(etat, id).liens === null);
@@ -448,6 +453,13 @@ async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
   const publication = publierContrefactuel(resultat, sous_ensemble, derangement, run);
   const inscription = inscrireContrefactuel(etat.env.repertoire_run, publication, () => etat.env.maintenant());
   if (resultat.statut === "run_invalide") return { statut: "run_invalide", raison: resultat.raison, resultat, inscription };
+  return { statut: inscription, resultat };
+}
+
+/** §7 (0.21) : sous deux candidats interrogés, le test indéfini est inscrit, sans tirage ni juge. */
+function inscrireFauteDInterroges(etat: Etat, run: RunDeNotation): EtatContrefactuel {
+  const resultat: ContrefactuelFauteDInterroges = { statut: "indefini", motif: "moins_de_deux_interroges", taux_echantillon_humain: TAUX_ECHANTILLON_SANS_RETRAIT };
+  const inscription = inscrireContrefactuel(etat.env.repertoire_run, publierFauteDInterroges(resultat, run), () => etat.env.maintenant());
   return { statut: inscription, resultat };
 }
 

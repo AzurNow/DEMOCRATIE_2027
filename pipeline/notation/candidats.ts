@@ -5,8 +5,9 @@
  * libellé et du nom seul déclarés au périmètre ; les 200 réponses sont tirées parmi celles dont la
  * réponse ou l'item nomme au moins un candidat. »).
  *
- * Le prédicat et le remplacement de la PR B lisent la même fonction, `occurrencesDeNom` : une réponse
- * est éligible exactement quand la permutation y trouvera quelque chose à permuter.
+ * Le prédicat (`permutation.ts:nommeUnInterroge`) et le remplacement de la PR B lisent la même
+ * fonction, `occurrencesDeNom` : une réponse est éligible exactement quand la permutation y trouvera
+ * quelque chose à permuter.
  *
  * Trois lectures de « remplacement exact », que le protocole ne précise pas, toutes restrictives :
  *
@@ -40,11 +41,6 @@ export interface Occurrence {
 }
 
 const CARACTERE_DE_MOT = /[\p{L}\p{N}\p{M}]/u;
-
-export function nommeUnCandidat(textes: readonly string[], candidats: readonly NomsDeCandidat[]): boolean {
-  const noms = candidats.flatMap((candidat) => [candidat.libelle, candidat.nom]);
-  return textes.some((texte) => noms.some((nom) => occurrencesDeNom(texte, nom).length > 0));
-}
 
 /** Toutes les occurrences en mot entier de `nom` dans `texte`, casse exacte. */
 export function occurrencesDeNom(texte: string, nom: string): readonly Occurrence[] {

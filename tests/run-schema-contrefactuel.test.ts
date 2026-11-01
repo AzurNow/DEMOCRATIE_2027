@@ -92,3 +92,21 @@ describe("11. bloc contrefactuel_candidats et effectifs des juges", () => {
     ]);
   });
 });
+
+describe("§7 (protocole 0.21) : test indéfini sous deux candidats interrogés", () => {
+  it("valide : un seul candidat interrogé, bloc réduit à son état, son motif et ses tailles (valide-11)", () => {
+    expect(erreurs("valide-11-contrefactuel-moins-de-deux-interroges.json")).toEqual([]);
+  });
+
+  it("le motif moins_de_deux_interroges sur un run qui interroge deux candidats : tombe sur le recoupement avec le périmètre seul", () => {
+    expect(erreurs("invalide-55-moins-de-deux-interroges-avec-deux-interroges.json").map((e) => [e.chemin, e.mot_cle])).toEqual([
+      ["/perimetre/candidats", "contains"],
+    ]);
+  });
+
+  it("le motif moins_de_deux_interroges avec un dérangement publié : tombe sur ce champ seul", () => {
+    expect(erreurs("invalide-56-moins-de-deux-interroges-avec-derangement.json").map((e) => [e.chemin, e.mot_cle])).toEqual([
+      ["/contrefactuel_candidats/correspondances", "false schema"],
+    ]);
+  });
+});

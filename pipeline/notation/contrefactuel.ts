@@ -38,7 +38,9 @@
  *    invalide, avec sa raison, et aucun juge n'est retenu (D16 (3)).
  *
  * Un sous-ensemble vide (aucune réponse éligible) n'a pas de taux : l'état est `indefini`, aucun
- * juge n'est retiré, et le taux n'est jamais 0 %. Le drapeau `sous_effectif` du tirage et le total
+ * juge n'est retiré, et le taux n'est jamais 0 %. Sous deux candidats interrogés (§7, protocole
+ * 0.21), le test n'est pas joué du tout : `chaine.ts` rend `ContrefactuelFauteDInterroges`, sans
+ * sous-ensemble ni dérangement, et ce module n'est pas appelé. Le drapeau `sous_effectif` du tirage et le total
  * des mentions résiduelles (`permutation.ts`) accompagnent tout résultat.
  */
 
@@ -124,6 +126,17 @@ export type ResultatContrefactuel =
   | (Commun & { readonly statut: "indefini"; readonly motif: "aucune_reponse_eligible"; readonly taux_echantillon_humain: typeof TAUX_ECHANTILLON_SANS_RETRAIT })
   | (Commun & { readonly statut: "termine"; readonly juges: readonly ResultatJuge[]; readonly taux_echantillon_humain: TauxEchantillonHumain })
   | (Commun & { readonly statut: "run_invalide"; readonly raison: string; readonly juges: readonly ResultatJuge[] });
+
+/**
+ * §7 (protocole 0.21) : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre,
+ * le test contrefactuel est indéfini. » Aucun sous-ensemble, aucun dérangement, aucune paire, aucun
+ * taux, jamais 0 % ; aucun juge n'est retiré. §12 : un test indéfini ne satisfait pas son critère.
+ */
+export interface ContrefactuelFauteDInterroges {
+  readonly statut: "indefini";
+  readonly motif: "moins_de_deux_interroges";
+  readonly taux_echantillon_humain: typeof TAUX_ECHANTILLON_SANS_RETRAIT;
+}
 
 export class ContrefactuelIncoherent extends Error {
   constructor(detail: string) {
