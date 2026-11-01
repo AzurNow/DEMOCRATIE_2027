@@ -11,15 +11,16 @@
  * (`attribution_contestee`). Un item définissant qui épingle une version dépassée de sa mesure
  * l'exclut aussi (`mesure_version_depassee`). Une question dont la réponse attendue n'est pas
  * définie au gel — item hors de sa fenêtre de validité, position « sans objet » sur un gabarit
- * fermé, négatif ou orienté, liste d'attribution non définie — est exclue. Chaque exclusion est
- * inscrite dans `tirage.exclusions` avec son motif. Ces règles sont évaluées avant tout usage de
- * la graine : aucune graine ne fait échouer ni réussir le tirage pour ces motifs.
+ * fermé, négatif ou orienté, liste d'attribution non définie — est exclue. Une question dont l'item
+ * principal est celui d'un candidat non interrogé au run est exclue aussi (`principal_non_interroge`,
+ * D57 (1), protocole 0.22). Chaque exclusion est inscrite dans `tirage.exclusions` avec un seul motif,
+ * le premier dans l'ordre : `attribution_contestee`, `mesure_version_depassee`, `hors_validite` ou
+ * `reponse_attendue_indecidable`, puis `principal_non_interroge`. Ces règles sont évaluées avant tout
+ * usage de la graine : aucune graine ne fait échouer ni réussir le tirage pour ces motifs.
  *
  * Une formulation dont la relecture conclut à un sens changé (`relecture.sens_preserve: false`)
  * n'est jamais interrogée (§5, conformité n° 58) : si sa question est tirable, `separer` lève
  * `FormulationAuSensChange` avant tout usage de la graine.
- * Une question tirable dont l'item principal est celui d'un candidat non interrogé est refusée de
- * même (§7, protocole 0.21) : `PrincipalNonInterrogeAuTirage`.
  *
  * `concerneLeRun` est la seule définition des questions que le tirage examine, lue aussi par la
  * complétude du jeu (`completude.ts`). `estCompare` est la seule définition du candidat comparé
@@ -246,7 +247,39 @@ function juger(question: Question, index: Index, run: GelDuRun, interroges: Read
   const lecture = lireAuGel(question, index, interroges);
   if (lecture.sorte !== "admise") return lecture;
   const exclusion = motifDExclusion({ gabarit: question.gabarit, items: lecture.items }, [...index.items.values()], run);
-  return exclusion === undefined ? { sorte: "tirable" } : { sorte: "exclue", exclusion };
+  if (exclusion !== undefined) return { sorte: "exclue", exclusion };
+  const horsRun = principalNonInterroge(question, index.items, interroges);
+  return horsRun === undefined ? { sorte: "tirable" } : { sorte: "exclue", exclusion: horsRun };
+}
+
+/**
+ * §5 (protocole 0.22, D57 (1)) : « Une question dont l'item principal est celui d'un candidat non
+ * interrogé au run n'est pas tirée non plus : elle est exclue et comptée à part dans le rapport du
+ * run, avec ce motif. » Le juge ne reçoit que les items des candidats interrogés (§7) : sans son item
+ * principal, la question n'aurait plus d'objet. La règle vaut pour toute question ; seule une question
+ * d'attribution l'atteint en pratique (elle ne nomme personne, `concerneLeRun` l'examine toujours),
+ * celle d'une mesure fictive dont l'item F est celui d'un candidat retiré ou non interrogé. Un item non
+ * principal d'un non-interrogé reste admis : la notation l'écarte. Évaluée en dernier : une question
+ * qui relève aussi d'un autre motif porte celui-là. `interroges` est celui du tirage (`interrogesDe`).
+ * Le refus de la notation (`preparation.ts`, `ItemPrincipalNonInterroge`) garde un tirage construit à
+ * la main.
+ */
+function principalNonInterroge(
+  question: Pick<Question, "items">,
+  items: ReadonlyMap<string, Item>,
+  interroges: ReadonlySet<string>,
+): MotifEtDetail | undefined {
+  const horsRun = question.items
+    .filter((entree) => entree.role === "principal")
+    .map((entree) => itemDe(entree.reference.item_id, items))
+    .find((item) => !interroges.has(item.candidat_id));
+  if (horsRun === undefined) return undefined;
+  return {
+    motif: "principal_non_interroge",
+    detail:
+      `Item principal ${horsRun.id} du candidat ${horsRun.candidat_id}, non interrogé au run : le juge ne reçoit ` +
+      `que les items des candidats interrogés (§7), la question n'est pas tirée (§5).`,
+  };
 }
 
 /**
@@ -326,7 +359,6 @@ export function separer(
     // le tirage avant tout usage de la graine, qu'elle eût été tirée ou non.
     premisseFausseAuGel(question, items, run.date_gel);
     verifierRelecture(question);
-    verifierPrincipalInterroge(question, index.items, interroges);
     tirables.push(question);
   }
   return { tirables, exclusions: exclusions.sort((a, b) => comparerChaines(a.question_id, b.question_id)) };
@@ -353,44 +385,6 @@ export class FormulationAuSensChange extends Error {
 function verifierRelecture(question: Question): void {
   const fautive = question.formulations.find((formulation) => !formulation.relecture.sens_preserve);
   if (fautive !== undefined) throw new FormulationAuSensChange(question, fautive);
-}
-
-/**
- * §7 (protocole 0.21, D56 (1)) : « Le juge ne reçoit que les items des candidats interrogés au run. »
- * La notation écarte la référence d'un non-interrogé, mais l'item principal ne s'écarte pas : sans
- * lui, la question n'a plus d'objet, et `preparation.ts` le refuse (`ItemPrincipalNonInterroge`),
- * arrêtant la notation de tout le run. Seule une question d'attribution peut l'atteindre — elle ne
- * nomme personne, `concerneLeRun` l'examine toujours —, quand l'item F principal d'une mesure fictive
- * est celui d'un candidat retiré. Le tirage la refuse en la nommant, avant tout usage de la graine,
- * plutôt que de l'exclure : le protocole n'écrit pas cette exclusion, qui changerait la population
- * tirée. La règle vaut pour toute question tirable ; un item non principal d'un non-interrogé reste
- * admis, la notation l'écarte. `interroges` est celui du tirage, `interrogesDe` (une seule définition).
- */
-export class PrincipalNonInterrogeAuTirage extends Error {
-  readonly question_id: string;
-  readonly item_id: string;
-  readonly candidat_id: string;
-
-  constructor(question: Pick<Question, "id" | "gabarit">, item: Pick<Item, "id" | "candidat_id">) {
-    super(
-      `Question ${question.id} (${question.gabarit}) : son item principal ${item.id} est celui du candidat ` +
-        `${item.candidat_id}, non interrogé au run. Le juge ne reçoit que les items des candidats interrogés ` +
-        `(§7) : la notation de cette question serait refusée. Retirer l'item du jeu ou interroger le candidat ` +
-        `avant le tirage.`,
-    );
-    this.name = "PrincipalNonInterrogeAuTirage";
-    this.question_id = question.id;
-    this.item_id = item.id;
-    this.candidat_id = item.candidat_id;
-  }
-}
-
-function verifierPrincipalInterroge(question: Question, items: ReadonlyMap<string, Item>, interroges: ReadonlySet<string>): void {
-  const horsRun = question.items
-    .filter((entree) => entree.role === "principal")
-    .map((entree) => itemDe(entree.reference.item_id, items))
-    .find((item) => !interroges.has(item.candidat_id));
-  if (horsRun !== undefined) throw new PrincipalNonInterrogeAuTirage(question, horsRun);
 }
 
 /**
