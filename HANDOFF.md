@@ -1,159 +1,107 @@
-# Passation — 2026-10-17
+# Passation — 2026-11-01 (session cloud)
 
-Pour une personne ou un agent qui reprend le dépôt sans contexte, pendant deux semaines d'absence
-de l'auteur. Lire dans l'ordre : `CLAUDE.md` (règles et installation), ce fichier,
-`docs/PROTOCOLE.md` (fait autorité sur tout), `docs/feuille-de-route.json` (état qui fait foi).
+Pour une session Claude Code dans le cloud (claude.ai/code) qui reprend le dépôt pendant que la
+machine de l'auteur est éteinte. L'auteur la pilote depuis son téléphone. Lire dans l'ordre :
+`CLAUDE.md` (règles et installation), ce fichier, `docs/PROTOCOLE.md` (fait autorité sur tout),
+`docs/feuille-de-route.json` (état qui fait foi).
 
-## Mission pendant l'absence
+La passation précédente (absence d'octobre, 2026-10-17) est dans l'historique Git de ce fichier.
+Deux pièges de `CLAUDE.md` sont périmés depuis le retour de l'auteur : l'absence d'octobre est
+finie, et `gh pr merge` fonctionne (voir « Fusion » ci-dessous).
 
-Deux choses seulement :
+## Installation dans le cloud
 
-1. **Rendre le code pleinement fonctionnel** : les lots de correction ci-dessous, dans l'ordre.
-   Tout travail au-delà de cette liste (par exemple ce qui manque pour une chaîne simulée de bout
-   en bout) commence par un plan soumis à l'auteur (voir « Quand il faut l'auteur »), jamais par du
-   code.
-2. **Relire et mettre à jour le protocole, puis le code en conséquence.** `docs/PROTOCOLE.md` et
-   `prompts/judge-*` restent des zones d'arrêt de `CLAUDE.md` : une modification se **propose**
-   dans une PR à part, qui ne touche que ces fichiers (et le journal des révisions en tête du
-   protocole). La fusion par l'auteur vaut accord. Le code qui applique la révision part dans une
-   PR suivante, tirée de `main` une fois la révision fusionnée. Avant la 1.0, une modification est
-   une révision listée en tête du protocole, pas un amendement (§9). Ne jamais mélanger texte du
-   protocole et code dans une même PR. Après chaque révision fusionnée, repasser la compétence
-   `conformite-protocole` (rapport dans `docs/conformite/`), qui dit quel code doit suivre.
-   Première révision faite : la 0.19 (#163, 2026-10-19) reporte au protocole les textes de
-   D54 (2), (4) et D55 (4), (5), (9) rédigés dans `docs/TACHES-AUTEUR.md` (section 1, entrées
-   datées du 2026-10-17).
+Suivre « Démarrer depuis un clone neuf » de `CLAUDE.md` : Node 22 (`.nvmrc`), pnpm par corepack,
+uv puis `uv sync --frozen`. Vérifier avant tout : `pnpm check && pnpm test` et
+`pnpm check:py && pnpm test:py` verts sur `main`. Sous Node 23, un seul échec est connu et sans
+effet (`tests/run/invalidation.test.ts`, cas 4 : `ExperimentalWarning` sur stderr) ; la CI tourne
+sous Node 22.
 
-Hors mission : collecte réelle, appels d'API réels, écriture dans `data/` ou dans
-`config/perimetre.yaml`, site, déploiement, signature et gel de la 1.0 (l'auteur seul).
+La mémoire locale de Claude Code de l'auteur n'existe pas dans le cloud : ses consignes durables
+sont recopiées dans « Façon de travailler », en bas de ce fichier. Elles font foi.
 
-**Revue et fusion** : l'auteur relit et fusionne les PR lui-même depuis GitHub, en voyage. Donc :
-des PR petites, une par lot, avec une description qui se lit sur téléphone, dans cet ordre :
-décision attendue (ou « aucune »), ce qui change, ce qui pourrait casser, comment c'est testé.
+## Fusion
 
-**Accès** : l'assistant pousse ses branches sur `origin` et ouvre des PR ; il ne pousse **jamais**
-sur `main` et ne fusionne jamais, même si ses droits GitHub le permettent.
+Décision de l'auteur du 2026-11-01 :
+- **Code, tests, documentation technique** : la session fusionne elle-même ses PR, dans l'ordre,
+  une fois la CI `check-et-test` verte (`gh pr merge <n> --merge`). Jamais de push direct sur
+  `main`.
+- **Zones d'arrêt de `CLAUDE.md`** (`docs/PROTOCOLE.md`, `prompts/judge-*`, `data/`,
+  `config/perimetre.yaml`, et toute décision métier) : la session **propose** une PR à part, qui ne
+  touche que ces fichiers, et l'auteur la fusionne lui-même. Le code qui l'applique part dans une PR
+  suivante, tirée de `main` après la fusion.
+- Description de PR lisible sur téléphone, dans cet ordre : décision attendue (ou « aucune »), ce
+  qui change, ce qui pourrait casser, comment c'est testé.
 
-## Quand il faut l'auteur
+## État au 2026-11-01 (soir)
 
-Une décision métier, une ambiguïté du protocole, un plan qui dépasse un fichier : ne rien
-supposer. Ouvrir une issue GitHub (ou une PR en brouillon si du texte est proposé) qui pose la
-question **complètement** : contexte, options réelles, coût de chacune, recommandation en
-premier. Puis passer à un autre lot indépendant en attendant la réponse. Une question posée coûte
-un jour d'attente ; une hypothèse inventée dans un pipeline de mesure coûte la crédibilité du
-projet.
-
-## Branche de départ
-
-**`main`.** Ce fichier y arrive par la PR #156 (`wip/handoff-2026-10-17`, docs et configuration
-seulement). Vérifier d'abord : `gh pr view 156 --json state` doit dire `MERGED`. Si elle ne l'est
-pas encore, partir de `wip/handoff-2026-10-17` et le signaler dans chaque PR.
-
-Chaque lot part d'une branche neuve tirée de `main` à jour (`git switch main && git pull`) et
-vise `main`. Noms de branche : `lots/<sujet>` pour le code, `protocole/<sujet>` pour une
-révision. Ne **jamais** baser une PR sur la branche d'une autre PR non fusionnée (c'est ainsi que
-#54 a manqué `main`, `LESSONS.md`) : si un lot dépend d'un autre, attendre la fusion du premier.
-
-## État actuel
-
-- Protocole en **version 0.20** (#166, 2026-10-19), pas encore gelé en 1.0. Le jalon J1 (15 octobre) est dépassé :
-  les jalons sont repoussables, la qualité passe avant les dates.
-- Code livré, de T2 à T3 selon les lots : schémas, interface de validation, collecte et
-  archivage, extraction double, questions/tirage/symétrie, interrogation simulée, notation et
-  notation humaine, test des liens, analyse §8, contestation/notification, go/no-go, gel, mesures
-  validées, reformulation. **Pas encore écrits** : le site statique (T0), `pnpm run:live`,
-  `pnpm analyze`, `pnpm build:site`.
-- Aucune donnée réelle : `data/`, `staging/`, `site/` n'existent pas dans un clone. Le pipeline
-  n'a encore fait aucun appel d'API réel.
-- Vérifié le 2026-10-17 sur un clone neuf, Node 22.23.3 : `pnpm install --frozen-lockfile`,
-  `pnpm check`, `pnpm test` (207 fichiers, 3 711 tests), `pnpm build`, `uv sync --frozen`, ruff,
-  `pytest` (607 tests) : tout vert. La CI Linux (ubuntu, Node 22) est verte sur `main` (82c8374)
-  et sur la PR #156. `pnpm dev`, `pnpm run:dry`, `pnpm notation:dry`, `pnpm proprete` et
-  `pnpm feuille-de-route` tournent sans argument ; les autres commandes exigent les leurs.
-- Toutes les décisions D1 à D55 sont tranchées ; aucune n'attend l'auteur dans la feuille de route.
+- Protocole **0.22** (#217). Décisions D1 à D57 tranchées (`docs/feuille-de-route.json`).
+- Passe de conformité du 2026-11-01 sur la 0.21 (`docs/conformite/2026-11-01.md`) : ses quatre
+  constats sont clos (#217, #218, #219).
+- Matrice remise à jour (#221, `docs/conformite/2026-11-01-matrice.md`) : 467 exigences, aucune
+  contredite, 48 « à implémenter » (site 25, analyse 10, extraction 4, interrogation 4,
+  notation 4, hors code 1).
+- Dette : `docs/DETTE.md`, entrée du 2026-11-01. Points hauts 1 et 2 réglés (#216, #220) ; reste
+  le point 3 (`Location` latin-1 relu en UTF-8), à vérifier seulement au premier test des liens
+  réel.
+- Rien n'a jamais tourné sur un appel réel : extraction, reformulation, interrogation, liens et
+  notation ne sont exercés que sur doubles et fixtures.
 
 ## Ce qui était en cours
 
-La revue de code du 2026-10-17 (`docs/revues/2026-10-17.md`) a relevé 44 constats. L'auteur a
-tranché le même jour ses 8 décisions (**D54**) et les 11 restées de la revue du 2026-10-12
-(**D55**), option recommandée partout. Il restait à **coder les lots de correction**, une petite PR
-chacune, en commençant par les gardes de sortie. Le texte au protocole de D54 (2), (4) et
-D55 (4), (5), (9) est reporté au protocole en 0.19 (#163, 2026-10-19), première révision de la
-mission (voir « Mission », point 2) ; la règle UTF-8 de `Location` (D55 (2)) attend la nouvelle
-version de la table des liens.
+Rien : tout le travail du 2026-11-01 est fusionné (`main` à `fdd1a36`, #214 à #223). Les constats
+n° 5, 6, 8 et 10 de la matrice sont corrigés (#222, #223) ; le n° 9 est accepté par l'auteur. Le
+tableau de bilan de `docs/conformite/2026-11-01-matrice.md` n'a pas été recompté après ces deux PR :
+la prochaine passe `conformite-protocole` le refera.
 
 ## Prochaines tâches, par priorité
 
-Critères communs à toutes : une PR par lot ; `pnpm check && pnpm test` (et `pnpm check:py &&
-pnpm test:py` si du Python bouge) verts en local et en CI ; tests écrits **avant** le correctif
-pour toute logique de mesure ; aucun écart aux huit règles ni écriture dans les zones d'arrêt de
-`CLAUDE.md` ; colonne « Statut » du constat passée à « corrigé (#PR) » dans
-`docs/revues/2026-10-17.md` ; entrée de dette ajoutée à la clôture (`cloture-de-session`).
-Les numéros « Lot n » sont ceux du rapport de revue ; l'ordre ci-dessous est celui à suivre. Le
-détail de chaque constat (fichier, ligne, scénario) est dans le rapport, section « Détail des
-constats hauts et moyens » et tableau « Constats ».
+1. **Attendre la décision de l'auteur sur le kappa** (constat n° 7 de la matrice, et le reliquat du
+   n° 8). Le protocole ne définit ni le « kappa de la paire » sur le jeu d'or (§7.22, §7.23 :
+   moyenne des deux juges, minimum, ou accord du verdict combiné ?) ni, au §7.30, si l'accord des
+   deux humains publié est un kappa ou la seule part d'accord. Ne rien coder avant : poser la
+   question complètement à l'auteur, puis proposer la révision du protocole en PR à part. Ce qui
+   est publié aujourd'hui (#223) : `run.json#/accord_humains_echantillon`, compte et part de
+   l'accord défini au §7, sans kappa.
+2. **Trois questions laissées par #223** (constat n° 6), à poser à l'auteur :
+   - `run.schema.json#/juges` n'exige qu'un juge (`minItems: 1`) : un run à un seul juge passe la
+     règle des familles. Recommandé : exiger deux juges (règle d'inclusion, donc décision de
+     l'auteur).
+   - Le gel n'appelle pas `exigerFamillesDistinctes` (`pipeline/notation/familles-juges.ts`) : deux
+     juges de même famille sont gelés puis refusés à la notation. Recommandé : l'appeler aussi au
+     gel (code seul, petit lot ; option recommandée retenue sans demander).
+   - Aucune exclusion d'une famille d'Anthropic n'est écrite au protocole : rien à coder sans texte.
+3. **Lot analyse** (10 exigences, `pnpm analyze`, règle de décision H1/H2/H4) : commencer par un
+   plan soumis à l'auteur, jamais par du code (`CLAUDE.md`, « Plan avant code »).
+4. **Extraction, interrogation, notation** (4 exigences chacune, liste dans le rapport de la
+   matrice) : même règle, un plan d'abord.
+5. **Site** (25 exigences) : pas avant que l'analyse existe.
 
-1. **Lot 1 — gardes de sortie** (constats 6, 32). Acceptation : `pnpm reformuler --simule
-   --sortie=data/...` et `pnpm extraire --simule` vers `data/` sont refusés par un refus nommé,
-   testé ; un seul `cheminReel` partagé, l'extraction n'importe plus ses gardes d'un module de
-   commande.
-2. **Lot 4 — petites robustesses** (constats 7, 8, 18, 19, 20, 21, 23, 25, 27, 28 ; D54 (5) et
-   (8)). Acceptation, entre autres : l'écran de notation humaine refuse un run invalidé ; relancer
-   `run:invalider` sur le même motif répond « déjà inscrite », code 0 ; seul `.DS_Store` est
-   ignoré en `staging/formulations/<id>/` (liste fermée en données) ; `run:dry` refuse une option
-   inconnue ; chaque cas a son test.
-3. **Lot 2 — registres de mesures** (constats 9, 11, 33, 26, puis 1 selon D54 (1)). Acceptation :
-   écriture atomique avec contrôle de modification concurrente pour les trois registres, une
-   frontière commune, précédence par l'ordre du registre et date contrôlée comme vraie date civile.
-4. **Lot 5 — extraction, reprise** (constat 3, puis 2, 4, 17 selon D54 (2), (3), (7)).
-   Acceptation : relance après arrêt sans doublon d'items ; 408/429/5xx = échec de transport,
-   source reprise ; entrée à l'épinglage périmé refusée ; `model` servi ≠ épinglé ⇒
-   `modele_different`.
-5. **Lot reformulation** (constat 10 avec D54 (4), constat 5). Acceptation : une seule règle
-   « formulation en vigueur » et un test d'accord reprise/relecture ; un état `sans_objet`
-   n'affirme aucune position et ne bloque plus `tachesDe`.
-6. **Lot 6 — structure du gel et du run** (constats 29, 30, 31, 34).
-7. **Lot 7 — documentation** (constats 12 à 16, 35, 37 à 42), dont la description du thème dans
-   `schema/commun.schema.json` (D54 (6), texte seul).
-8. **Décisions D55 (1) à (10)** : un lot par point ou par groupe cohérent, tests d'abord ; détail
-   dans `docs/feuille-de-route.json` (décision D55, champ `options`).
-9. **Lot 8** : repris de la revue du 2026-10-12 (liste en fin de section « Lots de correction
-   proposés » du rapport du 2026-10-17).
+Hors mission sans accord explicite de l'auteur : appels d'API réels, collecte réelle, écriture dans
+`data/` ou `config/perimetre.yaml`, déploiement, `pnpm run:live`, gel de la 1.0.
 
-Le diff de `CLAUDE.md` demandé par D55 (11) (commandes réelles, dossiers manquants, exception
-d'import `pipeline/` → `analysis/`) est fait dans la PR #156.
+## Quand il faut l'auteur
 
-## Ce qu'il ne faut pas faire pendant l'absence
-
-- Écrire dans `data/` ou `config/perimetre.yaml`. Changer une métrique, un seuil, une règle
-  d'inclusion ou la grille de notation autrement que par une révision du protocole proposée dans
-  sa propre PR. Ajouter une dépendance ou un appel réseau ; déployer ; lancer un appel d'API réel.
-  Proposer, documenter dans une issue ou une PR, attendre l'auteur.
-- Pousser sur `main`, fusionner, réécrire l'historique (`push --force`, `rebase` d'une branche
-  déjà poussée et relue), proposer à la fusion une PR à la CI rouge. Supprimer une branche
-  autrement que par `git branch -d`.
-- Rendre un test vert en affaiblissant son assertion, ou le marquer `skip`/`todo`.
-
-## Questions ouvertes
-
-1. **Brouillons rendus publics** (`scratch/protocole-0.16/`, `scratch/prompts/judge-1.0.0*.md`,
-   `scratch/perimetre/`) : acceptés pour l'instant, l'auteur les retirera de l'historique Git plus
-   tard. Ne pas les supprimer d'ici là, ne pas en ajouter d'autres du même genre.
-2. **Gel du protocole 1.0** (J1) : signature, avocat, Zenodo, transmission aux institutions,
-   fournisseur SMTP — tâches de l'auteur seul (`docs/TACHES-AUTEUR.md` §1).
-3. **Linux** : vérifié par la CI ubuntu, pas sur une machine Linux interactive. La transcription
-   (faster-whisper, 1,6 Go de poids) n'a pas été rejouée sur un clone neuf.
+Une décision métier, une ambiguïté du protocole, un plan qui dépasse un fichier : ne rien supposer.
+Poser la question dans la conversation (l'auteur la lit sur son téléphone), formulée complètement,
+ou ouvrir une PR en brouillon si du texte de protocole est proposé.
 
 ## Façon de travailler (consignes durables de l'auteur)
 
-- Une décision qui revient à l'auteur se pose **complètement** : contexte, options réelles, coût
-  de chacune, recommandation en premier. Jamais une demi-ligne. Pendant l'absence, par une issue
-  ou une PR GitHub (voir « Quand il faut l'auteur »).
-- Avec Claude Code, la session principale orchestre ; le code de mesure part à l'agent
-  `codeur-opus`, le code de routine à `codeur-sonnet`, avec un brief autonome d'après
-  `.claude/briefs/GABARIT.md`. Un autre assistant suit les mêmes règles sans ces agents.
+- Une décision qui revient à l'auteur se pose **complètement** : contexte, options réelles, coût de
+  chacune, recommandation en premier. Jamais une demi-ligne.
+- Depuis le 2026-11-01 : sur une décision d'outillage ou de code qui ne touche pas une zone d'arrêt,
+  retenir l'option recommandée sans demander, et le dire. Paralléliser les lots indépendants.
+- La session principale orchestre ; le code de mesure part à l'agent `codeur-opus`, le code de
+  routine à `codeur-sonnet`, avec un brief autonome d'après `.claude/briefs/GABARIT.md`. Ces agents
+  ne commitent pas : la session principale relit leur diff, commite, pousse et ouvre la PR. Lancer
+  deux agents en parallèle dans des worktrees séparés ; un conflit sur `docs/conformite/` se
+  résout à la fusion.
 - Qualité avant dates : un code propre et complet vaut mieux qu'un jalon tenu.
 - CI obligatoire sur `main`, administrateurs compris.
 - Ménage : branches fusionnées et worktrees d'agents supprimés avec `-d`, jamais `-D`.
+- Chaque PR dit ce qui pourrait casser ; une question laissée ouverte dans une PR entre le jour même
+  dans la feuille de route (`LESSONS.md`, section Méthode).
 - Fin de session : compétence `cloture-de-session` (`docs/DETTE.md`, `LESSONS.md`,
-  `docs/feuille-de-route.json` puis `pnpm feuille-de-route`).
+  `docs/feuille-de-route.json` puis `pnpm feuille-de-route`). Mettre à jour ce fichier avant de
+  s'arrêter, pour la session suivante.
