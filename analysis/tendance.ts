@@ -32,7 +32,7 @@ import { questionsAuTexteChange, signatureQuestion } from "../pipeline/questions
 export interface EtatRun {
   readonly unites: readonly UniteAnalyse[];
   readonly questions: readonly Question[];
-  /** Le partage du seuil de 20 % de CE run, par `couplesComparables` (`seuils.ts`). */
+  /** Le partage du seuil de 20 % de CE run, par `couplesComparables(reponses, plan)` (`seuils.ts`). */
   readonly couples: PartageCouples;
 }
 

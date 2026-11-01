@@ -47,7 +47,8 @@
 import { notesContrefactuellesConcordent } from "../../analysis/note-lue.ts";
 import type { Ulid } from "../../analysis/types.ts";
 import { JugeIndetermine } from "./decision.ts";
-import { comparerChaines, type SousEnsembleContrefactuel } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import { type SousEnsembleContrefactuel } from "./echantillons.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
 import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain } from "./types.ts";

@@ -27,7 +27,7 @@
  * Texte haché : `<valeur>␀contrefactuel␀noms_candidats␀derangement`.
  *
  * Consommation du générateur : les candidats sont rangés par `candidat_id` dans l'ordre croissant
- * des chaînes (unités UTF-16, comme `<` en JavaScript ; `echantillons.ts:comparerChaines`), quel
+ * des chaînes (unités UTF-16, comme `<` en JavaScript ; `outils/ordre-chaines.ts:comparerChaines`), quel
  * que soit l'ordre reçu. Ce rangement est mélangé par Fisher-Yates du dernier au premier
  * (`validation/domaine/alea.ts`, `melanger`). Si le mélange a un point fixe (un candidat à sa
  * propre place), il est rejeté et le rangement, et non le mélange rejeté, est mélangé de nouveau
@@ -40,7 +40,7 @@ import { graineDerivee } from "../../analysis/graines.ts";
 import { generateur, melanger, type GenerateurAleatoire } from "../../validation/domaine/alea.ts";
 import { verifierGraine } from "../questions/graine.ts";
 import type { GraineTirage } from "../questions/types.ts";
-import { comparerChaines } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import type { CandidatDuRun } from "./types.ts";
 
 /**

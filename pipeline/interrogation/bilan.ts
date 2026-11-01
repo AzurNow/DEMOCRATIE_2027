@@ -9,7 +9,7 @@
 
 import { partReponsesManquantes, runIncomplet } from "../../analysis/seuils.ts";
 import type { Taux } from "../../analysis/types.ts";
-import { comparerChaines } from "./plan.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { MODES, type Mode, type ReponseEcrite } from "./types.ts";
 
 export interface LigneBilan {

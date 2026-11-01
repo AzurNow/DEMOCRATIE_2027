@@ -18,6 +18,7 @@
  * Leur part par couple outil × mode est dans `seuils.ts`.
  */
 
+import { comparerChaines } from "../outils/ordre-chaines.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import {
   DRAPEAUX,
@@ -241,7 +242,7 @@ export interface MetriquesParOutilEtMode {
 /**
  * §8 : « les deux modes sont toujours publiés côte à côte ». Ils ne sont donc jamais agrégés.
  *
- * Le partage vient de `couplesComparables(reponses)` (`seuils.ts`), qui décide le seuil de 20 % ;
+ * Le partage vient de `couplesComparables(reponses, plan)` (`seuils.ts`), qui décide le seuil de 20 % ;
  * il n'est jamais recalculé ici (conformité 2026-09-29, n° 12). Une unité du canal application
  * lève (n° 10 : ses chiffres passent par `metriquesApplication`), comme une unité API sans mode ou
  * d'un couple que le partage ne connaît pas.
@@ -250,7 +251,7 @@ export function parOutilEtMode(unites: readonly UniteAnalyse[], couples: Partage
   const etat = etatDesCouples(couples);
   const groupes = grouper(unites, (u) => cleCouple(coupleApi(u)));
   const compares: MetriquesPrimaires[] = [];
-  for (const [, membres] of [...groupes].sort(([a], [b]) => (a < b ? -1 : 1))) {
+  for (const [, membres] of [...groupes].sort(([a], [b]) => comparerChaines(a, b))) {
     const couple = coupleApi(membres[0] as UniteAnalyse);
     // Un couple incomplet n'a aucune statistique : il est rendu dans `couples_incomplets`.
     if (etat(couple) === "compare") compares.push(metriquesPrimaires(membres, couple.outil_id, couple.mode));
@@ -270,7 +271,7 @@ export function metriquesApplication(unites: readonly UniteAnalyse[]): Metriques
   }
   const groupes = grouper(unites, (u) => u.outil_id);
   return [...groupes]
-    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .sort(([a], [b]) => comparerChaines(a, b))
     .map(([outil_id, membres]) => ({ outil_id, canal: "application", exploratoire: true, ...tauxPrimaires(membres) }));
 }
 

@@ -36,6 +36,7 @@ import type {
 import { POSITIONS } from "./types.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import { dateCivileValide } from "../../validation/domaine/validateurs-champ.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 
 export class ItemIntrouvable extends Error {
   constructor(item_id: string) {
@@ -408,7 +409,7 @@ function positionsParCandidat(
 function positionNonTranchee(
   table: ReadonlyMap<string, ReadonlySet<Position>>,
 ): { readonly candidat_id: string; readonly position: Position } | undefined {
-  for (const [candidat_id, positions] of [...table.entries()].sort(([a], [b]) => (a < b ? -1 : 1))) {
+  for (const [candidat_id, positions] of [...table.entries()].sort(([a], [b]) => comparerChaines(a, b))) {
     const hors = [...positions].sort().find((position) => !POSITIONS_TRANCHEES.includes(position));
     if (hors !== undefined) return { candidat_id, position: hors };
   }

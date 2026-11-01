@@ -38,6 +38,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { ErreurSchema, validerFragment, valider } from "../../outils/schemas/valider.ts";
 import type { PointeurDeSchema } from "../../outils/schemas/valider.ts";
 import { lireInstant } from "../interrogation/heure-paris.ts";
@@ -135,7 +136,7 @@ export function choisirPrecedent(runs: readonly RunDeRuns[], date_gel_ms: number
   // Tri par code-unit (comme le `.sort()` sans comparateur ailleurs dans le dépôt), jamais
   // `localeCompare` : le nom retenu dans le message d'ambiguïté ne doit pas dépendre de la locale
   // du processus (constat 21, revue du 2026-10-17).
-  const retenus = candidats.filter((run) => run.date_gel_ms === plus_recent).sort((a, b) => (a.repertoire < b.repertoire ? -1 : a.repertoire > b.repertoire ? 1 : 0));
+  const retenus = candidats.filter((run) => run.date_gel_ms === plus_recent).sort((a, b) => comparerChaines(a.repertoire, b.repertoire));
   const [premier, second] = retenus;
   if (premier === undefined) return null;
   if (second !== undefined) {
@@ -325,7 +326,7 @@ export function lireRunsDuDepot(runs: string): readonly RunDeRuns[] {
   // en cas d'ambiguïté.
   return readdirSync(runs, { withFileTypes: true })
     .filter((entree) => entree.isDirectory())
-    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    .sort((a, b) => comparerChaines(a.name, b.name))
     .map((entree) => {
       const chemin = join(runs, entree.name, "run.json");
       const texte = ou("run_illisible", entree.name, () => readFileSync(chemin, "utf8"));

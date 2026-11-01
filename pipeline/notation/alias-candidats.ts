@@ -22,7 +22,7 @@
  *
  * Consommation du générateur : les identifiants des candidats interrogés sont rangés par
  * `candidat_id` dans l'ordre croissant des chaînes (unités UTF-16, comme `<` en JavaScript,
- * `echantillons.ts:comparerChaines`), quel que soit l'ordre reçu, puis mélangés par Fisher-Yates du
+ * `outils/ordre-chaines.ts:comparerChaines`), quel que soit l'ordre reçu, puis mélangés par Fisher-Yates du
  * dernier au premier (`validation/domaine/alea.ts`, `melanger`). Le candidat au rang k (0 fondé) du
  * mélange reçoit l'alias `C{k+1}`.
  */
@@ -31,7 +31,7 @@ import { graineDerivee } from "../../analysis/graines.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
 import { verifierGraine } from "../questions/graine.ts";
 import type { GraineTirage } from "../questions/types.ts";
-import { comparerChaines } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 
 /**
  * Clé lisible de la graine de l'alias des candidats, dérivée de `run.graines.alias_candidats`.

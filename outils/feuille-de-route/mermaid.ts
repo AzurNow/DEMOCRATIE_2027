@@ -6,6 +6,7 @@
  * que la sortie soit un texte déterministe, octet pour octet, à entrée égale.
  */
 
+import { comparerChaines } from "../ordre-chaines.ts";
 import type { Decision, Jalon, Lot, TypeDependance } from "./types.ts";
 
 export interface DonneesGraphe {
@@ -75,11 +76,11 @@ export function areteDependance(source: string, cible: string, type: TypeDependa
 }
 
 function trierParDatePuisId(jalons: readonly Jalon[]): readonly Jalon[] {
-  return [...jalons].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+  return [...jalons].sort((a, b) => comparerChaines(a.date, b.date) || comparerChaines(a.id, b.id));
 }
 
 function trierParId<T extends { readonly id: string }>(elements: readonly T[]): readonly T[] {
-  return [...elements].sort((a, b) => a.id.localeCompare(b.id));
+  return [...elements].sort((a, b) => comparerChaines(a.id, b.id));
 }
 
 function rendreSubgraph(jalon: Jalon, lots: readonly Lot[]): readonly string[] {
@@ -110,7 +111,7 @@ function rendreDecisions(decisions: readonly Decision[]): readonly string[] {
 function rendreAretesDependances(lots: readonly Lot[]): readonly string[] {
   const lignes: string[] = [];
   for (const lot of trierParId(lots)) {
-    const dependances = [...lot.depend_de].sort((a, b) => a.lot.localeCompare(b.lot));
+    const dependances = [...lot.depend_de].sort((a, b) => comparerChaines(a.lot, b.lot));
     for (const dependance of dependances) {
       lignes.push(`  ${areteDependance(dependance.lot, lot.id, dependance.type)}`);
     }

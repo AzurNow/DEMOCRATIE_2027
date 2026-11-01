@@ -12,6 +12,7 @@
  * attente n'engendre aucune question.
  */
 
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import type { Item } from "./types.ts";
 
 /** Ce que la règle lit d'un item. */
@@ -53,7 +54,7 @@ export function fictifsEnDouble(items: readonly ItemFictifCandidat[]): ReadonlyM
   return new Map(
     [...parMesure.entries()]
       .filter(([, ids]) => ids.size > 1)
-      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .sort(([a], [b]) => comparerChaines(a, b))
       .map(([mesure_id, ids]) => [mesure_id, [...ids].sort()]),
   );
 }

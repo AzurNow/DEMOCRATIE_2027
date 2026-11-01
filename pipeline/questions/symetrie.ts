@@ -16,6 +16,7 @@
  * d'attribuer une question d'attribution à un candidat (`schema/README.md`, point ouvert 2).
  */
 
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { exigerJeuComplet, exigerTirageDuRun } from "./completude.ts";
 import { decisionAvantGel, decisionReintegre } from "./contestation.ts";
 import { gabaritParCode } from "./gabarits.ts";
@@ -554,7 +555,7 @@ function quotaParStrateRespecte(contexte: Contexte): ConditionSymetrie {
   }
   const depassements = [...comptes]
     .filter(([, nombre]) => nombre > contexte.quota)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .sort(([a], [b]) => comparerChaines(a, b))
     .map(([cle, nombre]) => {
       const [candidat, theme, gabarit] = cle.split("|");
       return `${String(candidat)}, ${String(theme)} × ${String(gabarit)} : ${nombre} question(s) propre(s)`;

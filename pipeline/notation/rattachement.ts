@@ -23,7 +23,7 @@
  */
 
 import { libelleSansMot, memesMots } from "../questions/libelles.ts";
-import { comparerChaines } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import type { CandidatDuRun } from "./types.ts";
 
 export interface Rattachement {

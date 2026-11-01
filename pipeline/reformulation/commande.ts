@@ -34,6 +34,7 @@
 import { join, resolve } from "node:path";
 import { analyserArguments, drapeau, OptionsInconnues, texte } from "../../outils/arguments.ts";
 import type { Arguments } from "../../outils/arguments.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { exigerHorsDesZonesProtegees, SimuleSousZoneProtegee } from "../gardes-sortie.ts";
 import type { Horloge } from "../interrogation/horloge.ts";
 import { lireConfiguration, ConfigurationRefusee } from "./configuration.ts";
@@ -150,7 +151,7 @@ function trierDepuis(taches: readonly Tache[], racine: string, staging: string):
 /* ------------------------------------------------------------------- bilan */
 
 function lignesBilan(mode: Mode, total: number, bilan: Bilan): readonly string[] {
-  const rejetees = [...bilan.rejetees.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
+  const rejetees = [...bilan.rejetees.entries()].sort(([a], [b]) => comparerChaines(a, b));
   const nombre_rejetees = rejetees.reduce((somme, [, n]) => somme + n, 0);
   const detail = rejetees.map(([motif, n]) => `${motif} ${n}`).join(", ");
   return [

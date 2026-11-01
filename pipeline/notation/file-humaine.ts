@@ -54,7 +54,8 @@
 import { notationsConcordent } from "../../analysis/note-lue.ts";
 import type { Ulid } from "../../analysis/types.ts";
 import { decider, type Decision, type MotifAttente } from "./decision.ts";
-import { comparerChaines, tirerEchantillonHumain, tirerJeuOr, type JeuOr } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import { tirerEchantillonHumain, tirerJeuOr, type JeuOr } from "./echantillons.ts";
 import type { TextesDeVerification } from "./extrait.ts";
 import { exigerPseudonyme, MOTIFS_HUMAINS, type MotifHumain } from "./notation-humaine.ts";
 import type { NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";

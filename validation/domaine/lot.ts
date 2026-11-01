@@ -12,6 +12,7 @@
  * graine maîtresse du lot, qui, elle, est enregistrée.
  */
 
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import type { GenerateurAleatoire } from "./alea.ts";
 import { ALGORITHME_ALEA, generateur, graineDepuisTexte, melanger } from "./alea.ts";
 import type { ItemDuLot, Lot, NatureLot } from "./types.ts";
@@ -252,7 +253,7 @@ export function annoncerComposition(composition: CompositionLots, taille: number
 }
 
 function comparerParIdentifiant(a: ItemDuLot, b: ItemDuLot): number {
-  return a.item_id < b.item_id ? -1 : a.item_id > b.item_id ? 1 : 0;
+  return comparerChaines(a.item_id, b.item_id);
 }
 
 /** Vrai si aucun item n'est immédiatement suivi d'un item du même candidat. */

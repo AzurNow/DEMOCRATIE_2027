@@ -7,6 +7,7 @@
  * une sortie déterministe octet pour octet.
  */
 
+import { comparerChaines } from "../ordre-chaines.ts";
 import type { EtatLot } from "./graphe.ts";
 import { genererMermaid } from "./mermaid.ts";
 import type { Decision, DecisionTranchee, FeuilleDeRoute, Jalon, Lot, Niveau } from "./types.ts";
@@ -51,7 +52,7 @@ function genererBlocDecisionEnAttente(decision: Decision, feuille: FeuilleDeRout
 function genererDecisionsEnAttente(feuille: FeuilleDeRoute): string {
   const decisions = feuille.decisions
     .filter((decision) => decision.statut === "en_attente")
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => comparerChaines(a.id, b.id));
   if (decisions.length === 0) {
     return ["## Décisions en attente", "", "Aucune décision en attente."].join("\n");
   }
@@ -62,7 +63,7 @@ function genererDecisionsEnAttente(feuille: FeuilleDeRoute): string {
 function genererDecisionsTranchees(feuille: FeuilleDeRoute): string {
   const decisions = feuille.decisions
     .filter((decision): decision is DecisionTranchee => decision.statut === "tranchee")
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => comparerChaines(a.id, b.id));
   if (decisions.length === 0) {
     return ["## Décisions tranchées", "", "Aucune décision tranchée."].join("\n");
   }
@@ -91,7 +92,7 @@ function texteEtat(etat: EtatLot): string {
 
 function texteDependances(lot: Lot): string {
   if (lot.depend_de.length === 0) return "—";
-  const triees = [...lot.depend_de].sort((a, b) => a.lot.localeCompare(b.lot));
+  const triees = [...lot.depend_de].sort((a, b) => comparerChaines(a.lot, b.lot));
   return triees.map((dependance) => (dependance.type === "bloque" ? dependance.lot : `${dependance.lot} (informe)`)).join(", ");
 }
 
@@ -103,8 +104,8 @@ function dateDuJalon(jalons: readonly Jalon[], jalonId: string): string {
 
 function trierLotsPourTableau(feuille: FeuilleDeRoute): readonly Lot[] {
   return [...feuille.lots].sort((a, b) => {
-    const comparaisonDate = dateDuJalon(feuille.jalons, a.jalon).localeCompare(dateDuJalon(feuille.jalons, b.jalon));
-    return comparaisonDate !== 0 ? comparaisonDate : a.id.localeCompare(b.id);
+    const comparaisonDate = comparerChaines(dateDuJalon(feuille.jalons, a.jalon), dateDuJalon(feuille.jalons, b.jalon));
+    return comparaisonDate !== 0 ? comparaisonDate : comparerChaines(a.id, b.id);
   });
 }
 
@@ -143,7 +144,7 @@ function genererLots(feuille: FeuilleDeRoute, etats: ReadonlyMap<string, EtatLot
 }
 
 function trierJalons(jalons: readonly Jalon[]): readonly Jalon[] {
-  return [...jalons].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+  return [...jalons].sort((a, b) => comparerChaines(a.date, b.date) || comparerChaines(a.id, b.id));
 }
 
 function genererTableauJalons(feuille: FeuilleDeRoute): string {
@@ -156,7 +157,7 @@ function genererTableauJalons(feuille: FeuilleDeRoute): string {
 }
 
 function genererBlocJalon(jalon: Jalon, feuille: FeuilleDeRoute): string {
-  const lots = feuille.lots.filter((lot) => lot.jalon === jalon.id).sort((a, b) => a.id.localeCompare(b.id));
+  const lots = feuille.lots.filter((lot) => lot.jalon === jalon.id).sort((a, b) => comparerChaines(a.id, b.id));
   const puces = lots.map((lot) => `- ${lot.id} (${lot.niveau})`).join("\n");
   return [`### ${jalon.id}`, "", puces].join("\n");
 }

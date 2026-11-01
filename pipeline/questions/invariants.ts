@@ -10,6 +10,7 @@
  * seulement « non » oblige à relire tout le corpus pour trouver l'objet fautif.
  */
 
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { fictifsEnDouble, type ItemFictifCandidat } from "../../validation/domaine/fictif-unique.ts";
 import { gabaritParCode } from "./gabarits.ts";
@@ -244,7 +245,7 @@ export function validationsConcordantesMemeVersion(
     else groupe.push(decision);
   }
   return [...parItem.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .sort(([a], [b]) => comparerChaines(a, b))
     .flatMap(([item_id, groupe]) => violationDeVersion(item_id, groupe));
 }
 
@@ -299,7 +300,7 @@ export function premisseFausseSurItemFOuO(
   const parId = new Map(items.map((item) => [item.id, item]));
   return questions
     .flatMap((question) => violationDePremisse(question, parId))
-    .sort((a, b) => (a.objet < b.objet ? -1 : a.objet > b.objet ? 1 : 0));
+    .sort((a, b) => comparerChaines(a.objet, b.objet));
 }
 
 function violationDePremisse(question: PorteurDePremisse, parId: ReadonlyMap<string, Item>): readonly Violation[] {

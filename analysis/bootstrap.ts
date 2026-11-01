@@ -33,6 +33,7 @@
  * l'intervalle retrouve les mêmes bornes.
  */
 
+import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { generateur, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import { graineDerivee, graineHexadecimale } from "./graines.ts";
@@ -107,8 +108,7 @@ export interface DifferenceTaux {
  * mêmes bornes. Partagé avec la permutation (`permutation.ts:grappesEtiquetees`).
  */
 export function comparerGrappes(a: Ulid, b: Ulid): number {
-  if (a < b) return -1;
-  return a > b ? 1 : 0;
+  return comparerChaines(a, b);
 }
 
 /** Les unités par grappe, clés rangées par `comparerGrappes` (conformité n° 19). */
