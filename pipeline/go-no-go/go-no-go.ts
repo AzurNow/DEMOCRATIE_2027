@@ -4,8 +4,11 @@
  * checklist de l'annexe F.
  *
  * Ce qui est lu : `run.json`, `volume/reponses/`, `volume/notations/` (et les réponses
- * contrefactuelles, validées au passage), `verdicts/`, `tirage.json` s'il est présent, et
- * l'existence de `metriques/`. Chaque fichier est validé contre son schéma (`analysis/lecture-run.ts`).
+ * contrefactuelles, validées au passage), `verdicts/`, `tirage.json` et `questions.json` (le plan
+ * d'interrogation du run, `plan-du-run.ts` : les manquantes se comptent sur lui, §8 et §12,
+ * protocole 0.21), le journal `volume/tentatives/` des seules requêtes du plan sans réponse
+ * (`attente-operateur.ts`), et l'existence de `metriques/`. Chaque fichier est validé contre son
+ * schéma (`analysis/lecture-run.ts`).
  *
  * Ce qui est écrit : dans `run.json`, `go_no_go`, `kappa_echantillon_humain` ou
  * `motif_indefini_kappa_echantillon_humain` de chaque juge retenu, `motif_provisoire` quand la
@@ -16,7 +19,9 @@
  * Refus, avant toute écriture : symétrie rouge (le run est invalide ou ne part pas, et ne porte
  * aucun go/no-go), run `invalide`, run qui porte une `invalidation` (D51 (2) : enregistrée par
  * `pnpm run:invalider` ou par la notation en D16 (3), statut encore `planifie` ou `en_cours`), run
- * `planifie`. Un `run.json` qui porte déjà un go/no-go (ou un
+ * `planifie`, plan d'interrogation non reconstructible (`PlanNonReconstructible`), réponse API hors
+ * plan (`ReponseHorsPlan`), requête en attente de l'opérateur (`ReponsesEnAttenteOperateur`, §6 et
+ * §12 : le go/no-go ne se prononce pas). Un `run.json` qui porte déjà un go/no-go (ou un
  * kappa d'échantillon, un motif provisoire, ou un `par_mode`) différent du recalcul, ou une checklist
  * dont la part calculée diffère, lève : jamais d'écrasement silencieux. Identique : rien n'est
  * réécrit, et l'issue le dit. `run.json` et `checklist.json` sont validés contre leur schéma avant
@@ -39,10 +44,11 @@ import {
   lireVerdicts,
   type RunLu,
 } from "../../analysis/lecture-run.ts";
-import { parModeDuRun } from "../../analysis/seuils.ts";
+import { parModeDuRun, requetesSansReponse } from "../../analysis/seuils.ts";
 import type { IdentifiantCourt, ParMode, Reponse, Ulid } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
+import { dispositionDuRepertoire } from "../interrogation/stockage.ts";
 import { tirerEchantillonHumain } from "../notation/echantillons.ts";
 import type { GraineTirage, Symetrie } from "../questions/types.ts";
 import { STATUT_INVALIDE, STATUT_PLANIFIE, type StatutRun } from "../run/types.ts";
@@ -57,6 +63,7 @@ import {
   type Checklist,
   type DemarragesDeReponse,
 } from "./checklist.ts";
+import { exigerAucuneAttenteOperateur } from "./attente-operateur.ts";
 import { critereKappaJugesHumains, critereTestContrefactuel } from "./criteres-juges.ts";
 import {
   critereAnalysesExecutees,
@@ -70,6 +77,7 @@ import {
 import { deciderPublication } from "./decision.ts";
 import { cheminChecklist, ecrireParRenommage, lireJson } from "./fichiers.ts";
 import { kappasEchantillon, type KappaDeJuge } from "./kappa-echantillon.ts";
+import { requetesDuPlanDuRun } from "./plan-du-run.ts";
 import type { GoNoGo } from "./types.ts";
 
 /** La part de `run.json` que lit le go/no-go, en plus de `RunLu`. */
@@ -165,6 +173,10 @@ function graineDuFichierTirage(repertoire_run: string, run: RunLu): GraineTirage
 
 function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
   const reponses = lireReponses<Reponse & DemarragesDeReponse>(repertoire_run, run.id);
+  // §8, §12 (protocole 0.21) : les manquantes se comptent sur le plan d'interrogation du run, et le
+  // go/no-go ne se prononce pas tant qu'une requête sans réponse attend l'opérateur (§6).
+  const plan = requetesDuPlanDuRun(repertoire_run, run);
+  exigerAucuneAttenteOperateur(dispositionDuRepertoire(repertoire_run).tentatives, requetesSansReponse(reponses, plan));
   const { notations, renvois } = lireNotationsDuRun(repertoire_run, run.id);
   const verdicts = lireVerdicts(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
@@ -175,7 +187,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     critereTestContrefactuel(run.juges),
     critereAucunItemConteste(vue.symetrie),
     critereTestsSymetrie(vue.symetrie),
-    critereReponsesManquantes(vue.perimetre.outils, reponses),
+    critereReponsesManquantes(vue.perimetre.outils, reponses, plan),
     critereErreursGravesRevues({ juges: run.juges, reponses_obtenues: obtenues, notations, verdicts }),
     critereAnalysesExecutees(resultatsDAnalyse(repertoire_run), { bootstrap: vue.graines.bootstrap.valeur, permutation: vue.graines.permutation.valeur }),
   ]);
@@ -193,7 +205,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     renvois: renvois.filter((r) => r.contexte === "run").length,
     refus_api,
     checklist: construireChecklist(run.id, go_no_go.criteres, constats),
-    par_mode: parModeDuRun(vue.perimetre.outils, reponses),
+    par_mode: parModeDuRun(vue.perimetre.outils, reponses, plan),
   };
 }
 

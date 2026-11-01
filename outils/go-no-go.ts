@@ -10,9 +10,11 @@
  * un run déjà décidé à l'identique, n'écrit rien et le dit.
  *
  * Codes de sortie : 0, la décision est écrite ou déjà là à l'identique ; 2, la commande est mal
- * appelée, le run est refusé (symétrie rouge, invalide, planifié), un fichier est illisible ou non
- * conforme, une référence humaine de l'échantillon manque, ou un go/no-go déjà écrit diffère du
- * recalcul. Dans ces derniers cas, rien n'est écrit.
+ * appelée, le run est refusé (symétrie rouge, invalide, planifié), une requête attend l'opérateur
+ * (§6, §12 : le go/no-go ne se prononce pas), le plan d'interrogation n'est pas reconstructible ou
+ * une réponse est hors plan, un fichier est illisible ou non conforme, une référence humaine de
+ * l'échantillon manque, ou un go/no-go déjà écrit diffère du recalcul. Dans ces derniers cas, rien
+ * n'est écrit.
  */
 
 import { goNoGo, type ResultatGoNoGo } from "../pipeline/go-no-go/go-no-go.ts";

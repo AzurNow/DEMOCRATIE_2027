@@ -10,6 +10,17 @@
  *   `run.perimetre.outils[].par_mode.<mode>.run_incomplet` est alors le report de ce calcul, jamais
  *   un second calcul : `parModeDuRun` l'assemble par outil, `pipeline/go-no-go/go-no-go.ts` l'écrit
  *   dans `run.json` (D55 (7)), `analysis/lecture-run.ts:lireRun` le recoupe à la lecture.
+ *
+ * Protocole 0.21 (D56 (2)) : la part est « comptée sur les requêtes que prévoit le plan
+ * d'interrogation du run pour ce couple […], et non sur les réponses enregistrées ». Le plan
+ * (`pipeline/interrogation/plan.ts:planifier`) est **reçu** en paramètre (`RequeteDuPlan`), construit
+ * par l'appelant du pipeline (`pipeline/go-no-go/plan-du-run.ts`) : `analysis/` n'importe pas le code
+ * d'interrogation (flux à sens unique, CLAUDE.md). Une requête du plan sans réponse API enregistrée
+ * de contexte run compte comme manquante ; une réponse enregistrée hors plan, ou deux pour une même
+ * requête, lève (`ReponseHorsPlan`) ; un couple déclaré sans requête planifiée lève
+ * (`CoupleSansRequetePlanifiee`). `partReponsesManquantes`, sur les seules réponses enregistrées,
+ * reste lue par le bilan d'interrogation (`pipeline/interrogation/bilan.ts`) : elle ne décide plus le
+ * seuil du §8.
  */
 
 import { filtrerContexteRun, type UniteAnalyse } from "./filtre.ts";
@@ -81,7 +92,9 @@ export function cleCouple(couple: CoupleOutilMode): string {
 
 /**
  * Part des réponses manquantes d'un couple outil × mode, sur les seules réponses du canal API du
- * run (§6, §8, protocole 0.11). Le canal application n'a pas de mode et n'entre jamais ici.
+ * run enregistrées (§6, protocole 0.11). Le canal application n'a pas de mode et n'entre jamais ici.
+ * Depuis le protocole 0.21, le seuil du §8 se compte sur le plan (`partReponsesManquantesDuPlan`) :
+ * cette part n'est plus lue que par le bilan d'interrogation (`pipeline/interrogation/bilan.ts`).
  */
 export function partReponsesManquantes(reponses: readonly Reponse[], couple: CoupleOutilMode): Taux {
   const siennes = reponsesApiDuRun(reponses).filter(
@@ -138,15 +151,146 @@ export function etatDesCouples(couples: PartageCouples): (couple: CoupleOutilMod
   };
 }
 
-/** Couples présents parmi les réponses API du run, dans l'ordre de première apparition. */
-export function couplesComparables(reponses: readonly Reponse[]): PartageCouples {
+/**
+ * Couples du plan d'interrogation du run, dans l'ordre de première apparition, partagés au seuil
+ * de 20 % compté sur le plan (§8, protocole 0.21). Une réponse API hors plan lève (`ReponseHorsPlan`).
+ */
+export function couplesComparables(reponses: readonly Reponse[], plan: readonly RequeteDuPlan[]): PartageCouples {
+  const rapprochement = rapprocher(reponses, plan);
   const compares: CoupleOutilMode[] = [];
   const incomplets: CoupleOutilMode[] = [];
-  for (const couple of couplesPresents(reponses)) {
-    if (runIncomplet(partReponsesManquantes(reponses, couple))) incomplets.push(couple);
+  for (const couple of couplesDuPlan(plan)) {
+    if (runIncomplet(partDuCouple(rapprochement, plan, couple))) incomplets.push(couple);
     else compares.push(couple);
   }
   return { compares, incomplets };
+}
+
+/* ------------------------------------------------------------------ plan d'interrogation */
+
+/**
+ * Une requête du plan d'interrogation du run (`pipeline/interrogation/plan.ts:RequetePlanifiee`),
+ * réduite à ce que le seuil en lit : sa clé. `RequetePlanifiee` s'y conforme telle quelle.
+ */
+export interface RequeteDuPlan {
+  readonly outil_id: IdentifiantCourt;
+  readonly mode: Mode;
+  readonly question_id: string;
+  readonly formulation_id: string;
+  readonly echantillon: number;
+}
+
+/** §8 (0.21) : un couple déclaré dont le plan ne prévoit aucune requête n'a pas de dénominateur. */
+export class CoupleSansRequetePlanifiee extends Error {
+  constructor(couple: CoupleOutilMode) {
+    super(
+      `Couple ${cleCouple(couple)} déclaré, mais sans aucune requête au plan d'interrogation du run, donc sans aucune ` +
+        `réponse API attendue : le seuil de 20 % n'est pas décidable (§8, aucune division par zéro).`,
+    );
+    this.name = "CoupleSansRequetePlanifiee";
+  }
+}
+
+/** §8 (0.21) : une réponse API du run qu'aucune requête du plan n'attend, ou la seconde d'une même requête. */
+export class ReponseHorsPlan extends Error {
+  constructor(reponse: Reponse, raison: string) {
+    super(
+      `Réponse API ${reponse.id} (${reponse.outil_id}, ${String(reponse.mode)}, question ${reponse.question_id}, formulation ` +
+        `${reponse.formulation_id}, échantillon ${reponse.echantillon}) : ${raison}. La part de manquantes, comptée sur ` +
+        `le plan d'interrogation du run (§8), n'est pas décidable.`,
+    );
+    this.name = "ReponseHorsPlan";
+  }
+}
+
+/** Le plan reçu contredit le périmètre ou se répète : aucun dénominateur n'en est tiré. */
+export class PlanIncoherent extends Error {
+  constructor(detail: string) {
+    super(`Plan d'interrogation du run incohérent (§6, §8) : ${detail}. Aucun dénominateur n'en est tiré.`);
+    this.name = "PlanIncoherent";
+  }
+}
+
+function cleRequete(requete: RequeteDuPlan): string {
+  return JSON.stringify([requete.outil_id, requete.mode, requete.question_id, requete.formulation_id, requete.echantillon]);
+}
+
+function duCouple(couple: CoupleOutilMode): (requete: RequeteDuPlan) => boolean {
+  return (requete) => requete.outil_id === couple.outil_id && requete.mode === couple.mode;
+}
+
+interface Rapprochement {
+  /** Requêtes du plan sans réponse API de contexte run enregistrée, dans l'ordre du plan. */
+  readonly sans_reponse: readonly RequeteDuPlan[];
+  /** Requêtes du plan dont la réponse enregistrée est une manquante écrite. */
+  readonly manquantes_ecrites: readonly RequeteDuPlan[];
+}
+
+function indexerPlan(plan: readonly RequeteDuPlan[]): ReadonlyMap<string, RequeteDuPlan> {
+  const index = new Map<string, RequeteDuPlan>();
+  for (const requete of plan) {
+    const cle = cleRequete(requete);
+    if (index.has(cle)) throw new PlanIncoherent(`la requête ${cle} y figure deux fois`);
+    index.set(cle, requete);
+  }
+  return index;
+}
+
+function requeteDe(reponse: Reponse): RequeteDuPlan {
+  const { outil_id, question_id, formulation_id, echantillon } = reponse;
+  return { outil_id, mode: modeExige(reponse), question_id, formulation_id, echantillon };
+}
+
+/** Chaque réponse API de contexte run rapprochée de sa requête du plan, une au plus par requête. */
+function rapprocher(reponses: readonly Reponse[], plan: readonly RequeteDuPlan[]): Rapprochement {
+  const index = indexerPlan(plan);
+  const couvertes = new Set<string>();
+  const manquantes_ecrites: RequeteDuPlan[] = [];
+  for (const reponse of reponsesApiDuRun(reponses)) {
+    const cle = cleRequete(requeteDe(reponse));
+    const requete = index.get(cle);
+    if (requete === undefined) throw new ReponseHorsPlan(reponse, "aucune requête du plan d'interrogation du run ne l'attend");
+    if (couvertes.has(cle)) throw new ReponseHorsPlan(reponse, "deux réponses enregistrées pour une même requête du plan");
+    couvertes.add(cle);
+    if (reponse.statut_reponse === "manquante") manquantes_ecrites.push(requete);
+  }
+  return { sans_reponse: plan.filter((requete) => !couvertes.has(cleRequete(requete))), manquantes_ecrites };
+}
+
+/** §8 (0.21) : (requêtes sans réponse + manquantes écrites) / requêtes planifiées, pour ce couple. */
+function partDuCouple(rapprochement: Rapprochement, plan: readonly RequeteDuPlan[], couple: CoupleOutilMode): Taux {
+  const planifiees = plan.filter(duCouple(couple)).length;
+  if (planifiees === 0) throw new CoupleSansRequetePlanifiee(couple);
+  const absentes = rapprochement.sans_reponse.filter(duCouple(couple)).length;
+  const ecrites = rapprochement.manquantes_ecrites.filter(duCouple(couple)).length;
+  return taux(absentes + ecrites, planifiees);
+}
+
+function couplesDuPlan(plan: readonly RequeteDuPlan[]): CoupleOutilMode[] {
+  const vus = new Map<string, CoupleOutilMode>();
+  for (const requete of plan) {
+    const couple = { outil_id: requete.outil_id, mode: requete.mode };
+    if (!vus.has(cleCouple(couple))) vus.set(cleCouple(couple), couple);
+  }
+  return [...vus.values()];
+}
+
+/**
+ * Les requêtes du plan sans réponse API de contexte run enregistrée, dans l'ordre du plan : celles
+ * que le seuil compte manquantes, et parmi lesquelles le go/no-go cherche les requêtes en attente
+ * de l'opérateur (§6, §12). Une réponse hors plan lève (`ReponseHorsPlan`).
+ */
+export function requetesSansReponse(reponses: readonly Reponse[], plan: readonly RequeteDuPlan[]): readonly RequeteDuPlan[] {
+  return rapprocher(reponses, plan).sans_reponse;
+}
+
+/**
+ * §8 (protocole 0.21) : part des réponses manquantes d'un couple outil × mode, comptée sur les
+ * requêtes que le plan d'interrogation du run prévoit pour lui. Une requête planifiée sans réponse
+ * API de contexte run enregistrée compte comme manquante, au même titre qu'une manquante écrite.
+ */
+export function partReponsesManquantesDuPlan(reponses: readonly Reponse[], plan: readonly RequeteDuPlan[], couple: CoupleOutilMode): Taux {
+  return partDuCouple(rapprocher(reponses, plan), plan, couple);
 }
 
 /** Ce que la définition des couples déclarés lit d'un outil du périmètre au gel. */
@@ -196,8 +340,8 @@ export function couplesDeclares(outils: readonly OutilDeclarable[]): readonly Co
 
 /**
  * Les couples déclarés, après refus de toute réponse API d'un couple hors périmètre
- * (`CoupleHorsPerimetre`, §8). Un couple déclaré sans réponse reste dans la liste : c'est le seuil
- * (`runIncomplet`) qui refuse de le décider, pas cette fonction.
+ * (`CoupleHorsPerimetre`, §8). Un couple déclaré sans réponse reste dans la liste : c'est le seuil,
+ * compté sur le plan (`partsDuRun`), qui le décide ou refuse de le décider, pas cette fonction.
  */
 export function couplesDuRun(outils: readonly OutilDeclarable[], reponses: readonly Reponse[]): readonly CoupleOutilMode[] {
   const declares = couplesDeclares(outils);
@@ -207,27 +351,52 @@ export function couplesDuRun(outils: readonly OutilDeclarable[], reponses: reado
   return declares;
 }
 
-function seuilDuCouple(reponses: readonly Reponse[], couple: CoupleOutilMode): SeuilMode {
-  const part = partReponsesManquantes(reponses, couple);
-  if (part.denominateur === 0) {
-    throw new Error(`Couple ${cleCouple(couple)} sans aucune réponse API dans le run : le seuil de 20 % n'est pas décidable.`);
-  }
+function exigerPlanDansLePerimetre(declares: readonly CoupleOutilMode[], plan: readonly RequeteDuPlan[]): void {
+  const cles = new Set(declares.map(cleCouple));
+  const hors = plan.find((requete) => !cles.has(cleCouple(requete)));
+  if (hors !== undefined) throw new PlanIncoherent(`requête planifiée pour le couple ${cleCouple(hors)}, qu'aucun assistant inclus ne déclare`);
+}
+
+export interface PartDuCouple {
+  readonly couple: CoupleOutilMode;
+  readonly part: Taux;
+}
+
+/**
+ * §8, §12 (protocole 0.21) : la part de manquantes de chaque couple déclaré, comptée sur le plan
+ * d'interrogation du run, dans l'ordre du périmètre. Lue par `parModeDuRun` et par
+ * `pipeline/go-no-go/criteres-run.ts:critereReponsesManquantes` — un seul calcul. Lève, dans cet
+ * ordre : `CoupleHorsPerimetre` (réponse d'un couple non déclaré), `PlanIncoherent` (requête
+ * planifiée hors périmètre ou répétée), `ReponseHorsPlan`, `CoupleSansRequetePlanifiee`.
+ */
+export function partsDuRun(outils: readonly OutilDeclarable[], reponses: readonly Reponse[], plan: readonly RequeteDuPlan[]): readonly PartDuCouple[] {
+  const couples = couplesDuRun(outils, reponses);
+  exigerPlanDansLePerimetre(couples, plan);
+  const rapprochement = rapprocher(reponses, plan);
+  return couples.map((couple) => ({ couple, part: partDuCouple(rapprochement, plan, couple) }));
+}
+
+function seuilDe(part: Taux): SeuilMode {
   return { reponses_manquantes_part: part.numerateur / part.denominateur, run_incomplet: runIncomplet(part) };
 }
 
 /**
  * §8, §12, D55 (7) : `par_mode` de chaque assistant inclus du périmètre, un par mode qu'il
- * déclare, calculé depuis les réponses du canal API du run. Seul calcul de ce champ — voir
- * l'en-tête du fichier. Un mode déclaré sans aucune réponse API lève (`runIncomplet`, comme
- * `critereReponsesManquantes`) : le seuil n'y est pas décidable. Une réponse API d'un couple non
- * déclaré par un assistant inclus lève aussi (`CoupleHorsPerimetre`, par `couplesDuRun`).
+ * déclare, la part de manquantes comptée sur le plan d'interrogation du run (`partsDuRun`,
+ * protocole 0.21). Seul calcul de ce champ — voir l'en-tête du fichier. Un mode déclaré sans
+ * requête planifiée lève (`CoupleSansRequetePlanifiee`) ; une réponse API d'un couple non déclaré
+ * par un assistant inclus lève aussi (`CoupleHorsPerimetre`, par `couplesDuRun`).
  */
-export function parModeDuRun(outils: readonly OutilDeclarable[], reponses: readonly Reponse[]): ReadonlyMap<IdentifiantCourt, ParMode> {
-  const couples = couplesDuRun(outils, reponses);
+export function parModeDuRun(
+  outils: readonly OutilDeclarable[],
+  reponses: readonly Reponse[],
+  plan: readonly RequeteDuPlan[],
+): ReadonlyMap<IdentifiantCourt, ParMode> {
+  const parts = partsDuRun(outils, reponses, plan);
   const resultat = new Map<IdentifiantCourt, ParMode>();
   for (const outil of outils.filter(estAssistantInclus)) {
     const parMode: Partial<Record<Mode, SeuilMode>> = {};
-    for (const couple of couples.filter((c) => c.outil_id === outil.outil_id)) parMode[couple.mode] = seuilDuCouple(reponses, couple);
+    for (const { couple, part } of parts.filter((p) => p.couple.outil_id === outil.outil_id)) parMode[couple.mode] = seuilDe(part);
     resultat.set(outil.outil_id, parMode);
   }
   return resultat;
