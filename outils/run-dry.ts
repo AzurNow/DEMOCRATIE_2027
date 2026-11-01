@@ -74,6 +74,7 @@ function imprimerLigne(ligne: LigneBilan): void {
     `  ${ligne.outil_id.padEnd(14)} ${ligne.mode.padEnd(15)} obtenues ${String(ligne.obtenues).padStart(3)}` +
       ` (dont refus API ${String(ligne.refus_api).padStart(2)})` +
       `  manquantes : échecs ${String(ligne.manquantes_echecs).padStart(2)}, hors fenêtre ${String(ligne.manquantes_hors_fenetre).padStart(2)}` +
+      `, sans réponse ${String(ligne.sans_reponse).padStart(2)}` +
       `  taux de manquantes ${ligne.part_manquantes.numerateur}/${ligne.part_manquantes.denominateur} = ${pourcentage(ligne)}${incomplet}\n`,
   );
 }

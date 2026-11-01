@@ -154,7 +154,16 @@ function assistant(): Record<string, unknown> {
   };
 }
 
-export function perimetreSaisi(date_gel: string, candidats: readonly CandidatNomme[]): Record<string, unknown> {
+/** §3 : un candidat retiré au gel, conservé au périmètre mais plus interrogé. */
+function retireSaisi(candidat: CandidatNomme): Record<string, unknown> {
+  return { ...candidatSaisi(candidat), statut_au_gel: "retire", interroge: false };
+}
+
+export function perimetreSaisi(
+  date_gel: string,
+  candidats: readonly CandidatNomme[],
+  retires: readonly CandidatNomme[] = [],
+): Record<string, unknown> {
   return {
     version: "0.2.0-essai",
     date_gel,
@@ -162,7 +171,7 @@ export function perimetreSaisi(date_gel: string, candidats: readonly CandidatNom
     liste_officielle: null,
     themes: [...THEMES],
     tirage: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
-    candidats: candidats.map(candidatSaisi),
+    candidats: [...candidats.map(candidatSaisi), ...retires.map(retireSaisi)],
     outils: [assistant()],
   };
 }
@@ -180,6 +189,8 @@ export function relue(tache: Tache): FormulationsValidees {
 export interface Jeu {
   readonly date_gel: string;
   readonly candidats: readonly CandidatNomme[];
+  /** Candidats retirés au gel (`interroge: false`), inscrits au périmètre après `candidats`. */
+  readonly retires?: readonly CandidatNomme[];
   readonly items: readonly Item[];
   readonly mesures: readonly Mesure[];
   /** Les formulations à poser dans `data/formulations/` ; par défaut, toutes relues. */
@@ -188,7 +199,8 @@ export interface Jeu {
 }
 
 export function tachesDuJeu(jeu: Jeu): readonly Tache[] {
-  return tachesDe({ items: jeu.items, mesures: jeu.mesures, candidats: jeu.candidats });
+  const retires = jeu.retires === undefined ? [] : jeu.retires;
+  return tachesDe({ items: jeu.items, mesures: jeu.mesures, candidats: [...jeu.candidats, ...retires] });
 }
 
 function ecrireJson(chemin: string, valeur: unknown): void {
@@ -205,7 +217,7 @@ export function poserJeu(racine: string, jeu: Jeu): void {
   const taches = tachesDuJeu(jeu);
   const formulations = jeu.formulations === undefined ? taches.map(relue) : jeu.formulations(taches);
   for (const lue of formulations) ecrireJson(join(racine, "data/formulations", `${lue.question_id}.json`), lue);
-  writeFileSync(join(racine, "config/perimetre.yaml"), stringify(perimetreSaisi(jeu.date_gel, jeu.candidats)), "utf8");
+  writeFileSync(join(racine, "config/perimetre.yaml"), stringify(perimetreSaisi(jeu.date_gel, jeu.candidats, jeu.retires)), "utf8");
   ecrireJson(join(racine, "config/gel.json"), jeu.configuration === undefined ? CONFIGURATION_GEL : jeu.configuration);
   writeFileSync(join(racine, "docs/PROTOCOLE.md"), PROTOCOLE_DE_FIXTURE, "utf8");
 }

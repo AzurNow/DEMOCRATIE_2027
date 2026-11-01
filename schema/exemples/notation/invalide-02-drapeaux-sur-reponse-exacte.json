@@ -27,6 +27,7 @@
   "drapeaux": [
     "obsolescence"
   ],
+  "obsolescence_fraiche": false,
   "sourcage": {
     "cite": false,
     "liens": []

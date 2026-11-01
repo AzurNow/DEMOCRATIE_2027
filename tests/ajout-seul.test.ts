@@ -64,6 +64,17 @@ function refus(avant: Item, apres: Item, corrections = false): string {
   return "";
 }
 
+/** Les motifs du refus, un par ligne ; un échec si la réécriture n'est pas refusée ou l'est par une autre erreur. */
+function motifsDuRefus(avant: Item, apres: Item, corrections = false): readonly string[] {
+  try {
+    verifierAjoutSeul(avant, apres, { corrections });
+  } catch (erreur) {
+    if (erreur instanceof EcritureNonAjoutSeule) return erreur.motifs;
+    throw erreur;
+  }
+  throw new Error("la réécriture a été admise ; un refus était attendu");
+}
+
 describe("réécritures admises", () => {
   it("une contestation ajoutée, un statut changé, une entrée d'historique", () => {
     const avant = itemPromu();
@@ -113,12 +124,19 @@ describe("réécritures refusées", () => {
     ...surcharges,
   });
 
-  it("un identifiant changé", () => {
-    expect(refus(avant, suite({ id: "01JBANCESSA1000000009TEM99" }))).toMatch(/id/);
+  // Revue du 2026-10-12, constat 46 : `toMatch(/id/)` passait aussi sur « validations ». On prouve la
+  // raison du refus par la classe d'erreur et le texte exact du motif (le refus en porte aussi un
+  // motif « contenu modifié », que ces fabriques ne séparent pas : d'où `toContain`, pas `toEqual`).
+  it("un identifiant changé : EcritureNonAjoutSeule, motif exact nommé", () => {
+    const apres = suite({ id: "01JBANCESSA1000000009TEM99" });
+    expect(() => verifierAjoutSeul(avant, apres, { corrections: false })).toThrow(EcritureNonAjoutSeule);
+    expect(motifsDuRefus(avant, apres)).toContain(`id changé : ${avant.id} → 01JBANCESSA1000000009TEM99`);
   });
 
-  it("des validations modifiées", () => {
-    expect(refus(avant, suite({ validations: (avant.validations ?? []).slice(0, 1) }))).toMatch(/validations/);
+  it("des validations modifiées : EcritureNonAjoutSeule, motif exact nommé", () => {
+    const apres = suite({ validations: (avant.validations ?? []).slice(0, 1) });
+    expect(() => verifierAjoutSeul(avant, apres, { corrections: false })).toThrow(EcritureNonAjoutSeule);
+    expect(motifsDuRefus(avant, apres)).toContain("validations[] modifiées");
   });
 
   it("une contestation retirée", () => {

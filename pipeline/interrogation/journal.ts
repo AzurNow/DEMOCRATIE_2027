@@ -54,11 +54,11 @@
  * nommant le fichier et la ligne : un journal abîmé se montre, il ne se répare pas en silence.
  */
 
-import { randomBytes } from "node:crypto";
-import { closeSync, existsSync, fsyncSync, linkSync, openSync, readFileSync, rmSync, writeSync } from "node:fs";
+import { closeSync, existsSync, fsyncSync, openSync, readFileSync, writeSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
 import { validerFragment } from "../../outils/schemas/valider.ts";
 import { canoniser, sha256 } from "../../validation/domaine/empreinte.ts";
+import { ecrireUneFois } from "../run/ecriture.ts";
 import { TENTATIVES_MAX } from "./conditions.ts";
 import { estObjetJson, lireJson } from "./editeur.ts";
 import type { CleRequete, ErreurTentative, Tentative } from "./types.ts";
@@ -132,38 +132,13 @@ export class ReceptionIllisible extends Error {
   }
 }
 
-/** Écrit la totalité du tampon : `writeSync` peut n'en écrire qu'une partie en un seul appel. */
-function ecrireIntegralement(descripteur: number, octets: Uint8Array): void {
-  let ecrit = 0;
-  while (ecrit < octets.length) {
-    ecrit += writeSync(descripteur, octets, ecrit, octets.length - ecrit);
-  }
-}
-
 /**
- * Écrit `octets` sous `<repertoire>/<nom>`, en entier ou pas du tout : un fichier temporaire caché
- * du même répertoire, écrit intégralement puis synchronisé (`fsync`), est ensuite lié sous son nom
- * final (`linkSync`, exclusif — jamais de remplacement). Un arrêt pendant l'écriture laisse au plus
- * le temporaire, jamais le nom final tronqué. `chemin` déjà pris ⇒ `OctetsDejaGardes`, sans écrire.
+ * Écrit `octets` sous `<repertoire>/<nom>`, en entier ou pas du tout, jamais en remplacement
+ * (`pipeline/run/ecriture.ts:ecrireUneFois`, la seule écriture « une fois » du dépôt). `chemin` déjà
+ * pris ⇒ `OctetsDejaGardes`, sans écrire.
  */
 function ecrireOctetsExclusif(repertoire: string, nom: string, octets: Uint8Array): void {
-  const chemin = join(repertoire, nom);
-  const tmp = join(repertoire, `.${nom}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
-  const descripteur = openSync(tmp, "wx");
-  try {
-    ecrireIntegralement(descripteur, octets);
-    fsyncSync(descripteur);
-  } finally {
-    closeSync(descripteur);
-  }
-  try {
-    linkSync(tmp, chemin);
-  } catch (erreur) {
-    if (erreur instanceof Error && "code" in erreur && erreur.code === "EEXIST") throw new OctetsDejaGardes(chemin);
-    throw erreur;
-  } finally {
-    rmSync(tmp, { force: true });
-  }
+  ecrireUneFois(repertoire, nom, octets, (chemin) => new OctetsDejaGardes(chemin));
 }
 
 function ajouterLigne(chemin: string, ligne: Ligne): void {

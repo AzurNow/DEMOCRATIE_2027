@@ -19,6 +19,7 @@
  */
 
 import type { ReponseObtenue } from "../interrogation/types.ts";
+import { interrogesDe } from "../questions/tirabilite.ts";
 import type { Question } from "../questions/types.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import type { ReponseANoter } from "./chaine.ts";
@@ -51,9 +52,12 @@ export class ItemPrincipalNonInterroge extends Error {
   }
 }
 
-/** `run.perimetre.candidats[].interroge` : la même définition que l'alias et le dérangement. */
+/**
+ * `run.perimetre.candidats[].interroge` : la même définition que l'alias et le dérangement, et que le
+ * tirage, qui refuse déjà un item principal d'un non-interrogé (`tirabilite.ts:interrogesDe`).
+ */
 export function interrogesDuRun(run: { readonly perimetre: { readonly candidats: readonly { readonly candidat_id: string; readonly interroge: boolean }[] } }): ReadonlySet<string> {
-  return new Set(run.perimetre.candidats.filter((candidat) => candidat.interroge).map((candidat) => candidat.candidat_id));
+  return interrogesDe(run);
 }
 
 export function preparerANoter(reponse: ReponseObtenue, gel: GelDeNotation): ReponseANoter {

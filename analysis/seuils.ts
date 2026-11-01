@@ -18,9 +18,8 @@
  * d'interrogation (flux à sens unique, CLAUDE.md). Une requête du plan sans réponse API enregistrée
  * de contexte run compte comme manquante ; une réponse enregistrée hors plan, ou deux pour une même
  * requête, lève (`ReponseHorsPlan`) ; un couple déclaré sans requête planifiée lève
- * (`CoupleSansRequetePlanifiee`). `partReponsesManquantes`, sur les seules réponses enregistrées,
- * reste lue par le bilan d'interrogation (`pipeline/interrogation/bilan.ts`) : elle ne décide plus le
- * seuil du §8.
+ * (`CoupleSansRequetePlanifiee`). Le bilan d'interrogation (`pipeline/interrogation/bilan.ts`) lit la
+ * même part, sur le même plan (`partReponsesManquantesDuPlan`) : aucune autre définition n'existe.
  */
 
 import { filtrerContexteRun, type UniteAnalyse } from "./filtre.ts";
@@ -88,20 +87,6 @@ export function repartirParCandidat(
  */
 export function cleCouple(couple: CoupleOutilMode): string {
   return `${couple.outil_id}/${couple.mode}`;
-}
-
-/**
- * Part des réponses manquantes d'un couple outil × mode, sur les seules réponses du canal API du
- * run enregistrées (§6, protocole 0.11). Le canal application n'a pas de mode et n'entre jamais ici.
- * Depuis le protocole 0.21, le seuil du §8 se compte sur le plan (`partReponsesManquantesDuPlan`) :
- * cette part n'est plus lue que par le bilan d'interrogation (`pipeline/interrogation/bilan.ts`).
- */
-export function partReponsesManquantes(reponses: readonly Reponse[], couple: CoupleOutilMode): Taux {
-  const siennes = reponsesApiDuRun(reponses).filter(
-    (r) => r.outil_id === couple.outil_id && r.mode === couple.mode,
-  );
-  const manquantes = siennes.filter((r) => r.statut_reponse === "manquante");
-  return taux(manquantes.length, siennes.length);
 }
 
 /**
