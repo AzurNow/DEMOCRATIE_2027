@@ -8,6 +8,7 @@
  */
 
 import { api, EchecApi } from "./api.ts";
+import { elementParId } from "./dom-type.ts";
 import { actionsPermises, etatInitial, libellePremisse, relectureDe, type EtatCases } from "./cases-formulations.ts";
 import type { ResumeFormulations, VueFormulations } from "./types.ts";
 
@@ -24,7 +25,7 @@ interface Relecture {
   readonly retour: () => void;
 }
 
-const ecran = (): HTMLElement => document.getElementById("ecran") as HTMLElement;
+const ecran = (): HTMLElement => elementParId("ecran", HTMLElement);
 
 /* --------------------------------------------------------------- liste */
 
@@ -163,8 +164,8 @@ function appliquer(permises: ReturnType<typeof actionsPermises>, promouvoir: HTM
 function majBoutons(etat: EtatCases): void {
   appliquer(
     actionsPermises(etat),
-    document.getElementById("bouton-promouvoir") as HTMLButtonElement,
-    document.getElementById("bouton-refuser") as HTMLButtonElement,
+    elementParId("bouton-promouvoir", HTMLButtonElement),
+    elementParId("bouton-refuser", HTMLButtonElement),
   );
 }
 
