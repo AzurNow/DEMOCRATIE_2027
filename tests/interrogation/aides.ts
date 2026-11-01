@@ -13,6 +13,7 @@ import { ouvrirFenetre, type Fenetre } from "../../pipeline/interrogation/fenetr
 import { HorlogeVirtuelle } from "../../pipeline/interrogation/horloge.ts";
 import type { PlanInterrogation } from "../../pipeline/interrogation/plan.ts";
 import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
+import { stockerEnAttente, type BilanStockage } from "../../pipeline/interrogation/stocker.ts";
 import type { ReponseEcrite, RequetePlanifiee } from "../../pipeline/interrogation/types.ts";
 
 export const DEBUT = "2026-12-01T06:00:00+01:00";
@@ -71,6 +72,12 @@ export interface OptionsExecuter {
   readonly depotPatch?: (depot: DepotReponses) => void;
 }
 
+/** Options d'un appel à `Banc.stocker` (`pnpm interrogation:stocker`, §6). */
+export interface OptionsStocker extends OptionsExecuter {
+  /** `--requete=<clé>` : l'empreinte de la clé canonique, celle du nom du journal. */
+  readonly requete?: string;
+}
+
 export interface Banc {
   readonly racine: string;
   readonly fenetre: Fenetre;
@@ -81,6 +88,8 @@ export interface Banc {
   readonly transports: Map<string, TransportEnregistreur>;
   editeur(outil_id: string, scenario: Scenario): void;
   executer(plan: PlanInterrogation, options?: OptionsExecuter): Promise<BilanExecution>;
+  /** L'opérateur stocke les réponses en attente depuis leurs octets gardés (§6), adaptateur simulé pour chaque outil du plan. */
+  stocker(plan: PlanInterrogation, options?: OptionsStocker): BilanStockage;
   /** Les réponses écrites, relues du disque et validées. */
   lues(): readonly ReponseEcrite[];
   nettoyer(): void;
@@ -117,6 +126,13 @@ export function banc(depart_ms?: number, racine = mkdtempSync(join(tmpdir(), "ba
         repertoire_tentatives: tentatives,
         editeurs,
       });
+    },
+    stocker(plan, options) {
+      const depot = DepotReponses.ouvrir(reponses);
+      options?.depotPatch?.(depot);
+      const adaptateurs = new Map([...plan.keys()].map((outil_id) => [outil_id, adaptateurSimule(CLE_API)] as const));
+      const contexte = { run_id: RUN_ID, horloge, depot, repertoire_tentatives: tentatives, adaptateurs };
+      return stockerEnAttente(plan, contexte, options?.requete);
     },
     lues: () => DepotReponses.ouvrir(reponses).toutes(),
     nettoyer: () => rmSync(racine, { recursive: true, force: true }),

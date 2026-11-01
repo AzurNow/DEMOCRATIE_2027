@@ -33,10 +33,11 @@ import { adaptateurSimule, scenarioParEmpreinte, TransportSimule } from "./edite
 import { estObjetJson } from "./editeur.ts";
 import { executerRun, type BilanExecution } from "./executer.ts";
 import { ouvrirFenetre, type Fenetre } from "./fenetre.ts";
-import { HorlogeVirtuelle } from "./horloge.ts";
+import { horlogeSysteme, HorlogeVirtuelle } from "./horloge.ts";
 import { planifier, type PlanInterrogation } from "./plan.ts";
 import { inscrireDemarrage, lireRunGele } from "./run-gele.ts";
 import { DepotReponses, dispositionDuRepertoire, dispositionRun, type DispositionRun } from "./stockage.ts";
+import { stockerEnAttente, type BilanStockage } from "./stocker.ts";
 
 /** Ce que l'éditeur simulé exige et qu'aucun run réel ne porte. */
 interface Simulation {
@@ -210,4 +211,43 @@ export async function lancerRunGeleSimule(options: OptionsRunGeleSimule): Promis
     avant_premiere_tentative: () => inscrireDemarrage(gele),
   });
   return { ...resultat, demarrage: gele.demarrage.issue };
+}
+
+export interface OptionsStockageGeleSimule extends OptionsRunGeleSimule {
+  /** `--requete=<clé>` : l'empreinte de la clé canonique (`stocker.ts:cleDeRequete`) ; absente, tout le plan. */
+  readonly requete?: string;
+}
+
+export interface ResultatStockageGeleSimule {
+  readonly disposition: DispositionRun;
+  readonly run_id: string;
+  readonly stockage: BilanStockage;
+}
+
+/**
+ * `pnpm interrogation:stocker --run` (§6, 0.21) : les réponses en attente d'un run gelé, stockées
+ * depuis leurs octets gardés avec l'adaptateur de l'éditeur simulé qui a interrogé ce run. Rien
+ * n'est envoyé, `run.json` n'est pas réécrit ; un outil du plan sans profil simulé est refusé
+ * (`ProfilSimuleAbsent`) avant toute écriture. L'identifiant opaque d'une réponse stockée est tiré
+ * à l'heure du système ; ses horodatages sont ceux de la réception d'origine.
+ */
+export function stockerRunGeleSimule(options: OptionsStockageGeleSimule): ResultatStockageGeleSimule {
+  const gele = lireRunGele(options.repertoire);
+  const simulation = simulationDe(lireObjet(options.profils), options.profils);
+  const plan = planifier(gele.outils, gele.questions_tirees);
+  const adaptateurs = new Map(
+    [...plan.keys()].map((outil_id) => {
+      if (!simulation.profils.has(outil_id)) throw new ProfilSimuleAbsent(outil_id);
+      return [outil_id, adaptateurSimule(simulation.cle_api)] as const;
+    }),
+  );
+  const disposition = dispositionDuRepertoire(gele.repertoire);
+  const contexte = {
+    run_id: gele.run_id,
+    horloge: horlogeSysteme,
+    depot: DepotReponses.ouvrir(disposition.reponses),
+    repertoire_tentatives: disposition.tentatives,
+    adaptateurs,
+  };
+  return { disposition, run_id: gele.run_id, stockage: stockerEnAttente(plan, contexte, options.requete) };
 }
