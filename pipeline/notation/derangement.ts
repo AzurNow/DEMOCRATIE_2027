@@ -49,6 +49,21 @@ import type { CandidatDuRun } from "./types.ts";
  */
 export const CLE_DERANGEMENT_CANDIDATS: readonly string[] = ["contrefactuel", "noms_candidats", "derangement"];
 
+/**
+ * §7 (protocole 0.21) : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre,
+ * le test contrefactuel est indéfini. » La chaîne (`chaine.ts:passerContrefactuel`) s'arrête avant
+ * le tirage sous ce nombre et publie le test indéfini ; `DerangementImpossible` n'est qu'un
+ * garde-fou, inatteignable depuis elle.
+ */
+export const MINIMUM_INTERROGES_DERANGEMENT = 2;
+
+export class DerangementImpossible extends Error {
+  constructor(interroges: number) {
+    super(`Dérangement impossible : ${interroges} candidat(s) interrogé(s) au run, il en faut au moins deux candidats interrogés (§7).`);
+    this.name = "DerangementImpossible";
+  }
+}
+
 export interface PaireDuDerangement {
   readonly source: CandidatDuRun;
   readonly image: CandidatDuRun;
@@ -72,9 +87,7 @@ export interface Derangement {
  */
 export function tirerDerangement(interroges: readonly CandidatDuRun[], perimetre: readonly CandidatDuRun[], graine: GraineTirage): Derangement {
   verifierCandidats(perimetre);
-  if (interroges.length < 2) {
-    throw new Error(`Dérangement impossible : ${interroges.length} candidat(s) interrogé(s) au run, il en faut au moins deux candidats interrogés (§7).`);
-  }
+  if (interroges.length < MINIMUM_INTERROGES_DERANGEMENT) throw new DerangementImpossible(interroges.length);
   verifierGraine(graine, "du dérangement");
   const idsInterroges = new Set(interroges.map((candidat) => candidat.candidat_id));
   const hors_derangement = perimetre

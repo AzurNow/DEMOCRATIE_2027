@@ -8,6 +8,8 @@ import { graineDerivee, graineHexadecimale } from "../../analysis/graines.ts";
 import {
   CLE_DERANGEMENT_CANDIDATS,
   correspondancesDe,
+  DerangementImpossible,
+  MINIMUM_INTERROGES_DERANGEMENT,
   tirerDerangement,
   verifierCandidats,
 } from "../../pipeline/notation/derangement.ts";
@@ -66,9 +68,12 @@ describe("dérangement des candidats", () => {
     expect(() => tirerDerangement(candidats(3), candidats(3), autre)).toThrow(/Graine du dérangement non conforme/);
   });
 
-  it("un seul candidat interrogé, ou aucun, lève : il n'a aucun dérangement", () => {
-    expect(() => tirerDerangement(candidats(1), candidats(1), graine(1))).toThrow(/au moins deux candidats interrogés/);
-    expect(() => tirerDerangement([], [], graine(1))).toThrow(/au moins deux candidats interrogés/);
+  it("un seul candidat interrogé, ou aucun, lève DerangementImpossible : il n'a aucun dérangement (§7 0.21)", () => {
+    expect(MINIMUM_INTERROGES_DERANGEMENT).toBe(2);
+    expect(() => tirerDerangement(candidats(1), candidats(1), graine(1))).toThrow(DerangementImpossible);
+    expect(() => tirerDerangement(candidats(1), candidats(1), graine(1))).toThrow(/1 candidat\(s\) interrogé\(s\).*au moins deux candidats interrogés/);
+    expect(() => tirerDerangement([], [], graine(1))).toThrow(DerangementImpossible);
+    expect(() => tirerDerangement([], [], graine(1))).toThrow(/0 candidat\(s\) interrogé\(s\)/);
   });
 
   it("deux candidats : le dérangement est l'échange, quelle que soit la graine", () => {
@@ -137,7 +142,7 @@ describe("dérangement des candidats", () => {
 
   it("moins de deux candidats interrogés au périmètre, même avec d'autres non interrogés, lève", () => {
     const perimetre = candidats(4);
-    expect(() => tirerDerangement(perimetre.slice(0, 1), perimetre, graine(1))).toThrow(/au moins deux candidats interrogés/);
+    expect(() => tirerDerangement(perimetre.slice(0, 1), perimetre, graine(1))).toThrow(DerangementImpossible);
   });
 });
 

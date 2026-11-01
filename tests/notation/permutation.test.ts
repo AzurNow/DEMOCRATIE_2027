@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { Derangement } from "../../pipeline/notation/derangement.ts";
-import { permuterTexte } from "../../pipeline/notation/permutation.ts";
+import { nommeUnInterroge, permuterTexte } from "../../pipeline/notation/permutation.ts";
 import type { CandidatDuRun } from "../../pipeline/notation/types.ts";
 import { CANDIDATS_DU_RUN } from "./fabriques.ts";
 
@@ -108,5 +108,63 @@ describe("mentions résiduelles", () => {
     const sortie = permuterTexte("İİİ Martinez et LE BRUN.", CYCLE);
     expect(sortie.texte).toBe("İİİ Le Brun et LE BRUN.");
     expect(sortie.mentions_residuelles).toBe(1);
+  });
+});
+
+/**
+ * Le prédicat d'éligibilité « nomme un candidat » (D14 (2), D55 (4)) : libellé ou nom seul déclarés
+ * au périmètre, correspondance exacte, mot entier. Cas repris de `candidats.test.ts`, qui les portait
+ * sur `nommeUnCandidat`, retiré faute d'appelant (le prédicat de production est celui-ci).
+ */
+describe("nommeUnInterroge : le prédicat d'éligibilité", () => {
+  const MARTINEZ: CandidatDuRun = { candidat_id: "martinez", libelle: "Alix Martinez", nom: "Martinez" };
+  const HOLLANDE: CandidatDuRun = { candidat_id: "hollande", libelle: "Bruno Hollande", nom: "Hollande" };
+  const TOUS = [MARTINEZ, HOLLANDE];
+  const nomme = (textes: readonly string[]): boolean => nommeUnInterroge(textes, TOUS, TOUS);
+
+  it("trouve le nom seul au début de phrase, et le libellé complet", () => {
+    expect(nomme(["Martinez propose une réforme."])).toBe(true);
+    expect(nomme(["Rien. Martinez propose."])).toBe(true);
+    expect(nomme(["Selon Alix Martinez, oui."])).toBe(true);
+  });
+
+  it("ne trouve pas le nom à l'intérieur d'un mot plus long (« Martinezville »)", () => {
+    expect(nomme(["Une usine à Martinezville."])).toBe(false);
+    expect(nomme(["Les Hollandes."])).toBe(false);
+    expect(nomme(["NeoMartinez"])).toBe(false);
+    expect(nomme(["Martinez2027"])).toBe(false);
+  });
+
+  it("respecte la casse : la correspondance est exacte", () => {
+    expect(nomme(["MARTINEZ propose."])).toBe(false);
+    expect(nomme(["martinez propose."])).toBe(false);
+  });
+
+  it("trouve le nom après une apostrophe typographique (« d’Hollande ») comme après une apostrophe droite", () => {
+    expect(nomme(["Le programme d’Hollande."])).toBe(true);
+    expect(nomme(["Le programme d'Hollande."])).toBe(true);
+  });
+
+  it("trouve le nom entre ponctuations, tirets et fin de texte", () => {
+    expect(nomme(["(Martinez)"])).toBe(true);
+    expect(nomme(["Jean-Martinez"])).toBe(true);
+    expect(nomme(["vote Martinez"])).toBe(true);
+  });
+
+  it("ne voit pas un nom accolé à une lettre accentuée ou une marque combinante", () => {
+    expect(nomme(["Martinezé"])).toBe(false);
+    expect(nomme(["Martinez\u0301"])).toBe(false);
+  });
+
+  it("lit chacun des textes reçus, et rend faux sans texte, sans candidat ou sans interrogé", () => {
+    expect(nomme(["rien", "Hollande"])).toBe(true);
+    expect(nomme([])).toBe(false);
+    expect(nommeUnInterroge(["Martinez"], [], [])).toBe(false);
+    expect(nommeUnInterroge(["Martinez"], [], TOUS)).toBe(false);
+  });
+
+  it("refuse un nom vide ou blanc au périmètre : il nommerait tout", () => {
+    const blanc: CandidatDuRun = { candidat_id: "blanc", libelle: "A", nom: " " };
+    expect(() => nommeUnInterroge(["x"], [blanc], [blanc])).toThrow(/vide ou blanc/);
   });
 });
