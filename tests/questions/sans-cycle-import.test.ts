@@ -13,7 +13,12 @@ import { describe, expect, it } from "vitest";
 
 const RACINE = resolve(import.meta.dirname, "../..");
 const DOSSIERS_IGNORES = new Set(["node_modules", ".git", "scratch", "archives", "modeles"]);
-const RE_IMPORT_RELATIF = /from\s+["'](\.\.?\/[^"']+)["']/g;
+/**
+ * Lot 10 (d) : toutes les formes qui chargent un module relatif — `import … from "./x.ts"`,
+ * `import type … from`, `export … from`, l'import pour effet `import "./x.ts"` et l'import dynamique
+ * `import("./x.ts")`. L'ancienne expression ne lisait que `from "…"` et manquait les deux dernières.
+ */
+const RE_IMPORT_RELATIF = /(?:\bfrom|\bimport)\s*\(?\s*["'](\.\.?\/[^"']+)["']/g;
 
 type Etat = "en_cours" | "fini";
 
@@ -28,14 +33,16 @@ function fichiersTypescript(dossier: string, acc: string[] = []): string[] {
   return acc;
 }
 
+/** Les chemins relatifs que charge un texte TypeScript, dans l'ordre d'apparition. */
+function specifiersRelatifs(texte: string): string[] {
+  return [...texte.matchAll(RE_IMPORT_RELATIF)].map((correspondance) => correspondance[1] as string);
+}
+
 function importsRelatifsDe(chemin: string, fichiers: readonly string[]): string[] {
   const texte = readFileSync(chemin, "utf8");
-  const cibles: string[] = [];
-  for (const correspondance of texte.matchAll(RE_IMPORT_RELATIF)) {
-    const cible = resolve(dirname(chemin), correspondance[1] as string);
-    if (fichiers.includes(cible)) cibles.push(cible);
-  }
-  return cibles;
+  return specifiersRelatifs(texte)
+    .map((specifier) => resolve(dirname(chemin), specifier))
+    .filter((cible) => fichiers.includes(cible));
 }
 
 function construireGraphe(fichiers: readonly string[]): Map<string, string[]> {
@@ -80,6 +87,31 @@ function traversePipelineQuestions(cycle: readonly string[]): boolean {
 function decrireCycle(cycle: readonly string[]): string {
   return cycle.map((chemin) => relative(RACINE, chemin)).join(" -> ");
 }
+
+describe("l'expression d'import relatif voit chaque forme (Lot 10 (d), test du test)", () => {
+  it.each([
+    ["import nommé", `import { a } from "./nomme.ts";`, "./nomme.ts"],
+    ["import type", `import type { A } from '../type.ts';`, "../type.ts"],
+    ["import sur plusieurs lignes", `import {\n  a,\n  b,\n} from "./lignes.ts";`, "./lignes.ts"],
+    ["import pour effet", `import "./effet.ts";`, "./effet.ts"],
+    ["import dynamique", `const m = await import("./dynamique.ts");`, "./dynamique.ts"],
+    ["import dynamique espacé", `import ( '../espace.ts' )`, "../espace.ts"],
+    ["réexport nommé", `export { a } from "./reexport.ts";`, "./reexport.ts"],
+    ["réexport global", `export * from "./tout.ts";`, "./tout.ts"],
+    ["réexport de type", `export type { A } from "./reexport-type.ts";`, "./reexport-type.ts"],
+  ])("%s", (_forme, texte, attendu) => {
+    expect(specifiersRelatifs(texte)).toEqual([attendu]);
+  });
+
+  it("ignore les imports de paquets et de modules node, qui ne sont pas relatifs", () => {
+    expect(specifiersRelatifs(`import { x } from "vitest";\nimport "node:fs";\nawait import("zod");`)).toEqual([]);
+  });
+
+  it("voit toutes les formes d'un même fichier, dans l'ordre", () => {
+    const texte = `import "./a.ts";\nexport * from "./b.ts";\nimport("./c.ts");\nimport { d } from "./d.ts";`;
+    expect(specifiersRelatifs(texte)).toEqual(["./a.ts", "./b.ts", "./c.ts", "./d.ts"]);
+  });
+});
 
 describe("absence de cycle d'import", () => {
   it("aucun cycle d'import ne passe par pipeline/questions/", () => {

@@ -369,6 +369,52 @@ describe("contraction de « à le » et « à les » devant la mesure (D35 (4))"
     );
   });
 
+  it("cas 9 quater (Lot 10 (e)) : « À [mesure] » en tête de phrase garde la casse du gabarit : « Au … », « Aux … »", () => {
+    const tete = { ...gabaritParCode("Q-NEG"), texte_neutre: "À [mesure], [candidat] s'oppose-t-il ou elle ?" };
+    expect(remplirTexteNeutre(tete, { libelle_candidat: CANDIDAT, formulation_mesure: "le budget" })).toBe(
+      "Au budget, Candidat demo-alpha s'oppose-t-il ou elle ?",
+    );
+    expect(remplirTexteNeutre(tete, { libelle_candidat: CANDIDAT, formulation_mesure: "les retraites" })).toBe(
+      "Aux retraites, Candidat demo-alpha s'oppose-t-il ou elle ?",
+    );
+    expect(remplirTexteNeutre(tete, { libelle_candidat: CANDIDAT, formulation_mesure: "la retraite" })).toBe(
+      "À la retraite, Candidat demo-alpha s'oppose-t-il ou elle ?",
+    );
+  });
+
+  it("cas 9 quinquies (Lot 10 (e)) : « à » suivi d'une espace insécable ou fine insécable contracte comme « à »", () => {
+    for (const espace of ["\u00A0", "\u202F"]) {
+      const fictif = { ...gabaritParCode("Q-NEG"), texte_neutre: `[candidat] s'oppose-t-il ou elle à${espace}[mesure] ?` };
+      expect(remplirTexteNeutre(fictif, { libelle_candidat: CANDIDAT, formulation_mesure: "le budget" })).toBe(
+        "Candidat demo-alpha s'oppose-t-il ou elle au budget ?",
+      );
+    }
+  });
+
+  it("cas 9 sexies (Lot 10 (e)) : chaque gabarit du fichier donne, pour chaque forme de mesure, le texte du remplissage d'avant #158", () => {
+    // Oracle indépendant : le remplissage d'avant #158, réécrit ici (« à » minuscule et espace
+    // ordinaire devant [mesure], « le »/« les » mot entier contractés). Aucun gabarit actuel ne
+    // doit en différer : l'élargissement de #158 ne devait toucher que la détection.
+    function remplissageDAvant(texte_neutre: string, mesure: string): string {
+      const [tete, ...suites] = texte_neutre.split("[mesure]");
+      const avecMesure = suites.reduce((avant, suite) => {
+        if (!/(?:^|\s)à $/u.test(avant)) return avant + mesure + suite;
+        if (mesure.startsWith("le ")) return `${avant.slice(0, -2)}au ${mesure.slice(3)}${suite}`;
+        if (mesure.startsWith("les ")) return `${avant.slice(0, -2)}aux ${mesure.slice(4)}${suite}`;
+        return avant + mesure + suite;
+      }, tete ?? "");
+      return avecMesure.replaceAll("[candidat]", CANDIDAT);
+    }
+    const mesures = ["le budget", "les retraites", "la retraite", "l'impôt", "l\u2019impôt", "lesdites réformes", "le", "le\u00a0budget"];
+    for (const gabarit of GABARITS) {
+      for (const formulation_mesure of mesures) {
+        expect(remplirTexteNeutre(gabarit, { libelle_candidat: CANDIDAT, formulation_mesure })).toBe(
+          remplissageDAvant(gabarit.texte_neutre, formulation_mesure),
+        );
+      }
+    }
+  });
+
   it("cas 10 : chaque gabarit du fichier, rempli avec une mesure neutre, donne le texte d'avant", () => {
     const attendus: Record<(typeof CODES_GABARIT)[number], string> = {
       "Q-DIR": "Quelle est la position de Candidat demo-alpha sur la retraite à 60 ans ?",

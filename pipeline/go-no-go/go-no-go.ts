@@ -45,6 +45,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { tirerEchantillonHumain } from "../notation/echantillons.ts";
 import type { GraineTirage, Symetrie } from "../questions/types.ts";
+import { STATUT_INVALIDE, STATUT_PLANIFIE, type StatutRun } from "../run/types.ts";
 import {
   constatGraineDuTirage,
   constatInterrogationDansLaFenetre,
@@ -73,7 +74,8 @@ import type { GoNoGo } from "./types.ts";
 
 /** La part de `run.json` que lit le go/no-go, en plus de `RunLu`. */
 interface VueGoNoGo {
-  readonly statut: string;
+  /** Typé par le schéma (`pipeline/run/types.ts`) : un statut mal écrit ou renommé ne compile plus. */
+  readonly statut: StatutRun;
   readonly invalidation?: { readonly motif: string };
   readonly fenetre: { readonly debut: string; readonly fin: string };
   readonly symetrie: Symetrie;
@@ -140,11 +142,11 @@ function refuser(vue: VueGoNoGo): void {
   if (vue.symetrie.statut_global === "rouge") {
     throw new GoNoGoRefuse("symétrie rouge (§5, §12) : le run est invalide ou ne part pas, et un run invalide ne porte aucune décision de publication.");
   }
-  if (vue.statut === "invalide") throw new GoNoGoRefuse("run invalide (§12) : il ne porte aucune décision de publication.");
+  if (vue.statut === STATUT_INVALIDE) throw new GoNoGoRefuse("run invalide (§12) : il ne porte aucune décision de publication.");
   if (vue.invalidation !== undefined) {
     throw new GoNoGoRefuse(`run invalidé (« ${vue.invalidation.motif} », D51 (2)) : il sera publié invalide, sans décision de publication (§12).`);
   }
-  if (vue.statut === "planifie") throw new GoNoGoRefuse("run planifié : il n'a été ni interrogé ni noté.");
+  if (vue.statut === STATUT_PLANIFIE) throw new GoNoGoRefuse("run planifié : il n'a été ni interrogé ni noté.");
 }
 
 /* ------------------------------------------------------------------ calcul */

@@ -39,6 +39,7 @@ import { dateParis, lireInstant } from "../pipeline/interrogation/heure-paris.ts
 import { tableAliasCandidats, type TableAliasCandidats } from "../pipeline/notation/alias-candidats.ts";
 import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain, VerdictProduit } from "../pipeline/notation/types.ts";
 import type { GraineTirage } from "../pipeline/questions/types.ts";
+import type { StatutRun, TypeRun } from "../pipeline/run/types.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import type { EntreesAnalyse } from "./filtre.ts";
 import { parModeDuRun } from "./seuils.ts";
@@ -163,6 +164,23 @@ export class ParModeDivergent extends Error {
   }
 }
 
+/**
+ * Lot 10 (a) : `par_mode` écrit pour un outil qui n'a aucun couple déclaré (comparateur, assistant
+ * exclu) — `parModeDuRun` ne le calcule pas, il n'y a rien à quoi le recouper.
+ */
+export class ParModeHorsPerimetre extends Error {
+  readonly chemin: string;
+
+  constructor(chemin: string, outil_id: string) {
+    super(
+      `${chemin}#/perimetre/outils (${outil_id}) : par_mode écrit pour un outil qui n'est pas un assistant inclus ` +
+        `(analysis/seuils.ts:couplesDeclares, D55 (7)) : aucun recalcul ne lui correspond. Rien n'est lu.`,
+    );
+    this.name = "ParModeHorsPerimetre";
+    this.chemin = chemin;
+  }
+}
+
 export class ArchiveInverifiable extends Error {
   readonly chemin: string;
 
@@ -206,9 +224,9 @@ export interface CandidatDuRunLu extends CandidatAuGel {
 
 /** La part de `run.json` que lisent l'analyse, la notation et la lecture du run. */
 export interface RunLu extends Run {
-  readonly statut: string;
+  readonly statut: StatutRun;
   /** `run.schema.json`, `type_run` : `pilote` désigne le run qui porte le jeu d'or (D18). */
-  readonly type_run: string;
+  readonly type_run: TypeRun;
   readonly perimetre: { readonly candidats: readonly CandidatDuRunLu[]; readonly outils: Run["perimetre"]["outils"] };
   readonly versions: { readonly donnees_commit: string };
   readonly tirage: { readonly chemin: string; readonly sha256: string };
@@ -517,7 +535,8 @@ function verifierParMode(run: RunLu, reponses: readonly Reponse[], chemin: strin
   if (declarent.length === 0) return;
   const recalcule = parModeDuRun(run.perimetre.outils, reponses);
   for (const outil of declarent) {
-    const attendu = recalcule.get(outil.outil_id) ?? {};
+    const attendu = recalcule.get(outil.outil_id);
+    if (attendu === undefined) throw new ParModeHorsPerimetre(chemin, outil.outil_id);
     for (const mode of Object.keys(outil.par_mode) as Mode[]) {
       const ecrit = outil.par_mode[mode];
       if (ecrit !== undefined && canoniser(ecrit) !== canoniser(attendu[mode])) {
