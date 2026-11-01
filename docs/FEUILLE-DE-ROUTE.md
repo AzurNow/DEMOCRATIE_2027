@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-19.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-01.
 
 ## Décisions en attente
 
@@ -211,6 +211,10 @@ Aucune décision en attente.
 ### D55 — Onze décisions laissées par la revue de code du 2026-10-12 (docs/revues/2026-10-12.md, constats 1, 2, 4, 5, 6, 13, 17, 20, 24, 42, 54), reprises par la revue du 2026-10-17 : normalisation dans la charge du juge ; décodage de Location ; schéma du manifeste de lot ; interroges sous permutation d'une Q-ATT ; réponse reçue non stockée ; retrait d'un item contesté sur un GET ; qui écrit par_mode ; plomberie HTTP partagée ; opacité de candidat_id ; amorce « attribution » ; mise à jour de CLAUDE.md.
 
 **Décision du 2026-10-17 :** Option 1 sur les onze points. (4) précise le §7 (« un dérangement des candidats interrogés au run »), (5) le §6, (9) le §7 (alias aveugles des candidats dans la charge du juge) : à écrire à la prochaine révision (TACHES-AUTEUR). (1), (2), (9) et (10) avant le premier appel réel ou le premier tirage réel ; (7) avant le premier run publié.
+
+### D56 — Quatre décisions laissées par la relecture du 2026-11-01 des PR fusionnées pendant l'absence de l'auteur (#157 à #186) : items d'un candidat non interrogé dans la charge du juge d'une Q-ATT ; réponse en attente de l'opérateur au go/no-go ; référence de l'épinglage de l'extracteur de texte ; sens publié de retrait_item.
+
+**Décision du 2026-11-01 :** Option 1 sur les quatre points. (1) précise le §7 et (2) le §6 : à écrire dans une révision 0.21, PR à part, avant le code qui les applique. (3) et (4) sans révision : (3) applique la lettre du §4, (4) ne change que du texte.
 
 ### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
 
