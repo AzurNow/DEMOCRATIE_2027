@@ -131,12 +131,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
   // 324 → 325 : relecture de D55 (3), réannotation exigée dans les deux sens, un invalide de lot (ordinaire portant reannote).
   // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
-  it("1. les 328 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 328 → 329 : conformité 2026-11-01, n° 10, invalide-18 (réponse du canal api sans parametres_effectifs).
+  it("1. les 329 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(328);
+    expect(manifeste.exemples).toHaveLength(329);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -382,7 +383,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
   // 324 → 325 : relecture de D55 (3), réannotation exigée dans les deux sens, un invalide de lot (ordinaire portant reannote).
   // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 328 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(328);
+  // 328 → 329 : conformité 2026-11-01, n° 10, invalide-18 (réponse du canal api sans parametres_effectifs).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 329 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(329);
   });
 });

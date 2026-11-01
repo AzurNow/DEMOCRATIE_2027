@@ -174,7 +174,7 @@
         "stop_reason": { "type": ["string", "null"] },
         "parametres_effectifs": {
           "type": "object",
-          "description": "§6 : les valeurs par défaut de l'éditeur sont utilisées, mais les valeurs EFFECTIVES sont enregistrées."
+          "description": "§6 : les valeurs par défaut de l'éditeur sont utilisées, mais les valeurs EFFECTIVES sont enregistrées. Obligatoire pour toute réponse obtenue du canal api (voir allOf) ; le canal application n'est pas visé."
         },
         "tokens": {
           "type": "object",
@@ -357,14 +357,14 @@
       "then": { "properties": { "tentatives": { "maxItems": 2 } } }
     },
     {
-      "$comment": "Conformité n° 61, §6 : « identifiant de version renvoyé par l'API, horodatage, latence » sont enregistrés. Pour une réponse d'API obtenue, les deux clés sont présentes ; modele_renvoye peut valoir null (l'API ne le renvoie pas), latence_ms jamais. Le canal application n'a pas d'API : le §6 ne lui demande ni l'un ni l'autre.",
+      "$comment": "Conformité n° 61, §6 : « identifiant de version renvoyé par l'API, horodatage, latence » sont enregistrés. Pour une réponse d'API obtenue, les deux clés sont présentes ; modele_renvoye peut valoir null (l'API ne le renvoie pas), latence_ms jamais. Conformité 2026-11-01, n° 10 (§6.04) : parametres_effectifs est aussi obligatoire, refus de modération compris. Le canal application n'a pas d'API : le §6 ne lui demande ni l'un ni l'autre.",
       "if": {
         "properties": { "canal": { "const": "api" }, "statut_reponse": { "const": "obtenue" } },
         "required": ["canal", "statut_reponse"]
       },
       "then": {
         "required": ["brut_octets_sha256"],
-        "properties": { "metadonnees": { "required": ["modele_renvoye", "latence_ms"] } }
+        "properties": { "metadonnees": { "required": ["modele_renvoye", "latence_ms", "parametres_effectifs"] } }
       }
     },
     {

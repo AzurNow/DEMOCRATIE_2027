@@ -481,6 +481,17 @@
       }
     },
     {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-18-api-sans-parametres-effectifs.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 privée de metadonnees.parametres_effectifs. §6 (exigence §6.04) : les valeurs par défaut de l'éditeur sont utilisées, mais les valeurs effectives sont enregistrées ; pour une réponse obtenue du canal api, une clé absente ne se distingue pas d'un enregistrement oublié.",
+      "regle_protocole": "§6, paramètres d'échantillonnage (valeurs effectives enregistrées)",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/metadonnees"
+      }
+    },
+    {
       "objet": "notation",
       "fichier": "notation/valide-01-juge-exacte.json",
       "attendu": "valide",
