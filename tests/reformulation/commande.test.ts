@@ -279,6 +279,19 @@ describe("dette du 2026-10-15, point 2 : code de sortie et délai d'abandon", ()
     expect(execution.sortie).toContain("Questions non appelées, plafond atteint : 0");
   });
 
+  it("une réponse reçue non stockée (corps non UTF-8) ⇒ code non nul ; la relance ne la rappelle pas et le dit (D55 (5))", async () => {
+    const chemin = racine();
+    const nonUtf8 = (prompt: string, rang: number): Response | Error =>
+      rang === 0 ? new Response(new Uint8Array([0x7b, 0xff, 0x7d]), { status: 200 }) : accepter(prompt, rang);
+    const premiere = await lancer(reel(chemin), nonUtf8);
+    expect(premiere.code).toBe(CODE_ECHECS_APPEL);
+    expect(premiere.sortie).toContain("  reçues et non stockées (octets gardés) : 1");
+    const relance = await lancer(reel(chemin));
+    expect(relance).toMatchObject({ code: CODE_ECHECS_APPEL, envois: 0 });
+    expect(relance.sortie).toContain("Questions non appelées, en attente de l'opérateur (réponse reçue non stockée) : 1");
+    expect(relance.sortie).toContain("Action de l'opérateur requise");
+  });
+
   it("des rejets du contrôle seuls ⇒ code 0 : la réponse a été reçue et écrite", async () => {
     const execution = await lancer(reel(racine()), () => new Response(corpsChat("pas du json"), { status: 200 }));
     expect(execution.code).toBe(0);

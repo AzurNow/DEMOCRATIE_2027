@@ -335,21 +335,34 @@ function substituerMesure(gabarit: Gabarit, mesure: string): string {
  * D42 (4) : les formes sous lesquelles la mesure peut figurer dans une reformulation de ce gabarit.
  * `canonique` est toujours admise ; `contractee` ne l'est que si le gabarit place « à » devant
  * `[mesure]` et que l'article de la mesure se contracte (`mesureContractee`), sinon `null`.
+ * `contractee_en_tete` est la même forme à majuscule initiale (« Au budget »), admise seulement si
+ * le gabarit écrit « À [mesure] » : c'est ce que produit le remplissage (`avecCasseDeLaPreposition`),
+ * une recopie du texte neutre ne peut donc pas être refusée ; `null` sinon.
  */
 export interface FormesDeMesure {
   readonly canonique: string;
   readonly contractee: string | null;
+  readonly contractee_en_tete: string | null;
 }
 
-/** Vrai si l'un des emplacements `[mesure]` du gabarit suit « à » : là seulement la contraction s'applique. */
-function placeAAvantMesure(gabarit: Gabarit): boolean {
+/** Les textes qui précèdent un emplacement `[mesure]` et finissent par « à » : là seulement la contraction s'applique. */
+function avantsEnA(gabarit: Gabarit): readonly string[] {
   const avants = gabarit.texte_neutre.split(EMPLACEMENT_MESURE).slice(0, -1);
-  return avants.some((avant) => PREPOSITION_A_EN_FIN.test(avant));
+  return avants.filter((avant) => PREPOSITION_A_EN_FIN.test(avant));
+}
+
+/** La forme contractée telle que le remplissage l'écrit derrière « À », ou `null` si aucun emplacement n'en a. */
+function contracteeEnTete(avants: readonly string[], contractee: string): string | null {
+  const en_tete = avants.map((avant) => avecCasseDeLaPreposition(avant, contractee)).find((forme) => forme !== contractee);
+  return en_tete === undefined ? null : en_tete;
 }
 
 export function formesAdmisesDeMesure(gabarit: Gabarit, mesure: string): FormesDeMesure {
-  if (!placeAAvantMesure(gabarit)) return { canonique: mesure, contractee: null };
-  return { canonique: mesure, contractee: mesureContractee(gabarit, mesure) };
+  const avants = avantsEnA(gabarit);
+  if (avants.length === 0) return { canonique: mesure, contractee: null, contractee_en_tete: null };
+  const contractee = mesureContractee(gabarit, mesure);
+  if (contractee === null) return { canonique: mesure, contractee: null, contractee_en_tete: null };
+  return { canonique: mesure, contractee, contractee_en_tete: contracteeEnTete(avants, contractee) };
 }
 
 /** Les positions de début de chaque occurrence de `aiguille` dans `texte`, chevauchements compris. */
@@ -370,10 +383,11 @@ function occurrences(texte: string, aiguille: string): readonly number[] {
  * typographique ne sont rapprochés.
  */
 export function mesureFigureSousFormeAdmise(texte: string, gabarit: Gabarit, mesure: string): boolean {
-  const { canonique, contractee } = formesAdmisesDeMesure(gabarit, mesure);
+  const { canonique, contractee, contractee_en_tete } = formesAdmisesDeMesure(gabarit, mesure);
   const debuts = occurrences(texte, canonique);
   if (contractee === null) return debuts.length > 0;
   if (texte.includes(contractee)) return true;
+  if (contractee_en_tete !== null && texte.includes(contractee_en_tete)) return true;
   return debuts.some((debut) => !PREPOSITION_A_EN_FIN.test(texte.slice(0, debut)));
 }
 
