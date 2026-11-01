@@ -18,7 +18,11 @@ qu'il contient le son), ni un format servi par fragments (HLS, DASH), qui se rec
 télécharge pas tel quel.
 
 Politesse (§6, `politesse.py`) : `robots.txt` est vérifié sur l'URL de la page **avant** d'appeler
-yt-dlp ; yt-dlp espace ses propres requêtes d'au moins une seconde et s'annonce avec le même
+yt-dlp, puis yt-dlp attend le créneau de l'hôte dans la `Cadence` de la collecte (`ClientPoli.creneau`),
+qui le compte sollicité jusqu'à la fin du téléchargement : yt-dlp 2026.8.19 ne dort pas avant sa
+première requête (`_first_webpage_request`, extractor/common.py), qui suivrait sinon `robots.txt` sans
+délai. Ensuite yt-dlp espace ses propres requêtes d'une seconde (`sleep_interval_requests`, entre
+requêtes d'extraction ; `sleep_interval`, avant le téléchargement) et s'annonce avec le même
 User-Agent que la collecte.
 
 Le type de contenu consigné dans le manifeste (`type_contenu_recu`) n'est pas un en-tête HTTP ici :
@@ -197,7 +201,8 @@ class TelechargeurMedia:
         self._temporaires.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=self._temporaires) as repertoire:
             try:
-                media = self._extracteur.telecharger(url, self._genre, Path(repertoire))
+                with self._client.creneau(url):
+                    media = self._extracteur.telecharger(url, self._genre, Path(repertoire))
             except EchecMedia as echec:
                 raise EchecCollecte(str(echec)) from None
             type_contenu = self._type(media.ext)

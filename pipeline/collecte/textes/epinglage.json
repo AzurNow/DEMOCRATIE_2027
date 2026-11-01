@@ -6,12 +6,12 @@
   },
   "html": {
     "outil": "html.parser",
-    "version": { "interpreteur": "python" },
+    "version": "3.12.14",
     "options": { "regle": "blocs-1" }
   },
   "transcription": {
     "outil": "webvtt",
-    "version": { "interpreteur": "python" },
+    "version": "3.12.14",
     "options": { "regle": "vtt-1" }
   }
 }

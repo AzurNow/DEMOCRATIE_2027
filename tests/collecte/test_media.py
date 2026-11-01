@@ -24,7 +24,7 @@ from pipeline.collecte.media import (
     lire_resultat_yt_dlp,
     options_yt_dlp,
 )
-from pipeline.collecte.politesse import AGENT_UTILISATEUR, Cadence, ClientPoli, EchecCollecte
+from pipeline.collecte.politesse import AGENT_UTILISATEUR, INTERVALLE_PAR_HOTE_S, Cadence, ClientPoli, EchecCollecte
 from tests.collecte.banc import INSTANTANE, banc, cle, fiche, manifeste, source
 from tests.collecte.doubles import HorlogeFactice, TransportFactice, reponse
 
@@ -85,7 +85,9 @@ def test_audio_sans_flux_audio_seul_refus() -> None:
 
 def test_options_yt_dlp_polies_sans_fusion_ni_post_traitement(tmp_path: Path) -> None:
     options = options_yt_dlp("video", tmp_path)
-    assert options["sleep_interval_requests"] >= 1  # type: ignore[operator]
+    assert INTERVALLE_PAR_HOTE_S == 1.0  # §6 : une requête par seconde et par hôte
+    assert options["sleep_interval_requests"] == INTERVALLE_PAR_HOTE_S
+    assert options["sleep_interval"] == INTERVALLE_PAR_HOTE_S
     assert options["http_headers"] == {"User-Agent": AGENT_UTILISATEUR}
     assert options["fixup"] == "never"
     assert options["postprocessors"] == []
@@ -107,10 +109,15 @@ class YtDlpFactice:
     octets: bytes = VIDEO
     ext: str = "mp4"
     erreur: EchecMedia | None = None
+    horloge: HorlogeFactice | None = None
     appels: list[tuple[str, str]] = field(default_factory=list)
+    instants: list[float] = field(default_factory=list)
+    """Temps monotone au départ de chaque appel, quand une horloge est donnée."""
 
     def telecharger(self, url: str, genre: str, repertoire: Path) -> MediaTelecharge:
         self.appels.append((url, genre))
+        if self.horloge is not None:
+            self.instants.append(self.horloge.monotone())
         if self.erreur is not None:
             raise self.erreur
         chemin = repertoire / f"media.{self.ext}"
@@ -134,6 +141,48 @@ def test_media_telecharge_rendu_comme_un_telechargement(racine: Path, horloge: H
     assert telechargement.url_finale == PAGE_FINALE
     assert ytdlp.appels == [(URL_VIDEO, "video")]
     assert not any((racine / "archives").rglob("*.mp4"))  # le répertoire temporaire est vidé
+
+
+def _client_et_transport(horloge: HorlogeFactice) -> tuple[ClientPoli, TransportFactice]:
+    transport = TransportFactice(horloge, {"https://example.org/robots.txt": reponse(200, b"User-agent: *\nAllow: /\n")})
+    return ClientPoli(transport, Cadence(horloge, INTERVALLE_PAR_HOTE_S)), transport
+
+
+def test_yt_dlp_ne_part_pas_avant_le_creneau_de_l_hote_apres_robots_txt(racine: Path, horloge: HorlogeFactice) -> None:
+    # Constat 31 du 2026-10-12 : yt-dlp ne dort pas avant sa première requête (`_first_webpage_request`).
+    client, transport = _client_et_transport(horloge)
+    ytdlp = YtDlpFactice(horloge=horloge)
+
+    TelechargeurMedia(client, ytdlp, "video", racine).telecharger(URL_VIDEO)
+
+    [(url_robots, instant_robots, _en_tetes)] = transport.requetes
+    assert url_robots == "https://example.org/robots.txt"
+    assert ytdlp.instants == [instant_robots + INTERVALLE_PAR_HOTE_S]
+    assert horloge.sommeils == [INTERVALLE_PAR_HOTE_S]
+
+
+def test_deux_medias_du_meme_hote_le_second_yt_dlp_attend_la_fin_du_premier(racine: Path, horloge: HorlogeFactice) -> None:
+    client, _transport = _client_et_transport(horloge)
+    ytdlp = YtDlpFactice(horloge=horloge)
+    telechargeur = TelechargeurMedia(client, ytdlp, "video", racine)
+
+    telechargeur.telecharger(URL_VIDEO)
+    horloge.temps += 0.25  # le premier yt-dlp a fini depuis 0,25 s
+    telechargeur.telecharger(URL_VIDEO)
+
+    assert ytdlp.instants[1] - ytdlp.instants[0] == INTERVALLE_PAR_HOTE_S
+
+
+def test_echec_yt_dlp_le_creneau_de_l_hote_est_tout_de_meme_consomme(racine: Path, horloge: HorlogeFactice) -> None:
+    client, _transport = _client_et_transport(horloge)
+    en_echec = YtDlpFactice(erreur=EchecMedia("yt-dlp : ERROR: Video unavailable"), horloge=horloge)
+    with pytest.raises(EchecCollecte):
+        TelechargeurMedia(client, en_echec, "video", racine).telecharger(URL_VIDEO)
+
+    ytdlp = YtDlpFactice(horloge=horloge)
+    TelechargeurMedia(client, ytdlp, "video", racine).telecharger(URL_VIDEO)
+
+    assert ytdlp.instants == [en_echec.instants[0] + INTERVALLE_PAR_HOTE_S]
 
 
 def test_robots_txt_interdit_refus_avant_yt_dlp(racine: Path, horloge: HorlogeFactice) -> None:

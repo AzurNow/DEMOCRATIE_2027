@@ -28,8 +28,8 @@ afterEach(() => {
 
 const DECLARATION = {
   pdf: { outil: "pymupdf", version: "1.28.2", options: { mode: "text", drapeaux: 67, separateur_pages: "\f" } },
-  html: { outil: "html.parser", version: { interpreteur: "python" }, options: { regle: "blocs-1" } },
-  transcription: { outil: "webvtt", version: { interpreteur: "python" }, options: { regle: "vtt-1" } },
+  html: { outil: "html.parser", version: HTML.version, options: { regle: "blocs-1" } },
+  transcription: { outil: "webvtt", version: HTML.version, options: { regle: "vtt-1" } },
 };
 
 function racineAvec(contenu: unknown): string {
@@ -65,6 +65,15 @@ describe("le fichier du dépôt, lu comme Python le lit", () => {
     expect(pdf?.version).toBe(epingle);
   });
 
+  it("html.parser et webvtt sont épinglés au correctif de Python écrit dans .python-version", () => {
+    const correctif = readFileSync(join(DEPOT, ".python-version"), "utf8").trim();
+    expect(correctif).toMatch(/^3\.12\.\d+$/u);
+    const versions = lireEpinglageEnService(DEPOT)
+      .filter((declaration) => declaration.outil === "html.parser" || declaration.outil === "webvtt")
+      .map((declaration) => declaration.version);
+    expect(versions).toEqual([correctif, correctif]);
+  });
+
   it("une fiche portant l'extracteur pymupdf déclaré est conforme au schéma des fiches", () => {
     const pdf = lireEpinglageEnService(DEPOT).find((declaration) => declaration.outil === "pymupdf");
     if (pdf === undefined || typeof pdf.version !== "string") throw new Error("pymupdf doit être déclaré en version écrite en clair");
@@ -93,7 +102,8 @@ describe("fichier absent ou illisible : refus nommé, jamais de valeur par défa
     ["outil vide", { ...DECLARATION, pdf: { ...DECLARATION.pdf, outil: "" } }],
     ["version vide", { ...DECLARATION, pdf: { ...DECLARATION.pdf, version: "" } }],
     ["version absente", { ...DECLARATION, pdf: { outil: "pymupdf", options: {} } }],
-    ["autre interpréteur", { ...DECLARATION, html: { ...DECLARATION.html, version: { interpreteur: "ruby" } } }],
+    ["forme interpréteur retirée", { ...DECLARATION, html: { ...DECLARATION.html, version: { interpreteur: "python" } } }],
+    ["version non chaîne", { ...DECLARATION, pdf: { ...DECLARATION.pdf, version: 1.28 } }],
     ["options non objet", { ...DECLARATION, html: { ...DECLARATION.html, options: ["blocs-1"] } }],
     ["même outil pour deux genres", { ...DECLARATION, transcription: { ...DECLARATION.html } }],
   ];
@@ -129,12 +139,13 @@ describe("estEnService : l'épinglage d'une entrée comparé à celui du code", 
     expect(estEnService(enService(sansPdf), pdf)).toBe(false);
   });
 
-  it("version d'interpréteur : outil et options comparés, le correctif de Python ne se lit pas hors de Python", () => {
+  it("html.parser : outil, options et correctif de Python comparés", () => {
     expect(estEnService(enService(), HTML)).toBe(true);
     expect(estEnService(enService(), { ...HTML, options: { regle: "blocs-2" } })).toBe(false);
+    expect(estEnService(enService(), { ...HTML, version: "3.12.8" })).toBe(false);
   });
 
-  it("version écrite en clair pour html.parser : comparée comme les autres", () => {
+  it("autre version écrite pour html.parser : comparée comme les autres", () => {
     const fige = { ...DECLARATION, html: { ...DECLARATION.html, version: "3.12.9" } };
     expect(estEnService(enService(fige), HTML)).toBe(false);
     expect(estEnService(enService(fige), { ...HTML, version: "3.12.9" })).toBe(true);

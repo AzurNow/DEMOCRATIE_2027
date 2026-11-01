@@ -8,11 +8,10 @@
  * dépôt (`--racine` dans les tests).
  *
  * Le fichier déclare, par genre de contenu, l'outil, la version et les options. La version est
- * écrite en clair (pymupdf) ou vaut `{"interpreteur": "python"}` (`html.parser`, `webvtt`) : elle est
- * alors celle du Python qui exécute l'extraction, qu'aucun fichier du dépôt n'épingle et que le
- * TypeScript ne peut pas lire. Pour ces outils, `estEnService` compare l'outil et les options ;
- * le correctif de Python reste contrôlé par l'égalité exacte de `choix-texte.ts:choisirFiche` entre
- * l'entrée (écrite par Python) et les fiches.
+ * toujours écrite en clair : celle de `uv.lock` pour pymupdf, le correctif de Python épinglé par
+ * `.python-version` pour `html.parser` et `webvtt` (testé). L'ancienne forme
+ * `{"interpreteur": "python"}` est retirée et refusée comme non conforme. `estEnService` compare donc
+ * l'outil, la version et les options pour tous les outils.
  *
  * Validé à la lecture, forme exacte : un fichier absent, qui n'est pas du JSON ou non conforme lève
  * `EpinglageEnServiceIllisible`, sans valeur de repli. Les genres eux-mêmes ne sont pas relus ici :
@@ -28,14 +27,10 @@ import type { ExtracteurEpingle } from "./choix-texte.ts";
 /** Chemin du fichier sous la racine du dépôt, le même que `en_service.py:CHEMIN_EPINGLAGE`. */
 export const CHEMIN_EPINGLAGE: readonly string[] = ["pipeline", "collecte", "textes", "epinglage.json"];
 
-export interface VersionInterpreteur {
-  readonly interpreteur: "python";
-}
-
 export interface DeclarationEnService {
   readonly genre: string;
   readonly outil: string;
-  readonly version: string | VersionInterpreteur;
+  readonly version: string;
   readonly options: Readonly<Record<string, unknown>>;
 }
 
@@ -55,9 +50,8 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
   return typeof valeur === "object" && valeur !== null && !Array.isArray(valeur);
 }
 
-function estVersion(valeur: unknown): valeur is string | VersionInterpreteur {
-  if (typeof valeur === "string") return valeur !== "";
-  return estObjet(valeur) && Object.keys(valeur).length === 1 && valeur["interpreteur"] === "python";
+function estVersion(valeur: unknown): valeur is string {
+  return typeof valeur === "string" && valeur !== "";
 }
 
 /** Le défaut de forme d'une déclaration, ou `null` si elle est conforme. */
@@ -67,7 +61,7 @@ function defautDe(declaration: unknown): string | null {
   }
   const outil = declaration["outil"];
   if (typeof outil !== "string" || outil === "") return "outil doit être une chaîne non vide";
-  if (!estVersion(declaration["version"])) return 'version doit être une chaîne non vide ou {"interpreteur": "python"}';
+  if (!estVersion(declaration["version"])) return "version doit être une chaîne non vide";
   if (!estObjet(declaration["options"])) return "options doit être un objet";
   return null;
 }
@@ -119,18 +113,14 @@ export function declarationPour(enService: EpinglageEnService, outil: string): D
   return enService.find((declaration) => declaration.outil === outil) ?? null;
 }
 
-function versionAccordee(declaree: DeclarationEnService["version"], inscrite: string): boolean {
-  return typeof declaree === "string" ? declaree === inscrite : true;
-}
-
 /**
- * Vrai si `epingle` est l'extracteur en service pour son outil : options égales en forme canonique,
- * et version égale quand le fichier l'écrit en clair (voir l'en-tête pour une version d'interpréteur).
+ * Vrai si `epingle` est l'extracteur en service pour son outil : version égale et options égales en
+ * forme canonique.
  */
 export function estEnService(enService: EpinglageEnService, epingle: ExtracteurEpingle): boolean {
   const declaration = declarationPour(enService, epingle.outil);
   if (declaration === null) return false;
-  return canoniser(declaration.options) === canoniser(epingle.options) && versionAccordee(declaration.version, epingle.version);
+  return declaration.version === epingle.version && canoniser(declaration.options) === canoniser(epingle.options);
 }
 
 /** Pour un message : la déclaration telle qu'en service, ou son absence. */
