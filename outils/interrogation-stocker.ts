@@ -8,6 +8,9 @@
  * relu et vérifié comme par celui-ci (`run-gele.ts`), jamais sous `runs/`. Seul run interrogeable
  * aujourd'hui, il l'a été par l'éditeur simulé : les adaptateurs sont ceux des profils simulés
  * (`tests/interrogation/fixtures/run-gele/profils-simules.json`), comme pour `pnpm run:dry --run`.
+ * Chaque réception gardée nomme l'adaptateur qui a reçu ses octets (`normalisation`) : des octets
+ * reçus par un autre adaptateur, celui d'un éditeur réel par exemple, sont refusés
+ * (`adaptateur_different`), jamais classés par l'éditeur simulé.
  * `--requete` : la clé d'une seule requête, l'empreinte qui nomme son journal et ses octets gardés
  * sous `volume/tentatives/` (`<clé>.jsonl`, `<clé>.<n>.octets`) ; absente, toutes celles du plan.
  *
@@ -20,7 +23,8 @@
  * Codes de sortie :
  * - 0 : chaque requête en attente est stockée ou conclue en échec, ou il n'y avait rien à faire ;
  * - 2 : une requête au moins reste en attente (refus nommé, avec sa cause : sans octets, sans
- *   métadonnées de réception, réception incohérente, stockage encore impossible), ou la commande
+ *   métadonnées de réception, adaptateur différent, réception incohérente, stockage encore
+ *   impossible), ou la commande
  *   est refusée (option inconnue, requête inconnue, run refusé) sans rien écrire.
  */
 

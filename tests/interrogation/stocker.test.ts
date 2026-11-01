@@ -5,9 +5,10 @@
  * le même chemin que le stockage du run.
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { adaptateurSimule } from "../../pipeline/interrogation/editeur-simule.ts";
 import { instantParis } from "../../pipeline/interrogation/heure-paris.ts";
 import { JournalIllisible, JournalRequete, nomJournal, nomOctets, nomReception, type Reception } from "../../pipeline/interrogation/journal.ts";
 import { codeSortieStockage, RequeteInconnue } from "../../pipeline/interrogation/stocker.ts";
@@ -71,6 +72,9 @@ async function enAttenteApresEcritureEnEchec(): Promise<Banc> {
 
 const HORODATAGE_DEBUT_MS = Date.parse("2026-12-01T05:10:00Z");
 
+/** L'adaptateur qui a reçu les octets au run : celui de l'éditeur simulé du banc. */
+const RECU_PAR = adaptateurSimule("cle-de-test").normalisation;
+
 /** L'arrêt brutal après la garde (§6, 0.19) : `debut`, réception et octets gardés, rien d'autre. */
 function arretApresGarde(b: Banc, numero: number, statut_http: number, octets: Uint8Array): void {
   const journal = journalDe(b);
@@ -85,6 +89,7 @@ function arretApresGarde(b: Banc, numero: number, statut_http: number, octets: U
     debut_ms: HORODATAGE_DEBUT_MS,
     reception_ms: HORODATAGE_DEBUT_MS + 1_200,
     octets_sha256: empreinteOctets(octets),
+    normalisation: RECU_PAR,
   };
   journal.garderReception(reception);
   journal.garderOctets(numero, octets);
@@ -107,6 +112,8 @@ describe("§6 : la réception gardée avec les octets", () => {
     expect(seconde).toMatchObject({ numero: 2, statut_http: 200 });
     const obtenue = seule(b.lues()) as ReponseObtenue;
     expect(seconde?.octets_sha256).toBe(obtenue.brut_octets_sha256);
+    expect(premiere?.normalisation).toEqual(obtenue.normalisation);
+    expect(seconde?.normalisation).toEqual(obtenue.normalisation);
     expect(instantParis(seconde?.debut_ms as number)).toBe(obtenue.metadonnees.horodatage_requete);
     expect(instantParis(seconde?.reception_ms as number)).toBe(obtenue.metadonnees.horodatage_reponse);
     expect(empreinteOctets(readFileSync(join(b.tentatives, nomOctets(cleDe(requete()), 2))))).toBe(seconde?.octets_sha256);
@@ -124,7 +131,7 @@ describe("§6 : la réception gardée avec les octets", () => {
     const b = nouveauBanc();
     const journal = journalDe(b);
     journal.inscrireDebut(1, instantParis(HORODATAGE_DEBUT_MS), cleDe(requete()));
-    journal.garderReception({ numero: 1, statut_http: 200, debut_ms: HORODATAGE_DEBUT_MS, reception_ms: HORODATAGE_DEBUT_MS, octets_sha256: empreinteOctets(CORPS_200) });
+    journal.garderReception({ numero: 1, statut_http: 200, debut_ms: HORODATAGE_DEBUT_MS, reception_ms: HORODATAGE_DEBUT_MS, octets_sha256: empreinteOctets(CORPS_200), normalisation: RECU_PAR });
     b.editeur("outil-alpha", scenarioScripte(["reponse"]));
     const bilan = await b.executer(plan(requete()));
     expect(bilan.en_attente_operateur).toEqual([]);
@@ -214,11 +221,71 @@ describe("§6 : l'opérateur stocke depuis les octets gardés", () => {
     const b = nouveauBanc();
     const journal = journalDe(b);
     journal.inscrireDebut(1, instantParis(HORODATAGE_DEBUT_MS), cleDe(requete()));
-    journal.garderReception({ numero: 1, statut_http: 200, debut_ms: HORODATAGE_DEBUT_MS, reception_ms: HORODATAGE_DEBUT_MS, octets_sha256: empreinteOctets(CORPS_200) });
+    journal.garderReception({ numero: 1, statut_http: 200, debut_ms: HORODATAGE_DEBUT_MS, reception_ms: HORODATAGE_DEBUT_MS, octets_sha256: empreinteOctets(CORPS_200), normalisation: RECU_PAR });
     journal.garderOctets(1, new TextEncoder().encode("d'autres octets que ceux de la réception"));
     const bilan = b.stocker(plan(requete()));
     expect(bilan.issues[0]).toMatchObject({ genre: "refusee", numero: 1, motif: "reception_incoherente" });
     expect(codeSortieStockage(bilan)).toBe(2);
+    expect(existsSync(b.reponses) ? readdirSync(b.reponses) : []).toEqual([]);
+  });
+
+  it("octets reçus par un autre adaptateur (autre fonction) : refus nommé adaptateur_different, rien d'écrit, la requête reste en attente", async () => {
+    const b = nouveauBanc();
+    const journal = journalDe(b);
+    journal.inscrireDebut(1, instantParis(HORODATAGE_DEBUT_MS), cleDe(requete()));
+    journal.garderReception({
+      numero: 1,
+      statut_http: 200,
+      debut_ms: HORODATAGE_DEBUT_MS,
+      reception_ms: HORODATAGE_DEBUT_MS + 1_200,
+      octets_sha256: empreinteOctets(CORPS_200),
+      normalisation: { fonction: "normaliser_editeur_reel", version: RECU_PAR.version },
+    });
+    const chemin = journal.garderOctets(1, CORPS_200);
+    journal.inscrireRecueNonStockee(1, chemin, "écriture en échec");
+    const journalAvant = lignesJournal(b);
+    const fichiersAvant = readdirSync(b.tentatives).sort();
+    const bilan = b.stocker(plan(requete()));
+    expect(bilan.issues).toEqual([
+      {
+        genre: "refusee",
+        requete: cleDe(requete()),
+        numero: 1,
+        motif: "adaptateur_different",
+        cause: `octets reçus par l'adaptateur normaliser_editeur_reel ${RECU_PAR.version}, adaptateur donné ${RECU_PAR.fonction} ${RECU_PAR.version}`,
+      },
+    ]);
+    expect(codeSortieStockage(bilan)).toBe(2);
+    expect(lignesJournal(b)).toBe(journalAvant);
+    expect(readdirSync(b.tentatives).sort()).toEqual(fichiersAvant);
+    expect(existsSync(b.reponses) ? readdirSync(b.reponses) : []).toEqual([]);
+
+    const relance = nouveauBanc(b.racine);
+    relance.editeur("outil-alpha", scenarioScripte([]));
+    expect((await relance.executer(plan(requete()))).en_attente_operateur).toHaveLength(1);
+    expect(transportDe(relance).interne.recues).toHaveLength(0);
+  });
+
+  it("même fonction, autre version de l'adaptateur : refus nommé adaptateur_different", () => {
+    const b = nouveauBanc();
+    arretApresGarde(b, 1, 200, CORPS_200);
+    const cheminReception = join(b.tentatives, nomReception(cleDe(requete()), 1));
+    const reception = JSON.parse(readFileSync(cheminReception, "utf8")) as Reception;
+    rmSync(cheminReception);
+    journalDe(b).garderReception({ ...reception, normalisation: { fonction: RECU_PAR.fonction, version: `${RECU_PAR.version}-autre` } });
+    const bilan = b.stocker(plan(requete()));
+    expect(bilan.issues[0]).toMatchObject({ genre: "refusee", numero: 1, motif: "adaptateur_different" });
+    expect(existsSync(b.reponses) ? readdirSync(b.reponses) : []).toEqual([]);
+  });
+
+  it("réception sans normalisation (volume antérieur) : refusée au schéma, jamais complétée, rien d'écrit", () => {
+    const b = nouveauBanc();
+    arretApresGarde(b, 1, 200, CORPS_200);
+    const cheminReception = join(b.tentatives, nomReception(cleDe(requete()), 1));
+    const { normalisation: _n, ...sans } = JSON.parse(readFileSync(cheminReception, "utf8")) as Reception;
+    writeFileSync(cheminReception, JSON.stringify(sans));
+    expect(() => journalDe(b).lireReception(1)).toThrow(/ErreurSchema|must have required property 'normalisation'/);
+    expect(() => b.stocker(plan(requete()))).toThrow(/must have required property 'normalisation'/);
     expect(existsSync(b.reponses) ? readdirSync(b.reponses) : []).toEqual([]);
   });
 
@@ -232,7 +299,7 @@ describe("§6 : l'opérateur stocke depuis les octets gardés", () => {
     const corps503 = new TextEncoder().encode("Service Unavailable");
     const journal = journalDe(b);
     journal.inscrireDebut(1, instantParis(b.fenetre.debut_ms), cleDe(requete()));
-    journal.garderReception({ numero: 1, statut_http: 503, debut_ms: b.fenetre.debut_ms, reception_ms: b.fenetre.debut_ms + 1_200, octets_sha256: empreinteOctets(corps503) });
+    journal.garderReception({ numero: 1, statut_http: 503, debut_ms: b.fenetre.debut_ms, reception_ms: b.fenetre.debut_ms + 1_200, octets_sha256: empreinteOctets(corps503), normalisation: RECU_PAR });
     journal.garderOctets(1, corps503);
     b.editeur("outil-alpha", scenarioScripte([]));
     const avant = await b.executer(plan(requete()));

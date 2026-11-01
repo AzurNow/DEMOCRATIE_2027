@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { geler } from "../../pipeline/gel/geler.ts";
+import { adaptateurSimule } from "../../pipeline/interrogation/editeur-simule.ts";
 import { instantParis } from "../../pipeline/interrogation/heure-paris.ts";
 import { JournalRequete, nomOctets } from "../../pipeline/interrogation/journal.ts";
 import { planifier } from "../../pipeline/interrogation/plan.ts";
@@ -67,6 +68,9 @@ const CORPS = new TextEncoder().encode(
     '"stop_reason":"end_turn","usage":{"input_tokens":12,"output_tokens":34}}',
 );
 
+/** L'adaptateur de l'éditeur simulé, qui a interrogé le run gelé de ces tests. */
+const RECU_PAR = adaptateurSimule("cle-de-test").normalisation;
+
 /** La première requête du plan du run gelé, et son journal sous `volume/tentatives/`. */
 function premiereRequete(repertoire: string): { readonly requete: RequetePlanifiee; readonly journal: JournalRequete; readonly debut_ms: number } {
   const gele = lireRunGele(repertoire);
@@ -82,7 +86,7 @@ describe("pnpm interrogation:stocker", () => {
     const repertoire = copie();
     const { requete, journal, debut_ms } = premiereRequete(repertoire);
     journal.inscrireDebut(1, instantParis(debut_ms), cleDe(requete));
-    journal.garderReception({ numero: 1, statut_http: 200, debut_ms, reception_ms: debut_ms + 1_200, octets_sha256: empreinteOctets(CORPS) });
+    journal.garderReception({ numero: 1, statut_http: 200, debut_ms, reception_ms: debut_ms + 1_200, octets_sha256: empreinteOctets(CORPS), normalisation: RECU_PAR });
     journal.garderOctets(1, CORPS);
     const run = await lancerRunGeleSimule({ repertoire, profils: PROFILS });
     expect(run.execution.en_attente_operateur.map((a) => a.requete)).toEqual([cleDe(requete)]);
@@ -116,6 +120,27 @@ describe("pnpm interrogation:stocker", () => {
     expect(resultat.status).toBe(2);
     expect(resultat.stdout).toContain("sans_metadonnees");
     expect(readdirSync(join(repertoire, "volume", "reponses"))).toEqual([]);
+  });
+
+  it("octets reçus par l'adaptateur d'un éditeur réel : refus nommé adaptateur_different, code 2, jamais classés par l'éditeur simulé", () => {
+    const repertoire = copie();
+    const { requete, journal, debut_ms } = premiereRequete(repertoire);
+    journal.inscrireDebut(1, instantParis(debut_ms), cleDe(requete));
+    journal.garderReception({
+      numero: 1,
+      statut_http: 200,
+      debut_ms,
+      reception_ms: debut_ms + 1_200,
+      octets_sha256: empreinteOctets(CORPS),
+      normalisation: { fonction: "normaliser_editeur_reel", version: "1.0.0" },
+    });
+    const chemin = journal.garderOctets(1, CORPS);
+    journal.inscrireRecueNonStockee(1, chemin, "écriture en échec");
+    const resultat = commande(`--run=${repertoire}`, `--requete=${cleDeRequete(requete)}`);
+    expect(resultat.status).toBe(2);
+    expect(resultat.stdout).toContain("adaptateur_different");
+    expect(resultat.stdout).toContain("normaliser_editeur_reel 1.0.0");
+    expect(existsSync(join(repertoire, "volume", "reponses")) ? readdirSync(join(repertoire, "volume", "reponses")) : []).toEqual([]);
   });
 
   it("requête inconnue : refus nommé RequeteInconnue, code 2, rien d'écrit", () => {
