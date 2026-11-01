@@ -5062,7 +5062,7 @@
         "analysis/seuils.ts:couplesComparables",
         "analysis/seuils.ts:etatDesCouples",
         "pipeline/interrogation/plan.ts:planifier",
-        "pipeline/go-no-go/plan-du-run.ts:requetesDuPlanDuRun",
+        "pipeline/interrogation/plan-du-run.ts:requetesDuPlanDuRun",
         "analysis/metriques.ts (etatDesCouples)",
         "analysis/conditions.ts (etatDesCouples)",
         "analysis/tendance.ts (etatDesCouples)",
@@ -7516,15 +7516,23 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/go-no-go/attente-operateur.ts:exigerAucuneAttenteOperateur",
-        "pipeline/go-no-go/go-no-go.ts"
+        "pipeline/interrogation/attente-operateur.ts:exigerAucuneAttenteOperateur",
+        "pipeline/interrogation/attente-operateur.ts:exigerAucuneAttenteDuRun",
+        "pipeline/go-no-go/go-no-go.ts",
+        "pipeline/notation/chaine.ts:ouvrir",
+        "pipeline/liens/attente.py:exiger_aucune_attente",
+        "outils/attente-operateur.ts"
       ],
       "tests": [
-        "tests/go-no-go/commande.test.ts « une requête en attente de l'opérateur (recue_non_stockee) : refus nommé qui la liste, rien n'est écrit »"
+        "tests/go-no-go/commande.test.ts « une requête en attente de l'opérateur (recue_non_stockee) : refus nommé qui la liste, rien n'est écrit »",
+        "tests/notation/attente-operateur.test.ts « 1. recue_non_stockee : refus nommé qui nomme la notation, rien n'est écrit sous le run »",
+        "tests/notation/attente-operateur.test.ts « 3. la réponse stockée par l'opérateur : la notation démarre »",
+        "tests/interrogation/attente-operateur-commande.test.ts « 6b. une réponse attend : code 2, la requête est listée sur la sortie d'erreur »",
+        "tests/liens/test_principal.py::test_reponse_en_attente_de_l_operateur_code_2_aucune_requete_aucun_fichier"
       ],
       "lot": null,
       "constat": 2,
-      "note": "Codé par #201. Rien n'empêche le test des liens ni la notation de commencer pendant l'attente (constat n° 2)."
+      "note": "Codé par #201 (go/no-go) ; le test des liens et la notation refusent aussi de commencer (constat n° 2, corrigé)."
     },
     {
       "id": "§12.22",
@@ -7533,8 +7541,8 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/go-no-go/attente-operateur.ts:exigerAucuneAttenteOperateur",
-        "pipeline/go-no-go/attente-operateur.ts:requetesEnAttenteOperateur"
+        "pipeline/interrogation/attente-operateur.ts:exigerAucuneAttenteOperateur",
+        "pipeline/interrogation/attente-operateur.ts:requetesEnAttenteOperateur"
       ],
       "tests": [
         "tests/go-no-go/commande.test.ts « une requête en attente de l'opérateur (recue_non_stockee) : refus nommé qui la liste, rien n'est écrit »"

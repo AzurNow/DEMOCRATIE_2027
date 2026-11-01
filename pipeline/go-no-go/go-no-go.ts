@@ -44,11 +44,10 @@ import {
   lireVerdicts,
   type RunLu,
 } from "../../analysis/lecture-run.ts";
-import { parModeDuRun, requetesSansReponse } from "../../analysis/seuils.ts";
+import { parModeDuRun } from "../../analysis/seuils.ts";
 import type { IdentifiantCourt, ParMode, Reponse, Ulid } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
-import { dispositionDuRepertoire } from "../interrogation/stockage.ts";
 import { tirerEchantillonHumain } from "../notation/echantillons.ts";
 import type { GraineTirage, Symetrie } from "../questions/types.ts";
 import { STATUT_INVALIDE, STATUT_PLANIFIE, type StatutRun } from "../run/types.ts";
@@ -63,7 +62,7 @@ import {
   type Checklist,
   type DemarragesDeReponse,
 } from "./checklist.ts";
-import { exigerAucuneAttenteOperateur } from "./attente-operateur.ts";
+import { exigerAucuneAttenteSurPlan } from "../interrogation/attente-operateur.ts";
 import { critereKappaJugesHumains, critereTestContrefactuel } from "./criteres-juges.ts";
 import {
   critereAnalysesExecutees,
@@ -77,7 +76,7 @@ import {
 import { deciderPublication } from "./decision.ts";
 import { cheminChecklist, ecrireParRenommage, lireJson } from "./fichiers.ts";
 import { kappasEchantillon, type KappaDeJuge } from "./kappa-echantillon.ts";
-import { requetesDuPlanDuRun } from "./plan-du-run.ts";
+import { requetesDuPlanDuRun } from "../interrogation/plan-du-run.ts";
 import type { GoNoGo } from "./types.ts";
 
 /** La part de `run.json` que lit le go/no-go, en plus de `RunLu`. */
@@ -176,7 +175,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
   // §8, §12 (protocole 0.21) : les manquantes se comptent sur le plan d'interrogation du run, et le
   // go/no-go ne se prononce pas tant qu'une requête sans réponse attend l'opérateur (§6).
   const plan = requetesDuPlanDuRun(repertoire_run, run);
-  exigerAucuneAttenteOperateur(dispositionDuRepertoire(repertoire_run).tentatives, requetesSansReponse(reponses, plan));
+  exigerAucuneAttenteSurPlan(repertoire_run, reponses, plan, "go-no-go");
   const { notations, renvois } = lireNotationsDuRun(repertoire_run, run.id);
   const verdicts = lireVerdicts(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);

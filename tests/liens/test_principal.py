@@ -16,6 +16,7 @@ import pytest
 
 from pipeline.collecte.reseau import Transport, TransportUrllib
 from pipeline.liens.__main__ import DELAI_WAYBACK_S, dependances_reelles, principal
+from pipeline.liens.attente import AttenteOperateur, GardeImpossible, exiger_aucune_attente
 from pipeline.liens.instantanes import InstantaneAbsent, InstantaneEcarte, InstantaneTrouve, Recherche
 from pipeline.liens.passage import Dependances
 from pipeline.liens.sortie import nom_resultat
@@ -82,6 +83,14 @@ def _monter(tmp_path: Path, routes: dict[str, Route], fin: str | None = None) ->
     return run, banc(routes, archiveur=ArchiveurFactice(reussite(EXISTE)), chercheur=chercheur)  # type: ignore[arg-type]
 
 
+def _aucune_attente(_repertoire: Path) -> None:
+    """Les runs de ces tests n'ont pas de journal d'interrogation : la garde réelle a ses propres tests."""
+
+
+def _principal(arguments: list[str], construire, garde=_aucune_attente) -> int:  # type: ignore[no-untyped-def]
+    return principal(arguments, construire, garde)
+
+
 def _construire(b: Banc):
     """Les dépendances du banc, avec la table que `principal` a chargée (`--table` compris)."""
 
@@ -94,7 +103,7 @@ def _construire(b: Banc):
 def test_passage_nominal_code_0_et_fichiers_dores(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     run, b = _monter(tmp_path, _routes())
 
-    code = principal([str(run)], _construire(b))
+    code = _principal([str(run)], _construire(b))
 
     assert code == 0
     sortie = capsys.readouterr().out
@@ -119,7 +128,7 @@ def test_passage_nominal_code_0_et_fichiers_dores(tmp_path: Path, capsys: pytest
 def test_fenetre_encore_ouverte_code_2_aucune_requete(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     run, b = _monter(tmp_path, _routes(), fin="2026-09-22T14:30:06+02:00")
 
-    assert principal([str(run)], _construire(b)) == 2
+    assert _principal([str(run)], _construire(b)) == 2
     assert "FenetreOuverte" in capsys.readouterr().err
     assert b.transport.urls() == []
     assert not (run / "volume" / "liens").exists()
@@ -128,7 +137,7 @@ def test_fenetre_encore_ouverte_code_2_aucune_requete(tmp_path: Path, capsys: py
 def test_fenetre_fermee_exactement_a_l_instant_du_passage(tmp_path: Path) -> None:
     """La fenêtre est semi-ouverte [debut, fin) : à `fin` exactement, elle est fermée."""
     run, b = _monter(tmp_path, _routes(), fin="2026-09-22T14:30:05+02:00")
-    assert principal([str(run)], _construire(b)) == 0
+    assert _principal([str(run)], _construire(b)) == 0
 
 
 def test_table_refusee_code_2(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -136,7 +145,7 @@ def test_table_refusee_code_2(tmp_path: Path, capsys: pytest.CaptureFixture[str]
     table = tmp_path / "table.toml"
     table.write_text('version = "table-liens-v2"\n', encoding="utf-8")
 
-    assert principal([str(run), f"--table={table}"], _construire(b)) == 2
+    assert _principal([str(run), f"--table={table}"], _construire(b)) == 2
     assert "TableIncomplete" in capsys.readouterr().err
     assert b.transport.urls() == []
 
@@ -145,7 +154,7 @@ def test_reponse_illisible_code_2_aucune_requete(tmp_path: Path, capsys: pytest.
     run, b = _monter(tmp_path, _routes())
     (run / "volume" / "reponses" / "01JD0000000000000000000009.json").write_text("{ pas du json", encoding="utf-8")
 
-    assert principal([str(run)], _construire(b)) == 2
+    assert _principal([str(run)], _construire(b)) == 2
     assert "EntreeRefusee" in capsys.readouterr().err
     assert b.transport.urls() == []
 
@@ -159,7 +168,7 @@ def test_url_sans_verdict_code_1(tmp_path: Path, capsys: pytest.CaptureFixture[s
     contenu = CHEMIN_TABLE.read_text(encoding="utf-8").replace('"1xx", "3xx", ', '"1xx", ')
     table.write_text(contenu.replace('"table-liens-v3"', '"table-liens-v99"'), encoding="utf-8")
 
-    assert principal([str(run), f"--table={table}"], _construire(b)) == 1
+    assert _principal([str(run), f"--table={table}"], _construire(b)) == 1
     assert "reponse_http (code HTTP 304) hors de la table table-liens-v99" in capsys.readouterr().out
     assert not (run / "volume" / "liens" / nom_resultat(MORT)).exists()
 
@@ -205,8 +214,68 @@ def test_d55_2_relecture_location_de_la_sonde_assemblee_par_dependances_reelles(
 
 def test_relance_apres_passage_complet_ne_teste_rien(tmp_path: Path) -> None:
     run, b = _monter(tmp_path, _routes())
-    assert principal([str(run)], _construire(b)) == 0
+    assert _principal([str(run)], _construire(b)) == 0
 
     _run, relance = _monter(tmp_path / "autre", {})
-    assert principal([str(run)], _construire(relance)) == 0
+    assert _principal([str(run)], _construire(relance)) == 0
     assert relance.transport.urls() == []
+
+
+def test_reponse_en_attente_de_l_operateur_code_2_aucune_requete_aucun_fichier(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """§6 (0.22, D57 (2)) : la garde refuse avant toute requête HTTP et avant toute écriture."""
+    run, b = _monter(tmp_path, _routes())
+    avant = sorted(p.relative_to(run).as_posix() for p in run.rglob("*"))
+
+    def garde(_repertoire: Path) -> None:
+        raise AttenteOperateur("1 requête(s) en attente de l'opérateur (§6)")
+
+    assert _principal([str(run)], _construire(b), garde) == 2
+    erreur = capsys.readouterr().err
+    assert "AttenteOperateur" in erreur
+    assert "aucune requête envoyée" in erreur
+    assert b.transport.urls() == []
+    assert b.archiveur.urls == []
+    assert b.chercheur.demandes == []  # type: ignore[attr-defined]
+    assert sorted(p.relative_to(run).as_posix() for p in run.rglob("*")) == avant
+    assert not (run / "volume" / "liens").exists()
+
+
+def test_garde_impossible_code_2_aucune_requete(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    run, b = _monter(tmp_path, _routes())
+
+    def garde(_repertoire: Path) -> None:
+        raise GardeImpossible("node introuvable")
+
+    assert _principal([str(run)], _construire(b), garde) == 2
+    assert "GardeImpossible" in capsys.readouterr().err
+    assert b.transport.urls() == []
+    assert not (run / "volume" / "liens").exists()
+
+
+def test_garde_appelee_avec_le_repertoire_du_run(tmp_path: Path) -> None:
+    run, b = _monter(tmp_path, _routes())
+    appels: list[Path] = []
+
+    assert _principal([str(run)], _construire(b), appels.append) == 0
+    assert appels == [run]
+
+
+def test_garde_reelle_node_introuvable_est_une_erreur_nommee(tmp_path: Path) -> None:
+    with pytest.raises(GardeImpossible, match="n'a pas pu être lancée"):
+        exiger_aucune_attente(tmp_path, ("commande-qui-n-existe-pas-banc",))
+
+
+def test_garde_reelle_code_2_est_une_attente_avec_le_message_de_la_commande(tmp_path: Path) -> None:
+    commande = ("python3", "-c", "import sys; sys.stderr.write('requête en attente'); sys.exit(2)", "--")
+    with pytest.raises(AttenteOperateur, match="requête en attente"):
+        exiger_aucune_attente(tmp_path, commande)
+
+
+def test_garde_reelle_autre_code_est_une_garde_impossible(tmp_path: Path) -> None:
+    commande = ("python3", "-c", "import sys; sys.stderr.write('plantage'); sys.exit(1)", "--")
+    with pytest.raises(GardeImpossible, match=r"code 1\) : plantage"):
+        exiger_aucune_attente(tmp_path, commande)
+
+
+def test_garde_reelle_code_0_laisse_passer(tmp_path: Path) -> None:
+    exiger_aucune_attente(tmp_path, ("python3", "-c", "import sys; sys.exit(0)", "--"))

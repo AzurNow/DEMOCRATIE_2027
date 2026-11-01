@@ -46,6 +46,10 @@
  * exception, la reprise d'un D16 (3) : le test contrefactuel est inscrit et ses deux juges retirés ;
  * la relance recalcule le test sans rien réécrire et s'arrête au même point.
  *
+ * **Réponse en attente de l'opérateur (§6, 0.22, D57 (2)).** Tant qu'une requête du plan attend
+ * l'opérateur, la chaîne refuse de commencer (`ReponsesEnAttenteOperateur`), avant toute écriture :
+ * la stocker après coup changerait l'échantillon humain et le sous-ensemble contrefactuel.
+ *
  * **Humains.** La chaîne n'en simule aucun. Elle lit les notations humaines déjà écrites (écran
  * `pnpm notation:humaine`) et les passe à `decider` : une relance après la saisie humaine résout les
  * attentes qui peuvent l'être.
@@ -54,6 +58,7 @@
 import { createHash } from "node:crypto";
 import { lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe, type RunLu } from "../../analysis/lecture-run.ts";
 import type { Instant, Ulid } from "../../analysis/types.ts";
+import { exigerAucuneAttenteDuRun } from "../interrogation/attente-operateur.ts";
 import type { ReponseObtenue } from "../interrogation/types.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { textesNommables } from "./candidats.ts";
@@ -219,6 +224,7 @@ export async function noterRun(reponses: readonly ReponseANoter[], env: Environn
 function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): Etat {
   const run = lireRunJson(env.repertoire_run);
   exigerNotable(run);
+  exigerAucuneAttenteDuRun(env.repertoire_run, "notation");
   verifierJuges(run, env.juges);
   const depot = DepotNotation.ouvrir(env.repertoire_run);
   const lues = lireNotationsDuRun(env.repertoire_run, run.id);

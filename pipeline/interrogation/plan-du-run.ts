@@ -15,8 +15,8 @@
 
 import { existsSync } from "node:fs";
 import { cheminDuTirage, dispositionRunNote, lireQuestions, lireTirage, type RunLu } from "../../analysis/lecture-run.ts";
-import { planifier } from "../interrogation/plan.ts";
-import type { RequetePlanifiee } from "../interrogation/types.ts";
+import { planifier } from "./plan.ts";
+import type { RequetePlanifiee } from "./types.ts";
 import type { Question } from "../questions/types.ts";
 
 /** Un fichier sans lequel le plan d'interrogation du run ne se reconstruit pas. */
