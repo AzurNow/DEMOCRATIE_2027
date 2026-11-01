@@ -37,8 +37,8 @@ export interface JugeAuBilan {
 export interface BilanNotation {
   /** `inscrit` que l'inscription ait eu lieu à cette exécution ou à une précédente : le bilan dit l'état du disque. */
   readonly statut_contrefactuel: "inscrit" | "en_attente_test_liens" | "run_invalide";
-  /** `run.json#/contrefactuel_candidats`, s'il est inscrit. */
-  readonly contrefactuel_inscrit?: { readonly etat: string; readonly eligibles: number; readonly taille: number; readonly sous_effectif: boolean };
+  /** `run.json#/contrefactuel_candidats`, s'il est inscrit : l'une des deux formes, jamais un mélange. */
+  readonly contrefactuel_inscrit?: ContrefactuelInscrit;
   readonly taux_echantillon_humain: number;
   readonly juges: readonly JugeAuBilan[];
   readonly reponses_obtenues: number;
@@ -59,11 +59,59 @@ export class ReponsePerdue extends Error {
   }
 }
 
-interface ContrefactuelLu {
+/** Test joué (terminé, ou sans réponse éligible). */
+export interface ContrefactuelInscritJoue {
+  readonly test: "joue";
   readonly etat: string;
   readonly eligibles: number;
   readonly taille: number;
   readonly sous_effectif: boolean;
+}
+
+/** §7 (0.21) : moins de deux candidats interrogés, le test n'est pas joué ; ni éligibles ni sous-effectif n'existent. */
+export interface ContrefactuelInscritFauteDInterroges {
+  readonly test: "non_joue_faute_d_interroges";
+  readonly etat: "indefini";
+  readonly motif_indefini: "moins_de_deux_interroges";
+  readonly taille_visee: number;
+  readonly taille: 0;
+}
+
+export type ContrefactuelInscrit = ContrefactuelInscritJoue | ContrefactuelInscritFauteDInterroges;
+
+/** Le bloc de `run.json` tel que le schéma le laisse passer : l'une ou l'autre forme. */
+type ContrefactuelLu = Readonly<Record<string, unknown>>;
+
+export class ContrefactuelInscritIllisible extends Error {
+  constructor(detail: string) {
+    super(`Bilan de notation : test contrefactuel inscrit illisible, ${detail}.`);
+    this.name = "ContrefactuelInscritIllisible";
+  }
+}
+
+function lireContrefactuelInscrit(bloc: ContrefactuelLu): ContrefactuelInscrit {
+  if (bloc["motif_indefini"] !== undefined) return lireFauteDInterroges(bloc);
+  const { etat, eligibles, taille, sous_effectif } = bloc;
+  if (typeof etat !== "string" || typeof eligibles !== "number" || typeof taille !== "number" || typeof sous_effectif !== "boolean") {
+    throw new ContrefactuelInscritIllisible("forme jouée sans état, éligibles, taille ou sous_effectif valides");
+  }
+  return { test: "joue", etat, eligibles, taille, sous_effectif };
+}
+
+function lireFauteDInterroges(bloc: ContrefactuelLu): ContrefactuelInscritFauteDInterroges {
+  const { etat, motif_indefini, taille_visee, taille } = bloc;
+  if (etat !== "indefini" || motif_indefini !== "moins_de_deux_interroges" || typeof taille_visee !== "number" || taille !== 0) {
+    throw new ContrefactuelInscritIllisible("forme sans interrogés suffisants incohérente avec le schéma");
+  }
+  return { test: "non_joue_faute_d_interroges", etat, motif_indefini, taille_visee, taille };
+}
+
+/** Le complément de la ligne « Test contrefactuel » imprimée : dit en clair ce qui n'a pas eu lieu. */
+export function texteContrefactuelInscrit(inscrit: ContrefactuelInscrit): string {
+  if (inscrit.test === "non_joue_faute_d_interroges") {
+    return " (non joué faute de deux candidats interrogés, §7 : indéfini, motif moins_de_deux_interroges ; le critère go/no-go du test contrefactuel sera rouge, §12)";
+  }
+  return ` (${inscrit.etat}, ${inscrit.taille} réponse(s) tirée(s) parmi ${inscrit.eligibles} éligible(s)${inscrit.sous_effectif ? ", sous-effectif" : ""})`;
 }
 
 export function bilanNotation(repertoire_run: string, resultat: ResultatChaine, reponses_obtenues: readonly Ulid[]): BilanNotation {
@@ -75,9 +123,7 @@ export function bilanNotation(repertoire_run: string, resultat: ResultatChaine, 
   const inscrit = brut.contrefactuel_candidats;
   return {
     statut_contrefactuel: resultat.contrefactuel.statut === "deja_inscrit" ? "inscrit" : resultat.contrefactuel.statut,
-    ...(inscrit === undefined
-      ? {}
-      : { contrefactuel_inscrit: { etat: inscrit.etat, eligibles: inscrit.eligibles, taille: inscrit.taille, sous_effectif: inscrit.sous_effectif } }),
+    ...(inscrit === undefined ? {} : { contrefactuel_inscrit: lireContrefactuelInscrit(inscrit) }),
     taux_echantillon_humain: run.taux_echantillon_humain,
     juges: run.juges.map((juge) => ({
       juge_id: juge.juge_id,

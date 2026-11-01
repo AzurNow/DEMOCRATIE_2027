@@ -12,7 +12,7 @@ import { cpSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dispositionRunNote, lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe } from "../../analysis/lecture-run.ts";
-import { bilanNotation, ReponsePerdue } from "../../pipeline/notation/bilan-notation.ts";
+import { bilanNotation, ReponsePerdue, type BilanNotation, texteContrefactuelInscrit } from "../../pipeline/notation/bilan-notation.ts";
 import { identifiantDerive, JugesNonConformes, noterRun, RunInvalideRefuse, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
 import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
@@ -192,7 +192,25 @@ describe("2. chaque issue de decider() qu'une notation sans humain peut atteindr
   });
 });
 
+function tailleDuTestJoue(bilan: BilanNotation): number {
+  const inscrit = bilan.contrefactuel_inscrit;
+  if (inscrit?.test !== "joue") throw new Error("test contrefactuel joué attendu");
+  return inscrit.taille;
+}
+
 describe("3. un juge simulé réglé au-delà de SEUIL_RETRAIT", () => {
+  it("bilan d'un run joué : forme jouée inchangée, éligibles et sous-effectif présents, texte avec les mêmes mentions", async () => {
+    const execution = await noter(nouvelleSortie());
+    const inscrit = execution.bilan.contrefactuel_inscrit;
+    expect(inscrit?.test).toBe("joue");
+    if (inscrit?.test !== "joue") return;
+    expect(typeof inscrit.eligibles).toBe("number");
+    expect(typeof inscrit.sous_effectif).toBe("boolean");
+    expect(texteContrefactuelInscrit(inscrit)).toBe(
+      ` (${inscrit.etat}, ${inscrit.taille} réponse(s) tirée(s) parmi ${inscrit.eligibles} éligible(s)${inscrit.sous_effectif ? ", sous-effectif" : ""})`,
+    );
+  });
+
   it("est retiré ; ses notations sont écartées et le juge restant fait foi hors de l'échantillon humain", async () => {
     const execution = await noter(nouvelleSortie(), avecBiais({ "juge-simule-b": BIAIS_BETA }));
     const { repertoire_run } = execution.prepare;
@@ -204,7 +222,7 @@ describe("3. un juge simulé réglé au-delà de SEUIL_RETRAIT", () => {
     expect(run.taux_echantillon_humain).toBe(0.25);
 
     // Le juge retiré n'est plus appelé après le test : ses notations du run sont celles du sous-ensemble.
-    const taille = execution.bilan.contrefactuel_inscrit?.taille;
+    const taille = tailleDuTestJoue(execution.bilan);
     expect(b?.notations_run).toBe(taille);
     expect(b?.notations_contrefactuel).toBe(taille);
     // D32 : le juge restant note toute réponse obtenue sauf les refus de l'API, que la règle note.
