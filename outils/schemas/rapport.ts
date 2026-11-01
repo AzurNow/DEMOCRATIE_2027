@@ -7,6 +7,11 @@ function imprimerCorpsEchec(resultat: ResultatExemple): void {
     process.stdout.write(`    fichier attendu par le manifeste, absent du disque : ${resultat.chemin}\n`);
     return;
   }
+  if (resultat.obtenu === "invalide" && resultat.regleVisee !== undefined && resultat.regleVueParmiLesErreurs === false) {
+    const { keyword, instancePath } = resultat.regleVisee;
+    const chemin = instancePath === "" ? "(racine)" : instancePath;
+    process.stdout.write(`    rejeté, mais pas pour la règle visée (« ${keyword} » à ${chemin}) ; erreurs obtenues :\n`);
+  }
   // LESSONS.md, « vérifier qu'un test échoue pour la bonne raison » : toutes les erreurs, pas la
   // première, pour voir que la règle du protocole visée est bien celle qui a été atteinte.
   for (const erreur of resultat.erreurs) process.stdout.write(`    ${formaterErreur(erreur)}\n`);

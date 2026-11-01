@@ -2,12 +2,24 @@ import { readFileSync } from "node:fs";
 
 export type Attendu = "valide" | "invalide";
 
+/**
+ * La règle qu'un exemple invalide vise : le mot-clé ajv et le chemin de l'instance (`instancePath`)
+ * de l'erreur attendue. Le chemin de schéma (`schemaPath`) est exclu à dessein : il change dès qu'un
+ * schéma est refactoré, sans que la règle change.
+ */
+export interface ErreurVisee {
+  readonly keyword: string;
+  readonly instance_path: string;
+}
+
 export interface EntreeManifeste {
   readonly objet: string;
   readonly fichier: string;
   readonly attendu: Attendu;
   readonly motif: string;
   readonly regle_protocole?: string;
+  /** Obligatoire pour un exemple invalide, interdite pour un valide (revue du 2026-10-12, constat 22). */
+  readonly erreur_visee?: ErreurVisee;
 }
 
 export interface Manifeste {
@@ -40,6 +52,34 @@ function champTexteFacultatif(brute: Record<string, unknown>, cle: string, conte
   return valeur;
 }
 
+function lireErreurVisee(brute: unknown, fichier: string): ErreurVisee {
+  const contexte = `manifeste (fichier ${fichier}) : erreur_visee`;
+  if (typeof brute !== "object" || brute === null) {
+    throw new ErreurManifeste(`${contexte} doit être un objet {keyword, instance_path}.`);
+  }
+  const objet = brute as Record<string, unknown>;
+  return { keyword: champTexte(objet, "keyword", contexte), instance_path: champTexte(objet, "instance_path", contexte) };
+}
+
+/** Un invalide déclare sa règle visée ; un valide n'en déclare pas (rien à viser). */
+function lireErreurViseeSelonAttendu(
+  brute: Record<string, unknown>,
+  attendu: Attendu,
+  fichier: string,
+): ErreurVisee | undefined {
+  const declaree = brute["erreur_visee"];
+  if (attendu === "valide") {
+    if (declaree !== undefined) {
+      throw new ErreurManifeste(`manifeste (fichier ${fichier}) : un exemple valide ne porte pas d'erreur_visee.`);
+    }
+    return undefined;
+  }
+  if (declaree === undefined) {
+    throw new ErreurManifeste(`manifeste (fichier ${fichier}) : un exemple invalide doit déclarer son erreur_visee.`);
+  }
+  return lireErreurVisee(declaree, fichier);
+}
+
 function validerEntree(brute: unknown, index: number): EntreeManifeste {
   const contexte = `manifeste.exemples[${index}]`;
   if (typeof brute !== "object" || brute === null) {
@@ -54,9 +94,15 @@ function validerEntree(brute: unknown, index: number): EntreeManifeste {
     throw new ErreurManifeste(`${contexte}.attendu doit être "valide" ou "invalide" (fichier ${fichier}).`);
   }
   const attendu = objetBrut["attendu"];
-  return reglesProtocole === undefined
-    ? { objet, fichier, attendu, motif }
-    : { objet, fichier, attendu, motif, regle_protocole: reglesProtocole };
+  const erreurVisee = lireErreurViseeSelonAttendu(objetBrut, attendu, fichier);
+  return {
+    objet,
+    fichier,
+    attendu,
+    motif,
+    ...(reglesProtocole === undefined ? {} : { regle_protocole: reglesProtocole }),
+    ...(erreurVisee === undefined ? {} : { erreur_visee: erreurVisee }),
+  };
 }
 
 export function chargerManifeste(chemin: string): Manifeste {

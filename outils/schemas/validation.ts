@@ -3,11 +3,18 @@ import type { ErrorObject } from "ajv";
 import { join } from "node:path";
 import { listerFichiersExemplesSurDisque } from "./disque.ts";
 import { copierErreurs } from "./erreurs.ts";
-import type { Attendu, EntreeManifeste, Manifeste } from "./manifeste.ts";
+import { ErreurManifeste } from "./manifeste.ts";
+import type { Attendu, EntreeManifeste, ErreurVisee, Manifeste } from "./manifeste.ts";
 import { estNomSchema, urnSchema } from "./noms.ts";
 import type { InstanceAjv } from "./registre.ts";
 
 export type Obtenu = "valide" | "invalide" | "absent";
+
+/** La règle visée d'un exemple invalide, dans les mots d'ajv (`instancePath`). */
+export interface RegleVisee {
+  readonly keyword: string;
+  readonly instancePath: string;
+}
 
 export interface ResultatExemple {
   readonly objet: string;
@@ -15,6 +22,10 @@ export interface ResultatExemple {
   readonly attendu: Attendu;
   readonly obtenu: Obtenu;
   readonly erreurs: readonly ErrorObject[];
+  /** Présente pour un exemple invalide seulement. */
+  readonly regleVisee?: RegleVisee;
+  /** Pour un exemple invalide : la règle visée figure-t-elle parmi les erreurs d'ajv ? Absent sinon. */
+  readonly regleVueParmiLesErreurs?: boolean;
   readonly reussi: boolean;
 }
 
@@ -34,6 +45,20 @@ function resultatFichierAbsent(entree: EntreeManifeste): ResultatExemple {
   };
 }
 
+function erreurViseeDe(entree: EntreeManifeste): ErreurVisee | undefined {
+  if (entree.attendu === "valide") return undefined;
+  if (entree.erreur_visee === undefined) {
+    throw new ErreurManifeste(
+      `manifeste (fichier ${entree.fichier}) : un exemple invalide doit déclarer son erreur_visee.`,
+    );
+  }
+  return entree.erreur_visee;
+}
+
+function regleVueParmi(erreurs: readonly ErrorObject[], visee: ErreurVisee): boolean {
+  return erreurs.some((erreur) => erreur.keyword === visee.keyword && erreur.instancePath === visee.instance_path);
+}
+
 function schemaDeLObjet(ajv: InstanceAjv, objet: string, fichier: string) {
   if (!estNomSchema(objet)) {
     throw new Error(`manifeste : objet "${objet}" (${fichier}) n'est pas un des schémas connus (outils/schemas/noms.ts).`);
@@ -47,6 +72,7 @@ function schemaDeLObjet(ajv: InstanceAjv, objet: string, fichier: string) {
 
 /** Une entrée du manifeste, jugée : pure une fois le registre et le disque lus (pas d'I/O ici). */
 function validerUneEntree(ajv: InstanceAjv, racineExemples: string, entree: EntreeManifeste): ResultatExemple {
+  const visee = erreurViseeDe(entree);
   const cheminAbsolu = join(racineExemples, entree.fichier);
   if (!existsSync(cheminAbsolu)) return resultatFichierAbsent(entree);
 
@@ -55,14 +81,16 @@ function validerUneEntree(ajv: InstanceAjv, racineExemples: string, entree: Entr
   const valide = validateur(donnee) === true;
   const erreurs = valide ? [] : copierErreurs(validateur.errors);
   const obtenu: Obtenu = valide ? "valide" : "invalide";
+  const base = { objet: entree.objet, chemin: entree.fichier, attendu: entree.attendu, obtenu, erreurs };
+  if (visee === undefined) return { ...base, reussi: obtenu === entree.attendu };
 
+  // Un invalide ne réussit que si c'est bien la règle visée qui le rejette (constat 22).
+  const vue = regleVueParmi(erreurs, visee);
   return {
-    objet: entree.objet,
-    chemin: entree.fichier,
-    attendu: entree.attendu,
-    obtenu,
-    erreurs,
-    reussi: obtenu === entree.attendu,
+    ...base,
+    regleVisee: { keyword: visee.keyword, instancePath: visee.instance_path },
+    regleVueParmiLesErreurs: vue,
+    reussi: obtenu === "invalide" && vue,
   };
 }
 

@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { listerFichiersExemplesSurDisque } from "../outils/schemas/disque.ts";
 import { tenterValidationIsolee } from "../outils/schemas/isole.ts";
 import type { Manifeste } from "../outils/schemas/manifeste.ts";
-import { chargerManifeste } from "../outils/schemas/manifeste.ts";
+import { chargerManifeste, ErreurManifeste } from "../outils/schemas/manifeste.ts";
 import { verifierConformiteMetaSchema } from "../outils/schemas/meta.ts";
 import { construireRegistre } from "../outils/schemas/registre.ts";
 import { validerContreManifeste } from "../outils/schemas/validation.ts";
@@ -218,7 +218,13 @@ describe("désaccords entre attendu et verdict ajv", () => {
     repertoire.ecrire("mesure/acceptee.json", mesureValideBrute());
     const { ajv } = construireRegistre(racineSchema);
     const manifeste = manifesteDe([
-      { objet: "mesure", fichier: "mesure/acceptee.json", attendu: "invalide", motif: "test" },
+      {
+        objet: "mesure",
+        fichier: "mesure/acceptee.json",
+        attendu: "invalide",
+        motif: "test",
+        erreur_visee: { keyword: "required", instance_path: "" },
+      },
     ]);
 
     const rapport = validerContreManifeste(ajv, repertoire.racine, manifeste);
@@ -240,6 +246,84 @@ describe("désaccords entre attendu et verdict ajv", () => {
     expect(erreurs.length).toBeGreaterThanOrEqual(2);
     expect(erreurs.some((erreur) => erreur.instancePath === "" && erreur.keyword === "required")).toBe(true);
     expect(erreurs.some((erreur) => erreur.instancePath === "/theme")).toBe(true);
+  });
+});
+
+describe("la règle visée d'un exemple invalide (revue du 2026-10-12, constat 22)", () => {
+  const visee = (keyword: string, instancePath: string) => ({ keyword, instance_path: instancePath });
+  const entreeInvalide = (erreurVisee: ReturnType<typeof visee>): Manifeste["exemples"] => [
+    {
+      objet: "mesure",
+      fichier: "mesure/double.json",
+      attendu: "invalide",
+      motif: "test",
+      erreur_visee: erreurVisee,
+    },
+  ];
+
+  it("9. un exemple invalide rejeté pour une autre raison que celle déclarée échoue, règle visée nommée", () => {
+    const repertoire = nouveauRepertoire();
+    repertoire.ecrire("mesure/double.json", mesureDoubleViolationBrute());
+    const { ajv } = construireRegistre(racineSchema);
+    // Deux violations réelles (required à la racine, enum sur /theme) ; la règle déclarée n'est pas l'une d'elles.
+    const manifeste = manifesteDe(entreeInvalide(visee("minItems", "/historique")));
+
+    const rapport = validerContreManifeste(ajv, repertoire.racine, manifeste);
+
+    expect(rapport.resultats[0]).toMatchObject({
+      obtenu: "invalide",
+      reussi: false,
+      regleVisee: { keyword: "minItems", instancePath: "/historique" },
+      regleVueParmiLesErreurs: false,
+    });
+  });
+
+  it("10. un exemple invalide rejeté pour la règle déclarée réussit, même avec d'autres erreurs", () => {
+    const repertoire = nouveauRepertoire();
+    repertoire.ecrire("mesure/double.json", mesureDoubleViolationBrute());
+    const { ajv } = construireRegistre(racineSchema);
+
+    for (const erreurVisee of [visee("required", ""), visee("enum", "/theme")]) {
+      const rapport = validerContreManifeste(ajv, repertoire.racine, manifesteDe(entreeInvalide(erreurVisee)));
+      expect(rapport.resultats[0]).toMatchObject({ obtenu: "invalide", reussi: true, regleVueParmiLesErreurs: true });
+    }
+  });
+
+  it("11. un exemple invalide dont la règle visée n'est pas déclarée est une erreur du manifeste", () => {
+    const repertoire = nouveauRepertoire();
+    repertoire.ecrire("mesure/double.json", mesureDoubleViolationBrute());
+    const { ajv } = construireRegistre(racineSchema);
+    const sansRegle: Manifeste = manifesteDe([
+      { objet: "mesure", fichier: "mesure/double.json", attendu: "invalide", motif: "test" },
+    ]);
+
+    expect(() => validerContreManifeste(ajv, repertoire.racine, sansRegle)).toThrow(ErreurManifeste);
+    expect(() => validerContreManifeste(ajv, repertoire.racine, sansRegle)).toThrow(/mesure\/double\.json/);
+  });
+
+  it("12. le chargeur refuse un invalide sans erreur_visee et un valide qui en porte une, en nommant le fichier", () => {
+    const repertoire = nouveauRepertoire();
+    const base = { objet: "mesure", motif: "test" };
+    repertoire.ecrire("m1.json", { description: "d", exemples: [{ ...base, fichier: "a.json", attendu: "invalide" }] });
+    repertoire.ecrire("m2.json", {
+      description: "d",
+      exemples: [{ ...base, fichier: "b.json", attendu: "valide", erreur_visee: visee("required", "") }],
+    });
+    repertoire.ecrire("m3.json", {
+      description: "d",
+      exemples: [{ ...base, fichier: "c.json", attendu: "invalide", erreur_visee: { keyword: "required" } }],
+    });
+
+    expect(() => chargerManifeste(join(repertoire.racine, "m1.json"))).toThrow(/a\.json.*erreur_visee/s);
+    expect(() => chargerManifeste(join(repertoire.racine, "m2.json"))).toThrow(/b\.json.*erreur_visee/s);
+    expect(() => chargerManifeste(join(repertoire.racine, "m3.json"))).toThrow(/c\.json.*instance_path/s);
+  });
+
+  it("13. dans le manifeste réel, chaque exemple invalide déclare sa règle visée et aucun valide n'en déclare", () => {
+    const manifeste = chargerManifeste(manifesteReel);
+    for (const entree of manifeste.exemples) {
+      expect(entree.erreur_visee !== undefined, entree.fichier).toBe(entree.attendu === "invalide");
+    }
   });
 });
 
