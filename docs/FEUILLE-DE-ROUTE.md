@@ -224,9 +224,17 @@ Aucune décision en attente.
 
 **Décision du 2026-11-01 :** Option 1 sur les trois points. Écrits en 0.23, PR à part ; code (analysis/ pour les kappas, run.schema.json minItems/maxItems 2) dans une PR suivante.
 
+### D59 — Vingt et un trous laissés par la matrice de conformité du 2026-11-01 sur des exigences à implémenter : règles de décision de H1, H2 (strate « moins de 60 jours ») et H4 ; corrélation exploratoire (§2.07) ; écart API / application (§6.18) ; intervalles de « tous les taux » (§8.18) ; seuils des recalculs de robustesse (§8.61) ; renvoi à la réextraction (§4.17) ; recherche d'une absence et nouvelle source T1 (§4.69, §4.70) ; sous-échantillon de l'application (§6.16, §6.17) ; contrefactuel d'outil (§7.27) ; écart du juge sur le produit de son éditeur (§7.28) ; notation des lectures de comparateur (§6.21) ; appels de l'interrogation (§9.14) ; nombres de réponses publiés (§5.50) ; en-tête du prompt de juge (charge v3 annoncée, v5 au code) ; rendu d'un champ absent de la charge (annexe D) ; refus et renvois dans le kappa du jeu d'or, kappa sans réponse comparable (§7) ; catégories du kappa humain-humain (§7).
+
+**Décision du 2026-11-01 :** Option 1 sur les vingt et un points. Écrits en 0.24, PR à part, empilée sur la 0.23 (#225), sauf la seconde moitié de (9) (suspension des items validés sur l'ancien texte), arrêtée sur une contradiction avec le §4 (un item publié ne change que par la contestation et le panel ; liste fermée des sept statuts) ; code dans des PR suivantes.
+
 ### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
 
 **Décision du 2026-09-20 :** Option 1 sur les six points : tronquées incluses dans les métriques primaires plus un quatrième recalcul de robustesse « hors tronquées » ; texte du dénominateur gardé et premisse_fausse interdite sur un item P dès l'engendrement ; Holm retiré de la famille des effets de condition, intervalles et qualificatif seuls publiés ; trois paires pour la famille des formulations ; exactitude globale dans la permutation ; comparateurs alignés sur les assistants.
+
+### D60 — Onze points laissés ouverts par la rédaction de la 0.24 : seconde moitié de D59 (9), cas non tranchés de H1 et H2, clés de graine non nommées, Spearman, écart API / application, empreinte de la capture masquée, compte du testeur, tourniquet, signe de la différence des modes, D31 (2) à écrire pour l'échantillon.
+
+**Décision du 2026-11-01 :** Option 1 sur tous les points (consigne durable de l'auteur : option recommandée). Texte à écrire en 0.25, PR à part, avant le code qui en dépend.
 
 ### D7 — Sept conventions du tirage que le protocole n'écrit pas, retenues au plus restrictif par le lot questions.
 
@@ -248,7 +256,7 @@ Légende : couleur par niveau de preuve — T0 gris, T1 ambre, T2 bleu, T3 vert,
 flowchart LR
   subgraph jalon_J1["J1 · 15 oct. 2026"]
     lot_perimetre_prompts["perimetre-prompts<br/>config/perimetre.yaml et prompts/ versionnés<br/>T1"]:::T1
-    lot_protocole["protocole<br/>Protocole (0.23 au 2026-11-01), à geler en v1.0<br/>T1"]:::T1
+    lot_protocole["protocole<br/>Protocole (0.24 au 2026-11-01), à geler en v1.0<br/>T1"]:::T1
   end
   subgraph jalon_J2["J2 · 31 oct. 2026"]
     lot_ci["ci<br/>Intégration continue : check et test sur chaque PR<br/>T3"]:::T3
@@ -318,7 +326,7 @@ flowchart LR
 | Lot | Titre | Jalon | Niveau | État | Agent | Taille | Temps auteur (h) | Dépend de |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | perimetre-prompts | config/perimetre.yaml et prompts/ versionnés | J1 | T1 | débloqué | auteur avec fable | S | 5 | — |
-| protocole | Protocole (0.23 au 2026-11-01), à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
+| protocole | Protocole (0.24 au 2026-11-01), à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
 | ci | Intégration continue : check et test sur chaque PR | J2 | T3 | atteint | sonnet | S | 0.25 | — |
 | collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T2 | débloqué | sonnet | L | 1 | — |
 | extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T3 | atteint | opus | L | 1 | collecte (informe), perimetre-prompts |
