@@ -27,9 +27,9 @@
  * entiers évite qu'un `0.1 × n` flottant tombe juste sous un entier.
  *
  * **Sous-ensemble contrefactuel** (D14 (2)) : 200 réponses tirées parmi celles dont la réponse ou
- * l'item nomme au moins un candidat (`candidats.ts`, `nommeUnCandidat`). Ce module ne reçoit que
- * les éligibles, déjà filtrés. S'il y en a moins de 200, toutes sont prises et le résultat le dit
- * (`sous_effectif`), jamais en silence.
+ * l'item nomme au moins un candidat interrogé (D55 (4) : `chaine.ts:estEligible`,
+ * `permutation.ts:nommeUnInterroge`). Ce module ne reçoit que les éligibles, déjà filtrés. S'il y
+ * en a moins de 200, toutes sont prises et le résultat le dit (`sous_effectif`), jamais en silence.
  *
  * **Jeu d'or** (§7, calibration ; D18 de l'auteur du 2026-10-06, texte proposé pour la 0.16) : 300
  * réponses tirées parmi les réponses obtenues du run pilote, avec la graine dérivée de

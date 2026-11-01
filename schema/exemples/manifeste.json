@@ -2690,6 +2690,27 @@
       }
     },
     {
+      "objet": "run",
+      "fichier": "run/valide-11-contrefactuel-moins-de-deux-interroges.json",
+      "attendu": "valide",
+      "motif": "Run publié qui n'interroge qu'un candidat (cand-a ; cand-b n'est plus interrogé, cand-d reste retiré) : le test contrefactuel n'est pas joué, le bloc ne porte que etat indefini, motif_indefini moins_de_deux_interroges, la taille visée et une taille nulle, sans éligibles, sous-ensemble ni dérangement ; aucun juge ne publie de taux, ni 0 %, ni d'effectifs, et le critère test_contrefactuel est rouge (§12 : un test indéfini ne satisfait pas son critère). Copie de valide-05, dont ne changent que cand-b.interroge, la table alias_candidats (C1 → cand-a, valeur d'exemple non recalculée de la graine) et le bloc contrefactuel_candidats.",
+      "regle_protocole": "§7 (protocole 0.21), test contrefactuel : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini » ; §12"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-55-moins-de-deux-interroges-avec-deux-interroges.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-11 dont cand-b est de nouveau interrogé : le motif moins_de_deux_interroges est publié alors que deux candidats sont interrogés au périmètre. Le schéma recoupe le motif avec perimetre.candidats[].interroge.",
+      "regle_protocole": "§7 (protocole 0.21), test contrefactuel : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini » ; §12"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-56-moins-de-deux-interroges-avec-derangement.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-11 dont le bloc publie aussi des correspondances : un test non joué faute de deux candidats interrogés n'a pas de dérangement.",
+      "regle_protocole": "§7 (protocole 0.21), test contrefactuel : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini » ; §12"
+    },
+    {
       "objet": "notation",
       "fichier": "notation/valide-10-humain-refus-sans-extrait.json",
       "attendu": "valide",

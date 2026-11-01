@@ -8,12 +8,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { ulid } from "../analysis/fabriques.ts";
-import type { ResultatContrefactuel, ResultatJuge } from "../../pipeline/notation/contrefactuel.ts";
+import type { ContrefactuelFauteDInterroges, ResultatContrefactuel, ResultatJuge } from "../../pipeline/notation/contrefactuel.ts";
 import type { Derangement } from "../../pipeline/notation/derangement.ts";
 import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, type SousEnsembleContrefactuel } from "../../pipeline/notation/echantillons.ts";
 import {
   ContrefactuelNonPubliable,
   publierContrefactuel,
+  publierFauteDInterroges,
   type PublicationContrefactuel,
 } from "../../pipeline/notation/publication-contrefactuel.ts";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -250,5 +251,50 @@ describe("12. ResultatContrefactuel → champs du run", () => {
       taux_echantillon_humain: 0.1,
     };
     expect(() => publierContrefactuel(resultat, sousEnsemble(3), CYCLE, runDeNotation())).toThrow(ContrefactuelNonPubliable);
+  });
+});
+
+const FAUTE_D_INTERROGES: ContrefactuelFauteDInterroges = { statut: "indefini", motif: "moins_de_deux_interroges", taux_echantillon_humain: 0.1 };
+
+/** L'exemple de run réduit à un seul candidat interrogé (cand-a) : cand-b n'est plus interrogé. */
+function unSeulInterroge(run: RunBrut): RunBrut {
+  const perimetre = run["perimetre"] as { candidats: Record<string, unknown>[] };
+  return {
+    ...run,
+    perimetre: { ...perimetre, candidats: perimetre.candidats.map((c) => (c["candidat_id"] === "cand-b" ? { ...c, interroge: false } : c)) },
+    alias_candidats: { C1: "cand-a" },
+  };
+}
+
+describe("§7 (0.21) : test contrefactuel indéfini sous deux candidats interrogés", () => {
+  it("moins_de_deux_interroges : bloc indéfini avec son motif, ni tirage ni dérangement publiés, aucun taux de juge, 10 %", () => {
+    const publication = publierFauteDInterroges(FAUTE_D_INTERROGES, runDeNotation());
+    expect(publication.contrefactuel_candidats).toEqual({ etat: "indefini", motif_indefini: "moins_de_deux_interroges", taille_visee: 200, taille: 0 });
+    expect(publication.juges).toEqual([
+      { juge_id: "j1", retire: false },
+      { juge_id: "j2", retire: false },
+    ]);
+    expect(publication.taux_echantillon_humain).toBe(0.1);
+    expect("invalidation" in publication).toBe(false);
+    expect(() => valider("run", fusionner(publication, unSeulInterroge), "run fusionné, un seul interrogé")).not.toThrow();
+  });
+
+  it("moins_de_deux_interroges publié sur un run qui interroge deux candidats : refusé par le schéma", () => {
+    expect(() => valider("run", fusionner(publierFauteDInterroges(FAUTE_D_INTERROGES, runDeNotation())), "run fusionné, deux interrogés")).toThrow(/\/perimetre\/candidats : must contain at least 0 and no more than 1 valid item/);
+  });
+
+  it("non-régression : toutes_paires_ecartees reste un motif de juge, sous un test terminé", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "termine",
+      sous_effectif: false,
+      mentions_residuelles: 0,
+      juges: [resultatJuge("j1", 2, false), { juge_id: "j2", motif_indefini_contrefactuel: "toutes_paires_ecartees", paires_ecartees_contrefactuel: 200, retire: false }],
+      taux_echantillon_humain: 0.1,
+    };
+    const publication = publierContrefactuel(resultat, sousEnsemble(200), CYCLE, runDeNotation());
+    expect(publication.contrefactuel_candidats.etat).toBe("termine");
+    expect("motif_indefini" in publication.contrefactuel_candidats).toBe(false);
+    expect(publication.juges[1]).toEqual({ juge_id: "j2", retire: false, paires_ecartees_contrefactuel: 200, motif_indefini_contrefactuel: "toutes_paires_ecartees" });
+    expect(() => valider("run", fusionner(publication), "run fusionné")).not.toThrow();
   });
 });

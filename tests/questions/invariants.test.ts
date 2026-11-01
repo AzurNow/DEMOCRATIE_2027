@@ -382,8 +382,9 @@ describe("exemples de schema/exemples/", () => {
   // 312 → 316 : décision D53 (1) (rattachement d'un item à une autre mesure), un valide et trois invalides de rattachement-item.
   // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
   // 324 → 325 : relecture de D55 (3), réannotation exigée dans les deux sens, un invalide de lot (ordinaire portant reannote).
-  it("charge les 325 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(325);
+  // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
+  it("charge les 328 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(328);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

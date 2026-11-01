@@ -966,14 +966,44 @@
       "additionalProperties": false,
       "required": [
         "etat",
-        "eligibles",
         "taille_visee",
-        "taille",
-        "sous_effectif",
-        "correspondances",
-        "cle_graine",
-        "cle_graine_derangement",
-        "mentions_residuelles"
+        "taille"
+      ],
+      "allOf": [
+        {
+          "$comment": "§7 (protocole 0.21) : sous deux candidats interrogés, le test n'est pas joué : ni éligibilité, ni sous-ensemble, ni dérangement ; le bloc ne porte que son état indéfini, son motif, la taille visée et une taille nulle. Un test joué porte tout le reste.",
+          "if": {
+            "required": [
+              "motif_indefini"
+            ]
+          },
+          "then": {
+            "properties": {
+              "etat": {
+                "const": "indefini"
+              },
+              "taille": {
+                "const": 0
+              },
+              "eligibles": false,
+              "sous_effectif": false,
+              "correspondances": false,
+              "cle_graine": false,
+              "cle_graine_derangement": false,
+              "mentions_residuelles": false
+            }
+          },
+          "else": {
+            "required": [
+              "eligibles",
+              "sous_effectif",
+              "correspondances",
+              "cle_graine",
+              "cle_graine_derangement",
+              "mentions_residuelles"
+            ]
+          }
+        }
       ],
       "description": "§7 : le test contrefactuel des noms de candidats, publié avec le run (« Le taux de changement est publié »). Décisions D14 et D16 de l'auteur (textes proposés pour la 0.16). Rempli par pipeline/notation/publication-contrefactuel.ts à partir du résultat de pipeline/notation/contrefactuel.ts ; un test en attente (paire incomplète) ne se publie pas. Le taux de chaque juge vit dans juges[].taux_changement_contrefactuel, avec ses effectifs exacts dans juges[].changements_contrefactuel. Le retrait des deux juges (D16 (3)) ne crée aucun champ : le run est invalide, avec la raison dans invalidation.motif.",
       "properties": {
@@ -983,7 +1013,11 @@
             "termine",
             "indefini"
           ],
-          "description": "termine : chaque paire a ses deux notations par juge, le taux de chaque juge est calculé. indefini : aucune réponse éligible (aucune ne nomme un candidat), le sous-ensemble est vide et aucun taux n'existe, jamais 0 %."
+          "description": "termine : chaque paire a ses deux notations par juge, le taux de chaque juge est calculé. indefini : aucune réponse éligible (aucune ne nomme un candidat), le sous-ensemble est vide et aucun taux n'existe, jamais 0 % ; ou, avec motif_indefini, moins de deux candidats interrogés (§7, protocole 0.21)."
+        },
+        "motif_indefini": {
+          "const": "moins_de_deux_interroges",
+          "description": "§7 (protocole 0.21) : « Un dérangement exige au moins deux candidats interrogés : sous ce nombre, le test contrefactuel est indéfini. » Le test n'est pas joué (pipeline/notation/chaine.ts, publication-contrefactuel.ts:publierFauteDInterroges) : aucun taux de juge, jamais 0 %, et le critère test_contrefactuel du go/no-go est rouge (§12 : « Un test contrefactuel indéfini ne satisfait pas son critère », effectifs absents). Absent quand le test est joué, y compris indéfini faute de réponse éligible. Recoupé avec le nombre de perimetre.candidats[].interroge (allOf du run)."
         },
         "eligibles": {
           "type": "integer",
@@ -1940,6 +1974,43 @@
         "required": [
           "contrefactuel_candidats"
         ]
+      }
+    },
+    {
+      "$comment": "§7 (protocole 0.21) : le motif moins_de_deux_interroges se recoupe avec le périmètre. Avec lui, au plus un candidat interrogé.",
+      "if": {
+        "properties": {
+          "contrefactuel_candidats": {
+            "required": [
+              "motif_indefini"
+            ]
+          }
+        },
+        "required": [
+          "contrefactuel_candidats"
+        ]
+      },
+      "then": {
+        "properties": {
+          "perimetre": {
+            "properties": {
+              "candidats": {
+                "contains": {
+                  "properties": {
+                    "interroge": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "interroge"
+                  ]
+                },
+                "minContains": 0,
+                "maxContains": 1
+              }
+            }
+          }
+        }
       }
     },
     {

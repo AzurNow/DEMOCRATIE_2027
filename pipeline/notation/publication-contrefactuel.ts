@@ -22,18 +22,24 @@
  * (`CLE_DERANGEMENT_CANDIDATS`), publié aussi en clair (`correspondances`, D55 (4) : les seuls
  * candidats interrogés au run, un candidat non interrogé n'y figure pas).
  *
+ * **Sous deux candidats interrogés** (§7, protocole 0.21) : `publierFauteDInterroges`. Ni
+ * sous-ensemble ni dérangement n'est tiré : le bloc ne porte que `etat: "indefini"`, le motif
+ * `moins_de_deux_interroges`, la taille visée et une taille nulle ; aucun juge ne publie de taux, ni
+ * 0 %, ni d'effectifs, ni de paires écartées. Le schéma recoupe le motif avec le nombre de candidats
+ * interrogés au périmètre.
+ *
  * Un run invalide garde un taux d'échantillon humain stocké, que le schéma exige : 25 %, celui
  * qu'impose un retrait (§7), et celui que le contrôle croisé attend dès qu'un juge est retiré.
  */
 
-import type { ResultatContrefactuel, ResultatJuge } from "./contrefactuel.ts";
+import type { ContrefactuelFauteDInterroges, ResultatContrefactuel, ResultatJuge } from "./contrefactuel.ts";
 import { CLE_DERANGEMENT_CANDIDATS, correspondancesDe, type Derangement } from "./derangement.ts";
-import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, comparerChaines, type SousEnsembleContrefactuel } from "./echantillons.ts";
+import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, comparerChaines, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL, type SousEnsembleContrefactuel } from "./echantillons.ts";
 import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { ChangementsContrefactuel, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
 
-/** `run.schema.json#/properties/contrefactuel_candidats`. */
-export interface BlocContrefactuelCandidats {
+/** `run.schema.json#/properties/contrefactuel_candidats`, test joué (terminé, ou sans réponse éligible). */
+export interface BlocContrefactuelJoue {
   readonly etat: "termine" | "indefini";
   readonly eligibles: number;
   readonly taille_visee: number;
@@ -44,6 +50,16 @@ export interface BlocContrefactuelCandidats {
   readonly cle_graine_derangement: readonly string[];
   readonly mentions_residuelles: number;
 }
+
+/** `run.schema.json#/properties/contrefactuel_candidats`, test non joué sous deux candidats interrogés (§7, 0.21). */
+export interface BlocContrefactuelFauteDInterroges {
+  readonly etat: "indefini";
+  readonly motif_indefini: ContrefactuelFauteDInterroges["motif"];
+  readonly taille_visee: number;
+  readonly taille: 0;
+}
+
+export type BlocContrefactuelCandidats = BlocContrefactuelJoue | BlocContrefactuelFauteDInterroges;
 
 /** Les champs d'un juge du run que le test fixe ; les autres (famille, modèle, kappa) ne changent pas. */
 export interface JugePublie {
@@ -97,12 +113,24 @@ export function publierContrefactuel(
   }
 }
 
+/**
+ * §7 (protocole 0.21) : le test indéfini faute de deux candidats interrogés. Il ne lit du run que
+ * ses juges : aucun n'est retiré, aucun ne publie de taux ; l'échantillon humain reste à 10 %.
+ */
+export function publierFauteDInterroges(indefini: ContrefactuelFauteDInterroges, run: RunDeNotation): PublicationContrefactuel {
+  return {
+    contrefactuel_candidats: { etat: indefini.statut, motif_indefini: indefini.motif, taille_visee: TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL, taille: 0 },
+    juges: run.juges.map((juge) => ({ juge_id: juge.juge_id, retire: false })),
+    taux_echantillon_humain: indefini.taux_echantillon_humain,
+  };
+}
+
 interface Commun {
   readonly sous_effectif: boolean;
   readonly mentions_residuelles: number;
 }
 
-function bloc(etat: BlocContrefactuelCandidats["etat"], commun: Commun, sous_ensemble: SousEnsembleContrefactuel, derangement: Derangement): BlocContrefactuelCandidats {
+function bloc(etat: BlocContrefactuelJoue["etat"], commun: Commun, sous_ensemble: SousEnsembleContrefactuel, derangement: Derangement): BlocContrefactuelJoue {
   return {
     etat,
     eligibles: sous_ensemble.eligibles,
