@@ -6,7 +6,15 @@
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { JournalIllisible, JournalRequete, MESSAGE_INTERROMPUE, nomJournal, nomOctets, OctetsDejaGardes } from "../../pipeline/interrogation/journal.ts";
+import {
+  JournalIllisible,
+  JournalRequete,
+  MESSAGE_INTERROMPUE,
+  MESSAGE_OCTETS_SANS_SUITE,
+  nomJournal,
+  nomOctets,
+  OctetsDejaGardes,
+} from "../../pipeline/interrogation/journal.ts";
 import { cleDe } from "../../pipeline/interrogation/types.ts";
 import { banc, plan, requete, scenarioScripte, seule, transportDe, type Banc } from "./aides.ts";
 
@@ -185,5 +193,133 @@ describe("D55 (5) : écriture atomique des octets gardés (garderOctets)", () =>
     expect(() => journal.garderOctets(1, new Uint8Array([9, 9, 9]))).toThrow(OctetsDejaGardes);
     expect(Array.from(readFileSync(join(b.tentatives, nomOctets(cleDe(requete()), 1))))).toEqual(Array.from(octets));
     expect(readdirSync(b.tentatives).filter((f) => f.endsWith(".tmp"))).toEqual([]);
+  });
+});
+
+/**
+ * §6 (0.19) : une réponse reçue et gardée n'est jamais renvoyée. Un arrêt brutal entre la garde des
+ * octets et la suite (réponse écrite ou événement du journal) laisse un `debut` sans suite dont les
+ * octets existent : c'est une réponse reçue, pas une tentative interrompue.
+ */
+describe("§6 : arrêt après la garde des octets, avant leur stockage", () => {
+  const HORODATAGE = "2026-12-01T06:00:00.000+01:00";
+
+  type LigneLue = { readonly evenement: string; readonly numero: number };
+
+  function lignesJournal(b: Banc): readonly LigneLue[] {
+    return readFileSync(join(b.tentatives, nomJournal(cleDe(requete()))), "utf8")
+      .trimEnd()
+      .split("\n")
+      .map((l) => JSON.parse(l) as LigneLue);
+  }
+
+  /** L'état laissé par l'arrêt : `debut` de la tentative `numero` inscrit, octets gardés, rien d'autre. */
+  function arretApresGarde(b: Banc, numero: number, octets: Uint8Array): void {
+    const journal = journalDe(b);
+    for (let passee = 1; passee < numero; passee += 1) {
+      journal.inscrireDebut(passee, HORODATAGE, cleDe(requete()));
+      journal.inscrireEchec(passee, { type: "http", message: "HTTP 503", code_http: 503 });
+    }
+    journal.inscrireDebut(numero, HORODATAGE, cleDe(requete()));
+    journal.garderOctets(numero, octets);
+  }
+
+  it("relance : aucune requête renvoyée, aucune réponse écrite, la requête attend l'opérateur avec ses octets", async () => {
+    const b = nouveauBanc();
+    const octets = new TextEncoder().encode('{"content":[{"type":"text","text":"Reçue avant l\'arrêt."}]}');
+    arretApresGarde(b, 1, octets);
+    b.editeur("outil-alpha", scenarioScripte(["reponse"]));
+    const bilan = await b.executer(plan(requete()));
+    expect(transportDe(b).interne.recues).toHaveLength(0);
+    expect(b.lues()).toHaveLength(0);
+    expect(bilan.ecrites).toBe(0);
+    expect(bilan.en_attente_operateur).toHaveLength(1);
+    const [attente] = bilan.en_attente_operateur;
+    expect(attente?.genre).toBe("en_attente_operateur");
+    expect(attente?.numero).toBe(1);
+    expect(attente?.cause).toBe(MESSAGE_OCTETS_SANS_SUITE);
+    expect(attente?.chemin_octets).toBe(join(b.tentatives, nomOctets(cleDe(requete()), 1)));
+    expect(Array.from(readFileSync(attente?.chemin_octets as string))).toEqual(Array.from(octets));
+  });
+
+  it("la relance conclut la ligne par recue_non_stockee : les octets ne restent pas orphelins du journal", async () => {
+    const b = nouveauBanc();
+    arretApresGarde(b, 1, new Uint8Array([1, 2, 3]));
+    b.editeur("outil-alpha", scenarioScripte([]));
+    await b.executer(plan(requete()));
+    expect(lignesJournal(b)).toEqual([
+      { evenement: "debut", numero: 1, horodatage: HORODATAGE, requete: cleDe(requete()) },
+      { evenement: "recue_non_stockee", numero: 1, chemin_octets: nomOctets(cleDe(requete()), 1), cause: MESSAGE_OCTETS_SANS_SUITE },
+    ]);
+  });
+
+  it("compteur de tentatives inchangé : après deux échecs, la 3e reçue et gardée n'est ni comptée ni suivie d'une manquante", async () => {
+    const b = nouveauBanc();
+    arretApresGarde(b, 3, new Uint8Array([7, 7, 7]));
+    b.editeur("outil-alpha", scenarioScripte(["reponse"]));
+    const bilan = await b.executer(plan(requete()));
+    expect(transportDe(b).interne.recues).toHaveLength(0);
+    expect(b.lues()).toHaveLength(0);
+    expect(bilan.en_attente_operateur.map((a) => a.numero)).toEqual([3]);
+    expect(lignesJournal(b).map((l) => [l.evenement, l.numero])).toEqual([
+      ["debut", 1],
+      ["echec", 1],
+      ["debut", 2],
+      ["echec", 2],
+      ["debut", 3],
+      ["recue_non_stockee", 3],
+    ]);
+  });
+
+  it("deuxième relance : idempotente, rien n'est envoyé ni ajouté au journal, même attente", async () => {
+    const b = nouveauBanc();
+    arretApresGarde(b, 1, new Uint8Array([1, 2, 3]));
+    b.editeur("outil-alpha", scenarioScripte([]));
+    const premier = await b.executer(plan(requete()));
+    const journalApresPremiere = readFileSync(join(b.tentatives, nomJournal(cleDe(requete()))), "utf8");
+
+    const relance = nouveauBanc(b.racine);
+    relance.editeur("outil-alpha", scenarioScripte(["reponse"]));
+    const second = await relance.executer(plan(requete()));
+    expect(second).toEqual(premier);
+    expect(transportDe(relance).interne.recues).toHaveLength(0);
+    expect(relance.lues()).toHaveLength(0);
+    expect(readFileSync(join(relance.tentatives, nomJournal(cleDe(requete()))), "utf8")).toBe(journalApresPremiere);
+  });
+
+  it.each([
+    ["vides", new Uint8Array([])],
+    ["tronqués", new TextEncoder().encode('{"content":[{"type":"te')],
+  ])("octets gardés %s : ce sont les octets reçus, gardés tels quels, jamais réparés ni renvoyés", async (_cas, octets) => {
+    const b = nouveauBanc();
+    arretApresGarde(b, 1, octets);
+    b.editeur("outil-alpha", scenarioScripte(["reponse"]));
+    const bilan = await b.executer(plan(requete()));
+    expect(transportDe(b).interne.recues).toHaveLength(0);
+    expect(b.lues()).toHaveLength(0);
+    expect(bilan.en_attente_operateur).toHaveLength(1);
+    expect(Array.from(readFileSync(bilan.en_attente_operateur[0]?.chemin_octets as string))).toEqual(Array.from(octets));
+  });
+
+  it("non-régression : arrêt avant la garde des octets, la tentative reste interrompue et la requête est renvoyée", async () => {
+    const b = nouveauBanc();
+    journalDe(b).inscrireDebut(1, HORODATAGE, cleDe(requete()));
+    b.editeur("outil-alpha", scenarioScripte(["reponse"]));
+    const bilan = await b.executer(plan(requete()));
+    expect(bilan.en_attente_operateur).toEqual([]);
+    expect(transportDe(b).interne.recues).toHaveLength(1);
+    expect(seule(b.lues()).tentatives).toEqual([{ numero: 1, horodatage: HORODATAGE, erreur: { type: "autre", message: MESSAGE_INTERROMPUE } }]);
+  });
+
+  it("des octets gardés d'une tentative close (échec journalisé) ne changent rien : seule la tentative ouverte compte", async () => {
+    const b = nouveauBanc();
+    const journal = journalDe(b);
+    journal.inscrireDebut(1, HORODATAGE, cleDe(requete()));
+    journal.garderOctets(1, new TextEncoder().encode("Service indisponible"));
+    journal.inscrireEchec(1, { type: "http", message: "HTTP 503", code_http: 503 });
+    b.editeur("outil-alpha", scenarioScripte(["reponse"]));
+    await b.executer(plan(requete()));
+    expect(transportDe(b).interne.recues).toHaveLength(1);
+    expect(seule(b.lues()).statut_reponse).toBe("obtenue");
   });
 });

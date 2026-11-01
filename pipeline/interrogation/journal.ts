@@ -3,7 +3,7 @@
  *
  * Avant chaque envoi, la tentative est inscrite (`debut`) et le fichier est synchronisé sur disque ;
  * après un échec, l'erreur est inscrite (`echec`). Une relance relit le journal : chaque `debut`
- * sans `echec` ni `recue_non_stockee` est une tentative interrompue (le processus s'est arrêté
+ * sans `echec` ni `recue_non_stockee`, et sans octets gardés, est une tentative interrompue (le processus s'est arrêté
  * pendant qu'elle était en vol) et compte comme échouée, de type « autre ». Le plafond de trois
  * tentatives du §6 tient donc même après un arrêt brutal : une requête n'est jamais envoyée une
  * quatrième fois.
@@ -25,6 +25,13 @@
  * remonte seule : la relance lira alors un `debut` sans suite comme une tentative interrompue
  * ordinaire — limite connue, non résolue ici (§6, D55 (5), décision du 2026-10-20).
  *
+ * Un arrêt brutal après la garde des octets mais avant la suite (réponse écrite, `echec` ou
+ * `recue_non_stockee`) laisse un `debut` sans suite dont les octets existent : la réponse a été
+ * reçue. `reprise()` le rend comme `octets_sans_suite`, jamais comme une tentative interrompue :
+ * la requête n'est pas renvoyée et le compteur de tentatives ne bouge pas (§6, 0.19). L'exécution
+ * conclut alors la ligne par `recue_non_stockee` (`executer.ts`), sans relire les octets : le
+ * journal ne garde ni le statut HTTP ni l'instant de réception, qu'une réponse stockée exigerait.
+ *
  * Le journal ne consigne pas les réussites stockées : une requête aboutie a sa réponse écrite
  * (`stockage.ts`), et c'est elle qui fait sauter la requête à la relance.
  *
@@ -44,6 +51,11 @@ import type { CleRequete, ErreurTentative, Tentative } from "./types.ts";
 
 export const MESSAGE_INTERROMPUE =
   "Tentative interrompue : inscrite au journal avant l'envoi, sans résultat journalisé ; comptée comme échouée à la reprise.";
+
+/** Cause inscrite à la reprise d'une tentative dont les octets sont gardés mais la ligne non conclue (§6, 0.19). */
+export const MESSAGE_OCTETS_SANS_SUITE =
+  "Arrêt après la garde des octets reçus, avant leur stockage : réponse reçue, ni renvoyée ni comptée comme " +
+  "tentative ; son statut HTTP et son instant de réception n'ont pas été journalisés, elle attend l'opérateur (§6).";
 
 type LigneDebut = { readonly evenement: "debut"; readonly numero: number; readonly horodatage: string; readonly requete: CleRequete };
 type LigneEchec = { readonly evenement: "echec"; readonly numero: number; readonly erreur: ErreurTentative };
@@ -233,10 +245,14 @@ function lignesDe(chemin: string): readonly string[] {
   return contenu.split("\n").slice(0, -1);
 }
 
-/** Ce que la relecture du journal d'une requête rend : ses tentatives, ou une requête en attente. */
+/**
+ * Ce que la relecture du journal d'une requête rend : ses tentatives, une requête en attente, ou
+ * une réponse reçue et gardée dont la ligne n'a pas été conclue (arrêt après `garderOctets`).
+ */
 export type Reprise =
   | { readonly genre: "tentatives"; readonly tentatives: readonly Tentative[] }
-  | { readonly genre: "recue_non_stockee"; readonly numero: number; readonly chemin_octets: string | null; readonly cause: string };
+  | { readonly genre: "recue_non_stockee"; readonly numero: number; readonly chemin_octets: string | null; readonly cause: string }
+  | { readonly genre: "octets_sans_suite"; readonly numero: number; readonly chemin_octets: string };
 
 /* ------------------------------------------------------------------ journal */
 
@@ -257,7 +273,9 @@ export class JournalRequete {
   /**
    * Ce que la requête porte avant de reprendre : ses tentatives (interrompues comprises), ou,
    * si le journal porte un événement `recue_non_stockee`, la requête en attente de l'opérateur —
-   * jamais retentée (§6, D55 (5)). Vide si aucun journal.
+   * jamais retentée (§6, D55 (5)). Une dernière tentative ouverte dont les octets sont gardés est
+   * une réponse reçue, non une tentative interrompue : `octets_sans_suite`, jamais renvoyée ni
+   * comptée (§6, 0.19). Vide si aucun journal. Lecture seule : rien n'est inscrit ici.
    */
   reprise(): Reprise {
     if (!existsSync(this.chemin)) return { genre: "tentatives", tentatives: [] };
@@ -274,8 +292,19 @@ export class JournalRequete {
       const { numero, chemin_octets, cause } = lecture.recueNonStockee;
       return { genre: "recue_non_stockee", numero, chemin_octets, cause };
     }
-    const tentatives = lecture.enCours === null ? lecture.tentatives : [...lecture.tentatives, interrompue(lecture.enCours)];
-    return { genre: "tentatives", tentatives };
+    if (lecture.enCours === null) return { genre: "tentatives", tentatives: lecture.tentatives };
+    return this.repriseDeLaTentativeOuverte(lecture.tentatives, lecture.enCours);
+  }
+
+  /**
+   * La dernière tentative a un `debut` sans suite. Ses octets gardés existent : la réponse a été
+   * reçue avant l'arrêt — leur contenu n'est pas lu (vide ou tronqué, ce sont les octets reçus).
+   * Sinon, l'arrêt a eu lieu avant toute réception : tentative interrompue, comptée comme échouée.
+   */
+  private repriseDeLaTentativeOuverte(closes: readonly Tentative[], ouverte: LigneDebut): Reprise {
+    const nom = nomOctets(this.cleOriginale, ouverte.numero);
+    if (existsSync(join(this.repertoire, nom))) return { genre: "octets_sans_suite", numero: ouverte.numero, chemin_octets: nom };
+    return { genre: "tentatives", tentatives: [...closes, interrompue(ouverte)] };
   }
 
   inscrireDebut(numero: number, horodatage: string, requete: CleRequete): void {

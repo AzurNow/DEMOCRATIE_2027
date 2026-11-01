@@ -17,7 +17,10 @@
  * continuent normalement. Si `garderOctets` échoue lui-même (collision, erreur disque), la réponse
  * est pourtant bien reçue : `garderOctetsOuSignaler` tente d'inscrire `recue_non_stockee` sans
  * octets (`chemin_octets: null`) avant de relever l'erreur d'origine, pour que la file s'arrête
- * bruyamment comme avant — mais sans jamais renvoyer cette requête à la relance.
+ * bruyamment comme avant — mais sans jamais renvoyer cette requête à la relance. Un arrêt brutal
+ * après la garde des octets, avant toute suite au journal, n'est pas non plus une tentative
+ * interrompue : la relance conclut la ligne par `recue_non_stockee` sans rien renvoyer
+ * (`conclureOctetsSansSuite`, §6, 0.19).
  *
  * Une erreur qui n'est pas un échec de tentative ni une réponse reçue non stockée (par exemple une
  * incohérence de programme pendant l'envoi lui-même) arrête la file de son outil ; les autres
@@ -33,7 +36,7 @@ import { entetesEnregistrables, type Adaptateur, type Contenu, type Editeur, typ
 import { tentativePeutDemarrer, type Fenetre } from "./fenetre.ts";
 import { instantParis } from "./heure-paris.ts";
 import type { Horloge } from "./horloge.ts";
-import { JournalRequete } from "./journal.ts";
+import { JournalRequete, MESSAGE_OCTETS_SANS_SUITE, type Reprise } from "./journal.ts";
 import type { PlanInterrogation } from "./plan.ts";
 import type { DepotReponses } from "./stockage.ts";
 import { conclure, envoyerSousDelai } from "./tentatives.ts";
@@ -316,7 +319,8 @@ function enAttente(
   info: Pick<EnAttenteOperateur, "numero" | "cause"> & { readonly chemin_octets: string | null },
 ): EnAttenteOperateur {
   const chemin_octets = info.chemin_octets === null ? null : join(repertoire_tentatives, info.chemin_octets);
-  return { genre: "en_attente_operateur", requete: cleDe(requete), ...info, chemin_octets };
+  // Champs nommés un à un : étaler `info` y recopierait le `genre` de l'appelant (« recue_non_stockee »).
+  return { genre: "en_attente_operateur", requete: cleDe(requete), numero: info.numero, chemin_octets, cause: info.cause };
 }
 
 /**
@@ -336,11 +340,27 @@ function ecrireObtenue(course: Course, fin: Extract<Aboutissement, { genre: "obt
   }
 }
 
+/**
+ * Une réponse reçue et gardée avant un arrêt brutal, sans suite au journal (§6, 0.19) : la ligne est
+ * conclue par `recue_non_stockee`, comme au chemin normal, et la requête attend l'opérateur. La
+ * relance suivante relit cet événement : rien n'est renvoyé ni réinscrit.
+ */
+function conclureOctetsSansSuite(
+  requete: RequetePlanifiee,
+  journal: JournalRequete,
+  repertoire_tentatives: string,
+  reprise: Extract<Reprise, { genre: "octets_sans_suite" }>,
+): EnAttenteOperateur {
+  journal.inscrireRecueNonStockee(reprise.numero, reprise.chemin_octets, MESSAGE_OCTETS_SANS_SUITE);
+  return enAttente(requete, repertoire_tentatives, { numero: reprise.numero, chemin_octets: reprise.chemin_octets, cause: MESSAGE_OCTETS_SANS_SUITE });
+}
+
 async function executerRequete(requete: RequetePlanifiee, editeur: Editeur, contexte: ContexteRun): Promise<IssueRequete> {
   if (contexte.depot.contient(requete)) return "deja_ecrite";
   const journal = new JournalRequete(contexte.repertoire_tentatives, cleDe(requete));
   const reprise = journal.reprise();
   if (reprise.genre === "recue_non_stockee") return enAttente(requete, contexte.repertoire_tentatives, reprise);
+  if (reprise.genre === "octets_sans_suite") return conclureOctetsSansSuite(requete, journal, contexte.repertoire_tentatives, reprise);
   const http = editeur.adaptateur.construireRequete({
     texte: requete.texte,
     mode: requete.mode,
