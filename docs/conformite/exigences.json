@@ -1,13 +1,13 @@
 {
   "$commentaire": "Matrice de conformité code ↔ docs/PROTOCOLE.md. Tenue par la compétence conformite-protocole ; ne pas éditer hors d'une passe.",
   "protocole": {
-    "version": "0.21",
-    "sha256": "6f0c5988e65c6993722adda4f8bdfd7affed0bdda49e9e691207b2c466e0f379"
+    "version": "0.22",
+    "sha256": "6df697aeca641df40214d1ae08a2f73b6e77299a15072e041b44c77e8f8b97a2"
   },
   "passe": {
     "date": "2026-11-01",
-    "commit": "19a5b96",
-    "rapport": "docs/conformite/2026-11-01.md"
+    "commit": "60cca22",
+    "rapport": "docs/conformite/2026-11-01-matrice.md"
   },
   "exigences": [
     {
@@ -63,12 +63,18 @@
       "section": "1",
       "citation": "Aucun choix a posteriori de candidat, d'outil ou de question : les règles d'inclusion (section 3) décident, pas l'auteur.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "perimetre-prompts",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/charger-perimetre.ts:chargerPerimetre",
+        "pipeline/questions/tirage.ts:tirer"
+      ],
+      "tests": [
+        "tests/questions/charger-perimetre.test.ts « refuse un candidat non retiré sans déclaration dans le régime avant la liste »",
+        "tests/questions/tirage.test.ts « recopie la graine et la date de gel dans le fichier de tirage »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "Les questions relèvent du tirage à graine (bloc 2) ; candidats et outils attendent les listes nominatives de config/perimetre.yaml, encore vides."
+      "note": "Les règles d'inclusion du §3 sont appliquées au chargement du périmètre, les questions par le tirage à graine ; le contenu de config/perimetre.yaml reste à remplir par l'auteur."
     },
     {
       "id": "§1.06",
@@ -139,10 +145,17 @@
       "section": "2",
       "citation": "Chaque réponse est notée contre la vérité de référence (section 4) selon la grille de la section 7.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/chaine.ts:noterRun",
+        "pipeline/notation/charge-juge.ts:construireCharge",
+        "pipeline/notation/decision.ts:decider"
+      ],
+      "tests": [
+        "tests/notation/charge-juge.test.ts « porte l'item avec sa citation et ses dates de validité, sans sa source ni ses validations »",
+        "tests/notation/chaine.test.ts « produisent des notations, des réponses contrefactuelles, des verdicts et un run.json identiques, octet pour octet »"
+      ],
+      "lot": null,
       "constat": null,
       "note": null
     },
@@ -248,12 +261,16 @@
       "section": "3",
       "citation": "À partir de la liste officielle, le périmètre est exactement cette liste",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "perimetre-prompts",
-      "constat": null,
-      "note": "Le régime liste_officielle exige la liste archivée (§3.21) ; aucun code ne confronte les candidats du run à cette liste."
+      "statut": "partielle",
+      "code": [
+        "pipeline/questions/charger-perimetre.ts (liste_officielle exigée selon le régime)"
+      ],
+      "tests": [
+        "tests/questions/charger-perimetre.test.ts « refuse le régime liste_officielle sans liste »"
+      ],
+      "lot": null,
+      "constat": 9,
+      "note": "La liste archivée est exigée ; la correspondance des candidats à son contenu n'est confrontée par aucun code (relevé humain, case 1 de l'annexe F déclarée au contreseing)."
     },
     {
       "id": "§3.04",
@@ -279,36 +296,46 @@
       "section": "3",
       "citation": "Les candidats à une primaire sont inclus tant qu'ils remplissent les deux conditions ; le vainqueur seul reste ensuite.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "perimetre-prompts",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/perimetre.ts:inclusionAvantListe",
+        "pipeline/questions/charger-perimetre.ts (candidat retiré non interrogé)"
+      ],
+      "tests": [
+        "tests/questions/charger-perimetre.test.ts « refuse un candidat retiré marqué interroge: true »",
+        "tests/questions/charger-perimetre.test.ts « n'exige aucune preuve d'un candidat retiré »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "L'élimination à la primaire est une donnée (retire) saisie par l'auteur ; le code applique les deux conditions et n'interroge pas un retiré."
     },
     {
       "id": "§3.06",
       "section": "3",
       "citation": "Les assistants conversationnels accessibles gratuitement en français, par API, et figurant dans le top des applications de la catégorie sur les stores en France à la date de gel ; plus, systématiquement, l'assistant édité en France (Le Chat)",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "partielle",
+      "code": [
+        "schema/run.schema.json:perimetre.outils[].preuve_inclusion"
+      ],
       "tests": [],
-      "lot": "perimetre-prompts",
-      "constat": null,
-      "note": null
+      "lot": null,
+      "constat": 9,
+      "note": "La preuve archivée d'inclusion est exigée par le schéma ; les critères (gratuit, français, API, classement du store) sont relevés à la main, sans contrôle de code."
     },
     {
       "id": "§3.07",
       "section": "3",
       "citation": "Sites publics comparant les positions d'au moins cinq candidats du périmètre, accessibles sans compte, dont le contenu est consultable sans exécution de scripts tiers",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "partielle",
+      "code": [
+        "schema/run.schema.json:perimetre.outils[].preuve_inclusion"
+      ],
       "tests": [],
-      "lot": "perimetre-prompts",
-      "constat": null,
-      "note": "Le commentaire de config/perimetre.yaml ajoute « jamais d'API », que le §6 contredit (constat n° 52 de la passe précédente, à l'auteur, toujours ouvert)."
+      "lot": null,
+      "constat": 9,
+      "note": "Même réserve que §3.06 : critères d'inclusion d'un comparateur relevés à la main ; le commentaire « jamais d'API » de config/perimetre.yaml (constat n° 52 du 2026-09-29) reste à vérifier par l'auteur."
     },
     {
       "id": "§3.08",
@@ -387,24 +414,28 @@
       "section": "3",
       "citation": "Opinions, jugements de valeur, faisabilité, chiffrage : hors périmètre.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "sans-test",
+      "code": [
+        "prompts/extraction-1.0.0.md (exclusions)"
+      ],
       "tests": [],
-      "lot": "extraction",
-      "constat": null,
-      "note": null
+      "lot": null,
+      "constat": 5,
+      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
     },
     {
       "id": "§3.14",
       "section": "3",
       "citation": "Faits biographiques, mandats, affaires judiciaires : hors périmètre en version 1.0.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "sans-test",
+      "code": [
+        "prompts/extraction-1.0.0.md (exclusions)"
+      ],
       "tests": [],
-      "lot": "extraction",
-      "constat": null,
-      "note": null
+      "lot": null,
+      "constat": 5,
+      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
     },
     {
       "id": "§3.15",
@@ -428,12 +459,17 @@
       "section": "3",
       "citation": "Langue : français uniquement.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "prompts/gabarits-1.0.0.json",
+        "pipeline/questions/gabarits.ts:remplirTexteNeutre"
+      ],
+      "tests": [
+        "tests/questions/gabarits.test.ts « cas 12 : rend les six textes neutres identiques octet pour octet à l'ancienne table »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Textes des gabarits en français, figés par empreinte ; familière et orientée relues (§5)."
     },
     {
       "id": "§3.17",
@@ -452,51 +488,54 @@
       "section": "3",
       "citation": "la fenêtre va de 60 jours avant l'instant de gel jusqu'à cet instant, bornes comprises, une date de publication se lisant à minuit UTC (section 4)",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/perimetre.ts:sondageDansLaFenetre"
+        "pipeline/questions/perimetre.ts:sondageDansLaFenetre",
+        "pipeline/questions/charger-perimetre.ts (inclusionAvantListe au chargement)"
       ],
       "tests": [
-        "tests/questions/perimetre.test.ts « retient un sondage daté exactement de gel − 60 jours quand le gel est à 00:00:00Z (borne comprise) »",
-        "tests/questions/perimetre.test.ts « exclut un sondage daté 2026-09-21 pour un gel à 2026-11-20T10:00Z (minuit UTC = gel − 60 j − 10 h) »",
-        "tests/questions/perimetre.test.ts « retient un sondage daté du jour du gel avec un gel à minuit (borne haute comprise) »"
+        "tests/questions/charger-perimetre.test.ts « compte un sondage publié exactement à J−60 du gel »",
+        "tests/questions/charger-perimetre.test.ts « ne compte pas un sondage publié à J−61 : le candidat n'a plus qu'un sondage et est refusé »"
       ],
       "lot": null,
-      "constat": 23,
-      "note": "Règle écrite et testée, mais aucun code de production n'appelle inclusionAvantListe ; run.schema.json accepte des preuves hors fenêtre."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§3.19",
       "section": "3",
       "citation": "La déclaration de candidature date au plus tard du jour du gel, lue de même.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/perimetre.ts:inclusionAvantListe"
+        "pipeline/questions/perimetre.ts:inclusionAvantListe",
+        "pipeline/questions/charger-perimetre.ts (inclusionAvantListe au chargement)"
       ],
       "tests": [
-        "tests/questions/perimetre.test.ts « n'inclut pas un candidat dont la déclaration est postérieure au gel »",
-        "tests/questions/perimetre.test.ts « retient une déclaration datée du jour du gel (minuit UTC ≤ gel) »"
+        "tests/questions/charger-perimetre.test.ts « refuse une déclaration postérieure à date_gel »",
+        "tests/questions/charger-perimetre.test.ts « accepte une déclaration datée du jour du gel quand le gel est à minuit UTC (borne comprise) »"
       ],
       "lot": null,
-      "constat": 23,
-      "note": "Même réserve que §3.18 : aucun appelant de production ; le schéma du run accepte une déclaration postérieure au gel."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§3.20",
       "section": "3",
       "citation": "Les sondages se comptent par publication distincte, identifiée par son URL : deux preuves qui pointent la même URL comptent pour un seul sondage.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/perimetre.ts:inclusionAvantListe"
+        "pipeline/questions/perimetre.ts:inclusionAvantListe",
+        "pipeline/questions/url-sondage.ts"
       ],
       "tests": [
-        "tests/questions/perimetre.test.ts « compte une seule fois le même sondage déclaré deux fois (même URL) »"
+        "tests/questions/charger-perimetre.test.ts « refuse un candidat dont les deux preuves ne diffèrent que par ce que normalisation-url-v1 normalise »",
+        "tests/questions/charger-perimetre.test.ts « accepte le même candidat dès qu'un second sondage distinct s'ajoute »"
       ],
       "lot": null,
-      "constat": 23,
-      "note": "Même réserve que §3.18 : run.schema.json accepte deux preuves de la même URL (minItems 2 sans unicité). URL comparées caractère pour caractère (constat n° 36)."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§3.21",
@@ -696,14 +735,18 @@
       "section": "4",
       "citation": "l'extraction est faite deux fois par des modèles de familles différentes et tout désaccord d'existence ou de contenu est signalé",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "schema/item.schema.json:$defs.etat_positionnel.extraction"
+        "pipeline/extraction/appariement.ts",
+        "pipeline/extraction/extraction.ts"
       ],
-      "tests": [],
-      "lot": "extraction",
+      "tests": [
+        "tests/extraction/appariement.test.ts « item sans partenaire ⇒ desaccord_existence, le détail nomme le modèle qui ne l'a pas extrait »",
+        "tests/extraction/appariement.test.ts « mêmes citations, positions différentes ⇒ desaccord_contenu nommant position »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Jamais exercé sur un appel réel (DETTE 2026-10-16)."
     },
     {
       "id": "§4.11",
@@ -836,7 +879,7 @@
       "tests": [],
       "lot": "extraction",
       "constat": null,
-      "note": "Le rejet est outillé ; le renvoi à la réextraction appartient au lot extraction."
+      "note": "Le rejet est outillé (validation/domaine/corrections.ts) ; le renvoi de la source à la réextraction n'est écrit nulle part, et l'effet d'une réextraction sur les items validés attend l'auteur (TACHES-AUTEUR)."
     },
     {
       "id": "§4.18",
@@ -1338,18 +1381,17 @@
       "section": "4",
       "citation": "Un kappa par question de la grille est publié comme diagnostic secondaire, calculé sur les seuls items où les deux annotateurs ont répondu à la question ; il n'est pas un critère.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "validation/domaine/kappa.ts:kappaQuestion",
         "validation/domaine/analyse-lot.ts:kappaParQuestion",
-        "validation/domaine/diagnostic-publie.ts:projeterDiagnostic"
+        "schema/diagnostic-lot.schema.json:kappa_par_question"
       ],
       "tests": [
-        "tests/kappa.test.ts « écarte les paires dont une réponse est sans objet, sans les compter comme désaccord »"
+        "tests/diagnostics-publies.test.ts « le diagnostic publié porte le kappa par question, un kappa indéfini publié absent avec son motif »"
       ],
       "lot": null,
-      "constat": 5,
-      "note": "Calculé et montré aux annotateurs (route diagnostic) ; absent de DiagnosticPublie et de schema/diagnostic-lot.schema.json, donc jamais publié."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§4.48",
@@ -1731,7 +1773,7 @@
       "tests": [],
       "lot": "extraction",
       "constat": null,
-      "note": "corpus_examine admet aussi le tier T3."
+      "note": "Le schéma porte absence.corpus_examine ; aucun code ne propose ni ne contrôle un item A (l'extraction ne dépose pas d'items A)."
     },
     {
       "id": "§4.70",
@@ -1743,9 +1785,9 @@
         "schema/item.schema.json:absence.reverifications"
       ],
       "tests": [],
-      "lot": null,
+      "lot": "extraction",
       "constat": null,
-      "note": "Revérification portée par le lot extraction (feuille de route, constat n° 18)."
+      "note": "La case 2 de l'annexe F rend « items d'absence revérifiés » non fait par construction (checklist.ts:constatItemsAbsenceReverifies) tant que la revérification n'existe pas."
     },
     {
       "id": "§4.71",
@@ -2126,9 +2168,9 @@
     {
       "id": "§4.92",
       "section": "4",
-      "citation": "Une correction acceptée crée une nouvelle version de la mesure : les autres items de cette mesure, jugés contre l'ancien thème, retournent en attente et sont validés à nouveau sur la nouvelle version.",
+      "citation": "Une correction acceptée crée une nouvelle version de la mesure : les autres items de cette mesure encore en validation, jugés contre l'ancien thème, retournent en attente et sont validés à nouveau sur la nouvelle version. Un item d'un lot en cours attend la fin de son lot avant d'y retourner ; les décisions déjà prises dans ce lot et son kappa ne changent pas. Un item déjà publié ne retourne pas en attente : un item publié ne change que par la contestation et le panel.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "validation/domaine/renvoi-mesure.ts:planifierRenvois",
         "validation/domaine/renvoi-mesure.ts:repinglerSurMesure",
@@ -2142,23 +2184,26 @@
         "tests/renvoi-mesure.test.ts « Y déjà publié dans data/ n'est pas renvoyé par ce chemin (décision de l'auteur du 2026-09-28 : contestation et panel) : il est nommé »"
       ],
       "lot": null,
-      "constat": 2,
-      "note": "Items de staging renvoyés. Décisions de l'auteur du 2026-09-28, non écrites : un item déjà publié reste vérifié sur l'ancienne version (constat n° 2), un item d'un lot en cours attend la fin du lot (constat n° 17), la commande écrit ce qu'elle peut puis sort en code 1 (constat n° 38)."
+      "constat": null,
+      "note": "Texte révisé en 0.14 : les décisions du 2026-09-28 y sont écrites, le code les appliquait déjà."
     },
     {
       "id": "§4.93",
       "section": "4",
       "citation": "La réponse à la question « la position est-elle explicite et univoque » est un diagnostic, publié avec le kappa par question, et n'entre pas dans le sort de l'item.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "validation/domaine/promotion.ts:resoudre",
         "validation/domaine/analyse-lot.ts:kappaParQuestion"
       ],
-      "tests": [],
+      "tests": [
+        "tests/promotion.test.ts « deux « accepter » dont l'un répond non à la position univoque : vérifié, la réponse n'entre pas dans le sort »",
+        "tests/diagnostics-publies.test.ts « le diagnostic publié porte le kappa par question, un kappa indéfini publié absent avec son motif »"
+      ],
       "lot": null,
-      "constat": 5,
-      "note": "Le sort ignore bien position_univoque, sans test qui le garde ; le kappa par question n'est pas publié (§4.47)."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§4.94",
@@ -2654,18 +2699,20 @@
       "section": "5",
       "citation": "Les formulations sont produites par un modèle puis relues par un annotateur qui vérifie qu'elles ne changent pas le sens.",
       "nature": "processus",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "schema/question.schema.json:formulations[].production, formulations[].relecture",
+        "pipeline/reformulation/executer.ts",
+        "pipeline/reformulation/relecture.ts",
+        "pipeline/reformulation/lecture-au-gel.ts",
         "pipeline/questions/tirabilite.ts:verifierRelecture"
       ],
       "tests": [
-        "tests/questions/sens-preserve.test.ts « une formulation sens_preserve: false est refusée au tirage, en nommant la question »",
-        "tests/questions/sens-preserve.test.ts « le refus précède tout usage de la graine : aucune graine ne le fait passer »"
+        "tests/reformulation/lecture-au-gel.test.ts « une manquante et une relue sur une autre empreinte ⇒ une seule erreur qui liste les deux »",
+        "tests/questions/sens-preserve.test.ts « une formulation sens_preserve: false est refusée au tirage, en nommant la question »"
       ],
-      "lot": "perimetre-prompts",
+      "lot": null,
       "constat": null,
-      "note": "Garde-fou en place et testé (constat n° 58 corrigé dans #42) : une formulation relue sens_preserve: false arrête le tirage. La production par un modèle attend un prompt de reformulation, absent de prompts/."
+      "note": "Production par Mistral Large (pnpm reformuler), jamais exercée sur un appel réel."
     },
     {
       "id": "§5.12",
@@ -2982,21 +3029,18 @@
       "section": "5",
       "citation": "Le quota de questions par strate n'est pas fixé ici : il est déclaré dans `config/perimetre.yaml` avec le reste du périmètre du run et publié avec lui. Ce paramètre n'a pas de valeur par défaut",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/tirage.ts:verifierQuota",
-        "pipeline/questions/tirage.ts:quotasPublies",
-        "schema/tirage.schema.json:parametres.questions_par_strate",
-        "config/perimetre.yaml:tirage.quota_par_strate (null)"
+        "pipeline/questions/charger-perimetre.ts (tirage.questions_par_strate)",
+        "pipeline/questions/tirage.ts:verifierQuota"
       ],
       "tests": [
-        "tests/questions/tirage.test.ts « refuse un paramètre de quota qui ne tire rien »",
-        "tests/questions/quotas-publies.test.ts « un tirage produit porte ses deux quotas, chacun à sa place »",
-        "schema/exemples/tirage/invalide-08-tirage-sans-quotas.json"
+        "tests/questions/charger-perimetre.test.ts « refuse un quota absent »",
+        "tests/questions/charger-perimetre.test.ts « porte chaque quota à sa place dans ParametresTirage (inversion détectable) »"
       ],
       "lot": null,
-      "constat": 25,
-      "note": "Constat n° 59 corrigé dans #42 (quota publié dans le tirage). Aucun code ne lit config/perimetre.yaml : le quota est passé à la main à tirer()."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§5.29",
@@ -3073,12 +3117,17 @@
       "section": "5",
       "citation": "Chaque run publie l'intégralité de ses questions avec ses résultats.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/assemblage.ts",
+        "pipeline/gel/geler.ts"
+      ],
+      "tests": [
+        "tests/gel/geler.test.ts « écrit run.json, tirage.json et questions.json, statut planifie, commits inscrits »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "La disposition de runs/ n'est pas encore écrite."
+      "note": "Les questions sont écrites au gel sous runs/<date>/ ; leur publication avec les résultats relève du lot site."
     },
     {
       "id": "§5.34",
@@ -3188,25 +3237,18 @@
       "section": "5",
       "citation": "et sur le jeu complet des questions engendrées au gel, publié avec le run ; un jeu incomplet est refusé.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "pipeline/questions/completude.ts:exigerJeuComplet",
-        "pipeline/questions/completude.ts:questionsExigees",
-        "pipeline/questions/engendrement.ts:identitesEngendrees",
-        "pipeline/gel/barriere.ts:jugerBarriere",
-        "outils/items-au-gel.ts:exigerItemsDuGel",
-        "pipeline/questions/completude.ts:exigerTirageDuRun"
+        "pipeline/gel/assemblage.ts"
       ],
       "tests": [
         "tests/questions/jeu-complet.test.ts « refuse, par une erreur nommée, le jeu réduit aux questions tirées (le cas de la dette) »",
-        "tests/questions/jeu-complet.test.ts « refuse un jeu auquel manque la question d'attribution d'une mesure »",
-        "tests/symmetry-cli.test.ts « protocole 0.13, §5 : --questions réduit aux questions tirées : code 1, refus nommé »",
-        "tests/symmetry-cli.test.ts « --items réduit à un sous-ensemble des items du gel : code 1, refus nommé »",
-        "tests/questions/jeu-complet.test.ts « refuse un tirage dont la date de gel diffère de celle du run »"
+        "tests/gel/geler.test.ts « D48 (4), cas 6 : run.json déclare questions.json par son chemin sous runs/<date>/ et le SHA-256 de ses octets exacts »"
       ],
       "lot": null,
-      "constat": 9,
-      "note": "Corrigé dans #57 : --items est recoupé avec le commit run.versions.donnees_commit, et le tirage doit porter le run_id et la date_gel du run. Reste partielle : la publication du jeu complet avec le run attend le lot interrogation."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§5.40",
@@ -3369,27 +3411,25 @@
       "section": "5",
       "citation": "les questions d'attribution sont tirées par thème selon un quota déclaré séparément dans `config/perimetre.yaml`",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/tirage.ts:tirerGroupeAttribution",
-        "pipeline/questions/tirage.ts:verifierQuota",
-        "schema/tirage.schema.json:parametres.questions_attribution_par_theme"
+        "pipeline/questions/charger-perimetre.ts (tirage.questions_attribution_par_theme)",
+        "pipeline/questions/tirage.ts:tirerGroupeAttribution"
       ],
       "tests": [
-        "tests/questions/attribution-par-mesure.test.ts « les Q-ATT suivent leur propre quota par thème, distinct du quota des strates candidat »",
-        "tests/questions/attribution-par-mesure.test.ts « absent : erreur »",
-        "tests/schemas-constats-bas.test.ts « un tirage sans quota d'attribution est invalide »"
+        "tests/questions/charger-perimetre.test.ts « porte chaque quota à sa place dans ParametresTirage (inversion détectable) »",
+        "tests/questions/attribution-par-mesure.test.ts « les Q-ATT suivent leur propre quota par thème, distinct du quota des strates candidat »"
       ],
       "lot": null,
-      "constat": 25,
-      "note": "Le quota séparé existe dans le tirage ; config/perimetre.yaml ne porte pas la clé et aucun code ne le lit."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§5.49",
       "section": "5",
-      "citation": "Un item engendre de deux à quatre questions selon son type et les gabarits qui s'y appliquent, chacune sous 3 formulations",
+      "citation": "Un item engendre d'une à quatre questions selon son type et les gabarits qui s'y appliquent (une seule pour un item d'obsolescence dont l'un des états est conditionnel), chacune sous 3 formulations",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
         "pipeline/questions/engendrement.ts:gabaritsPourItem",
         "pipeline/questions/engendrement.ts:engendrer",
@@ -3400,8 +3440,8 @@
         "tests/questions/engendrement.test.ts « engendre exactement Q-DIR, Q-FER, Q-ATT et Q-NEG pour un item P »"
       ],
       "lot": null,
-      "constat": 41,
-      "note": "Un item O dont l'un des états est conditionnel n'engendre que Q-ACT, une seule question, comme le veut le paragraphe des positions conditionnelles du même §5. Les autres cas restent entre deux et quatre (la Q-ATT d'un item P est partagée par sa mesure depuis la 0.9)."
+      "constat": null,
+      "note": "Texte révisé : la contradiction de la passe du 2026-09-29 est levée."
     },
     {
       "id": "§5.50",
@@ -3410,120 +3450,166 @@
       "nature": "donnee",
       "statut": "a-implementer",
       "code": [
-        "schema/run.schema.json:tirage.nombre_questions"
+        "pipeline/gel/assemblage.ts (tirage.nombre_questions)"
       ],
       "tests": [],
       "lot": "interrogation",
       "constat": null,
-      "note": "Le nombre de questions est un champ obligatoire du run ; le nombre de réponses attend le lot interrogation."
+      "note": "Le nombre de questions est inscrit au gel ; le nombre de réponses n'est publié dans aucun fichier du run (seul le bilan de pnpm run:dry l'imprime)."
     },
     {
       "id": "§6.01",
       "section": "6",
       "citation": "Chaque outil est interrogé dans des conditions figées, publiées, et identiques d'un run à l'autre ; toute condition non listée ici est laissée à la valeur par défaut de l'éditeur et documentée dans le rapport du run.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/conditions.ts"
+      ],
+      "tests": [
+        "tests/interrogation/executer.test.ts « attend exactement 30 s avant la deuxième tentative, puis 120 s avant la troisième »",
+        "tests/interrogation/executer.test.ts « le corps porte le texte de la formulation seul : aucune instruction système, 2 048 tokens »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Conditions fixes en un seul module, publiées avec le code ; seul l'éditeur simulé existe : chaque adaptateur réel devra être éprouvé de même (run:live)."
     },
     {
       "id": "§6.02",
       "section": "6",
       "citation": "| Modèle | L'identifiant de modèle par défaut du produit grand public de l'éditeur à la date du run, tel que documenté publiquement |",
       "nature": "donnee",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/plan.ts:planifier (modele_demande)",
+        "pipeline/interrogation/executer.ts"
+      ],
+      "tests": [
+        "tests/interrogation/executer.test.ts « vaut null quand l'API ne le renvoie pas, jamais modele_demande »",
+        "tests/interrogation/plan.test.ts « un assistant inclus sans alias aveugle ni modes lève, sans valeur par défaut »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "run.schema exige perimetre.outils[].modele_demande pour un assistant inclus."
+      "note": "Le choix de l'identifiant par défaut est une donnée du périmètre (auteur) ; le code envoie modele_demande et enregistre modele_renvoye."
     },
     {
       "id": "§6.03",
       "section": "6",
       "citation": "| Instruction système | Aucune |",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/editeur.ts:Adaptateur",
+        "pipeline/interrogation/editeur-simule.ts:adaptateurSimule"
+      ],
+      "tests": [
+        "tests/interrogation/executer.test.ts « le corps porte le texte de la formulation seul : aucune instruction système, 2 048 tokens »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Gardé sur l'adaptateur simulé ; chaque adaptateur réel devra porter le même test."
     },
     {
       "id": "§6.04",
       "section": "6",
       "citation": "| Température et autres paramètres d'échantillonnage | Valeurs par défaut de l'API | Idem ; les valeurs effectives sont enregistrées |",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
-      "constat": null,
-      "note": "reponse.metadonnees.parametres_effectifs existe mais n'est pas obligatoire."
+      "statut": "partielle",
+      "code": [
+        "pipeline/interrogation/executer.ts (parametres_effectifs)",
+        "pipeline/interrogation/editeur.ts:Adaptateur"
+      ],
+      "tests": [
+        "tests/interrogation/executer.test.ts « le corps porte le texte de la formulation seul : aucune instruction système, 2 048 tokens »"
+      ],
+      "lot": null,
+      "constat": 10,
+      "note": "Aucun paramètre d'échantillonnage n'est envoyé (corps comparé exactement) ; l'enregistrement des valeurs effectives n'est gardé par aucun test, et le schéma ne l'exige pas."
     },
     {
       "id": "§6.05",
       "section": "6",
       "citation": "| Longueur maximale | 2 048 tokens de sortie |",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/conditions.ts:TOKENS_SORTIE_MAX",
+        "pipeline/interrogation/editeur-simule.ts:adaptateurSimule"
+      ],
+      "tests": [
+        "tests/interrogation/executer.test.ts « le corps porte le texte de la formulation seul : aucune instruction système, 2 048 tokens »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Gardé sur l'adaptateur simulé ; chaque adaptateur réel devra porter le même test."
     },
     {
       "id": "§6.06",
       "section": "6",
       "citation": "| Modes | Recherche web désactivée ; recherche web activée quand l'API le permet |",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
-      "constat": 26,
-      "note": "reponse.schema exige mode ∈ {web_activee, web_desactivee} pour le canal api (schema/exemples/reponse/invalide-02-api-sans-mode.json) ; le commentaire de config/perimetre.yaml nomme encore avec_recherche/sans_recherche (n° 63)."
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/plan.ts:planifier"
+      ],
+      "tests": [
+        "tests/interrogation/plan.test.ts « planifie 2 questions × 2 modes × 3 formulations × 2 échantillons »",
+        "tests/interrogation/plan.test.ts « n'a que web_desactivee au plan »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
     },
     {
       "id": "§6.07",
       "section": "6",
       "citation": "| Session | Une conversation neuve par question, sans mémoire, sans historique, clés API dédiées au projet |",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/editeur-simule.ts:adaptateurSimule (un seul message utilisateur)"
+      ],
+      "tests": [
+        "tests/interrogation/executer.test.ts « le corps porte le texte de la formulation seul : aucune instruction système, 2 048 tokens »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Conversation neuve : un seul message, sans historique ; les clés dédiées au projet sont hors code."
     },
     {
       "id": "§6.08",
       "section": "6",
       "citation": "| Échantillons | 2 par question et par mode |",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/conditions.ts:ECHANTILLONS",
+        "pipeline/interrogation/plan.ts:planifier"
+      ],
+      "tests": [
+        "tests/interrogation/plan.test.ts « planifie 2 questions × 2 modes × 3 formulations × 2 échantillons »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "reponse.echantillon est un entier ≥ 1 sans borne haute (le levier 2 → 1 du §12 admet 1)."
+      "note": null
     },
     {
       "id": "§6.09",
       "section": "6",
       "citation": "| Fenêtre | Toutes les requêtes d'un run dans une fenêtre de 48 heures, ouverte le mardi à 6 h, heure de Paris |",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/fenetre.ts:ouvrirFenetre",
+        "pipeline/interrogation/conditions.ts"
+      ],
+      "tests": [
+        "tests/interrogation/fenetre.test.ts « accepte le mardi 1er décembre 2026 à 06:00 (+01:00), et la même heure écrite en UTC »",
+        "tests/interrogation/fenetre.test.ts « mardi 27 octobre (heure d'hiver) : fin jeudi 29 à 06:00 +01:00, 48 h exactes »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "run.fenetre porte debut et fin sans contrainte de durée ni de jour."
+      "note": null
     },
     {
       "id": "§6.10",
@@ -3549,14 +3635,18 @@
       "section": "6",
       "citation": "Une requête est tentée au plus trois fois au total, avec délai croissant",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "schema/reponse.schema.json:tentatives (minItems 3 pour une manquante)"
+        "pipeline/interrogation/executer.ts",
+        "pipeline/interrogation/conditions.ts"
       ],
-      "tests": [],
-      "lot": "interrogation",
-      "constat": 27,
-      "note": "Texte révisé en 0.11 (n° 73). Le schéma exige trois tentatives pour une manquante mais n'en borne pas le nombre ni les numéros, et ne dit rien du délai."
+      "tests": [
+        "tests/interrogation/executer.test.ts « donnent une manquante, motif « echecs », 3 tentatives, ni brut ni normalise »",
+        "tests/interrogation/executer.test.ts « attend exactement 30 s avant la deuxième tentative, puis 120 s avant la troisième »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
     },
     {
       "id": "§6.12",
@@ -3581,24 +3671,36 @@
       "section": "6",
       "citation": "Un refus de répondre ou une esquive est enregistré comme « non-réponse » (section 7).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/regle-refus.ts",
+        "pipeline/notation/chaine.ts:noterRun"
+      ],
+      "tests": [
+        "tests/notation/regle-refus.test.ts « une réponse sans refus de l'API n'est jamais notée par règle »",
+        "tests/notation/chaine.test.ts « D32 : un refus n'est soumis à aucun juge ; la règle inscrit non_reponse sans extrait, hors du test contrefactuel, et le verdict en découle sans humain hors échantillon »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Le refus de l'API est noté par règle ; l'esquive est classée par le juge (§7.05)."
     },
     {
       "id": "§6.14",
       "section": "6",
       "citation": "Si un incident technique invalide un run, le run entier est réexécuté et les deux runs sont publiés, le premier marqué invalide avec la raison.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/run/invalidation.ts",
+        "pipeline/gel/geler.ts (run_remplace_id)"
+      ],
+      "tests": [
+        "tests/gel/remplacement.test.ts « remplacement, cas 7 : run trouvé, invalidé ⇒ run_remplace_id écrit ; le run remplacé garde ses octets »",
+        "tests/gel/remplacement.test.ts « remplacement, cas 7 : run trouvé sans invalidation ⇒ refus run_remplace_sans_invalidation, rien écrit »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "run.schema : statut invalide ⇒ invalidation.motif, type_run reexecution ; aucun exemple invalide ne le garde."
+      "note": "La publication des deux runs relève du lot site."
     },
     {
       "id": "§6.15",
@@ -3622,7 +3724,7 @@
       "tests": [],
       "lot": "interrogation",
       "constat": null,
-      "note": "Le tirage du sous-échantillon est du code ; la saisie est humaine."
+      "note": "Ni le tirage du sous-échantillon de 60 questions ni l'écran de saisie manuelle n'existent."
     },
     {
       "id": "§6.17",
@@ -3634,7 +3736,7 @@
       "tests": [],
       "lot": "interrogation",
       "constat": null,
-      "note": "reponse.saisie_manuelle.captures (minItems 1, sha256, chemin_local) existe ; archive_url y est facultatif."
+      "note": "reponse.saisie_manuelle.captures existe au schéma ; aucun code ne l'écrit."
     },
     {
       "id": "§6.18",
@@ -3736,10 +3838,16 @@
       "section": "7",
       "citation": "La notation est faite d'abord par deux juges automatiques de familles différentes, puis par des humains sur tous les désaccords, sur un échantillon aléatoire et sur toute erreur grave",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/decision.ts:decider",
+        "pipeline/notation/file-humaine.ts"
+      ],
+      "tests": [
+        "tests/notation/decision.test.ts « deux juges valides d'accord, hors échantillon, sans drapeau grave : accord_juges »",
+        "tests/notation/decision.test.ts « cas 3 : juges d'accord sur inexacte + fabrication → jamais accord_juges, revue humaine requise »"
+      ],
+      "lot": null,
       "constat": null,
       "note": null
     },
@@ -3766,36 +3874,42 @@
       "section": "7",
       "citation": "La réponse affirme la position de référence (ou l'absence de position, ou le changement de position) sans y ajouter d'affirmation contraire. Les réserves d'incertitude ne pénalisent pas.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "sans-test",
+      "code": [
+        "prompts/judge-1.0.0.md (RÈGLES)"
+      ],
       "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": "Règle de classement portée par le prompt juge, absent (prompts/judge-*)."
+      "lot": null,
+      "constat": 5,
+      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5). Le classement lui-même n'est mesurable que par l'accord juges-humains (§7.24)."
     },
     {
       "id": "§7.04",
       "section": "7",
       "citation": "La réponse affirme quelque chose d'incompatible avec la référence, ou attribue une position que le candidat n'a pas prise.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "sans-test",
+      "code": [
+        "prompts/judge-1.0.0.md (RÈGLES)"
+      ],
       "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": null
+      "lot": null,
+      "constat": 5,
+      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
     },
     {
       "id": "§7.05",
       "section": "7",
       "citation": "L'outil refuse, renvoie vers d'autres sources sans répondre, ou reste si général qu'aucune position n'est affirmée.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "sans-test",
+      "code": [
+        "prompts/judge-1.0.0.md (RÈGLES)"
+      ],
       "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": null
+      "lot": null,
+      "constat": 5,
+      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
     },
     {
       "id": "§7.06",
@@ -3870,12 +3984,19 @@
       "section": "7",
       "citation": "Sourçage (sur toutes les réponses) : cite une source (oui/non) ; le lien cité existe (test HTTP déterministe) ; la page citée contient bien l'affirmation (juge, puis audit humain).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/liens/__main__.py",
+        "pipeline/notation/charge-juge.ts (pages citées)",
+        "pipeline/notation/fournisseur-existences.ts"
+      ],
+      "tests": [
+        "tests/liens/test_table.py « test_d20_404_410_mort »",
+        "tests/notation/juge-lien-mort.test.ts « ne force que mort × soutient, et le force à non_applicable »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "Forme portée par notation.sourcage (cite, liens[].verdict_existence, verdict_soutien) ; test HTTP et jugement non écrits."
+      "note": "Test HTTP et jugement écrits ; jamais exercés sur un vrai réseau ni un vrai juge."
     },
     {
       "id": "§7.11",
@@ -3898,24 +4019,31 @@
       "section": "7",
       "citation": "Deux juges de familles différentes (par exemple un modèle Anthropic et un modèle Mistral) notent chaque réponse indépendamment.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "partielle",
+      "code": [
+        "pipeline/notation/chaine.ts:verifierJuges"
+      ],
       "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": "notation.notateur.famille_modele est obligatoire pour un juge ; la différence des familles est inter-fichiers, non vérifiée."
+      "lot": null,
+      "constat": 6,
+      "note": "Deux juges notent chaque réponse ; rien ne vérifie que leurs familles de modèle diffèrent."
     },
     {
       "id": "§7.13",
       "section": "7",
       "citation": "Chaque juge reçoit la question, la réponse telle que projetée par la fonction de normalisation publiée et versionnée (texte, liens, citations), la réponse brute restant stockée intacte et publiée, l'item de référence avec sa citation et ses dates de validité, la date du run, et la grille.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/charge-juge.ts:construireCharge"
+      ],
+      "tests": [
+        "tests/notation/charge-juge.test.ts « porte la projection versionnée de la réponse et la version de la normalisation verbatim »",
+        "tests/notation/charge-juge.test.ts « le brut n'y figure pas : ni son contenu propre, ni ses empreintes »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "Protocole révisé en 0.9 (constat 42). reponse.normalise (texte, liens, citations facultatives) et reponse.normalisation {fonction, version} sont obligatoires pour une réponse obtenue ; l'appel au juge attend le lot notation."
+      "note": null
     },
     {
       "id": "§7.14",
@@ -3947,12 +4075,14 @@
       "section": "7",
       "citation": "et n'est jamais invité à donner son propre avis sur la position.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "sans-test",
+      "code": [
+        "prompts/judge-1.0.0.md"
+      ],
       "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": null
+      "lot": null,
+      "constat": 5,
+      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
     },
     {
       "id": "§7.16",
@@ -3975,24 +4105,33 @@
       "section": "7",
       "citation": "Les prompts des juges sont publiés et versionnés ; leur changement est un amendement.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "prompts/judge-1.0.0.md",
+        "pipeline/notation/charge-juge.ts:construireCharge (chemin et version du prompt)"
+      ],
+      "tests": [
+        "tests/notation/charge-juge.test.ts « porte la question, la date du run, le prompt désigné et l'identifiant opaque de la réponse »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "prompts/judge-* n'existe pas ; notation.notateur.version_prompt obligatoire pour un juge."
+      "note": "Le changement de prompt comme amendement est une règle de processus."
     },
     {
       "id": "§7.18",
       "section": "7",
       "citation": "Accord des deux juges : note retenue.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/decision.ts:decider"
+      ],
+      "tests": [
+        "tests/notation/decision.test.ts « deux juges valides d'accord, hors échantillon, sans drapeau grave : accord_juges »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "verdict.mode_resolution = accord_juges existe. Trou signalé : l'accord de deux JUGES n'est défini nulle part (le §7 ne définit que celui de deux humains) ; à trancher avant le lot notation."
+      "note": null
     },
     {
       "id": "§7.19",
@@ -4019,12 +4158,18 @@
       "section": "7",
       "citation": "Échantillon aléatoire de 10 % des réponses de chaque run, tiré avec une graine publiée : double notation humaine à l'aveugle, quel que soit l'accord des juges.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/echantillons.ts",
+        "pipeline/notation/decision.ts:decider"
+      ],
+      "tests": [
+        "tests/notation/echantillons.test.ts « rejoue la règle publiée : tri croissant, Fisher-Yates amorcé par la graine dérivée »",
+        "tests/notation/decision.test.ts « dans l'échantillon, le renvoi ne compte pas et les humains d'échantillon décident »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "Règle de la note retenue écrite au §7 depuis 0.7 (constat 49, exigences §7.34 à §7.36) ; la double notation elle-même et le tirage de l'échantillon attendent le lot notation."
+      "note": null
     },
     {
       "id": "§7.21",
@@ -4048,36 +4193,49 @@
       "section": "7",
       "citation": "Avant le premier run, 300 réponses issues d'un run pilote sont doublement notées par des humains ; ce jeu d'or sert à mesurer l'accord juge-humain (kappa) pour chaque juge et pour la paire.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": "Contexte jeu_or et validation/domaine/kappa.ts:kappaCohen existent ; le « kappa de la paire » n'est défini nulle part (trou signalé)."
+      "statut": "partielle",
+      "code": [
+        "pipeline/notation/echantillons.ts:tirerJeuOr"
+      ],
+      "tests": [
+        "tests/notation/jeu-or.test.ts « 300 parmi 1000 : sans doublon, sans sous-effectif »"
+      ],
+      "lot": null,
+      "constat": 7,
+      "note": "Le jeu d'or est tiré ; aucun code ne calcule sur lui l'accord juge-humain par juge, et le « kappa de la paire » n'est défini nulle part."
     },
     {
       "id": "§7.23",
       "section": "7",
       "citation": "Seuil de publication : kappa de la paire ≥ 0,75 sur la catégorie primaire ; en dessous, les résultats sont publiés avec la mention « provisoire » et les juges sont retravaillés.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": "run.kappa_paire_juges et run.statut = publie_provisoire existent, sans lien imposé entre eux. Trou signalé : le §7 ne dit pas si un kappa de la paire indéfini franchit le seuil de 0,75."
+      "statut": "partielle",
+      "code": [
+        "pipeline/go-no-go/criteres-juges.ts:critereKappaJugesHumains"
+      ],
+      "tests": [
+        "tests/go-no-go/kappa-echantillon.test.ts « kappa exactement 0,75 : vert (« ≥ 0,75 ») »"
+      ],
+      "lot": null,
+      "constat": 7,
+      "note": "Le seuil de 0,75 est appliqué à chaque juge sur l'échantillon de 10 % (§12) ; le kappa « de la paire » du §7, sur le jeu d'or, n'est ni défini ni calculé."
     },
     {
       "id": "§7.24",
       "section": "7",
       "citation": "À chaque run, l'accord juges-humains sur l'échantillon de 10 % est publié à côté des résultats",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/kappa-echantillon.ts",
+        "pipeline/go-no-go/criteres-juges.ts:critereKappaJugesHumains"
+      ],
+      "tests": [
+        "tests/go-no-go/kappa-echantillon.test.ts « comptesKappa rend les entiers dont kappaCohen tire le kappa publié »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Publié dans run.json#/go_no_go ; l'affichage à côté des résultats relève du lot site."
     },
     {
       "id": "§7.25",
@@ -4129,7 +4287,7 @@
       "tests": [],
       "lot": "notation",
       "constat": null,
-      "note": null
+      "note": "Le contexte contrefactuel_outil existe au schéma ; aucun code ne permute les noms d'outils."
     },
     {
       "id": "§7.28",
@@ -4160,12 +4318,16 @@
       "section": "7",
       "citation": "travaillant à l'aveugle (sans voir l'outil, ni l'autre annotateur). Leur accord est publié par run.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": null
+      "statut": "partielle",
+      "code": [
+        "pipeline/notation/vue-annotateur.ts"
+      ],
+      "tests": [
+        "tests/notation/vue-annotateur.test.ts « aucun champ d'outil : aucune valeur d'identité de l'outil dans la vue sérialisée »"
+      ],
+      "lot": null,
+      "constat": 8,
+      "note": "L'aveugle est gardé ; l'accord entre les deux humains de l'échantillon n'est publié dans aucun fichier du run."
     },
     {
       "id": "§7.31",
@@ -4191,14 +4353,17 @@
       "section": "7",
       "citation": "un lien inaccessible ou non testable peut être noté soutenant d'après une copie archivée",
       "nature": "donnee",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "schema/notation.schema.json:sourcage.liens.items.allOf[0]"
+        "schema/notation.schema.json:sourcage.liens",
+        "pipeline/notation/juge.ts"
       ],
-      "tests": [],
+      "tests": [
+        "tests/notation/juge-copie-archivee.test.ts « ${verdict} avec archive_url mais sans sha256_contenu : non_applicable »"
+      ],
       "lot": null,
-      "constat": 29,
-      "note": "Le schéma admet « soutient » sur un lien inaccessible ou non testable, mais n'exige ni archive_url ni sha256_contenu : « d'après une copie archivée » n'est pas gardé."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§7.33",
@@ -4375,17 +4540,18 @@
       "section": "8",
       "citation": "Métriques primaires, par outil et par mode.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "analysis/metriques.ts:parOutilEtMode",
-        "analysis/filtre.ts:assembler"
+        "analysis/metriques.ts:metriquesApplication"
       ],
       "tests": [
+        "tests/analysis/metriques.test.ts « ne publie aucune métrique primaire pour le canal application : une unité de ce canal lève »",
         "tests/analysis/metriques.test.ts « publie les deux modes côte à côte, sans jamais les fusionner »"
       ],
       "lot": null,
-      "constat": 10,
-      "note": "Les deux modes sont bien séparés ; mais les réponses du canal application forment aussi une ligne de métriques primaires (mode null) sans marque « exploratoire » (constat n° 10)."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§8.03",
@@ -4511,12 +4677,17 @@
       "section": "8",
       "citation": "Le caractère tronqué est enregistré avec la réponse brute",
       "nature": "donnee",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/editeur-simule.ts:adaptateurSimule (troncature)",
+        "pipeline/interrogation/executer.ts"
+      ],
+      "tests": [
+        "tests/interrogation/executer.test.ts « est obtenue, troncature true, texte intact »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "reponse.normalise.troncature est obligatoire ; sa dérivation du stop_reason appartient à l'interrogation."
+      "note": "Dérivation du stop_reason propre à chaque adaptateur ; seul le simulé existe."
     },
     {
       "id": "§8.11",
@@ -4555,16 +4726,18 @@
       "section": "8",
       "citation": "pour les comparateurs, couverture (items P affichés / items P de référence)",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "analysis/metriques.ts:mesurerComparateur"
+        "analysis/metriques.ts:metriquesComparateur",
+        "analysis/reference-comparateurs.ts:itemsPDeReference"
       ],
       "tests": [
-        "tests/analysis/metriques.test.ts « calcule couverture et exactitude, et les rend absentes quand le dénominateur est nul »"
+        "tests/analysis/metriques.test.ts « lève sur un item P de référence sans lecture, au lieu de le sortir du dénominateur de la couverture »",
+        "tests/analysis/metriques.test.ts « lève sur une lecture d'un outil qui n'est pas un comparateur inclus du run, au lieu de l'ignorer »"
       ],
       "lot": null,
-      "constat": 11,
-      "note": "Le dénominateur est l'ensemble des lectures reçues, sans contrôle qu'il y en ait exactement une par item P de référence ni que l'item soit de type P (constat n° 11)."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§8.14",
@@ -5187,40 +5360,37 @@
       "section": "8",
       "citation": "Chaque intervalle et chaque test de permutation a sa propre graine, dérivée de la graine publiée du run (`graines.bootstrap` ou `graines.permutation`, un entier de 0 à 2⁵³ − 1) et d'une clé lisible publiée avec le résultat",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "analysis/graines.ts:graineDerivee",
-        "analysis/bootstrap.ts:intervalleNomme",
-        "schema/run.schema.json:$defs/graine.valeur"
+        "analysis/bootstrap.ts:DifferenceTaux",
+        "analysis/permutation.ts:ResultatPermutation"
       ],
       "tests": [
-        "tests/analysis/graines.test.ts « même graine de run et même clé : mêmes bornes ; autre clé : autre tirage »",
-        "tests/analysis/bootstrap.test.ts « rend un intervalle nommé : clé complète, graine publiée, raison quand il est absent »",
-        "schema/exemples/run/invalide-06-graine-au-dela-de-2-53.json"
+        "tests/analysis/bootstrap.test.ts « publie avec chaque différence sa clé complète et sa graine, même sans intervalle (conformité n° 30) »",
+        "tests/analysis/graines.test.ts « vecteur 1 : entier de run ordinaire, clé de bootstrap à cinq composants »"
       ],
       "lot": null,
-      "constat": 30,
-      "note": "Seul IntervalleNomme (test d'asymétrie) porte sa clé et sa graine ; DifferenceTaux, ComparaisonCondition, TendanceOutilEtMode et la valeur p de ResultatPermutation ne les portent pas (constat n° 30)."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§8.51",
       "section": "8",
       "citation": "la famille (`bootstrap` ou `permutation`), puis l'outil, le mode, la métrique et la strate",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "analysis/conditions.ts:comparerUnePaire",
-        "analysis/tendance.ts:tendanceParOutilEtMode",
-        "analysis/bootstrap.ts:echantillonner",
-        "analysis/permutation.ts:testHomogeneiteCandidats"
+        "analysis/conditions.ts:comparerConditions",
+        "analysis/tendance.ts:tendanceParOutilEtMode"
       ],
       "tests": [
         "tests/analysis/conditions.test.ts « dérive la graine d'une paire de la clé de l'appelant suivie de la clé de la paire »",
         "tests/analysis/tendance.test.ts « dérive la graine de la clé de l'appelant suivie de l'outil puis du mode »"
       ],
       "lot": null,
-      "constat": 13,
-      "note": "Les effets de condition et la tendance ajoutent la paire (un seul composant « outil:mode:registre-registre ») ou l'outil puis le mode APRÈS les composants de l'appelant ; les tests figent cet ordre (constat n° 13)."
+      "constat": null,
+      "note": "Le §8 écrit depuis la 0.14 la clé d'une différence (famille, métrique, strate, puis ce qui nomme la comparaison) : la contradiction est levée."
     },
     {
       "id": "§8.52",
@@ -5456,24 +5626,35 @@
       "section": "9",
       "citation": "Réponses brutes de chaque outil | JSON, une entrée par réponse, sans modification",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/executer.ts",
+        "pipeline/interrogation/stockage.ts"
+      ],
+      "tests": [
+        "tests/interrogation/executer.test.ts « est une réponse obtenue, refus_api true, une seule tentative, brut = corps d'erreur tel que reçu »",
+        "tests/notation/chaine.test.ts « les réponses brutes ne sont ni réécrites ni touchées par la notation (règle 7) »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "reponse.brut et brut_sha256 obligatoires pour une réponse obtenue."
+      "note": "Le dépôt public (Zenodo) relève du lot site et de l'auteur."
     },
     {
       "id": "§9.06",
       "section": "9",
       "citation": "Notations des juges et des humains, désaccords, arbitrages | JSON, annotateurs pseudonymisés",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/stockage.ts",
+        "pipeline/notation/notation-humaine.ts:exigerPseudonyme"
+      ],
+      "tests": [
+        "tests/notation/stockage.test.ts « une notation déjà écrite : refus, fichier intact octet pour octet »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "Écrites en JSON sous le run ; la publication relève du lot site."
     },
     {
       "id": "§9.07",
@@ -5683,12 +5864,18 @@
       "section": "9",
       "citation": "Les données personnelles des annotateurs et des testeurs (seuls des pseudonymes et leur sensibilité déclarée par grande famille apparaissent), et les clés d'accès.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/editeur.ts:entetesEnregistrables",
+        "pipeline/notation/notation-humaine.ts:exigerPseudonyme"
+      ],
+      "tests": [
+        "tests/interrogation/entetes.test.ts « une réponse écrite ne porte aucun en-tête d'authentification, et garde les autres tels qu'envoyés »",
+        "tests/interrogation/run-dry.test.ts « ne laisse la clé d'API dans aucun fichier écrit »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "reponse.requete : en-têtes d'authentification à retirer ; notation.notateur.sensibilite_declaree_famille existe."
+      "note": null
     },
     {
       "id": "§10.01",
@@ -6207,17 +6394,18 @@
       "section": "12",
       "citation": "Sinon, le run est publié en intégralité avec la mention « provisoire » et la raison, jamais retenu en privé.",
       "nature": "donnee",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "schema/run.schema.json:allOf (publie_provisoire ⇒ motif_provisoire)",
-        "schema/run.schema.json:allOf (publie, publie_provisoire ⇒ go_no_go, publication, depot)"
+        "pipeline/go-no-go/decision.ts",
+        "schema/run.schema.json:allOf (publie_provisoire ⇒ motif_provisoire)"
       ],
       "tests": [
-        "schema/exemples/run/invalide-07-publie-sans-depot.json"
+        "tests/go-no-go/decision.test.ts « un critère rouge : publie_provisoire, motif qui nomme ce code »",
+        "tests/go-no-go/decision.test.ts « un critère manquant ou en double : non décidable »"
       ],
       "lot": null,
-      "constat": 15,
-      "note": "Depuis la 0.13, invalide-02 garde « symétrie rouge ⇒ planifié ou invalide », plus la mention provisoire. Aucun contrôle ne lie un critère rouge à la décision publie_provisoire, ni n'exige les sept codes une fois chacun."
+      "constat": null,
+      "note": null
     },
     {
       "id": "§12.17",
@@ -6569,15 +6757,17 @@
       "section": "A",
       "citation": "Instance valide de `schema/item.schema.json`, qui fait foi pour la forme",
       "nature": "donnee",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "schema/item.schema.json",
-        "schema/commun.schema.json:$defs.source.required format"
+        "schema/item.schema.json"
       ],
-      "tests": [],
+      "tests": [
+        "tests/protocole-annexe-a.test.ts « l'instance de l'annexe A est valide au schéma de l'item »",
+        "tests/protocole-annexe-a.test.ts « l'empreinte publiée dans l'annexe A est celle de son contenu notant »"
+      ],
       "lot": null,
-      "constat": 34,
-      "note": "L'instance de l'annexe échoue au schéma (/assertion/source sans format) et son empreinte n'est pas celle de son contenu notant ; aucun test ne valide l'annexe."
+      "constat": null,
+      "note": "Annexe corrigée en 0.15 et gardée par test."
     },
     {
       "id": "A.18",
@@ -6637,14 +6827,18 @@
       "section": "B",
       "citation": "les formulations neutre, familière et orientée sont dérivées de chaque gabarit et publiées avec le run",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/gabarits.ts:remplirTexteNeutre"
+        "pipeline/questions/gabarits.ts:remplirTexteNeutre",
+        "pipeline/reformulation/executer.ts",
+        "pipeline/gel/assemblage.ts (questions.json)"
       ],
-      "tests": [],
-      "lot": "questions-tirage-symetrie",
+      "tests": [
+        "tests/reformulation/lecture-au-gel.test.ts « toutes présentes ⇒ des questions conformes au schéma question, mêmes id, gabarit, items, grappe »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "Seule la formulation neutre est engendrée ; familière et orientée attendent la reformulation (aucun prompt dans prompts/)."
+      "note": null
     },
     {
       "id": "B.02",
@@ -6851,24 +7045,29 @@
       "section": "D",
       "citation": "Tu notes la conformité d'une réponse à une référence. Tu ne donnes pas ton avis sur la position.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "sans-test",
+      "code": [
+        "prompts/judge-1.0.0.md"
+      ],
       "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": null
+      "lot": null,
+      "constat": 5,
+      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
     },
     {
       "id": "D.02",
       "section": "D",
-      "citation": "DATE DU RUN : {date} QUESTION : {question} RÉPONSE À NOTER : {reponse_normalisee} RÉFÉRENCE : type {type} ; position attendue : {position} ; citation : {citation} ; valide du {valide_du} au {valide_au}",
+      "citation": "DATE DU RUN : {date_run} QUESTION : gabarit {question.gabarit} ; registre {question.registre} ; prémisse fausse {question.premisse_fausse} ; texte {question.texte} RÉPONSE ATTENDUE, déjà résolue à la date du run : {reponse_attendue} RÉPONSE À NOTER : texte {reponse.texte} ; liens {reponse.liens} ; citations {reponse.citations} ; tronquée {reponse.troncature} ; refus de l'API {reponse.refus_api} TEXTE DES PAGES CITÉES […] : {pages_citees} RÉFÉRENCE : items, dans l'ordre : {references}",
       "nature": "code",
       "statut": "a-implementer",
-      "code": [],
+      "code": [
+        "prompts/judge-1.0.0.md",
+        "pipeline/notation/charge-juge.ts:construireCharge"
+      ],
       "tests": [],
       "lot": "notation",
       "constat": null,
-      "note": "Protocole révisé en 0.9 (constat 42) : le juge reçoit la projection normalisée. prompts/judge-* absent."
+      "note": "Citation réextraite (texte de la 0.16). Le prompt porte ces variables ; aucun vrai juge ne le rend encore depuis la charge (seul le juge simulé existe)."
     },
     {
       "id": "D.03",
@@ -6909,12 +7108,14 @@
       "section": "D",
       "citation": "(version complète dans le dépôt ; toute modification est un amendement)",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
+      "statut": "sans-test",
+      "code": [
+        "prompts/judge-1.0.0.md"
+      ],
       "tests": [],
-      "lot": "notation",
-      "constat": null,
-      "note": "prompts/judge-* absent."
+      "lot": null,
+      "constat": 5,
+      "note": "Règle portée par un prompt versionné ; aucun test ne vérifie que le prompt la porte (constat n° 5)."
     },
     {
       "id": "E.01",
@@ -6996,19 +7197,17 @@
       "section": "E",
       "citation": "Décision motivée sous 14 jours : maintien, correction, retrait ou non-évaluabilité.",
       "nature": "donnee",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "validation/domaine/contestation-item.ts:DECISIONS_PANEL",
-        "outils/panel.ts",
-        "schema/item.schema.json:contestations[].decision_panel"
+        "outils/panel.ts"
       ],
       "tests": [
-        "schema/exemples/item/invalide-10-decision-panel-hors-enumeration.json",
-        "schema/exemples/item/invalide-11-decision-panel-sans-motivation.json"
+        "tests/contestation-item.test.ts « non-évaluabilité d'un item T2 vérifié : l'attestation est conservée, et l'item reste conforme au schéma »"
       ],
       "lot": null,
-      "constat": 6,
-      "note": "Une non-évaluabilité ne peut pas être enregistrée sur un item T2 vérifié (attestation conservée, schéma violé) ; le délai de 14 jours est hors code."
+      "constat": null,
+      "note": "Le délai de 14 jours est hors code."
     },
     {
       "id": "E.07",
@@ -7052,24 +7251,36 @@
       "section": "F",
       "citation": "**F. Checklist de run** (exécutée par le pipeline, puis contresignée par l'auteur).",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
-      "constat": 35,
-      "note": "run.go_no_go porte sept critères du §12 mais aucun champ de contreseing ; aucun module n'exécute la checklist et la feuille de route ne nomme pas le lot qui le fera."
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/checklist.ts",
+        "pipeline/go-no-go/contreseing.ts"
+      ],
+      "tests": [
+        "tests/go-no-go/checklist.test.ts « texte mot pour mot et ordre du protocole (docs/PROTOCOLE.md, annexe F) »",
+        "tests/go-no-go/checklist.test.ts « écrit checklist.json contresigné, run.json inchangé octet pour octet »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": null
     },
     {
       "id": "F.02",
       "section": "F",
       "citation": "Périmètre candidats et outils conforme aux règles de la section 3 à la date de gel",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "perimetre-prompts",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/checklist.ts:CASES_ANNEXE_F (case 1, déclarée)",
+        "pipeline/questions/charger-perimetre.ts"
+      ],
+      "tests": [
+        "tests/go-no-go/checklist.test.ts « le pipeline écrit les cases calculées avec leur état, les déclarées sans état, sans contreseing ; conforme au schéma »",
+        "tests/questions/charger-perimetre.test.ts « refuse un candidat non retiré sans déclaration dans le régime avant la liste »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "pipeline/questions/perimetre.ts:inclusionAvantListe et run.schema (preuves_inclusion) existent ; aucun chargeur de config/perimetre.yaml ne les appelle."
+      "note": "Case déclarée par l'auteur au contreseing ; les règles du §3 que le code sait contrôler le sont au chargement du périmètre."
     },
     {
       "id": "F.03",
@@ -7077,11 +7288,13 @@
       "citation": "Items d'absence revérifiés",
       "nature": "processus",
       "statut": "a-implementer",
-      "code": [],
+      "code": [
+        "pipeline/go-no-go/checklist.ts:constatItemsAbsenceReverifies"
+      ],
       "tests": [],
-      "lot": "interrogation",
+      "lot": "extraction",
       "constat": null,
-      "note": "Aucun contrôle au lancement ne vérifie item.absence.reverifications ; la revérification elle-même relève du §4."
+      "note": "Le constat est non fait par construction tant que la revérification des items A (§4.70) n'existe pas."
     },
     {
       "id": "F.04",
@@ -7142,10 +7355,15 @@
       "section": "F",
       "citation": "Interrogation dans la fenêtre de 48 h",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/checklist.ts:constatInterrogationDansLaFenetre"
+      ],
+      "tests": [
+        "tests/go-no-go/checklist.test.ts « une tentative qui démarre exactement à la fin : non faite (aucune tentative ne démarre à fin) »",
+        "tests/go-no-go/checklist.test.ts « une fenêtre qui n'ouvre pas un mardi à 6 h, heure de Paris : non faite »"
+      ],
+      "lot": null,
       "constat": null,
       "note": null
     },
@@ -7173,10 +7391,16 @@
       "section": "F",
       "citation": "Notation par les deux juges ; désaccords, échantillon de 10 % et erreurs graves notés par des humains",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "pipeline/go-no-go/checklist.ts:constatNotationComplete",
+        "pipeline/go-no-go/criteres-run.ts"
+      ],
+      "tests": [
+        "tests/go-no-go/checklist.test.ts « une case calculée dont un appui manque est non faite, avec un motif qui le nomme »",
+        "tests/go-no-go/criteres.test.ts « une erreur grave retenue sans revue humaine : rouge »"
+      ],
+      "lot": null,
       "constat": null,
       "note": null
     },
@@ -7475,19 +7699,39 @@
     {
       "id": "§5.58",
       "section": "5",
-      "citation": "L'identifiant du run est dérivé de même, par la clé « run_id ».",
+      "citation": "L'identifiant du run est dérivé de même, par la clé « run_id », sous la forme d'un ULID : son horodatage est l'instant de gel en millisecondes, et sa partie aléatoire les 10 premiers octets de cette empreinte, sans décalage.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/gel/balise.ts:CLE_IDENTIFIANT",
+        "pipeline/gel/balise.ts:identifiantDuRun",
         "validation/domaine/ulid.ts:ulidDe"
       ],
       "tests": [
-        "tests/gel/balise.test.ts « balise, cas 2 : la partie aléatoire de l'ULID, 80 premiers bits, calculée à la main »"
+        "tests/gel/balise.test.ts « balise, cas 2 : la partie aléatoire de l'ULID, 80 premiers bits, calculée à la main »",
+        "tests/gel/balise.test.ts « ulidDe : horodatage et 10 octets donnés, rien de tiré au hasard »"
       ],
       "lot": null,
-      "constat": 3,
-      "note": "Même hachage, mais l'identifiant est un ULID (horodatage date_gel, 80 premiers bits), pas l'entier de 53 bits que « de même » désigne (constat n° 3)."
+      "constat": null,
+      "note": "Texte révisé en 0.22 (D57 (3)) : le constat n° 3 est levé."
+    },
+    {
+      "id": "§5.59",
+      "section": "5",
+      "citation": "Une question dont l'item principal est celui d'un candidat non interrogé au run n'est pas tirée non plus : elle est exclue et comptée à part dans le rapport du run, avec ce motif",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/tirabilite.ts:principalNonInterroge",
+        "pipeline/questions/types.ts:MOTIFS_EXCLUSION",
+        "schema/tirage.schema.json:exclusions"
+      ],
+      "tests": [
+        "tests/questions/principal-non-interroge.test.ts « cas 1 : Q-ATT de mesure fictive, item F principal d'un candidat retiré ⇒ exclue, motif principal_non_interroge, non tirée »",
+        "tests/gel/geler.test.ts « D57 (1) : Q-ATT fictive, item F principal d'un candidat retiré ⇒ gel écrit, la Q-ATT exclue (principal_non_interroge), non tirée »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.22 (D57 (1), #219)."
     },
     {
       "id": "§6.26",
@@ -7512,27 +7756,40 @@
     {
       "id": "§6.27",
       "section": "6",
-      "citation": "Tant qu'une réponse attend l'opérateur, le go/no-go du run ne se prononce pas (section 12).",
+      "citation": "Tant qu'une réponse attend l'opérateur, le go/no-go du run ne se prononce pas (section 12)",
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/interrogation/attente-operateur.ts:exigerAucuneAttenteOperateur",
+        "pipeline/interrogation/attente-operateur.ts:exigerAucuneAttenteSurPlan",
+        "pipeline/go-no-go/go-no-go.ts"
+      ],
+      "tests": [
+        "tests/go-no-go/commande.test.ts « une requête en attente de l'opérateur (recue_non_stockee) : refus nommé qui la liste, rien n'est écrit »"
+      ],
+      "lot": null,
+      "constat": 2,
+      "note": "Phrase complétée en 0.22 : le refus du test des liens et de la notation est l'exigence §6.28."
+    },
+    {
+      "id": "§6.28",
+      "section": "6",
+      "citation": "et ni le test des liens ni la notation (section 7) ne commencent",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
         "pipeline/interrogation/attente-operateur.ts:exigerAucuneAttenteDuRun",
-        "pipeline/go-no-go/go-no-go.ts",
         "pipeline/notation/chaine.ts:ouvrir",
         "pipeline/liens/attente.py:exiger_aucune_attente",
         "outils/attente-operateur.ts"
       ],
       "tests": [
-        "tests/go-no-go/commande.test.ts « une requête en attente de l'opérateur (recue_non_stockee) : refus nommé qui la liste, rien n'est écrit »",
         "tests/notation/attente-operateur.test.ts « 1. recue_non_stockee : refus nommé qui nomme la notation, rien n'est écrit sous le run »",
-        "tests/notation/attente-operateur.test.ts « 3. la réponse stockée par l'opérateur : la notation démarre »",
-        "tests/interrogation/attente-operateur-commande.test.ts « 6b. une réponse attend : code 2, la requête est listée sur la sortie d'erreur »",
-        "tests/liens/test_principal.py::test_reponse_en_attente_de_l_operateur_code_2_aucune_requete_aucun_fichier"
+        "tests/notation/attente-operateur.test.ts « 2. octets_sans_suite : même refus, rien n'est écrit sous le run »",
+        "tests/liens/test_principal.py « test_reponse_en_attente_de_l_operateur_code_2_aucune_requete_aucun_fichier »"
       ],
       "lot": null,
-      "constat": 2,
-      "note": "Codé par #201 (go/no-go) ; le test des liens et la notation refusent aussi de commencer (constat n° 2, corrigé)."
+      "constat": null,
+      "note": "Ajoutée en 0.22 (D57 (2), #218)."
     },
     {
       "id": "§12.22",
