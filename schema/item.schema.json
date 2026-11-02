@@ -28,7 +28,7 @@
     "version": {
       "type": "integer",
       "minimum": 1,
-      "description": "Incrémentée à toute correction, paraphrase comprise, et quand la version de la mesure épinglée change (§4 : « la version trace l'historique, l'empreinte trace le contenu notant » ; seule une correction du contenu notant change l'empreinte). §9 exige que l'historique d'un item soit visible ; Git donne le quand, pas le contre-quoi une réponse a été notée."
+      "description": "Incrémentée à toute correction, paraphrase comprise, quand la version de la mesure épinglée change, et quand l'item retourne en attente parce qu'un autre item jugé sur le même texte a été rejeté pour « texte extrait erroné », contenu notant inchangé (§4, Contrat des artefacts). §4 : « la version trace l'historique, l'empreinte trace le contenu notant » ; seule une correction du contenu notant change l'empreinte. §9 exige que l'historique d'un item soit visible ; Git donne le quand, pas le contre-quoi une réponse a été notée."
     },
 
     "empreinte": {

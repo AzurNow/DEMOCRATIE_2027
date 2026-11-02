@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  ApplicationHorsConditionsDesTesteurs,
   ApplicationHorsSousEchantillon,
   COMPOSANT_ECART,
   ecartsApiApplication,
@@ -133,6 +134,30 @@ describe("écart API / application : bras, appariement, clé", () => {
         OPTIONS,
       ),
     ).toThrow(ApplicationHorsSousEchantillon);
+  });
+
+  it("une saisie de l'application hors de la formulation neutre lève : les testeurs ne saisissent qu'elle", () => {
+    const familiere = sur(Q1, { canal: "application", mode: null, categorie: "exacte", registre: "familier" });
+    const unites = [api(Q1, "web_desactivee", "exacte"), application(Q1, "exacte"), familiere];
+
+    expect(() =>
+      ecartsApiApplication(
+        { unites, outils: [outil()], couples: tousCompares(unites), questions_sous_echantillon: [Q1] },
+        OPTIONS,
+      ),
+    ).toThrow(new ApplicationHorsConditionsDesTesteurs([familiere.reponse_id]));
+  });
+
+  it("une saisie de l'application à un autre échantillon que 1 lève, même neutre", () => {
+    const seconde = sur(Q1, { canal: "application", mode: null, categorie: "exacte", echantillon: 2 });
+    const unites = [api(Q1, "web_desactivee", "exacte"), application(Q1, "exacte"), seconde];
+
+    expect(() =>
+      ecartsApiApplication(
+        { unites, outils: [outil()], couples: tousCompares(unites), questions_sous_echantillon: [Q1] },
+        OPTIONS,
+      ),
+    ).toThrow(ApplicationHorsConditionsDesTesteurs);
   });
 
   it("garde toutes les réponses de l'application d'une question où un seul testeur a rapporté", () => {

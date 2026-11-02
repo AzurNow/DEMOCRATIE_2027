@@ -19,7 +19,10 @@
  *   (`registre`, `echantillon` de l'unité). **Le bras application** est l'ensemble des unités du
  *   canal application de l'outil, les deux testeurs confondus : chaque saisie est une observation,
  *   et toutes celles d'une question portent sa grappe (`grappe_id`). Une réponse de l'application
- *   hors du sous-échantillon lève `ApplicationHorsSousEchantillon` : elle n'a pas été tirée.
+ *   hors du sous-échantillon lève `ApplicationHorsSousEchantillon` : elle n'a pas été tirée. Une
+ *   saisie qui n'est pas à la formulation neutre et à l'échantillon 1 lève
+ *   `ApplicationHorsConditionsDesTesteurs` (D61) : le bras API serait comparé à autre chose que ce
+ *   qu'il est censé reproduire, et la restreindre en silence cacherait un dépôt faux.
  * - **Appariement par question** (`appariement.ts:apparier`, sur `question_id`) : une question du
  *   sous-échantillon présente dans un seul bras — pas de réponse API neutre à l'échantillon 1
  *   (manquante, ou seulement d'autres formulations ou échantillons), ou aucune saisie de
@@ -117,10 +120,25 @@ export class ApplicationHorsSousEchantillon extends Error {
   }
 }
 
+/** Une saisie de l'application qui n'est pas à la formulation neutre, échantillon 1 (§6, D61). */
+export class ApplicationHorsConditionsDesTesteurs extends Error {
+  readonly reponses: readonly string[];
+
+  constructor(reponses: readonly string[]) {
+    super(
+      `${reponses.length} réponse(s) du canal application hors de la formulation neutre ou de l'échantillon 1 (§6) : ` +
+        `${reponses.join(", ")}.`,
+    );
+    this.name = "ApplicationHorsConditionsDesTesteurs";
+    this.reponses = reponses;
+  }
+}
+
 export function ecartsApiApplication(entrees: EntreesEcart, options: OptionsEcart): EcartsApiApplication {
   const sousEchantillon = new Set(entrees.questions_sous_echantillon);
   const applications = entrees.unites.filter((u) => u.canal === "application");
   exigerDansSousEchantillon(applications, sousEchantillon);
+  exigerCommeLesTesteurs(applications);
   const etat = etatDesCouples(entrees.couples);
   const par_outil: EcartApiApplication[] = [];
   const outils_exclus: OutilExcluDeLEcart[] = [];
@@ -161,6 +179,11 @@ function ecartDeLOutil(
 /** §6 (0.25) : la formulation neutre, échantillon 1 — ce que saisissent les testeurs. */
 function commeLesTesteurs(unite: UniteAnalyse): boolean {
   return unite.registre === REGISTRE_API && unite.echantillon === ECHANTILLON_API;
+}
+
+function exigerCommeLesTesteurs(applications: readonly UniteAnalyse[]): void {
+  const hors = applications.filter((u) => !commeLesTesteurs(u)).map((u) => u.reponse_id);
+  if (hors.length > 0) throw new ApplicationHorsConditionsDesTesteurs(hors);
 }
 
 function exigerDansSousEchantillon(applications: readonly UniteAnalyse[], sousEchantillon: ReadonlySet<string>): void {
