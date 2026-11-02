@@ -390,8 +390,9 @@ describe("exemples de schema/exemples/", () => {
   // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
   // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
   // 352 → 354 : §6, protocole 0.24 (D59 (15)), lecture de comparateur notée par un juge, motif de lecture sur une réponse : deux invalides de notation.
-  it("charge les 354 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(354);
+  // 354 → 355 : §6, protocole 0.25 (D60 (g)), un valide de dépôt d'application (capture masquée).
+  it("charge les 355 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(355);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
