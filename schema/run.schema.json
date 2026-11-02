@@ -22,7 +22,8 @@
     "taux_echantillon_humain",
     "symetrie",
     "tirage",
-    "questions"
+    "questions",
+    "reponses"
   ],
   "properties": {
     "id": {
@@ -1292,6 +1293,26 @@
         "sha256": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
           "description": "Empreinte des octets de questions.json. Une divergence au recalcul est une erreur dure, pas un avertissement."
+        }
+      }
+    },
+    "reponses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prevues"
+      ],
+      "description": "§5 « Tailles » (protocole 0.24, D59 (17)) : « le nombre de réponses prévues par le plan d'interrogation est inscrit au gel, et celui des réponses obtenues l'est après l'interrogation ». Comptes de fonctionnement STOCKÉS, comme tirage.nombre_questions, et non une métrique du §8.",
+      "properties": {
+        "prevues": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Nombre de requêtes du plan d'interrogation du run (pipeline/interrogation/plan.ts:planifier sur run.json#/perimetre/outils et les questions du tirage) : chaque assistant inclus, chaque mode déclaré, chaque question tirée, chaque formulation, chaque échantillon. Écrit par pnpm geler (pipeline/gel/assemblage.ts), jamais réécrit."
+        },
+        "obtenues": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Nombre de réponses API de contexte run au statut obtenue, refus de l'API compris (§6 : un refus opposé par l'API est une réponse obtenue), rapprochées du plan : une réponse manquante, hors fenêtre ou après échecs, est prévue et non obtenue. Absent tant que l'interrogation n'est pas terminée ; jamais supérieur à prevues (contrôlé par pipeline/run/reponses.ts, qu'un schéma ne sait pas exprimer)."
         }
       }
     },
