@@ -67,6 +67,17 @@ export const CLE_SOUS_ENSEMBLE_CONTREFACTUEL: readonly string[] = ["contrefactue
 export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL = 200;
 
 /**
+ * Clé lisible de la graine du sous-ensemble du contrefactuel d'outil (§7 0.24, D59 (13) : « tirées
+ * avec leur propre graine dérivée, comme celles du test des candidats »), dérivée de
+ * `run.graines.contrefactuel`. `noms_outils` est la valeur de `reponse.permutation.type`.
+ * Texte haché : `<valeur>␀contrefactuel␀noms_outils␀sous_ensemble`.
+ */
+export const CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS: readonly string[] = ["contrefactuel", "noms_outils", "sous_ensemble"];
+
+/** §7 0.24 : « Ce sous-ensemble compte 200 réponses dont le texte nomme au moins un outil ». */
+export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS = 200;
+
+/**
  * Clé lisible de la graine du jeu d'or, dérivée de `run.graines.echantillon_humain` (D18).
  * Texte haché : `<valeur>␀jeu_or`.
  */
@@ -147,12 +158,26 @@ export function tirerSousEnsembleContrefactuel(
   eligibles: readonly string[],
   graine: GraineTirage,
 ): SousEnsembleContrefactuel {
-  const ordre = ordreTire(eligibles, graine, CLE_SOUS_ENSEMBLE_CONTREFACTUEL);
+  return sousEnsemble(eligibles, graine, CLE_SOUS_ENSEMBLE_CONTREFACTUEL, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL);
+}
+
+/**
+ * Le sous-ensemble du contrefactuel d'outil, tiré parmi les réponses éligibles reçues (celles dont
+ * le texte nomme un outil : `derangement-outils.ts:estEligibleOutils`). Même consommation que celui
+ * des candidats, autre clé ; moins de 200 éligibles : toutes, et `sous_effectif` le dit (« comme
+ * celles du test des candidats », D14 (2)).
+ */
+export function tirerSousEnsembleContrefactuelOutils(eligibles: readonly string[], graine: GraineTirage): SousEnsembleContrefactuel {
+  return sousEnsemble(eligibles, graine, CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS);
+}
+
+function sousEnsemble(eligibles: readonly string[], graine: GraineTirage, cle: readonly string[], taille: number): SousEnsembleContrefactuel {
+  const ordre = ordreTire(eligibles, graine, cle);
   return {
-    reponse_ids: ordre.slice(0, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL),
+    reponse_ids: ordre.slice(0, taille),
     eligibles: eligibles.length,
-    taille_visee: TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL,
-    sous_effectif: eligibles.length < TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL,
+    taille_visee: taille,
+    sous_effectif: eligibles.length < taille,
   };
 }
 

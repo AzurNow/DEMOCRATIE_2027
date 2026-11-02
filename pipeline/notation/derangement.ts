@@ -123,14 +123,20 @@ function enregistrerForme(formes: Map<string, string>, forme: string, candidat_i
   formes.set(forme, candidat_id);
 }
 
-function melangeSansPointFixe(ranges: readonly CandidatDuRun[], rng: GenerateurAleatoire): CandidatDuRun[] {
+/**
+ * Le rangement mélangé jusqu'au premier mélange sans point fixe, le générateur poursuivant sa suite
+ * (règle ci-dessus). Partagé avec le dérangement des outils (`derangement-outils.ts`, §7 0.24) :
+ * une seule définition du rejet. Exige au moins deux éléments, sinon la boucle ne finirait pas.
+ */
+export function melangeSansPointFixe<T>(ranges: readonly T[], rng: GenerateurAleatoire): T[] {
+  if (ranges.length < 2) throw new Error(`Mélange sans point fixe impossible sur ${ranges.length} élément(s).`);
   let images = melanger(ranges, rng);
   while (aUnPointFixe(ranges, images)) images = melanger(ranges, rng);
   return images;
 }
 
-function aUnPointFixe(ranges: readonly CandidatDuRun[], images: readonly CandidatDuRun[]): boolean {
-  return ranges.some((candidat, rang) => images[rang] === candidat);
+function aUnPointFixe<T>(ranges: readonly T[], images: readonly T[]): boolean {
+  return ranges.some((element, rang) => images[rang] === element);
 }
 
 function exiger(images: readonly CandidatDuRun[], rang: number): CandidatDuRun {

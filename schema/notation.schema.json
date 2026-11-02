@@ -263,9 +263,11 @@
         "extrait_invalide",
         "accord_partiel_juges",
         "attribution_indecidable",
-        "regle_refus_api"
+        "regle_refus_api",
+        "double_notation_comparateur",
+        "arbitrage_comparateur"
       ],
-      "description": "Pourquoi CE notateur a noté CET objet. §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E). extrait_invalide (décision D15 de l'auteur) est l'humain appelé, hors échantillon, parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : « invalide la notation du juge ; la réponse est alors notée par un humain ») ; il est exigé dans ce cas, même si un drapeau grave est aussi posé (pipeline/notation/decision.ts). accord_partiel_juges (décision D15 de l'auteur : « accord partiel → humain ») est l'humain appelé, hors échantillon, parce que les deux juges s'accordent au sens de analysis/note-lue.ts:notationsConcordent mais diffèrent sur un champ porté par la note retenue (motif d'inexactitude, citation d'une source, existence d'un lien) ; il n'est admis que dans ce cas. attribution_indecidable (décision D30 (2) de l'auteur) est l'humain appelé, hors échantillon, parce qu'un juge a renvoyé une question d'attribution qu'aucun texte ne permet de noter (schema/renvoi-humain.schema.json) ; il n'est admis que dans ce cas. regle_refus_api (décision D32 de l'auteur) est le motif de la notation par règle d'un refus de l'API, et de nulle autre."
+      "description": "Pourquoi CE notateur a noté CET objet. double_notation_comparateur et arbitrage_comparateur (protocole 0.24, §6, D59 (15)) : une lecture de comparateur n'est notée par aucun juge automatique ; elle est doublement notée par des humains à l'aveugle (double_notation_comparateur) puis, quand ils divergent, arbitrée par un troisième humain (arbitrage_comparateur), comme une réponse de l'échantillon ; ces deux motifs ne valent que pour elle, et elle n'en admet pas d'autre (pipeline/notation/lectures-comparateur.ts). §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E). extrait_invalide (décision D15 de l'auteur) est l'humain appelé, hors échantillon, parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : « invalide la notation du juge ; la réponse est alors notée par un humain ») ; il est exigé dans ce cas, même si un drapeau grave est aussi posé (pipeline/notation/decision.ts). accord_partiel_juges (décision D15 de l'auteur : « accord partiel → humain ») est l'humain appelé, hors échantillon, parce que les deux juges s'accordent au sens de analysis/note-lue.ts:notationsConcordent mais diffèrent sur un champ porté par la note retenue (motif d'inexactitude, citation d'une source, existence d'un lien) ; il n'est admis que dans ce cas. attribution_indecidable (décision D30 (2) de l'auteur) est l'humain appelé, hors échantillon, parce qu'un juge a renvoyé une question d'attribution qu'aucun texte ne permet de noter (schema/renvoi-humain.schema.json) ; il n'est admis que dans ce cas. regle_refus_api (décision D32 de l'auteur) est le motif de la notation par règle d'un refus de l'API, et de nulle autre."
     }
   },
 
@@ -345,6 +347,22 @@
       "$comment": "D32 : le motif regle_refus_api n'appartient qu'à la notation par règle ; un juge ou un humain sous ce motif se ferait passer pour elle.",
       "if": { "properties": { "motif_notation": { "const": "regle_refus_api" } }, "required": ["motif_notation"] },
       "then": { "properties": { "notateur": { "properties": { "type": { "const": "regle" } } } } }
+    },
+    {
+      "$comment": "§6 (protocole 0.24, D59 (15)) : aucun juge automatique ne note une lecture de comparateur ; seul un humain la note, sous l'un des deux motifs de sa double notation et de son arbitrage.",
+      "if": { "properties": { "objet_note": { "properties": { "type": { "const": "lecture_comparateur" } }, "required": ["type"] } }, "required": ["objet_note"] },
+      "then": {
+        "required": ["motif_notation"],
+        "properties": {
+          "notateur": { "properties": { "type": { "const": "humain" } } },
+          "motif_notation": { "enum": ["double_notation_comparateur", "arbitrage_comparateur"] }
+        }
+      }
+    },
+    {
+      "$comment": "§6 (protocole 0.24, D59 (15)) : les motifs de la notation d'une lecture de comparateur ne valent que pour elle.",
+      "if": { "properties": { "motif_notation": { "enum": ["double_notation_comparateur", "arbitrage_comparateur"] } }, "required": ["motif_notation"] },
+      "then": { "properties": { "objet_note": { "properties": { "type": { "const": "lecture_comparateur" } } } } }
     },
     {
       "$comment": "§7 : les drapeaux portent sur les réponses inexactes.",

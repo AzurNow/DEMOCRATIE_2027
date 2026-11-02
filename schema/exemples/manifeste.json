@@ -2363,13 +2363,13 @@
       "objet": "notation",
       "fichier": "notation/valide-08-lecture-comparateur-sans-version-charge.json",
       "attendu": "valide",
-      "motif": "Copie de valide-01 sur une lecture de comparateur, sans version_charge. D30 (4) : la version de la charge n'est exigée que d'une notation de réponse ; une lecture de comparateur ne reçoit pas la charge du juge de réponse."
+      "motif": "Notation humaine d'une lecture de comparateur, sans version_charge. D30 (4) : la version de la charge n'est exigée que d'une notation de réponse ; une lecture de comparateur ne reçoit pas la charge du juge de réponse. Modifié ouvertement (protocole 0.24, D59 (15)) : le notateur était un juge, qu'une lecture n'admet plus ; il est un humain sous le motif double_notation_comparateur."
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-12-lecture-comparateur-avec-version-charge.json",
       "attendu": "invalide",
-      "motif": "Copie de valide-01 sur une lecture de comparateur, avec version_charge. D30 (4) : la version de la charge est interdite pour une lecture de comparateur, qui n'a pas reçu cette charge.",
+      "motif": "Copie de valide-08 avec version_charge. D30 (4) : la version de la charge est interdite pour une lecture de comparateur, qui n'a pas reçu cette charge. Modifié ouvertement (protocole 0.24, D59 (15)) : le notateur passe de juge à humain, pour que l'exemple ne vise que la version de charge.",
       "regle_protocole": "§6 (QR9), §7 ; décision D30 (4) de l'auteur",
       "erreur_visee": {
         "keyword": "not",
@@ -2868,6 +2868,28 @@
       "erreur_visee": {
         "keyword": "required",
         "instance_path": ""
+      }
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-19-juge-sur-lecture-comparateur.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-08 notée par un juge automatique. Une lecture de comparateur n'est notée par aucun juge automatique : double notation humaine, puis arbitrage humain.",
+      "regle_protocole": "§6 (protocole 0.24) ; décision D59 (15) de l'auteur",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/notateur/type"
+      }
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-20-motif-comparateur-sur-reponse.json",
+      "attendu": "invalide",
+      "motif": "Notation humaine d'une réponse sous le motif double_notation_comparateur, qui ne vaut que pour une lecture de comparateur.",
+      "regle_protocole": "§6 (protocole 0.24) ; décision D59 (15) de l'auteur",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/objet_note/type"
       }
     },
     {

@@ -9,7 +9,7 @@
   "properties": {
     "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
-    "contexte": { "enum": ["run", "contrefactuel_candidat"], "description": "Celui de la notation que le juge aurait rendue." },
+    "contexte": { "enum": ["run", "contrefactuel_candidat", "contrefactuel_outil"], "description": "Celui de la notation que le juge aurait rendue. contrefactuel_outil (protocole 0.24, D59 (13)) : une Q-ATT du sous-ensemble du contrefactuel d'outil, renvoyée sur sa copie permutée." },
     "objet_note": {
       "type": "object",
       "additionalProperties": false,
