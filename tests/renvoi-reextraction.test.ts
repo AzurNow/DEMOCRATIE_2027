@@ -8,8 +8,8 @@
  * autre rejet qui porte le motif (motifs discordants, rejet tranché par l'arbitre, item à deux
  * sources distinctes) est rapporté « à trancher », jamais résolu en silence ni écarté.
  *
- * La seconde moitié de D59 (9) — suspendre les items déjà validés sur l'ancien texte — n'est pas
- * retenue par l'auteur : rien ici ne touche à un autre item que celui rejeté.
+ * Ce module ne nomme que les items rejetés. Ce que le renvoi fait aux autres items validés sur le
+ * même texte (protocole 0.25, D60 (9b)) est testé dans `renvoi-texte-errone.test.ts`.
  */
 
 import { describe, expect, it } from "vitest";
@@ -161,7 +161,7 @@ describe("renvoi à la réextraction : ce que le texte ne tranche pas est rappor
     expect(resultat).toEqual({ sources: [], a_trancher: [] });
   });
 
-  it("un item rejeté ne touche à aucun autre item : la sortie ne nomme que les items rejetés (D59 (9), seconde moitié non retenue)", () => {
+  it("la sortie ne nomme que les items rejetés, jamais un item vérifié sur le même texte (traité par renvoi-texte-errone.ts)", () => {
     const rejeteItem = itemP();
     const verifie = itemP({ id: "01JBANCESSA1000000001TEM09" });
     const resultat = renvoisAReextraction([
