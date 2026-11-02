@@ -872,14 +872,22 @@
       "section": "4",
       "citation": "Un texte extrait faux se solde par un rejet de l'item, qui renvoie la source à la réextraction.",
       "nature": "processus",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
-        "validation/domaine/corrections.ts:examinerCitation"
+        "validation/domaine/corrections.ts:examinerCitation",
+        "schema/decision.schema.json:motif_rejet",
+        "validation/domaine/decision.ts:controlerMotifRejet",
+        "validation/domaine/renvoi-reextraction.ts:renvoisAReextraction",
+        "outils/promote.ts:imprimerRenvoisReextraction"
       ],
-      "tests": [],
+      "tests": [
+        "tests/motif-rejet.test.ts « un rejet d'item P sous le motif est accepté, et la ligne de journal le porte »",
+        "tests/renvoi-reextraction.test.ts « deux « rejeter » sous le motif, item P à une source : la source est renvoyée, avec l'item et le texte en cause »",
+        "tests/renvoi-reextraction.test.ts « deux « rejeter », un seul sous le motif : à trancher, motifs discordants, aucune source renvoyée »"
+      ],
       "lot": "extraction",
       "constat": null,
-      "note": "Le rejet est outillé (validation/domaine/corrections.ts) ; le renvoi de la source à la réextraction n'est écrit nulle part, et l'effet d'une réextraction sur les items validés attend l'auteur (TACHES-AUTEUR)."
+      "note": "D59 (9), première moitié (protocole 0.24) : motif énuméré texte_extrait_errone sur la ligne de journal, renvoi recalculé et nommé par pnpm promote. Partielle : motifs discordants, rejet arbitré et item O à deux sources sont rapportés « à trancher » en attendant l'auteur ; le renvoi est un rapport, aucune file ni commande ne le consomme. Seconde moitié (suspension des items validés sur l'ancien texte) non retenue par l'auteur."
     },
     {
       "id": "§4.18",
@@ -1766,28 +1774,39 @@
       "section": "4",
       "citation": "si une recherche dans l'ensemble de son corpus T1 et T2 ne trouve aucune position sur la mesure",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
-        "schema/item.schema.json:absence.corpus_examine"
+        "schema/item.schema.json:absence.corpus_examine",
+        "validation/domaine/absence.ts:rechercheAbsence"
       ],
-      "tests": [],
+      "tests": [
+        "tests/absence.test.ts « aucun item vérifié, double extraction passée sur tout le corpus sans proposition : la recherche ne trouve rien »",
+        "tests/absence.test.ts « double extraction dont un seul extracteur propose une position (désaccord d'existence) : ce n'est pas une absence »",
+        "tests/absence.test.ts « item P vérifié présent, item O seulement en staging : position trouvée, les deux sont nommés »"
+      ],
       "lot": "extraction",
       "constat": null,
-      "note": "Le schéma porte absence.corpus_examine ; aucun code ne propose ni ne contrôle un item A (l'extraction ne dépose pas d'items A)."
+      "note": "D59 (10) (protocole 0.24) : la définition est codée et testée (validation/domaine/absence.ts). Partielle : aucun chemin ne crée ni ne promeut encore un item A en l'appelant, et une proposition d'extraction n'est rattachée à la mesure recherchée que par son mesure_id (l'extraction propose ses propres mesures) — question ouverte à l'auteur."
     },
     {
       "id": "§4.70",
       "section": "4",
       "citation": "Les items A sont revérifiés à chaque run par recherche automatique de nouvelles sources T1 sur le thème, puis confirmation humaine.",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
-        "schema/item.schema.json:absence.reverifications"
+        "schema/item.schema.json:absence.reverifications",
+        "validation/domaine/absence.ts:nouvellesSourcesT1",
+        "validation/domaine/types.ts:Reverification"
       ],
-      "tests": [],
+      "tests": [
+        "tests/absence.test.ts « aucune revérification encore faite : la borne est la date d'examen du corpus »",
+        "tests/absence.test.ts « source collectée exactement à l'instant de la dernière revérification : pas nouvelle (« après » est strict) »",
+        "tests/absence.test.ts « une revérification porte un seul annotateur, et le schéma refuse une liste »"
+      ],
       "lot": "extraction",
       "constat": null,
-      "note": "La case 2 de l'annexe F rend « items d'absence revérifiés » non fait par construction (checklist.ts:constatItemsAbsenceReverifies) tant que la revérification n'existe pas."
+      "note": "D59 (11) (protocole 0.24) : « nouvelle source T1 » et le seul annotateur de la revérification sont codés et testés. Partielle : la recherche automatique « sur le thème » et la confirmation humaine (écriture de reverifications[]) n'existent pas ; la case 2 de l'annexe F reste non faite par construction (checklist.ts:constatItemsAbsenceReverifies)."
     },
     {
       "id": "§4.71",
