@@ -29,6 +29,10 @@
  * Une mesure identique à sa version publiée passe sans relecture. Le registre est lu, jamais écrit
  * ici ; un registre illisible ou une entrée malformée arrêtent la commande.
  *
+ * Protocole 0.24 (§4, D59 (9)) : les sources que des rejets sous le motif « texte extrait erroné »
+ * renvoient à la réextraction sont nommées au rapport, recalculées depuis les journaux ; rien n'est
+ * écrit pour elles (`validation/domaine/renvoi-reextraction.ts`).
+ *
  *   pnpm promote
  *   pnpm promote --ecrire
  */
@@ -44,6 +48,7 @@ import { CorrectionMesureIncoherente } from "../validation/domaine/corrections-m
 import { decrireEcart, ecartsDeDates } from "../validation/domaine/dates-sources.ts";
 import type { LotEffectif } from "../validation/domaine/lot.ts";
 import { VersionMesureEcart, type Issue } from "../validation/domaine/promotion.ts";
+import { renvoisAReextraction } from "../validation/domaine/renvoi-reextraction.ts";
 import type { Item, Lot } from "../validation/domaine/types.ts";
 import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
@@ -152,6 +157,27 @@ function imprimerRenvoyes(renvoyes: readonly RenvoyeDuLot[]): void {
       `  ${renvoye.item.id}  [${renvoye.lot_id}]  jugé en version ${renvoye.version_du_lot}, ` +
         `en attente en version ${renvoye.item.version} (mesure en version ${renvoye.item.mesure_version})\n`,
     );
+  }
+}
+
+/**
+ * §4 (protocole 0.24, D59 (9)) : un item rejeté sous le motif « texte extrait erroné » renvoie sa
+ * source à la réextraction. Le renvoi se recalcule à chaque lancement depuis les journaux ; il est
+ * nommé ici, n'écrit rien et ne bloque rien. Un rejet sous ce motif que le texte ne tranche pas
+ * (`renvoi-reextraction.ts`) est nommé à part, avec sa raison.
+ */
+function imprimerRenvoisReextraction(verdicts: readonly Verdict[]): void {
+  const { sources, a_trancher } = renvoisAReextraction(verdicts);
+  if (sources.length > 0) {
+    process.stdout.write(`\nSources renvoyées à la réextraction (motif « texte extrait erroné ») : ${sources.length}\n`);
+    for (const source of sources) {
+      const texte = source.texte_sha256 === undefined ? "sans texte_sha256" : `texte ${source.texte_sha256}`;
+      process.stdout.write(`  ${source.sha256}  ${texte}  ${source.url}  items : ${source.items.join(", ")}\n`);
+    }
+  }
+  if (a_trancher.length > 0) {
+    process.stdout.write(`\nRejets sous le motif « texte extrait erroné » sans renvoi établi : ${a_trancher.length}\n`);
+    for (const rejet of a_trancher) process.stdout.write(`  ${rejet.item_id}  ${rejet.raison}\n`);
   }
 }
 
@@ -439,6 +465,7 @@ function principal(): void {
   imprimerRapport(verdicts, effectifs, options);
   imprimerIntrouvables(introuvables);
   imprimerRenvoyes(renvoyes);
+  imprimerRenvoisReextraction(verdicts);
   imprimerNonConformes(fautifs);
   imprimerDatesIncoherentes(dates);
   imprimerPlanMesures(plan);

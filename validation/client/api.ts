@@ -6,6 +6,7 @@ import type {
   Decision,
   Diagnostic,
   ListeFormulations,
+  MotifRejet,
   Raccourcis,
   RelectureFormulations,
   Session,
@@ -27,6 +28,8 @@ export interface RequeteDecision {
   readonly lot_id: string;
   readonly item_id: string;
   readonly decision: Decision;
+  /** Sur « rejeter » seulement, et seulement si l'annotateur l'a coché (D59 (9)). */
+  readonly motif_rejet?: MotifRejet;
   readonly reponses_grille?: Record<string, boolean | null>;
   readonly reponses_par_etat?: {
     readonly anterieur: Record<string, boolean | null>;
