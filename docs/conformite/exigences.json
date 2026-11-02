@@ -176,48 +176,86 @@
       "section": "2",
       "citation": "H1 : pour chaque outil, le taux de fabrication sur les items pièges et d'absence est strictement positif (borne inférieure de l'intervalle de confiance à 95 % supérieure à 0).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/hypotheses.ts:decisionH1"
+      ],
+      "tests": [
+        "tests/analysis/hypotheses.test.ts « est vraie pour un outil dont un seul des deux couples a une borne inférieure > 0 »",
+        "tests/analysis/hypotheses.test.ts « est fausse quand la borne inférieure touche exactement 0 »",
+        "tests/analysis/hypotheses.test.ts « publie « sans objet » un outil sans aucun couple comparé (tous incomplets) »",
+        "tests/analysis/hypotheses.test.ts « n'est confirmée que si elle est vraie pour tous les outils »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "Règle de décision d'une hypothèse ; aucune fonction d'analysis/ ne la porte encore."
+      "note": "Règle de décision de la 0.24 (D59 (3)). Le couple au taux de fabrication sans dénominateur est tenu pour « sans objet » ; un outil « sans objet » rend H1 globale infirmée (lecture littérale, question posée à l'auteur). L'intervalle du taux de fabrication est une entrée : son calcul par couple et le branchement à pnpm analyze restent à faire."
     },
     {
       "id": "§2.05",
       "section": "2",
       "citation": "H2 : l'exactitude est plus faible sans recherche web qu'avec, en particulier sur les items datant de moins de 60 jours.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "analysis/strate-recente.ts:unitesDeLaStrateRecente",
+        "analysis/strate-recente.ts:dateDansStrateRecente",
+        "analysis/hypotheses.ts:decisionH2"
+      ],
+      "tests": [
+        "tests/analysis/strate-recente.test.ts « garde un item daté exactement de 60 jours avant le gel (borne basse comprise) »",
+        "tests/analysis/strate-recente.test.ts « exclut un item daté de 61 jours avant le gel »",
+        "tests/analysis/strate-recente.test.ts « garde un item daté du jour du gel (borne haute comprise) »",
+        "tests/analysis/strate-recente.test.ts « refuse un item O sans date de changement, sans se replier sur valide_du »",
+        "tests/analysis/strate-recente.test.ts « exclut une question sur un item F, même daté dans la fenêtre »",
+        "tests/analysis/strate-recente.test.ts « exclut une question d'attribution, même portée par un item principal récent »",
+        "tests/analysis/hypotheses.test.ts « est confirmée quand l'exactitude baisse sans web et que l'intervalle exclut 0 »",
+        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand la différence est établie mais positive »",
+        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand l'intervalle touche 0 (non établie) »",
+        "tests/analysis/hypotheses.test.ts « lit le sens réel de pairesParMode : exactitude plus basse sans web ⇒ confirmée »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "La sous-population « moins de 60 jours » n'existe nulle part dans analysis/."
+      "note": "Règle de décision et strate de la 0.24 (D59 (1), (2)). Partielle : le nom de la strate « moins de 60 jours » dans la clé de graine du §8 n'est pas écrit (seuls global, candidat:, theme:, gabarit:, registre:), donc la différence secondaire n'est pas calculée ; decisionH2 la reçoit en entrée. Les items lus par lireItemsEpingles portent valide_du et obsolescence au type Item d'analysis/types.ts près."
     },
     {
       "id": "§2.06",
       "section": "2",
       "citation": "H4 : les taux d'erreur ne sont pas homogènes entre candidats pour au moins un outil (test de la section 8, seuil 0,05 après correction de Holm).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/hypotheses.ts:decisionH4",
+        "analysis/permutation.ts:corrigerFamilleAsymetrie",
+        "analysis/holm.ts:corrigerHolm"
+      ],
+      "tests": [
+        "tests/analysis/hypotheses.test.ts « est confirmée quand un couple a une valeur p corrigée sous 0,05 »",
+        "tests/analysis/hypotheses.test.ts « est infirmée quand la valeur p corrigée vaut exactement 0,05 (inégalité stricte) »",
+        "tests/analysis/hypotheses.test.ts « est indécidable quand aucun couple n'a de test, jamais infirmée »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "analysis/holm.ts et analysis/permutation.ts existent (bloc 3) ; le seuil de décision 0,05 n'est appliqué nulle part."
+      "note": "Règle de décision de la 0.24 (D59 (4)) : p corrigé < 0,05 strict, « indécidable » sans test. Le branchement à pnpm analyze reste à faire."
     },
     {
       "id": "§2.07",
       "section": "2",
       "citation": "Analyse exploratoire annoncée : corrélation entre le taux d'erreur par candidat et le nombre d'items de référence disponibles pour ce candidat (proxy de couverture).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/correlation-couverture.ts:correlationsParCouple",
+        "analysis/correlation-couverture.ts:correlationCouverture"
+      ],
+      "tests": [
+        "tests/analysis/correlation-couverture.test.ts « est calculée avec exactement trois candidats comparés »",
+        "tests/analysis/correlation-couverture.test.ts « n'est pas calculée avec deux candidats comparés, et publie son motif »",
+        "tests/analysis/correlation-couverture.test.ts « traite les ex æquo de taux d'erreur par rangs moyens, sur l'égalité exacte des fractions »",
+        "tests/analysis/correlation-couverture.test.ts « n'y fait pas entrer un candidat sous le seuil de couverture, qui ne compte pas pour les trois »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": null
+      "note": "D59 (5), protocole 0.24 : Spearman (rangs moyens) entre le taux d'erreur exact (1 − exactitude) et items_p_verifies, par couple comparé, sans intervalle, étiquette exploratoire ; absent avec motif sous trois candidats ou sur un classement constant (rangs_constants, lecture à confirmer). Composition dans pnpm analyze : hors lot."
     },
     {
       "id": "§3.01",
@@ -3467,14 +3505,26 @@
       "section": "5",
       "citation": "Le nombre exact de questions et de réponses (2 échantillons par formulation) est publié avec chaque run.",
       "nature": "donnee",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
-        "pipeline/gel/assemblage.ts (tirage.nombre_questions)"
+        "pipeline/gel/assemblage.ts (tirage.nombre_questions)",
+        "pipeline/gel/assemblage.ts (reponses.prevues)",
+        "pipeline/run/reponses.ts:reponsesPrevues",
+        "pipeline/run/reponses.ts:reponsesObtenues",
+        "pipeline/run/reponses.ts:inscrireReponsesObtenues",
+        "schema/run.schema.json:reponses"
       ],
-      "tests": [],
+      "tests": [
+        "tests/gel/geler.test.ts « D59 (17) : run.json inscrit au gel le nombre de réponses prévues par le plan, sans réponses obtenues »",
+        "tests/run/reponses.test.ts « chaque assistant inclus × mode déclaré × question tirée × formulation × échantillon (2) »",
+        "tests/run/reponses.test.ts « un refus de l'API est obtenu ; une manquante hors fenêtre ou après échecs est prévue et non obtenue »",
+        "tests/run/reponses.test.ts « aucune réponse obtenue (toutes manquantes) : zéro, pas une absence »",
+        "tests/run/reponses.test.ts « une requête du plan sans réponse écrite (jamais tentée, ou en attente de l'opérateur) : l'interrogation n'est pas terminée »",
+        "tests/run/reponses.test.ts « déjà inscrit, nombre différent : refus, jamais réécrit »"
+      ],
       "lot": "interrogation",
       "constat": null,
-      "note": "Le nombre de questions est inscrit au gel ; le nombre de réponses n'est publié dans aucun fichier du run (seul le bilan de pnpm run:dry l'imprime)."
+      "note": "Protocole 0.24, D59 (17) : le nombre de réponses prévues par le plan d'interrogation est inscrit au gel (run.json#/reponses/prevues, exigé de tout run). Le nombre de réponses obtenues (reponses.obtenues) est défini, compté et inscriptible par une fonction pure (refus de l'API compris, manquantes exclues, refus tant qu'une requête du plan n'a pas de réponse écrite), mais aucune commande ne l'écrit encore : le moment « après l'interrogation » et la commande qui l'inscrit sont une question ouverte (rapport du lot D59 A3)."
     },
     {
       "id": "§6.01",
@@ -4240,11 +4290,15 @@
         "tests/analysis/kappa-jeu-or.test.ts « un juge parfait et l'autre faible : la paire vaut le kappa du faible (un juge faible ne se cache pas) »",
         "tests/analysis/kappa-jeu-or.test.ts « toutes les notes retenues indéterminées : exclues et comptées, aucune réponse comparable »",
         "tests/analysis/kappa-jeu-or.test.ts « une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1 ; la paire aussi »",
-        "tests/analysis/kappa-jeu-or.test.ts « le juge retiré n'a pas de kappa ; la paire est celle du juge restant, même si le retiré était faible »"
+        "tests/analysis/kappa-jeu-or.test.ts « le juge retiré n'a pas de kappa ; la paire est celle du juge restant, même si le retiré était faible »",
+        "tests/analysis/kappa-jeu-or.test.ts « refus de l'API : hors du kappa de chaque juge, compté une fois pour le jeu d'or »",
+        "tests/analysis/kappa-jeu-or.test.ts « jeu d'or composé uniquement de refus : aucune réponse comparable, chaque kappa et la paire absents avec ce motif »",
+        "tests/analysis/kappa-jeu-or.test.ts « Q-ATT renvoyée par un juge : hors du kappa de CE juge seulement, comptée pour lui »",
+        "tests/analysis/kappa-jeu-or.test.ts « Q-ATT renvoyée ET refus de l'API sur la même réponse : incohérent (aucun juge ne voit un refus, D32), rien n'est compté deux fois »"
       ],
       "lot": null,
       "constat": 7,
-      "note": "Lot D58 (protocole 0.23) : le kappa de chaque juge sur le jeu d'or (contre la note humaine retenue, catégorie primaire, non pondéré, indéterminées exclues et comptées) et celui de la paire (le plus faible) sont calculés par une fonction pure, analysis/kappa-jeu-or.ts, qui partage la note humaine retenue et le noyau du kappa avec l'échantillon. Reste partielle : aucun format de fichier n'assemble le jeu d'or, aucun motif n'existe pour son troisième humain, et aucune commande n'écrit kappa_juge_humain ni kappa_paire_juges dans run.json."
+      "note": "Lot D58 (protocole 0.23) : le kappa de chaque juge sur le jeu d'or (contre la note humaine retenue, catégorie primaire, non pondéré, indéterminées exclues et comptées) et celui de la paire (le plus faible) sont calculés par une fonction pure, analysis/kappa-jeu-or.ts, qui partage la note humaine retenue et le noyau du kappa avec l'échantillon. Protocole 0.24, D59 (20) : un refus de l'API (notation par règle) sort du kappa de chaque juge et est compté (refus_api), une Q-ATT renvoyée par un juge sort du kappa de ce juge et est comptée pour lui (renvois_ecartes), comme pour l'échantillon (D32, D31 (2)) ; tout écarté donne aucune_reponse_comparable. Reste partielle : aucun format de fichier n'assemble le jeu d'or, aucun motif n'existe pour son troisième humain, aucune commande n'écrit kappa_juge_humain ni kappa_paire_juges dans run.json, et run.json n'a encore aucun champ pour les nombres d'indéterminées, de refus et de renvois du jeu d'or."
     },
     {
       "id": "§7.23",
@@ -4338,12 +4392,19 @@
       "section": "7",
       "citation": "Si l'écart d'exactitude entre le juge Anthropic et le juge tiers sur les réponses du produit Anthropic dépasse l'écart observé sur les autres produits, il est signalé dans le rapport.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "analysis/ecart-juge-editeur.ts:ecartsJugesEditeurs"
+      ],
+      "tests": [
+        "tests/analysis/ecart-juge-editeur.test.ts « calcule l'écart signé sur l'outil de l'éditeur contre la moyenne des autres, et le signale s'il exclut 0 »",
+        "tests/analysis/ecart-juge-editeur.test.ts « compare à l'écart du seul autre outil quand il n'y en a qu'un »",
+        "tests/analysis/ecart-juge-editeur.test.ts « ne signale pas une différence dont l'intervalle touche 0 exactement »",
+        "tests/analysis/ecart-juge-editeur.test.ts « publie absent, avec son motif, l'écart d'un juge dont l'éditeur n'a aucune réponse notée »"
+      ],
       "lot": "notation",
       "constat": null,
-      "note": "À porter en données (famille_modele, éditeur de l'outil), jamais par un if sur un outil."
+      "note": "D59 (14), protocole 0.24 : calcul fait (écart signé, moyenne des autres outils, bootstrap en grappes, signalé si l'intervalle exclut 0). Partielle : l'association juge → outils de son éditeur est reçue en paramètre, aucune donnée du run ne la porte (famille_modele n'est pas un éditeur ; editeur de l'outil reste dans perimetre.yaml) ; la clé de la graine n'est pas écrite au §8 ; un éditeur à plusieurs outils du run est publié absent. Décisions à poser à l'auteur."
     },
     {
       "id": "§7.29",
@@ -4381,11 +4442,14 @@
         "tests/analysis/lecture-run.test.ts « un accord qui contredit les notations lève AccordHumainsDivergent, avec l'écrit et le recalcul »",
         "tests/analysis/accord-humains.test.ts « non pondéré, sur les quatre catégories de la grille (annexe C) : 3 accords sur 4, κ = 7/11 »",
         "tests/analysis/accord-humains.test.ts « une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1 »",
-        "tests/analysis/lecture-run.test.ts « D58 : un kappa des deux humains écrit qui contredit le recalcul (1 au lieu d'absent) : AccordHumainsDivergent »"
+        "tests/analysis/lecture-run.test.ts « D58 : un kappa des deux humains écrit qui contredit le recalcul (1 au lieu d'absent) : AccordHumainsDivergent »",
+        "tests/analysis/accord-humains.test.ts « « indeterminee » est une catégorie primaire (annexe C) : deux humains qui la donnent tous deux s'accordent »",
+        "tests/analysis/accord-humains.test.ts « D59 (21) : un humain « indeterminee », l'autre non — un désaccord sur une catégorie comptée, pas une réponse écartée »",
+        "tests/analysis/accord-humains.test.ts « D59 (21) : deux « indeterminee » partout — elles s'accordent, une seule catégorie : accord attendu maximal, jamais 1 »"
       ],
       "lot": null,
       "constat": 8,
-      "note": "Corrigé : l'aveugle est gardé ; l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14, notationsConcordent), est publié dans run.json#/accord_humains_echantillon (réponses doublement notées, accords, part ; part absente sur zéro réponse), exigé de tout go/no-go et recoupé par lireRun. Lot D58 (protocole 0.23) : le kappa de Cohen des deux humains sur la catégorie primaire, non pondéré, y est publié (kappa, ou motif_indefini_kappa quand il est indéfini), diagnostic lu par aucun critère du go/no-go."
+      "note": "Corrigé : l'aveugle est gardé ; l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14, notationsConcordent), est publié dans run.json#/accord_humains_echantillon (réponses doublement notées, accords, part ; part absente sur zéro réponse), exigé de tout go/no-go et recoupé par lireRun. Lot D58 (protocole 0.23) : le kappa de Cohen des deux humains sur la catégorie primaire, non pondéré, y est publié (kappa, ou motif_indefini_kappa quand il est indéfini), diagnostic lu par aucun critère du go/no-go. Protocole 0.24, D59 (21) : ce kappa porte sur les quatre catégories de l'annexe C, « indéterminée » comprise, et deux « indéterminée » s'accordent ; c'était déjà le code du lot D58 (CATEGORIES_PRIMAIRES), désormais couvert par des tests des cas limites."
     },
     {
       "id": "§7.31",
@@ -4864,12 +4928,20 @@
       "section": "8",
       "citation": "Tous les taux sont accompagnés d'un intervalle de confiance à 95 %",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "analysis/incertitude.ts:tauxPubliesParCouple",
+        "analysis/incertitude.ts:stratesDuCalculPrincipal"
+      ],
+      "tests": [
+        "tests/analysis/incertitude.test.ts « nomme l'intervalle d'un taux par la clé du §8 : famille, outil, mode, métrique, strate »",
+        "tests/analysis/incertitude.test.ts « publie l'exactitude sur chaque strate candidat:, theme:, gabarit:, registre:, dans cet ordre »",
+        "tests/analysis/incertitude.test.ts « publie absente, avec le motif strate_vide, une strate sans unité dans ce couple — jamais 0 »",
+        "tests/analysis/incertitude.test.ts « publie absent, avec le motif denominateur_nul, un taux dont le dénominateur est nul sur une strate non vide »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "analysis/bootstrap.ts:intervalleBootstrap et intervalleNomme existent ; metriquesPrimaires ne rend aucun intervalle ; la composition relève de pnpm analyze, absent de package.json."
+      "note": "D59 (7), protocole 0.24 : chaque taux primaire et chaque part de la répartition des drapeaux (strate global), l'exactitude par candidat:, theme:, gabarit:, registre:, avec intervalle nommé, pour chaque couple outil × mode comparé. Partielle : couverture et exactitude des comparateurs, et taux exploratoires du canal application, sans intervalle — le §8 n'écrit leur clé qu'avec un mode. Composition dans pnpm analyze : hors lot."
     },
     {
       "id": "§8.19",
@@ -5615,12 +5687,20 @@
       "section": "8",
       "citation": "Les taux sont publiés recalculés sans qualificatif de fragilité.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/robustesse-taux.ts:tauxRecalcules",
+        "analysis/robustesse.ts:restrictions"
+      ],
+      "tests": [
+        "tests/analysis/robustesse-taux.test.ts « ne retire pas par un seuil réappliqué un candidat comparé au principal, même réduit à une réponse »",
+        "tests/analysis/robustesse-taux.test.ts « garde exclu de chaque recalcul un candidat sous le seuil au calcul principal »",
+        "tests/analysis/robustesse-taux.test.ts « publie, avec des taux absents, un couple comparé que la restriction vide, et n'ouvre jamais un couple incomplet »",
+        "tests/analysis/robustesse-taux.test.ts « garde la clé et la graine du calcul principal : sans réponse retirée, l'intervalle est le même »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "Les restrictions (a) à (d) sont exportées par analysis/robustesse.ts ; aucune fonction ne recalcule les métriques primaires sur chacune (evaluerRobustesse ne traite que des différences). Composition de pnpm analyze."
+      "note": "D59 (8), protocole 0.24 : les quatre recalculs rendent tous les taux publiés (incertitude.ts), sans qualificatif de fragilité, sur le partage des couples, des candidats et les strates du calcul principal, reçus et jamais recalculés. Composition dans pnpm analyze : hors lot."
     },
     {
       "id": "§9.01",

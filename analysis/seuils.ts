@@ -387,7 +387,8 @@ export function parModeDuRun(
   return resultat;
 }
 
-function reponsesApiDuRun(reponses: readonly Reponse[]): Reponse[] {
+/** Les réponses API de contexte run ; exportée pour le compte des réponses obtenues (`pipeline/run/reponses.ts`, D59 (17)). */
+export function reponsesApiDuRun(reponses: readonly Reponse[]): Reponse[] {
   return filtrerContexteRun(reponses).filter((r) => r.canal === "api");
 }
 

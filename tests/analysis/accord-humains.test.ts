@@ -123,6 +123,24 @@ describe("§7 « Annotateurs humains » (protocole 0.23, D58) : kappa des deux h
     expect(accordHumainsEchantillon(echantillon, notations)).toMatchObject({ kappa: 1, motif_indefini_kappa: null });
   });
 
+  it("D59 (21) : un humain « indeterminee », l'autre non — un désaccord sur une catégorie comptée, pas une réponse écartée", () => {
+    // Premier humain (indeterminee 1, exacte 1, inexacte 1), second (exacte 2, inexacte 1) ; A = 2, B = 1·2 + 1·1 + 1·0 = 3, n = 3 :
+    // κ = (2·3 − 3) / (9 − 3) = 1/2. Écarter la réponse indéterminée donnerait κ = 1 sur deux réponses.
+    const { echantillon, notations } = echantillonSynthetique([
+      { juges: {}, humains: ["indeterminee", "exacte"], arbitre: "exacte" },
+      { juges: {}, humains: ["exacte", "exacte"] },
+      { juges: {}, humains: ["inexacte", "inexacte"] },
+    ]);
+    const accord = accordHumainsEchantillon(echantillon, notations);
+    expect(accord).toMatchObject({ reponses_doublement_notees: 3, accords: 2, motif_indefini_kappa: null });
+    expect(accord.kappa).toBeCloseTo(1 / 2, 12);
+  });
+
+  it("D59 (21) : deux « indeterminee » partout — elles s'accordent, une seule catégorie : accord attendu maximal, jamais 1", () => {
+    const { echantillon, notations } = echantillonSynthetique(fois(3, { juges: {}, humains: ["indeterminee", "indeterminee"] }));
+    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal" });
+  });
+
   it("une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1", () => {
     const { echantillon, notations } = echantillonSynthetique(fois(5, ACCORD));
     expect(accordHumainsEchantillon(echantillon, notations)).toMatchObject({ part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal" });

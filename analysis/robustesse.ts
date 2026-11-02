@@ -232,13 +232,16 @@ export function evaluerRobustesse(
   return { principal, recalculs, fragile: motifs.length > 0, motifs_fragilite: motifs };
 }
 
-interface Restriction {
+export interface Restriction {
   readonly recalcul: Recalcul;
   readonly restreindre: (unites: readonly UniteAnalyse[]) => UniteAnalyse[];
 }
 
-/** Ordre figé : (a), (b), (c), (d) du §8, dans cet ordre, pour que le rapport soit comparable d'un run à l'autre. */
-function restrictions(sources: SourcesRobustesse): readonly Restriction[] {
+/**
+ * Ordre figé : (a), (b), (c), (d) du §8, dans cet ordre, pour que le rapport soit comparable d'un run à l'autre.
+ * Partagé avec `robustesse-taux.ts`, qui recalcule les taux sur les mêmes restrictions.
+ */
+export function restrictions(sources: SourcesRobustesse): readonly Restriction[] {
   return [
     { recalcul: "echantillon_humain", restreindre: (unites) => recalculEchantillonHumain(unites, sources.notations) },
     { recalcul: "items_contestes", restreindre: (unites) => exclureItemsContestes(unites, sources.run) },
