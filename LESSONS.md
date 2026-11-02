@@ -247,11 +247,18 @@ de l'épinglage de l'extracteur, posé dans le corps de #161 le 19 octobre, et l
 recommandée de #168 sont restés sans réponse jusqu'à la relecture du 1er novembre, alors que le code
 fusionné appliquait déjà l'option contraire au §4 pour la première. Une question qui n'est que dans le
 corps d'une PR fusionnée n'est plus lue par personne : elle entre comme décision Dn ou n'existe pas.
+Récidive le 2026-11-02 : cinq PR des lots D59 (#230, #232 à #235) annonçaient leurs questions « à
+inscrire dans la feuille de route avec celles des autres lots ». Personne ne l'a fait, et D60 n'en a
+repris qu'une partie. La clôture en a retrouvé vingt et une, dont la fausse absence de
+`rechercheAbsence` (DETTE 2026-11-02, point 2), devenues D62. « Plus tard, avec les autres » revient
+à ne jamais les inscrire : la PR qui pose la question écrit aussi la ligne Dn.
 
 **Une autorisation en mémoire ne lève pas une garde de l'outil.** Le 2026-10-12, `gh pr merge` a été
 refusé par le contrôle automatique de Claude Code malgré l'autorisation de fusion du 2026-10-02.
 Les PR #104 et #109 attendent la fusion de l'auteur. Ne pas contourner : le dire, et laisser
-l'auteur ajouter une règle de permission.
+l'auteur ajouter une règle de permission. Récidive le 2026-11-02 : la fusion de #242 a été
+refusée (« Merge Without Review ») alors que la consigne du 2026-11-01 et la mémoire l'autorisent.
+Ce qu'en dit `HANDOFF.md` (« `gh pr merge` fonctionne ») ne vaut que pour la session cloud.
 
 **Une dette marquée « réglée » se vérifie dans le code, pas dans le récit.** Le point de dette du
 2026-09-20 sur l'exactitude des comparateurs a été barré avec la mention « jamais implémentée » ; la

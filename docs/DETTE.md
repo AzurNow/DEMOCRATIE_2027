@@ -13,6 +13,86 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-02 — D58 à D61, protocole 0.23 à 0.26 et lots d'analyse, d'extraction, d'interrogation, de notation et de validation (PR #224 à #242 : `analysis/`, `validation/domaine/`, `pipeline/interrogation/`, `pipeline/notation/`, `outils/promote.ts`)
+
+### 1. Les modules d'analyse de D59 et D60 ne sont assemblés par aucun appelant — *haute*
+
+`analysis/hypotheses.ts`, `incertitude.ts`, `robustesse-taux.ts`, `ecart-api-application.ts`,
+`correlation-couverture.ts`, `ecart-juge-editeur.ts` et `strate-recente.ts` reçoivent chacun en
+paramètre le partage des couples et des candidats, les strates et le mode de tête. `pnpm analyze`
+n'existe pas : rien ne garantit qu'ils recevront les mêmes.
+
+**Pourquoi ça casse.** Si l'assembleur passe aux recalculs de robustesse un autre partage que celui
+du calcul principal (ou recalcule les seuils), la robustesse publiée porte sur une autre population
+que les chiffres qu'elle doit éprouver. Chaque module reste vert dans ses propres tests.
+
+**Ce qu'il faut faire.** Dans le lot `pnpm analyze`, calculer le partage une fois et le passer à tous
+les modules, avec un test de bout en bout qui compare les populations. Plan soumis à l'auteur d'abord.
+
+### 2. `rechercheAbsence` ne voit pas une proposition non rattachée à la mesure — *haute*
+
+`validation/domaine/absence.ts` (#233) conclut « rien trouvé » quand aucune proposition de
+l'extraction ne porte sur la mesure. Une proposition encore non rattachée à la mesure (son `mesure_id` en désigne une autre)
+n'y figure pas. La fonction n'a aucun appelant aujourd'hui.
+
+**Pourquoi ça casse.** Dès qu'elle sera branchée sur la promotion d'un item A, une position réelle
+du candidat, déposée mais pas encore rattachée, laissera passer un item d'absence faux. Toute
+réponse qui rapporte la vraie position sera alors notée comme une fabrication.
+
+**Ce qu'il faut faire.** Exiger le rattachement de toutes les propositions du corpus avant de
+promouvoir un item A (recommandation de #233, D62 (#233 (3)), décision de l'auteur).
+
+### 3. Les graines publiées dépendent de chaînes écrites dans le code — *moyenne*
+
+Les clés de bootstrap de D59 et D60 (`exactitude`, `global`, `recents:60j`, `contrefactuel_outil`,
+`<outil>:api-application`, `<juge>:propre-editeur`, les noms des métriques de `incertitude.ts`)
+sont des littéraux de `analysis/` et de `pipeline/notation/echantillons.ts`.
+
+**Pourquoi ça casse.** Si l'une d'elles est renommée, toutes les bornes qu'elle engendre changent,
+alors que le protocole cite toujours l'ancienne clé : un tiers qui refait le calcul d'après le texte
+n'obtient plus les intervalles publiés.
+
+**Ce qu'il faut faire.** Un test qui relève chaque clé écrite au §7 et au §8 et la retrouve dans le
+code, à ajouter à la prochaine passe de conformité.
+
+### 4. Le retour en attente après un texte extrait erroné se recalcule à chaque `pnpm promote` — *moyenne*
+
+`validation/domaine/renvoi-texte-errone.ts` (#239) dérive les renvois des journaux à chaque appel.
+Il reconnaît un retour déjà fait au libellé exact de l'entrée d'historique (`CHANGEMENT_TEXTE_ERRONE`).
+
+**Pourquoi ça casse.** Si ce libellé change, ou si une réannotation fait apparaître ou disparaître le
+rejet, un item repart en attente une seconde fois (version + 1, revalidation), ou cesse de l'être,
+sans trace écrite de la cause.
+
+**Ce qu'il faut faire.** Garder le libellé sous un test de non-régression ; journaliser le renvoi
+lui-même le jour où un consommateur de la liste des renvois existera (D62, #233 (2)).
+
+### 5. Un adaptateur d'éditeur réel peut manquer à `docs/APPELS-INTERROGATION.md` — *basse*
+
+Le document engendré par `pnpm appels-interrogation` (#234) ne liste que les adaptateurs de
+`ADAPTATEURS_DOCUMENTES`. Un adaptateur réel oublié dans cette liste est omis sans échec de test.
+
+**Ce qu'il faut faire.** Au branchement du premier adaptateur réel, dériver la liste du registre des
+adaptateurs au lieu de la tenir à la main.
+
+### 6. La liste « à contester » de `pnpm promote` revient à chaque appel — *basse*
+
+Un item publié sur un texte extrait erroné est listé tant que le rejet existe, même après sa
+contestation (D61, laissé tel quel le 2026-11-02 : son statut de contestation est affiché, et filtrer
+masquerait une contestation au motif différent).
+
+**Ce qu'il faut faire.** Si la liste devient bruyante, ne plus lister un item dont une contestation
+postérieure au rejet existe.
+
+### 7. Une seule saisie de l'application hors conditions arrête toute l'analyse — *basse*
+
+`ApplicationHorsConditionsDesTesteurs` (#242) lève pour tout le run, pas pour le seul outil touché.
+Le schéma `depot-application` refuse déjà ces saisies en amont.
+
+**Ce qu'il faut faire.** Rien tant que le contrôle amont tient ; corriger le dépôt, jamais la garde.
+
+---
+
 ## 2026-11-01 — Relecture des PR de l'absence, D56, protocole 0.21 et lots de correction (PR #187 à #213 : `pipeline/`, `validation/`, `notation-humaine/`, `outils/`, `analysis/`)
 
 ### ~~1. `pnpm interrogation:stocker` classe une réponse avec les adaptateurs d'une fixture de test~~ — réglé le 2026-11-01 : chaque réception gardée nomme l'adaptateur qui a reçu ses octets (`normalisation`, `reponse#/$defs/reception`), et le stockage refuse tout autre adaptateur (`adaptateur_different`). La commande reste branchée sur les profils simulés : avec un éditeur réel, elle refusera bruyamment au lieu de mal classer, jusqu'à ce que les vrais adaptateurs y soient branchés

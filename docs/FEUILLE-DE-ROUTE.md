@@ -4,7 +4,18 @@
 
 ## Décisions en attente
 
-Aucune décision en attente.
+### D62 — Questions laissées ouvertes par les lots D59 (#230, #232 à #235), que D60 n'a pas couvertes et qui n'avaient pas été inscrites : association juge → outils de son éditeur, clé d'un taux sans mode, réponses prévues, renvoi à la réextraction, recherche d'absence, sous-échantillon et dépôts de l'application, contrefactuel d'outil, lecture de comparateur.
+
+Relevées à la clôture du 2026-11-02 dans les corps des PR fusionnées. Le code fusionné applique déjà une lecture sur plusieurs points (indiquée entre crochets) ; aucune n'est écrite au protocole. #230 : (A) quels outils édite l'éditeur d'un juge [paramètre, en attente] ; (B) clé de graine d'un taux sans mode, comparateur ou canal application [recommandé : `lecture` ou `application` à la place du mode] ; (C) clé, population et cas d'un éditeur à plusieurs outils de l'écart juge-éditeur ; (D) même exactitude par candidat publiée sous deux clés. #232 : (1) qui inscrit les réponses obtenues et quand [recommandé : au début de la notation] ; (2) où publier dans run.json les comptes du jeu d'or ; (3) Q-ATT renvoyée qui est aussi un refus de l'API [traitée en incohérence] ; (4) sous-échantillon de l'application hors des réponses prévues [à confirmer]. #233 : (1) rejets « texte extrait erroné » seulement affichés : un seul des deux rejets porte le motif, rejet tranché par l'arbitre (decision-arbitrage sans motif), item O à deux sources [recommandé : renvoyer dans les trois cas, motif ajouté à l'arbitrage] ; (2) aucun mécanisme ne consomme la liste des renvois : pnpm extraire ne relance pas une source journalisée et l'extracteur épinglé rendrait le même texte ; (3) une proposition non rattachée à la mesure est invisible de rechercheAbsence, d'où une fausse absence [recommandé : exiger le rattachement avant de promouvoir un item A] ; (4) une proposition rejetée par le test verbatim compte-t-elle comme position ; (5) docs/CONTRATS.md §1 dit « commentaire » où la 0.24 dit « motif » (CONTRATS fait partie du protocole : amendement). #234 : (2) candidat interrogé à moins de 5 questions tirées [refusé ; recommandé : toutes ses questions] ; (4) sous-échantillon non écrit au gel, run du mois testé et outils à application non dits ; (5) aucune conversion d'un dépôt de testeur vers reponse, faute de règle de normalisation ; (6) sous-échantillon sans graine [ordre trié seul, à confirmer]. #235 : (1) outils du dérangement [recommandé : assistants inclus] ; (2) libellé et éditeur absents de run.json [recommandé : instantané du gel] ; (3) verdict d'une lecture de comparateur : mode_resolution, dans_echantillon_humain, motif divergent à note égale ; (4) trois refus stricts à confirmer : deux outils du même éditeur, notation de lecture sans déclaration d'aveuglement, juges retirés non mesurés.
+
+Options :
+
+1. Option recommandée de chaque PR, écrite à la prochaine révision du protocole (0.27), puis le code des points sans lecture appliquée.
+2. Trancher point par point, en commençant par #233 (3) et #234 (5), qui bloquent un item A juste et l'écart API / application.
+
+**Recommandation :** Commencer par #233 (3) (fausse absence, DETTE 2026-11-02 point 2) et #233 (2) (renvoi sans consommateur), qui touchent une mesure publiée ; le reste avant le gel de la 1.0.
+
+Lots portant cette décision : aucun
 
 ## Décisions tranchées
 
@@ -238,7 +249,7 @@ Aucune décision en attente.
 
 ### D61 — Deux lectures laissées par le code de D60 (#238, #239) : mode « sans objet » de H2 quand la différence des modes est indéfinie ; portée de « les autres items validés » après un rejet pour texte extrait erroné.
 
-**Décision du 2026-11-02 :** Option 1 sur les deux points (décision de l'auteur du 2026-11-02 ; code fusionné dans #238 et #239). Texte écrit en 0.26, PR à part. Restent ouverts, sans décision : contrôle que les saisies de l'application sont neutres et à l'échantillon 1 (lot à part), description de version dans schema/item.schema.json, liste « à contester » de pnpm promote non filtrée sur les contestations ouvertes.
+**Décision du 2026-11-02 :** Option 1 sur les deux points (décision de l'auteur du 2026-11-02 ; code fusionné dans #238 et #239). Texte écrit en 0.26, PR à part. Suites réglées le 2026-11-02 sans décision de l'auteur (option recommandée) : une saisie de l'application hors neutre ou échantillon 1 est refusée à l'analyse et la description de version de schema/item.schema.json cite le retour en attente (#242) ; la liste « à contester » de pnpm promote reste non filtrée, son statut de contestation étant affiché (DETTE 2026-11-02, point 6).
 
 ### D7 — Sept conventions du tirage que le protocole n'écrit pas, retenues au plus restrictif par le lot questions.
 
@@ -292,6 +303,7 @@ flowchart LR
     lot_go_no_go["go-no-go<br/>Critères go/no-go du §12 et contreseing de la checklist de l'annexe F<br/>T3"]:::T3
     lot_site["site<br/>Site statique généré depuis runs/<br/>T0"]:::T0
   end
+  dec_D62{{"D62<br/>Questions laissées ouvertes par les lots D59 (#230, #232 à #…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
