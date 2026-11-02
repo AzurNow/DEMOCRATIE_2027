@@ -3339,6 +3339,12 @@
     },
     {
       "objet": "depot-application",
+      "fichier": "depot-application/valide-02-capture-masquee.json",
+      "attendu": "valide",
+      "motif": "Capture masquée : l'empreinte de la capture d'origine et celle de la capture masquée sont publiées toutes deux (§6, protocole 0.25, D60 (g))."
+    },
+    {
+      "objet": "depot-application",
       "fichier": "depot-application/invalide-01-compte-personnel.json",
       "attendu": "invalide",
       "motif": "Compte personnel du testeur : le §6 l'interdit (« jamais un compte personnel du testeur ») ; seuls « aucun » et « dedie » sont déposables.",

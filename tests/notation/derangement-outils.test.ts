@@ -215,6 +215,14 @@ describe("sous-ensemble du contrefactuel d'outil", () => {
     expect(CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS).not.toEqual(CLE_SOUS_ENSEMBLE_CONTREFACTUEL);
   });
 
+  it("clé de graine du contrefactuel d'outil figée : contrefactuel_outil (§7, protocole 0.25, D60)", () => {
+    expect(CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS).toEqual(["contrefactuel_outil"]);
+    expect(CLE_SOUS_ENSEMBLE_CONTREFACTUEL).toEqual(["contrefactuel", "noms_candidats", "sous_ensemble"]);
+    const rng = generateur(graineDerivee(9, ["contrefactuel_outil"]));
+    const attendu = melanger(ids(450).sort(), rng).slice(0, 200);
+    expect(tirerSousEnsembleContrefactuelOutils(ids(450), graine(9)).reponse_ids).toEqual(attendu);
+  });
+
   it("moins de 200 réponses nommant un outil : toutes, et le sous-effectif est dit (comme pour les candidats)", () => {
     const tire = tirerSousEnsembleContrefactuelOutils(ids(37), graine(9));
     expect([...tire.reponse_ids].sort()).toEqual(ids(37));
