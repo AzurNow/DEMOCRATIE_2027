@@ -176,48 +176,86 @@
       "section": "2",
       "citation": "H1 : pour chaque outil, le taux de fabrication sur les items pièges et d'absence est strictement positif (borne inférieure de l'intervalle de confiance à 95 % supérieure à 0).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/hypotheses.ts:decisionH1"
+      ],
+      "tests": [
+        "tests/analysis/hypotheses.test.ts « est vraie pour un outil dont un seul des deux couples a une borne inférieure > 0 »",
+        "tests/analysis/hypotheses.test.ts « est fausse quand la borne inférieure touche exactement 0 »",
+        "tests/analysis/hypotheses.test.ts « publie « sans objet » un outil sans aucun couple comparé (tous incomplets) »",
+        "tests/analysis/hypotheses.test.ts « n'est confirmée que si elle est vraie pour tous les outils »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "Règle de décision d'une hypothèse ; aucune fonction d'analysis/ ne la porte encore."
+      "note": "Règle de décision de la 0.24 (D59 (3)). Le couple au taux de fabrication sans dénominateur est tenu pour « sans objet » ; un outil « sans objet » rend H1 globale infirmée (lecture littérale, question posée à l'auteur). L'intervalle du taux de fabrication est une entrée : son calcul par couple et le branchement à pnpm analyze restent à faire."
     },
     {
       "id": "§2.05",
       "section": "2",
       "citation": "H2 : l'exactitude est plus faible sans recherche web qu'avec, en particulier sur les items datant de moins de 60 jours.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "analysis/strate-recente.ts:unitesDeLaStrateRecente",
+        "analysis/strate-recente.ts:dateDansStrateRecente",
+        "analysis/hypotheses.ts:decisionH2"
+      ],
+      "tests": [
+        "tests/analysis/strate-recente.test.ts « garde un item daté exactement de 60 jours avant le gel (borne basse comprise) »",
+        "tests/analysis/strate-recente.test.ts « exclut un item daté de 61 jours avant le gel »",
+        "tests/analysis/strate-recente.test.ts « garde un item daté du jour du gel (borne haute comprise) »",
+        "tests/analysis/strate-recente.test.ts « refuse un item O sans date de changement, sans se replier sur valide_du »",
+        "tests/analysis/strate-recente.test.ts « exclut une question sur un item F, même daté dans la fenêtre »",
+        "tests/analysis/strate-recente.test.ts « exclut une question d'attribution, même portée par un item principal récent »",
+        "tests/analysis/hypotheses.test.ts « est confirmée quand l'exactitude baisse sans web et que l'intervalle exclut 0 »",
+        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand la différence est établie mais positive »",
+        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand l'intervalle touche 0 (non établie) »",
+        "tests/analysis/hypotheses.test.ts « lit le sens réel de pairesParMode : exactitude plus basse sans web ⇒ confirmée »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "La sous-population « moins de 60 jours » n'existe nulle part dans analysis/."
+      "note": "Règle de décision et strate de la 0.24 (D59 (1), (2)). Partielle : le nom de la strate « moins de 60 jours » dans la clé de graine du §8 n'est pas écrit (seuls global, candidat:, theme:, gabarit:, registre:), donc la différence secondaire n'est pas calculée ; decisionH2 la reçoit en entrée. Les items lus par lireItemsEpingles portent valide_du et obsolescence au type Item d'analysis/types.ts près."
     },
     {
       "id": "§2.06",
       "section": "2",
       "citation": "H4 : les taux d'erreur ne sont pas homogènes entre candidats pour au moins un outil (test de la section 8, seuil 0,05 après correction de Holm).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/hypotheses.ts:decisionH4",
+        "analysis/permutation.ts:corrigerFamilleAsymetrie",
+        "analysis/holm.ts:corrigerHolm"
+      ],
+      "tests": [
+        "tests/analysis/hypotheses.test.ts « est confirmée quand un couple a une valeur p corrigée sous 0,05 »",
+        "tests/analysis/hypotheses.test.ts « est infirmée quand la valeur p corrigée vaut exactement 0,05 (inégalité stricte) »",
+        "tests/analysis/hypotheses.test.ts « est indécidable quand aucun couple n'a de test, jamais infirmée »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "analysis/holm.ts et analysis/permutation.ts existent (bloc 3) ; le seuil de décision 0,05 n'est appliqué nulle part."
+      "note": "Règle de décision de la 0.24 (D59 (4)) : p corrigé < 0,05 strict, « indécidable » sans test. Le branchement à pnpm analyze reste à faire."
     },
     {
       "id": "§2.07",
       "section": "2",
       "citation": "Analyse exploratoire annoncée : corrélation entre le taux d'erreur par candidat et le nombre d'items de référence disponibles pour ce candidat (proxy de couverture).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/correlation-couverture.ts:correlationsParCouple",
+        "analysis/correlation-couverture.ts:correlationCouverture"
+      ],
+      "tests": [
+        "tests/analysis/correlation-couverture.test.ts « est calculée avec exactement trois candidats comparés »",
+        "tests/analysis/correlation-couverture.test.ts « n'est pas calculée avec deux candidats comparés, et publie son motif »",
+        "tests/analysis/correlation-couverture.test.ts « traite les ex æquo de taux d'erreur par rangs moyens, sur l'égalité exacte des fractions »",
+        "tests/analysis/correlation-couverture.test.ts « n'y fait pas entrer un candidat sous le seuil de couverture, qui ne compte pas pour les trois »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": null
+      "note": "D59 (5), protocole 0.24 : Spearman (rangs moyens) entre le taux d'erreur exact (1 − exactitude) et items_p_verifies, par couple comparé, sans intervalle, étiquette exploratoire ; absent avec motif sous trois candidats ou sur un classement constant (rangs_constants, lecture à confirmer). Composition dans pnpm analyze : hors lot."
     },
     {
       "id": "§3.01",
@@ -4335,12 +4373,19 @@
       "section": "7",
       "citation": "Si l'écart d'exactitude entre le juge Anthropic et le juge tiers sur les réponses du produit Anthropic dépasse l'écart observé sur les autres produits, il est signalé dans le rapport.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "analysis/ecart-juge-editeur.ts:ecartsJugesEditeurs"
+      ],
+      "tests": [
+        "tests/analysis/ecart-juge-editeur.test.ts « calcule l'écart signé sur l'outil de l'éditeur contre la moyenne des autres, et le signale s'il exclut 0 »",
+        "tests/analysis/ecart-juge-editeur.test.ts « compare à l'écart du seul autre outil quand il n'y en a qu'un »",
+        "tests/analysis/ecart-juge-editeur.test.ts « ne signale pas une différence dont l'intervalle touche 0 exactement »",
+        "tests/analysis/ecart-juge-editeur.test.ts « publie absent, avec son motif, l'écart d'un juge dont l'éditeur n'a aucune réponse notée »"
+      ],
       "lot": "notation",
       "constat": null,
-      "note": "À porter en données (famille_modele, éditeur de l'outil), jamais par un if sur un outil."
+      "note": "D59 (14), protocole 0.24 : calcul fait (écart signé, moyenne des autres outils, bootstrap en grappes, signalé si l'intervalle exclut 0). Partielle : l'association juge → outils de son éditeur est reçue en paramètre, aucune donnée du run ne la porte (famille_modele n'est pas un éditeur ; editeur de l'outil reste dans perimetre.yaml) ; la clé de la graine n'est pas écrite au §8 ; un éditeur à plusieurs outils du run est publié absent. Décisions à poser à l'auteur."
     },
     {
       "id": "§7.29",
@@ -4864,12 +4909,20 @@
       "section": "8",
       "citation": "Tous les taux sont accompagnés d'un intervalle de confiance à 95 %",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "analysis/incertitude.ts:tauxPubliesParCouple",
+        "analysis/incertitude.ts:stratesDuCalculPrincipal"
+      ],
+      "tests": [
+        "tests/analysis/incertitude.test.ts « nomme l'intervalle d'un taux par la clé du §8 : famille, outil, mode, métrique, strate »",
+        "tests/analysis/incertitude.test.ts « publie l'exactitude sur chaque strate candidat:, theme:, gabarit:, registre:, dans cet ordre »",
+        "tests/analysis/incertitude.test.ts « publie absente, avec le motif strate_vide, une strate sans unité dans ce couple — jamais 0 »",
+        "tests/analysis/incertitude.test.ts « publie absent, avec le motif denominateur_nul, un taux dont le dénominateur est nul sur une strate non vide »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "analysis/bootstrap.ts:intervalleBootstrap et intervalleNomme existent ; metriquesPrimaires ne rend aucun intervalle ; la composition relève de pnpm analyze, absent de package.json."
+      "note": "D59 (7), protocole 0.24 : chaque taux primaire et chaque part de la répartition des drapeaux (strate global), l'exactitude par candidat:, theme:, gabarit:, registre:, avec intervalle nommé, pour chaque couple outil × mode comparé. Partielle : couverture et exactitude des comparateurs, et taux exploratoires du canal application, sans intervalle — le §8 n'écrit leur clé qu'avec un mode. Composition dans pnpm analyze : hors lot."
     },
     {
       "id": "§8.19",
@@ -5615,12 +5668,20 @@
       "section": "8",
       "citation": "Les taux sont publiés recalculés sans qualificatif de fragilité.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/robustesse-taux.ts:tauxRecalcules",
+        "analysis/robustesse.ts:restrictions"
+      ],
+      "tests": [
+        "tests/analysis/robustesse-taux.test.ts « ne retire pas par un seuil réappliqué un candidat comparé au principal, même réduit à une réponse »",
+        "tests/analysis/robustesse-taux.test.ts « garde exclu de chaque recalcul un candidat sous le seuil au calcul principal »",
+        "tests/analysis/robustesse-taux.test.ts « publie, avec des taux absents, un couple comparé que la restriction vide, et n'ouvre jamais un couple incomplet »",
+        "tests/analysis/robustesse-taux.test.ts « garde la clé et la graine du calcul principal : sans réponse retirée, l'intervalle est le même »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "Les restrictions (a) à (d) sont exportées par analysis/robustesse.ts ; aucune fonction ne recalcule les métriques primaires sur chacune (evaluerRobustesse ne traite que des différences). Composition de pnpm analyze."
+      "note": "D59 (8), protocole 0.24 : les quatre recalculs rendent tous les taux publiés (incertitude.ts), sans qualificatif de fragilité, sur le partage des couples, des candidats et les strates du calcul principal, reçus et jamais recalculés. Composition dans pnpm analyze : hors lot."
     },
     {
       "id": "§9.01",
