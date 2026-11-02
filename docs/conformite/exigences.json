@@ -3722,36 +3722,57 @@
       "section": "6",
       "citation": "Une fois par mois, deux testeurs saisissent à la main un sous-échantillon stratifié de 60 questions du run (5 par candidat, réparties par gabarit), dans l'application grand public de chaque éditeur, en session neuve, sans compte quand c'est possible et sinon avec un compte dédié sans historique.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "pipeline/interrogation/sous-echantillon-application.ts:sousEchantillonApplication (cinq questions par candidat interrogé, tourniquet des gabarits, formulation neutre, échantillon 1, deux testeurs)",
+        "schema/sous-echantillon-application.schema.json",
+        "pipeline/interrogation/depot-application.ts:bilanDesDepots (deux testeurs sur tout, saisies incomplètes nommées)",
+        "schema/depot-application.schema.json:compte (aucun | dedie)"
+      ],
+      "tests": [
+        "tests/interrogation/sous-echantillon-application.test.ts « moins de cinq gabarits : le tourniquet repart du premier gabarit, et saute un gabarit épuisé »",
+        "tests/interrogation/sous-echantillon-application.test.ts « un candidat non interrogé n'a pas de sous-échantillon, même s'il porte des questions »",
+        "tests/interrogation/sous-echantillon-application.test.ts « le tirage ne dépend d'aucun attribut du candidat : deux candidats aux mêmes files reçoivent le même motif »",
+        "tests/interrogation/depot-application.test.ts « un seul testeur a rapporté une question : incomplète, le testeur présent nommé »",
+        "schema/exemples/depot-application/invalide-01-compte-personnel.json"
+      ],
       "lot": "interrogation",
       "constat": null,
-      "note": "Ni le tirage du sous-échantillon de 60 questions ni l'écran de saisie manuelle n'existent."
+      "note": "D59 (12). Le sous-échantillon se calcule depuis les fichiers gelés du run, sans graine ; il n'est pas encore écrit au gel ni référencé par run.json. Restent ouverts : le candidat interrogé à moins de cinq questions tirées (refus nommé), le masquage des données personnelles des captures (qui, comment, empreinte de quel fichier), l'écran de saisie."
     },
     {
       "id": "§6.17",
       "section": "6",
       "citation": "Les captures d'écran sont archivées et les réponses notées comme celles de l'API.",
       "nature": "donnee",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "schema/depot-application.schema.json:captures (sha256, chemin_local), texte_copie"
+      ],
+      "tests": [
+        "schema/exemples/depot-application/invalide-03-sans-capture.json"
+      ],
       "lot": "interrogation",
       "constat": null,
-      "note": "reponse.saisie_manuelle.captures existe au schéma ; aucun code ne l'écrit."
+      "note": "D59 (12). Le dépôt porte l'empreinte de chaque capture et le texte copié tel quel ; la conversion d'un dépôt en réponse du canal application (normalise : liens, troncature) et l'archivage des captures ne sont pas codés."
     },
     {
       "id": "§6.18",
       "section": "6",
       "citation": "L'écart est rapporté avec ses intervalles de confiance et l'étiquette « exploratoire », l'effectif étant faible.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "analyse",
+      "statut": "testee",
+      "code": [
+        "analysis/ecart-api-application.ts:ecartsApiApplication (mode de tête lu, exactitude, appariement par question, clé exactitude/global/<outil>:api-application, exploratoire)"
+      ],
+      "tests": [
+        "tests/analysis/ecart-api-application.test.ts « réponse API manquante pour une question de l'application : la paire n'est pas appariée, la question est nommée »",
+        "tests/analysis/ecart-api-application.test.ts « égalité d'exactitude entre les deux modes : le mode lu est celui déclaré, jamais départagé par les chiffres »",
+        "tests/analysis/ecart-api-application.test.ts « publie la clé §8 : famille, métrique, strate, puis <outil>:api-application, et la graine qui en dérive »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "D59 (6). Le bras API porte toutes les formulations des questions du sous-échantillon dans le mode de tête ; aucune commande ne publie encore l'écart."
     },
     {
       "id": "§6.19",
@@ -5807,12 +5828,18 @@
       "section": "9",
       "citation": "Relancer l'interrogation elle-même exige des clés de chaque éditeur ; le protocole documente exactement quels appels faire.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "outils/appels-interrogation/rendu.ts:genererAppelsInterrogation",
+        "outils/appels-interrogation.ts (pnpm appels-interrogation [--verifier])",
+        "docs/APPELS-INTERROGATION.md"
+      ],
+      "tests": [
+        "tests/appels-interrogation.test.ts « est à jour avec le code de l'interrogation (sinon : pnpm appels-interrogation) »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "D59 (16). Seul l'éditeur simulé est documenté : aucun adaptateur d'éditeur réel n'est encore écrit."
     },
     {
       "id": "§9.15",
