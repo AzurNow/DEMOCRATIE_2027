@@ -236,6 +236,10 @@ Aucune décision en attente.
 
 **Décision du 2026-11-01 :** Option 1 sur tous les points (consigne durable de l'auteur : option recommandée). Écrits en 0.25, PR à part ; (h) était déjà écrit en 0.24, et le code applique déjà (k) (pipeline/go-no-go). Code dans des PR suivantes : (9b) renvoi en validation et contestation des items validés sur un texte faux, (b) et (c) verdicts de H1 et H2, (d) clés, (e) Spearman, (f) bras API de l'écart restreint à la formulation neutre et à l'échantillon 1, (g) deux empreintes de capture, (j) signe de H2.
 
+### D61 — Deux lectures laissées par le code de D60 (#238, #239) : mode « sans objet » de H2 quand la différence des modes est indéfinie ; portée de « les autres items validés » après un rejet pour texte extrait erroné.
+
+**Décision du 2026-11-02 :** Option 1 sur les deux points (décision de l'auteur du 2026-11-02 ; code fusionné dans #238 et #239). Texte à écrire à la prochaine révision du protocole. Restent ouverts, sans décision : contrôle que les saisies de l'application sont neutres et à l'échantillon 1 (lot à part), description de version dans schema/item.schema.json, liste « à contester » de pnpm promote non filtrée sur les contestations ouvertes.
+
 ### D7 — Sept conventions du tirage que le protocole n'écrit pas, retenues au plus restrictif par le lot questions.
 
 **Décision du 2026-09-20 :** Option 1 sur les sept points : item arbitré tirable si la dernière décision du panel vaut maintien ou correction ; Q-ORI sur un item O résolue par l'état en vigueur ; ni Q-FER ni Q-NEG pour une position conditionnelle ; quota par strate fixé dans config/perimetre.yaml ; budget de reprise 80 % étendu aux Q-ATT, stratifiées par thème ; date civile comparée à date_gel à minuit UTC ; gabarits déplacés vers prompts/gabarits-1.0.0.json.

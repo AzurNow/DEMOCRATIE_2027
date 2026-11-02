@@ -829,6 +829,19 @@
       "recommandation": "Option 1 sur tous les points.",
       "retenu": "Option 1 sur tous les points (consigne durable de l'auteur : option recommandée). Écrits en 0.25, PR à part ; (h) était déjà écrit en 0.24, et le code applique déjà (k) (pipeline/go-no-go). Code dans des PR suivantes : (9b) renvoi en validation et contestation des items validés sur un texte faux, (b) et (c) verdicts de H1 et H2, (d) clés, (e) Spearman, (f) bras API de l'écart restreint à la formulation neutre et à l'échantillon 1, (g) deux empreintes de capture, (j) signe de H2.",
       "date_decision": "2026-11-01"
+    },
+    {
+      "id": "D61",
+      "statut": "tranchee",
+      "question": "Deux lectures laissées par le code de D60 (#238, #239) : mode « sans objet » de H2 quand la différence des modes est indéfinie ; portée de « les autres items validés » après un rejet pour texte extrait erroné.",
+      "contexte": "(1) Le §2 (0.25) rend H2 « sans objet » quand l'un des modes est sans objet, sans définir un mode sans objet ; une différence indéfinie (un mode sans réponse classée sur les items appariés) donnait « non confirmée » avant #238. (2) Le §4 (0.25) dit « les autres items validés sur ce même texte » : vérifiés seulement, ou tout item jugé jusqu'au bout ?",
+      "options": [
+        "(1) « sans objet », comme le couple sans dénominateur de H1 ; (2) tout item jugé jusqu'au bout sur ce texte, quel que soit son verdict, comme la correction de thème.",
+        "(1) « non confirmée » ; (2) items vérifiés seulement."
+      ],
+      "recommandation": "Option 1 sur les deux points.",
+      "retenu": "Option 1 sur les deux points (décision de l'auteur du 2026-11-02 ; code fusionné dans #238 et #239). Texte à écrire à la prochaine révision du protocole. Restent ouverts, sans décision : contrôle que les saisies de l'application sont neutres et à l'échantillon 1 (lot à part), description de version dans schema/item.schema.json, liste « à contester » de pnpm promote non filtrée sur les contestations ouvertes.",
+      "date_decision": "2026-11-02"
     }
   ],
   "lots": [
