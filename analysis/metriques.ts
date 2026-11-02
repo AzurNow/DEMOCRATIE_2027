@@ -275,8 +275,8 @@ export function metriquesApplication(unites: readonly UniteAnalyse[]): Metriques
     .map(([outil_id, membres]) => ({ outil_id, canal: "application", exploratoire: true, ...tauxPrimaires(membres) }));
 }
 
-/** Le couple d'une unité du canal API ; toute autre unité lève, en disant pourquoi. */
-function coupleApi(unite: UniteAnalyse): CoupleOutilMode {
+/** Le couple d'une unité du canal API ; toute autre unité lève, en disant pourquoi. Partagé avec `couples-compares.ts`. */
+export function coupleApi(unite: UniteAnalyse): CoupleOutilMode {
   if (unite.canal !== "api") {
     throw new Error(
       `Réponse ${unite.reponse_id} du canal ${unite.canal} : exploratoire (QR8), hors des métriques primaires du §8 ` +
