@@ -69,10 +69,11 @@ export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL = 200;
 /**
  * Clé lisible de la graine du sous-ensemble du contrefactuel d'outil (§7 0.24, D59 (13) : « tirées
  * avec leur propre graine dérivée, comme celles du test des candidats »), dérivée de
- * `run.graines.contrefactuel`. `noms_outils` est la valeur de `reponse.permutation.type`.
- * Texte haché : `<valeur>␀contrefactuel␀noms_outils␀sous_ensemble`.
+ * `run.graines.contrefactuel`. §7 0.25 (D60) : « leur propre graine dérivée de la clé
+ * `contrefactuel_outil` » : un seul composant, comme `jeu_or`.
+ * Texte haché : `<valeur>␀contrefactuel_outil`.
  */
-export const CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS: readonly string[] = ["contrefactuel", "noms_outils", "sous_ensemble"];
+export const CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS: readonly string[] = ["contrefactuel_outil"];
 
 /** §7 0.24 : « Ce sous-ensemble compte 200 réponses dont le texte nomme au moins un outil ». */
 export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS = 200;

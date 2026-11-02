@@ -11,6 +11,8 @@
  * (`sous-echantillon-application.ts`) et dit ce qui manque, sans rien compléter :
  *
  * - chaque dépôt est validé contre son schéma (frontière d'entrée) ;
+ * - une capture masquée porte les empreintes de l'origine et de la capture masquée (§6, 0.25) ; une
+ *   empreinte masquée égale à l'origine lève `CaptureMasqueeIdentique` ;
  * - un dépôt d'un autre run, d'un outil non attendu, d'une question hors du sous-échantillon ou sur
  *   une autre formulation que la neutre désignée lève `DepotHorsSousEchantillon` ;
  * - deux dépôts du même testeur pour le même outil et la même question lèvent `DepotEnDouble` :
@@ -39,7 +41,14 @@ export interface DepotApplication {
   readonly compte: "aucun" | "dedie";
   readonly horodatage_saisie: string;
   readonly texte_copie: string;
-  readonly captures: readonly { readonly sha256: string; readonly chemin_local: string }[];
+  readonly captures: readonly CaptureDepot[];
+}
+
+/** Une capture : l'empreinte de l'origine et, seulement si elle a été masquée, celle de la capture masquée (§6, 0.25). */
+export interface CaptureDepot {
+  readonly sha256: string;
+  readonly sha256_masquee?: string;
+  readonly chemin_local: string;
 }
 
 export interface SaisieIncomplete {
@@ -66,6 +75,18 @@ export class DepotHorsSousEchantillon extends Error {
         `sous-échantillon de l'application : ${raison} (§6).`,
     );
     this.name = "DepotHorsSousEchantillon";
+  }
+}
+
+export class CaptureMasqueeIdentique extends Error {
+  constructor(depot: DepotApplication, capture: CaptureDepot) {
+    super(
+      `Dépôt de ${depot.testeur_id} (outil ${depot.outil_id}, question ${depot.question_id}) : la capture ` +
+        `${capture.chemin_local} déclare une empreinte masquée égale à celle de l'origine (${capture.sha256}) ; ` +
+        `un masquage qui ne change rien n'est pas un masquage, la capture est soit masquée (deux empreintes ` +
+        `distinctes), soit non masquée (une seule) (§6, protocole 0.25).`,
+    );
+    this.name = "CaptureMasqueeIdentique";
   }
 }
 
@@ -97,6 +118,7 @@ export function bilanDesDepots(
   for (const [rang, brut] of depots.entries()) {
     const depot = valider<DepotApplication>("depot-application", brut, `dépôt n° ${rang + 1} de l'application`);
     exigerDansSousEchantillon(depot, sousEchantillon.run_id, outils, formulations);
+    exigerMasquagesReels(depot);
     ajouterTesteur(testeursParSaisie, depot);
   }
   exigerDeuxTesteursAuPlus(testeursParSaisie);
@@ -120,6 +142,13 @@ function exigerDansSousEchantillon(
   if (designee === undefined) throw new DepotHorsSousEchantillon(depot, "question non tirée au sous-échantillon");
   if (designee !== depot.formulation_id) {
     throw new DepotHorsSousEchantillon(depot, `formulation ${depot.formulation_id}, la neutre désignée est ${designee}`);
+  }
+}
+
+/** Garde de cohérence que le schéma ne peut pas exprimer : l'empreinte masquée diffère de l'origine. */
+function exigerMasquagesReels(depot: DepotApplication): void {
+  for (const capture of depot.captures) {
+    if (capture.sha256_masquee === capture.sha256) throw new CaptureMasqueeIdentique(depot, capture);
   }
 }
 

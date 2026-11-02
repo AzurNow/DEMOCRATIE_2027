@@ -1,0 +1,18 @@
+{
+  "run_id": "01JDQ7XK2M8N3P4R5S6T7V8W9X",
+  "outil_id": "outil-alpha",
+  "question_id": "q_0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a",
+  "formulation_id": "01JDQ7XK2M8N3P4R5S6T7V8W9A",
+  "echantillon": 1,
+  "testeur_id": "testeur-2",
+  "compte": "aucun",
+  "horodatage_saisie": "2026-12-02T11:00:00+01:00",
+  "texte_copie": "Texte copié depuis l’application, tel quel.",
+  "captures": [
+    {
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "sha256_masquee": "4444444444444444444444444444444444444444444444444444444444444444",
+      "chemin_local": "captures/testeur-2/outil-alpha/0a.png"
+    }
+  ]
+}
