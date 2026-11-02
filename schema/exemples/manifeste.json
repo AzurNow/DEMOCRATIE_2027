@@ -3280,6 +3280,73 @@
         "keyword": "not",
         "instance_path": ""
       }
+    },
+    {
+      "objet": "sous-echantillon-application",
+      "fichier": "sous-echantillon-application/valide-01-cinq-questions-en-tourniquet.json",
+      "attendu": "valide",
+      "motif": "Cinq questions d'un candidat interrogé, une par gabarit dans l'ordre trié des codes (tourniquet), chacune avec sa formulation neutre ; échantillon 1, deux testeurs."
+    },
+    {
+      "objet": "sous-echantillon-application",
+      "fichier": "sous-echantillon-application/invalide-01-question-attribution.json",
+      "attendu": "invalide",
+      "motif": "Question d'attribution dans le sous-échantillon d'un candidat : elle ne nomme aucun candidat (§5) et n'est « cinq par candidat » d'aucun.",
+      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24",
+      "erreur_visee": {
+        "keyword": "not",
+        "instance_path": "/candidats/0/questions/4/gabarit"
+      }
+    },
+    {
+      "objet": "sous-echantillon-application",
+      "fichier": "sous-echantillon-application/invalide-02-quatre-questions.json",
+      "attendu": "invalide",
+      "motif": "Quatre questions pour un candidat interrogé : le §6 en fixe cinq, et ne dit pas quoi faire d'un candidat qui en a moins ; le calcul refuse plutôt que de raccourcir.",
+      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/candidats/0/questions"
+      }
+    },
+    {
+      "objet": "depot-application",
+      "fichier": "depot-application/valide-01-compte-dedie.json",
+      "attendu": "valide",
+      "motif": "Saisie d'un testeur avec le compte dédié au banc : texte copié tel quel, une capture identifiée par son empreinte, échantillon 1."
+    },
+    {
+      "objet": "depot-application",
+      "fichier": "depot-application/invalide-01-compte-personnel.json",
+      "attendu": "invalide",
+      "motif": "Compte personnel du testeur : le §6 l'interdit (« jamais un compte personnel du testeur ») ; seuls « aucun » et « dedie » sont déposables.",
+      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24",
+      "erreur_visee": {
+        "keyword": "enum",
+        "instance_path": "/compte"
+      }
+    },
+    {
+      "objet": "depot-application",
+      "fichier": "depot-application/invalide-02-echantillon-2.json",
+      "attendu": "invalide",
+      "motif": "Échantillon 2 : le §6 fixe un seul échantillon, numéroté 1.",
+      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/echantillon"
+      }
+    },
+    {
+      "objet": "depot-application",
+      "fichier": "depot-application/invalide-03-sans-capture.json",
+      "attendu": "invalide",
+      "motif": "Saisie sans capture d'écran : la capture est la preuve de la réponse copiée (§6), son empreinte est publiée.",
+      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/captures"
+      }
     }
   ]
 }

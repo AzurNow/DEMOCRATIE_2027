@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:sous-echantillon-application",
+  "title": "Sous-échantillon de l'application",
+  "description": "§6, QR8 (protocole 0.24, D59 (12)) : les questions qu'un testeur saisit à la main dans l'application grand public de chaque éditeur. Cinq par candidat interrogé, réparties entre ses gabarits en tourniquet, gabarits et questions pris dans l'ordre trié de leurs codes et identifiants ; chacune dans sa formulation neutre, en un seul échantillon, numéroté 1 ; chacun des deux testeurs saisit tout le sous-échantillon. Calculé sans graine par pipeline/interrogation/sous-echantillon-application.ts depuis les fichiers gelés du run (tirage.json, questions.json, run.json#/perimetre/candidats) : quiconque les relit retrouve le même sous-échantillon. Les questions d'attribution, qui ne nomment aucun candidat, n'y entrent pas.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "questions_par_candidat", "registre", "echantillon", "testeurs", "candidats"],
+
+  "properties": {
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "questions_par_candidat": { "const": 5, "description": "§6 : « cinq par candidat interrogé »." },
+    "registre": { "const": "neutre", "description": "§6 : « chacune est saisie dans sa formulation neutre »." },
+    "echantillon": { "const": 1, "description": "§6 : « en un seul échantillon, numéroté 1 »." },
+    "testeurs": { "const": 2, "description": "§6 : « Chacun des deux testeurs saisit tout le sous-échantillon »." },
+    "candidats": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Un bloc par candidat interrogé au run, trié par candidat_id.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidat_id", "questions"],
+        "properties": {
+          "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "questions": {
+            "type": "array",
+            "minItems": 5,
+            "maxItems": 5,
+            "description": "Dans l'ordre du tourniquet. Un candidat interrogé qui a moins de cinq questions tirées n'a pas de sous-échantillon : le calcul est refusé (le §6 ne dit pas quoi faire).",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["rang", "question_id", "gabarit", "formulation_id"],
+              "properties": {
+                "rang": { "type": "integer", "minimum": 1, "maximum": 5 },
+                "question_id": { "type": "string", "pattern": "^q_[0-9a-f]{32}$" },
+                "gabarit": {
+                  "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit",
+                  "not": { "const": "Q-ATT" }
+                },
+                "formulation_id": {
+                  "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+                  "description": "La formulation neutre de la question, celle que le testeur saisit."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

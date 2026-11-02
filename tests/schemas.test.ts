@@ -136,12 +136,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 333 → 337 : §7, protocole 0.23 (D58), exactement deux juges : un et trois juges, invalides de run et de config-gel.
   // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
   // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
-  it("1. les 345 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application (un valide, deux invalides) et dépôt d'une saisie (un valide, trois invalides).
+  it("1. les 352 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(345);
+    expect(manifeste.exemples).toHaveLength(352);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -160,9 +161,10 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 35 → 36 : relecture-mesure (registre des relectures de mesure, verrou de promotion), décision D53 (1) de l'auteur.
   // 36 → 37 : rattachement-item (registre des rattachements d'item, pnpm mesures --rattacher), décision D53 (1) de l'auteur.
   // 37 → 38 : lot (manifeste de lot de validation), revue du 2026-10-12, constat 4 (D55 (3)).
-  it("2. les trente-huit schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  // 38 → 40 : sous-echantillon-application et depot-application (§6, D59 (12), protocole 0.24).
+  it("2. les quarante schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(38);
+    expect(conformites).toHaveLength(40);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
@@ -392,7 +394,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 333 → 337 : §7, protocole 0.23 (D58), exactement deux juges : un et trois juges, invalides de run et de config-gel.
   // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
   // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 345 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(345);
+  // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 352 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(352);
   });
 });

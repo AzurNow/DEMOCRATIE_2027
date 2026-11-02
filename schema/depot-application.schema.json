@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:depot-application",
+  "title": "Dépôt d'une saisie dans l'application",
+  "description": "§6, QR8 (protocole 0.24, D59 (12)) : ce qu'un testeur rapporte d'une question du sous-échantillon saisie à la main dans l'application grand public d'un éditeur (schema/sous-echantillon-application.schema.json). La réponse brute est le texte que copie le bouton de copie de l'application, stocké tel quel (règle 7) ; la capture d'écran en est la preuve, identifiée par l'empreinte SHA-256 de ses octets. Le testeur est nommé par son pseudonyme (§9). Contrôlé par pipeline/interrogation/depot-application.ts contre le sous-échantillon du run. Le masquage des données personnelles visibles sur une capture n'est pas porté ici : le §6 ne dit ni qui masque ni sur quel fichier porte l'empreinte publiée (question ouverte, D59 (12)).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "outil_id",
+    "question_id",
+    "formulation_id",
+    "echantillon",
+    "testeur_id",
+    "compte",
+    "horodatage_saisie",
+    "texte_copie",
+    "captures"
+  ],
+
+  "properties": {
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+    "question_id": { "type": "string", "pattern": "^q_[0-9a-f]{32}$" },
+    "formulation_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "La formulation neutre saisie, celle que le sous-échantillon désigne."
+    },
+    "echantillon": { "const": 1, "description": "§6 : « en un seul échantillon, numéroté 1 »." },
+    "testeur_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "Pseudonyme du testeur (§9 : seuls des pseudonymes apparaissent)."
+    },
+    "compte": {
+      "type": "string",
+      "enum": ["aucun", "dedie"],
+      "description": "§6 : « sans compte quand c'est possible et sinon avec un compte dédié au banc, sans historique, jamais un compte personnel du testeur ». Un compte personnel n'a pas de valeur ici : il n'est pas déposable."
+    },
+    "horodatage_saisie": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+    "texte_copie": {
+      "type": "string",
+      "description": "Le texte que copie le bouton de copie de l'application, tel quel : ni nettoyé, ni tronqué, ni reformaté (règle 7)."
+    },
+    "captures": {
+      "type": "array",
+      "minItems": 1,
+      "description": "La preuve de la saisie : une capture au moins, plusieurs si la réponse dépasse l'écran.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sha256", "chemin_local"],
+        "properties": {
+          "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+          "chemin_local": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

@@ -29,6 +29,7 @@
     "extraire": "node --experimental-strip-types outils/extraire.ts",
     "geler": "node --experimental-strip-types outils/geler.ts",
     "feuille-de-route": "node --experimental-strip-types outils/feuille-de-route.ts",
+    "appels-interrogation": "node --experimental-strip-types outils/appels-interrogation.ts",
     "lots": "node --experimental-strip-types outils/lots.ts",
     "mesures": "node --experimental-strip-types outils/mesures.ts",
     "promote": "node --experimental-strip-types outils/promote.ts",
