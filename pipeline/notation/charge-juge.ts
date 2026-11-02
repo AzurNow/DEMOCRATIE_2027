@@ -66,6 +66,7 @@ import type { EntreeTirage, Registre, ReponseAttendue } from "../questions/types
 import { aliasDeCandidat, inverserTable, type TableAliasCandidats } from "./alias-candidats.ts";
 import { LONGUEUR_MAX_TEXTE_PAGE, type PageCitee } from "./pages-citees.ts";
 import type { ReponseContrefactuelle } from "./reponse-contrefactuelle.ts";
+import type { ReponseContrefactuelleOutil } from "./reponse-contrefactuelle-outil.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
 
@@ -119,9 +120,15 @@ export interface ReferenceSoumise {
   readonly role: RoleItem;
 }
 
+/** Ce qu'un juge peut recevoir à noter : une réponse obtenue du run, ou l'une de ses copies permutées. */
+export type ReponseNotable = ReponseObtenue | ReponseContrefactuelle | ReponseContrefactuelleOutil;
+
 export interface DemandeCharge {
-  /** Une réponse du run, ou sa copie permutée du test contrefactuel (`reponse-contrefactuelle.ts`). */
-  readonly reponse: ReponseObtenue | ReponseContrefactuelle;
+  /**
+   * Une réponse du run, ou sa copie permutée du test contrefactuel des candidats
+   * (`reponse-contrefactuelle.ts`) ou des outils (`reponse-contrefactuelle-outil.ts`, §7 0.24).
+   */
+  readonly reponse: ReponseNotable;
   readonly question: QuestionPosee;
   readonly references: readonly ReferenceSoumise[];
   /** `run.date_gel` : l'instant de référence unique du run. */
@@ -232,7 +239,7 @@ export function contenuSoumis(demande: Omit<DemandeCharge, "prompt">): ContenuSo
 }
 
 /** Une page par lien distinct de la réponse, dans l'ordre de première citation : ni plus, ni moins. */
-function exigerUnePageParLien(reponse: ReponseObtenue | ReponseContrefactuelle, pages: readonly PageCitee[]): void {
+function exigerUnePageParLien(reponse: ReponseNotable, pages: readonly PageCitee[]): void {
   const attendues = [...new Set(reponse.normalise.liens)];
   const recues = pages.map((page) => page.url_citee);
   if (attendues.length !== recues.length || attendues.some((url, rang) => url !== recues[rang])) {
@@ -280,7 +287,7 @@ function pageSoumise(page: PageCitee): PageCitee {
   };
 }
 
-export function reponseSoumise(reponse: ReponseObtenue | ReponseContrefactuelle): ReponseSoumise {
+export function reponseSoumise(reponse: ReponseNotable): ReponseSoumise {
   const projection = reponse.normalise;
   return {
     texte: projection.texte,

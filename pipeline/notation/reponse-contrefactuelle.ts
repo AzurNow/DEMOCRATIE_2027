@@ -37,14 +37,14 @@
 
 import type { ObjetJson, ReponseEcrite, ReponseObtenue } from "../interrogation/types.ts";
 import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
-import type { DemandeCharge, ReferenceSoumise, ResoluAuGel } from "./charge-juge.ts";
+import type { DemandeCharge, ReferenceSoumise, ReponseNotable, ResoluAuGel } from "./charge-juge.ts";
 import { correspondancesDe, type Derangement } from "./derangement.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import { permuterTexte } from "./permutation.ts";
 
 /** `Omit` appliqué à chaque membre de l'union (brut objet ou brut texte), qui reste discriminée. */
-type SansContexte<T> = T extends unknown ? Omit<T, "contexte"> : never;
+export type SansContexte<T> = T extends unknown ? Omit<T, "contexte"> : never;
 
 /** Une réponse permutée, conforme à `schema/reponse.schema.json` (contexte `contrefactuel_candidat`). */
 export type ReponseContrefactuelle = SansContexte<ReponseObtenue> & {
@@ -76,7 +76,7 @@ interface Compteur {
   mentions: number;
 }
 
-export function reponseContrefactuelle(reponse: ReponseEcrite | ReponseContrefactuelle, nouvel_id: string, derangement: Derangement): ReponsePermutee {
+export function reponseContrefactuelle(reponse: ReponseEcrite | ReponseNotable, nouvel_id: string, derangement: Derangement): ReponsePermutee {
   const obtenue = permutable(reponse);
   const compteur: Compteur = { mentions: 0 };
   const permuter = (texte: string): string => permuterCompte(texte, derangement, compteur);
@@ -116,8 +116,11 @@ export function demandePermutee(demande: DemandeCharge, nouvel_id: string, deran
   };
 }
 
-/** Seule une réponse obtenue du run, qui n'est pas un refus de l'API, porte un texte à permuter. */
-function permutable(reponse: ReponseEcrite | ReponseContrefactuelle): ReponseObtenue {
+/**
+ * Seule une réponse obtenue du run, qui n'est pas un refus de l'API, porte un texte à permuter.
+ * Partagée avec le contrefactuel d'outil (`reponse-contrefactuelle-outil.ts`).
+ */
+export function permutable(reponse: ReponseEcrite | ReponseNotable): ReponseObtenue {
   if (reponse.statut_reponse !== "obtenue") {
     throw new Error(`Réponse ${reponse.id} manquante : elle n'a pas de texte, rien à permuter (§6, §7).`);
   }
@@ -137,7 +140,7 @@ function permuterCompte(texte: string, derangement: Derangement, compteur: Compt
 }
 
 /** La clé `texte`, si c'est une chaîne ; toute autre clé, et une citation sans texte, à l'identique. */
-function citationPermutee(citation: ObjetJson, permuter: (texte: string) => string): ObjetJson {
+export function citationPermutee(citation: ObjetJson, permuter: (texte: string) => string): ObjetJson {
   const texte = citation["texte"];
   return typeof texte === "string" ? { ...citation, texte: permuter(texte) } : citation;
 }

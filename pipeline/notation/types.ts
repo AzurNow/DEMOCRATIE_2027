@@ -133,7 +133,7 @@ export interface NotationIndividuelle {
 export interface RenvoiHumain {
   readonly id: Ulid;
   readonly run_id: Ulid;
-  readonly contexte: "run" | "contrefactuel_candidat";
+  readonly contexte: "run" | "contrefactuel_candidat" | "contrefactuel_outil";
   readonly objet_note: { readonly type: "reponse"; readonly id: Ulid };
   readonly notateur: Notateur;
   readonly version_charge: string;

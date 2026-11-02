@@ -3883,12 +3883,22 @@
       "section": "6",
       "citation": "L'appariement item-comparateur suit la procédure de notation de la section 7.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "pipeline/notation/lectures-comparateur.ts:lecturesANoter",
+        "pipeline/notation/lectures-comparateur.ts:etatsDesLectures",
+        "schema/notation.schema.json:motif_notation (double_notation_comparateur, arbitrage_comparateur)",
+        "schema/notation.schema.json:allOf (lecture_comparateur ⇒ humain)"
+      ],
+      "tests": [
+        "tests/notation/lectures-comparateur.test.ts « deux humains d'accord : leur note est retenue, sans arbitrage »",
+        "tests/notation/lectures-comparateur.test.ts « désaccord puis arbitrage d'un troisième humain : la note de l'arbitre est retenue »",
+        "tests/notation/lectures-comparateur.test.ts « une notation de juge sur une lecture : refusée (aucun juge automatique, §6 0.24) »",
+        "schema/exemples/notation/invalide-19-juge-sur-lecture-comparateur.json"
+      ],
       "lot": "notation",
       "constat": null,
-      "note": null
+      "note": "Lot D59 (15), protocole 0.24 : sélection (lectures affichées du run), double notation humaine à l'aveugle et arbitrage par un troisième humain, comme l'échantillon (même égalité, analysis/note-lue.ts) ; aucun juge automatique, refusé par le schéma et par le domaine. Reste : construction du verdict d'une lecture (mode_resolution et dans_echantillon_humain non définis pour une lecture), écran de notation humaine des lectures (notation-humaine/), branchement dans la chaîne."
     },
     {
       "id": "§6.22",
@@ -4401,12 +4411,26 @@
       "section": "7",
       "citation": "le test contrefactuel s'applique aussi à la comparaison entre outils, en renotant un sous-ensemble après permutation des noms d'outils dans les métadonnées",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "pipeline/notation/derangement-outils.ts:tirerDerangementOutils",
+        "pipeline/notation/derangement-outils.ts:permuterNomsOutils",
+        "pipeline/notation/derangement-outils.ts:estEligibleOutils",
+        "pipeline/notation/echantillons.ts:tirerSousEnsembleContrefactuelOutils",
+        "pipeline/notation/reponse-contrefactuelle-outil.ts:reponseContrefactuelleOutil",
+        "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils",
+        "pipeline/notation/contrefactuel.ts:compterChangements"
+      ],
+      "tests": [
+        "tests/notation/derangement-outils.test.ts « un seul outil au run : dérangement impossible, refus nommé (jamais une identité) »",
+        "tests/notation/derangement-outils.test.ts « une réponse qui nomme deux outils : les deux remplacés en une passe, jamais relus (A↔B donne B…A) »",
+        "tests/notation/derangement-outils.test.ts « un libellé en sous-chaîne d'un autre mot n'est pas remplacé (mot entier) »",
+        "tests/notation/derangement-outils.test.ts « moins de 200 réponses nommant un outil : toutes, et le sous-effectif est dit (comme pour les candidats) »",
+        "tests/notation/contrefactuel-outils.test.ts « 50 changements sur 200 (25 %) : taux publié, aucun champ de retrait ni d'échantillon »"
+      ],
       "lot": "notation",
       "constat": null,
-      "note": "Le contexte contrefactuel_outil existe au schéma ; aucun code ne permute les noms d'outils."
+      "note": "Citation antérieure à la 0.24 (« dans les métadonnées ») ; la 0.24 dit « dans le texte des réponses », 200 réponses nommant un outil, libellé et éditeur, dérangement non défini sous deux outils, diagnostic sans retrait. Lot D59 (13) : domaine codé et testé (dérangement, remplacement, éligibilité, tirage, réponse permutée, taux sans retrait). Reste : source du libellé et de l'éditeur au moment de la notation (absents de run.json, seulement dans config/perimetre.yaml), choix des outils du dérangement (assistants inclus seuls ?), champ de publication dans run.json, branchement dans pipeline/notation/chaine.ts et dans l'adaptateur des juges (contexte contrefactuel_outil)."
     },
     {
       "id": "§7.28",

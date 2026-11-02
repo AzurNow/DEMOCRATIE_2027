@@ -389,8 +389,9 @@ describe("exemples de schema/exemples/", () => {
   // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
   // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
   // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
-  it("charge les 352 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(352);
+  // 352 → 354 : §6, protocole 0.24 (D59 (15)), lecture de comparateur notée par un juge, motif de lecture sur une réponse : deux invalides de notation.
+  it("charge les 354 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(354);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -439,7 +440,9 @@ describe("exemples de schema/exemples/", () => {
     // (un valide en regle_refus_api, deux invalides), tous de contexte run ; leur contexte suit
     // toujours l'objet noté.
     // 38 → 41 : décision D33, trois notations (marqueur sur_refus_api), de contexte run.
-    expect(notants).toHaveLength(41);
+    // 41 → 43 : D59 (15), deux notations invalides (juge sur une lecture, motif de lecture sur une
+    // réponse), de contexte run ; leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(43);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

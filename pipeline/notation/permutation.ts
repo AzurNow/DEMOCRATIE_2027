@@ -44,9 +44,13 @@ export interface TextePermute {
   readonly mentions_residuelles: number;
 }
 
-interface Forme {
+/**
+ * Une forme cherchée dans le texte, et ce qui la remplace. Exportée pour le contrefactuel d'outil
+ * (`derangement-outils.ts`, §7 0.24), qui applique la même recherche à d'autres formes.
+ */
+export interface Forme {
   readonly forme: string;
-  /** `null` : forme d'un candidat non interrogé, cherchée mais jamais remplacée (D55 (4)). */
+  /** `null` : forme cherchée, jamais remplacée (candidat non interrogé, D55 (4) ; outil hors dérangement). */
   readonly remplacant: string | null;
 }
 
@@ -60,7 +64,14 @@ interface Remplacee extends Occurrence {
 }
 
 export function permuterTexte(texte: string, derangement: Derangement): TextePermute {
-  const formes = formesDe(derangement);
+  return permuterParFormes(texte, formesDe(derangement));
+}
+
+/**
+ * Le remplacement, la règle de chevauchement et le compte des mentions résiduelles, sur des formes
+ * quelconques : le seul moteur des deux tests contrefactuels (noms de candidats, noms d'outils).
+ */
+export function permuterParFormes(texte: string, formes: readonly Forme[]): TextePermute {
   const remplacees = occurrencesDInterroges(texte, formes);
   return {
     texte: remplacer(texte, remplacees),
@@ -79,6 +90,11 @@ export function nommeUnInterroge(textes: readonly string[], interroges: readonly
   const ids = new Set(interroges.map((candidat) => candidat.candidat_id));
   // Le remplaçant d'un interrogé n'a pas d'importance ici : seule compte l'occurrence.
   const formes = perimetre.flatMap((candidat) => (ids.has(candidat.candidat_id) ? formesIdentiques(candidat) : formesIntactes(candidat)));
+  return nommeUneForme(textes, formes);
+}
+
+/** Un des textes porte-t-il une occurrence remplaçable, une fois retirées celles des formes intactes ? */
+export function nommeUneForme(textes: readonly string[], formes: readonly Forme[]): boolean {
   return textes.some((texte) => occurrencesDInterroges(texte, formes).length > 0);
 }
 

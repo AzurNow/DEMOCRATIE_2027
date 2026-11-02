@@ -343,8 +343,9 @@ describe("entrées", () => {
   });
 
   it("les notations de lectures de comparateur sont hors de la file", () => {
-    // D30 (4) : une lecture de comparateur ne porte pas de version de charge.
-    const { version_charge: _sansCharge, ...lecture } = notationJuge("j1", { objet_note: { type: "lecture_comparateur", id: ulid("lecture") } });
+    // D30 (4) : une lecture de comparateur ne porte pas de version de charge. D59 (15), §6 0.24 :
+    // elle n'est notée que par des humains (le juge de cette notation d'entrée est devenu un humain).
+    const { version_charge: _sansCharge, ...lecture } = notationHumaine("a1", "double_notation_comparateur", { objet_note: { type: "lecture_comparateur", id: ulid("lecture") } });
     const file = construireFile(entree(IDS, [...jugesDAccord(IDS), lecture]));
     expect(file.taches.map((t) => t.reponse_id)).toEqual([DANS]);
   });

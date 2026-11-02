@@ -137,12 +137,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
   // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
   // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application (un valide, deux invalides) et dépôt d'une saisie (un valide, trois invalides).
-  it("1. les 352 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 352 → 354 : §6, protocole 0.24 (D59 (15)), lecture de comparateur notée par un juge, motif de lecture sur une réponse : deux invalides de notation.
+  it("1. les 354 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(352);
+    expect(manifeste.exemples).toHaveLength(354);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -395,7 +396,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
   // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
   // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 352 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(352);
+  // 352 → 354 : §6, protocole 0.24 (D59 (15)), deux invalides de notation (juge sur une lecture, motif de lecture sur une réponse).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 354 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(354);
   });
 });
