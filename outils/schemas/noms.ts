@@ -102,6 +102,12 @@
  * fois par `pnpm lots` et jamais réécrit (§4). Revue du 2026-10-12, constat 4 (D55 (3)) :
  * `lireLot`, `lireLots`, `ecrireLot` et `ecrireLots` le valident désormais, à la lecture comme
  * avant toute écriture. Le trente-huitième.
+ *
+ * `sous-echantillon-application` et `depot-application` décrivent le sous-échantillon que les deux
+ * testeurs saisissent à la main dans l'application grand public de chaque éditeur, et ce qu'un
+ * testeur dépose pour chaque saisie (§6, QR8 ; D59 (12), protocole 0.24) :
+ * `pipeline/interrogation/sous-echantillon-application.ts` et `depot-application.ts`. Les
+ * trente-neuvième et quarantième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -142,6 +148,8 @@ export const NOMS_SCHEMAS = [
   "relecture-mesure",
   "rattachement-item",
   "lot",
+  "sous-echantillon-application",
+  "depot-application",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

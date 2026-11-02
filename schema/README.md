@@ -48,6 +48,8 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `entree-extraction.schema.json` | entrée de l'extraction double d'une source | §4, décision D52 (PR 3 du lot extraction) : `staging/entrees-extraction/<cle_source>/<sha256>.json`, écrit une fois par `pnpm extraction:entrees` (Python) et lu par `pnpm extraire`. Porte l'extracteur de texte épinglé par le code pour ce contenu (D52 (4)) et un bloc `source` par fiche d'extraction, assemblé par `source_de` sans page ni extrait ; le choix de la fiche reste à `choix-texte.ts:choisirFiche`. Vérifié comme la collecte : fichier doré de `tests/collecte/dore/entrees-extraction/` |
 | `reponse-extraction.schema.json` | réponse HTTP d'un modèle extracteur | §4, décision D52, règle 7 : `staging/reponses-extraction/<cle_source>/<sha256>/<modèle>.<prompt_sha256>.json`, écrit une fois par `pnpm extraire` avant toute lecture du corps (objet JSON dans `brut`, texte UTF-8 exact dans `brut_texte`). Clé de reprise : source, modèle, empreinte du prompt rendu |
 | `journal-extraction.schema.json` | journal de l'extraction d'une source | §4, décisions D52 et D53 (2) : `staging/journal-extraction/<cle_source>/<sha256>.json`, écrit en dernier par `pnpm extraire`, après les items et les mesures ; marque la source traitée. Issue `extraite` (identifiants déposés, rejets du cœur) ou `refusee` (une sortie rejetée en entier, `extraction_double_incomplete`, aucun item) |
+| `sous-echantillon-application.schema.json` | sous-échantillon de l'application grand public | §6, QR8, D59 (12) (protocole 0.24) : les cinq questions par candidat interrogé que chacun des deux testeurs saisit à la main, réparties entre les gabarits du candidat en tourniquet (codes de gabarit, puis identifiants de question, triés), formulation neutre, échantillon 1. Calculé sans graine par `pipeline/interrogation/sous-echantillon-application.ts` depuis les fichiers gelés du run ; les questions d'attribution n'y entrent pas |
+| `depot-application.schema.json` | dépôt d'une saisie dans l'application | §6, QR8, D59 (12) : ce qu'un testeur rapporte d'une saisie du sous-échantillon — texte copié par le bouton de copie, tel quel (règle 7), empreinte SHA-256 de chaque capture, pseudonyme du testeur, compte employé (`aucun` ou `dedie`, jamais un compte personnel). Contrôlé contre le sous-échantillon par `pipeline/interrogation/depot-application.ts:bilanDesDepots`. Le masquage des données personnelles d'une capture n'y est pas porté (question ouverte) |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
@@ -190,6 +192,8 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | journal-extraction | issue `refusee` sans rejet de portée `source` · issue `extraite` portant `extraction_double_incomplete` |
 | relecture-mesure | empreinte non hexadécimale · formulation recopiée dans l'entrée (champ en trop) |
 | rattachement-item | entrée sans `mesure_avant` · version de la mesure cible à 0 · libellé recopié dans l'entrée (champ en trop) |
+| sous-echantillon-application | question d'attribution dans le sous-échantillon d'un candidat · quatre questions au lieu de cinq |
+| depot-application | compte personnel du testeur · échantillon 2 · saisie sans capture |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
 depuis, `pnpm check` rejoue le tout et imprime les comptes : chaque schéma au registre, chaque exemple

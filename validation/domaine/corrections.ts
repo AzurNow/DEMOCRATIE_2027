@@ -12,9 +12,9 @@
  * offsets sont recalculés et journalisés à côté des anciens.
  *
  * Quand c'est le **texte extrait** qui est faux — OCR défaillant, transcription erronée — la
- * correction n'est pas la bonne issue : l'item se rejette avec le commentaire « texte extrait
- * erroné », ce qui renvoie la source à la réextraction. Personne ne corrige un texte de source
- * depuis l'interface.
+ * correction n'est pas la bonne issue : l'item se rejette sous le motif énuméré « texte extrait
+ * erroné » (protocole 0.24, D59 (9)), qui renvoie la source à la réextraction
+ * (`renvoi-reextraction.ts`). Personne ne corrige un texte de source depuis l'interface.
  */
 
 import { cheminModifiable } from "./promotion.ts";
@@ -108,7 +108,7 @@ function examinerCitation(correction: Correction, acces: AccesTexte): Examen {
         detail:
           "La citation corrigée ne figure pas telle quelle dans le texte de la source. " +
           "Si c'est le texte extrait qui est faux, la décision attendue est « rejeter », " +
-          "avec le commentaire « texte extrait erroné ».",
+          "sous le motif « texte extrait erroné ».",
       },
     };
   }

@@ -172,6 +172,20 @@ describe("gel nominal", () => {
     expect(tirage["nombre_questions"]).toBe((json(run, "tirage.json")["entrees"] as unknown[]).length);
   });
 
+  it("D59 (17) : run.json inscrit au gel le nombre de réponses prévues par le plan, sans réponses obtenues", async () => {
+    const { run } = await gelNominal();
+    const objet = json(run, "run.json");
+    const outils = (objet["perimetre"] as { outils: { famille: string; inclus: boolean; modes?: string[] }[] }).outils;
+    const interroges = outils.filter((o) => o.famille === "assistant" && o.inclus);
+    expect(interroges.every((o) => o.modes !== undefined)).toBe(true);
+    const modes = interroges.flatMap((o) => o.modes ?? []).length;
+    const tirees = new Set((json(run, "tirage.json")["entrees"] as { question_id: string }[]).map((e) => e.question_id));
+    const questions = JSON.parse(lire(run, "questions.json")) as { id: string; formulations: unknown[] }[];
+    const formulations = questions.filter((q) => tirees.has(q.id)).reduce((total, q) => total + q.formulations.length, 0);
+    expect(modes).toBeGreaterThan(0);
+    expect(objet["reponses"]).toEqual({ prevues: modes * formulations * 2 });
+  });
+
   it("D48 (4), cas 6 : run.json déclare questions.json par son chemin sous runs/<date>/ et le SHA-256 de ses octets exacts", async () => {
     const { run } = await gelNominal();
     const objet = json(run, "run.json");

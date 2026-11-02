@@ -6,13 +6,16 @@
  */
 
 /*
- * Les deux listes fermées qui recopient un `enum` de `schema/` portent une constante dont l'union
+ * Les listes fermées qui recopient un `enum` de `schema/` portent une constante dont l'union
  * est dérivée ; `tests/enumerations-schemas.test.ts` confronte chacune à son schéma.
  */
 export const TYPES_ITEM = ["P", "A", "O", "F"] as const;
 export type TypeItem = (typeof TYPES_ITEM)[number];
 export const DECISIONS = ["accepter", "corriger", "rejeter", "non_evaluable"] as const;
 export type Decision = (typeof DECISIONS)[number];
+/** Motifs énumérés d'un rejet (§4, protocole 0.24, D59 (9)) : facultatifs, sur « rejeter » seulement. */
+export const MOTIFS_REJET = ["texte_extrait_errone"] as const;
+export type MotifRejet = (typeof MOTIFS_REJET)[number];
 export type CleEmplacement = "assertion" | "anterieur" | "posterieur" | "couverture";
 
 export interface SourceProjetee {

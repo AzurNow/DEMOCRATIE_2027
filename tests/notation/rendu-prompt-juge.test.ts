@@ -4,8 +4,8 @@
  * Le prompt de fixture (`fixtures/prompt-juge/prompt-juge-fixture.md`) a la forme d'un
  * `prompts/judge-*.md` (titre versionné, en-tête, phrase du marqueur d'absence, lignes de variables
  * optionnelles) et porte chacune des quatorze variables une fois. Le vrai prompt
- * (`prompts/judge-1.0.0.md`) n'est lu qu'en mémoire, jamais modifié : son en-tête annonce encore
- * `charge-juge-v3` (correction en PR de protocole séparée), il est donc refusé tel quel.
+ * (`prompts/judge-1.0.0.md`) n'est lu qu'en mémoire, jamais modifié : depuis le protocole 0.24
+ * (D59 (18)), son en-tête annonce la charge du code, ce qu'un test exige sans condition.
  */
 
 import { readFileSync } from "node:fs";
@@ -138,6 +138,19 @@ function attendreRefus(rendre: () => string, motif: MotifRefusRendu, champs: rea
   expect(leve.motif).toBe(motif);
   expect(leve.champs).toEqual(champs);
   for (const champ of champs) expect(leve.message).toContain(champ);
+}
+
+/** La charge privée du champ que nomme `variable` (`date_run`, ou `groupe.champ`), le reste intact. */
+function sansChamp(c: ChargeJuge, variable: string): ChargeJuge {
+  const [groupe, champ] = variable.split(".") as [string, string | undefined];
+  const copie: Record<string, unknown> = { ...c };
+  if (champ === undefined) {
+    delete copie[groupe];
+    return copie as unknown as ChargeJuge;
+  }
+  const sous: Record<string, unknown> = { ...(copie[groupe] as Record<string, unknown>) };
+  delete sous[champ];
+  return { ...copie, [groupe]: sous } as unknown as ChargeJuge;
 }
 
 function ligne(rendu: string, etiquette: string): string {
@@ -304,6 +317,21 @@ describe("champ absent : le marqueur que déclare le prompt, sur ses seuls champ
     attendreRefus(() => rendrePromptJuge(source(), sansDate as ChargeJuge), "champ_absent", ["date_run"]);
   });
 
+  // D59 (19), annexe D 0.24 : sur le vrai prompt, seuls la prémisse et les citations sont
+  // facultatives ; chacun des douze autres champs, retiré seul de la charge, interdit le rendu.
+  it("vrai prompt : tout champ hors prémisse et citations, absent, interdit le rendu (D59 (19))", () => {
+    const reel = readFileSync(PROMPT_REEL, "utf8");
+    const facultatifs = ["question.premisse_fausse", "reponse.citations"];
+    const obligatoires = VARIABLES_DE_CHARGE.filter((variable) => !facultatifs.includes(variable));
+    expect(obligatoires).toHaveLength(12);
+    for (const variable of obligatoires) {
+      attendreRefus(() => rendrePromptJuge(reel, sansChamp(chargeDuVraiPrompt(), variable)), "champ_absent", [variable]);
+    }
+    const rendu = rendrePromptJuge(reel, chargeDuVraiPrompt(demandeNeutreSansCitations()));
+    expect(rendu).toContain("- Prémisse de la formulation orientée, fausse à la date du run : ABSENT\n");
+    expect(rendu).toContain("- Citations jointes par l'outil : ABSENT\n");
+  });
+
   it("une ligne de variable qui ne prévoit pas le marqueur rend le champ obligatoire", () => {
     const stricte = source().replace(" ; `ABSENT` hors formulation orientée", "");
     attendreRefus(() => rendrePromptJuge(stricte, charge(demandeNeutreSansCitations())), "champ_absent", ["question.premisse_fausse"]);
@@ -434,15 +462,14 @@ describe("version de la charge annoncée par le prompt", () => {
     attendreRefus(() => rendrePromptJuge(deux, charge()), "en_tete_sans_version_charge", []);
   });
 
-  // Au 2026-11-01, l'en-tête annonce charge-juge-v3 : le vrai prompt est refusé. Quand la PR de
-  // protocole l'aura aligné, le même test exige qu'il soit rendu, sans retouche ici.
-  it("le vrai prompt tel qu'inscrit est rendu si et seulement si son en-tête annonce VERSION_CHARGE_JUGE", () => {
+  // D59 (18), protocole 0.24 : l'en-tête du vrai prompt annonce la charge du code. Le test est
+  // inconditionnel : une charge montée de version sans l'amendement qui corrige l'en-tête (zone
+  // d'arrêt, prompts/judge-*) le fait échouer, au lieu de basculer vers une branche de refus.
+  it("le vrai prompt tel qu'inscrit annonce VERSION_CHARGE_JUGE et se rend sans retouche (D59 (18))", () => {
     const reel = readFileSync(PROMPT_REEL, "utf8");
-    const annoncee = versionDeChargeDuPrompt(reel);
-    expect(annoncee).toMatch(/^charge-juge-v\d+$/);
-    const rendre = (): string => rendrePromptJuge(reel, chargeDuVraiPrompt());
-    if (annoncee === VERSION_CHARGE_JUGE) expect(rendre).not.toThrow();
-    else attendreRefus(rendre, "version_charge_discordante", [annoncee, VERSION_CHARGE_JUGE]);
+    expect(versionDeChargeDuPrompt(reel)).toBe(VERSION_CHARGE_JUGE);
+    expect(() => rendrePromptJuge(reel, chargeDuVraiPrompt())).not.toThrow();
+    expect(() => rendrePromptJuge(reel, chargeDuVraiPrompt(demandeNeutreSansCitations()))).not.toThrow();
   });
 });
 

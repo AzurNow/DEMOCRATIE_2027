@@ -21,6 +21,7 @@ describe("accord des champs de /api/decisions entre client et serveur (relecture
       lot_id: true,
       item_id: true,
       decision: true,
+      motif_rejet: true,
       reponses_grille: true,
       reponses_par_etat: true,
       questions_specifiques: true,

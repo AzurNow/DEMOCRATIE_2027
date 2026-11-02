@@ -29,6 +29,12 @@ function exigerChaine(objet: Objet, cle: string, chemin: string): readonly strin
   return typeof objet[cle] === "string" ? [] : [`${chemin}.${cle} : une chaîne est attendue`];
 }
 
+/** Une absence s'écrit en omettant le champ : null n'est pas une valeur admise. */
+function chaineSiPresente(objet: Objet, cle: string, chemin: string): readonly string[] {
+  if (objet[cle] === undefined) return [];
+  return typeof objet[cle] === "string" ? [] : [`${chemin}.${cle} : une chaîne est attendue (champ omis s'il est absent)`];
+}
+
 function chaineOuNulleSiPresente(objet: Objet, cle: string, chemin: string): readonly string[] {
   if (objet[cle] === undefined || objet[cle] === null) return [];
   return typeof objet[cle] === "string" ? [] : [`${chemin}.${cle} : une chaîne ou null est attendue`];
@@ -61,6 +67,7 @@ export const CHAMPS_DECISION = [
   "lot_id",
   "item_id",
   "decision",
+  "motif_rejet",
   "reponses_grille",
   "reponses_par_etat",
   "questions_specifiques",
@@ -81,6 +88,7 @@ function erreursRequeteDecision(corps: Objet): readonly string[] {
   const item_id = erreurIdentifiant(corps["item_id"], "item_id");
   if (item_id !== null) erreurs.push(item_id);
   erreurs.push(...exigerChaine(corps, "decision", "corps"));
+  erreurs.push(...chaineSiPresente(corps, "motif_rejet", "corps"));
   erreurs.push(...erreursGrille(corps["reponses_grille"], "reponses_grille"));
   erreurs.push(...erreursGrilleParEtat(corps["reponses_par_etat"]));
   erreurs.push(...erreursQuestionsSpecifiques(corps["questions_specifiques"]));

@@ -910,14 +910,22 @@
       "section": "4",
       "citation": "Un texte extrait faux se solde par un rejet de l'item, qui renvoie la source à la réextraction.",
       "nature": "processus",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
-        "validation/domaine/corrections.ts:examinerCitation"
+        "validation/domaine/corrections.ts:examinerCitation",
+        "schema/decision.schema.json:motif_rejet",
+        "validation/domaine/decision.ts:controlerMotifRejet",
+        "validation/domaine/renvoi-reextraction.ts:renvoisAReextraction",
+        "outils/promote.ts:imprimerRenvoisReextraction"
       ],
-      "tests": [],
+      "tests": [
+        "tests/motif-rejet.test.ts « un rejet d'item P sous le motif est accepté, et la ligne de journal le porte »",
+        "tests/renvoi-reextraction.test.ts « deux « rejeter » sous le motif, item P à une source : la source est renvoyée, avec l'item et le texte en cause »",
+        "tests/renvoi-reextraction.test.ts « deux « rejeter », un seul sous le motif : à trancher, motifs discordants, aucune source renvoyée »"
+      ],
       "lot": "extraction",
       "constat": null,
-      "note": "Le rejet est outillé (validation/domaine/corrections.ts) ; le renvoi de la source à la réextraction n'est écrit nulle part, et l'effet d'une réextraction sur les items validés attend l'auteur (TACHES-AUTEUR)."
+      "note": "D59 (9), première moitié (protocole 0.24) : motif énuméré texte_extrait_errone sur la ligne de journal, renvoi recalculé et nommé par pnpm promote. Partielle : motifs discordants, rejet arbitré et item O à deux sources sont rapportés « à trancher » en attendant l'auteur ; le renvoi est un rapport, aucune file ni commande ne le consomme. Seconde moitié (suspension des items validés sur l'ancien texte) non retenue par l'auteur."
     },
     {
       "id": "§4.18",
@@ -1804,28 +1812,39 @@
       "section": "4",
       "citation": "si une recherche dans l'ensemble de son corpus T1 et T2 ne trouve aucune position sur la mesure",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
-        "schema/item.schema.json:absence.corpus_examine"
+        "schema/item.schema.json:absence.corpus_examine",
+        "validation/domaine/absence.ts:rechercheAbsence"
       ],
-      "tests": [],
+      "tests": [
+        "tests/absence.test.ts « aucun item vérifié, double extraction passée sur tout le corpus sans proposition : la recherche ne trouve rien »",
+        "tests/absence.test.ts « double extraction dont un seul extracteur propose une position (désaccord d'existence) : ce n'est pas une absence »",
+        "tests/absence.test.ts « item P vérifié présent, item O seulement en staging : position trouvée, les deux sont nommés »"
+      ],
       "lot": "extraction",
       "constat": null,
-      "note": "Le schéma porte absence.corpus_examine ; aucun code ne propose ni ne contrôle un item A (l'extraction ne dépose pas d'items A)."
+      "note": "D59 (10) (protocole 0.24) : la définition est codée et testée (validation/domaine/absence.ts). Partielle : aucun chemin ne crée ni ne promeut encore un item A en l'appelant, et une proposition d'extraction n'est rattachée à la mesure recherchée que par son mesure_id (l'extraction propose ses propres mesures) — question ouverte à l'auteur."
     },
     {
       "id": "§4.70",
       "section": "4",
       "citation": "Les items A sont revérifiés à chaque run par recherche automatique de nouvelles sources T1 sur le thème, puis confirmation humaine.",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
-        "schema/item.schema.json:absence.reverifications"
+        "schema/item.schema.json:absence.reverifications",
+        "validation/domaine/absence.ts:nouvellesSourcesT1",
+        "validation/domaine/types.ts:Reverification"
       ],
-      "tests": [],
+      "tests": [
+        "tests/absence.test.ts « aucune revérification encore faite : la borne est la date d'examen du corpus »",
+        "tests/absence.test.ts « source collectée exactement à l'instant de la dernière revérification : pas nouvelle (« après » est strict) »",
+        "tests/absence.test.ts « une revérification porte un seul annotateur, et le schéma refuse une liste »"
+      ],
       "lot": "extraction",
       "constat": null,
-      "note": "La case 2 de l'annexe F rend « items d'absence revérifiés » non fait par construction (checklist.ts:constatItemsAbsenceReverifies) tant que la revérification n'existe pas."
+      "note": "D59 (11) (protocole 0.24) : « nouvelle source T1 » et le seul annotateur de la revérification sont codés et testés. Partielle : la recherche automatique « sur le thème » et la confirmation humaine (écriture de reverifications[]) n'existent pas ; la case 2 de l'annexe F reste non faite par construction (checklist.ts:constatItemsAbsenceReverifies)."
     },
     {
       "id": "§4.71",
@@ -3486,14 +3505,26 @@
       "section": "5",
       "citation": "Le nombre exact de questions et de réponses (2 échantillons par formulation) est publié avec chaque run.",
       "nature": "donnee",
-      "statut": "a-implementer",
+      "statut": "partielle",
       "code": [
-        "pipeline/gel/assemblage.ts (tirage.nombre_questions)"
+        "pipeline/gel/assemblage.ts (tirage.nombre_questions)",
+        "pipeline/gel/assemblage.ts (reponses.prevues)",
+        "pipeline/run/reponses.ts:reponsesPrevues",
+        "pipeline/run/reponses.ts:reponsesObtenues",
+        "pipeline/run/reponses.ts:inscrireReponsesObtenues",
+        "schema/run.schema.json:reponses"
       ],
-      "tests": [],
+      "tests": [
+        "tests/gel/geler.test.ts « D59 (17) : run.json inscrit au gel le nombre de réponses prévues par le plan, sans réponses obtenues »",
+        "tests/run/reponses.test.ts « chaque assistant inclus × mode déclaré × question tirée × formulation × échantillon (2) »",
+        "tests/run/reponses.test.ts « un refus de l'API est obtenu ; une manquante hors fenêtre ou après échecs est prévue et non obtenue »",
+        "tests/run/reponses.test.ts « aucune réponse obtenue (toutes manquantes) : zéro, pas une absence »",
+        "tests/run/reponses.test.ts « une requête du plan sans réponse écrite (jamais tentée, ou en attente de l'opérateur) : l'interrogation n'est pas terminée »",
+        "tests/run/reponses.test.ts « déjà inscrit, nombre différent : refus, jamais réécrit »"
+      ],
       "lot": "interrogation",
       "constat": null,
-      "note": "Le nombre de questions est inscrit au gel ; le nombre de réponses n'est publié dans aucun fichier du run (seul le bilan de pnpm run:dry l'imprime)."
+      "note": "Protocole 0.24, D59 (17) : le nombre de réponses prévues par le plan d'interrogation est inscrit au gel (run.json#/reponses/prevues, exigé de tout run). Le nombre de réponses obtenues (reponses.obtenues) est défini, compté et inscriptible par une fonction pure (refus de l'API compris, manquantes exclues, refus tant qu'une requête du plan n'a pas de réponse écrite), mais aucune commande ne l'écrit encore : le moment « après l'interrogation » et la commande qui l'inscrit sont une question ouverte (rapport du lot D59 A3)."
     },
     {
       "id": "§6.01",
@@ -3760,36 +3791,57 @@
       "section": "6",
       "citation": "Une fois par mois, deux testeurs saisissent à la main un sous-échantillon stratifié de 60 questions du run (5 par candidat, réparties par gabarit), dans l'application grand public de chaque éditeur, en session neuve, sans compte quand c'est possible et sinon avec un compte dédié sans historique.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "pipeline/interrogation/sous-echantillon-application.ts:sousEchantillonApplication (cinq questions par candidat interrogé, tourniquet des gabarits, formulation neutre, échantillon 1, deux testeurs)",
+        "schema/sous-echantillon-application.schema.json",
+        "pipeline/interrogation/depot-application.ts:bilanDesDepots (deux testeurs sur tout, saisies incomplètes nommées)",
+        "schema/depot-application.schema.json:compte (aucun | dedie)"
+      ],
+      "tests": [
+        "tests/interrogation/sous-echantillon-application.test.ts « moins de cinq gabarits : le tourniquet repart du premier gabarit, et saute un gabarit épuisé »",
+        "tests/interrogation/sous-echantillon-application.test.ts « un candidat non interrogé n'a pas de sous-échantillon, même s'il porte des questions »",
+        "tests/interrogation/sous-echantillon-application.test.ts « le tirage ne dépend d'aucun attribut du candidat : deux candidats aux mêmes files reçoivent le même motif »",
+        "tests/interrogation/depot-application.test.ts « un seul testeur a rapporté une question : incomplète, le testeur présent nommé »",
+        "schema/exemples/depot-application/invalide-01-compte-personnel.json"
+      ],
       "lot": "interrogation",
       "constat": null,
-      "note": "Ni le tirage du sous-échantillon de 60 questions ni l'écran de saisie manuelle n'existent."
+      "note": "D59 (12). Le sous-échantillon se calcule depuis les fichiers gelés du run, sans graine ; il n'est pas encore écrit au gel ni référencé par run.json. Restent ouverts : le candidat interrogé à moins de cinq questions tirées (refus nommé), le masquage des données personnelles des captures (qui, comment, empreinte de quel fichier), l'écran de saisie."
     },
     {
       "id": "§6.17",
       "section": "6",
       "citation": "Les captures d'écran sont archivées et les réponses notées comme celles de l'API.",
       "nature": "donnee",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "schema/depot-application.schema.json:captures (sha256, chemin_local), texte_copie"
+      ],
+      "tests": [
+        "schema/exemples/depot-application/invalide-03-sans-capture.json"
+      ],
       "lot": "interrogation",
       "constat": null,
-      "note": "reponse.saisie_manuelle.captures existe au schéma ; aucun code ne l'écrit."
+      "note": "D59 (12). Le dépôt porte l'empreinte de chaque capture et le texte copié tel quel ; la conversion d'un dépôt en réponse du canal application (normalise : liens, troncature) et l'archivage des captures ne sont pas codés."
     },
     {
       "id": "§6.18",
       "section": "6",
       "citation": "L'écart est rapporté avec ses intervalles de confiance et l'étiquette « exploratoire », l'effectif étant faible.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "analyse",
+      "statut": "testee",
+      "code": [
+        "analysis/ecart-api-application.ts:ecartsApiApplication (mode de tête lu, exactitude, appariement par question, clé exactitude/global/<outil>:api-application, exploratoire)"
+      ],
+      "tests": [
+        "tests/analysis/ecart-api-application.test.ts « réponse API manquante pour une question de l'application : la paire n'est pas appariée, la question est nommée »",
+        "tests/analysis/ecart-api-application.test.ts « égalité d'exactitude entre les deux modes : le mode lu est celui déclaré, jamais départagé par les chiffres »",
+        "tests/analysis/ecart-api-application.test.ts « publie la clé §8 : famille, métrique, strate, puis <outil>:api-application, et la graine qui en dérive »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "D59 (6). Le bras API porte toutes les formulations des questions du sous-échantillon dans le mode de tête ; aucune commande ne publie encore l'écart."
     },
     {
       "id": "§6.19",
@@ -3831,12 +3883,22 @@
       "section": "6",
       "citation": "L'appariement item-comparateur suit la procédure de notation de la section 7.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "pipeline/notation/lectures-comparateur.ts:lecturesANoter",
+        "pipeline/notation/lectures-comparateur.ts:etatsDesLectures",
+        "schema/notation.schema.json:motif_notation (double_notation_comparateur, arbitrage_comparateur)",
+        "schema/notation.schema.json:allOf (lecture_comparateur ⇒ humain)"
+      ],
+      "tests": [
+        "tests/notation/lectures-comparateur.test.ts « deux humains d'accord : leur note est retenue, sans arbitrage »",
+        "tests/notation/lectures-comparateur.test.ts « désaccord puis arbitrage d'un troisième humain : la note de l'arbitre est retenue »",
+        "tests/notation/lectures-comparateur.test.ts « une notation de juge sur une lecture : refusée (aucun juge automatique, §6 0.24) »",
+        "schema/exemples/notation/invalide-19-juge-sur-lecture-comparateur.json"
+      ],
       "lot": "notation",
       "constat": null,
-      "note": null
+      "note": "Lot D59 (15), protocole 0.24 : sélection (lectures affichées du run), double notation humaine à l'aveugle et arbitrage par un troisième humain, comme l'échantillon (même égalité, analysis/note-lue.ts) ; aucun juge automatique, refusé par le schéma et par le domaine. Reste : construction du verdict d'une lecture (mode_resolution et dans_echantillon_humain non définis pour une lecture), écran de notation humaine des lectures (notation-humaine/), branchement dans la chaîne."
     },
     {
       "id": "§6.22",
@@ -4259,11 +4321,15 @@
         "tests/analysis/kappa-jeu-or.test.ts « un juge parfait et l'autre faible : la paire vaut le kappa du faible (un juge faible ne se cache pas) »",
         "tests/analysis/kappa-jeu-or.test.ts « toutes les notes retenues indéterminées : exclues et comptées, aucune réponse comparable »",
         "tests/analysis/kappa-jeu-or.test.ts « une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1 ; la paire aussi »",
-        "tests/analysis/kappa-jeu-or.test.ts « le juge retiré n'a pas de kappa ; la paire est celle du juge restant, même si le retiré était faible »"
+        "tests/analysis/kappa-jeu-or.test.ts « le juge retiré n'a pas de kappa ; la paire est celle du juge restant, même si le retiré était faible »",
+        "tests/analysis/kappa-jeu-or.test.ts « refus de l'API : hors du kappa de chaque juge, compté une fois pour le jeu d'or »",
+        "tests/analysis/kappa-jeu-or.test.ts « jeu d'or composé uniquement de refus : aucune réponse comparable, chaque kappa et la paire absents avec ce motif »",
+        "tests/analysis/kappa-jeu-or.test.ts « Q-ATT renvoyée par un juge : hors du kappa de CE juge seulement, comptée pour lui »",
+        "tests/analysis/kappa-jeu-or.test.ts « Q-ATT renvoyée ET refus de l'API sur la même réponse : incohérent (aucun juge ne voit un refus, D32), rien n'est compté deux fois »"
       ],
       "lot": null,
       "constat": 7,
-      "note": "Lot D58 (protocole 0.23) : le kappa de chaque juge sur le jeu d'or (contre la note humaine retenue, catégorie primaire, non pondéré, indéterminées exclues et comptées) et celui de la paire (le plus faible) sont calculés par une fonction pure, analysis/kappa-jeu-or.ts, qui partage la note humaine retenue et le noyau du kappa avec l'échantillon. Reste partielle : aucun format de fichier n'assemble le jeu d'or, aucun motif n'existe pour son troisième humain, et aucune commande n'écrit kappa_juge_humain ni kappa_paire_juges dans run.json."
+      "note": "Lot D58 (protocole 0.23) : le kappa de chaque juge sur le jeu d'or (contre la note humaine retenue, catégorie primaire, non pondéré, indéterminées exclues et comptées) et celui de la paire (le plus faible) sont calculés par une fonction pure, analysis/kappa-jeu-or.ts, qui partage la note humaine retenue et le noyau du kappa avec l'échantillon. Protocole 0.24, D59 (20) : un refus de l'API (notation par règle) sort du kappa de chaque juge et est compté (refus_api), une Q-ATT renvoyée par un juge sort du kappa de ce juge et est comptée pour lui (renvois_ecartes), comme pour l'échantillon (D32, D31 (2)) ; tout écarté donne aucune_reponse_comparable. Reste partielle : aucun format de fichier n'assemble le jeu d'or, aucun motif n'existe pour son troisième humain, aucune commande n'écrit kappa_juge_humain ni kappa_paire_juges dans run.json, et run.json n'a encore aucun champ pour les nombres d'indéterminées, de refus et de renvois du jeu d'or."
     },
     {
       "id": "§7.23",
@@ -4345,12 +4411,26 @@
       "section": "7",
       "citation": "le test contrefactuel s'applique aussi à la comparaison entre outils, en renotant un sous-ensemble après permutation des noms d'outils dans les métadonnées",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "pipeline/notation/derangement-outils.ts:tirerDerangementOutils",
+        "pipeline/notation/derangement-outils.ts:permuterNomsOutils",
+        "pipeline/notation/derangement-outils.ts:estEligibleOutils",
+        "pipeline/notation/echantillons.ts:tirerSousEnsembleContrefactuelOutils",
+        "pipeline/notation/reponse-contrefactuelle-outil.ts:reponseContrefactuelleOutil",
+        "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils",
+        "pipeline/notation/contrefactuel.ts:compterChangements"
+      ],
+      "tests": [
+        "tests/notation/derangement-outils.test.ts « un seul outil au run : dérangement impossible, refus nommé (jamais une identité) »",
+        "tests/notation/derangement-outils.test.ts « une réponse qui nomme deux outils : les deux remplacés en une passe, jamais relus (A↔B donne B…A) »",
+        "tests/notation/derangement-outils.test.ts « un libellé en sous-chaîne d'un autre mot n'est pas remplacé (mot entier) »",
+        "tests/notation/derangement-outils.test.ts « moins de 200 réponses nommant un outil : toutes, et le sous-effectif est dit (comme pour les candidats) »",
+        "tests/notation/contrefactuel-outils.test.ts « 50 changements sur 200 (25 %) : taux publié, aucun champ de retrait ni d'échantillon »"
+      ],
       "lot": "notation",
       "constat": null,
-      "note": "Le contexte contrefactuel_outil existe au schéma ; aucun code ne permute les noms d'outils."
+      "note": "Citation antérieure à la 0.24 (« dans les métadonnées ») ; la 0.24 dit « dans le texte des réponses », 200 réponses nommant un outil, libellé et éditeur, dérangement non défini sous deux outils, diagnostic sans retrait. Lot D59 (13) : domaine codé et testé (dérangement, remplacement, éligibilité, tirage, réponse permutée, taux sans retrait). Reste : source du libellé et de l'éditeur au moment de la notation (absents de run.json, seulement dans config/perimetre.yaml), choix des outils du dérangement (assistants inclus seuls ?), champ de publication dans run.json, branchement dans pipeline/notation/chaine.ts et dans l'adaptateur des juges (contexte contrefactuel_outil)."
     },
     {
       "id": "§7.28",
@@ -4407,11 +4487,14 @@
         "tests/analysis/lecture-run.test.ts « un accord qui contredit les notations lève AccordHumainsDivergent, avec l'écrit et le recalcul »",
         "tests/analysis/accord-humains.test.ts « non pondéré, sur les quatre catégories de la grille (annexe C) : 3 accords sur 4, κ = 7/11 »",
         "tests/analysis/accord-humains.test.ts « une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1 »",
-        "tests/analysis/lecture-run.test.ts « D58 : un kappa des deux humains écrit qui contredit le recalcul (1 au lieu d'absent) : AccordHumainsDivergent »"
+        "tests/analysis/lecture-run.test.ts « D58 : un kappa des deux humains écrit qui contredit le recalcul (1 au lieu d'absent) : AccordHumainsDivergent »",
+        "tests/analysis/accord-humains.test.ts « « indeterminee » est une catégorie primaire (annexe C) : deux humains qui la donnent tous deux s'accordent »",
+        "tests/analysis/accord-humains.test.ts « D59 (21) : un humain « indeterminee », l'autre non — un désaccord sur une catégorie comptée, pas une réponse écartée »",
+        "tests/analysis/accord-humains.test.ts « D59 (21) : deux « indeterminee » partout — elles s'accordent, une seule catégorie : accord attendu maximal, jamais 1 »"
       ],
       "lot": null,
       "constat": 8,
-      "note": "Corrigé : l'aveugle est gardé ; l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14, notationsConcordent), est publié dans run.json#/accord_humains_echantillon (réponses doublement notées, accords, part ; part absente sur zéro réponse), exigé de tout go/no-go et recoupé par lireRun. Lot D58 (protocole 0.23) : le kappa de Cohen des deux humains sur la catégorie primaire, non pondéré, y est publié (kappa, ou motif_indefini_kappa quand il est indéfini), diagnostic lu par aucun critère du go/no-go."
+      "note": "Corrigé : l'aveugle est gardé ; l'accord des deux humains de l'échantillon, au sens du §7 (révision 0.14, notationsConcordent), est publié dans run.json#/accord_humains_echantillon (réponses doublement notées, accords, part ; part absente sur zéro réponse), exigé de tout go/no-go et recoupé par lireRun. Lot D58 (protocole 0.23) : le kappa de Cohen des deux humains sur la catégorie primaire, non pondéré, y est publié (kappa, ou motif_indefini_kappa quand il est indéfini), diagnostic lu par aucun critère du go/no-go. Protocole 0.24, D59 (21) : ce kappa porte sur les quatre catégories de l'annexe C, « indéterminée » comprise, et deux « indéterminée » s'accordent ; c'était déjà le code du lot D58 (CATEGORIES_PRIMAIRES), désormais couvert par des tests des cas limites."
     },
     {
       "id": "§7.31",
@@ -5868,12 +5951,18 @@
       "section": "9",
       "citation": "Relancer l'interrogation elle-même exige des clés de chaque éditeur ; le protocole documente exactement quels appels faire.",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "interrogation",
+      "statut": "testee",
+      "code": [
+        "outils/appels-interrogation/rendu.ts:genererAppelsInterrogation",
+        "outils/appels-interrogation.ts (pnpm appels-interrogation [--verifier])",
+        "docs/APPELS-INTERROGATION.md"
+      ],
+      "tests": [
+        "tests/appels-interrogation.test.ts « est à jour avec le code de l'interrogation (sinon : pnpm appels-interrogation) »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": null
+      "note": "D59 (16). Seul l'éditeur simulé est documenté : aucun adaptateur d'éditeur réel n'est encore écrit."
     },
     {
       "id": "§9.15",

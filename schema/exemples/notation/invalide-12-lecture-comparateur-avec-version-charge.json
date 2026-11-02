@@ -7,11 +7,9 @@
     "id": "YPWCRSKQA9C9VVYJ9Z3SFNQX2F"
   },
   "notateur": {
-    "type": "juge",
-    "id": "juge-1",
-    "famille_modele": "famille-x",
-    "modele": "famille-x/modele-juge-1",
-    "version_prompt": "prompts/judge-primaire-1.0.0",
+    "type": "humain",
+    "id": "a1",
+    "sensibilite_declaree_famille": "famille-1",
     "a_vu_identite_outil": false
   },
   "version_charge": "charge-juge-v3",
@@ -30,6 +28,5 @@
     "liens": []
   },
   "date": "2026-12-03T11:00:00+01:00",
-  "duree_ms": 2400,
-  "motif_notation": "notation_juge"
+  "motif_notation": "double_notation_comparateur"
 }
