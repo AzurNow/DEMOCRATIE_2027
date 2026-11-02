@@ -1,12 +1,14 @@
 /**
  * Corrélation exploratoire entre le taux d'erreur par candidat et sa couverture (§2, protocole 0.24,
- * D59 (5)).
+ * D59 (5) ; protocole 0.25, D60 : rangs moyens et exclusion avant le compte, écrits au §2).
  *
  * « Elle est calculée pour chaque couple outil × mode comparé : c'est le coefficient de rang de
  * Spearman entre le taux d'erreur de chaque candidat, un moins son exactitude, et le nombre de ses
  * items P vérifiés, compté comme pour le seuil de couverture (section 4) ; les candidats sous ce
- * seuil n'y entrent pas. Elle est publiée sans intervalle, avec l'étiquette « exploratoire ». Sous
- * trois candidats, elle n'est pas calculée, et le motif est publié. »
+ * seuil n'y entrent pas, ni un candidat dont l'exactitude n'est pas définie dans le couple (aucune
+ * réponse classée). Les ex aequo reçoivent leur rang moyen. Elle est publiée sans intervalle, avec
+ * l'étiquette « exploratoire ». Sous trois candidats, comptés après ces deux exclusions, elle n'est
+ * pas calculée, et le motif est publié. »
  *
  * Lectures, toutes visibles dans la sortie :
  *

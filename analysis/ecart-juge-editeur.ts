@@ -13,8 +13,9 @@
  *   une donnée, jamais un `if` sur un outil. Ni `run.json` ni la notation ne la portent aujourd'hui ;
  *   son origine reste à décider (rapport du lot D59 (14)).
  * - La population des réponses (`unites`) : celles que l'appelant passe, des unités d'analyse du run.
- * - La clé de la graine : `options.cle`, suivie de l'identifiant du juge. Le §8 n'écrit pas la clé de
- *   cet intervalle.
+ * - La métrique et la strate de la clé de la graine : `options.cle` (`exactitude`, `global`, dans
+ *   l'ordre du §8). Ce module y ajoute le composant qui nomme la comparaison, `<juge>:propre-editeur`
+ *   (§8, « Graines de l'analyse », protocole 0.25, D60).
  *
  * **Lectures, toutes visibles dans la sortie.**
  * - L'exactitude d'un juge sur un outil est `metriques.ts:exactitude` appliquée à ses notations des
@@ -97,6 +98,11 @@ export class NotationDeJugeIncoherente extends Error {
     this.name = "NotationDeJugeIncoherente";
     this.reponse_id = reponse_id;
   }
+}
+
+/** §8 (0.25) : le composant de clé de l'écart d'un juge sur l'outil de son propre éditeur. */
+function composantPropreEditeur(juge_id: IdentifiantCourt): string {
+  return `${juge_id}:propre-editeur`;
 }
 
 /** §7 : vrai quand l'intervalle exclut 0 ; `null` quand il n'y a rien à qualifier. */
@@ -194,7 +200,7 @@ function ecartDuJuge(
   const outilsMoyenne = autres.filter((e) => e.ecart !== null).map((e) => e.outil_id);
   const statistique = differenceSur(sonOutil, outilsMoyenne, comparaison);
   const retenues = notees.filter((u) => u.outil_id === sonOutil || outilsMoyenne.includes(u.outil_id));
-  const intervalle = intervalleNomme(retenues, statistique, { ...options, cle: [...options.cle, juge.juge_id] });
+  const intervalle = intervalleNomme(retenues, statistique, { ...options, cle: [...options.cle, composantPropreEditeur(juge.juge_id)] });
   return {
     ...base,
     autres_outils_sans_ecart: sansEcart,

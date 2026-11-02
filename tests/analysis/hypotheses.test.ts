@@ -1,5 +1,6 @@
 /**
- * Règles de décision des hypothèses préenregistrées H1, H2 et H4 (§2, protocole 0.24, D59 (2) à (4)).
+ * Règles de décision des hypothèses préenregistrées H1, H2 et H4 (§2, protocole 0.24, D59 (2) à (4) ;
+ * protocole 0.25, D60 : outils « sans objet » de H1 et de H2, H2 lue sur la différence publiée).
  */
 
 import { describe, expect, it } from "vitest";
@@ -123,8 +124,52 @@ describe("H1 : borne inférieure strictement positive sur un couple comparé", (
       [fabrication("outil-alpha", "web_activee", intervalle(0.05, 0.2))],
     );
     expect(decision.outils.map((o) => o.verdict)).toEqual(["vraie", "sans_objet"]);
-    // « Confirmée quand elle est vraie pour tous les outils » : un outil sans objet ne l'est pas.
+  });
+
+  it("est confirmée avec un outil sans objet et un outil vrai : l'outil sans objet n'entre pas dans le verdict", () => {
+    const decision = decisionH1(
+      ["outil-alpha", "outil-beta"],
+      {
+        compares: [{ outil_id: "outil-alpha", mode: "web_activee" }],
+        incomplets: [{ outil_id: "outil-beta", mode: "web_activee" }],
+      },
+      [fabrication("outil-alpha", "web_activee", intervalle(0.05, 0.2))],
+    );
+    expect(decision.outils.map((o) => o.verdict)).toEqual(["vraie", "sans_objet"]);
+    expect(decision.verdict).toBe("confirmee");
+  });
+
+  it("n'est pas confirmée quand un outil est faux, même à côté d'un outil sans objet", () => {
+    const decision = decisionH1(
+      ["outil-alpha", "outil-beta", "outil-gamma"],
+      {
+        compares: [
+          { outil_id: "outil-alpha", mode: "web_activee" },
+          { outil_id: "outil-beta", mode: "web_activee" },
+        ],
+        incomplets: [],
+      },
+      [
+        fabrication("outil-alpha", "web_activee", intervalle(0.05, 0.2)),
+        fabrication("outil-beta", "web_activee", intervalle(0, 0.2)),
+      ],
+    );
+    expect(decision.outils.map((o) => o.verdict)).toEqual(["vraie", "fausse", "sans_objet"]);
     expect(decision.verdict).toBe("infirmee");
+  });
+
+  it("est publiée « sans objet » quand aucun outil n'a de couple comparé", () => {
+    const decision = decisionH1(
+      ["outil-alpha", "outil-beta"],
+      {
+        compares: [{ outil_id: "outil-alpha", mode: "web_activee" }],
+        incomplets: [{ outil_id: "outil-beta", mode: "web_desactivee" }],
+      },
+      // Le seul couple comparé n'a aucune réponse aux items A et F : sans objet.
+      [fabrication("outil-alpha", "web_activee", null, [0, 0])],
+    );
+    expect(decision.outils.map((o) => o.verdict)).toEqual(["sans_objet", "sans_objet"]);
+    expect(decision.verdict).toBe("sans_objet");
   });
 
   it("n'est confirmée que si elle est vraie pour tous les outils", () => {
@@ -221,28 +266,29 @@ function comparaisonModes(
 
 const VIDE = { comparaisons: [], paires_exclues: [] };
 
-describe("H2 : différence web désactivée − web activée, strate global, établie et négative", () => {
+describe("H2 : différence publiée web activée − web désactivée, strate global, établie et positive", () => {
   it("est confirmée quand l'exactitude baisse sans web et que l'intervalle exclut 0", () => {
     const [decision] = decisionH2(
       ["outil-alpha"],
       { comparaisons: [comparaisonModes("outil-alpha", 0.3, intervalle(0.1, 0.5), "etablie")], paires_exclues: [] },
       VIDE,
     );
-    expect(decision?.confirmee).toBe(true);
-    // Rendue dans le sens de H2 : désactivée − activée, intervalle retourné.
-    expect(decision?.global).toMatchObject({ statut: "comparee", difference: -0.3 });
+    expect(decision?.verdict).toBe("confirmee");
+    // Lue telle que publiée (§8, 0.25) : activée − désactivée, intervalle non retourné.
+    expect(decision?.global).toMatchObject({ statut: "comparee", difference: 0.3 });
     if (decision?.global.statut !== "comparee") throw new Error("comparaison attendue");
-    expect(decision.global.intervalle).toMatchObject({ bas: -0.5, haut: -0.1 });
+    expect(decision.global.intervalle).toMatchObject({ bas: 0.1, haut: 0.5 });
+    expect(decision.global.cle).toEqual(["bootstrap", "exactitude", "global", `outil-alpha:${CLE_MODES}`]);
   });
 
-  it("n'est pas confirmée quand la différence est établie mais positive", () => {
+  it("n'est pas confirmée quand la différence publiée est établie mais négative", () => {
     const [decision] = decisionH2(
       ["outil-alpha"],
       { comparaisons: [comparaisonModes("outil-alpha", -0.3, intervalle(-0.5, -0.1), "etablie")], paires_exclues: [] },
       VIDE,
     );
-    expect(decision?.confirmee).toBe(false);
-    expect(decision?.global).toMatchObject({ statut: "comparee", difference: 0.3, qualificatif: "etablie" });
+    expect(decision?.verdict).toBe("non_confirmee");
+    expect(decision?.global).toMatchObject({ statut: "comparee", difference: -0.3, qualificatif: "etablie" });
   });
 
   it("n'est pas confirmée quand l'intervalle touche 0 (non établie)", () => {
@@ -251,7 +297,7 @@ describe("H2 : différence web désactivée − web activée, strate global, ét
       { comparaisons: [comparaisonModes("outil-alpha", 0.2, intervalle(0, 0.4), "non_etablie")], paires_exclues: [] },
       VIDE,
     );
-    expect(decision?.confirmee).toBe(false);
+    expect(decision?.verdict).toBe("non_confirmee");
   });
 
   it("n'est pas confirmée sur une seule grappe (ni établie ni non établie)", () => {
@@ -263,21 +309,22 @@ describe("H2 : différence web désactivée − web activée, strate global, ét
       },
       VIDE,
     );
-    expect(decision?.confirmee).toBe(false);
+    // Ni établie ni non établie : ni confirmée, ni sans objet (les deux modes sont comparés).
+    expect(decision?.verdict).toBe("non_confirmee");
     expect(decision?.global).toMatchObject({ statut: "comparee", qualificatif: null });
   });
 
-  it("n'est pas confirmée sans différence (un taux indéfini)", () => {
+  it("publie « sans objet » un outil dont un mode n'a aucune réponse classée (différence indéfinie)", () => {
     const [decision] = decisionH2(
       ["outil-alpha"],
       { comparaisons: [comparaisonModes("outil-alpha", null, null, null)], paires_exclues: [] },
       VIDE,
     );
-    expect(decision?.confirmee).toBe(false);
+    expect(decision?.verdict).toBe("sans_objet");
     expect(decision?.global).toMatchObject({ statut: "comparee", difference: null, intervalle: null });
   });
 
-  it("rend une paire exclue pour run incomplet telle quelle, sans décision positive", () => {
+  it("publie « sans objet » un outil dont un couple est marqué run incomplet, la paire exclue rendue telle quelle", () => {
     const [decision] = decisionH2(
       ["outil-alpha"],
       {
@@ -286,14 +333,27 @@ describe("H2 : différence web désactivée − web activée, strate global, ét
       },
       VIDE,
     );
-    expect(decision?.confirmee).toBe(false);
+    expect(decision?.verdict).toBe("sans_objet");
     expect(decision?.global).toEqual({ statut: "exclue", couples_incomplets: ["outil-alpha/web_activee"] });
   });
 
-  it("rend « absente » la comparaison d'un outil qui n'interroge qu'un mode", () => {
+  it("publie « sans objet » un outil qui n'interroge qu'un mode (comparaison absente)", () => {
     const [decision] = decisionH2(["outil-alpha"], VIDE, VIDE);
-    expect(decision?.confirmee).toBe(false);
+    expect(decision?.verdict).toBe("sans_objet");
     expect(decision?.global).toEqual({ statut: "absente" });
+  });
+
+  it("rend un verdict par outil et aucun verdict global", () => {
+    const decisions = decisionH2(
+      ["outil-alpha", "outil-beta"],
+      { comparaisons: [comparaisonModes("outil-alpha", 0.3, intervalle(0.1, 0.5), "etablie")], paires_exclues: [] },
+      VIDE,
+    );
+    expect(Array.isArray(decisions)).toBe(true);
+    expect(decisions.map((d) => [d.outil_id, d.verdict])).toEqual([
+      ["outil-alpha", "confirmee"],
+      ["outil-beta", "sans_objet"],
+    ]);
   });
 
   it("publie la strate de moins de 60 jours en secondaire, sans qu'elle décide", () => {
@@ -302,8 +362,8 @@ describe("H2 : différence web désactivée − web activée, strate global, ét
       { comparaisons: [comparaisonModes("outil-alpha", 0.1, intervalle(-0.1, 0.3), "non_etablie")], paires_exclues: [] },
       { comparaisons: [comparaisonModes("outil-alpha", 0.4, intervalle(0.2, 0.6), "etablie")], paires_exclues: [] },
     );
-    expect(decision?.confirmee).toBe(false);
-    expect(decision?.moins_de_60_jours).toMatchObject({ statut: "comparee", difference: -0.4, qualificatif: "etablie" });
+    expect(decision?.verdict).toBe("non_confirmee");
+    expect(decision?.moins_de_60_jours).toMatchObject({ statut: "comparee", difference: 0.4, qualificatif: "etablie" });
   });
 
   it("refuse une différence établie dont le signe contredit son intervalle", () => {
@@ -360,8 +420,9 @@ describe("H2 : différence web désactivée − web activée, strate global, ét
       cle: ["exactitude", "global"],
     });
     const [decision] = decisionH2(["outil-alpha"], { comparaisons, paires_exclues }, VIDE);
-    expect(decision?.global).toMatchObject({ statut: "comparee", difference: -1 });
-    expect(decision?.confirmee).toBe(true);
+    // Publiée activée − désactivée : 1 − 0 = 1, positive et établie.
+    expect(decision?.global).toMatchObject({ statut: "comparee", difference: 1 });
+    expect(decision?.verdict).toBe("confirmee");
   });
 });
 

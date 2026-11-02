@@ -106,11 +106,17 @@ describe("ecartsJugesEditeurs", () => {
     ]);
     expect(j1.moyenne_autres_outils).toBe(0);
     expect(j1.difference).toBe(1);
-    expect(j1.intervalle?.cle).toEqual(["bootstrap", "ecart_juge_editeur", "j1"]);
+    expect(j1.intervalle?.cle).toEqual(["bootstrap", "ecart_juge_editeur", "j1:propre-editeur"]);
     expect(j1.intervalle?.intervalle).toMatchObject({ bas: 1, haut: 1, nombre_grappes: 4, degenere: null });
     expect(j1.signale).toBe(true);
     expect(j1.motif_absence).toBeNull();
     expect(resultat.juges_sans_outil_de_leur_editeur).toEqual(["j2"]);
+  });
+
+  it("publie la clé §8 (0.25) : famille, métrique et strate, puis le composant <juge>:propre-editeur", () => {
+    const jeu = jeuIndulgentSurA(["outil-b"]);
+    const resultat = ecartsJugesEditeurs(jeu.unites, jeu.notations, juges(["outil-a"]), { ...OPTIONS, cle: ["exactitude", "global"] });
+    expect(premier(resultat).intervalle?.cle).toEqual(["bootstrap", "exactitude", "global", "j1:propre-editeur"]);
   });
 
   it("garde le signe : un juge plus sévère que l'autre sur l'outil de son éditeur a une différence négative", () => {

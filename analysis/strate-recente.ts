@@ -16,6 +16,9 @@
  *
  * Ce module ne fait que sélectionner des unités. La différence de modes se calcule sur elles par
  * `conditions.ts`, comme pour la strate `global`, et sa décision vit dans `hypotheses.ts`.
+ *
+ * Le nom de la strate dans la clé de graine (§8, « Graines de l'analyse », protocole 0.25, D60) :
+ * `recents:60j`, à la place de `global` dans `options.cle` (`STRATE_RECENTE`).
  */
 
 import { instantDe, instantDeDateCivile } from "../pipeline/questions/reponse-attendue.ts";
@@ -24,6 +27,12 @@ import type { TypeItem, Ulid } from "./types.ts";
 
 /** §2, H2 : « moins de 60 jours ». */
 export const FENETRE_STRATE_RECENTE_JOURS = 60;
+
+/**
+ * §8 (0.25) : « `recents:60j` pour les questions dont l'item principal date de moins de 60 jours
+ * (section 2, H2) ». Le composant de strate de la clé, après la métrique : `[métrique, STRATE_RECENTE]`.
+ */
+export const STRATE_RECENTE = "recents:60j";
 
 const MILLISECONDES_PAR_JOUR = 86_400_000;
 

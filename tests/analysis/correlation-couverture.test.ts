@@ -111,6 +111,26 @@ describe("correlationCouverture", () => {
     expect(resultat.motif_absence).toBe("moins_de_trois_candidats");
   });
 
+  it("n'est pas calculée sur trois candidats dont un sans exactitude définie : exclu avant le compte (0.25)", () => {
+    const resultat = calculer(
+      [candidatAvec("c1", 30), candidatAvec("c2", 20), candidatAvec("c3", 10)],
+      [...reponses("c1", 9, 1), ...reponses("c2", 8, 2), ...unites(2, { candidat_id: "c3", categorie: "indeterminee" })],
+    );
+    expect(resultat.points).toHaveLength(2);
+    expect(resultat.coefficient).toBeNull();
+    expect(resultat.motif_absence).toBe("moins_de_trois_candidats");
+  });
+
+  it("donne leur rang moyen aux ex aequo de nombre d'items P vérifiés (0.25)", () => {
+    // Items : c1 20, c2 20, c3 30 → rangs 1,5 ; 1,5 ; 3. Erreurs 1/10, 2/10, 5/10 → rangs 1 ; 2 ; 3.
+    const resultat = calculer(
+      [candidatAvec("c1", 20), candidatAvec("c2", 20), candidatAvec("c3", 30)],
+      [...reponses("c1", 9, 1), ...reponses("c2", 8, 2), ...reponses("c3", 5, 5)],
+    );
+    expect(resultat.coefficient).toBeCloseTo(coefficientDeSpearman([1, 2, 3], [1.5, 1.5, 3]) as number, 12);
+    expect(resultat.coefficient).toBeCloseTo(1.5 / Math.sqrt(3), 12);
+  });
+
   it("nomme à part un candidat comparé sans réponse classée, qui n'a pas de taux d'erreur", () => {
     const resultat = calculer(
       [candidatAvec("c1", 30), candidatAvec("c2", 20), candidatAvec("c3", 10)],

@@ -1,10 +1,13 @@
 /**
- * Écart API / application (§6, QR8, exploratoire ; D59 (6), protocole 0.24).
+ * Écart API / application (§6, QR8, exploratoire ; D59 (6), protocole 0.24 ; D60, protocole 0.25).
  *
  * §6 : « L'écart est rapporté avec ses intervalles de confiance et l'étiquette « exploratoire »,
  * l'effectif étant faible : c'est la différence d'exactitude entre l'API, dans le mode de tête de
  * l'outil (section 8), et l'application, appariée par question sur les questions du
- * sous-échantillon, dont la graine dérive de la clé `<outil>:api-application` (section 8). »
+ * sous-échantillon, dont la graine dérive de la clé `<outil>:api-application` (section 8). Côté
+ * API, seule la réponse à la formulation neutre, échantillon 1, entre dans l'écart, comme ce que
+ * saisissent les testeurs ; côté application, les saisies des deux testeurs sont deux observations
+ * de la même question, dans la grappe de celle-ci (section 8). »
  *
  * Ce que le module fait, et rien d'autre :
  *
@@ -12,12 +15,14 @@
  *   chiffres : deux modes d'exactitude égale ne se départagent pas ici. Un outil qui a des réponses
  *   de l'application sans mode de tête déclaré lève `ModeDeTeteAbsent`.
  * - **Le bras API** est l'ensemble des unités du canal API de l'outil, dans le mode de tête, sur
- *   les questions du sous-échantillon (toutes leurs formulations et tous leurs échantillons : le §6
- *   ne restreint que le mode et les questions). **Le bras application** est l'ensemble des unités du
- *   canal application de l'outil, les deux testeurs confondus. Une réponse de l'application hors du
- *   sous-échantillon lève `ApplicationHorsSousEchantillon` : elle n'a pas été tirée.
+ *   les questions du sous-échantillon, à la formulation neutre et à l'échantillon 1 seulement
+ *   (`registre`, `echantillon` de l'unité). **Le bras application** est l'ensemble des unités du
+ *   canal application de l'outil, les deux testeurs confondus : chaque saisie est une observation,
+ *   et toutes celles d'une question portent sa grappe (`grappe_id`). Une réponse de l'application
+ *   hors du sous-échantillon lève `ApplicationHorsSousEchantillon` : elle n'a pas été tirée.
  * - **Appariement par question** (`appariement.ts:apparier`, sur `question_id`) : une question du
- *   sous-échantillon présente dans un seul bras — réponse API manquante, ou aucune saisie de
+ *   sous-échantillon présente dans un seul bras — pas de réponse API neutre à l'échantillon 1
+ *   (manquante, ou seulement d'autres formulations ou échantillons), ou aucune saisie de
  *   l'application — sort de la comparaison et est nommée dans `questions_exclues`. Le bootstrap
  *   reste en grappes (l'item, ou la mesure d'une question d'attribution : §8, « Incertitude »).
  * - **La différence** est API moins application, sur l'exactitude (`metriques.ts:exactitude`, seule
@@ -44,6 +49,10 @@ export const COMPOSANT_ECART = "api-application";
 /** §8 : la métrique et la strate de la clé. D59 (6) : l'exactitude, sur l'ensemble des réponses. */
 const METRIQUE = "exactitude";
 const STRATE = "global";
+
+/** §6 (0.25) : côté API, la réponse « à la formulation neutre, échantillon 1 », comme les testeurs. */
+const REGISTRE_API = "neutre";
+const ECHANTILLON_API = 1;
 
 export interface EntreesEcart {
   /** Les unités du run, des deux canaux (`filtre.ts:assembler`). */
@@ -122,7 +131,7 @@ export function ecartsApiApplication(entrees: EntreesEcart, options: OptionsEcar
       continue;
     }
     const bras_api = entrees.unites.filter(
-      (u) => u.canal === "api" && u.outil_id === outil_id && u.mode === mode_de_tete && sousEchantillon.has(u.question_id),
+      (u) => u.canal === "api" && u.outil_id === outil_id && u.mode === mode_de_tete && sousEchantillon.has(u.question_id) && commeLesTesteurs(u),
     );
     const bras_application = applications.filter((u) => u.outil_id === outil_id);
     par_outil.push(ecartDeLOutil(outil_id, mode_de_tete, bras_api, bras_application, options));
@@ -147,6 +156,11 @@ function ecartDeLOutil(
     questions_exclues: appariement.exclues,
     difference: differenceAppariee(appariement.a, appariement.b, exactitude, { ...options, cle }),
   };
+}
+
+/** §6 (0.25) : la formulation neutre, échantillon 1 — ce que saisissent les testeurs. */
+function commeLesTesteurs(unite: UniteAnalyse): boolean {
+  return unite.registre === REGISTRE_API && unite.echantillon === ECHANTILLON_API;
 }
 
 function exigerDansSousEchantillon(applications: readonly UniteAnalyse[], sousEchantillon: ReadonlySet<string>): void {

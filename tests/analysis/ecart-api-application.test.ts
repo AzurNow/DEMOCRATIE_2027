@@ -22,6 +22,7 @@ const OPTIONS = { reechantillonnages: 200, graine_du_run: 20261201 };
 const Q1 = idQuestion("q1");
 const Q2 = idQuestion("q2");
 const Q3 = idQuestion("q3");
+const Q4 = idQuestion("q4");
 
 let rang = 0;
 
@@ -154,22 +155,83 @@ describe("écart API / application : bras, appariement, clé", () => {
   });
 });
 
+describe("écart API / application : formulation neutre, échantillon 1 côté API (§6, protocole 0.25, D60)", () => {
+  it("une réponse API en formulation familière ou à l'échantillon 2 n'entre pas dans l'écart", () => {
+    const unites = [
+      api(Q1, "web_desactivee", "exacte"),
+      sur(Q1, { canal: "api", mode: "web_desactivee", categorie: "inexacte", registre: "familier" }),
+      sur(Q1, { canal: "api", mode: "web_desactivee", categorie: "inexacte", registre: "oriente", premisse_fausse: true }),
+      sur(Q1, { canal: "api", mode: "web_desactivee", categorie: "inexacte", echantillon: 2 }),
+      application(Q1, "exacte"),
+    ];
+
+    const [ecart] = ecartsApiApplication(
+      { unites, outils: [outil()], couples: tousCompares(unites), questions_sous_echantillon: [Q1] },
+      OPTIONS,
+    ).par_outil;
+
+    expect(ecart?.difference.taux_a).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
+    expect(ecart?.difference.difference).toBe(0);
+  });
+
+  it("deux saisies (deux testeurs) d'une même question sont deux observations de la même grappe", () => {
+    const unites = [
+      api(Q1, "web_desactivee", "exacte"),
+      api(Q2, "web_desactivee", "exacte"),
+      application(Q1, "exacte"),
+      application(Q1, "inexacte"),
+      application(Q2, "exacte"),
+    ];
+
+    const [ecart] = ecartsApiApplication(
+      { unites, outils: [outil()], couples: tousCompares(unites), questions_sous_echantillon: [Q1, Q2] },
+      OPTIONS,
+    ).par_outil;
+
+    // Trois observations de l'application, deux grappes (les items de Q1 et de Q2), pas trois.
+    expect(ecart?.difference.taux_b).toEqual({ numerateur: 2, denominateur: 3, valeur: 2 / 3 });
+    expect(ecart?.difference.intervalle?.nombre_grappes).toBe(2);
+  });
+
+  it("une question sans réponse API neutre à l'échantillon 1 est exclue et nommée", () => {
+    // Q2 n'a, côté API, qu'une réponse familière et une réponse neutre à l'échantillon 2.
+    const unites = [
+      api(Q1, "web_desactivee", "exacte"),
+      sur(Q2, { canal: "api", mode: "web_desactivee", categorie: "exacte", registre: "familier" }),
+      sur(Q2, { canal: "api", mode: "web_desactivee", categorie: "exacte", echantillon: 2 }),
+      application(Q1, "exacte"),
+      application(Q2, "inexacte"),
+    ];
+
+    const [ecart] = ecartsApiApplication(
+      { unites, outils: [outil()], couples: tousCompares(unites), questions_sous_echantillon: [Q1, Q2] },
+      OPTIONS,
+    ).par_outil;
+
+    expect(ecart?.questions_appariees).toBe(1);
+    expect(ecart?.questions_exclues).toEqual([Q2]);
+    expect(ecart?.difference.taux_b).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
+  });
+});
+
 describe("écart API / application : mode de tête", () => {
   it("égalité d'exactitude entre les deux modes : le mode lu est celui déclaré, jamais départagé par les chiffres", () => {
-    // web_activee : 1/2 ; web_desactivee : 2/4. Même exactitude, effectifs différents : seul le
-    // dénominateur dit quel bras a été lu.
+    // web_activee : 1/2 (Q1, Q2) ; web_desactivee : 2/4 (Q1 à Q4). Même exactitude, effectifs
+    // différents : seul le dénominateur dit quel bras a été lu.
     const unites = [
       api(Q1, "web_activee", "exacte"),
       api(Q2, "web_activee", "inexacte"),
       api(Q1, "web_desactivee", "exacte"),
-      api(Q1, "web_desactivee", "inexacte"),
-      api(Q2, "web_desactivee", "exacte"),
       api(Q2, "web_desactivee", "inexacte"),
+      api(Q3, "web_desactivee", "exacte"),
+      api(Q4, "web_desactivee", "inexacte"),
       application(Q1, "exacte"),
       application(Q2, "exacte"),
+      application(Q3, "exacte"),
+      application(Q4, "exacte"),
     ];
     const couples = tousCompares(unites);
-    const entrees = { unites, couples, questions_sous_echantillon: [Q1, Q2] };
+    const entrees = { unites, couples, questions_sous_echantillon: [Q1, Q2, Q3, Q4] };
 
     const desactivee = ecartsApiApplication({ ...entrees, outils: [outil({ mode_de_tete: "web_desactivee" })] }, OPTIONS);
     const activee = ecartsApiApplication({ ...entrees, outils: [outil({ mode_de_tete: "web_activee" })] }, OPTIONS);
