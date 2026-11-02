@@ -387,9 +387,10 @@ describe("exemples de schema/exemples/", () => {
   // 329 → 333 : §7.30 (conformité du 2026-11-01, constat 8), accord des deux humains de l'échantillon, un valide et trois invalides de run.
   // 333 → 337 : §7, protocole 0.23 (D58), exactement deux juges : un et trois juges, invalides de run et de config-gel.
   // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
-  // 342 → 349 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
-  it("charge les 349 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(349);
+  // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
+  // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
+  it("charge les 352 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(352);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

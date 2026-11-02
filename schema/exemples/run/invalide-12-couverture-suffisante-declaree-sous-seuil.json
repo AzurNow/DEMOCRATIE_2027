@@ -387,6 +387,9 @@
       }
     ]
   },
+  "reponses": {
+    "prevues": 4824
+  },
   "tirage": {
     "chemin": "runs/2026-12-01/tirage.json",
     "sha256": "b2eb21e020f78c4b491c48455d87fcbaffcb6ef195a93c119d2d91ea3c08abba",

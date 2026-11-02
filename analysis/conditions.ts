@@ -94,6 +94,12 @@ export interface PairesDeCondition {
  * dont l'un des deux modes est incomplet n'a pas de comparaison de modes ; l'autre mode reste
  * publié dans les métriques primaires (§8).
  */
+/** Clé de la comparaison des deux modes d'un outil (§8, « Graines de l'analyse ») : `<outil>:web_activee-web_desactivee`. */
+export function cleComparaisonModes(outil_id: string): string {
+  const [premier, second] = MODES as readonly [Mode, Mode];
+  return `${outil_id}:${premier}-${second}`;
+}
+
 export function pairesParMode(unites: readonly UniteAnalyse[], couples: PartageCouples): PairesDeCondition {
   const etat = etatDesUnites(unites, couples);
   const formees: PaireFormee[] = [];
@@ -105,7 +111,7 @@ export function pairesParMode(unites: readonly UniteAnalyse[], couples: PartageC
     const incomplets = [premier, second]
       .filter((mode) => etat({ outil_id, mode }) === "incomplet")
       .map((mode) => cleCouple({ outil_id, mode }));
-    formees.push({ paire: { cle: `${outil_id}:${premier}-${second}`, a, b }, incomplets });
+    formees.push({ paire: { cle: cleComparaisonModes(outil_id), a, b }, incomplets });
   }
   return repartirPaires(formees);
 }

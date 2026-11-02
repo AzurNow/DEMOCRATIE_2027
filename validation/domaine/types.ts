@@ -19,6 +19,15 @@ export const DECISIONS = ["accepter", "corriger", "rejeter", "non_evaluable"] as
 export type Decision = (typeof DECISIONS)[number];
 
 /**
+ * Motifs énumérés d'un rejet (§4, protocole 0.24, D59 (9)). « texte_extrait_errone » : le texte
+ * canonique de la source est faux (OCR défaillant, transcription erronée) ; c'est ce motif qui
+ * renvoie la source à la réextraction (`renvoi-reextraction.ts`). Facultatif : un rejet sans motif
+ * énuméré est un rejet ordinaire.
+ */
+export const MOTIFS_REJET = ["texte_extrait_errone"] as const;
+export type MotifRejet = (typeof MOTIFS_REJET)[number];
+
+/**
  * Les trois catégories du kappa publié. Dérivées de la décision : c'est le devenir de l'item
  * qui compte, et distinguer « accepter » de « corriger » pénaliserait une coquille repérée par
  * un seul annotateur. « rejeté » et « non évaluable » ne fusionnent pas : l'un dit que
@@ -83,6 +92,8 @@ export interface EntreeDecision extends EntreeCommune {
   readonly item_empreinte: string;
   readonly item_type: TypeItem;
   readonly decision: Decision;
+  /** Sur un « rejeter » seulement, et seulement quand l'annotateur l'a choisi (D59 (9)). */
+  readonly motif_rejet?: MotifRejet;
   readonly reponses_grille?: Grille;
   readonly reponses_par_etat?: Readonly<Record<EtatObsolescence, Grille>>;
   readonly questions_specifiques?: QuestionsSpecifiques;
@@ -145,6 +156,17 @@ export interface EtatPositionnel {
   readonly extraction?: unknown;
 }
 
+/**
+ * Une revérification d'item A (`item.schema.json`, `absence.reverifications[]`) : §4, confirmée par
+ * un seul annotateur (protocole 0.24, D59 (11)), d'où `confirme_par` au singulier.
+ */
+export interface Reverification {
+  readonly run_id: string;
+  readonly date: string;
+  readonly resultat: "absence_confirmee" | "position_trouvee";
+  readonly confirme_par: string;
+}
+
 export interface BlocAbsence {
   readonly source_couverture_theme: Source;
   readonly corpus_examine: readonly {
@@ -153,7 +175,7 @@ export interface BlocAbsence {
     readonly tier: "T1" | "T2" | "T3";
   }[];
   readonly date_examen: string;
-  readonly reverifications: readonly unknown[];
+  readonly reverifications: readonly Reverification[];
   readonly confirmation_initiale?: {
     readonly lot_id: string;
     readonly date: string;

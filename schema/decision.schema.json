@@ -63,6 +63,12 @@
       "description": "§4. Le kappa publié porte sur trois catégories dérivées : retenu (accepter ou corriger), rejete, non_evaluable — c'est le devenir de l'item qui compte, et distinguer accepter de corriger pénaliserait une coquille corrigée par un seul annotateur."
     },
 
+    "motif_rejet": {
+      "type": "string",
+      "enum": ["texte_extrait_errone"],
+      "description": "§4 (protocole 0.24, D59 (9)) : motif énuméré d'un rejet. texte_extrait_errone : le texte canonique de la source est faux (OCR défaillant, transcription erronée) ; c'est ce motif qui renvoie la source à la réextraction (validation/domaine/renvoi-reextraction.ts). Facultatif : un rejet sans motif énuméré est un rejet ordinaire, qui ne renvoie rien. Permis sur decision = rejeter seulement ; interdit sur un item sans source de contenu (item F), contrôle de validation/domaine/decision.ts, la ligne ne portant pas les sources. Il n'entre pas dans le kappa, qui ne lit que la décision."
+    },
+
     "reponses_grille": {
       "$ref": "#/$defs/grille",
       "description": "Les cinq questions du §4. Interdit sur un item de type O, qui porte une grille par état : stocker en plus leur réduction serait stocker deux fois une valeur qui peut diverger."
@@ -164,6 +170,11 @@
   },
 
   "allOf": [
+    {
+      "$comment": "D59 (9) : le motif de rejet n'existe que sur une décision « rejeter ».",
+      "if": { "required": ["motif_rejet"] },
+      "then": { "required": ["decision"], "properties": { "decision": { "const": "rejeter" } } }
+    },
     {
       "$comment": "Une décision porte sur une version épinglée de l'item, et sur elle seule.",
       "if": { "properties": { "type_entree": { "const": "decision" } }, "required": ["type_entree"] },
