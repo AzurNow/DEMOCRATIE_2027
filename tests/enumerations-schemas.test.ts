@@ -203,6 +203,7 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(DOMAINE, "TYPES_ITEM"), valeurs: domaine.TYPES_ITEM, fichier: COMMUN, pointeur: "#/$defs/type_item" },
   { liste: en(DOMAINE, "DECISIONS"), valeurs: domaine.DECISIONS, fichier: DECISION, pointeur: "#/properties/decision" },
   { liste: en(DOMAINE, "DECISIONS"), valeurs: domaine.DECISIONS, fichier: ITEM, pointeur: "#/properties/validations/items/properties/decision" },
+  { liste: en(DOMAINE, "MOTIFS_REJET"), valeurs: domaine.MOTIFS_REJET, fichier: DECISION, pointeur: "#/properties/motif_rejet" },
   { liste: en(DOMAINE, "NATURES_LOT"), valeurs: domaine.NATURES_LOT, fichier: DECISION, pointeur: "#/properties/lot_nature" },
   { liste: en(DOMAINE, "EntreeJournal.type_entree"), valeurs: PONT_TYPE_ENTREE, fichier: DECISION, pointeur: "#/properties/type_entree" },
   { liste: en(DOMAINE, "Correction.cible"), valeurs: PONT_CIBLE_CORRECTION, fichier: DECISION, pointeur: "#/$defs/correction/properties/cible" },
@@ -224,6 +225,7 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   // validation/client/types.ts
   { liste: en(CLIENT, "TYPES_ITEM"), valeurs: client.TYPES_ITEM, fichier: COMMUN, pointeur: "#/$defs/type_item" },
   { liste: en(CLIENT, "DECISIONS"), valeurs: client.DECISIONS, fichier: DECISION, pointeur: "#/properties/decision" },
+  { liste: en(CLIENT, "MOTIFS_REJET"), valeurs: client.MOTIFS_REJET, fichier: DECISION, pointeur: "#/properties/motif_rejet" },
   { liste: en(CLIENT, "LotResume.nature"), valeurs: PONT_NATURE_LOT_CLIENT, fichier: DECISION, pointeur: "#/properties/lot_nature" },
   { liste: en(CLIENT, "Correction.cible"), valeurs: PONT_CIBLE_CORRECTION, fichier: DECISION, pointeur: "#/$defs/correction/properties/cible" },
 ];

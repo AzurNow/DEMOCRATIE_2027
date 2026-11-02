@@ -21,12 +21,28 @@
  * sur le juge restant ») : il n'a pas de kappa, ses notations ne sont pas lues, et la paire est le
  * kappa du juge restant — comme `critereKappaJugesHumains` pour l'échantillon.
  *
+ * **Refus de l'API et renvois d'attribution** (protocole 0.24, D59 (20)) : « Comme pour l'échantillon,
+ * un refus de l'API, noté sans juge, n'entre pas dans l'accord juge-humain du jeu d'or, et une question
+ * d'attribution qu'un juge renvoie à un humain, faute que la règle en détermine la note, n'entre pas
+ * dans le kappa de ce juge ; leur nombre est publié. Un kappa du jeu d'or qui ne porte sur aucune
+ * réponse comparable est publié absent, avec ce motif. » Les règles sont celles de l'échantillon
+ * (`pipeline/go-no-go/kappa-echantillon.ts`, D32 et D31 (2)), reprises à l'identique :
+ *
+ * - un refus (la réponse porte la notation par règle `d12-refus-api`) est écarté du kappa de CHAQUE
+ *   juge, avant toute lecture de sa référence humaine, et compté une fois (`refus_api`) ; une notation
+ *   ou un renvoi de juge sur un refus, même d'un juge retiré, est incohérent (aucun juge ne voit un
+ *   refus, D32) : rien n'est donc compté deux fois ;
+ * - une réponse renvoyée par un juge est écartée du kappa de CE juge seulement, et comptée pour lui
+ *   (`renvois_ecartes`) ; elle garde sa référence humaine, et une référence indéterminée la compte
+ *   parmi les indéterminées, pas parmi les renvois ; les renvois d'un juge retiré ne sont pas lus ;
+ * - tout écarté : `aucune_reponse_comparable` (`kappa-categorie-primaire.ts`), jamais 0 ni 1.
+ *
  * **Refusé, jamais deviné** (`JeuOrIncoherent`) : un run qui ne déclare pas exactement deux juges ;
  * deux juges retirés ; une réponse sans exactement deux notations `calibration_jeu_or` d'humains
  * distincts ; deux humains qui divergent sans troisième, ou un troisième là où ils s'accordent, ou un
- * troisième qui est l'un des deux ; une note de juge retenu absente ou double ; une note d'un juge non
- * déclaré. Une note de juge absente couvre le refus de l'API et le renvoi d'attribution, que le §7 ne
- * règle pas pour le jeu d'or (question ouverte, rapport du lot D58).
+ * troisième qui est l'un des deux ; une note de juge retenu absente sans renvoi, ou double ; un juge
+ * qui note et renvoie la même réponse ; une note ou un renvoi d'un juge non déclaré ; un refus qui
+ * n'est pas une notation par règle, ou qu'un juge a noté ou renvoyé.
  */
 
 import {
@@ -52,12 +68,27 @@ export interface ReponseDuJeuOr {
   readonly calibration: readonly Notation[];
   /** Le troisième humain, quand les deux premiers divergent ; `null` sinon. */
   readonly troisieme: Notation | null;
-  /** Les notations de juge de la réponse, une par juge déclaré (celles d'un juge retiré ne sont pas lues). */
+  /**
+   * Les notations de juge de la réponse, une par juge déclaré qui ne l'a pas renvoyée (celles d'un
+   * juge retiré ne sont pas lues).
+   */
   readonly juges: readonly Notation[];
+  /** D32 : la notation par règle d'un refus de l'API (`notateur.type: regle`) ; `null` si la réponse n'en est pas un. */
+  readonly refus_api: Notation | null;
+  /** D30 (2) : les renvois de juge vers un humain sur cette Q-ATT (`schema/renvoi-humain.schema.json`), contexte `run`. */
+  readonly renvois: readonly RenvoiDuJeuOr[];
+}
+
+/** Ce que le kappa lit d'un renvoi de juge (`pipeline/notation/types.ts:RenvoiHumain` s'y conforme). */
+export interface RenvoiDuJeuOr {
+  readonly id: Ulid;
+  readonly notateur: { readonly type: string; readonly id: string };
 }
 
 export interface KappaJugeJeuOr extends KappaCategorie {
   readonly juge_id: string;
+  /** D59 (20) : réponses du jeu d'or écartées de ce kappa parce que ce juge les a renvoyées à un humain. */
+  readonly renvois_ecartes: number;
 }
 
 export interface ResultatJeuOr {
@@ -67,6 +98,8 @@ export interface ResultatJeuOr {
   readonly paire: KappaDeLaPaire;
   /** Réponses du jeu d'or dont la note humaine retenue est indéterminée, écartées de chaque kappa. */
   readonly indeterminees: number;
+  /** D59 (20) : réponses du jeu d'or refusées par l'API, notées par règle, écartées de chaque kappa. */
+  readonly refus_api: number;
 }
 
 export class JeuOrIncoherent extends Error {
@@ -84,10 +117,21 @@ interface Reference {
 export function kappasJeuOr(juges: readonly JugeDeclare[], reponses: readonly ReponseDuJeuOr[]): ResultatJeuOr {
   const retenus = jugesRetenus(juges);
   for (const reponse of reponses) exigerJugesDeclares(reponse, juges);
-  const toutes = reponses.map((reponse) => ({ reponse, categorie: referenceDe(reponse) }));
+  const refus = reponses.filter(estUnRefus);
+  const toutes = reponses.filter((reponse) => !estUnRefus(reponse)).map((reponse) => ({ reponse, categorie: referenceDe(reponse) }));
   const references = toutes.filter((r): r is Reference => r.categorie !== "indeterminee");
   const kappas = retenus.map((juge) => kappaDuJuge(juge.juge_id, references));
-  return { kappas, paire: kappaDeLaPaire(kappas), indeterminees: toutes.length - references.length };
+  return { kappas, paire: kappaDeLaPaire(kappas), indeterminees: toutes.length - references.length, refus_api: refus.length };
+}
+
+/** D32 : un refus porte la notation par règle et rien d'un juge, ni notation ni renvoi, même d'un juge retiré. */
+function estUnRefus(reponse: ReponseDuJeuOr): boolean {
+  const regle = reponse.refus_api;
+  if (regle === null) return false;
+  if (regle.notateur.type !== "regle") throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : la notation ${regle.id} donnée pour refus de l'API n'est pas une notation par règle (D32).`);
+  const deJuges = reponse.juges.length + reponse.renvois.length;
+  if (deJuges > 0) throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : refus de l'API noté par règle (D32), elle porte aussi ${deJuges} notation(s) ou renvoi(s) de juge.`);
+  return true;
 }
 
 /** §7 (D58) : exactement deux juges déclarés ; au moins un retenu, sinon le run est invalide. */
@@ -100,8 +144,8 @@ function jugesRetenus(juges: readonly JugeDeclare[]): readonly JugeDeclare[] {
 
 function exigerJugesDeclares(reponse: ReponseDuJeuOr, juges: readonly JugeDeclare[]): void {
   const declares = new Set(juges.map((juge) => juge.juge_id));
-  const etrangere = reponse.juges.find((n) => n.notateur.type !== "juge" || !declares.has(n.notateur.id));
-  if (etrangere !== undefined) throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : notation ${etrangere.id} de ${etrangere.notateur.id}, qui n'est pas un juge déclaré au run.`);
+  const etrangere = [...reponse.juges, ...reponse.renvois].find((n) => n.notateur.type !== "juge" || !declares.has(n.notateur.id));
+  if (etrangere !== undefined) throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : notation ou renvoi ${etrangere.id} de ${etrangere.notateur.id}, qui n'est pas un juge déclaré au run.`);
 }
 
 /** La note humaine retenue de la réponse, après contrôle des deux calibrations et du troisième. */
@@ -137,9 +181,19 @@ function exigerTroisiemeDistinct(reponse: ReponseDuJeuOr, premiere: Notation, se
   }
 }
 
+/** D59 (20), comme D31 (2) : les réponses renvoyées par ce juge sortent de son kappa, et sont comptées. */
 function kappaDuJuge(juge_id: string, references: readonly Reference[]): KappaJugeJeuOr {
-  const paires = references.map((r) => ({ a: categorieDuJuge(juge_id, r.reponse), b: r.categorie }));
-  return { juge_id, ...kappaCategoriePrimaire(paires, CATEGORIES_DE_JUGE) };
+  const renvoyee = (r: Reference): boolean => r.reponse.renvois.some((renvoi) => renvoi.notateur.id === juge_id);
+  const gardees = references.filter((r) => !renvoyee(r));
+  for (const r of references.filter(renvoyee)) exigerSansNotation(juge_id, r.reponse);
+  const paires = gardees.map((r) => ({ a: categorieDuJuge(juge_id, r.reponse), b: r.categorie }));
+  return { juge_id, ...kappaCategoriePrimaire(paires, CATEGORIES_DE_JUGE), renvois_ecartes: references.length - gardees.length };
+}
+
+/** Un juge qui porte à la fois un renvoi et une notation sur la réponse : deux issues, aucune n'est choisie. */
+function exigerSansNotation(juge_id: string, reponse: ReponseDuJeuOr): void {
+  const siennes = reponse.juges.filter((n) => n.notateur.id === juge_id).length;
+  if (siennes > 0) throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : le juge ${juge_id} l'a renvoyée à un humain et l'a aussi notée (${siennes} notation(s)).`);
 }
 
 /** La note du juge retenu sur la réponse : exactement une, jamais « indeterminee » (§7). */

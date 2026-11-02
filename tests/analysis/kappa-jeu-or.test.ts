@@ -13,9 +13,9 @@ import {
   type ReponseDuJeuOr,
 } from "../../analysis/kappa-jeu-or.ts";
 import { categorieHumaineRetenue, kappaDeLaPaire } from "../../analysis/kappa-categorie-primaire.ts";
-import type { CategorieRetenue } from "../../analysis/types.ts";
+import type { CategorieRetenue, Notation } from "../../analysis/types.ts";
 import { ulid } from "./fabriques.ts";
-import { inexacte, notationHumaine, notationJuge } from "../notation/fabriques.ts";
+import { inexacte, notationHumaine, notationJuge, notationRegle, renvoiJuge } from "../notation/fabriques.ts";
 
 type Categorie3 = Exclude<CategorieRetenue, "indeterminee">;
 
@@ -46,6 +46,8 @@ function reponse(rang: number, ligne: Ligne): ReponseDuJeuOr {
     ],
     troisieme: ligne.troisieme === undefined ? null : notationHumaine("annotateur-3", "calibration_jeu_or", { ...objet, ...surcharges(ligne.troisieme) }),
     juges: Object.entries(ligne.juges).map(([juge, categorie]) => notationJuge(juge, { ...objet, ...surcharges(categorie) })),
+    refus_api: null,
+    renvois: [],
   };
 }
 
@@ -67,8 +69,8 @@ describe("kappa de chaque juge et de la paire sur le jeu d'or", () => {
       accord("inexacte", "inexacte", "inexacte"),
     ]));
     expect(resultat.kappas).toEqual([
-      { juge_id: "j1", kappa: 1, motif_indefini: null, n: 4 },
-      { juge_id: "j2", kappa: 0, motif_indefini: null, n: 4 },
+      { juge_id: "j1", kappa: 1, motif_indefini: null, n: 4, renvois_ecartes: 0 },
+      { juge_id: "j2", kappa: 0, motif_indefini: null, n: 4, renvois_ecartes: 0 },
     ]);
     expect(resultat.paire).toEqual({ kappa: 0, motif_indefini: null });
     expect(resultat.indeterminees).toBe(0);
@@ -97,8 +99,8 @@ describe("kappa de chaque juge et de la paire sur le jeu d'or", () => {
   it("une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1 ; la paire aussi", () => {
     const resultat = kappasJeuOr(JUGES, jeu([accord("exacte", "exacte", "exacte"), accord("exacte", "exacte", "exacte")]));
     expect(resultat.kappas).toEqual([
-      { juge_id: "j1", kappa: null, motif_indefini: "accord_attendu_maximal", n: 2 },
-      { juge_id: "j2", kappa: null, motif_indefini: "accord_attendu_maximal", n: 2 },
+      { juge_id: "j1", kappa: null, motif_indefini: "accord_attendu_maximal", n: 2, renvois_ecartes: 0 },
+      { juge_id: "j2", kappa: null, motif_indefini: "accord_attendu_maximal", n: 2, renvois_ecartes: 0 },
     ]);
     expect(resultat.paire).toEqual({ kappa: null, motif_indefini: "accord_attendu_maximal" });
   });
@@ -107,8 +109,8 @@ describe("kappa de chaque juge et de la paire sur le jeu d'or", () => {
     // Référence toujours « exacte » : j1 varie (pₑ = 1/2, κ = 0, défini), j2 aussi constant (pₑ = 1, indéfini).
     const resultat = kappasJeuOr(JUGES, jeu([accord("exacte", "exacte", "exacte"), accord("exacte", "inexacte", "exacte")]));
     expect(resultat.kappas).toEqual([
-      { juge_id: "j1", kappa: 0, motif_indefini: null, n: 2 },
-      { juge_id: "j2", kappa: null, motif_indefini: "accord_attendu_maximal", n: 2 },
+      { juge_id: "j1", kappa: 0, motif_indefini: null, n: 2, renvois_ecartes: 0 },
+      { juge_id: "j2", kappa: null, motif_indefini: "accord_attendu_maximal", n: 2, renvois_ecartes: 0 },
     ]);
     expect(resultat.paire).toEqual({ kappa: null, motif_indefini: "accord_attendu_maximal" });
     const indefini = kappaDeLaPaire([
@@ -121,8 +123,8 @@ describe("kappa de chaque juge et de la paire sur le jeu d'or", () => {
   it("aucune réponse commune (jeu d'or vide) : aucune_reponse_comparable, jamais 0 ni 1", () => {
     const resultat = kappasJeuOr(JUGES, []);
     expect(resultat.kappas).toEqual([
-      { juge_id: "j1", kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0 },
-      { juge_id: "j2", kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0 },
+      { juge_id: "j1", kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0, renvois_ecartes: 0 },
+      { juge_id: "j2", kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0, renvois_ecartes: 0 },
     ]);
     expect(resultat.paire).toEqual({ kappa: null, motif_indefini: "aucune_reponse_comparable" });
     expect(resultat.indeterminees).toBe(0);
@@ -149,6 +151,137 @@ describe("kappa de chaque juge et de la paire sur le jeu d'or", () => {
   });
 });
 
+/**
+ * §7 (protocole 0.24, D59 (20)) : « Comme pour l'échantillon, un refus de l'API, noté sans juge,
+ * n'entre pas dans l'accord juge-humain du jeu d'or, et une question d'attribution qu'un juge renvoie
+ * à un humain [...] n'entre pas dans le kappa de ce juge ; leur nombre est publié. Un kappa du jeu
+ * d'or qui ne porte sur aucune réponse comparable est publié absent, avec ce motif. »
+ */
+describe("D59 (20) : refus de l'API et renvois d'attribution hors du kappa du jeu d'or, comptés", () => {
+  /** Une réponse du jeu d'or refusée par l'API : notée par la règle (D32), par aucun juge. */
+  function refus(rang: number): ReponseDuJeuOr {
+    const id = ulid(`reponse-jeu-or-refus-${rang}`);
+    const objet = { objet_note: { type: "reponse" as const, id } };
+    return {
+      reponse_id: id,
+      calibration: [
+        notationHumaine("annotateur-1", "calibration_jeu_or", { ...objet, categorie: "non_reponse" }),
+        notationHumaine("annotateur-2", "calibration_jeu_or", { ...objet, categorie: "non_reponse" }),
+      ],
+      troisieme: null,
+      juges: [],
+      refus_api: notationRegle(objet),
+      renvois: [],
+    };
+  }
+
+  /** La réponse `ligne`, que le juge `juge_id` a renvoyée à un humain au lieu de la noter. */
+  function renvoyee(rang: number, ligne: Ligne, juge_id: string): ReponseDuJeuOr {
+    const r = reponse(rang, ligne);
+    return { ...r, renvois: [...r.renvois, renvoiJuge(juge_id, { objet_note: { type: "reponse", id: r.reponse_id } })] };
+  }
+
+  it("refus de l'API : hors du kappa de chaque juge, compté une fois pour le jeu d'or", () => {
+    const resultat = kappasJeuOr(JUGES, [
+      ...jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "inexacte")]),
+      refus(0),
+    ]);
+    expect(resultat.refus_api).toBe(1);
+    expect(resultat.kappas).toEqual([
+      { juge_id: "j1", kappa: 1, motif_indefini: null, n: 2, renvois_ecartes: 0 },
+      { juge_id: "j2", kappa: 1, motif_indefini: null, n: 2, renvois_ecartes: 0 },
+    ]);
+  });
+
+  it("jeu d'or composé uniquement de refus : aucune réponse comparable, chaque kappa et la paire absents avec ce motif", () => {
+    const resultat = kappasJeuOr(JUGES, [refus(0), refus(1), refus(2)]);
+    expect(resultat.refus_api).toBe(3);
+    expect(resultat.indeterminees).toBe(0);
+    expect(resultat.kappas).toEqual([
+      { juge_id: "j1", kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0, renvois_ecartes: 0 },
+      { juge_id: "j2", kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0, renvois_ecartes: 0 },
+    ]);
+    expect(resultat.paire).toEqual({ kappa: null, motif_indefini: "aucune_reponse_comparable" });
+  });
+
+  it("la référence humaine d'un refus n'est pas lue : deux humains en désaccord sans troisième n'empêchent rien", () => {
+    const r = refus(0);
+    const divergent = { ...r, calibration: [r.calibration[0] as Notation, { ...(r.calibration[1] as Notation), categorie: "exacte" as const }] };
+    expect(kappasJeuOr(JUGES, [divergent]).refus_api).toBe(1);
+  });
+
+  it("Q-ATT renvoyée par un juge : hors du kappa de CE juge seulement, comptée pour lui", () => {
+    const resultat = kappasJeuOr(JUGES, [
+      ...jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "inexacte")]),
+      renvoyee(9, { humains: ["exacte", "exacte"], juges: { j2: "inexacte" } }, "j1"),
+    ]);
+    expect(resultat.kappas[0]).toEqual({ juge_id: "j1", kappa: 1, motif_indefini: null, n: 2, renvois_ecartes: 1 });
+    // j2 garde la réponse : 2 accords sur 3 ; marges juge (exacte 1, inexacte 2), humain (2, 1) ; pₑ = 4/9 ; κ = (2/3 − 4/9) / (5/9) = 2/5.
+    expect(resultat.kappas[1]?.renvois_ecartes).toBe(0);
+    expect(resultat.kappas[1]?.n).toBe(3);
+    expect(resultat.kappas[1]?.kappa).toBeCloseTo(2 / 5, 12);
+    expect(resultat.refus_api).toBe(0);
+  });
+
+  it("Q-ATT renvoyée par les deux juges : écartée des deux kappas, comptée pour chacun", () => {
+    const base = renvoyee(9, { humains: ["exacte", "exacte"], juges: {} }, "j1");
+    const deux = { ...base, renvois: [...base.renvois, renvoiJuge("j2", { objet_note: { type: "reponse", id: base.reponse_id } })] };
+    const resultat = kappasJeuOr(JUGES, [...jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "inexacte")]), deux]);
+    expect(resultat.kappas.map((k) => [k.n, k.renvois_ecartes])).toEqual([[2, 1], [2, 1]]);
+  });
+
+  it("toutes les réponses renvoyées par un juge : son kappa est absent (aucune_reponse_comparable), la paire aussi", () => {
+    const resultat = kappasJeuOr(JUGES, [renvoyee(0, { humains: ["exacte", "exacte"], juges: { j2: "exacte" } }, "j1")]);
+    expect(resultat.kappas[0]).toEqual({ juge_id: "j1", kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0, renvois_ecartes: 1 });
+    expect(resultat.paire).toEqual({ kappa: null, motif_indefini: "aucune_reponse_comparable" });
+  });
+
+  it("renvoi sur une réponse à note retenue indéterminée : comptée indéterminée, pas renvoyée (aucun double compte)", () => {
+    const resultat = kappasJeuOr(JUGES, [
+      ...jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "inexacte")]),
+      renvoyee(9, { humains: ["indeterminee", "indeterminee"], juges: { j2: "exacte" } }, "j1"),
+    ]);
+    expect(resultat.indeterminees).toBe(1);
+    expect(resultat.kappas.map((k) => k.renvois_ecartes)).toEqual([0, 0]);
+  });
+
+  it("le renvoi d'un juge retiré n'est pas lu : il n'a pas de kappa", () => {
+    const resultat = kappasJeuOr([{ juge_id: "j1", retire: false }, { juge_id: "j2", retire: true }], [
+      ...jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "inexacte")]),
+      renvoyee(9, { humains: ["exacte", "exacte"], juges: { j1: "exacte" } }, "j2"),
+    ]);
+    expect(resultat.kappas).toEqual([{ juge_id: "j1", kappa: 1, motif_indefini: null, n: 3, renvois_ecartes: 0 }]);
+  });
+
+  it("Q-ATT renvoyée ET refus de l'API sur la même réponse : incohérent (aucun juge ne voit un refus, D32), rien n'est compté deux fois", () => {
+    const r = refus(0);
+    const renvoiSurRefus = { ...r, renvois: [renvoiJuge("j1", { objet_note: { type: "reponse", id: r.reponse_id } })] };
+    expect(() => kappasJeuOr(JUGES, [renvoiSurRefus])).toThrow(/refus de l'API/);
+  });
+
+  it("une notation de juge sur un refus de l'API : incohérent (D32)", () => {
+    const r = refus(0);
+    const noteParUnJuge = { ...r, juges: [notationJuge("j1", { objet_note: { type: "reponse", id: r.reponse_id }, categorie: "non_reponse" })] };
+    expect(() => kappasJeuOr(JUGES, [noteParUnJuge])).toThrow(JeuOrIncoherent);
+  });
+
+  it("un juge qui renvoie ET note la même réponse : deux issues, aucune n'est choisie", () => {
+    const r = renvoyee(0, { humains: ["exacte", "exacte"], juges: { j1: "exacte", j2: "exacte" } }, "j1");
+    expect(() => kappasJeuOr(JUGES, [r])).toThrow(JeuOrIncoherent);
+  });
+
+  it("un renvoi d'un juge non déclaré au run", () => {
+    const r = renvoyee(0, { humains: ["exacte", "exacte"], juges: { j1: "exacte", j2: "exacte" } }, "j9");
+    expect(() => kappasJeuOr(JUGES, [r])).toThrow(/j9/);
+  });
+
+  it("un « refus de l'API » qui n'est pas une notation par règle : incohérent", () => {
+    const r = refus(0);
+    const humain = { ...r, refus_api: r.calibration[0] as Notation };
+    expect(() => kappasJeuOr(JUGES, [humain])).toThrow(JeuOrIncoherent);
+  });
+});
+
 describe("juge retiré (§7 : ses notations sortent, le kappa ne porte plus que sur le juge restant)", () => {
   const RETIRE: readonly JugeDeclare[] = [
     { juge_id: "j1", retire: false },
@@ -160,7 +293,7 @@ describe("juge retiré (§7 : ses notations sortent, le kappa ne porte plus que 
       accord("exacte", "exacte", "inexacte"),
       accord("inexacte", "inexacte", "exacte"),
     ]));
-    expect(resultat.kappas).toEqual([{ juge_id: "j1", kappa: 1, motif_indefini: null, n: 2 }]);
+    expect(resultat.kappas).toEqual([{ juge_id: "j1", kappa: 1, motif_indefini: null, n: 2, renvois_ecartes: 0 }]);
     expect(resultat.paire).toEqual({ kappa: 1, motif_indefini: null });
   });
 
@@ -207,7 +340,7 @@ describe("entrées incohérentes : erreur visible, aucune référence ni note in
     expect(() => kappasJeuOr(JUGES, [{ ...r, calibration: [r.calibration[0] as typeof autre, autre] }])).toThrow(JeuOrIncoherent);
   });
 
-  it("note d'un juge retenu absente (refus de l'API, renvoi d'attribution : règle non écrite au §7 pour le jeu d'or)", () => {
+  it("note d'un juge retenu absente sans refus de l'API ni renvoi : erreur, aucune note inventée", () => {
     expect(() => kappasJeuOr(JUGES, jeu([{ humains: ["exacte", "exacte"], juges: { j1: "exacte" } }]))).toThrow(/j2/);
   });
 

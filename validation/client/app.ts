@@ -38,6 +38,8 @@ interface Etat {
   champs: readonly ChampEditable[];
   commentaire: string;
   decision: Decision | null;
+  /** Case « texte extrait erroné » d'un rejet ; lue seulement si la décision est « rejeter ». */
+  texte_errone: boolean;
   question: number;
   source: number;
   chrono: { debut: number; actifDepuis: number | null; cumul: number };
@@ -55,6 +57,7 @@ const etat: Etat = {
   champs: [],
   commentaire: "",
   decision: null,
+  texte_errone: false,
   question: 0,
   source: 0,
   chrono: { debut: 0, actifDepuis: null, cumul: 0 },
@@ -213,6 +216,7 @@ function reinitialiserSaisie(): void {
   etat.saisies = new Map();
   etat.champs = champsEditables(vue.item, etat.session as Session);
   etat.decision = null;
+  etat.texte_errone = false;
   etat.question = 0;
   etat.source = 0;
   etat.chrono = chronoDepuis(brouillon);
@@ -486,6 +490,34 @@ function choisir(decision: Decision): void {
   rendreItem();
 }
 
+/**
+ * §4 (protocole 0.24, D59 (9)) : un rejet peut porter le motif énuméré « texte extrait erroné », qui
+ * renvoie la source à la réextraction. Facultatif et décoché par défaut : un rejet ordinaire coûte
+ * le même nombre de gestes qu'accepter. Sans objet sur un item sans source (item F).
+ */
+function motifRejetPossible(vue: VueItem): boolean {
+  return etat.decision === "rejeter" && vue.sources.length > 0;
+}
+
+function caseTexteErrone(): HTMLElement {
+  const etiquette = element("label");
+  const entree = element("input") as HTMLInputElement;
+  entree.type = "checkbox";
+  entree.checked = etat.texte_errone;
+  entree.addEventListener("change", () => {
+    etat.texte_errone = entree.checked;
+  });
+  etiquette.append(
+    entree,
+    document.createTextNode(" Motif : texte extrait erroné (le texte de la source est faux ; la source repart à la réextraction)"),
+  );
+  return etiquette;
+}
+
+function motifSoumis(vue: VueItem): Pick<RequeteDecision, "motif_rejet"> {
+  return motifRejetPossible(vue) && etat.texte_errone ? { motif_rejet: "texte_extrait_errone" } : {};
+}
+
 function blocConfirmation(vue: VueItem): HTMLElement {
   const bloc = element("div", "confirmation");
   const manquantes = questionsManquantes(vue);
@@ -499,6 +531,7 @@ function blocConfirmation(vue: VueItem): HTMLElement {
     return bloc;
   }
   if (etat.decision === "corriger") bloc.append(blocEdition());
+  if (motifRejetPossible(vue)) bloc.append(caseTexteErrone());
 
   const bouton = element("button") as HTMLButtonElement;
   bouton.textContent = `Confirmer « ${etat.decision} » (Entrée)`;
@@ -582,6 +615,7 @@ async function soumettre(): Promise<void> {
     lot_id: vue.lot_id,
     item_id: vue.item.id,
     decision,
+    ...motifSoumis(vue),
     ...grillesSoumises(vue),
     questions_specifiques: Object.fromEntries(etat.specifiques),
     corrections: decision === "corriger" ? corrections(etat.champs, etat.saisies) : ([] as Correction[]),

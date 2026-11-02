@@ -243,7 +243,7 @@ describe("item A : confirmation initiale et revérifications", () => {
   it("une revérification ajoutée en fin de liste est admise", () => {
     const reverifications = [
       ...absenceDe(avantA).reverifications,
-      { run_id: "01JBANCESSA1RUN00000000002", date: "2026-11-01T09:00:00+02:00", resultat: "absence_confirmee", confirme_par: "a2" },
+      { run_id: "01JBANCESSA1RUN00000000002", date: "2026-11-01T09:00:00+02:00", resultat: "absence_confirmee" as const, confirme_par: "a2" },
     ];
     expect(refus(avantA, ajout({ ...absenceDe(avantA), reverifications }))).toBe("");
   });

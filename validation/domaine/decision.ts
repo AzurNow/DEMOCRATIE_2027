@@ -22,9 +22,11 @@ import type {
   EtatObsolescence,
   Grille,
   Item,
+  MotifRejet,
   NatureLot,
   QuestionsSpecifiques,
 } from "./types.ts";
+import { sourcesDuContenu } from "./ecoute-t2.ts";
 
 export const VERSION_JOURNAL = 1;
 
@@ -32,6 +34,7 @@ export const VERSION_JOURNAL = 1;
 export interface SoumissionDecision {
   readonly item_id: string;
   readonly decision: Decision;
+  readonly motif_rejet?: MotifRejet;
   readonly reponses_grille?: Grille;
   readonly reponses_par_etat?: Readonly<Record<EtatObsolescence, Grille>>;
   readonly questions_specifiques?: QuestionsSpecifiques;
@@ -70,6 +73,7 @@ export function construireDecision(
     ...controlerFormeDesReponses(soumission, contexte.item),
     ...controlerSpecifiques(contexte.item,soumission.questions_specifiques ?? {}),
     ...controlerCorrections(soumission),
+    ...controlerMotifRejet(soumission, contexte.item),
     ...controlerDurees(soumission),
   ];
   if (manquements.length > 0) return { ok: false, manquements };
@@ -145,6 +149,17 @@ function controlerCorrections(soumission: SoumissionDecision): readonly Manqueme
   return [];
 }
 
+/**
+ * §4 (protocole 0.24, D59 (9)) : le motif « texte extrait erroné » qualifie un rejet, et seulement un
+ * rejet. Il est sans objet sur un item sans source de contenu (item F) : aucun texte n'y a été
+ * extrait. Sa valeur est contrôlée par le schéma de la ligne de journal.
+ */
+function controlerMotifRejet(soumission: SoumissionDecision, item: Item): readonly ManquementGrille[] {
+  if (soumission.motif_rejet === undefined) return [];
+  const sansObjet = soumission.decision !== "rejeter" || sourcesDuContenu(item).length === 0;
+  return sansObjet ? [{ cle: "motif_rejet", probleme: "repondue_alors_que_sans_objet" }] : [];
+}
+
 function controlerDurees(soumission: SoumissionDecision): readonly ManquementGrille[] {
   const { duree_affichage_ms, duree_active_ms } = soumission;
   const valides =
@@ -169,6 +184,7 @@ function assembler(soumission: SoumissionDecision, contexte: ContexteDecision): 
     item_empreinte: contexte.item.empreinte,
     item_type: contexte.item.type,
     decision: soumission.decision,
+    ...(soumission.motif_rejet === undefined ? {} : { motif_rejet: soumission.motif_rejet }),
     ...(soumission.reponses_grille === undefined ? {} : { reponses_grille: soumission.reponses_grille }),
     ...(soumission.reponses_par_etat === undefined
       ? {}
