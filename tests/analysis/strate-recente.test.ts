@@ -8,18 +8,21 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { comparerConditions, pairesParMode } from "../../analysis/conditions.ts";
+import { exactitude } from "../../analysis/metriques.ts";
 import {
   dateDeLItem,
   dateDansStrateRecente,
   ItemOSansDateChangement,
   ItemPrincipalHorsDesItems,
   QuestionSansItemPrincipal,
+  STRATE_RECENTE,
   TypeItemDivergent,
   unitesDeLaStrateRecente,
   type ItemDate,
 } from "../../analysis/strate-recente.ts";
 import { DateCivileInvalide } from "../../pipeline/questions/reponse-attendue.ts";
-import { ulid, unite } from "./fabriques.ts";
+import { tousCompares, ulid, unite } from "./fabriques.ts";
 
 /** Gel à minuit UTC : « 60 jours avant » tombe exactement sur une date civile. */
 const GEL_MINUIT = "2027-03-01T00:00:00Z";
@@ -174,5 +177,31 @@ describe("unitesDeLaStrateRecente", () => {
 
   it("refuse deux items de même identifiant", () => {
     expect(() => unitesDeLaStrateRecente([], [recent, recent], GEL_MINUIT)).toThrow(/double/);
+  });
+});
+
+describe("clé de graine de la strate récente (§8, protocole 0.25, D60)", () => {
+  it("nomme la strate recents:60j, et la différence de modes sur cette strate porte la clé exacte du §8", () => {
+    expect(STRATE_RECENTE).toBe("recents:60j");
+    const unites = Array.from({ length: 3 }, (_, i) => {
+      const item = ulid(`item-recent-${i}`);
+      const commun = { grappe_id: item, item_principal_id: item, item_ids: [item] };
+      return [
+        unite({ ...commun, verdict_id: ulid(`v-a-${i}`), mode: "web_activee" }),
+        unite({ ...commun, verdict_id: ulid(`v-d-${i}`), mode: "web_desactivee" }),
+      ];
+    }).flat();
+    const { paires } = pairesParMode(unites, tousCompares(unites));
+    const [comparaison] = comparerConditions(paires, exactitude, {
+      reechantillonnages: 50,
+      graine_du_run: 20261201,
+      cle: ["exactitude", STRATE_RECENTE],
+    });
+    expect(comparaison?.difference.cle).toEqual([
+      "bootstrap",
+      "exactitude",
+      "recents:60j",
+      "outil-alpha:web_activee-web_desactivee",
+    ]);
   });
 });

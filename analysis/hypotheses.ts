@@ -1,6 +1,6 @@
 /**
  * Règles de décision des hypothèses préenregistrées H1, H2 et H4 (§2, protocole 0.24, D59 (2)
- * à (4)).
+ * à (4) ; protocole 0.25, D60 : outils « sans objet » de H1 et de H2, sens de lecture de H2).
  *
  * Ce module ne calcule aucune métrique : il lit des résultats déjà produits ailleurs dans
  * `analysis/` (intervalles du taux de fabrication, comparaisons de modes de `conditions.ts`,
@@ -64,9 +64,14 @@ export interface DecisionH1Outil {
   readonly couples: readonly CoupleH1[];
 }
 
+/**
+ * §2 (0.25) : « confirmée quand elle est vraie pour tous les outils qui ont au moins un couple
+ * comparé » ; « sans objet » quand aucun outil n'a de couple comparé.
+ */
+export type VerdictH1 = "confirmee" | "infirmee" | "sans_objet";
+
 export interface DecisionH1 {
-  /** « H1 est confirmée quand elle est vraie pour tous les outils. » */
-  readonly verdict: "confirmee" | "infirmee";
+  readonly verdict: VerdictH1;
   readonly outils: readonly DecisionH1Outil[];
 }
 
@@ -79,10 +84,11 @@ export class FabricationsIncoherentes extends Error {
 }
 
 /**
- * §2 (0.24) : « H1 est vraie pour un outil quand l'un au moins de ses couples outil × mode
+ * §2 (0.25) : « H1 est vraie pour un outil quand l'un au moins de ses couples outil × mode
  * comparés […] a une borne inférieure strictement supérieure à 0 ; un outil qui n'a aucun couple
  * comparé est publié « sans objet » pour H1. H1 est confirmée quand elle est vraie pour tous les
- * outils. »
+ * outils qui ont au moins un couple comparé ; un outil « sans objet » n'entre pas dans ce verdict,
+ * et quand aucun outil n'a de couple comparé, H1 est publiée « sans objet ». »
  *
  * `outils` : les assistants inclus du run, dans l'ordre de publication. `fabrications` : une entrée
  * par couple comparé du partage, et aucune autre.
@@ -96,8 +102,13 @@ export function decisionH1(
   const parCle = indexerFabrications(fabrications, couples);
   verifierOutilsDuPartage(couples, outils);
   const decisions = outils.map((outil_id) => decisionH1Outil(outil_id, couples, parCle));
-  const toutesVraies = decisions.every((d) => d.verdict === "vraie");
-  return { verdict: toutesVraies ? "confirmee" : "infirmee", outils: decisions };
+  return { verdict: verdictH1(decisions), outils: decisions };
+}
+
+function verdictH1(decisions: readonly DecisionH1Outil[]): VerdictH1 {
+  const decides = decisions.filter((d) => d.verdict !== "sans_objet");
+  if (decides.length === 0) return "sans_objet";
+  return decides.every((d) => d.verdict === "vraie") ? "confirmee" : "infirmee";
 }
 
 function indexerFabrications(
@@ -163,9 +174,9 @@ export interface ComparaisonsDeModes {
 }
 
 /**
- * La différence de modes d'un outil dans le sens de H2 : web désactivée moins web activée.
- * `conditions.ts` la calcule dans l'autre sens (bras a = web activée) ; elle est ici retournée,
- * intervalle compris, sans être recalculée.
+ * La différence de modes d'un outil telle que publiée (§8, 0.25) : web activée moins web
+ * désactivée, dans l'ordre de sa clé, comme `conditions.ts` la calcule (bras a = web activée).
+ * Elle est lue telle quelle, ni recalculée ni retournée.
  */
 export type DifferenceModesH2 =
   | {
@@ -184,10 +195,16 @@ export type DifferenceModesH2 =
   /** L'outil n'a pas de réponses dans les deux modes : aucune paire n'a été formée. */
   | { readonly statut: "absente" };
 
+/**
+ * §2 (0.25) : « sans objet » quand les deux modes ne sont pas comparés. `non_confirmee` n'est pas
+ * un mot du §2 : c'est l'absence de confirmation d'une différence comparée, jamais une infirmation.
+ */
+export type VerdictH2Outil = "confirmee" | "non_confirmee" | "sans_objet";
+
 export interface DecisionH2Outil {
   readonly outil_id: IdentifiantCourt;
   /** Lu sur la strate `global` seule. */
-  readonly confirmee: boolean;
+  readonly verdict: VerdictH2Outil;
   readonly global: DifferenceModesH2;
   /** Résultat secondaire : publié, jamais lu par la décision. */
   readonly moins_de_60_jours: DifferenceModesH2;
@@ -212,12 +229,21 @@ export class SigneDifferenceIncoherent extends Error {
 }
 
 /**
- * §2 (0.24) : « H2 est confirmée pour un outil quand la différence de son exactitude, strate
- * `global`, web désactivée moins web activée, est établie (section 8) et négative. La même
- * différence, restreinte aux questions dont l'item principal date de moins de 60 jours, est
- * publiée comme résultat secondaire. »
+ * §2 (0.25) : « H2 est confirmée pour un outil quand la différence de son exactitude, strate
+ * `global`, web désactivée moins web activée, est établie (section 8) et négative. Un outil dont
+ * les deux modes ne sont pas comparés, parce que l'un est sans objet ou que l'un de ses couples
+ * est marqué « run incomplet » (section 8), est publié « sans objet » pour H2. H2 n'a pas de
+ * verdict global : elle est publiée outil par outil. La même différence, restreinte aux questions
+ * dont l'item principal date de moins de 60 jours, est publiée comme résultat secondaire. »
  *
- * Le §2 ne définit H2 que « pour un outil » : aucune décision globale n'est rendue.
+ * §8 (0.25) : « La différence des modes est publiée web activée moins web désactivée, dans l'ordre
+ * de sa clé ; H2, écrite dans l'autre sens (section 2), en lit l'opposé : elle est confirmée pour
+ * un outil quand cette différence publiée est établie et positive. »
+ *
+ * « Sans objet » se lit sur le statut de `global` : `exclue` (un couple « run incomplet »),
+ * `absente` (un mode sans aucune réponse), ou `comparee` sans différence (un mode sans réponse
+ * classée sur les items appariés : son exactitude n'est pas définie, comme le couple sans
+ * dénominateur tenu pour sans objet par H1). Aucun verdict global n'est rendu.
  */
 export function decisionH2(
   outils: readonly IdentifiantCourt[],
@@ -231,7 +257,7 @@ export function decisionH2(
     const differenceGlobale = differenceDe(parOutilGlobal, outil_id);
     return {
       outil_id,
-      confirmee: etablieEtNegative(differenceGlobale),
+      verdict: verdictH2Outil(differenceGlobale),
       global: differenceGlobale,
       moins_de_60_jours: differenceDe(parOutilRecent, outil_id),
     };
@@ -252,7 +278,7 @@ function indexerModes(entree: ComparaisonsDeModes, outils: readonly IdentifiantC
     if (parOutil.has(outil_id)) throw new ComparaisonsDeModesIncoherentes(`deux comparaisons de modes pour l'outil ${outil_id}.`);
     parOutil.set(outil_id, difference);
   };
-  for (const comparaison of entree.comparaisons) ranger(comparaison.cle, versSensH2(comparaison));
+  for (const comparaison of entree.comparaisons) ranger(comparaison.cle, differencePubliee(comparaison));
   for (const exclue of entree.paires_exclues) ranger(exclue.cle, { statut: "exclue", couples_incomplets: exclue.couples_incomplets });
   return parOutil;
 }
@@ -265,35 +291,24 @@ function outilDeLaCle(cle: string, outils: readonly IdentifiantCourt[]): Identif
   return outil_id;
 }
 
-function versSensH2(comparaison: ComparaisonCondition): DifferenceModesH2 {
+function differencePubliee(comparaison: ComparaisonCondition): DifferenceModesH2 {
   const { difference } = comparaison;
-  const intervalle = difference.intervalle === null ? null : retourner(difference.intervalle);
-  const sens = difference.difference === null ? null : oppose(difference.difference);
-  verifierSigne(comparaison.cle, sens, intervalle, difference.qualificatif);
+  verifierSigne(comparaison.cle, difference.difference, difference.intervalle, difference.qualificatif);
   return {
     statut: "comparee",
     cle: difference.cle,
     graine: difference.graine,
-    difference: sens,
-    intervalle,
+    difference: difference.difference,
+    intervalle: difference.intervalle,
     qualificatif: difference.qualificatif,
     grappes_appariees: comparaison.grappes_appariees,
     grappes_exclues: comparaison.grappes_exclues,
   };
 }
 
-/** `0 - x` et non `-x` : une différence nulle reste `0`, jamais `-0`. */
-function oppose(valeur: number): number {
-  return 0 - valeur;
-}
-
-function retourner(intervalle: Intervalle95): Intervalle95 {
-  return { ...intervalle, bas: oppose(intervalle.haut), haut: oppose(intervalle.bas) };
-}
-
 /**
  * Une différence établie a un intervalle entièrement d'un côté de zéro ; sa valeur doit être du
- * même côté. Sinon « négative » dépendrait de ce qu'on lit, la valeur ou l'intervalle : refusé.
+ * même côté. Sinon « positive » dépendrait de ce qu'on lit, la valeur ou l'intervalle : refusé.
  */
 function verifierSigne(
   cle: string,
@@ -306,9 +321,10 @@ function verifierSigne(
   if (!coherent) throw new SigneDifferenceIncoherent(cle, difference, intervalle);
 }
 
-function etablieEtNegative(difference: DifferenceModesH2): boolean {
-  if (difference.statut !== "comparee" || difference.difference === null) return false;
-  return difference.qualificatif === "etablie" && difference.difference < 0;
+/** Une seule grappe (qualificatif `null`) ou une différence non établie : `non_confirmee`. */
+function verdictH2Outil(difference: DifferenceModesH2): VerdictH2Outil {
+  if (difference.statut !== "comparee" || difference.difference === null) return "sans_objet";
+  return difference.qualificatif === "etablie" && difference.difference > 0 ? "confirmee" : "non_confirmee";
 }
 
 /* ------------------------------------------------------------------ H4 */
