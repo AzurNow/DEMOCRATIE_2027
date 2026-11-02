@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 import {
   bilanDesDepots,
+  CaptureMasqueeIdentique,
   DepotEnDouble,
   DepotHorsSousEchantillon,
   TesteursEnTrop,
@@ -87,6 +88,39 @@ describe("bilan des dépôts", () => {
     bilanDesDepots(SOUS_ECHANTILLON, depots, ["outil-alpha"]);
 
     expect(JSON.stringify(depots)).toBe(avant);
+  });
+});
+
+describe("empreintes de la capture d'origine et de la capture masquée (§6, protocole 0.25, D60 (g))", () => {
+  const capture = (extra: Record<string, string> = {}) => ({ sha256: "1".repeat(64), chemin_local: "captures/x.png", ...extra });
+  const seul = (captures: readonly Record<string, string>[]): DepotApplication =>
+    ({ ...depot(0, "testeur-1"), captures }) as unknown as DepotApplication;
+
+  it("capture non masquée, une seule empreinte : valide", () => {
+    expect(() => bilanDesDepots(SOUS_ECHANTILLON, [seul([capture()])], ["outil-alpha"])).not.toThrow();
+  });
+
+  it("capture masquée avec ses deux empreintes distinctes : valide", () => {
+    expect(() => bilanDesDepots(SOUS_ECHANTILLON, [seul([capture({ sha256_masquee: "2".repeat(64) })])], ["outil-alpha"])).not.toThrow();
+  });
+
+  it("plusieurs captures, une seule masquée : valide", () => {
+    const captures = [capture({ chemin_local: "captures/a.png" }), capture({ chemin_local: "captures/b.png", sha256_masquee: "2".repeat(64) })];
+
+    expect(() => bilanDesDepots(SOUS_ECHANTILLON, [seul(captures)], ["outil-alpha"])).not.toThrow();
+  });
+
+  it("empreinte masquée égale à l'origine : refusée nommément", () => {
+    const depots = [seul([capture({ sha256_masquee: "1".repeat(64) })])];
+
+    expect(() => bilanDesDepots(SOUS_ECHANTILLON, depots, ["outil-alpha"])).toThrow(CaptureMasqueeIdentique);
+  });
+
+  it("empreinte masquée mal formée (majuscules, longueur) : refusée par le schéma", () => {
+    for (const mal of ["A".repeat(64), "2".repeat(63), "g".repeat(64), ""]) {
+      const depots = [seul([capture({ sha256_masquee: mal })])];
+      expect(() => bilanDesDepots(SOUS_ECHANTILLON, depots, ["outil-alpha"])).toThrow(ErreurSchema);
+    }
   });
 });
 
