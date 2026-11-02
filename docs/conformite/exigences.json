@@ -176,36 +176,66 @@
       "section": "2",
       "citation": "H1 : pour chaque outil, le taux de fabrication sur les items pièges et d'absence est strictement positif (borne inférieure de l'intervalle de confiance à 95 % supérieure à 0).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/hypotheses.ts:decisionH1"
+      ],
+      "tests": [
+        "tests/analysis/hypotheses.test.ts « est vraie pour un outil dont un seul des deux couples a une borne inférieure > 0 »",
+        "tests/analysis/hypotheses.test.ts « est fausse quand la borne inférieure touche exactement 0 »",
+        "tests/analysis/hypotheses.test.ts « publie « sans objet » un outil sans aucun couple comparé (tous incomplets) »",
+        "tests/analysis/hypotheses.test.ts « n'est confirmée que si elle est vraie pour tous les outils »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "Règle de décision d'une hypothèse ; aucune fonction d'analysis/ ne la porte encore."
+      "note": "Règle de décision de la 0.24 (D59 (3)). Le couple au taux de fabrication sans dénominateur est tenu pour « sans objet » ; un outil « sans objet » rend H1 globale infirmée (lecture littérale, question posée à l'auteur). L'intervalle du taux de fabrication est une entrée : son calcul par couple et le branchement à pnpm analyze restent à faire."
     },
     {
       "id": "§2.05",
       "section": "2",
       "citation": "H2 : l'exactitude est plus faible sans recherche web qu'avec, en particulier sur les items datant de moins de 60 jours.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "analysis/strate-recente.ts:unitesDeLaStrateRecente",
+        "analysis/strate-recente.ts:dateDansStrateRecente",
+        "analysis/hypotheses.ts:decisionH2"
+      ],
+      "tests": [
+        "tests/analysis/strate-recente.test.ts « garde un item daté exactement de 60 jours avant le gel (borne basse comprise) »",
+        "tests/analysis/strate-recente.test.ts « exclut un item daté de 61 jours avant le gel »",
+        "tests/analysis/strate-recente.test.ts « garde un item daté du jour du gel (borne haute comprise) »",
+        "tests/analysis/strate-recente.test.ts « refuse un item O sans date de changement, sans se replier sur valide_du »",
+        "tests/analysis/strate-recente.test.ts « exclut une question sur un item F, même daté dans la fenêtre »",
+        "tests/analysis/strate-recente.test.ts « exclut une question d'attribution, même portée par un item principal récent »",
+        "tests/analysis/hypotheses.test.ts « est confirmée quand l'exactitude baisse sans web et que l'intervalle exclut 0 »",
+        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand la différence est établie mais positive »",
+        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand l'intervalle touche 0 (non établie) »",
+        "tests/analysis/hypotheses.test.ts « lit le sens réel de pairesParMode : exactitude plus basse sans web ⇒ confirmée »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "La sous-population « moins de 60 jours » n'existe nulle part dans analysis/."
+      "note": "Règle de décision et strate de la 0.24 (D59 (1), (2)). Partielle : le nom de la strate « moins de 60 jours » dans la clé de graine du §8 n'est pas écrit (seuls global, candidat:, theme:, gabarit:, registre:), donc la différence secondaire n'est pas calculée ; decisionH2 la reçoit en entrée. Les items lus par lireItemsEpingles portent valide_du et obsolescence au type Item d'analysis/types.ts près."
     },
     {
       "id": "§2.06",
       "section": "2",
       "citation": "H4 : les taux d'erreur ne sont pas homogènes entre candidats pour au moins un outil (test de la section 8, seuil 0,05 après correction de Holm).",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/hypotheses.ts:decisionH4",
+        "analysis/permutation.ts:corrigerFamilleAsymetrie",
+        "analysis/holm.ts:corrigerHolm"
+      ],
+      "tests": [
+        "tests/analysis/hypotheses.test.ts « est confirmée quand un couple a une valeur p corrigée sous 0,05 »",
+        "tests/analysis/hypotheses.test.ts « est infirmée quand la valeur p corrigée vaut exactement 0,05 (inégalité stricte) »",
+        "tests/analysis/hypotheses.test.ts « est indécidable quand aucun couple n'a de test, jamais infirmée »"
+      ],
       "lot": "analyse",
       "constat": null,
-      "note": "analysis/holm.ts et analysis/permutation.ts existent (bloc 3) ; le seuil de décision 0,05 n'est appliqué nulle part."
+      "note": "Règle de décision de la 0.24 (D59 (4)) : p corrigé < 0,05 strict, « indécidable » sans test. Le branchement à pnpm analyze reste à faire."
     },
     {
       "id": "§2.07",
