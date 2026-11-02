@@ -15,7 +15,9 @@
  * **Kappa des deux humains.** Sur les mêmes réponses doublement notées que la part, la catégorie
  * primaire du premier humain contre celle du second, sur les quatre catégories de la grille (annexe C :
  * exacte, inexacte, non-réponse, indéterminée), fixées a priori. « indeterminee » y est une catégorie
- * comme les autres : le §7 n'écarte les notes indéterminées que du kappa des juges, où la référence est
+ * comme les autres, ce que le protocole 0.24 écrit (D59 (21) : « sur les quatre catégories de l'annexe
+ * C, "indéterminée" comprise, deux humains qui notent tous deux "indéterminée" s'accordant sur la
+ * catégorie ») : le §7 n'écarte les notes indéterminées que du kappa des juges, où la référence est
  * la note retenue et où un juge ne peut pas la rendre. Indéfini : `aucune_reponse_comparable` sans
  * réponse doublement notée, `accord_attendu_maximal` quand l'accord attendu vaut 1 (une seule
  * catégorie partout) — jamais 0 ni 1. Les notes des juges n'y entrent pas : le retrait d'un juge n'y

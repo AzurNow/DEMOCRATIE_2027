@@ -52,6 +52,7 @@ import { grainesDuRun } from "./graines.ts";
 import type { GrainesDuRun, ValeursDesGraines } from "./graines.ts";
 import { exigerFenetreApresDateGel } from "./instants.ts";
 import type { PrecedentDuGel } from "./precedent.ts";
+import { reponsesPrevues } from "../run/reponses.ts";
 import { STATUT_PLANIFIE } from "../run/types.ts";
 import { candidatsInterroges } from "../../analysis/candidats-interroges.ts";
 
@@ -182,6 +183,20 @@ function candidatsInterrogesAuGel(prepare: GelPrepare): readonly { readonly cand
   return candidatsInterroges(prepare.perimetre.perimetre.candidats);
 }
 
+/**
+ * §5 (protocole 0.24, D59 (17)) : les questions des entrées du tirage, dans l'ordre du tirage, celles
+ * qu'interrogera le plan. Le tirage ne tire que parmi `prepare.questions` : une entrée sans question
+ * est une erreur d'invariant, jamais une question ignorée.
+ */
+function questionsTireesAuGel(prepare: GelPrepare, tirage: Tirage): readonly Question[] {
+  const parId = new Map(prepare.questions.map((question) => [question.id, question]));
+  return tirage.entrees.map((entree) => {
+    const question = parId.get(entree.question_id);
+    if (question === undefined) throw new Error(`Invariant violé (gel) : la question tirée ${entree.question_id} n'est pas parmi les questions engendrées au gel.`);
+    return question;
+  });
+}
+
 function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta: MetaDuRun, textes: TextesEngages): unknown {
   const tirage = tire.resultat.tirage;
   return {
@@ -215,6 +230,7 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
       chemin: `runs/${prepare.date_repertoire}/questions.json`,
       sha256: sha256(textes.questions),
     },
+    reponses: { prevues: reponsesPrevues(prepare.perimetre.perimetre.outils, questionsTireesAuGel(prepare, tirage)) },
   };
 }
 

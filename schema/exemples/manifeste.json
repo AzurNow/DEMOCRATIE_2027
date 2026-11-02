@@ -2843,6 +2843,35 @@
       }
     },
     {
+      "objet": "run",
+      "fichier": "run/valide-14-reponses-obtenues.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01 qui porte, après l'interrogation, le nombre de réponses obtenues à côté des réponses prévues inscrites au gel.",
+      "regle_protocole": "§5 « Tailles » (protocole 0.24, D59 (17)) : « le nombre de réponses prévues par le plan d'interrogation est inscrit au gel, et celui des réponses obtenues l'est après l'interrogation »"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-66-sans-reponses.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 sans le nombre de réponses prévues : il est inscrit au gel, tout run le porte.",
+      "regle_protocole": "§5 « Tailles » (protocole 0.24, D59 (17)) : « le nombre de réponses prévues par le plan d'interrogation est inscrit au gel »",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": ""
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-67-reponses-obtenues-sans-prevues.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 qui publie les réponses obtenues sans les réponses prévues : le nombre prévu, inscrit au gel, ne manque jamais.",
+      "regle_protocole": "§5 « Tailles » (protocole 0.24, D59 (17)) : « le nombre de réponses prévues par le plan d'interrogation est inscrit au gel, et celui des réponses obtenues l'est après l'interrogation »",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/reponses"
+      }
+    },
+    {
       "objet": "notation",
       "fichier": "notation/valide-10-humain-refus-sans-extrait.json",
       "attendu": "valide",
