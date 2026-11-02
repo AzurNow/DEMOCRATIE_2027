@@ -76,6 +76,7 @@ const UNITE_NEUTRE: UniteAnalyse = {
   candidat_id: "candidat-a",
   theme: "retraites",
   registre: "neutre",
+  echantillon: 1,
   premisse_fausse: null,
   categorie: "exacte",
   drapeaux: [],

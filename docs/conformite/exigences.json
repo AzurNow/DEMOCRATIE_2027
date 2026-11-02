@@ -184,11 +184,14 @@
         "tests/analysis/hypotheses.test.ts « est vraie pour un outil dont un seul des deux couples a une borne inférieure > 0 »",
         "tests/analysis/hypotheses.test.ts « est fausse quand la borne inférieure touche exactement 0 »",
         "tests/analysis/hypotheses.test.ts « publie « sans objet » un outil sans aucun couple comparé (tous incomplets) »",
-        "tests/analysis/hypotheses.test.ts « n'est confirmée que si elle est vraie pour tous les outils »"
+        "tests/analysis/hypotheses.test.ts « n'est confirmée que si elle est vraie pour tous les outils »",
+        "tests/analysis/hypotheses.test.ts « est confirmée avec un outil sans objet et un outil vrai : l'outil sans objet n'entre pas dans le verdict »",
+        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand un outil est faux, même à côté d'un outil sans objet »",
+        "tests/analysis/hypotheses.test.ts « est publiée « sans objet » quand aucun outil n'a de couple comparé »"
       ],
       "lot": "analyse",
       "constat": null,
-      "note": "Règle de décision de la 0.24 (D59 (3)). Le couple au taux de fabrication sans dénominateur est tenu pour « sans objet » ; un outil « sans objet » rend H1 globale infirmée (lecture littérale, question posée à l'auteur). L'intervalle du taux de fabrication est une entrée : son calcul par couple et le branchement à pnpm analyze restent à faire."
+      "note": "Règle de décision de la 0.24 (D59 (3)), amendée en 0.25 (D60) : un outil « sans objet » n'entre pas dans le verdict global, qui est « sans objet » quand aucun outil n'a de couple comparé. Le couple au taux de fabrication sans dénominateur est tenu pour « sans objet ». L'intervalle du taux de fabrication est une entrée : son calcul par couple et le branchement à pnpm analyze restent à faire."
     },
     {
       "id": "§2.05",
@@ -209,13 +212,17 @@
         "tests/analysis/strate-recente.test.ts « exclut une question sur un item F, même daté dans la fenêtre »",
         "tests/analysis/strate-recente.test.ts « exclut une question d'attribution, même portée par un item principal récent »",
         "tests/analysis/hypotheses.test.ts « est confirmée quand l'exactitude baisse sans web et que l'intervalle exclut 0 »",
-        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand la différence est établie mais positive »",
+        "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand la différence publiée est établie mais négative »",
         "tests/analysis/hypotheses.test.ts « n'est pas confirmée quand l'intervalle touche 0 (non établie) »",
-        "tests/analysis/hypotheses.test.ts « lit le sens réel de pairesParMode : exactitude plus basse sans web ⇒ confirmée »"
+        "tests/analysis/hypotheses.test.ts « lit le sens réel de pairesParMode : exactitude plus basse sans web ⇒ confirmée »",
+        "tests/analysis/hypotheses.test.ts « publie « sans objet » un outil dont un couple est marqué run incomplet, la paire exclue rendue telle quelle »",
+        "tests/analysis/hypotheses.test.ts « publie « sans objet » un outil qui n'interroge qu'un mode (comparaison absente) »",
+        "tests/analysis/hypotheses.test.ts « rend un verdict par outil et aucun verdict global »",
+        "tests/analysis/strate-recente.test.ts « nomme la strate recents:60j, et la différence de modes sur cette strate porte la clé exacte du §8 »"
       ],
       "lot": "analyse",
       "constat": null,
-      "note": "Règle de décision et strate de la 0.24 (D59 (1), (2)). Partielle : le nom de la strate « moins de 60 jours » dans la clé de graine du §8 n'est pas écrit (seuls global, candidat:, theme:, gabarit:, registre:), donc la différence secondaire n'est pas calculée ; decisionH2 la reçoit en entrée. Les items lus par lireItemsEpingles portent valide_du et obsolescence au type Item d'analysis/types.ts près."
+      "note": "Règle de décision et strate de la 0.24 (D59 (1), (2)), amendées en 0.25 (D60) : H2 lit la différence publiée web activée − web désactivée (confirmée si établie et positive), un outil aux modes non comparés (exclue, absente, ou exactitude d'un mode indéfinie) est « sans objet », pas de verdict global ; la strate s'écrit recents:60j dans la clé (strate-recente.ts:STRATE_RECENTE). Partielle : aucune commande ne calcule encore la différence secondaire ; decisionH2 la reçoit en entrée. Les items lus par lireItemsEpingles portent valide_du et obsolescence au type Item d'analysis/types.ts près."
     },
     {
       "id": "§2.06",
@@ -3837,11 +3844,14 @@
       "tests": [
         "tests/analysis/ecart-api-application.test.ts « réponse API manquante pour une question de l'application : la paire n'est pas appariée, la question est nommée »",
         "tests/analysis/ecart-api-application.test.ts « égalité d'exactitude entre les deux modes : le mode lu est celui déclaré, jamais départagé par les chiffres »",
-        "tests/analysis/ecart-api-application.test.ts « publie la clé §8 : famille, métrique, strate, puis <outil>:api-application, et la graine qui en dérive »"
+        "tests/analysis/ecart-api-application.test.ts « publie la clé §8 : famille, métrique, strate, puis <outil>:api-application, et la graine qui en dérive »",
+        "tests/analysis/ecart-api-application.test.ts « une réponse API en formulation familière ou à l'échantillon 2 n'entre pas dans l'écart »",
+        "tests/analysis/ecart-api-application.test.ts « deux saisies (deux testeurs) d'une même question sont deux observations de la même grappe »",
+        "tests/analysis/ecart-api-application.test.ts « une question sans réponse API neutre à l'échantillon 1 est exclue et nommée »"
       ],
       "lot": null,
       "constat": null,
-      "note": "D59 (6). Le bras API porte toutes les formulations des questions du sous-échantillon dans le mode de tête ; aucune commande ne publie encore l'écart."
+      "note": "D59 (6), amendé en 0.25 (D60) : le bras API ne porte que la formulation neutre, échantillon 1, des questions du sous-échantillon dans le mode de tête ; les saisies des deux testeurs sont deux observations dans la grappe de leur question. Aucune commande ne publie encore l'écart."
     },
     {
       "id": "§6.19",
@@ -4445,11 +4455,12 @@
         "tests/analysis/ecart-juge-editeur.test.ts « calcule l'écart signé sur l'outil de l'éditeur contre la moyenne des autres, et le signale s'il exclut 0 »",
         "tests/analysis/ecart-juge-editeur.test.ts « compare à l'écart du seul autre outil quand il n'y en a qu'un »",
         "tests/analysis/ecart-juge-editeur.test.ts « ne signale pas une différence dont l'intervalle touche 0 exactement »",
-        "tests/analysis/ecart-juge-editeur.test.ts « publie absent, avec son motif, l'écart d'un juge dont l'éditeur n'a aucune réponse notée »"
+        "tests/analysis/ecart-juge-editeur.test.ts « publie absent, avec son motif, l'écart d'un juge dont l'éditeur n'a aucune réponse notée »",
+        "tests/analysis/ecart-juge-editeur.test.ts « publie la clé §8 (0.25) : famille, métrique et strate, puis le composant <juge>:propre-editeur »"
       ],
       "lot": "notation",
       "constat": null,
-      "note": "D59 (14), protocole 0.24 : calcul fait (écart signé, moyenne des autres outils, bootstrap en grappes, signalé si l'intervalle exclut 0). Partielle : l'association juge → outils de son éditeur est reçue en paramètre, aucune donnée du run ne la porte (famille_modele n'est pas un éditeur ; editeur de l'outil reste dans perimetre.yaml) ; la clé de la graine n'est pas écrite au §8 ; un éditeur à plusieurs outils du run est publié absent. Décisions à poser à l'auteur."
+      "note": "D59 (14), protocole 0.24 : calcul fait (écart signé, moyenne des autres outils, bootstrap en grappes, signalé si l'intervalle exclut 0). Partielle : l'association juge → outils de son éditeur est reçue en paramètre, aucune donnée du run ne la porte (famille_modele n'est pas un éditeur ; editeur de l'outil reste dans perimetre.yaml) ; la clé de la graine suit le §8 de la 0.25 (composant <juge>:propre-editeur après la métrique et la strate de l'appelant) ; un éditeur à plusieurs outils du run est publié absent. Décisions à poser à l'auteur."
     },
     {
       "id": "§7.29",

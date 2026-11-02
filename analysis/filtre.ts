@@ -74,6 +74,8 @@ export interface UniteAnalyse {
   readonly candidat_id: IdentifiantCourt | null;
   readonly theme: Theme | null;
   readonly registre: Registre;
+  /** Le numéro d'échantillon de la réponse (`reponse.echantillon`, à partir de 1), lu tel quel. */
+  readonly echantillon: number;
   /**
    * Formulation orientée : la vérité de sa prémisse au gel, lue dans le tirage
    * (`entree.premisse_fausse`, protocole 0.11), jamais sur la question. `null` pour une formulation
@@ -316,6 +318,7 @@ function composer(
     candidat_id: question.candidat_id === undefined ? null : question.candidat_id,
     theme: entree.theme === undefined ? null : entree.theme,
     registre: formulation.registre,
+    echantillon: reponse.echantillon,
     premisse_fausse: formulation.registre === "oriente" ? entree.premisse_fausse : null,
     categorie: verdict.categorie_retenue,
     drapeaux: verdict.drapeaux_retenus,
