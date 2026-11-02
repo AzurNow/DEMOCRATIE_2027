@@ -234,7 +234,7 @@ Aucune décision en attente.
 
 ### D60 — Onze points laissés ouverts par la rédaction de la 0.24 : seconde moitié de D59 (9), cas non tranchés de H1 et H2, clés de graine non nommées, Spearman, écart API / application, empreinte de la capture masquée, compte du testeur, tourniquet, signe de la différence des modes, D31 (2) à écrire pour l'échantillon.
 
-**Décision du 2026-11-01 :** Option 1 sur tous les points (consigne durable de l'auteur : option recommandée). Texte à écrire en 0.25, PR à part, avant le code qui en dépend.
+**Décision du 2026-11-01 :** Option 1 sur tous les points (consigne durable de l'auteur : option recommandée). Écrits en 0.25, PR à part ; (h) était déjà écrit en 0.24, et le code applique déjà (k) (pipeline/go-no-go). Code dans des PR suivantes : (9b) renvoi en validation et contestation des items validés sur un texte faux, (b) et (c) verdicts de H1 et H2, (d) clés, (e) Spearman, (f) bras API de l'écart restreint à la formulation neutre et à l'échantillon 1, (g) deux empreintes de capture, (j) signe de H2.
 
 ### D7 — Sept conventions du tirage que le protocole n'écrit pas, retenues au plus restrictif par le lot questions.
 
