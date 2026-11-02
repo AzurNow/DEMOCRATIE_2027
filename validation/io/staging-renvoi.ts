@@ -1,7 +1,9 @@
 /**
  * La seule écriture de l'outillage de validation dans `staging/` : la réécriture d'un item en attente,
  * après une correction de thème acceptée (protocole 0.13, §4 ; `domaine/renvoi-mesure.ts`) ou un
- * rattachement à une autre mesure (décision D53 (1) ; `domaine/rattachements-item.ts`).
+ * rattachement à une autre mesure (décision D53 (1) ; `domaine/rattachements-item.ts`) ou le rejet
+ * d'un autre item sous le motif « texte extrait erroné » (protocole 0.25, §4 ;
+ * `domaine/renvoi-texte-errone.ts`, écrit par `pnpm promote --ecrire`).
  *
  * `staging/` est l'endroit où vit l'item en attente, et c'est donc là qu'il retourne : les items
  * publiés ne sont jamais touchés (règle 3 de `CLAUDE.md`, contrôlée par `tests/ecriture-data.test.ts`). L'écriture est gardée comme celle de

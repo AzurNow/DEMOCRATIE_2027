@@ -8,8 +8,10 @@
  * Le renvoi n'est pas un état écrit : il se **recalcule** depuis les verdicts de la promotion (lots,
  * journaux, registres), comme la file d'arbitrage. Aucune fonction d'ici n'écrit ; `pnpm promote`
  * imprime la liste. Un renvoi désigne une source par l'empreinte du document et celle du texte jugé
- * faux ; il ne déplace, ne revalide ni ne suspend aucun autre item : la seconde moitié de D59 (9)
- * (suspendre les items déjà validés sur l'ancien texte) n'est pas retenue par l'auteur.
+ * faux. Ce module ne nomme que les items rejetés ; ce que le renvoi fait aux autres items validés
+ * sur ce même texte (seconde moitié de D59 (9), écrite au §4 en protocole 0.25, D60 (9b) : retour en
+ * attente d'un item non publié, contestation par l'auteur d'un item publié) est calculé, depuis les
+ * seules sources renvoyées tranchées, par `renvoi-texte-errone.ts`.
  *
  * Seul le cas que le texte tranche renvoie une source : l'item est rejeté par deux « rejeter »
  * concordants, qui portent tous deux le motif, et son contenu n'a qu'une source. Les autres rejets

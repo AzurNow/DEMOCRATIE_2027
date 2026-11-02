@@ -32,11 +32,19 @@ export const CHANGEMENT_RENVOI = "renvoi en attente";
 export const CHANGEMENT_RATTACHEMENT = "rattachement à une autre mesure";
 
 /**
+ * Préfixe de l'entrée d'historique d'un retour en attente après le rejet d'un autre item sous le
+ * motif « texte extrait erroné » (protocole 0.25, §4, D60 (9b)) : écrit par
+ * `renvoi-texte-errone.ts:renvoyerEnAttente`, lu par `renvoyeDepuis`. Défini ici pour la même raison
+ * que `CHANGEMENT_RATTACHEMENT`.
+ */
+export const CHANGEMENT_TEXTE_ERRONE = "retour en attente, texte extrait erroné";
+
+/**
  * Les changements d'historique qui renvoient un item en attente : le lot qui épinglait une version
  * antérieure ne le juge plus. Une donnée, pas une branche par cas : un nouveau chemin de renvoi
  * s'ajoute ici.
  */
-export const CHANGEMENTS_QUI_RENVOIENT: readonly string[] = [CHANGEMENT_RENVOI, CHANGEMENT_RATTACHEMENT];
+export const CHANGEMENTS_QUI_RENVOIENT: readonly string[] = [CHANGEMENT_RENVOI, CHANGEMENT_RATTACHEMENT, CHANGEMENT_TEXTE_ERRONE];
 
 /** Le renvoi n'existe qu'après une correction de thème acceptée au registre et portée par la mesure. */
 export class RenvoiSansCorrectionAppliquee extends Error {
@@ -206,7 +214,7 @@ export function repinglerSurMesure(item: Item, mesure: Mesure, trace: TraceRenvo
 
 /* --------------------------------------------------------- supersession par version */
 
-/** Vrai si l'item a été renvoyé en attente (renvoi ou rattachement) après la version donnée. */
+/** Vrai si l'item a été renvoyé en attente (renvoi, rattachement ou texte extrait erroné) après la version donnée. */
 export function renvoyeDepuis(item: Item, version: number): boolean {
   if (item.historique === undefined) return false;
   return item.historique.some((entree) => estRenvoiPosterieur(entree, version));
@@ -220,7 +228,7 @@ function estRenvoiPosterieur(entree: unknown, version: number): boolean {
 
 /**
  * Un lot juge encore l'item qu'il épingle, sauf si l'item a été renvoyé en attente depuis la version
- * épinglée, par un renvoi ou un rattachement : les décisions du lot restent au journal, mais ne
+ * épinglée, par un renvoi, un rattachement ou un retour après texte extrait erroné : les décisions du lot restent au journal, mais ne
  * comptent plus pour cet item.
  */
 export function lotJugeEncore(item: Item, reference: Pick<ItemDuLot, "item_version">): boolean {

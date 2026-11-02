@@ -33,6 +33,14 @@
  * renvoient à la réextraction sont nommées au rapport, recalculées depuis les journaux ; rien n'est
  * écrit pour elles (`validation/domaine/renvoi-reextraction.ts`).
  *
+ * Protocole 0.25 (§4, D60 (9b)) : les autres items validés sur un texte ainsi renvoyé
+ * (`validation/domaine/renvoi-texte-errone.ts`). Un item non publié jugé jusqu'au bout par son lot
+ * n'est pas promu : `--ecrire` le réécrit en `staging/` de retour en attente (version + 1, entrée
+ * d'historique), avant toute écriture dans `data/`, et son lot ne le juge plus ; c'est la seule
+ * écriture de la commande dans `staging/`. Un item dont le lot n'a pas fini attend la fin de son lot.
+ * Un item publié n'est pas touché : il est listé à contester par l'auteur (`pnpm contester`), la
+ * contestation étant un acte de l'auteur.
+ *
  *   pnpm promote
  *   pnpm promote --ecrire
  */
@@ -48,7 +56,15 @@ import { CorrectionMesureIncoherente } from "../validation/domaine/corrections-m
 import { decrireEcart, ecartsDeDates } from "../validation/domaine/dates-sources.ts";
 import type { LotEffectif } from "../validation/domaine/lot.ts";
 import { VersionMesureEcart, type Issue } from "../validation/domaine/promotion.ts";
-import { renvoisAReextraction } from "../validation/domaine/renvoi-reextraction.ts";
+import { renvoisAReextraction, type RenvoisReextraction } from "../validation/domaine/renvoi-reextraction.ts";
+import {
+  jugementsDesVerdicts,
+  planifierTexteErrone,
+  porteUnTexteRenvoye,
+  renvoyerEnAttente,
+  type PlanTexteErrone,
+  type RetourEnAttente,
+} from "../validation/domaine/renvoi-texte-errone.ts";
 import type { Item, Lot } from "../validation/domaine/types.ts";
 import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
@@ -66,6 +82,7 @@ import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
 import { lireRelectures } from "../validation/io/relectures-fichier.ts";
 import { chargerStaging, type Staging } from "../validation/io/staging.ts";
+import { reecrireItemStaging } from "../validation/io/staging-renvoi.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { evaluerLots, type Introuvable, type RenvoyeDuLot, type Verdict } from "./evaluation-lots.ts";
 import { erreurDeSchema } from "./schemas/valider.ts";
@@ -166,8 +183,7 @@ function imprimerRenvoyes(renvoyes: readonly RenvoyeDuLot[]): void {
  * nommé ici, n'écrit rien et ne bloque rien. Un rejet sous ce motif que le texte ne tranche pas
  * (`renvoi-reextraction.ts`) est nommé à part, avec sa raison.
  */
-function imprimerRenvoisReextraction(verdicts: readonly Verdict[]): void {
-  const { sources, a_trancher } = renvoisAReextraction(verdicts);
+function imprimerRenvoisReextraction({ sources, a_trancher }: RenvoisReextraction): void {
   if (sources.length > 0) {
     process.stdout.write(`\nSources renvoyées à la réextraction (motif « texte extrait erroné ») : ${sources.length}\n`);
     for (const source of sources) {
@@ -179,6 +195,103 @@ function imprimerRenvoisReextraction(verdicts: readonly Verdict[]): void {
     process.stdout.write(`\nRejets sous le motif « texte extrait erroné » sans renvoi établi : ${a_trancher.length}\n`);
     for (const rejet of a_trancher) process.stdout.write(`  ${rejet.item_id}  ${rejet.raison}\n`);
   }
+}
+
+/* ------------------------------------------- texte extrait erroné (protocole 0.25) */
+
+/** Ce que les rejets sous le motif « texte extrait erroné » font aux autres items du même texte. */
+interface TexteErrone {
+  readonly renvois: RenvoisReextraction;
+  readonly plan: PlanTexteErrone;
+  /** Les items à réécrire de retour en attente : jugés jusqu'au bout, ils ne sont pas promus. */
+  readonly a_renvoyer: readonly RetourEnAttente[];
+}
+
+interface EvaluationLue {
+  readonly verdicts: readonly Verdict[];
+  readonly effectifs: readonly LotEffectif[];
+}
+
+/**
+ * Calculé sur **tous** les verdicts : le renvoi d'une source se lit dans les rejets, et ce sont les
+ * verdicts qui disent quel lot juge encore chaque item.
+ */
+function texteErrone(evaluation: EvaluationLue, staging: Staging, data: ReadonlyMap<string, Item>): TexteErrone {
+  const renvois = renvoisAReextraction(evaluation.verdicts);
+  const annotateurs = new Map(evaluation.effectifs.map((effectif) => [effectif.lot.lot_id, effectif.lot.annotateurs]));
+  const concernes = evaluation.verdicts.filter((verdict) => porteUnTexteRenvoye(verdict.item, renvois.sources));
+  const plan = planifierTexteErrone({
+    renvois: renvois.sources,
+    items: [...staging.items.values()],
+    publies: data,
+    jugements: jugementsDesVerdicts(concernes, annotateurs),
+  });
+  return { renvois, plan, a_renvoyer: plan.retours.filter((retour) => retour.sort === "renvoyer") };
+}
+
+/** Les verdicts que la promotion traite : un item qui retourne en attente n'est ni promu ni arbitré. */
+function sansRetours(verdicts: readonly Verdict[], texte: TexteErrone): readonly Verdict[] {
+  const renvoyes = new Set(texte.a_renvoyer.map((retour) => retour.item.id));
+  return verdicts.filter((verdict) => !renvoyes.has(verdict.item.id));
+}
+
+/** Un texte qui rapproche des items porte toujours son empreinte de texte (`RenvoiIdentifie`). */
+function textesAffiches(textes: RetourEnAttente["textes"]): string {
+  return textes.map((renvoi) => `${renvoi.sha256} texte ${renvoi.texte_sha256}`).join(", ");
+}
+
+function imprimerListeRetours(titre: string, retours: readonly RetourEnAttente[]): void {
+  if (retours.length === 0) return;
+  process.stdout.write(`\n${titre} : ${retours.length}\n`);
+  for (const retour of retours) {
+    process.stdout.write(`  ${retour.item.id}  [${retour.lot_id}]  ${textesAffiches(retour.textes)}\n`);
+  }
+}
+
+function imprimerAContester(plan: PlanTexteErrone): void {
+  if (plan.a_contester.length === 0) return;
+  process.stdout.write(
+    `\nPubliés sur un texte extrait erroné, à contester par l'auteur (pnpm contester), non modifiés ici : ${plan.a_contester.length}\n`,
+  );
+  for (const { item, textes } of plan.a_contester) {
+    process.stdout.write(
+      `  ${item.id}  ${item.statut_validation}  contestation ${item.statut_contestation}  ${textesAffiches(textes)}\n`,
+    );
+  }
+}
+
+function imprimerSansTexte(plan: PlanTexteErrone): void {
+  if (plan.sans_texte.length === 0) return;
+  process.stdout.write(`\nSources renvoyées sans empreinte de texte, aucun autre item rapproché : ${plan.sans_texte.length}\n`);
+  for (const renvoi of plan.sans_texte) process.stdout.write(`  ${renvoi.sha256}  ${renvoi.url}\n`);
+}
+
+/**
+ * §4 (protocole 0.25) : les items de retour en attente, ceux qui attendent la fin de leur lot, les
+ * items publiés que l'auteur conteste, et les renvois dont le texte n'est pas identifié.
+ */
+function imprimerTexteErrone({ plan, a_renvoyer }: TexteErrone): void {
+  imprimerListeRetours("De retour en attente (texte extrait erroné), réécrits dans staging/ par --ecrire", a_renvoyer);
+  imprimerListeRetours(
+    "Sur un texte extrait erroné, dans un lot en cours : retour en attente à la fin du lot",
+    plan.retours.filter((retour) => retour.sort === "decisions_incompletes"),
+  );
+  imprimerAContester(plan);
+  imprimerSansTexte(plan);
+}
+
+/** Réécrit en `staging/` les items de retour en attente ; rend leur trace pour le commit. */
+function ecrireRetours(texte: TexteErrone, options: Options): readonly string[] {
+  const trace = { commit: commitCourant(options.racine), horodatage: instantLocal(new Date()) };
+  for (const retour of texte.a_renvoyer) {
+    reecrireItemStaging(options.staging, retour.item, renvoyerEnAttente(retour.item, retour.textes, trace));
+  }
+  return texte.a_renvoyer.map((retour) => `retour en attente ${retour.item.id}`);
+}
+
+function cheminsACommiter(retours: readonly string[]): readonly string[] {
+  const promotion = ["data/items", "data/mesures", "validation/notifications/dues.jsonl"];
+  return retours.length === 0 ? promotion : [...promotion, "staging/items"];
 }
 
 function cheminDansData(item: Item, options: Options): string {
@@ -401,7 +514,7 @@ function ecrireMesures(plan: PlanMesures, options: Options): readonly string[] {
   ];
 }
 
-function ecrire(verdicts: readonly Verdict[], plan: PlanMesures, options: Options): void {
+function ecrire(verdicts: readonly Verdict[], plan: PlanMesures, texte: TexteErrone, options: Options): void {
   const promus: string[] = [];
   // §4 (0.10) : tout ce qui est publié est notifié, rejeté et non évaluable compris. Toutes les
   // notifications sont préparées et la file contrôlée avant le premier item écrit : une file
@@ -410,6 +523,8 @@ function ecrire(verdicts: readonly Verdict[], plan: PlanMesures, options: Option
     verdict.issue.sort === "promouvoir" && !dejaDansData(verdict, options) ? [{ item: verdict.issue.item, due: notificationDue(verdict.issue.item, "creation") }] : [],
   );
   controlerAjout(options.notifications, aPromouvoir.map(({ due }) => due));
+  // §4 (protocole 0.25) : les retours en attente, avant la première écriture dans `data/`.
+  const retours = ecrireRetours(texte, options);
   const mesures = ecrireMesures(plan, options);
   for (const { item, due } of aPromouvoir) {
     // Seule écriture vers `data/items/` : `creerItem` revalide contre le schéma, quel que soit le
@@ -430,13 +545,10 @@ function ecrire(verdicts: readonly Verdict[], plan: PlanMesures, options: Option
 
   process.stdout.write(
     `\n${promus.length} item(s) écrit(s) dans ${options.data}\n` +
+      `${retours.length} item(s) de retour en attente dans ${options.staging}\n` +
       `${plan.creer.length} mesure(s) créée(s), ${plan.reecrire.length} réécrite(s) dans ${options.data_mesures}\n` +
       `${file.length} entrée(s) dans la file d'arbitrage.\n\n` +
-      commandeGit(
-        ["data/items", "data/mesures", "validation/notifications/dues.jsonl"],
-        `data: promotion de ${promus.length} item(s)`,
-        [...promus, ...mesures],
-      ),
+      commandeGit(cheminsACommiter(retours), `data: promotion de ${promus.length} item(s)`, [...promus, ...mesures, ...retours]),
   );
 }
 
@@ -447,9 +559,10 @@ function principal(): void {
   // Les registres sont **lus**, jamais écrits ici : `pnpm mesures --ecrire` et `pnpm arbitrer
   // --ecrire` y ajoutent les décisions ; le registre des relectures est lu par `planDesMesures`.
   const staging = chargerStaging(options.staging);
-  const { effectifs, verdicts, introuvables, renvoyes } = evaluerLots({
+  const data = lireItemsData(options.data);
+  const evaluation = evaluerLots({
     staging,
-    data: lireItemsData(options.data),
+    data,
     lots: lireLots(options.lots),
     repertoire_decisions: options.decisions,
     registre_mesures: lireRegistre(options.mesures),
@@ -457,6 +570,10 @@ function principal(): void {
     commit: commitCourant(options.racine),
     horodatage: instantLocal(new Date()),
   });
+  const { effectifs, introuvables, renvoyes } = evaluation;
+  // §4 (protocole 0.25) : un item dont la validation ne tient plus n'est ni promu ni arbitré.
+  const texte = texteErrone(evaluation, staging, data);
+  const verdicts = sansRetours(evaluation.verdicts, texte);
 
   const fautifs = nonConformes(verdicts, options);
   const dates = datesIncoherentes(verdicts, options);
@@ -465,7 +582,8 @@ function principal(): void {
   imprimerRapport(verdicts, effectifs, options);
   imprimerIntrouvables(introuvables);
   imprimerRenvoyes(renvoyes);
-  imprimerRenvoisReextraction(verdicts);
+  imprimerRenvoisReextraction(texte.renvois);
+  imprimerTexteErrone(texte);
   imprimerNonConformes(fautifs);
   imprimerDatesIncoherentes(dates);
   imprimerPlanMesures(plan);
@@ -507,7 +625,7 @@ function principal(): void {
     process.stdout.write("\nSimulation : rien n'a été écrit. Ajouter --ecrire pour écrire dans data/.\n");
     return;
   }
-  ecrire(verdicts, plan, options);
+  ecrire(verdicts, plan, texte, options);
 }
 
 try {
