@@ -1,4 +1,4 @@
-# Passation — 2026-11-01 (session cloud)
+# Passation — 2026-11-02
 
 Pour une session Claude Code dans le cloud (claude.ai/code) qui reprend le dépôt pendant que la
 machine de l'auteur est éteinte. L'auteur la pilote depuis son téléphone. Lire dans l'ordre :
@@ -33,49 +33,35 @@ Décision de l'auteur du 2026-11-01 :
 - Description de PR lisible sur téléphone, dans cet ordre : décision attendue (ou « aucune »), ce
   qui change, ce qui pourrait casser, comment c'est testé.
 
-## État au 2026-11-01 (soir)
+## État au 2026-11-02 (soir)
 
-- Protocole **0.22** (#217). Décisions D1 à D57 tranchées (`docs/feuille-de-route.json`).
-- Passe de conformité du 2026-11-01 sur la 0.21 (`docs/conformite/2026-11-01.md`) : ses quatre
-  constats sont clos (#217, #218, #219).
-- Matrice remise à jour (#221, `docs/conformite/2026-11-01-matrice.md`) : 467 exigences, aucune
-  contredite, 48 « à implémenter » (site 25, analyse 10, extraction 4, interrogation 4,
-  notation 4, hors code 1).
-- Dette : `docs/DETTE.md`, entrée du 2026-11-01. Points hauts 1 et 2 réglés (#216, #220) ; reste
-  le point 3 (`Location` latin-1 relu en UTF-8), à vérifier seulement au premier test des liens
-  réel.
+- Protocole **0.26** (#241). Décisions D1 à D61 tranchées ; **D62 en attente** (`docs/feuille-de-route.json`).
+- Le 2026-11-02, #224 à #242 ont été fusionnées : D58 (deux juges, kappa de la paire, kappa des deux
+  humains), D59 (vingt et un trous des plans analyse, extraction, interrogation et notation), D60
+  (onze points laissés par la 0.24) et D61 (H2 sans objet sur une différence indéfinie, portée du
+  retour en attente après un texte extrait erroné), avec leur code.
+- Dette : `docs/DETTE.md`, entrée du 2026-11-02. Deux points hauts : les modules d'analyse ne sont
+  assemblés par aucun appelant (`pnpm analyze` manque), et `rechercheAbsence` ne voit pas une
+  proposition non rattachée (fausse absence). Le point 3 du 2026-11-01 (`Location` latin-1) reste ouvert.
 - Rien n'a jamais tourné sur un appel réel : extraction, reformulation, interrogation, liens et
   notation ne sont exercés que sur doubles et fixtures.
+- Le 2026-11-02, le mode auto de Claude Code a refusé `gh pr merge` sur la machine Windows de
+  l'auteur, malgré la consigne de fusion : l'auteur a fusionné à la main.
 
 ## Ce qui était en cours
 
-Rien : tout le travail du 2026-11-01 est fusionné (`main` à `fdd1a36`, #214 à #223). Les constats
-n° 5, 6, 8 et 10 de la matrice sont corrigés (#222, #223) ; le n° 9 est accepté par l'auteur. Le
-tableau de bilan de `docs/conformite/2026-11-01-matrice.md` n'a pas été recompté après ces deux PR :
-la prochaine passe `conformite-protocole` le refera.
+Rien, hormis la PR de clôture du 2026-11-02, que l'auteur fusionne.
 
 ## Prochaines tâches, par priorité
 
-1. **Attendre la décision de l'auteur sur le kappa** (constat n° 7 de la matrice, et le reliquat du
-   n° 8). Le protocole ne définit ni le « kappa de la paire » sur le jeu d'or (§7.22, §7.23 :
-   moyenne des deux juges, minimum, ou accord du verdict combiné ?) ni, au §7.30, si l'accord des
-   deux humains publié est un kappa ou la seule part d'accord. Ne rien coder avant : poser la
-   question complètement à l'auteur, puis proposer la révision du protocole en PR à part. Ce qui
-   est publié aujourd'hui (#223) : `run.json#/accord_humains_echantillon`, compte et part de
-   l'accord défini au §7, sans kappa.
-2. **Trois questions laissées par #223** (constat n° 6), à poser à l'auteur :
-   - `run.schema.json#/juges` n'exige qu'un juge (`minItems: 1`) : un run à un seul juge passe la
-     règle des familles. Recommandé : exiger deux juges (règle d'inclusion, donc décision de
-     l'auteur).
-   - Le gel n'appelle pas `exigerFamillesDistinctes` (`pipeline/notation/familles-juges.ts`) : deux
-     juges de même famille sont gelés puis refusés à la notation. Recommandé : l'appeler aussi au
-     gel (code seul, petit lot ; option recommandée retenue sans demander).
-   - Aucune exclusion d'une famille d'Anthropic n'est écrite au protocole : rien à coder sans texte.
-3. **Lot analyse** (10 exigences, `pnpm analyze`, règle de décision H1/H2/H4) : commencer par un
-   plan soumis à l'auteur, jamais par du code (`CLAUDE.md`, « Plan avant code »).
-4. **Extraction, interrogation, notation** (4 exigences chacune, liste dans le rapport de la
-   matrice) : même règle, un plan d'abord.
-5. **Site** (25 exigences) : pas avant que l'analyse existe.
+1. **Faire trancher D62** par l'auteur, en commençant par #233 (3) (fausse absence) et #233 (2)
+   (aucun mécanisme ne consomme la liste des renvois à la réextraction). Poser les questions
+   complètement, puis écrire la 0.27 dans une PR à part, et le code dans des PR suivantes.
+2. **Lot `pnpm analyze`** : assembler les modules d'`analysis/` sur un partage unique (DETTE
+   2026-11-02, point 1). Soumettre un plan à l'auteur avant d'écrire du code.
+3. **Passe `conformite-protocole`** sur la 0.26 : la matrice date du 2026-11-01 (0.21), et les
+   lots D58 à D61 l'ont fait bouger. Y ajouter le test des clés de graine (DETTE 2026-11-02, point 3).
+4. **Site** (25 exigences) : pas avant que l'analyse existe.
 
 Hors mission sans accord explicite de l'auteur : appels d'API réels, collecte réelle, écriture dans
 `data/` ou `config/perimetre.yaml`, déploiement, `pnpm run:live`, gel de la 1.0.

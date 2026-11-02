@@ -4,13 +4,15 @@ Tout ce qui attend l'auteur, et que ni le code ni un agent ne peut faire à sa p
 traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une tâche faite est cochée,
 puis retirée à la clôture de session suivante.
 
-Mis à jour le 2026-10-16. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
+Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
 `docs/PROTOCOLE.md` 0.16, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #75.
 
 ---
 
 ## 0. Fusions en attente
 
+- [x] (2026-11-02) #224 à #242 fusionnées (protocole 0.23 à 0.26, D58 à D61 et leur code).
+- [ ] (2026-11-02) Fusionner la PR de clôture du 2026-11-02 (DETTE, LESSONS, feuille de route, D62).
 - [x] (2026-10-16) #136 fusionnée (texte de D51 dans le bloc 0.17).
 - [x] (2026-10-16) #135, #137 et #138 fusionnées (lot gel, PR 3 et 4 ; dépôts de test sans gc).
 - [x] (2026-10-12) #109, #104, #110 et #111 fusionnées. Conflit de #104 réglé par l'agent (D34 et
@@ -32,6 +34,10 @@ Mis à jour le 2026-10-16. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ### Protocole (`docs/PROTOCOLE.md`)
 
+- [ ] **Trancher D62** (`docs/feuille-de-route.json`) : vingt et une questions laissées par les lots
+      D59 (#230, #232 à #235). Commencer par #233 (3), la fausse absence de `rechercheAbsence`
+      (DETTE 2026-11-02, point 2), et #233 (2), le renvoi à la réextraction qu'aucun mécanisme ne
+      consomme. Inclut un amendement de `docs/CONTRATS.md` §1 (« commentaire » → « motif »).
 - [x] **0.13 écrite** (#48) : les seize décisions du 2026-09-27 sont dans le protocole, et le code
       est aligné sur toutes (#49 : symétrie, run, générateurs ; #50 : format, dates, attestation,
       renvoi après correction de thème, tiers de la fiche).
