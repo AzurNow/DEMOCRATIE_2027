@@ -4,18 +4,7 @@
 
 ## Décisions en attente
 
-### D71 — Questions laissées ouvertes par les lots de la 0.28 (#255 à #259), à écrire dans une prochaine révision du protocole.
-
-Relevées le 2026-11-03. Recommandation entre crochets ; « [code] » signale la lecture déjà appliquée par le code fusionné. (1) Case 7 « robustesse calculée » quand robustesse.taux est sans objet (aucun_couple_compare) [non faite ; code, #255]. (2) Règle des taux à 0 ou à 1 (D70 (8)) sur l'écart juge-éditeur du §7, ecart-juge-editeur.ts:signaler [l'appliquer, signaler recevant les taux par juge]. (3) Nom ambigu entre un candidat éliminé et un autre candidat sur une question d'attribution [renvoi humain, comme tout nom ambigu ; code, #257]. (4) Reconnaissance d'un éliminé : retiré d'un run entre_deux_tours, sans statut propre au schéma [garder ; statut elimine_premier_tour seulement si un retiré antérieur restait au périmètre ; code, #257]. (5) Fenêtre des notices pour un gel un 29 février [28 février de l'année précédente ; code, #258]. (6) « Même date douze mois avant » [date civile UTC de l'instant de gel ; code, #258]. (7) Hôte de l'URL d'une notice non contrôlé [ne pas en fixer tant que le protocole ne nomme pas le domaine]. (8) Opinions du panel publiées à égalité des voix (§10) : aucun champ ne les porte [tableau deliberations_sans_majorite[] en ajout seul dans contestations[], lot dédié, schéma de l'item]. (9) Lot achevé par une contestation qu'aucun journal ne date [dater la clôture à la date_reception de la contestation, à écrire au §12 ; code actuel : cloture_non_datee, J3 jamais vert]. (10) Ex aequo de clôture de deux lots [départage par identifiant du lot ; code, #259]. (11) Reportés d'avant : H5 quand un outil n'existe que dans le premier run (TendanceIncoherente) ; modèle de chaque outil par run dans la tendance ; écran humain pour un renvoi de D70 (4).
-
-Options :
-
-1. Retenir toutes les recommandations entre crochets et les écrire à la prochaine révision.
-2. Trancher point par point.
-
-**Recommandation :** Option 1 ; le point (11) instruit à part, une question à la fois.
-
-Lots portant cette décision : aucun
+Aucune décision en attente.
 
 ## Décisions tranchées
 
@@ -291,6 +280,10 @@ Lots portant cette décision : aucun
 
 **Décision du 2026-11-03 :** Option 1 pour les points (1) à (13) (consigne durable de l'auteur : option recommandée, 2026-11-03) ; le point (14) reste ouvert, instruit une sous-question à la fois. Texte proposé pour la 0.28 (PR de protocole à part) : §2 H5 par couple comparé (1) ; §8 strate `type_item:F+O` et clé complète de la différence de H3, ajoutée par la session principale (1b) ; §7 non classées hors de tout kappa (2), vigueur semi-ouverte (3) et renvoi humain exacte ou inexacte (4), §7 et annexe B ; §4 et §12 seuil d'accord sur l'effectif publié, deux derniers lots dans l'ordre de clôture (5) ; §3 notices d'institut en mois civils, toute notice, sondage archivé comme preuve (6) ; §3 « Entre les deux tours » et §7 éliminés cherchés sans être remplacés, citation non fautive (7) ; §8 taux égal à 1, intervalle [1 ; 1] (8) ; §4 items F rédigés par l'auteur (9) ; §10 égalité des voix du panel (10) ; §12 dates recalées au gel de la v1.0, rapport de synthèse sur le décret de convocation (11) ; §8 accord entre échantillons en diagnostic (12) ; §8 et §9 metriques.json jamais réécrit, recalcul (b) daté à côté (13).
 
+### D71 — Questions laissées ouvertes par les lots de la 0.28 (#255 à #259), à écrire dans une prochaine révision du protocole.
+
+**Décision du 2026-11-03 :** Option 1 pour les points (1) à (10) (consigne durable de l'auteur : option recommandée ; demande explicite du 2026-11-03 de trancher D71) ; le point (11) reste ouvert, instruit une question à la fois. Protocole 0.29 (PR à part) : §3 date douze mois avant le gel et 29 février (5, 6), éliminé reconnu au run entre_deux_tours sans statut propre (4), nom ambigu entre un éliminé et un autre candidat renvoyé à un humain (3) ; §7 écart juge-éditeur sous la règle des taux à 0 ou à 1 (2) ; §10 et annexe E opinions publiées en ajout seul à égalité (8) ; §12 clôture datée par la contestation (9), ex aequo par identifiant (10), case « robustesse calculée » non cochée sans couple comparé (1) ; (7) sans texte, aucun domaine fixé. Code restant : (2) ecart-juge-editeur.ts:signaler, (8) schéma de l'item (deliberations_sans_majorite[]), (9) critere-j3.ts (cloture_non_datee aujourd'hui).
+
 ### D8 — Trois points que le §4 ne tranche pas, rencontrés en implémentant la réannotation et le registre des mesures.
 
 **Décision du 2026-09-20 :** Option 1 sur les trois points : héritage des annotateurs gardé, une autre paire supposerait un amendement au §4 disant quel kappa compte ; clé du registre élargie seulement si le §4 ouvre un jour la correction d'autre chose que le thème ; conventions d'identifiant de réannotation et de date par défaut entérinées dans schema/README.md.
@@ -342,7 +335,6 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
-  dec_D71{{"D71<br/>Questions laissées ouvertes par les lots de la 0.28 (#255 à …"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
