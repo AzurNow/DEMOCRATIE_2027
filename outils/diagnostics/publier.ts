@@ -4,9 +4,13 @@
  * Le kappa vient de `diagnostiquerLot`, appelé exactement comme la route `diagnostic` de
  * l'interface l'appelle : mêmes items, mêmes états rejoués, même taille attendue. Un lot que l'un
  * des deux annotateurs n'a pas fini n'est pas publié ; il est seulement signalé « en attente ».
+ *
+ * `cloturesDesLots` lit, sur les mêmes entrées, l'instant de clôture de chaque lot, que le verdict
+ * de J3 (§12, `critere-j3.ts:verdictJ3`) ordonne.
  */
 
 import { diagnostiquerLot } from "../../validation/domaine/analyse-lot.ts";
+import { clotureDuLot, type Cloture } from "../../validation/domaine/critere-j3.ts";
 import { projeterDiagnostic } from "../../validation/domaine/diagnostic-publie.ts";
 import { tailleAttendue } from "../../validation/domaine/lot.ts";
 import type { Item, Lot } from "../../validation/domaine/types.ts";
@@ -53,4 +57,14 @@ export function publierDiagnostics(chemins: Chemins, maintenant: string): readon
   const items = chargerItemsEffectifs(chargerStaging(chemins.staging).items, chemins.data);
   const lots = lireLots(chemins.lots);
   return lots.map((lot) => publierLot(chemins, items, lots, lot, maintenant));
+}
+
+/** La clôture de chaque lot des manifestes (§12), lue sur les journaux (`critere-j3.ts:clotureDuLot`). */
+export function cloturesDesLots(chemins: Chemins): ReadonlyMap<string, Cloture> {
+  const items = chargerItemsEffectifs(chargerStaging(chemins.staging).items, chemins.data);
+  const clotures = new Map<string, Cloture>();
+  for (const lot of lireLots(chemins.lots)) {
+    clotures.set(lot.lot_id, clotureDuLot({ lot, items, etats: etatsDuLot(chemins.decisions, lot) }));
+  }
+  return clotures;
 }

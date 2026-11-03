@@ -1,0 +1,178 @@
+/**
+ * Critère de passage du jalon J3 (§12, protocole 0.28, D70 (5)) : « Accord suffisant […] lu sur
+ * l'effectif publié du lot, sur les deux derniers lots réels ou de réannotation de taille conforme
+ * (50 items, hors entraînement), dans l'ordre de leur clôture, un lot étant clos quand ses deux
+ * annotateurs l'ont terminé, celui du lot de réannotation comptant seul quand un lot a été
+ * réannoté (section 4) ».
+ *
+ * Rien n'est recalculé ici. L'accord suffisant d'un lot est le champ publié `accord_suffisant`
+ * (`kappa.ts:accordSuffisant`, via `analyse-lot.ts:diagnostiquerLot`) ; les lots qui comptent sont
+ * ceux de `diagnostic-publie.ts:kappasRetenusSection12` (dernier calcul, dernier maillon de la
+ * chaîne de réannotation, taille conforme, hors entraînement) ; « terminé » est
+ * `analyse-lot.ts:lesDeuxOntFini`. Ce module n'ajoute que l'ordre : l'instant de clôture de chaque
+ * lot, puis le choix des deux derniers.
+ *
+ * **Instant de clôture.** Aucun champ ne l'enregistre : il se lit sur les journaux en ajout seul.
+ * Un annotateur a terminé un lot à l'horodatage de l'entrée de son journal après laquelle chaque
+ * item du lot porte une décision active ou un retrait journalisé (`retrait_item`), et le reste
+ * jusqu'à la fin du journal ; le lot est clos au plus tardif des deux (`Date.parse`, décalages
+ * comparés). Le verrou d'un lot terminé (`verrou-lot.ts`) interdit toute écriture après la
+ * clôture : la dernière entrée qui achève est donc bien celle de la clôture. Un lot que
+ * `lesDeuxOntFini` dit terminé sans que les journaux couvrent chaque item (un item contesté jamais
+ * atteint ni journalisé, la contestation ayant achevé le lot après la dernière écriture) est clos
+ * à un instant qu'aucun journal ne porte : il est rendu clos sans instant, jamais daté par
+ * approximation, et J3 n'est alors pas décidable.
+ *
+ * **Ex aequo.** Deux lots clos au même instant sont départagés par leur identifiant
+ * (`comparerChaines`). Le protocole ne fixe pas ce second critère : question ouverte, signalée
+ * avec le lot.
+ */
+
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import { lesDeuxOntFini } from "./analyse-lot.ts";
+import { derniersCalculs, kappasRetenusSection12, type DiagnosticPublie } from "./diagnostic-publie.ts";
+import { rejouer, type EtatAnnotateur } from "./journal.ts";
+import type { EntreeJournal, Lot } from "./types.ts";
+
+/** Clôture d'un lot. `instant` est `null` quand le lot est clos sans qu'aucun journal ne le date. */
+export type Cloture = { readonly clos: false } | { readonly clos: true; readonly instant: string | null };
+
+export type MotifJ3NonAtteint =
+  /** Un lot éligible est clos sans instant connu : l'ordre de clôture n'est pas décidable. */
+  | "cloture_non_datee"
+  /** Moins de deux lots éligibles clos. */
+  | "moins_de_deux_lots_clos"
+  /** Un des deux derniers lots n'a aucun item commun : son accord n'est pas observé. */
+  | "accord_non_decidable"
+  /** Un des deux derniers lots a un accord insuffisant (§4). */
+  | "accord_insuffisant";
+
+export type VerdictJ3 =
+  | { readonly atteint: true; readonly lots: readonly [string, string] }
+  | { readonly atteint: false; readonly motif: MotifJ3NonAtteint; readonly lots: readonly string[] };
+
+/** Un lot clos (par les journaux) dont aucun diagnostic n'est publié : `pnpm diagnostics` d'abord. */
+export class DiagnosticManquant extends Error {
+  constructor(lot_id: string) {
+    super(`Lot ${lot_id} : clos par ses deux annotateurs, sans diagnostic publié. Lancer pnpm diagnostics avant de lire J3.`);
+    this.name = "DiagnosticManquant";
+  }
+}
+
+/** Un lot des manifestes dont la clôture n'a pas été établie : aucun lot n'est présumé ouvert. */
+export class ClotureInconnue extends Error {
+  constructor(lot_id: string) {
+    super(`Lot ${lot_id} : aucune clôture établie (ni close, ni ouverte). J3 n'est pas lu sur une liste incomplète.`);
+    this.name = "ClotureInconnue";
+  }
+}
+
+/* ---------------------------------------------------------------- clôture */
+
+/** Chaque item du lot porte, dans ce journal, une décision active ou un retrait journalisé. */
+function journalCouvreLeLot(lot: Lot, etat: EtatAnnotateur): boolean {
+  return lot.items.every((reference) => etat.decisions.has(reference.item_id) || etat.retires.has(reference.item_id));
+}
+
+/**
+ * Horodatage de l'entrée après laquelle le journal de cet annotateur couvre le lot et le couvre
+ * encore à la fin. `null` si le journal ne couvre pas le lot.
+ */
+export function finAnnotateur(lot: Lot, etat: EtatAnnotateur): string | null {
+  let fin: string | null = null;
+  for (let rang = 0; rang < etat.entrees.length; rang += 1) {
+    const couvert = journalCouvreLeLot(lot, rejouer(etat.entrees.slice(0, rang + 1)));
+    if (!couvert) fin = null;
+    else if (fin === null) fin = (etat.entrees[rang] as EntreeJournal).horodatage;
+  }
+  return fin;
+}
+
+function plusTardif(a: string, b: string): string {
+  return Date.parse(b) > Date.parse(a) ? b : a;
+}
+
+/** Clôture d'un lot (§12) : le plus tardif des deux instants de fin, si les deux ont terminé. */
+export function clotureDuLot(entree: Parameters<typeof lesDeuxOntFini>[0]): Cloture {
+  if (!lesDeuxOntFini(entree)) return { clos: false };
+  const fins = [...entree.etats.values()].map((etat) => finAnnotateur(entree.lot, etat));
+  if (fins.some((fin) => fin === null)) return { clos: true, instant: null };
+  return { clos: true, instant: (fins as string[]).reduce(plusTardif) };
+}
+
+/* ---------------------------------------------------------------- verdict */
+
+interface LotClos {
+  readonly diagnostic: DiagnosticPublie;
+  readonly instant: string | null;
+}
+
+function clotureDe(clotures: ReadonlyMap<string, Cloture>, lot_id: string): Cloture {
+  const cloture = clotures.get(lot_id);
+  if (cloture === undefined) throw new ClotureInconnue(lot_id);
+  return cloture;
+}
+
+/** Tout lot clos a un dernier calcul publié ; tout lot des manifestes a une clôture établie. */
+function controlerCompletude(
+  diagnostics: readonly DiagnosticPublie[],
+  lots: readonly Lot[],
+  clotures: ReadonlyMap<string, Cloture>,
+): void {
+  const publies = new Set(derniersCalculs(diagnostics).map((diagnostic) => diagnostic.lot_id));
+  for (const lot of lots) {
+    if (clotureDe(clotures, lot.lot_id).clos && !publies.has(lot.lot_id)) throw new DiagnosticManquant(lot.lot_id);
+  }
+}
+
+/** Les lots qui comptent pour le §12 et qui sont clos. Un lot ouvert n'est pas clos : il est ignoré. */
+function lotsClosEligibles(
+  diagnostics: readonly DiagnosticPublie[],
+  lots: readonly Lot[],
+  clotures: ReadonlyMap<string, Cloture>,
+): readonly LotClos[] {
+  const eligibles: LotClos[] = [];
+  for (const diagnostic of kappasRetenusSection12(diagnostics, lots)) {
+    const cloture = clotureDe(clotures, diagnostic.lot_id);
+    if (cloture.clos) eligibles.push({ diagnostic, instant: cloture.instant });
+  }
+  return eligibles;
+}
+
+/** Ordre de clôture, instant réel croissant, puis identifiant du lot (départage non fixé par le §12). */
+function comparerClotures(a: { readonly instant: string; readonly lot_id: string }, b: typeof a): number {
+  return Date.parse(a.instant) - Date.parse(b.instant) || comparerChaines(a.lot_id, b.lot_id);
+}
+
+function motifDesDeuxDerniers(derniers: readonly DiagnosticPublie[]): MotifJ3NonAtteint | null {
+  if (derniers.some((diagnostic) => diagnostic.accord_suffisant === null)) return "accord_non_decidable";
+  if (derniers.some((diagnostic) => diagnostic.accord_suffisant === false)) return "accord_insuffisant";
+  return null;
+}
+
+/**
+ * Verdict de J3. `diagnostics` : tous les diagnostics publiés ; `lots` : tous les manifestes ;
+ * `clotures` : la clôture de chaque lot des manifestes (`clotureDuLot`). Jamais atteint par défaut :
+ * sans deux lots éligibles clos et datés, il ne l'est pas, avec son motif.
+ */
+export function verdictJ3(
+  diagnostics: readonly DiagnosticPublie[],
+  lots: readonly Lot[],
+  clotures: ReadonlyMap<string, Cloture>,
+): VerdictJ3 {
+  controlerCompletude(diagnostics, lots, clotures);
+  const eligibles = lotsClosEligibles(diagnostics, lots, clotures);
+  const nonDates = eligibles.filter((lot) => lot.instant === null).map((lot) => lot.diagnostic.lot_id);
+  if (nonDates.length > 0) return { atteint: false, motif: "cloture_non_datee", lots: nonDates };
+
+  const ordonnes = eligibles
+    .map((lot) => ({ diagnostic: lot.diagnostic, instant: lot.instant as string, lot_id: lot.diagnostic.lot_id }))
+    .sort(comparerClotures);
+  const [avantDernier, dernier] = ordonnes.slice(-2);
+  if (avantDernier === undefined || dernier === undefined) {
+    return { atteint: false, motif: "moins_de_deux_lots_clos", lots: ordonnes.map((lot) => lot.lot_id) };
+  }
+  const paire: readonly [string, string] = [avantDernier.lot_id, dernier.lot_id];
+  const motif = motifDesDeuxDerniers([avantDernier.diagnostic, dernier.diagnostic]);
+  return motif === null ? { atteint: true, lots: paire } : { atteint: false, motif, lots: paire };
+}

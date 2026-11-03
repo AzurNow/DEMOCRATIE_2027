@@ -13,7 +13,8 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ErreurSchema } from "../outils/schemas/valider.ts";
-import { publierDiagnostics, type Chemins } from "../outils/diagnostics/publier.ts";
+import { cloturesDesLots, publierDiagnostics, type Chemins } from "../outils/diagnostics/publier.ts";
+import { verdictJ3 } from "../validation/domaine/critere-j3.ts";
 import {
   CalculsSimultanes,
   derniersCalculs,
@@ -451,7 +452,32 @@ describe("pnpm diagnostics", () => {
     expect(resultat.status).toBe(0);
     expect(resultat.stdout).toContain("lot-003");
     expect(resultat.stdout).toMatch(/lot-003 \(reel\) : accord insuffisant, kappa 0\.583/);
+    // §12, D70 (5) : un seul lot clos, J3 n'est pas atteint et le dit.
+    expect(resultat.stdout).toContain("J3 (§12) : non atteint, moins_de_deux_lots_clos (lot-003).");
     expect(fichiers("lot-003")).toHaveLength(1);
+  });
+});
+
+describe("clôture des lots lue sur les journaux (§12, D70 (5))", () => {
+  it("un lot fini par les deux est clos à l'horodatage de l'entrée qui l'achève ; un lot à moitié fait ne l'est pas", () => {
+    const { lot } = lotReelEnDesaccord();
+    const liste = items("3", 3);
+    ecrireItems(liste);
+    const ouvert = lotDe("lot-006", liste, "reel");
+    bac.ecrireLot(ouvert);
+    decider(ouvert, liste, repete("accepter", 3), ["accepter", "accepter"]);
+
+    const clotures = cloturesDesLots(chemins);
+    // La fabrique `decision` horodate toutes ses entrées au même instant.
+    expect(clotures.get(lot.lot_id)).toEqual({ clos: true, instant: "2026-09-20T10:00:00+02:00" });
+    expect(clotures.get("lot-006")).toEqual({ clos: false });
+
+    publierDiagnostics(chemins, T1);
+    expect(verdictJ3(lireDiagnostics(chemins.diagnostics), lireLots(chemins.lots), clotures)).toEqual({
+      atteint: false,
+      motif: "moins_de_deux_lots_clos",
+      lots: ["lot-003"],
+    });
   });
 });
 

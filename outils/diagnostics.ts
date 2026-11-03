@@ -1,6 +1,9 @@
 /**
  * `pnpm diagnostics` — publie le kappa de chaque lot (§4, « calculé par lot […] et publié » ; §9,
- * « diagnostics de lot »), puis imprime les kappas qui comptent pour le §12.
+ * « diagnostics de lot »), puis imprime les kappas qui comptent pour le §12 et le verdict de J3 :
+ * accord suffisant sur les deux derniers lots dans l'ordre de leur clôture (§12, D70 (5),
+ * `critere-j3.ts:verdictJ3`). Le verdict est imprimé, pas écrit : il se recalcule des fichiers
+ * publiés et des journaux.
  *
  * Commande distincte de `pnpm promote`, parce que les deux n'ont ni le même objet ni le même
  * moment : le kappa se publie dès que les deux annotateurs ont fini un lot, y compris pour un lot
@@ -16,7 +19,8 @@
 
 import { resolve } from "node:path";
 import { analyserArguments, texte } from "./arguments.ts";
-import { publierDiagnostics, type Chemins } from "./diagnostics/publier.ts";
+import { cloturesDesLots, publierDiagnostics, type Chemins } from "./diagnostics/publier.ts";
+import { verdictJ3, type VerdictJ3 } from "../validation/domaine/critere-j3.ts";
 import { kappasRetenusSection12, type DiagnosticPublie } from "../validation/domaine/diagnostic-publie.ts";
 import { lireDiagnostics } from "../validation/io/diagnostics-fichier.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
@@ -52,15 +56,25 @@ function ligneRetenue(diagnostic: DiagnosticPublie): string {
   return `  ${diagnostic.lot_id} (${diagnostic.nature}) : ${libelleAccord(diagnostic)}, ${libelleKappa(diagnostic)}, n = ${diagnostic.n}, calculé le ${diagnostic.date_calcul}${taille}`;
 }
 
+/** Le verdict tel que `verdictJ3` le rend, motif compris : jamais « atteint » par défaut. */
+function ligneJ3(verdict: VerdictJ3): string {
+  const lots = verdict.lots.length === 0 ? "aucun lot" : verdict.lots.join(" puis ");
+  if (verdict.atteint) return `J3 (§12) : accord suffisant sur les deux derniers lots clos (${lots}).`;
+  return `J3 (§12) : non atteint, ${verdict.motif} (${lots}).`;
+}
+
 function principal(): void {
   const chemins = lireChemins();
   const comptes = publierDiagnostics(chemins, instantLocal(new Date()));
   console.log("Diagnostics de lot :");
   for (const compte of comptes) console.log(`  ${compte.lot_id} : ${compte.issue}`);
 
-  const retenus = kappasRetenusSection12(lireDiagnostics(chemins.diagnostics), lireLots(chemins.lots));
+  const diagnostics = lireDiagnostics(chemins.diagnostics);
+  const lots = lireLots(chemins.lots);
+  const retenus = kappasRetenusSection12(diagnostics, lots);
   console.log("\nKappas retenus pour le §12 (derniers maillons, supersede_par = null) :");
   for (const diagnostic of retenus) console.log(ligneRetenue(diagnostic));
+  console.log(`\n${ligneJ3(verdictJ3(diagnostics, lots, cloturesDesLots(chemins)))}`);
 }
 
 principal();
