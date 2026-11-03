@@ -7,8 +7,9 @@
  * contrefactuelles, validées au passage), `verdicts/`, `tirage.json` et `questions.json` (le plan
  * d'interrogation du run, `plan-du-run.ts` : les manquantes se comptent sur lui, §8 et §12,
  * protocole 0.21), le journal `volume/tentatives/` des seules requêtes du plan sans réponse
- * (`attente-operateur.ts`), et l'existence de `metriques/`. Chaque fichier est validé contre son
- * schéma (`analysis/lecture-run.ts`).
+ * (`attente-operateur.ts`), et `metriques/metriques.json` s'il existe (`metriques.ts` : ses graines
+ * pour le critère des analyses, ses sections de robustesse pour la case 7 de l'annexe F). Chaque
+ * fichier est validé contre son schéma (`analysis/lecture-run.ts`, `metriques.ts`).
  *
  * Ce qui est écrit : dans `run.json`, `go_no_go`, `kappa_echantillon_humain` ou
  * `motif_indefini_kappa_echantillon_humain` de chaque juge retenu, `accord_humains_echantillon` (§7.30 :
@@ -28,12 +29,14 @@
  * réécrit, et l'issue le dit. `run.json` et `checklist.json` sont validés contre leur schéma avant
  * d'être écrits.
  *
- * `metriques/` n'a encore aucun écrivain ni aucun format (`runs/README.md`) : absent, le critère
- * des analyses est rouge ; présent, la commande s'arrête plutôt que d'inventer sa lecture.
+ * `metriques/` absent : le critère des analyses est rouge et la case 7 non faite. Présent sans
+ * `metriques.json`, non conforme, ou d'un autre run : la commande s'arrête, rien n'est écrit. La
+ * commande se lance après `pnpm analyze` ; l'empreinte `entrees.run_json_sha256` de `metriques.json`
+ * ignore ce que le go/no-go écrit dans `run.json`, de sorte qu'une analyse relancée ensuite reste
+ * identique (`analysis/analyse-du-run.ts:empreinteDuRun`).
  */
 
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsEchantillon } from "../../analysis/accord-humains.ts";
 import { estDuRun } from "../../analysis/filtre.ts";
 import {
@@ -72,12 +75,12 @@ import {
   critereErreursGravesRevues,
   critereReponsesManquantes,
   critereTestsSymetrie,
-  type GraineDeResultat,
   type OutilDeclare,
 } from "./criteres-run.ts";
 import { deciderPublication } from "./decision.ts";
 import { cheminChecklist, ecrireParRenommage, lireJson } from "./fichiers.ts";
 import { kappasEchantillon, type KappaDeJuge } from "./kappa-echantillon.ts";
+import { lireMetriques } from "./metriques.ts";
 import { requetesDuPlanDuRun } from "../interrogation/plan-du-run.ts";
 import type { GoNoGo } from "./types.ts";
 
@@ -105,16 +108,6 @@ export class GoNoGoDivergent extends Error {
   constructor(chemin: string, quoi: string) {
     super(`${chemin} porte déjà ${quoi} différent du recalcul : rien n'est écrit (jamais d'écrasement silencieux).`);
     this.name = "GoNoGoDivergent";
-  }
-}
-
-export class FormatMetriquesNonDefini extends Error {
-  constructor(chemin: string) {
-    super(
-      `${chemin} existe, mais aucun format de fichier de métriques n'est défini (runs/README.md) : le critère ` +
-        `« analyses préenregistrées exécutées avec la graine publiée » ne sait pas le lire. Rien n'est écrit.`,
-    );
-    this.name = "FormatMetriquesNonDefini";
   }
 }
 
@@ -168,13 +161,6 @@ function refuser(vue: VueGoNoGo): void {
 
 /* ------------------------------------------------------------------ calcul */
 
-/** `metriques/` : absent, aucun résultat (`null`) ; présent, un format que rien ne définit encore. */
-function resultatsDAnalyse(repertoire_run: string): readonly GraineDeResultat[] | null {
-  const chemin = join(repertoire_run, "metriques");
-  if (existsSync(chemin)) throw new FormatMetriquesNonDefini(chemin);
-  return null;
-}
-
 function graineDuFichierTirage(repertoire_run: string, run: RunLu): GraineTirage | undefined {
   if (!existsSync(cheminDuTirage(repertoire_run, run))) return undefined;
   return lireTirage(repertoire_run, run).graine_tirage;
@@ -188,6 +174,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
   exigerAucuneAttenteSurPlan(repertoire_run, reponses, plan, "go-no-go");
   const { notations, renvois } = lireNotationsDuRun(repertoire_run, run.id);
   const verdicts = lireVerdicts(repertoire_run, run.id);
+  const metriques = lireMetriques(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
   const echantillon = tirerEchantillonHumain(obtenues, run.graines.echantillon_humain, run.taux_echantillon_humain);
   const { kappas, indeterminees, non_classees, refus_api } = kappasEchantillon({ juges: run.juges, echantillon, notations, renvois });
@@ -198,14 +185,14 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     critereTestsSymetrie(vue.symetrie),
     critereReponsesManquantes(vue.perimetre.outils, reponses, plan),
     critereErreursGravesRevues({ juges: run.juges, reponses_obtenues: obtenues, notations, verdicts }),
-    critereAnalysesExecutees(resultatsDAnalyse(repertoire_run), { bootstrap: vue.graines.bootstrap.valeur, permutation: vue.graines.permutation.valeur }),
+    critereAnalysesExecutees(metriques === null ? null : metriques.graines, { bootstrap: vue.graines.bootstrap.valeur, permutation: vue.graines.permutation.valeur }),
   ]);
   const constats = [
     constatItemsAbsenceReverifies(),
     constatGraineDuTirage(vue.graines.tirage, graineDuFichierTirage(repertoire_run, run)),
     constatNotationComplete(obtenues, new Set<Ulid>(verdicts.map((v) => v.objet_note.id))),
     constatInterrogationDansLaFenetre(vue.fenetre, reponses),
-    constatRobustesseCalculee(),
+    constatRobustesseCalculee(metriques === null ? null : metriques.robustesse),
   ];
   return {
     go_no_go,

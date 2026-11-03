@@ -395,8 +395,9 @@ du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.sch
 - **Jamais réécrit.** Absent, le fichier est écrit ; identique à l'octet près, rien n'est fait et la
   commande le dit ; différent, la commande refuse (`MetriquesDivergentes`). Sortie 0 ou 2.
 
-`pnpm go-no-go` s'arrête encore dès que `metriques/` existe (son critère des analyses ne lit pas ce
-format) : son branchement sur `metriques.json` est un lot à venir.
+`pnpm go-no-go` se lance après `pnpm analyze` et lit `metriques.json` (ci-dessous) ; ce qu'il écrit
+ensuite dans `run.json` est hors de `entrees.run_json_sha256`, de sorte qu'une analyse relancée après
+lui reste identique et ne refuse pas le run.
 
 ## `pnpm notation:controle <repertoire_run>`
 
@@ -431,8 +432,9 @@ les deux et ne réécrit rien. Sa réexécution se gèle avec `--remplace` (ci-d
 ## `pnpm go-no-go <repertoire_run>` et `pnpm go-no-go:contresigner`
 
 Les sept critères du §12 et la décision qui en découle (D24, `pipeline/go-no-go/`). Lit `run.json`,
-`volume/reponses/`, `volume/notations/`, `verdicts/`, `tirage.json` s'il est là, et l'existence de
-`metriques/`. Écrit dans `run.json` `go_no_go`, le kappa de l'échantillon humain de chaque juge
+`volume/reponses/`, `volume/notations/`, `verdicts/`, `tirage.json` s'il est là, et
+`metriques/metriques.json` s'il est là, validé contre son schéma (`pipeline/go-no-go/metriques.ts`).
+Écrit dans `run.json` `go_no_go`, le kappa de l'échantillon humain de chaque juge
 retenu (`kappa_echantillon_humain`, ou son motif d'indéfinition), le nombre de réponses de
 l'échantillon à note humaine indéterminée, écartées de ce kappa (`indeterminees_echantillon_humain`,
 D25), `perimetre.outils[].par_mode` de chaque assistant inclus (D55 (7), `analysis/seuils.ts:parModeDuRun`,
@@ -441,8 +443,13 @@ seul calcul de ce champ, recoupé à la lecture par `analysis/lecture-run.ts:lir
 est provisoire ; écrit `checklist.json` sans contreseing. Ne touche jamais `statut`. Refuse un run
 `invalide`, `planifie`, à symétrie rouge, ou qui porte une `invalidation` (D51 (2)) ; un go/no-go déjà
 écrit (ou un `par_mode`) différent du recalcul est une
-erreur, identique un no-op. `metriques/` présent arrête la commande : le critère des analyses ne lit
-pas encore `metriques.json` (`pnpm analyze`). Sortie 0 ou 2.
+erreur, identique un no-op. Le critère « analyses préenregistrées exécutées avec la graine publiée »
+recoupe chaque graine de `metriques.json#/graines` avec l'entier publié du run ; la case 7 de
+l'annexe F (« robustesse calculée ») n'est faite que si `robustesse.taux` et `robustesse.differences`
+sont calculées — tant que les différences sont `calcul_a_venir`, son motif dit « robustesse des
+différences non calculée ». `metriques/` absent : critère rouge, case non faite ; présent sans
+`metriques.json` (`MetriquesSansFichier`), non conforme (`ErreurSchema`) ou d'un autre run
+(`MetriquesDUnAutreRun`) : arrêt, rien n'est écrit. Sortie 0 ou 2.
 
 `pnpm go-no-go:contresigner <repertoire_run> --nom="<nom>" --case=<rang>:faite --case=<rang>:non_faite:<motif>`
 déclare chaque case `declaree` de la checklist et ajoute `contreseing: { nom, date }`. Refuse une case
