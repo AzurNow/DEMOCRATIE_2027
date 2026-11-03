@@ -393,8 +393,10 @@ describe("exemples de schema/exemples/", () => {
   // 354 → 355 : §6, protocole 0.25 (D60 (g)), un valide de dépôt d'application (capture masquée).
   // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides de metriques.
   // 361 → 363 : §4, protocole 0.27 (D65), un valide et un invalide de diagnostic de lot (accord suffisant).
-  it("charge les 363 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(363);
+  // 363 → 368 : §7, protocole 0.27 (D64), non classée : trois de notation, un de verdict, un de tirage.
+  // 368 → 369 : §7, D64 et D70, un invalide de run (go/no-go sans non_classees_echantillon_humain).
+  it("charge les 369 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(369);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -445,7 +447,9 @@ describe("exemples de schema/exemples/", () => {
     // 38 → 41 : décision D33, trois notations (marqueur sur_refus_api), de contexte run.
     // 41 → 43 : D59 (15), deux notations invalides (juge sur une lecture, motif de lecture sur une
     // réponse), de contexte run ; leur contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(43);
+    // 43 → 47 : D64, trois notations (une valide, deux invalides) et un verdict valide « non classée »,
+    // copies de notation/valide-07 et de verdict/valide-01 ; leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(47);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

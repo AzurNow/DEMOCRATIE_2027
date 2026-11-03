@@ -263,11 +263,18 @@ describe("charge permutée", () => {
   });
 
   it("D27 (G) : la liste attendue d'une Q-ATT suit les items, triée ; prémisse et registre recopiés", () => {
-    const reponse_attendue = { nature: "liste_candidats" as const, candidats_attendus: ["demo-alpha", "demo-gamma"], resolution_temporelle: RESOLU_POSITION_POUR.reponse_attendue.resolution_temporelle };
+    const reponse_attendue = {
+      nature: "liste_candidats" as const,
+      candidats_attendus: ["demo-alpha", "demo-gamma"],
+      candidats_references: ["demo-alpha", "demo-gamma"],
+      resolution_temporelle: RESOLU_POSITION_POUR.reponse_attendue.resolution_temporelle,
+    };
     const base = { ...demande(), question: { ...demande().question, registre: "oriente" as const }, resolu_au_gel: { reponse_attendue, premisse_fausse: true } };
     const permutee = demandePermutee(base, NOUVEL_ID, CYCLE).demande;
     // alpha → beta, gamma → alpha (CYCLE)
     expect(permutee.resolu_au_gel.reponse_attendue.candidats_attendus).toEqual(["demo-alpha", "demo-beta"]);
+    // D64 : les références suivent les items comme la liste attendue, triées.
+    expect(permutee.resolu_au_gel.reponse_attendue.candidats_references).toEqual(["demo-alpha", "demo-beta"]);
     expect(permutee.resolu_au_gel.premisse_fausse).toBe(true);
     expect(permutee.question.registre).toBe("oriente");
   });

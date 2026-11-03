@@ -1110,6 +1110,11 @@
       "minimum": 0,
       "description": "Décision D25 (1) de l'auteur (2026-10-09) : nombre de réponses de l'échantillon humain dont la note humaine retenue (accord des deux humains, sinon arbitre) est « indeterminee ». Elles sont écartées du kappa de l'échantillon de chaque juge (juges[].kappa_echantillon_humain), et leur nombre est publié ici, une fois pour le run, puisque la référence humaine est commune aux juges. Écrit par pnpm go-no-go ; exigé d'un run qui porte un go/no-go."
     },
+    "non_classees_echantillon_humain": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Décisions D64 (protocole 0.27) et D70 de l'auteur : nombre de réponses de l'échantillon humain dont la note humaine retenue, ou la note d'un juge retenu, est « non_classee » (non classée, référence incomplète). Elles sont écartées du kappa de l'échantillon de chaque juge, comme les indéterminées (D25), et leur nombre est publié ici à côté de indeterminees_echantillon_humain. Écrit par pnpm go-no-go ; exigé d'un run qui porte un go/no-go."
+    },
     "contrefactuel_candidats": {
       "type": "object",
       "additionalProperties": false,
@@ -1982,6 +1987,7 @@
         "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui. D32 : les refus de l'API de l'échantillon aussi. §7.30 : l'accord des deux humains de l'échantillon aussi.",
         "required": [
           "indeterminees_echantillon_humain",
+          "non_classees_echantillon_humain",
           "renvois_attribution_indecidable",
           "refus_api_echantillon_humain",
           "accord_humains_echantillon"

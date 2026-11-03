@@ -98,6 +98,8 @@ describe("n° 39 : une seule Q-ATT par mesure", () => {
     expect(attendue).toEqual({
       nature: "liste_candidats",
       candidats_attendus: ["demo-alpha", "demo-gamma"],
+      // D64 : beta, « contre », porte un item vérifié sur la mesure : il est une référence.
+      candidats_references: ["demo-alpha", "demo-beta", "demo-gamma"],
       resolution_temporelle: { date_gel: GEL, regle: "semi_ouvert" },
     });
   });

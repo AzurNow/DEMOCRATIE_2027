@@ -197,6 +197,11 @@ export interface ReponseAttendue {
   readonly position?: Position;
   readonly etat_attendu?: "anterieur" | "posterieur";
   readonly candidats_attendus?: readonly string[];
+  /**
+   * D64 (protocole 0.27) : sur une Q-ATT d'une mesure réelle, les candidats interrogés qui portent au
+   * gel un item vérifié en vigueur sur la mesure. Contient `candidats_attendus`.
+   */
+  readonly candidats_references?: readonly string[];
   readonly resolution_temporelle: ResolutionTemporelle;
 }
 

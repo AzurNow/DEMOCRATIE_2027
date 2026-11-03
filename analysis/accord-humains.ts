@@ -46,7 +46,7 @@
  * n'y a donc pas de notation « supersédée » à écarter.
  */
 
-import { CATEGORIES_PRIMAIRES, kappaCategoriePrimaire, type MotifKappaIndefini } from "./kappa-categorie-primaire.ts";
+import { CATEGORIES_PRIMAIRES, ecarterNonClassees, kappaCategoriePrimaire, type MotifKappaIndefini } from "./kappa-categorie-primaire.ts";
 import { notationsConcordent } from "./note-lue.ts";
 import type { Notation, Ulid } from "./types.ts";
 
@@ -61,6 +61,12 @@ export interface AccordHumainsEchantillon {
   readonly kappa: number | null;
   /** Pourquoi le kappa est absent ; `null` quand il est défini. */
   readonly motif_indefini_kappa: MotifKappaIndefini | null;
+  /**
+   * D64, D70 : réponses doublement notées dont l'une des deux notes est non classée, écartées du
+   * kappa (pas de la part d'accord, qui n'est pas un kappa), comptées à part. Non publiées dans
+   * `run.json` : aucun nombre d'indéterminées n'y accompagne ce kappa.
+   */
+  readonly non_classees_ecartees_kappa: number;
 }
 
 /** Le kappa publié : sa valeur, ou son motif d'absence, jamais les deux. */
@@ -109,13 +115,16 @@ export function accordHumainsEchantillon(echantillon: readonly Ulid[], notations
     .map(([id, siennes]) => paireDe(id, siennes))
     .filter((paire): paire is readonly [Notation, Notation] => paire !== null);
   const accords = paires.filter(([a, b]) => notationsConcordent(a, b)).length;
-  const kappa = kappaCategoriePrimaire(paires.map(([a, b]) => ({ a: a.categorie, b: b.categorie })), CATEGORIES_PRIMAIRES);
+  // D64, D70 : une paire dont une note est non classée sort du kappa, comptée à part.
+  const { gardes, non_classees } = ecarterNonClassees(paires, ([a, b]) => [a.categorie, b.categorie]);
+  const kappa = kappaCategoriePrimaire(gardes.map(([a, b]) => ({ a: a.categorie, b: b.categorie })), CATEGORIES_PRIMAIRES);
   return {
     reponses_doublement_notees: paires.length,
     accords,
     part: paires.length === 0 ? null : accords / paires.length,
     kappa: kappa.kappa,
     motif_indefini_kappa: kappa.motif_indefini,
+    non_classees_ecartees_kappa: non_classees,
   };
 }
 

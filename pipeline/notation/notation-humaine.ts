@@ -56,9 +56,9 @@ import type { Item } from "../../validation/domaine/types.ts";
 import { citationsDeReference, controlerExtrait, type MotifExtraitInvalide, type TextesDeVerification } from "./extrait.ts";
 import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "./charge-juge.ts";
 import { fraicheurDesItems } from "./fraicheur.ts";
-import { attributionRelevee, AttributionIncoherente, noterAttribution, type ContexteAttribution } from "./note-attribution.ts";
+import { attributionRelevee, AttributionIncoherente, noterAttribution, type ContexteAttribution, type NoteAttribution } from "./note-attribution.ts";
 import { NomCiteSansMot } from "./rattachement.ts";
-import type { CandidatDuRun, ExtraitJustificatif, LienNotation, MotifInexactitude, NotationIndividuelle } from "./types.ts";
+import type { CandidatDuRun, ExtraitJustificatif, LienNotation, MotifInexactitude, MotifNonClassement, NotationIndividuelle } from "./types.ts";
 import type { ExistenceEtablie, VueAnnotateur } from "./vue-annotateur.ts";
 
 /**
@@ -217,6 +217,8 @@ interface NoteSaisie {
   readonly categorie: CategorieRetenue;
   readonly drapeaux: readonly Drapeau[];
   readonly motif_inexactitude?: MotifInexactitude;
+  /** D64 : posé par la règle d'ensembles d'une Q-ATT, jamais saisi. */
+  readonly motif_non_classement?: MotifNonClassement;
   readonly attribution?: NonNullable<NotationIndividuelle["attribution"]>;
 }
 
@@ -258,7 +260,7 @@ function noteCalculeeOuDecidee(saisie: SaisieAttribution, contexte: ContexteNota
   const decidee = saisie.note_decidee;
   if (note.statut === "calculee") {
     if (decidee !== undefined) return refus("note_decidee_hors_cas_indecidable", "la règle d'ensembles calcule la note de cette question d'attribution : une note décidée n'y est pas admise (D30 (2)).");
-    return { categorie: note.categorie, drapeaux: note.drapeaux, ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }), attribution: note.attribution };
+    return { ...noteCalculee(note), attribution: note.attribution };
   }
   if (decidee === undefined) return refus("attribution_indecidable", `${note.raison} Décidez la catégorie, le motif et les drapeaux (D30 (2)).`);
   if (!CATEGORIES_DECIDABLES.includes(decidee.categorie)) {
@@ -268,6 +270,16 @@ function noteCalculeeOuDecidee(saisie: SaisieAttribution, contexte: ContexteNota
 }
 
 const CATEGORIES_DECIDABLES: readonly string[] = ["exacte", "inexacte"];
+
+/** Catégorie, drapeaux et motifs d'une note d'attribution calculée, recopiés champ par champ (D64 : motif de non-classement compris). */
+function noteCalculee(note: Extract<NoteAttribution, { readonly statut: "calculee" }>): NoteSaisie {
+  return {
+    categorie: note.categorie,
+    drapeaux: note.drapeaux,
+    ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }),
+    ...(note.motif_non_classement === undefined ? {} : { motif_non_classement: note.motif_non_classement }),
+  };
+}
 
 /** La prémisse n'existe que sur la formulation orientée, où la vue la porte toujours. */
 function contexteAttribution(contexte: ContexteNotationHumaine): ContexteAttribution {
@@ -397,6 +409,7 @@ function assembler(saisie: SaisieHumaine, note: NoteSaisie, contexte: ContexteNo
     categorie: note.categorie,
     drapeaux: [...note.drapeaux],
     ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }),
+    ...(note.motif_non_classement === undefined ? {} : { motif_non_classement: note.motif_non_classement }),
     ...(calcule.fraiche === undefined ? {} : { obsolescence_fraiche: calcule.fraiche }),
     ...(note.attribution === undefined ? {} : { attribution: note.attribution }),
     sourcage: { cite: saisie.cite, liens: calcule.liens },

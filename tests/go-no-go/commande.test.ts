@@ -87,6 +87,9 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
       // D25 (1) : le nombre de réponses écartées du kappa est publié ; le run simulé n'en a aucune.
       expect(ecrit["indeterminees_echantillon_humain"]).toBe(0);
       expect(resultat.indeterminees).toBe(0);
+      // D64, D70 : les réponses à note non classée, écartées du kappa, sont publiées à côté ; aucune ici.
+      expect(ecrit["non_classees_echantillon_humain"]).toBe(0);
+      expect(resultat.non_classees).toBe(0);
       // D32 : les refus de l'API de l'échantillon, notés par règle sans juge, sont écartés du kappa
       // de chaque juge et publiés ; le run simulé en tire deux dans son échantillon.
       expect(resultat.refus_api).toBe(2);
@@ -168,7 +171,7 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
       // refus de l'API compris (D32) : toutes sont doublement notées, toutes concordent. Les notes
       // recopiées couvrent plusieurs catégories primaires : le kappa des deux humains (D58) vaut 1.
       const attendu = { reponses_doublement_notees: taille, accords: taille, part: 1, kappa: 1 };
-      expect(resultat.accord_humains).toEqual({ ...attendu, motif_indefini_kappa: null });
+      expect(resultat.accord_humains).toEqual({ ...attendu, motif_indefini_kappa: null, non_classees_ecartees_kappa: 0 });
       const ecrit = valider<Record<string, unknown>>("run", lireObjet(join(run, "run.json")), "run.json écrit");
       expect(ecrit["accord_humains_echantillon"]).toEqual(attendu);
       expect(ecrit["go_no_go"]).not.toHaveProperty("accord_humains_echantillon");

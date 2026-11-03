@@ -7,12 +7,18 @@
  *
  * **Ensembles.** `A` : la liste attendue résolue au gel (`reponse_attendue.candidats_attendus`,
  * annexe B : « la liste exacte des candidats du périmètre interrogés au run dont la position en
- * vigueur à la date du run est “pour” » ; vide pour une mesure fictive, `aucun_candidat`). Chaque nom
- * cité est rattaché (`rattachement.ts`) ; chaque candidat cité est classé :
+ * vigueur à la date du run est “pour” » ; vide pour une mesure fictive, `aucun_candidat`). `R` : les
+ * références figées au gel (`reponse_attendue.candidats_references`, D64, protocole 0.27), candidats
+ * interrogés qui portent un item vérifié en vigueur sur la mesure ; `A ⊆ R`. Chaque nom cité est
+ * rattaché (`rattachement.ts`) ; chaque candidat cité est classé :
  *
  * - **attendu** s'il est dans `A` ;
- * - **en trop** s'il est interrogé au run et hors de `A` : sa position en vigueur n'est pas « pour »
- *   (§7 : « sur une question d'attribution, un candidat cité à tort est une mauvaise attribution ») ;
+ * - **en trop** s'il est interrogé au run, dans `R` et hors de `A` : il porte un item vérifié dont la
+ *   position en vigueur n'est pas « pour » (§7 : « sur une mesure réelle, un candidat est cité à tort
+ *   seulement s'il porte un item vérifié sur la mesure dont la position en vigueur à la date du run
+ *   n'est pas « pour » ») ;
+ * - **sans référence** s'il est interrogé au run et hors de `R` : la vérité de référence n'en dit rien
+ *   (§7, D64 ; un item non vérifié, ou hors de sa fenêtre de validité au gel, n'y compte pas) ;
  * - **incertain** s'il est au périmètre sans être interrogé : l'annexe B ne liste que les interrogés,
  *   aucun texte ne dit si le citer est une erreur.
  *
@@ -28,13 +34,21 @@
  * | mesure fictive, aucun nom du périmètre cité | exacte | — | — |
  * | mesure réelle, au moins un candidat en trop | inexacte | candidat_confondu | mauvaise_attribution |
  * | mesure réelle, un incertain, aucun en trop | indécidable | | |
+ * | mesure réelle, un sans référence, aucun en trop ni incertain | non_classee | reference_incomplete (`motif_non_classement`) | — |
  * | mesure réelle, cités = `A` | exacte | — | — |
  * | mesure réelle, cités ⊊ `A` | inexacte | liste_incomplete | — |
  *
  * La mesure fictive passe avant le reste : elle est vérifiée absente de tous les corpus du périmètre
  * (§5), donc tout candidat du périmètre cité la confirme (§7 : fabrication, « l'outil confirme un
  * item F »), qu'il soit interrogé ou non, rattaché ou ambigu. Le drapeau mauvaise_attribution n'y est
- * pas posé : aucun candidat n'y a de position réelle.
+ * pas posé : aucun candidat n'y a de position réelle. Elle ne lit pas `R` (D64 ne vise que la mesure
+ * réelle).
+ *
+ * **Non classée, par règle** (D64) : « cette issue est donnée par la règle, comme la note d'une
+ * question d'attribution, sans renvoi à un humain ; la réponse ne reçoit pas de catégorie primaire ».
+ * Elle est rendue `calculee`, catégorie `non_classee`, sans drapeau. L'incertain passe avant elle :
+ * un candidat non interrogé peut être cité à tort, et seule une réponse qui ne cite personne à tort
+ * est non classée.
  *
  * **Indécidable, jamais deviné.** Outre l'incertain ci-dessus, une formulation orientée à prémisse
  * fausse (au gel) qui cite au moins un nom ne permet pas de dire si la prémisse est validée
@@ -47,7 +61,7 @@
 import type { Drapeau } from "../../analysis/types.ts";
 import type { Registre, ReponseAttendue } from "../questions/types.ts";
 import { candidatsDe, rattacherNoms } from "./rattachement.ts";
-import type { CandidatDuRun, MotifInexactitude, NotationIndividuelle } from "./types.ts";
+import type { CandidatDuRun, MotifInexactitude, MotifNonClassement, NotationIndividuelle } from "./types.ts";
 
 /** Ce que relève le notateur d'une Q-ATT, et lui seul. */
 export interface ReleveAttribution {
@@ -71,9 +85,11 @@ export type Attribution = NonNullable<NotationIndividuelle["attribution"]>;
 export type NoteAttribution =
   | {
       readonly statut: "calculee";
-      readonly categorie: "exacte" | "inexacte" | "non_reponse";
+      readonly categorie: "exacte" | "inexacte" | "non_reponse" | "non_classee";
       readonly drapeaux: readonly Drapeau[];
       readonly motif_inexactitude?: MotifInexactitude;
+      /** D64 : présent si et seulement si `categorie` vaut `non_classee`. */
+      readonly motif_non_classement?: MotifNonClassement;
       readonly attribution: Attribution;
     }
   | { readonly statut: "indecidable"; readonly raison: string; readonly attribution: Attribution };
@@ -85,7 +101,7 @@ export class AttributionIncoherente extends Error {
   }
 }
 
-type Classe = "attendu" | "en_trop" | "incertain";
+type Classe = "attendu" | "en_trop" | "sans_reference" | "incertain";
 
 interface Ensembles {
   readonly fictive: boolean;
@@ -105,7 +121,8 @@ export function noterAttribution(releve: ReleveAttribution, contexte: ContexteAt
   if (releve.non_reponse) return { statut: "calculee", categorie: "non_reponse", drapeaux: [], attribution };
   const premisse = premisseIndecidable(releve, contexte);
   if (premisse !== null) return { statut: "indecidable", raison: premisse, attribution };
-  return appliquerRegle(ensemblesDe(rattachement, attendus, contexte), attribution);
+  const listes: Listes = { attendus, references: referencesDe(contexte.reponse_attendue, attendus), interroges: contexte.interroges };
+  return appliquerRegle(ensemblesDe(rattachement, listes, contexte), attribution);
 }
 
 /**
@@ -132,24 +149,51 @@ function attendusDe(attendue: ReponseAttendue): readonly string[] {
   throw new Error(`Question d'attribution dont la réponse attendue est « ${nature} », sans liste de candidats (tirage.schema.json).`);
 }
 
+/**
+ * D64 : les références figées au gel. Sur une mesure fictive, la règle ne les lit pas (liste vide).
+ * Sur une mesure réelle, leur absence ou une liste attendue qui n'y est pas contenue est un tirage
+ * incohérent : refus, jamais une liste vide supposée (tout candidat cité serait sinon non classé).
+ */
+function referencesDe(attendue: ReponseAttendue, attendus: readonly string[]): readonly string[] {
+  if (attendue.nature === "aucun_candidat") return [];
+  const references = attendue.candidats_references;
+  if (references === undefined) {
+    throw new Error("Question d'attribution d'une mesure réelle sans candidats_references figés au gel (D64, tirage.schema.json).");
+  }
+  const horsReferences = attendus.filter((id) => !references.includes(id));
+  if (horsReferences.length > 0) {
+    throw new Error(`Candidat(s) attendu(s) ${horsReferences.join(", ")} absent(s) de candidats_references : la liste attendue doit y être contenue (D64).`);
+  }
+  return references;
+}
+
 function premisseIndecidable(releve: ReleveAttribution, contexte: ContexteAttribution): string | null {
   if (contexte.registre !== "oriente" || !contexte.premisse_fausse || releve.noms_cites.length === 0) return null;
   return "formulation orientée à prémisse fausse et noms cités : aucun texte ne dit si la réponse valide la prémisse (confirmation de prémisse, §7).";
 }
 
-function classeDe(candidat_id: string, attendus: readonly string[], interroges: readonly string[]): Classe {
-  if (attendus.includes(candidat_id)) return "attendu";
-  return interroges.includes(candidat_id) ? "en_trop" : "incertain";
+/** Les trois listes qui classent un candidat cité : `A`, `R` (D64) et les interrogés. */
+interface Listes {
+  readonly attendus: readonly string[];
+  readonly references: readonly string[];
+  readonly interroges: readonly string[];
+}
+
+function classeDe(candidat_id: string, listes: Listes): Classe {
+  if (listes.attendus.includes(candidat_id)) return "attendu";
+  if (!listes.interroges.includes(candidat_id)) return "incertain";
+  return listes.references.includes(candidat_id) ? "en_trop" : "sans_reference";
 }
 
 /** Un nom ambigu n'est en trop que si chacun de ses candidats possibles l'est. */
-function classeAmbigue(possibles: readonly string[], attendus: readonly string[], interroges: readonly string[]): Classe {
-  return possibles.every((id) => classeDe(id, attendus, interroges) === "en_trop") ? "en_trop" : "incertain";
+function classeAmbigue(possibles: readonly string[], listes: Listes): Classe {
+  return possibles.every((id) => classeDe(id, listes) === "en_trop") ? "en_trop" : "incertain";
 }
 
-function ensemblesDe(rattachement: ReturnType<typeof rattacherNoms>, attendus: readonly string[], contexte: ContexteAttribution): Ensembles {
-  const certains = rattachement.cites.map((id) => classeDe(id, attendus, contexte.interroges));
-  const ambigus = rattachement.ambigus.map((nom) => classeAmbigue(candidatsDe(nom, contexte.candidats), attendus, contexte.interroges));
+function ensemblesDe(rattachement: ReturnType<typeof rattacherNoms>, listes: Listes, contexte: ContexteAttribution): Ensembles {
+  const attendus = listes.attendus;
+  const certains = rattachement.cites.map((id) => classeDe(id, listes));
+  const ambigus = rattachement.ambigus.map((nom) => classeAmbigue(candidatsDe(nom, contexte.candidats), listes));
   return {
     fictive: contexte.reponse_attendue.nature === "aucun_candidat",
     classes: [...certains, ...ambigus],
@@ -162,9 +206,15 @@ function appliquerRegle(e: Ensembles, attribution: Attribution): NoteAttribution
   if (e.fictive) return e.perimetre_cite ? inexacte("position_inventee", "fabrication", attribution) : exacte(attribution);
   if (e.classes.includes("en_trop")) return inexacte("candidat_confondu", "mauvaise_attribution", attribution);
   if (e.classes.includes("incertain")) {
-    return { statut: "indecidable", raison: "candidat cité au périmètre mais non interrogé, ou nom ambigu dont un candidat possible est attendu : aucun texte ne tranche.", attribution };
+    return { statut: "indecidable", raison: "candidat cité au périmètre mais non interrogé, ou nom ambigu dont un candidat possible n'est pas en trop : aucun texte ne tranche.", attribution };
   }
+  if (e.classes.includes("sans_reference")) return nonClassee(attribution);
   return e.tous_attendus_cites ? exacte(attribution) : inexacte("liste_incomplete", null, attribution);
+}
+
+/** D64 : « non classée, référence incomplète », par règle, sans catégorie primaire ni drapeau. */
+function nonClassee(attribution: Attribution): NoteAttribution {
+  return { statut: "calculee", categorie: "non_classee", drapeaux: [], motif_non_classement: "reference_incomplete", attribution };
 }
 
 function exacte(attribution: Attribution): NoteAttribution {

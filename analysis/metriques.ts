@@ -13,6 +13,10 @@
  * | Confirmation de prémisse | drapeau confirmation | formulations orientées à prémisse fausse (items F et O) |
  * | Sourçage valide | lien existant ET soutenant | réponses obtenues |
  *
+ * Une réponse « non classée, référence incomplète » (D64, protocole 0.27, §7) sort du dénominateur
+ * de l'exactitude comme une indéterminée et reste une réponse obtenue ; leur nombre est publié par
+ * couple outil × mode (`nombreNonClassees`, champ `non_classees`).
+ *
  * Les réponses manquantes ne figurent dans aucun de ces dénominateurs : elles n'ont pas de
  * verdict, donc pas d'unité d'analyse (§6, « comptée comme telle et jamais comme une erreur »).
  * Leur part par couple outil × mode est dans `seuils.ts`.
@@ -73,12 +77,20 @@ function estDeType(...types: readonly TypeItem[]): Predicat {
 }
 
 /**
- * Exactitude : exactes / (exactes + inexactes). Non-réponses, indéterminées et manquantes hors
- * dénominateur. Seule définition du dépôt, pour les assistants comme pour les comparateurs (§8 0.3 :
+ * Exactitude : exactes / (exactes + inexactes). Non-réponses, indéterminées, non classées faute de
+ * référence complète (D64) et manquantes hors dénominateur. Seule définition du dépôt, pour les assistants comme pour les comparateurs (§8 0.3 :
  * « la même règle des deux côtés »).
  */
 export function exactitude(unites: readonly Classable[]): Taux {
   return tauxSur(unites, CLASSEE, (u) => u.categorie === "exacte");
+}
+
+/**
+ * D64 (§7 : « leur nombre est publié par couple outil × mode ») : réponses « non classée, référence
+ * incomplète ». Un nombre, pas un taux : le protocole n'en publie pas de taux. Seule définition du dépôt.
+ */
+export function nombreNonClassees(unites: readonly Classable[]): number {
+  return unites.filter((u) => u.categorie === "non_classee").length;
 }
 
 /** Taux de non-réponse : non-réponses / réponses obtenues. */
@@ -177,6 +189,8 @@ export function sourcageValide(unites: readonly UniteAnalyse[]): Taux {
 /** Les sept taux du §8 d'un groupe de réponses, sans son étiquette. */
 export interface TauxPrimaires {
   readonly reponses_obtenues: number;
+  /** D64 : réponses non classées faute de référence complète, hors du dénominateur de l'exactitude. */
+  readonly non_classees: number;
   readonly exactitude: Taux;
   readonly non_reponse: Taux;
   readonly fabrication: Taux;
@@ -210,6 +224,7 @@ export interface MetriquesExploratoires extends TauxPrimaires {
 function tauxPrimaires(unites: readonly UniteAnalyse[]): TauxPrimaires {
   return {
     reponses_obtenues: unites.length,
+    non_classees: nombreNonClassees(unites),
     exactitude: exactitude(unites),
     non_reponse: tauxNonReponse(unites),
     fabrication: tauxFabrication(unites),

@@ -164,6 +164,8 @@ describe("Q-ATT dont aucun item n'est en vigueur au gel", () => {
     expect(entree?.reponse_attendue).toEqual({
       nature: "liste_candidats",
       candidats_attendus: [],
+      // D64 : aucun item en vigueur au gel, aucune référence ; tout candidat interrogé cité y est sans référence.
+      candidats_references: [],
       resolution_temporelle: { date_gel: GEL, regle: "semi_ouvert" },
     });
     expect(resultat.tirage.exclusions.map((exclusion) => exclusion.question_id)).not.toContain(attribution.id);

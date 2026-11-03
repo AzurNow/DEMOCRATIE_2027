@@ -20,17 +20,17 @@ const DESACCORD = { juges: {}, humains: ["exacte", "inexacte"], arbitre: "exacte
 describe("§7.30 : accord des deux humains de l'échantillon", () => {
   it("tout concorde : part 1", () => {
     const { echantillon, notations } = echantillonSynthetique(fois(3, ACCORD));
-    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal" });
+    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal", non_classees_ecartees_kappa: 0 });
   });
 
   it("rien ne concorde : part 0, définie puisque des réponses sont doublement notées", () => {
     const { echantillon, notations } = echantillonSynthetique(fois(2, DESACCORD));
-    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 2, accords: 0, part: 0, kappa: 0, motif_indefini_kappa: null });
+    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 2, accords: 0, part: 0, kappa: 0, motif_indefini_kappa: null, non_classees_ecartees_kappa: 0 });
   });
 
   it("mixte : 1 accord sur 4", () => {
     const { echantillon, notations } = echantillonSynthetique([ACCORD, ...fois(3, DESACCORD)]);
-    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 4, accords: 1, part: 0.25, kappa: 0, motif_indefini_kappa: null });
+    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 4, accords: 1, part: 0.25, kappa: 0, motif_indefini_kappa: null, non_classees_ecartees_kappa: 0 });
   });
 
   it("la règle est celle du §7 (tout ce que lisent les métriques primaires) : même catégorie, drapeaux différents ⇒ pas d'accord", () => {
@@ -40,37 +40,37 @@ describe("§7.30 : accord des deux humains de l'échantillon", () => {
       notationHumaine("annotateur-1", "echantillon_aleatoire_10", { ...objet, ...inexacte(["fabrication"]) }),
       notationHumaine("annotateur-2", "echantillon_aleatoire_10", { ...objet, ...inexacte(["mauvaise_attribution"]) }),
     ];
-    expect(accordHumainsEchantillon([id], notations)).toEqual({ reponses_doublement_notees: 1, accords: 0, part: 0, kappa: null, motif_indefini_kappa: "accord_attendu_maximal" });
+    expect(accordHumainsEchantillon([id], notations)).toEqual({ reponses_doublement_notees: 1, accords: 0, part: 0, kappa: null, motif_indefini_kappa: "accord_attendu_maximal", non_classees_ecartees_kappa: 0 });
   });
 
   it("réponse notée par un seul humain : exclue du numérateur et du dénominateur (ni accord ni désaccord)", () => {
     const { echantillon, notations } = echantillonSynthetique(fois(3, ACCORD));
     const seul = echantillon[0] as string;
     const amputees = notations.filter((n) => !(n.objet_note.id === seul && n.notateur.id === "annotateur-2"));
-    expect(accordHumainsEchantillon(echantillon, amputees)).toEqual({ reponses_doublement_notees: 2, accords: 2, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal" });
+    expect(accordHumainsEchantillon(echantillon, amputees)).toEqual({ reponses_doublement_notees: 2, accords: 2, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal", non_classees_ecartees_kappa: 0 });
   });
 
   it("échantillon vide : aucune réponse doublement notée, part absente (null), jamais 0 ni 1", () => {
-    expect(accordHumainsEchantillon([], [])).toEqual({ reponses_doublement_notees: 0, accords: 0, part: null, kappa: null, motif_indefini_kappa: "aucune_reponse_comparable" });
+    expect(accordHumainsEchantillon([], [])).toEqual({ reponses_doublement_notees: 0, accords: 0, part: null, kappa: null, motif_indefini_kappa: "aucune_reponse_comparable", non_classees_ecartees_kappa: 0 });
   });
 
   it("échantillon sans aucune double notation : part absente (null)", () => {
     const { echantillon, notations } = echantillonSynthetique(fois(2, ACCORD));
     const premiers = notations.filter((n) => n.notateur.id !== "annotateur-2");
-    expect(accordHumainsEchantillon(echantillon, premiers)).toEqual({ reponses_doublement_notees: 0, accords: 0, part: null, kappa: null, motif_indefini_kappa: "aucune_reponse_comparable" });
+    expect(accordHumainsEchantillon(echantillon, premiers)).toEqual({ reponses_doublement_notees: 0, accords: 0, part: null, kappa: null, motif_indefini_kappa: "aucune_reponse_comparable", non_classees_ecartees_kappa: 0 });
   });
 
   it("arbitrage d'un troisième humain : l'accord porte sur les deux premiers, l'arbitre n'en fait pas un accord", () => {
     // L'arbitre rejoint le premier humain : la note retenue existe, mais les deux humains ne s'accordaient pas.
     const { echantillon, notations } = echantillonSynthetique([DESACCORD]);
     expect(notations.some((n) => n.motif_notation === "arbitrage_echantillon_10")).toBe(true);
-    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 1, accords: 0, part: 0, kappa: 0, motif_indefini_kappa: null });
+    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 1, accords: 0, part: 0, kappa: 0, motif_indefini_kappa: null, non_classees_ecartees_kappa: 0 });
   });
 
   it("un arbitrage ne tient pas lieu de seconde notation : un humain d'échantillon et un arbitre ⇒ réponse exclue", () => {
     const { echantillon, notations } = echantillonSynthetique([DESACCORD]);
     const sansSecond = notations.filter((n) => n.notateur.id !== "annotateur-2");
-    expect(accordHumainsEchantillon(echantillon, sansSecond)).toEqual({ reponses_doublement_notees: 0, accords: 0, part: null, kappa: null, motif_indefini_kappa: "aucune_reponse_comparable" });
+    expect(accordHumainsEchantillon(echantillon, sansSecond)).toEqual({ reponses_doublement_notees: 0, accords: 0, part: null, kappa: null, motif_indefini_kappa: "aucune_reponse_comparable", non_classees_ecartees_kappa: 0 });
   });
 
   it("les notations hors de l'échantillon, d'un juge, ou d'un autre contexte n'entrent pas", () => {
@@ -80,7 +80,7 @@ describe("§7.30 : accord des deux humains de l'échantillon", () => {
       notationHumaine("annotateur-1", "echantillon_aleatoire_10", { objet_note: { type: "reponse", id: dehors } }),
       notationHumaine("annotateur-2", "echantillon_aleatoire_10", { objet_note: { type: "reponse", id: dehors }, ...inexacte() }),
     ];
-    expect(accordHumainsEchantillon(echantillon, [...notations, ...etrangeres])).toEqual({ reponses_doublement_notees: 1, accords: 1, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal" });
+    expect(accordHumainsEchantillon(echantillon, [...notations, ...etrangeres])).toEqual({ reponses_doublement_notees: 1, accords: 1, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal", non_classees_ecartees_kappa: 0 });
   });
 
   it("deux notations d'échantillon du même annotateur : DoubleNotationHumaineIncoherente, aucun compte rendu", () => {
@@ -138,7 +138,7 @@ describe("§7 « Annotateurs humains » (protocole 0.23, D58) : kappa des deux h
 
   it("D59 (21) : deux « indeterminee » partout — elles s'accordent, une seule catégorie : accord attendu maximal, jamais 1", () => {
     const { echantillon, notations } = echantillonSynthetique(fois(3, { juges: {}, humains: ["indeterminee", "indeterminee"] }));
-    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal" });
+    expect(accordHumainsEchantillon(echantillon, notations)).toEqual({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal", non_classees_ecartees_kappa: 0 });
   });
 
   it("une seule catégorie partout : accord attendu maximal, kappa absent avec son motif, jamais 1", () => {
@@ -163,7 +163,7 @@ describe("§7 « Annotateurs humains » (protocole 0.23, D58) : kappa des deux h
 
 describe("§7.30 : forme publiée dans run.json", () => {
   it("une part et un kappa définis sont publiés avec leurs effectifs", () => {
-    expect(accordPublie({ reponses_doublement_notees: 4, accords: 1, part: 0.25, kappa: 0.1, motif_indefini_kappa: null })).toEqual({
+    expect(accordPublie({ reponses_doublement_notees: 4, accords: 1, part: 0.25, kappa: 0.1, motif_indefini_kappa: null, non_classees_ecartees_kappa: 0 })).toEqual({
       reponses_doublement_notees: 4,
       accords: 1,
       part: 0.25,
@@ -172,19 +172,33 @@ describe("§7.30 : forme publiée dans run.json", () => {
   });
 
   it("une part indéfinie est absente de la forme publiée, ni 0, ni 1, ni null ; le kappa absent porte son motif", () => {
-    const publie = accordPublie({ reponses_doublement_notees: 0, accords: 0, part: null, kappa: null, motif_indefini_kappa: "aucune_reponse_comparable" });
+    const publie = accordPublie({ reponses_doublement_notees: 0, accords: 0, part: null, kappa: null, motif_indefini_kappa: "aucune_reponse_comparable", non_classees_ecartees_kappa: 0 });
     expect(publie).toEqual({ reponses_doublement_notees: 0, accords: 0, motif_indefini_kappa: "aucune_reponse_comparable" });
     expect("part" in publie).toBe(false);
     expect("kappa" in publie).toBe(false);
   });
 
   it("un kappa indéfini sur des réponses doublement notées : absent, avec accord_attendu_maximal", () => {
-    const publie = accordPublie({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal" });
+    const publie = accordPublie({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: "accord_attendu_maximal", non_classees_ecartees_kappa: 0 });
     expect(publie).toEqual({ reponses_doublement_notees: 3, accords: 3, part: 1, motif_indefini_kappa: "accord_attendu_maximal" });
   });
 
   it("un kappa à la fois défini et motivé, ou ni l'un ni l'autre : incohérent, rien n'est publié", () => {
-    expect(() => accordPublie({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: 1, motif_indefini_kappa: "accord_attendu_maximal" })).toThrow();
-    expect(() => accordPublie({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: null })).toThrow();
+    expect(() => accordPublie({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: 1, motif_indefini_kappa: "accord_attendu_maximal", non_classees_ecartees_kappa: 0 })).toThrow();
+    expect(() => accordPublie({ reponses_doublement_notees: 3, accords: 3, part: 1, kappa: null, motif_indefini_kappa: null, non_classees_ecartees_kappa: 0 })).toThrow();
+  });
+});
+
+describe("D64, D70 : kappa des deux humains et réponse non classée", () => {
+  it("une paire non classée laisse le kappa inchangé par rapport au même échantillon sans elle, et elle est comptée 1", () => {
+    const base = [ACCORD, ...fois(3, DESACCORD)];
+    const sans = echantillonSynthetique(base);
+    const avec = echantillonSynthetique([...base, { juges: {}, humains: ["non_classee", "non_classee"] }]);
+    const accordSans = accordHumainsEchantillon(sans.echantillon, sans.notations);
+    const accordAvec = accordHumainsEchantillon(avec.echantillon, avec.notations);
+    expect(accordAvec.kappa).toBe(accordSans.kappa);
+    expect(accordAvec.motif_indefini_kappa).toBe(accordSans.motif_indefini_kappa);
+    expect(accordAvec.non_classees_ecartees_kappa).toBe(1);
+    expect(accordSans.non_classees_ecartees_kappa).toBe(0);
   });
 });

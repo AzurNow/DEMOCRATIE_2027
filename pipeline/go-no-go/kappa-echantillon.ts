@@ -40,6 +40,8 @@
 import {
   CATEGORIES_DE_JUGE,
   categorieHumaineRetenue,
+  categoriePourKappa,
+  ecarterNonClassees,
   kappaCategoriePrimaire,
   type CategorieDeJuge,
   type MotifKappaIndefini,
@@ -115,6 +117,12 @@ export interface ResultatEchantillon {
    */
   readonly indeterminees: number;
   /**
+   * D64, D70 : réponses de l'échantillon dont la note humaine retenue ou la note d'un juge retenu est
+   * « non classée, référence incomplète », écartées du kappa de chaque juge, publiées dans
+   * `run.json#/non_classees_echantillon_humain`. Comptées avant les indéterminées.
+   */
+  readonly non_classees: number;
+  /**
    * D32 : réponses de l'échantillon refusées par l'API, notées par règle et par aucun juge, écartées
    * du kappa de chaque juge, publiées dans `run.json#/refus_api_echantillon_humain`.
    */
@@ -127,8 +135,9 @@ interface Reference {
   readonly categorie: CategorieKappaEchantillon;
 }
 
-function estComparable(reference: { readonly categorie: CategorieRetenue }): reference is { readonly categorie: CategorieKappaEchantillon } {
-  return reference.categorie !== "indeterminee";
+/** D25 (1) : la note humaine retenue indéterminée est écartée ; une non classée l'a déjà été (D70). */
+function estComparable(reference: { readonly id: Ulid; readonly categorie: CategorieRetenue }): reference is { readonly id: Ulid; readonly categorie: CategorieKappaEchantillon } {
+  return categoriePourKappa(reference.categorie, `Réponse ${reference.id} de l'échantillon`) !== "indeterminee";
 }
 
 export function kappasEchantillon(entree: EntreeKappaEchantillon): ResultatEchantillon {
@@ -137,11 +146,18 @@ export function kappasEchantillon(entree: EntreeKappaEchantillon): ResultatEchan
   for (const [id, notations] of refus) exigerSansJuge(id, notations, entree.renvois);
   const notees = parReponse.filter(([, notations]) => !notations.some(estNotationParRegle));
   const toutes = notees.map(([id, notations]) => ({ id, notations, categorie: referenceHumaine(id, notations) }));
-  const references = toutes.filter((r): r is Reference => estComparable(r));
-  const kappas = entree.juges
-    .filter((juge) => !juge.retire)
-    .map((juge) => kappaAvecRenvois(juge.juge_id, references, renvoyesPar(juge.juge_id, entree.renvois)));
-  return { kappas, indeterminees: toutes.length - references.length, refus_api: refus.length };
+  const retenus = entree.juges.filter((juge) => !juge.retire);
+  // D64, D70 : une réponse dont la référence humaine ou un juge retenu est non classée sort de tout kappa, comptée à part.
+  const { gardes, non_classees } = ecarterNonClassees(toutes, (r) => [r.categorie, ...categoriesDesJuges(r.notations, retenus)]);
+  const references = gardes.filter((r): r is Reference => estComparable(r));
+  const kappas = retenus.map((juge) => kappaAvecRenvois(juge.juge_id, references, renvoyesPar(juge.juge_id, entree.renvois)));
+  return { kappas, indeterminees: gardes.length - references.length, non_classees, refus_api: refus.length };
+}
+
+/** Les catégories rendues par les juges retenus sur une réponse. */
+function categoriesDesJuges(notations: readonly NotationIndividuelle[], retenus: readonly JugeDuRun[]): readonly CategorieRetenue[] {
+  const ids = new Set(retenus.map((juge) => juge.juge_id));
+  return notations.filter((n) => n.notateur.type === "juge" && ids.has(n.notateur.id)).map((n) => n.categorie);
 }
 
 /** D32 : un refus noté par règle n'a ni notation ni renvoi de juge, même d'un juge retiré. */
@@ -213,8 +229,9 @@ function categorieDuJuge(juge_id: string, reponse_id: Ulid, notations: readonly 
   const siennes = notations.filter((n) => n.notateur.type === "juge" && n.notateur.id === juge_id);
   const [notation] = siennes;
   if (notation === undefined || siennes.length !== 1) throw new NotationDeJugeIntrouvable(juge_id, reponse_id, siennes.length);
-  if (notation.categorie === "indeterminee") throw new JugeIndetermine(notation);
-  return notation.categorie;
+  const categorie = categoriePourKappa(notation.categorie, `Réponse ${reponse_id} de l'échantillon, juge ${juge_id}`);
+  if (categorie === "indeterminee") throw new JugeIndetermine(notation);
+  return categorie;
 }
 
 function kappaDuJuge(juge_id: string, paires: readonly PaireCategories<CategorieKappaEchantillon>[]): Omit<KappaDeJuge, "renvois_ecartes"> {

@@ -290,3 +290,38 @@ describe("renvois d'attribution dans l'échantillon (D31 (2))", () => {
     expect(() => kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations, renvois: [renvoi("j1", echantillon[0] as string)] })).toThrow(NotationDeJugeIntrouvable);
   });
 });
+
+/**
+ * D64 (protocole 0.27) et D70 : une réponse dont la note humaine retenue ou la note d'un juge retenu
+ * est « non classée, référence incomplète » est écartée du kappa de chaque juge et comptée à part,
+ * comme une indéterminée sous D25.
+ */
+describe("D64, D70 : une réponse non classée est écartée du kappa de l'échantillon, comptée à part", () => {
+  const BASE = matrice("j1", 3, 1, 1, 3);
+  const UN_JUGE = [{ juge_id: "j1", retire: false }];
+
+  function resultatDe(lignes: readonly LigneEchantillon[], jugeNonClasse = false) {
+    const { echantillon, notations } = echantillonSynthetique(lignes);
+    const dernier = echantillon[echantillon.length - 1];
+    const notees = jugeNonClasse
+      ? notations.map((n) => (n.notateur.type === "juge" && n.objet_note.id === dernier ? { ...n, categorie: "non_classee" as const, motif_non_classement: "reference_incomplete" as const } : n))
+      : notations;
+    return kappasEchantillon({ juges: UN_JUGE, echantillon, notations: notees, renvois: [] });
+  }
+
+  it("note humaine retenue non classée : kappa inchangé par rapport à l'échantillon sans elle, compte 1", () => {
+    const sans = resultatDe(BASE);
+    const avec = resultatDe([...BASE, { juges: { j1: "exacte" }, humains: ["non_classee", "non_classee"] }]);
+    expect(avec.kappas).toEqual(sans.kappas);
+    expect(avec.non_classees).toBe(1);
+    expect(sans.non_classees).toBe(0);
+    expect(avec.indeterminees).toBe(0);
+  });
+
+  it("note du juge non classée : kappa inchangé par rapport à l'échantillon sans elle, compte 1", () => {
+    const sans = resultatDe(BASE);
+    const avec = resultatDe([...BASE, { juges: { j1: "exacte" }, humains: ["exacte", "exacte"] }], true);
+    expect(avec.kappas).toEqual(sans.kappas);
+    expect(avec.non_classees).toBe(1);
+  });
+});

@@ -98,7 +98,13 @@ describe("(C) fraîcheur de l'obsolescence : calculée depuis les dates, jamais 
 });
 
 describe("(D) et D29 (1) : question d'attribution, le juge relève les noms, le code calcule la note", () => {
-  const LISTE: ReponseAttendue = { nature: "liste_candidats", candidats_attendus: ["demo-alpha", "demo-beta"], resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" } };
+  /** D64 : gamma et delta portent un item vérifié qui n'est pas « pour » (références figées au gel). */
+  const LISTE: ReponseAttendue = {
+    nature: "liste_candidats",
+    candidats_attendus: ["demo-alpha", "demo-beta"],
+    candidats_references: ["demo-alpha", "demo-beta", "demo-delta", "demo-gamma"],
+    resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" },
+  };
   const FICTIVE: ReponseAttendue = { nature: "aucun_candidat", candidats_attendus: [], resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" } };
   const HOMONYMES = [...CANDIDATS_DU_RUN, { candidat_id: "demo-delta", libelle: "Hélène Ollivier", nom: "Ollivier" }];
   const INTERROGES = HOMONYMES.map((c) => c.candidat_id);
@@ -124,6 +130,21 @@ describe("(D) et D29 (1) : question d'attribution, le juge relève les noms, le 
 
   it("un candidat interrogé en trop : candidat_confondu, mauvaise_attribution", () => {
     expect(qatt(releve(["Martinez", "Le Brun", "Camille Ollivier"]))).toMatchObject({ categorie: "inexacte", motif_inexactitude: "candidat_confondu", drapeaux: ["mauvaise_attribution"] });
+  });
+
+  it("D64 : un candidat interrogé cité sans item vérifié sur la mesure : notation non classée, référence incomplète, conforme au schéma", () => {
+    const sansGamma: ReponseAttendue = { ...LISTE, candidats_references: ["demo-alpha", "demo-beta", "demo-delta"] };
+    const n = qatt(releve(["Martinez", "Le Brun", "Camille Ollivier"]), sansGamma);
+    expect(n).toMatchObject({ categorie: "non_classee", motif_non_classement: "reference_incomplete", drapeaux: [], attribution: { cites: ["demo-alpha", "demo-beta", "demo-gamma"] } });
+    expect("motif_inexactitude" in n).toBe(false);
+  });
+
+  it("D64 : la même sortie, sans candidat sans référence, reste une notation exacte sans motif de non-classement", () => {
+    expect("motif_non_classement" in qatt(releve(["Martinez", "Le Brun"]))).toBe(false);
+  });
+
+  it("D64 : un juge qui rend lui-même « non_classee » hors Q-ATT voit sa sortie refusée (issue réservée à la règle)", () => {
+    expect(() => noter({ ...EXACTE, categorie: "non_classee" })).toThrow(SortieJugeIncoherente);
   });
 
   it("nom ambigu dont les deux candidats sont en trop : conservé dans ambigus_cites, candidat_confondu", () => {

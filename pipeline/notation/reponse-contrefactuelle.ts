@@ -178,13 +178,25 @@ function etatPermute(etat: EtatPositionnel, permuter: (texte: string) => string)
  * D27 (G) : la liste attendue d'une Q-ATT désigne des candidats interrogés (annexe B) ; elle suit
  * leurs items, dont le `candidat_id` devient celui de leur image. Triée comme le tirage la trie. La
  * prémisse, la nature et les dates ne nomment personne : recopiées. Un candidat non interrogé n'a
- * rien à y faire (annexe B) : lève plutôt que de le recopier (D55 (4)).
+ * rien à y faire (annexe B) : lève plutôt que de le recopier (D55 (4)). D64 : les références figées au
+ * gel (`candidats_references`), candidats interrogés elles aussi, suivent leurs items de la même façon.
  */
 function resoluPermute(resolu: ResoluAuGel, derangement: Derangement): ResoluAuGel {
   const candidats = resolu.reponse_attendue.candidats_attendus;
   if (candidats === undefined) return resolu;
-  const images = candidats.map((candidat_id) => imageDeAttendu(candidat_id, derangement)).sort(comparerChaines);
-  return { ...resolu, reponse_attendue: { ...resolu.reponse_attendue, candidats_attendus: images } };
+  const references = resolu.reponse_attendue.candidats_references;
+  return {
+    ...resolu,
+    reponse_attendue: {
+      ...resolu.reponse_attendue,
+      candidats_attendus: imagesTriees(candidats, derangement),
+      ...(references === undefined ? {} : { candidats_references: imagesTriees(references, derangement) }),
+    },
+  };
+}
+
+function imagesTriees(candidats: readonly string[], derangement: Derangement): readonly string[] {
+  return candidats.map((candidat_id) => imageDeAttendu(candidat_id, derangement)).sort(comparerChaines);
 }
 
 /**

@@ -286,6 +286,12 @@
           "uniqueItems": true,
           "description": "Q-ATT : la liste exacte des candidats dont la position en vigueur au gel sur la mesure est « pour » (annexe B, protocole 0.6). Vide pour un item fictif, et pour une mesure dont aucun candidat n'est « pour » au gel."
         },
+        "candidats_references": {
+          "type": "array",
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "uniqueItems": true,
+          "description": "Décision D64 (protocole 0.27, §7, annexe B) : sur une Q-ATT d'une mesure réelle (nature liste_candidats), les candidats interrogés au run qui portent au gel un item vérifié (gardé au gel) en vigueur sur la mesure, quelle que soit sa position ; contient candidats_attendus. Un candidat interrogé cité hors de cette liste n'est pas « en trop » : la réponse est « non classée, référence incomplète » (pipeline/notation/note-attribution.ts). Absente sur une mesure fictive (aucun_candidat)."
+        },
         "resolution_temporelle": {
           "type": "object",
           "additionalProperties": false,
@@ -304,7 +310,8 @@
       "allOf": [
         {
           "if": { "properties": { "nature": { "const": "liste_candidats" } }, "required": ["nature"] },
-          "then": { "required": ["candidats_attendus"] }
+          "then": { "required": ["candidats_attendus", "candidats_references"] },
+          "else": { "not": { "required": ["candidats_references"] } }
         },
         {
           "if": {

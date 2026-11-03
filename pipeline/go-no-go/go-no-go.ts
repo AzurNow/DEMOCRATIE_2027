@@ -124,6 +124,8 @@ export interface ResultatGoNoGo {
   readonly go_no_go: GoNoGo;
   readonly kappas: readonly KappaDeJuge[];
   readonly indeterminees: number;
+  /** D64, D70 : réponses de l'échantillon à note non classée, écartées du kappa. */
+  readonly non_classees: number;
   readonly refus_api: number;
   /** §7.30 : l'accord des deux humains de l'échantillon (`analysis/accord-humains.ts`). */
   readonly accord_humains: AccordHumainsEchantillon;
@@ -138,6 +140,8 @@ interface Calcul {
   readonly kappas: readonly KappaDeJuge[];
   /** D25 (1) : réponses de l'échantillon à note humaine indéterminée, écartées du kappa. */
   readonly indeterminees: number;
+  /** D64, D70 : réponses de l'échantillon à note non classée (référence ou juge retenu), écartées du kappa. */
+  readonly non_classees: number;
   /** D30 (2) : renvois de juge vers l'humain pour une Q-ATT indécidable, contexte run. */
   readonly renvois: number;
   /** D32 : refus de l'API de l'échantillon, notés par règle, écartés du kappa de chaque juge. */
@@ -186,7 +190,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
   const verdicts = lireVerdicts(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
   const echantillon = tirerEchantillonHumain(obtenues, run.graines.echantillon_humain, run.taux_echantillon_humain);
-  const { kappas, indeterminees, refus_api } = kappasEchantillon({ juges: run.juges, echantillon, notations, renvois });
+  const { kappas, indeterminees, non_classees, refus_api } = kappasEchantillon({ juges: run.juges, echantillon, notations, renvois });
   const go_no_go = deciderPublication([
     critereKappaJugesHumains(kappas),
     critereTestContrefactuel(run.juges),
@@ -207,6 +211,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     go_no_go,
     kappas,
     indeterminees,
+    non_classees,
     renvois: renvois.filter((r) => r.contexte === "run").length,
     refus_api,
     accord_humains: accordHumainsEchantillon(echantillon, notations),
@@ -254,6 +259,7 @@ function fusionner(brut: Objet, calcul: Calcul): Objet {
     perimetre: { ...(perimetre as Objet), outils: outils.map((outil) => outilAvecParMode(outil, calcul.par_mode)) },
     ...(motif === undefined ? {} : { motif_provisoire: motif }),
     indeterminees_echantillon_humain: calcul.indeterminees,
+    non_classees_echantillon_humain: calcul.non_classees,
     renvois_attribution_indecidable: calcul.renvois,
     refus_api_echantillon_humain: calcul.refus_api,
     accord_humains_echantillon: accordPublie(calcul.accord_humains),
@@ -269,6 +275,7 @@ function partEcrite(run: Objet): string {
     go_no_go: run["go_no_go"],
     motif_provisoire: run["motif_provisoire"],
     indeterminees_echantillon_humain: run["indeterminees_echantillon_humain"],
+    non_classees_echantillon_humain: run["non_classees_echantillon_humain"],
     renvois_attribution_indecidable: run["renvois_attribution_indecidable"],
     refus_api_echantillon_humain: run["refus_api_echantillon_humain"],
     accord_humains_echantillon: run["accord_humains_echantillon"],

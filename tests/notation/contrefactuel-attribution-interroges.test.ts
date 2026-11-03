@@ -60,7 +60,8 @@ function reponseDeTest(texte: string): ReponseObtenue {
 }
 
 const ORIGINE = reponseDeTest(TEXTE_ORIGINE);
-const ATTENDU: ReponseAttendue = { nature: "liste_candidats", candidats_attendus: ["a"], resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", regle: "semi_ouvert" } };
+/** D64 : « c » porte un item vérifié qui n'est pas « pour » (une référence) : le citer est le citer à tort. */
+const ATTENDU: ReponseAttendue = { nature: "liste_candidats", candidats_attendus: ["a"], candidats_references: ["a", "c"], resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", regle: "semi_ouvert" } };
 
 function identite(juge_id: string): IdentiteJuge {
   return { juge_id, famille_modele: `famille-${juge_id}`, modele: `famille-${juge_id}/modele`, prompt: { chemin: "simule://cas-construit-d55-4", version: "1.0.0" } };
@@ -110,7 +111,7 @@ interface PaireNotee {
 /** Les deux juges, aveugles et identiques, notent l'origine (citant « C » à tort) puis le côté permuté. */
 function noterLaPaire(derangement: Derangement): PaireNotee {
   const { reponse: permutee } = reponseContrefactuelle(ORIGINE, CONTREFACTUELLE_ID, derangement);
-  const attendu_permute: ReponseAttendue = { ...ATTENDU, candidats_attendus: [imageDe(derangement, "a")] };
+  const attendu_permute: ReponseAttendue = { ...ATTENDU, candidats_attendus: [imageDe(derangement, "a")], candidats_references: [imageDe(derangement, "a"), imageDe(derangement, "c")].sort() };
   const nom_permute = PERIMETRE.find((c) => c.candidat_id === imageDe(derangement, "c"))?.nom;
   if (nom_permute === undefined) throw new Error("image de « c » introuvable parmi les candidats de test.");
   expect(permutee.normalise.texte).toContain(nom_permute);
