@@ -29,6 +29,7 @@ import {
 } from "../validation/domaine/deliberation-sans-majorite.ts";
 import type { Item } from "../validation/domaine/types.ts";
 import { creerItem } from "../validation/io/data-items.ts";
+import { lireDues } from "../validation/io/notifications-dues.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { creerBac, type Bac } from "./aides/bac.ts";
 import { itemPromu } from "./aides/data.ts";
@@ -330,9 +331,13 @@ describe("pnpm panel --sans-majorite", () => {
   );
   const base = [...racine, `--item=${banc.item.id}`, `--contestation=${contestation_id}`, "--version-jugee=1"];
   const avecDecision = executerOutil("panel.ts", [...base, `--sans-majorite=${fichierDeliberation}`, "--decision=maintien", "--ecrire"]);
+  const notifications = join(banc.bac.racine, "validation/notifications");
+  const duesAvant = lireDues(notifications);
   const simulation = executerOutil("panel.ts", [...base, `--sans-majorite=${fichierDeliberation}`]);
   const apresSimulation = banc.lire();
+  const duesApresSimulation = lireDues(notifications);
   const ecriture = executerOutil("panel.ts", [...base, `--sans-majorite=${fichierDeliberation}`, "--ecrire"]);
+  const duesApresEcriture = lireDues(notifications);
   afterAll(() => banc.bac.detruire());
 
   it("--sans-majorite et --decision ensemble sont refusés", () => {
@@ -358,5 +363,21 @@ describe("pnpm panel --sans-majorite", () => {
       { membre: "Membre 4", vote: "retrait", motivation: "Retirer : la phrase suivante conditionne." },
     ]);
     expect(ecriture.sortie).toMatch(/sans majorité/);
+  });
+
+  // D72 (12), §10 et annexe E (0.30) : « la campagne et le contestataire en sont notifiés ». La file
+  // ne porte que la campagne : aucune adresse de contestataire n'entre dans le projet (§10).
+  it("égalité ⇒ une notification due « deliberation_sans_majorite » pour la campagne de l'item, au même --ecrire", () => {
+    expect(duesAvant.map((due) => due.evenement)).toEqual(["contestation"]);
+    expect(duesApresEcriture.slice(duesAvant.length)).toEqual([
+      expect.objectContaining({ item_id: banc.item.id, candidat_id: banc.item.candidat_id, evenement: "deliberation_sans_majorite" }),
+    ]);
+    const derniere = banc.lire().historique?.at(-1) as { date: string; commit: string };
+    expect(duesApresEcriture.at(-1)).toMatchObject({ date: derniere.date, commit: derniere.commit });
+    expect(ecriture.sortie).toMatch(/validation\/notifications\/dues\.jsonl/);
+  });
+
+  it("égalité en simulation ⇒ aucune notification mise en file", () => {
+    expect(duesApresSimulation).toEqual(duesAvant);
   });
 });

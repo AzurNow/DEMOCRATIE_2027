@@ -3,7 +3,8 @@
  * ajout seul (protocole 0.10, §4 « Droit de réponse »).
  *
  * Écrite au même `--ecrire` que l'item publié, juste après lui, par `pnpm promote` (création),
- * `pnpm contester` (contestation) et `pnpm panel` (décision du panel). Chacune prépare ses
+ * `pnpm contester` (contestation) et `pnpm panel` (décision du panel, ou délibération sans majorité,
+ * §10 et annexe E, D72 (12)). Chacune prépare ses
  * notifications et les passe à `controlerAjout` **avant** d'écrire dans `data/` : une file illisible
  * arrête la commande quand rien n'est encore publié, au lieu de laisser un item publié sans
  * notification, que la relance ne réparerait pas (revue du 2026-10-12, constat 8). Lue par `pnpm notifier`
@@ -21,7 +22,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../domaine/ulid.ts";
 import type { Item } from "../domaine/types.ts";
 
-export const EVENEMENTS_NOTIFICATION = ["creation", "modification", "contestation", "decision_panel"] as const;
+export const EVENEMENTS_NOTIFICATION = ["creation", "modification", "contestation", "decision_panel", "deliberation_sans_majorite"] as const;
 export type EvenementNotification = (typeof EVENEMENTS_NOTIFICATION)[number];
 
 export interface NotificationDue {

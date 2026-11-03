@@ -18,7 +18,10 @@
  * et ses pièces : son fichier porte l'opinion motivée de chaque membre votant et les membres
  * déportés (`outils/deliberation-panel.ts`). Rien ne change : l'item reste contesté et hors du
  * tirage ; la délibération s'ajoute à la contestation qu'elle tranche, sans jamais réécrire une
- * délibération antérieure. Aucune notification n'est mise en file : aucune décision n'est rendue.
+ * délibération antérieure. La campagne en est notifiée (protocole 0.30, D72 (12)) : une ligne
+ * « deliberation_sans_majorite » est mise en file au même --ecrire, comme une décision. Le
+ * contestataire, dont aucune adresse n'entre dans le projet (§10), reçoit la réponse depuis la boîte
+ * dédiée, comme pour la contestation et la décision.
  *
  * Une décision rendue après 14 jours est acceptée ; son délai est imprimé et se calcule depuis
  * les deux dates publiées. Simulation par défaut ; `--ecrire` exige un arbre Git propre ; rien
@@ -42,7 +45,7 @@ import {
 import { enregistrerDeliberationSansMajorite } from "../validation/domaine/deliberation-sans-majorite.ts";
 import type { Correction } from "../validation/domaine/types.ts";
 import { lireItem, reecrireItem, type ItemLu } from "../validation/io/data-items.ts";
-import { ajouterDues, controlerAjout, notificationDue } from "../validation/io/notifications-dues.ts";
+import { ajouterDues, controlerAjout, notificationDue, type EvenementNotification } from "../validation/io/notifications-dues.ts";
 import { lireTexteCanonique } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { accesTexteCorrections } from "../validation/serveur/emplacements.ts";
@@ -125,7 +128,8 @@ interface Ecriture {
   readonly resultat: ResultatPanel;
   /** Ce qui est imprimé avant l'écriture. */
   readonly resume: object;
-  readonly notifier: boolean;
+  /** L'événement notifié à la campagne : une décision comme une délibération sans majorité. */
+  readonly evenement: EvenementNotification;
   readonly sujet: string;
   readonly detail: string;
 }
@@ -138,7 +142,7 @@ function decisionMajoritaire(table: Arguments, bruts: readonly string[], options
   return {
     resultat,
     resume: { ...decision, statut_contestation: item.statut_contestation, statut_validation: item.statut_validation, version: item.version },
-    notifier: true,
+    evenement: "decision_panel",
     sujet: "décision du panel",
     detail: `${decision.decision}, contestation ${decision.contestation_id}`,
   };
@@ -159,25 +163,21 @@ function deliberationSansMajorite(table: Arguments, options: Options, lu: ItemLu
   return {
     resultat,
     resume: { ...deliberation, statut_contestation: resultat.item.statut_contestation, version: resultat.item.version },
-    notifier: false,
+    evenement: "deliberation_sans_majorite",
     sujet: "délibération du panel sans majorité",
     detail: `contestation ${deliberation.contestation_id}, ${deliberation.opinions.length} votant(s)`,
   };
 }
 
-function ecrire(options: Options, lu: ItemLu, ecriture: Ecriture): readonly string[] {
+function ecrire(options: Options, lu: ItemLu, ecriture: Ecriture): void {
   const { item, autorisation } = ecriture.resultat;
-  if (!ecriture.notifier) {
-    reecrireItem(options.data, lu, item, autorisation);
-    return [];
-  }
-  // §4 (0.10) : la campagne est notifiée ; la file est écrite au même --ecrire, juste après l'item,
-  // et contrôlée avant lui, pour qu'un item ne soit jamais publié sans sa notification.
-  const dues = [notificationDue(item, "decision_panel")];
+  // §4 (0.10), §10 et annexe E (0.30) : la campagne est notifiée ; la file est écrite au même
+  // --ecrire, juste après l'item, et contrôlée avant lui, pour qu'un item ne soit jamais publié sans
+  // sa notification.
+  const dues = [notificationDue(item, ecriture.evenement)];
   controlerAjout(options.notifications, dues);
   reecrireItem(options.data, lu, item, autorisation);
   ajouterDues(options.notifications, dues);
-  return ["validation/notifications/dues.jsonl"];
 }
 
 function principal(): void {
@@ -194,11 +194,11 @@ function principal(): void {
     process.stdout.write("\nSimulation : rien n'a été écrit. Ajouter --ecrire.\n");
     return;
   }
-  const autres = ecrire(options, lu, ecriture);
+  ecrire(options, lu, ecriture);
   const sujet = ecriture.sujet.charAt(0).toUpperCase() + ecriture.sujet.slice(1);
   process.stdout.write(
     `\n${sujet} enregistrée sur l'item ${item_id}.\n\n` +
-      commandeGit([`data/items/${item_id}.json`, ...autres], `data: ${ecriture.sujet} sur l'item ${item_id}`, [ecriture.detail]),
+      commandeGit([`data/items/${item_id}.json`, "validation/notifications/dues.jsonl"], `data: ${ecriture.sujet} sur l'item ${item_id}`, [ecriture.detail]),
   );
 }
 

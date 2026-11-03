@@ -119,7 +119,8 @@ describe("une ligne due par événement, au même --ecrire", () => {
     expect(apresContestation.slice(2).map((due) => due.evenement)).toEqual(["contestation"]);
   });
 
-  it("panel : exactement une ligne « decision_panel »", () => {
+  // D72 (12) : la notification d'une délibération sans majorité ne change rien à une décision.
+  it("panel, décision à la majorité : exactement une ligne « decision_panel », comportement inchangé", () => {
     expect(panel.status, panel.erreur).toBe(0);
     expect(apresPanel.slice(3).map((due) => [due.item_id, due.evenement])).toEqual([[verifie.id, "decision_panel"]]);
   });
