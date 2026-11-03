@@ -9,7 +9,7 @@
  * non-publication ne sont pas réappliqués à la population restreinte, et un couple ou un candidat
  * exclu du calcul principal l'est aussi de chaque recalcul. »
  *
- * La fragilité d'une différence vit dans `robustesse.ts:evaluerRobustesse` ; ici, les taux seuls,
+ * La fragilité d'une différence vit dans `robustesse.ts:fragiliteDesDifferences` ; ici, les taux seuls,
  * sans qualificatif. Les restrictions sont celles de `robustesse.ts:restrictions`, dans le même
  * ordre ; les taux et leurs intervalles sont ceux de `incertitude.ts:tauxPubliesParCouple`, avec la
  * clé du calcul principal (§8 : « Les recalculs de robustesse gardent la clé de la comparaison
@@ -24,7 +24,7 @@
 
 import type { UniteAnalyse } from "./filtre.ts";
 import { tauxPubliesParCouple, type OptionsIncertitude, type StratesPubliees, type TauxDuRun } from "./incertitude.ts";
-import { restrictions, type Recalcul, type SourcesRobustesse } from "./robustesse.ts";
+import { restrictionDe, restrictions, type Recalcul, type SourcesRobustesse } from "./robustesse.ts";
 import type { PartageCandidats, PartageCouples } from "./seuils.ts";
 
 export interface TauxRecalcules {
@@ -65,7 +65,6 @@ export function tauxRecalcule(
   partage: PartageCandidats,
   options: OptionsIncertitude,
 ): TauxRecalcules {
-  const restriction = restrictions(sources).find((r) => r.recalcul === recalcul);
-  if (restriction === undefined) throw new Error(`Recalcul de robustesse inconnu : ${recalcul}.`);
+  const restriction = restrictionDe(sources, recalcul);
   return { recalcul, taux: tauxPubliesParCouple(restriction.restreindre(unites), couples, strates, partage, options) };
 }

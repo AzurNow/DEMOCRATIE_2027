@@ -3111,8 +3111,12 @@
       ]
     },
     "differences": {
-      "statut": "sans_objet",
-      "motif": "calcul_a_venir"
+      "statut": "calcule",
+      "tendance": {
+        "statut": "sans_objet",
+        "motif": "premier_run_absent"
+      },
+      "resultats": []
     }
   },
   "variabilite_echantillons": {

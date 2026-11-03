@@ -130,8 +130,8 @@ const SECTIONS_DE_ROBUSTESSE: readonly { readonly section: keyof RobustesseLue; 
 /**
  * « robustesse calculée » (annexe F, D25 (3)) : les deux sections `robustesse` de `metriques.json`
  * (`pipeline/go-no-go/metriques.ts`) sont `calcule`. Une section `sans_objet`, quel qu'en soit le
- * motif (`calcul_a_venir` pour les différences tant que le sous-lot B n'est pas écrit), laisse la
- * case non faite et le motif la nomme ; `null` (`metriques/` absent) aussi. Jamais faite par défaut.
+ * motif (`aucun_couple_compare` : §8, D71 (1)), laisse la case non faite et le motif la nomme ;
+ * `null` (`metriques/` absent) aussi. Jamais faite par défaut.
  */
 export function constatRobustesseCalculee(robustesse: RobustesseLue | null): Constat {
   const nom = "robustesse_calculee";

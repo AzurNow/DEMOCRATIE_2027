@@ -379,10 +379,12 @@ du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.sch
   `population`, avec le régime d'inclusion déclaré au gel (§3).
 - **Sections.** `taux` (métriques primaires et secondaires, avec intervalles), `asymetrie` (test par
   couple comparé, Holm), `conditions` (modes et formulations, strates `global` et `recents:60j`),
-  `robustesse.taux` (recalculs (a) à (d)), `hypotheses` (H1 à H5 ; un verdict non confirmé est
-  `non_confirmee`, jamais « infirmé »). Chaque section est `{statut: "calcule", …}` ou
-  `{statut: "sans_objet", motif}`. À venir : `robustesse.differences` (`calcul_a_venir`) ; ni les
-  comparateurs, ni les taux du canal application, ni la liste des erreurs graves ne sont encore calculés.
+  `robustesse.taux` (recalculs (a) à (d)), `robustesse.differences` (fragilité de chaque différence
+  établie des modes, des formulations, de H3 et de la tendance, D69 ; le recalcul (c) d'une
+  différence qui compare l'orientée est « sans objet »), `hypotheses` (H1 à H5 ; un verdict non
+  confirmé est `non_confirmee`, jamais « infirmé »). Chaque section est `{statut: "calcule", …}` ou
+  `{statut: "sans_objet", motif}`. Ni les comparateurs, ni les taux du canal application, ni la liste
+  des erreurs graves ne sont encore calculés.
 - **Exploratoire.** `exploratoire.correlation_couverture` (Spearman par couple comparé, §2, sans
   intervalle ; sans objet en `entre_deux_tours`, motif `moins_de_trois_candidats`) et
   `exploratoire.ecart_api_application` (§6, QR8 ; sans objet, `aucune_reponse_application`, quand le
@@ -452,8 +454,8 @@ est provisoire ; écrit `checklist.json` sans contreseing. Ne touche jamais `sta
 erreur, identique un no-op. Le critère « analyses préenregistrées exécutées avec la graine publiée »
 recoupe chaque graine de `metriques.json#/graines` avec l'entier publié du run ; la case 7 de
 l'annexe F (« robustesse calculée ») n'est faite que si `robustesse.taux` et `robustesse.differences`
-sont calculées — tant que les différences sont `calcul_a_venir`, son motif dit « robustesse des
-différences non calculée ». `metriques/` absent : critère rouge, case non faite ; présent sans
+sont calculées — sans couple comparé, les deux sont `aucun_couple_compare` et son motif le dit.
+`metriques/` absent : critère rouge, case non faite ; présent sans
 `metriques.json` (`MetriquesSansFichier`), non conforme (`ErreurSchema`) ou d'un autre run
 (`MetriquesDUnAutreRun`) : arrêt, rien n'est écrit. Sortie 0 ou 2.
 

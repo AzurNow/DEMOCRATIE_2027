@@ -20,8 +20,9 @@
  *    « Chaque recalcul garde le partage des couples outil × mode et des candidats du calcul
  *    principal : les seuils de non-publication ne sont pas réappliqués à la population restreinte ».
  * 4. à 8. Les sections : taux, asymétrie (test par couple comparé, puis Holm), conditions (modes et
- *    formulations, strates `global` et `recents:60j`), robustesse (taux recalculés (a) à (d) ; la
- *    robustesse des différences est le sous-lot B), hypothèses (H1 à H5, protocole 0.27, D63 ; H5
+ *    formulations, strates `global` et `recents:60j`), robustesse (taux recalculés (a) à (d), puis la
+ *    fragilité de chaque différence établie des modes, des formulations, de H3 et de la tendance,
+ *    reprise des sections déjà calculées et recalculée sur les unités restreintes, D69), hypothèses (H1 à H5, protocole 0.27, D63 ; H5
  *    lit la tendance entre le premier run, lu avec son propre partage, et ce run ; D70 pour un outil
  *    à deux modes), variabilité entre échantillons (diagnostic par couple comparé, §8, D70 (12),
  *    `accord-echantillons.ts`, qui lit aussi le plan d'interrogation), puis les analyses exploratoires
@@ -48,7 +49,17 @@ import { canoniser } from "../validation/domaine/empreinte.ts";
 import { variabiliteEntreEchantillons, type VariabiliteDuCouple } from "./accord-echantillons.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "./bootstrap.ts";
 import { correlationsParCouple, type CorrelationCouverture } from "./correlation-couverture.ts";
-import { comparerConditions, pairesDeH3, pairesParFormulation, pairesParMode, type ComparaisonCondition, type PaireExclue } from "./conditions.ts";
+import {
+  clesComparantLeRegistreOriente,
+  comparerConditions,
+  pairesDeH3,
+  pairesParFormulation,
+  pairesParMode,
+  type ComparaisonCondition,
+  type PaireCondition,
+  type PaireExclue,
+  type PairesDeCondition,
+} from "./conditions.ts";
 import { unitesParCoupleCompare } from "./couples-compares.ts";
 import { ecartsApiApplication, type EcartsApiApplication } from "./ecart-api-application.ts";
 import { assembler, estDuRun, type EntreesAnalyse, type UniteAnalyse } from "./filtre.ts";
@@ -65,7 +76,7 @@ import {
 import { exactitude } from "./metriques.ts";
 import { corrigerFamilleAsymetrie, PERMUTATIONS_PRODUCTION, testHomogeneiteCandidats, type FamilleAsymetrie, type ResultatCouple } from "./permutation.ts";
 import { tauxRecalcules } from "./robustesse-taux.ts";
-import type { SourcesRobustesse } from "./robustesse.ts";
+import { fragiliteDesDifferences, restrictionDe, type FamilleDeDifferences, type FamilleDeResultats, type Recalcul, type SourcesRobustesse } from "./robustesse.ts";
 import { candidatsComparables, cleCouple, couplesComparables, type PartageCandidats, type PartageCouples, type RequeteDuPlan } from "./seuils.ts";
 import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate-recente.ts";
 import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
@@ -242,7 +253,6 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
 
 export type MotifSansObjet =
   | "aucun_couple_compare"
-  | "calcul_a_venir"
   | "moins_de_deux_candidats"
   | "premier_run_absent"
   | "moins_de_trois_candidats"
@@ -327,25 +337,33 @@ export interface ConditionsDUneStrate {
 /** §8, « Graines de l'analyse » : la clé d'une différence est la métrique et la strate, puis la paire. */
 const METRIQUE_DES_CONDITIONS = "exactitude";
 
-function comparerFamille(
-  contexte: ContexteDuRun,
-  paires: { readonly paires: Parameters<typeof comparerConditions>[0]; readonly paires_exclues: readonly PaireExclue[] },
-  strate: string,
-): ComparaisonsDUneFamille {
-  const options = { ...optionsBootstrap(contexte), cle: [METRIQUE_DES_CONDITIONS, strate] };
-  return { comparaisons: comparerConditions(paires.paires, exactitude, options), paires_exclues: paires.paires_exclues };
+/** Les paires comparées sous la clé `exactitude / <strate>` : le calcul principal et ses recalculs de robustesse. */
+function comparerPaires(contexte: ContexteDuRun, paires: readonly PaireCondition[], strate: string): ComparaisonCondition[] {
+  return comparerConditions(paires, exactitude, { ...optionsBootstrap(contexte), cle: [METRIQUE_DES_CONDITIONS, strate] });
+}
+
+function comparerFamille(contexte: ContexteDuRun, paires: PairesDeCondition, strate: string): ComparaisonsDUneFamille {
+  return { comparaisons: comparerPaires(contexte, paires.paires, strate), paires_exclues: paires.paires_exclues };
+}
+
+/** Les strates des effets de condition, dans l'ordre publié, et les unités de chacune. */
+const STRATES_DES_CONDITIONS: readonly { readonly strate: string; readonly unites: (contexte: ContexteDuRun) => readonly UniteAnalyse[] }[] = [
+  { strate: STRATE_GLOBALE, unites: (contexte) => contexte.unites },
+  { strate: STRATE_RECENTE, unites: (contexte) => contexte.unites_recentes },
+];
+
+function unitesDeLaStrate(contexte: ContexteDuRun, strate: string): readonly UniteAnalyse[] {
+  const trouvee = STRATES_DES_CONDITIONS.find((s) => s.strate === strate);
+  if (trouvee === undefined) throw new Error(`Strate ${strate} inconnue des effets de condition.`);
+  return trouvee.unites(contexte);
 }
 
 /** 6. Modes et formulations, sur la strate `global` puis sur `recents:60j`. */
 export function calculerConditions(contexte: ContexteDuRun): readonly ConditionsDUneStrate[] {
-  const strates = [
-    { strate: STRATE_GLOBALE, unites: contexte.unites },
-    { strate: STRATE_RECENTE, unites: contexte.unites_recentes },
-  ];
-  return strates.map(({ strate, unites }) => ({
+  return STRATES_DES_CONDITIONS.map(({ strate, unites }) => ({
     strate,
-    modes: comparerFamille(contexte, pairesParMode(unites, contexte.couples), strate),
-    formulations: comparerFamille(contexte, pairesParFormulation(unites, contexte.couples), strate),
+    modes: comparerFamille(contexte, pairesParMode(unites(contexte), contexte.couples), strate),
+    formulations: comparerFamille(contexte, pairesParFormulation(unites(contexte), contexte.couples), strate),
   }));
 }
 
@@ -353,16 +371,101 @@ export function sectionConditions(contexte: ContexteDuRun, conditions: readonly 
   return surCouplesCompares(contexte, () => ({ strates: conditions }));
 }
 
-/** 7. Les taux recalculés (a) à (d), sur le partage et les strates du calcul principal. */
-export function sectionRobustesse(contexte: ContexteDuRun): { readonly taux: Section<object>; readonly differences: SansObjet } {
+/** Ce que la robustesse des différences reprend du calcul principal, sans le recalculer. */
+export interface DifferencesDuPrincipal {
+  readonly conditions: readonly ConditionsDUneStrate[];
+  readonly h3: ComparaisonsDUneFamille;
+  readonly tendance: TendanceCalculee | null;
+}
+
+/**
+ * Le contexte d'un recalcul de robustesse : les unités restreintes (`robustesse.ts:restrictionDe`),
+ * tout le reste — partage des couples et des candidats, strates, graines — celui du calcul principal
+ * (§8 : « les seuils de non-publication ne sont pas réappliqués à la population restreinte »).
+ */
+function contexteRestreint(contexte: ContexteDuRun, recalcul: Recalcul): ContexteDuRun {
+  const { restreindre } = restrictionDe(contexte.sources_robustesse, recalcul);
+  return { ...contexte, unites: restreindre(contexte.unites), unites_recentes: restreindre(contexte.unites_recentes) };
+}
+
+interface DescriptionDeFamille {
+  readonly famille: Exclude<FamilleDeResultats, "tendance">;
+  readonly strate: string;
+  /** Les unités sur lesquelles la famille forme ses paires : celles de sa strate, lues dans un contexte. */
+  readonly unites: (contexte: ContexteDuRun) => readonly UniteAnalyse[];
+  readonly former: (unites: readonly UniteAnalyse[], couples: PartageCouples) => PairesDeCondition;
+  readonly principales: ComparaisonsDUneFamille;
+  /** Les clés de paire qui comparent le registre orienté lui-même (§8, D69). */
+  readonly orientees: ReadonlySet<string>;
+}
+
+/** Une famille d'effets de condition : chaque recalcul reforme les paires sur les unités restreintes et les compare sous la même clé. */
+function familleDeConditions(contexte: ContexteDuRun, description: DescriptionDeFamille): FamilleDeDifferences {
+  const { famille, strate, unites, former, principales, orientees } = description;
+  return {
+    famille,
+    strate,
+    principales: principales.comparaisons.map((c) => ({ comparaison: c.cle, difference: c.difference, compare_le_registre_oriente: orientees.has(c.cle) })),
+    recalculer: (recalcul, comparaisons) => {
+      const restreint = contexteRestreint(contexte, recalcul);
+      const paires = former(unites(restreint), contexte.couples).paires.filter((p) => comparaisons.has(p.cle));
+      return new Map(comparerPaires(contexte, paires, strate).map((c) => [c.cle, c.difference]));
+    },
+  };
+}
+
+/** La tendance (H5) : chaque run est restreint avec ses propres sources, et garde son propre partage. */
+function familleDeTendance(contexte: ContexteDuRun, calculee: TendanceCalculee): FamilleDeDifferences {
+  return {
+    famille: "tendance",
+    strate: STRATE_GLOBALE,
+    principales: calculee.tendance.par_outil_et_mode.map((l) => ({ comparaison: cleCouple(l), difference: l.difference, compare_le_registre_oriente: false })),
+    recalculer: (recalcul) => {
+      const premier = { ...calculee.premier, contexte: contexteRestreint(calculee.premier.contexte, recalcul) };
+      return new Map(calculerTendance(contexteRestreint(contexte, recalcul), premier).par_outil_et_mode.map((l) => [cleCouple(l), l.difference]));
+    },
+  };
+}
+
+/**
+ * Les familles de résultats du §8 (D69) : modes et formulations de chaque strate des conditions,
+ * la différence de H3, puis la tendance quand l'analyse reçoit un premier run.
+ */
+function famillesDeResultats(contexte: ContexteDuRun, principal: DifferencesDuPrincipal): FamilleDeDifferences[] {
+  const orientees = new Set(contexte.couples.compares.flatMap(clesComparantLeRegistreOriente));
+  const aucune = new Set<string>();
+  const conditions = principal.conditions.flatMap(({ strate, modes, formulations }) => {
+    const unites = (c: ContexteDuRun) => unitesDeLaStrate(c, strate);
+    return [
+      familleDeConditions(contexte, { famille: "modes", strate, unites, former: pairesParMode, principales: modes, orientees: aucune }),
+      familleDeConditions(contexte, { famille: "formulations", strate, unites, former: pairesParFormulation, principales: formulations, orientees }),
+    ];
+  });
+  const h3 = familleDeConditions(contexte, { famille: "h3", strate: STRATE_H3, unites: (c) => c.unites, former: pairesDeH3, principales: principal.h3, orientees });
+  const tendance = principal.tendance === null ? [] : [familleDeTendance(contexte, principal.tendance)];
+  return [...conditions, h3, ...tendance];
+}
+
+function tendanceDeLaRobustesse(tendance: TendanceCalculee | null): object {
+  return tendance === null ? sansObjet("premier_run_absent") : { statut: "calcule", premier_run_id: tendance.premier.run_id };
+}
+
+/**
+ * 7. Les taux recalculés (a) à (d), sur le partage et les strates du calcul principal ; puis la
+ * fragilité de chaque différence établie (`robustesse.ts:fragiliteDesDifferences`), reprise des
+ * sections déjà calculées. `tendance` dit si la famille de la tendance a pu être lue.
+ */
+export function sectionRobustesse(contexte: ContexteDuRun, principal: DifferencesDuPrincipal): { readonly taux: Section<object>; readonly differences: Section<object> } {
   return {
     taux: surCouplesCompares(contexte, () => ({
       recalculs: tauxRecalcules(contexte.unites, contexte.sources_robustesse, contexte.couples, contexte.strates, contexte.candidats, optionsBootstrap(contexte)).map(
         ({ recalcul, taux }) => ({ recalcul, couples: taux.compares, couples_incomplets: taux.couples_incomplets }),
       ),
     })),
-    // Sous-lot B : la fragilité des différences établies (`robustesse.ts:evaluerRobustesse`).
-    differences: sansObjet("calcul_a_venir"),
+    differences: surCouplesCompares(contexte, () => ({
+      tendance: tendanceDeLaRobustesse(principal.tendance),
+      resultats: fragiliteDesDifferences(famillesDeResultats(contexte, principal)),
+    })),
   };
 }
 
@@ -433,16 +536,27 @@ export function calculerTendance(contexte: ContexteDuRun, premier: PremierRun): 
   return tendanceDuRun(etat(premier.contexte), etat(contexte), exactitude, { ...optionsBootstrap(contexte), cle: [METRIQUE_DES_CONDITIONS, STRATE_GLOBALE] });
 }
 
-function sectionH5(contexte: ContexteDuRun, premier: PremierRun | null): object {
-  if (premier === null) return sansObjet("premier_run_absent");
-  return { statut: "calcule", premier_run_id: premier.run_id, ...decisionH5(contexte.outils, calculerTendance(contexte, premier)) };
+/** La tendance du calcul principal et le premier run dont elle vient : lue par H5 et par la robustesse. */
+export interface TendanceCalculee {
+  readonly premier: PremierRun;
+  readonly tendance: TendanceDuRun;
+}
+
+/** La tendance, calculée une fois ; `null` sans premier run. */
+export function tendanceCalculee(contexte: ContexteDuRun, premier: PremierRun | null): TendanceCalculee | null {
+  return premier === null ? null : { premier, tendance: calculerTendance(contexte, premier) };
+}
+
+function sectionH5(contexte: ContexteDuRun, calculee: TendanceCalculee | null): object {
+  if (calculee === null) return sansObjet("premier_run_absent");
+  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(contexte.outils, calculee.tendance) };
 }
 
 /** 8. Les hypothèses lisent les sections déjà calculées, la différence de H3 et la tendance. */
 export function sectionHypotheses(
   contexte: ContexteDuRun,
   calculs: { readonly taux: TauxDuRun; readonly asymetrie: AsymetrieCalculee; readonly conditions: readonly ConditionsDUneStrate[]; readonly h3: ComparaisonsDUneFamille },
-  premier: PremierRun | null,
+  tendance: TendanceCalculee | null,
 ): Readonly<Record<"H1" | "H2" | "H3" | "H4" | "H5", object>> {
   const { taux, asymetrie, conditions, h3 } = calculs;
   return {
@@ -453,7 +567,7 @@ export function sectionHypotheses(
     },
     H3: { statut: "calcule", strate: STRATE_H3, couples: decisionH3(contexte.couples, h3) },
     H4: { statut: "calcule", ...decisionH4(asymetrie.famille) },
-    H5: sectionH5(contexte, premier),
+    H5: sectionH5(contexte, tendance),
   };
 }
 
@@ -648,6 +762,7 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
   const asymetrie = calculerAsymetrie(contexte);
   const conditions = calculerConditions(contexte);
   const h3 = calculerH3(contexte);
+  const tendance = tendanceCalculee(contexte, premierRunDe(premier, entrees, parametres));
   const document = {
     run_id: entrees.run.id,
     entrees: entreesPubliees(entrees),
@@ -656,9 +771,9 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
     taux: sectionTaux(contexte, taux),
     asymetrie: sectionAsymetrie(contexte, asymetrie),
     conditions: sectionConditions(contexte, conditions),
-    robustesse: sectionRobustesse(contexte),
+    robustesse: sectionRobustesse(contexte, { conditions, h3, tendance }),
     variabilite_echantillons: sectionVariabilite(contexte, entrees),
-    hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, premierRunDe(premier, entrees, parametres)),
+    hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, tendance),
     exploratoire: sectionExploratoire(contexte, entrees),
   };
   return { ...document, graines: collecterGraines(document) };

@@ -2,8 +2,8 @@
  * `pnpm go-no-go` lit `runs/<date>/metriques/metriques.json` (`pnpm analyze`, sous-lot A) à travers
  * son schéma : les graines publiées pour le critère du §12 « analyses préenregistrées exécutées avec
  * la graine publiée », et les sections de robustesse pour la case 7 de l'annexe F (« robustesse
- * calculée »). La robustesse des différences, encore `sans_objet` / `calcul_a_venir`, ne rend jamais
- * la case faite : le motif le dit. Et l'enchaînement analyze → go-no-go → analyze ne fait pas
+ * calculée »). Une section de robustesse `sans_objet`, quel qu'en soit le motif, ne rend jamais la
+ * case faite : le motif le dit. Et l'enchaînement analyze → go-no-go → analyze ne fait pas
  * refuser la seconde analyse (l'empreinte de `run.json` ignore ce que le go/no-go y écrit).
  */
 
@@ -69,7 +69,7 @@ describe("go/no-go : lecture de metriques.json", () => {
     expect(lues.graines).toEqual(DOCUMENT.graines);
     expect(lues.graines.length).toBeGreaterThan(0);
     expect(critereAnalysesExecutees(lues.graines, GRAINES_DU_RUN)).toMatchObject({ statut: "vert" });
-    expect(lues.robustesse).toEqual({ taux: { statut: "calcule" }, differences: { statut: "sans_objet", motif: "calcul_a_venir" } });
+    expect(lues.robustesse).toEqual({ taux: { statut: "calcule" }, differences: { statut: "calcule" } });
   });
 
   it("une graine altérée dans metriques.json : le critère passe au rouge", () => {
@@ -106,18 +106,18 @@ describe("case 7 de l'annexe F : « robustesse calculée »", () => {
     return construireChecklist(ulid("run-robustesse"), criteres, [...autres, constat]).cases.find((c) => c.rang === 7);
   }
 
-  it("robustesse des différences calcul_a_venir : non faite, et le motif le dit explicitement", () => {
-    const constat = constatRobustesseCalculee({ taux: CALCULEE, differences: { statut: "sans_objet", motif: "calcul_a_venir" } });
-    expect(constat).toEqual({ nom: "robustesse_calculee", fait: false, detail: "robustesse des différences non calculée (calcul_a_venir)" });
-    expect(caseSept(constat)).toMatchObject({ etat: "non_faite", motif: "robustesse des différences non calculée (calcul_a_venir)." });
+  it("robustesse des différences sans objet : non faite, et le motif le dit explicitement", () => {
+    const constat = constatRobustesseCalculee({ taux: CALCULEE, differences: { statut: "sans_objet", motif: "aucun_couple_compare" } });
+    expect(constat).toEqual({ nom: "robustesse_calculee", fait: false, detail: "robustesse des différences non calculée (aucun_couple_compare)" });
+    expect(caseSept(constat)).toMatchObject({ etat: "non_faite", motif: "robustesse des différences non calculée (aucun_couple_compare)." });
   });
 
   it("taux de robustesse sans objet : non faite, motif nommé ; les deux manques sont dits ensemble", () => {
-    const robustesse: RobustesseLue = { taux: { statut: "sans_objet", motif: "aucun_couple_compare" }, differences: { statut: "sans_objet", motif: "calcul_a_venir" } };
+    const robustesse: RobustesseLue = { taux: { statut: "sans_objet", motif: "aucun_couple_compare" }, differences: { statut: "sans_objet", motif: "aucun_couple_compare" } };
     expect(constatRobustesseCalculee(robustesse)).toEqual({
       nom: "robustesse_calculee",
       fait: false,
-      detail: "robustesse des taux non calculée (aucun_couple_compare) ; robustesse des différences non calculée (calcul_a_venir)",
+      detail: "robustesse des taux non calculée (aucun_couple_compare) ; robustesse des différences non calculée (aucun_couple_compare)",
     });
   });
 

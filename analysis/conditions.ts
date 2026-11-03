@@ -145,6 +145,15 @@ export function cleComparaisonFormulations(couple: CoupleOutilMode, r1: Registre
 }
 
 /**
+ * §8 (0.27, D69) : les clés des paires de formulations d'un couple qui comprennent l'orientée. Elles
+ * comparent le registre orienté lui-même : le recalcul (c), qui l'exclut, y est « sans objet ». La
+ * paire de H3, neutre − orientée (`cleComparaisonH3`), en est.
+ */
+export function clesComparantLeRegistreOriente(couple: CoupleOutilMode): string[] {
+  return PAIRES_REGISTRES.filter((paire) => paire.includes("oriente")).map(([r1, r2]) => cleComparaisonFormulations(couple, r1, r2));
+}
+
+/**
  * §2 (0.27, D63) : H3 lit « la différence appariée de son exactitude, formulation neutre moins
  * formulation orientée, restreinte aux questions dont l'item principal est un item F ou O ».
  */

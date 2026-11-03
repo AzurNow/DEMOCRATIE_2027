@@ -55,11 +55,10 @@ import type { Notation, Run, Ulid } from "./types.ts";
 /** Réexportée : sa définition vit dans `note-lue.ts`, avec l'égalité de deux notes. */
 export { sourcageDeNotation } from "./note-lue.ts";
 
-export type Recalcul =
-  | "echantillon_humain"
-  | "items_contestes"
-  | "formulations_orientees"
-  | "reponses_tronquees";
+/** Les quatre recalculs du §8, dans l'ordre (a), (b), (c), (d) : l'ordre publié, d'un run à l'autre. */
+export const RECALCULS = ["echantillon_humain", "items_contestes", "formulations_orientees", "reponses_tronquees"] as const;
+
+export type Recalcul = (typeof RECALCULS)[number];
 
 export interface RecalculRobustesse {
   readonly recalcul: Recalcul;
@@ -252,12 +251,129 @@ export function restrictions(sources: SourcesRobustesse): readonly Restriction[]
   ];
 }
 
+/** La restriction d'un seul recalcul, celle de `restrictions` : jamais une seconde définition. */
+export function restrictionDe(sources: SourcesRobustesse, recalcul: Recalcul): Restriction {
+  const restriction = restrictions(sources).find((r) => r.recalcul === recalcul);
+  if (restriction === undefined) throw new Error(`Recalcul de robustesse inconnu : ${recalcul}.`);
+  return restriction;
+}
+
+/** §8 : une différence est un résultat seulement si elle est établie ; un recalcul la confirme s'il l'est encore. */
+function estEtablie(difference: DifferenceTaux): boolean {
+  return difference.qualificatif === "etablie";
+}
+
 function motifsDeFragilite(
   principal: DifferenceTaux,
   recalculs: readonly RecalculRobustesse[],
 ): Recalcul[] {
-  if (principal.qualificatif !== "etablie") return [];
+  if (!estEtablie(principal)) return [];
   return recalculs
-    .filter((r) => r.difference.qualificatif !== "etablie")
+    .filter((r) => !estEtablie(r.difference))
     .map((r) => r.recalcul);
+}
+
+/* ------------------------------------------------- fragilité des différences d'un run */
+
+/**
+ * Les différences dont la fragilité est publiée (§8, protocole 0.27, D69 ; texte de la 0.30) :
+ * « toute différence que la section 2 ou la présente section qualifie d'« établie » hors des
+ * analyses exploratoires, celles des modes, des formulations et de la tendance, et la différence de
+ * H3 ». L'écart API / application, l'écart d'un juge sur l'outil de son éditeur et la corrélation de
+ * Spearman sont exploratoires : ils ne sont pas des familles de résultats et n'ont pas de fragilité.
+ */
+export type FamilleDeResultats = "modes" | "formulations" | "h3" | "tendance";
+
+/** Une différence du calcul principal, telle que sa section la publie. */
+export interface DifferencePrincipale {
+  /** L'identifiant de la comparaison dans sa famille : clé de paire, ou `cleCouple` pour la tendance. */
+  readonly comparaison: string;
+  readonly difference: DifferenceTaux;
+  /**
+   * §8 (D69) : la différence compare le registre orienté lui-même (paire de formulations qui comprend
+   * l'orientée, différence de H3). Le recalcul (c) en retirerait le terme comparé : il y est « sans
+   * objet » et ne rend pas le résultat fragile.
+   */
+  readonly compare_le_registre_oriente: boolean;
+}
+
+/**
+ * Une famille de différences : ses différences principales, et leur recalcul sous l'une des quatre
+ * restrictions, par le même calcul que le principal (même appariement, même partage, même clé).
+ * `recalculer` rend la différence recalculée de chaque comparaison demandée qui se forme encore ;
+ * une comparaison qui ne se forme plus (un bras vidé par la restriction) est absente du résultat.
+ */
+export interface FamilleDeDifferences {
+  readonly famille: FamilleDeResultats;
+  readonly strate: string;
+  readonly principales: readonly DifferencePrincipale[];
+  readonly recalculer: (recalcul: Recalcul, comparaisons: ReadonlySet<string>) => ReadonlyMap<string, DifferenceTaux>;
+}
+
+/** §8 : pourquoi un recalcul n'a pas de différence à publier. */
+export type RecalculDeLaDifference =
+  | { readonly recalcul: Recalcul; readonly statut: "calcule"; readonly difference: DifferenceTaux }
+  | { readonly recalcul: Recalcul; readonly statut: "incalculable"; readonly motif: "comparaison_absente" }
+  | { readonly recalcul: Recalcul; readonly statut: "sans_objet"; readonly motif: "registre_oriente_compare" };
+
+/** Le qualificatif de fragilité d'un résultat, avec ses quatre recalculs. */
+export interface FragiliteDUneDifference {
+  readonly famille: FamilleDeResultats;
+  readonly strate: string;
+  readonly comparaison: string;
+  /** La clé et la graine du calcul principal, que chaque recalcul garde (§8, « Graines de l'analyse »). */
+  readonly cle: readonly string[];
+  readonly graine: string;
+  readonly recalculs: readonly RecalculDeLaDifference[];
+  readonly fragile: boolean;
+  readonly motifs_fragilite: readonly Recalcul[];
+}
+
+/** §8 (D69) : le recalcul qui retire les formulations orientées. */
+const RECALCUL_SANS_ORIENTEES: Recalcul = "formulations_orientees";
+
+/**
+ * La fragilité de chaque différence établie au calcul principal, famille par famille, dans l'ordre
+ * des familles puis des différences principales. Une différence non établie au principal n'est pas
+ * un résultat : elle n'a ni recalcul ni qualificatif, et n'est pas publiée ici.
+ */
+export function fragiliteDesDifferences(familles: readonly FamilleDeDifferences[]): FragiliteDUneDifference[] {
+  return familles.flatMap(fragiliteDeLaFamille);
+}
+
+function fragiliteDeLaFamille(famille: FamilleDeDifferences): FragiliteDUneDifference[] {
+  const etablies = famille.principales.filter((p) => estEtablie(p.difference));
+  if (etablies.length === 0) return [];
+  const comparaisons = new Set(etablies.map((p) => p.comparaison));
+  const recalculees = RECALCULS.map((recalcul) => ({ recalcul, differences: famille.recalculer(recalcul, comparaisons) }));
+  return etablies.map((principale) => {
+    const recalculs = recalculees.map(({ recalcul, differences }) => recalculDe(principale, recalcul, differences));
+    const motifs = recalculs.filter(rendFragile).map((r) => r.recalcul);
+    const { cle, graine } = principale.difference;
+    return { famille: famille.famille, strate: famille.strate, comparaison: principale.comparaison, cle, graine, recalculs, fragile: motifs.length > 0, motifs_fragilite: motifs };
+  });
+}
+
+function recalculDe(principale: DifferencePrincipale, recalcul: Recalcul, differences: ReadonlyMap<string, DifferenceTaux>): RecalculDeLaDifference {
+  if (recalcul === RECALCUL_SANS_ORIENTEES && principale.compare_le_registre_oriente) {
+    return { recalcul, statut: "sans_objet", motif: "registre_oriente_compare" };
+  }
+  const difference = differences.get(principale.comparaison);
+  if (difference === undefined) return { recalcul, statut: "incalculable", motif: "comparaison_absente" };
+  verifierMemeCle(principale, recalcul, difference);
+  return { recalcul, statut: "calcule", difference };
+}
+
+/** §8 : « Les recalculs de robustesse gardent la clé de la comparaison principale », donc sa graine. */
+function verifierMemeCle(principale: DifferencePrincipale, recalcul: Recalcul, difference: DifferenceTaux): void {
+  if (difference.cle.join("\0") === principale.difference.cle.join("\0")) return;
+  throw new Error(
+    `Recalcul ${recalcul} de ${principale.comparaison} sous la clé [${difference.cle.join(", ")}], et non celle du calcul principal [${principale.difference.cle.join(", ")}] : graine non reproductible (§8).`,
+  );
+}
+
+/** Fragile : le recalcul ne peut plus être calculé, ou sa différence n'est plus établie. « Sans objet » ne compte pas. */
+function rendFragile(recalcul: RecalculDeLaDifference): boolean {
+  if (recalcul.statut === "sans_objet") return false;
+  return recalcul.statut === "incalculable" || !estEtablie(recalcul.difference);
 }
