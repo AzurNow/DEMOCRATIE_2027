@@ -19,7 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 CLES_DUE = ("id", "item_id", "candidat_id", "evenement", "date", "commit")
-EVENEMENTS = ("creation", "modification", "contestation", "decision_panel")
+# Recopie de `schema/notification-due.schema.json#/properties/evenement/enum` (contrôlée par pytest).
+EVENEMENTS = ("creation", "modification", "contestation", "decision_panel", "deliberation_sans_majorite")
 ETATS_FINAUX = ("envoyee", "echec")
 
 
