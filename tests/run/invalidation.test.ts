@@ -37,7 +37,7 @@ function exemple(nom: string): Objet {
 /** `valide-01` ramené au statut voulu avant publication : sans go/no-go, publication ni dépôt. */
 function avantPublication(statut: string): Objet {
   const run = exemple("valide-01-mensuel-publie.json");
-  for (const cle of ["go_no_go", "publication", "depot", "indeterminees_echantillon_humain", "renvois_attribution_indecidable", "refus_api_echantillon_humain"]) delete run[cle];
+  for (const cle of ["go_no_go", "publication", "depot", "indeterminees_echantillon_humain", "non_classees_echantillon_humain", "renvois_attribution_indecidable", "refus_api_echantillon_humain"]) delete run[cle];
   return { ...run, statut };
 }
 

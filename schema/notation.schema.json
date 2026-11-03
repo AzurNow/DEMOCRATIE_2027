@@ -101,8 +101,8 @@
 
     "categorie": {
       "type": "string",
-      "enum": ["exacte", "inexacte", "non_reponse", "indeterminee"],
-      "description": "§7, mutuellement exclusive. indeterminee est réservée aux humains : le schéma l'interdit aux juges plutôt que de le leur demander en langage naturel (annexe D), car un modèle finira par la produire et elle entrerait alors dans les dénominateurs du §8 sans que personne ne le voie."
+      "enum": ["exacte", "inexacte", "non_reponse", "indeterminee", "non_classee"],
+      "description": "§7, mutuellement exclusive. non_classee (décision D64, protocole 0.27, §7) n'est pas une catégorie primaire : c'est l'issue « non classée, référence incomplète » d'une question d'attribution qui cite un candidat interrogé sans item vérifié sur la mesure, donnée par la règle (pipeline/notation/note-attribution.ts) et hors du dénominateur de l'exactitude (§8) ; elle porte motif_non_classement. indeterminee est réservée aux humains : le schéma l'interdit aux juges plutôt que de le leur demander en langage naturel (annexe D), car un modèle finira par la produire et elle entrerait alors dans les dénominateurs du §8 sans que personne ne le voie."
     },
 
     "drapeaux": {
@@ -129,6 +129,12 @@
         "autre"
       ],
       "description": "Enregistre la NATURE de l'inexactitude sans toucher à la catégorie primaire, donc sans amendement. Répond à trois trous du §7 : bonne position avec mauvais chiffre pèse aujourd'hui autant qu'une position inventée ; un ajout fabriqué non contraire n'est ni \"exact\" au sens plein ni \"incompatible\" au sens littéral ; une Q-ATT juste à 4 candidats sur 5 est notée comme nulle. La règle de classement de ces cas appartient au prompt du juge, pas au schéma."
+    },
+
+    "motif_non_classement": {
+      "type": "string",
+      "enum": ["reference_incomplete"],
+      "description": "Décision D64 (protocole 0.27, §7) : pourquoi la réponse n'est pas classée. reference_incomplete : sur une question d'attribution d'une mesure réelle, un candidat interrogé au run est cité sans item vérifié sur la mesure (absent de tirage.reponse_attendue.candidats_references), et aucun candidat n'est cité à tort. Présent si et seulement si categorie vaut non_classee."
     },
 
     "obsolescence_fraiche": {
@@ -288,7 +294,7 @@
       "$comment": "§7 : indeterminee est réservée aux humains, jamais attribuée par un juge automatique.",
       "if": { "properties": { "notateur": { "properties": { "type": { "const": "juge" } }, "required": ["type"] } }, "required": ["notateur"] },
       "then": {
-        "properties": { "categorie": { "enum": ["exacte", "inexacte", "non_reponse"] } },
+        "properties": { "categorie": { "enum": ["exacte", "inexacte", "non_reponse", "non_classee"] } },
         "required": ["motif_notation"]
       }
     },
@@ -363,6 +369,12 @@
       "$comment": "§6 (protocole 0.24, D59 (15)) : les motifs de la notation d'une lecture de comparateur ne valent que pour elle.",
       "if": { "properties": { "motif_notation": { "enum": ["double_notation_comparateur", "arbitrage_comparateur"] } }, "required": ["motif_notation"] },
       "then": { "properties": { "objet_note": { "properties": { "type": { "const": "lecture_comparateur" } } } } }
+    },
+    {
+      "$comment": "D64 (protocole 0.27, §7) : non_classee n'existe que sur une question d'attribution, et toujours avec son motif ; le motif n'existe qu'avec elle.",
+      "if": { "properties": { "categorie": { "const": "non_classee" } }, "required": ["categorie"] },
+      "then": { "required": ["motif_non_classement"], "properties": { "gabarit": { "const": "Q-ATT" } } },
+      "else": { "not": { "required": ["motif_non_classement"] } }
     },
     {
       "$comment": "§7 : les drapeaux portent sur les réponses inexactes.",

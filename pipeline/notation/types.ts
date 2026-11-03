@@ -43,6 +43,10 @@ export const MOTIFS_INEXACTITUDE = [
 ] as const;
 export type MotifInexactitude = (typeof MOTIFS_INEXACTITUDE)[number];
 
+/** `notation.schema.json#/properties/motif_non_classement` (D64, protocole 0.27, §7). */
+export const MOTIFS_NON_CLASSEMENT = ["reference_incomplete"] as const;
+export type MotifNonClassement = (typeof MOTIFS_NON_CLASSEMENT)[number];
+
 /** `verdict.schema.json#/properties/mode_resolution`. */
 export const MODES_RESOLUTION = [
   "accord_juges",
@@ -111,6 +115,8 @@ export interface NotationIndividuelle {
   readonly categorie: CategorieRetenue;
   readonly drapeaux: readonly Drapeau[];
   readonly motif_inexactitude?: MotifInexactitude;
+  /** D64 : présent si et seulement si `categorie` vaut `non_classee`, sur une Q-ATT seulement. */
+  readonly motif_non_classement?: MotifNonClassement;
   readonly obsolescence_fraiche?: boolean;
   readonly attribution?: {
     readonly attendus: readonly IdentifiantCourt[];

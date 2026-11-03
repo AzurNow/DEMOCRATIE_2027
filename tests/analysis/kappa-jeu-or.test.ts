@@ -374,3 +374,29 @@ describe("note humaine retenue : une seule règle pour l'échantillon et le jeu 
     expect(categorieHumaineRetenue(a, b, h("a3", "exacte"))).toBe("exacte");
   });
 });
+
+/** D64 (protocole 0.27) et D70 : la non classée sort du kappa du jeu d'or, comptée à part. */
+describe("D64, D70 : réponse non classée sur le jeu d'or", () => {
+  const BASE = [
+    accord("exacte", "exacte", "exacte"),
+    accord("exacte", "exacte", "inexacte"),
+    accord("inexacte", "inexacte", "exacte"),
+    accord("inexacte", "inexacte", "inexacte"),
+  ];
+
+  it("référence humaine non classée : kappas et paire inchangés par rapport au jeu sans elle, compte 1", () => {
+    const sans = kappasJeuOr(JUGES, jeu(BASE));
+    const avec = kappasJeuOr(JUGES, jeu([...BASE, { humains: ["non_classee", "non_classee"], juges: { j1: "exacte", j2: "exacte" } }]));
+    expect(avec.kappas).toEqual(sans.kappas);
+    expect(avec.paire).toEqual(sans.paire);
+    expect(avec.non_classees).toBe(1);
+    expect(sans.non_classees).toBe(0);
+  });
+
+  it("note d'un juge retenu non classée : la réponse sort du kappa des deux juges, compte 1", () => {
+    const sans = kappasJeuOr(JUGES, jeu(BASE));
+    const avec = kappasJeuOr(JUGES, jeu([...BASE, accord("exacte", "non_classee", "exacte")]));
+    expect(avec.kappas).toEqual(sans.kappas);
+    expect(avec.non_classees).toBe(1);
+  });
+});

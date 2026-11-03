@@ -37,6 +37,35 @@ export interface KappaCategorie {
   readonly n: number;
 }
 
+/**
+ * D64 (protocole 0.27, §7) et D70 : « non classée, référence incomplète » ne reçoit pas de catégorie
+ * primaire. Une réponse dont une note comparée (référence humaine, juge retenu, l'un des deux humains)
+ * est non classée est écartée de tout kappa sur la catégorie primaire — juge-humain, paire de juges,
+ * jeu d'or, humain-humain — et comptée à part, comme une indéterminée sous D25. Seule règle du dépôt :
+ * chaque kappa l'applique par `ecarterNonClassees`.
+ */
+export function estNonClassee(categorie: CategorieRetenue): boolean {
+  return categorie === "non_classee";
+}
+
+/** D64, D70 : sépare les objets d'un kappa de ceux qu'une note non classée en écarte, et les compte. */
+export function ecarterNonClassees<O>(
+  objets: readonly O[],
+  categoriesComparees: (objet: O) => readonly CategorieRetenue[],
+): { readonly gardes: readonly O[]; readonly non_classees: number } {
+  const gardes = objets.filter((objet) => !categoriesComparees(objet).some(estNonClassee));
+  return { gardes, non_classees: objets.length - gardes.length };
+}
+
+/**
+ * La catégorie d'une note déjà passée par `ecarterNonClassees`. Une non classée ici est une erreur
+ * de programmation (le tri de D70 a été sauté), jamais une catégorie comparée.
+ */
+export function categoriePourKappa<C extends CategorieRetenue>(categorie: C, lieu: string): Exclude<C, "non_classee"> {
+  if (categorie === "non_classee") throw new Error(`${lieu} : note non classée parvenue au kappa sans être écartée (D64, D70).`);
+  return categorie as Exclude<C, "non_classee">;
+}
+
 /** Kappa de Cohen non pondéré sur des catégories fixées a priori, avec le motif de son absence. */
 export function kappaCategoriePrimaire<T extends string>(paires: readonly PaireCategories<T>[], categories: readonly T[]): KappaCategorie {
   const resultat = kappaCohen(paires, categories);

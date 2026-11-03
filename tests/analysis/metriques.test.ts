@@ -17,6 +17,7 @@ import {
   metriquesApplication,
   metriquesComparateur,
   metriquesPrimaires,
+  nombreNonClassees,
   parOutilEtMode,
   repartitionDrapeaux,
   sourcageValide,
@@ -71,6 +72,21 @@ describe("exactitude et non-réponse : dénominateurs du §8", () => {
 
     expect(exactitude(jeu)).toEqual({ numerateur: 2, denominateur: 4, valeur: 0.5 });
     expect(tauxNonReponse(jeu)).toEqual({ numerateur: 0, denominateur: 5, valeur: 0 });
+  });
+
+  it("D64 : sort la non classée (référence incomplète) de l'exactitude, la garde dans les réponses obtenues, la compte à part", () => {
+    // 2 exactes, 1 inexacte, 2 non classées.
+    // Exactitude : 2/3. Non-réponse : 0/5 — la non classée reste une réponse obtenue. Non classées : 2.
+    const jeu = [
+      ...unites(2, { categorie: "exacte" }),
+      ...unites(1, { categorie: "inexacte" }),
+      ...unites(2, { categorie: "non_classee" }),
+    ];
+
+    expect(exactitude(jeu)).toEqual({ numerateur: 2, denominateur: 3, valeur: 2 / 3 });
+    expect(tauxNonReponse(jeu)).toEqual({ numerateur: 0, denominateur: 5, valeur: 0 });
+    expect(nombreNonClassees(jeu)).toBe(2);
+    expect(nombreNonClassees(unites(3, { categorie: "indeterminee" }))).toBe(0);
   });
 
   it("rend une exactitude absente quand aucune réponse n'est classée", () => {
@@ -219,6 +235,26 @@ describe("regroupement par outil et par mode", () => {
     ]);
     expect(groupes[0]?.exactitude).toEqual({ numerateur: 2, denominateur: 2, valeur: 1 });
     expect(groupes[1]?.exactitude).toEqual({ numerateur: 0, denominateur: 2, valeur: 0 });
+  });
+
+  it("D64 : le nombre de non classées est publié par couple outil × mode, jamais fusionné entre modes", () => {
+    const jeu = [
+      ...unites(2, { outil_id: "outil-alpha", mode: "web_activee", categorie: "exacte" }),
+      ...unites(3, { outil_id: "outil-alpha", mode: "web_activee", categorie: "non_classee" }),
+      ...unites(1, { outil_id: "outil-alpha", mode: "web_desactivee", categorie: "non_classee" }),
+      ...unites(1, { outil_id: "outil-alpha", mode: "web_desactivee", categorie: "inexacte" }),
+      ...unites(1, { outil_id: "outil-beta", mode: "web_activee", categorie: "exacte" }),
+    ];
+
+    const groupes = parOutilEtMode(jeu, tousCompares(jeu)).compares;
+
+    expect(groupes.map((g) => [g.outil_id, g.mode, g.non_classees, g.reponses_obtenues])).toEqual([
+      ["outil-alpha", "web_activee", 3, 5],
+      ["outil-alpha", "web_desactivee", 1, 2],
+      ["outil-beta", "web_activee", 0, 1],
+    ]);
+    expect(groupes[0]?.exactitude).toEqual({ numerateur: 2, denominateur: 2, valeur: 1 });
+    expect(groupes[1]?.exactitude).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
   });
 
   it("assemble les six métriques primaires d'un outil et d'un mode", () => {

@@ -42,7 +42,8 @@
 
     "categorie_retenue": {
       "type": "string",
-      "enum": ["exacte", "inexacte", "non_reponse", "indeterminee"]
+      "enum": ["exacte", "inexacte", "non_reponse", "indeterminee", "non_classee"],
+      "description": "non_classee (décision D64, protocole 0.27, §7) : « non classée, référence incomplète », issue sans catégorie primaire d'une question d'attribution (notation.schema.json, motif_non_classement) ; hors du dénominateur de l'exactitude (§8), comptée par couple outil × mode (analysis/metriques.ts)."
     },
 
     "drapeaux_retenus": {

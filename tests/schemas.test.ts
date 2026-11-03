@@ -141,12 +141,14 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 354 → 355 : §6, protocole 0.25 (D60 (g)), dépôt d'une capture masquée avec ses deux empreintes : un valide (l'égalité des deux empreintes ne s'exprime pas en JSON Schema : garde du code).
   // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides du nouveau schéma metriques.
   // 361 → 363 : §4, protocole 0.27 (D65), diagnostic de lot : accord suffisant par l'accord observé (valide), accord non décidable sur un kappa défini (invalide).
-  it("1. les 363 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 363 → 368 : §7, protocole 0.27 (D64), « non classée, référence incomplète » : un valide et deux invalides de notation, un valide de verdict, un invalide de tirage (liste sans références).
+  // 368 → 369 : §7, D64 et D70, un invalide de run (go/no-go sans non_classees_echantillon_humain).
+  it("1. les 369 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(363);
+    expect(manifeste.exemples).toHaveLength(369);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -404,7 +406,9 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 354 → 355 : §6, protocole 0.25 (D60 (g)), un valide de dépôt d'application (capture masquée).
   // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides de metriques.
   // 361 → 363 : §4, protocole 0.27 (D65), un valide et un invalide de diagnostic de lot (accord suffisant).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 363 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(363);
+  // 363 → 368 : §7, protocole 0.27 (D64), non classée : trois de notation, un de verdict, un de tirage.
+  // 368 → 369 : §7, D64 et D70, un invalide de run.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 369 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(369);
   });
 });

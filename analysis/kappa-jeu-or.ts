@@ -48,6 +48,8 @@
 import {
   CATEGORIES_DE_JUGE,
   categorieHumaineRetenue,
+  categoriePourKappa,
+  ecarterNonClassees,
   kappaCategoriePrimaire,
   kappaDeLaPaire,
   type CategorieDeJuge,
@@ -98,6 +100,11 @@ export interface ResultatJeuOr {
   readonly paire: KappaDeLaPaire;
   /** Réponses du jeu d'or dont la note humaine retenue est indéterminée, écartées de chaque kappa. */
   readonly indeterminees: number;
+  /**
+   * D64, D70 : réponses du jeu d'or dont la note humaine retenue ou la note d'un juge retenu est non
+   * classée, écartées de chaque kappa (et donc du kappa de la paire), comptées avant les indéterminées.
+   */
+  readonly non_classees: number;
   /** D59 (20) : réponses du jeu d'or refusées par l'API, notées par règle, écartées de chaque kappa. */
   readonly refus_api: number;
 }
@@ -119,9 +126,12 @@ export function kappasJeuOr(juges: readonly JugeDeclare[], reponses: readonly Re
   for (const reponse of reponses) exigerJugesDeclares(reponse, juges);
   const refus = reponses.filter(estUnRefus);
   const toutes = reponses.filter((reponse) => !estUnRefus(reponse)).map((reponse) => ({ reponse, categorie: referenceDe(reponse) }));
-  const references = toutes.filter((r): r is Reference => r.categorie !== "indeterminee");
+  // D64, D70 : une réponse dont la référence humaine ou un juge retenu est non classée sort de tout kappa, comptée à part.
+  const ids = new Set(retenus.map((juge) => juge.juge_id));
+  const { gardes, non_classees } = ecarterNonClassees(toutes, (r) => [r.categorie, ...r.reponse.juges.filter((n) => ids.has(n.notateur.id)).map((n) => n.categorie)]);
+  const references = gardes.filter((r): r is Reference => categoriePourKappa(r.categorie, `Réponse ${r.reponse.reponse_id} du jeu d'or`) !== "indeterminee");
   const kappas = retenus.map((juge) => kappaDuJuge(juge.juge_id, references));
-  return { kappas, paire: kappaDeLaPaire(kappas), indeterminees: toutes.length - references.length, refus_api: refus.length };
+  return { kappas, paire: kappaDeLaPaire(kappas), indeterminees: gardes.length - references.length, non_classees, refus_api: refus.length };
 }
 
 /** D32 : un refus porte la notation par règle et rien d'un juge, ni notation ni renvoi, même d'un juge retiré. */
@@ -203,6 +213,7 @@ function categorieDuJuge(juge_id: string, reponse: ReponseDuJeuOr): CategorieDeJ
   if (notation === undefined || siennes.length !== 1) {
     throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : ${siennes.length} notation(s) du juge retenu ${juge_id} au lieu d'une.`);
   }
-  if (notation.categorie === "indeterminee") throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : le juge ${juge_id} a rendu « indeterminee », réservée aux humains (§7).`);
-  return notation.categorie;
+  const categorie = categoriePourKappa(notation.categorie, `Réponse ${reponse.reponse_id} du jeu d'or, juge ${juge_id}`);
+  if (categorie === "indeterminee") throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : le juge ${juge_id} a rendu « indeterminee », réservée aux humains (§7).`);
+  return categorie;
 }

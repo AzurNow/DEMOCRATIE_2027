@@ -94,9 +94,14 @@ function contexte(options: OptionsContexte = {}): ContexteNotationHumaine {
 
 const EXACTE: SaisieHumaine = { categorie: "exacte", drapeaux: [], cite: false, soutiens: [] };
 
-/** Une Q-ATT dont seul alpha (Martinez) est attendu. */
+/** Une Q-ATT dont seul alpha (Martinez) est attendu ; beta et gamma portent un item vérifié qui n'est pas « pour » (D64). */
 const QATT_ALPHA: ResoluAuGel = {
-  reponse_attendue: { nature: "liste_candidats", candidats_attendus: ["demo-alpha"], resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", regle: "semi_ouvert" } },
+  reponse_attendue: {
+    nature: "liste_candidats",
+    candidats_attendus: ["demo-alpha"],
+    candidats_references: ["demo-alpha", "demo-beta", "demo-gamma"],
+    resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", regle: "semi_ouvert" },
+  },
   premisse_fausse: false,
 };
 
@@ -177,6 +182,33 @@ describe("notation acceptée", () => {
     expect(acceptee(construireNotationHumaine(avec, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })))).toMatchObject({ categorie: "inexacte", motif_inexactitude: "liste_incomplete" });
   });
 
+  it("D64 : l'humain relève un candidat interrogé sans item vérifié sur la mesure ; le code recalcule « non classée, référence incomplète », sans renvoi", () => {
+    const sansGamma: ResoluAuGel = { ...QATT_ALPHA, reponse_attendue: { ...QATT_ALPHA.reponse_attendue, candidats_references: ["demo-alpha", "demo-beta"] } };
+    const saisie: SaisieHumaine = { cite: false, soutiens: [], noms_cites: ["Martinez", "Camille Ollivier"], non_reponse: false, indeterminee: false, extrait: { texte: "selon la presse", provenance: "reponse" } };
+    const n = acceptee(construireNotationHumaine(saisie, contexte({ gabarit: "Q-ATT", resolu: sansGamma })));
+    expect(n).toMatchObject({ categorie: "non_classee", motif_non_classement: "reference_incomplete", drapeaux: [], attribution: { attendus: ["demo-alpha"], cites: ["demo-alpha", "demo-gamma"] } });
+    expect("motif_inexactitude" in n).toBe(false);
+  });
+
+  it("D64 : sur la même issue calculée, une note décidée par l'humain est refusée (aucun renvoi, la règle s'applique)", () => {
+    const sansGamma: ResoluAuGel = { ...QATT_ALPHA, reponse_attendue: { ...QATT_ALPHA.reponse_attendue, candidats_references: ["demo-alpha", "demo-beta"] } };
+    const saisie: SaisieHumaine = {
+      cite: false,
+      soutiens: [],
+      noms_cites: ["Martinez", "Camille Ollivier"],
+      non_reponse: false,
+      indeterminee: false,
+      extrait: { texte: "selon la presse", provenance: "reponse" },
+      note_decidee: { categorie: "exacte", drapeaux: [] },
+    };
+    expect(codes(construireNotationHumaine(saisie, contexte({ gabarit: "Q-ATT", resolu: sansGamma })))).toEqual(["note_decidee_hors_cas_indecidable"]);
+  });
+
+  it("D64 : « non_classee » saisie à la main hors Q-ATT est refusée par le schéma (issue réservée à la règle d'attribution)", () => {
+    const saisie: SaisieHumaine = { categorie: "non_classee", drapeaux: [], cite: false, soutiens: [], extrait: { texte: "supprimer la taxe", provenance: "reponse" } };
+    expect(codes(construireNotationHumaine(saisie, contexte()))).toContain("non_conforme_au_schema");
+  });
+
   it("Q-ATT : non-réponse explicite", () => {
     const saisie: SaisieHumaine = { cite: false, soutiens: [], noms_cites: [], non_reponse: true, indeterminee: false, extrait: { texte: "selon la presse", provenance: "reponse" } };
     expect(acceptee(construireNotationHumaine(saisie, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA }))).categorie).toBe("non_reponse");
@@ -208,7 +240,7 @@ describe("notation acceptée", () => {
         releve(["Martinez", "Ollivier"]),
         contexte({
           gabarit: "Q-ATT",
-          resolu: { ...QATT_ALPHA, reponse_attendue: { ...QATT_ALPHA.reponse_attendue, candidats_attendus: ["demo-alpha", "demo-epsilon"] } },
+          resolu: { ...QATT_ALPHA, reponse_attendue: { ...QATT_ALPHA.reponse_attendue, candidats_attendus: ["demo-alpha", "demo-epsilon"], candidats_references: ["demo-alpha", "demo-beta", "demo-epsilon", "demo-gamma"] } },
           surcharges: { perimetre: { candidats: HOMONYMES, interroges: HOMONYMES.map((c) => c.candidat_id) } },
         }),
       ],

@@ -72,7 +72,12 @@ export interface CoupleOutilMode {
   readonly mode: Mode;
 }
 
-export const CATEGORIES_RETENUES = ["exacte", "inexacte", "non_reponse", "indeterminee"] as const;
+/**
+ * `non_classee` (D64, protocole 0.27, §7) n'est pas une catégorie primaire : c'est l'issue d'une
+ * question d'attribution qui cite un candidat interrogé sans item vérifié sur la mesure, « non
+ * classée, référence incomplète ». Elle sort du dénominateur de l'exactitude (§8).
+ */
+export const CATEGORIES_RETENUES = ["exacte", "inexacte", "non_reponse", "indeterminee", "non_classee"] as const;
 export type CategorieRetenue = (typeof CATEGORIES_RETENUES)[number];
 
 /** Ordre figé : il fixe l'ordre de la répartition des drapeaux parmi les inexactes (§8). */

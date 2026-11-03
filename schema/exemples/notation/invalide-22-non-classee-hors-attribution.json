@@ -1,0 +1,41 @@
+{
+  "id": "Q7M2C4V9DXKH3RWB8ZTN5PFJ6E",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "objet_note": {
+    "type": "reponse",
+    "id": "YPWCRSKQA9C9VVYJ9Z3SFNQX2F"
+  },
+  "notateur": {
+    "type": "juge",
+    "id": "juge-1",
+    "famille_modele": "famille-x",
+    "modele": "famille-x/modele-juge-1",
+    "version_prompt": "prompts/judge-primaire-1.0.0",
+    "a_vu_identite_outil": false
+  },
+  "version_charge": "charge-juge-v3",
+  "gabarit": "Q-DIR",
+  "references_item": [
+    {
+      "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "item_version": 1,
+      "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+    }
+  ],
+  "categorie": "non_classee",
+  "drapeaux": [],
+  "motif_non_classement": "reference_incomplete",
+  "sourcage": {
+    "cite": false,
+    "liens": []
+  },
+  "extrait_justificatif": {
+    "provenance": "reponse",
+    "texte": "proposent la mesure",
+    "verifie_deterministe": true
+  },
+  "date": "2026-12-03T11:00:00+01:00",
+  "duree_ms": 2400,
+  "motif_notation": "notation_juge"
+}

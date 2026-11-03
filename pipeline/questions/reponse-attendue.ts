@@ -363,7 +363,16 @@ export function premisseFausseAuGel(question: QuestionAPremisse, items: readonly
  * (§5, protocole 0.9).
  */
 export type ListeAuGel =
-  | { readonly definie: true; readonly candidats: readonly string[] }
+  | {
+      readonly definie: true;
+      readonly candidats: readonly string[];
+      /**
+       * D64 (protocole 0.27, §7, annexe B) : les candidats interrogés qui portent au gel un item
+       * vérifié en vigueur sur la mesure, « pour » ou non — les clés de `positionsParCandidat`. Un
+       * candidat interrogé hors de cette liste est sans référence : le citer ne peut pas être jugé.
+       */
+      readonly references: readonly string[];
+    }
   | { readonly definie: false; readonly candidat_id: string; readonly position: Position };
 
 /**
@@ -436,7 +445,7 @@ function listeAttendueAuGel(
     if (positions.size > 1) throw new PositionsContradictoires(candidat_id, [...positions].sort());
     if (positions.has("pour")) candidats.push(candidat_id);
   }
-  return { definie: true, candidats: candidats.sort() };
+  return { definie: true, candidats: candidats.sort(), references: [...table.keys()].sort() };
 }
 
 /**
@@ -539,7 +548,7 @@ function attributionSansPrincipal(
   if (gabaritParCode(question.gabarit).nomme_candidat) throw new QuestionSansPrincipal(0);
   return {
     nature: "liste_candidats",
-    candidats_attendus: listeDefinieOuRefus(question.gabarit, null, question.items, parId, gel),
+    ...listeDefinieOuRefus(question.gabarit, null, question.items, parId, gel),
     resolution_temporelle: { date_gel: gel.date_gel, regle: "semi_ouvert" },
   };
 }
@@ -620,9 +629,15 @@ function ouiSiOppose(contexte: Contexte, position: Position): ReponseAttendue {
  * tirabilité (`tirabilite.ts`) l'attrape avant le tirage et compte la question à part (§5,
  * protocole 0.9). Y répondre serait une décision de mesure prise en silence.
  */
-function candidatsAttendus(contexte: Contexte): readonly string[] {
+function candidatsAttendus(contexte: Contexte): ListeEtReferences {
   const gel = { date_gel: contexte.temporelle.date_gel, interroges: contexte.interroges };
   return listeDefinieOuRefus(contexte.gabarit, contexte.item.type, contexte.items, contexte.parId, gel);
+}
+
+/** Ce que le gel fige d'une Q-ATT de mesure réelle : la liste attendue et, D64, ses références. */
+interface ListeEtReferences {
+  readonly candidats_attendus: readonly string[];
+  readonly candidats_references: readonly string[];
 }
 
 function listeDefinieOuRefus(
@@ -631,9 +646,9 @@ function listeDefinieOuRefus(
   entrees: readonly ItemDeQuestion[],
   parId: ReadonlyMap<string, Item>,
   gel: GelDuRun,
-): readonly string[] {
+): ListeEtReferences {
   const liste = listeAttendueAuGel(entrees, parId, gel);
-  if (liste.definie) return liste.candidats;
+  if (liste.definie) return { candidats_attendus: liste.candidats, candidats_references: liste.references };
   throw new ReponseNonDefinieAuGel(
     gabarit,
     type_item,
@@ -664,7 +679,7 @@ const RESOLVEURS: ReadonlyMap<string, Resolveur> = new Map<string, Resolveur>([
     "Q-ATT:P",
     (contexte) => ({
       nature: "liste_candidats",
-      candidats_attendus: candidatsAttendus(contexte),
+      ...candidatsAttendus(contexte),
       resolution_temporelle: contexte.temporelle,
     }),
   ],

@@ -106,7 +106,7 @@ export const REGLES_JUGE_SIMULE = {
     extrait_invalide: { a: "non_reponse_extrait_introuvable", b: "non_reponse" },
   },
   /** La note qu'un juge biaisé rend à la place de la sienne, selon sa catégorie. */
-  biais: { exacte: "inexacte_opposee", inexacte: "exacte", non_reponse: "inexacte_opposee", indeterminee: "inexacte_opposee" },
+  biais: { exacte: "inexacte_opposee", inexacte: "exacte", non_reponse: "inexacte_opposee", indeterminee: "inexacte_opposee", non_classee: "inexacte_opposee" },
 } as const satisfies {
   readonly scenarios: Readonly<Record<string, Readonly<Record<RoleSimule, NomNote>>>>;
   readonly biais: Readonly<Record<CategorieRetenue, NomNote>>;

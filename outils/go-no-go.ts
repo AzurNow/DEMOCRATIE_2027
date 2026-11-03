@@ -39,6 +39,7 @@ function imprimer(repertoire: string, resultat: ResultatGoNoGo): void {
     ...resultat.go_no_go.criteres.map((c) => `  ${c.statut === "vert" ? "VERT " : "ROUGE"}  ${c.code.padEnd(36)} valeur ${String(c.valeur)} ; seuil ${String(c.seuil)}`),
     ...resultat.kappas.map((k) => `  kappa de l'échantillon, ${k.juge_id} : ${k.kappa === null ? `indéfini (${String(k.motif_indefini)})` : String(k.kappa)} sur ${k.n} réponse(s)`),
     `  réponses de l'échantillon à note humaine indéterminée, écartées du kappa (D25) : ${resultat.indeterminees}`,
+    `  réponses de l'échantillon à note non classée, référence incomplète, écartées du kappa (D64, D70) : ${resultat.non_classees}`,
     `  refus de l'API de l'échantillon, notés par règle sans juge, écartés du kappa (D32) : ${resultat.refus_api}`,
     `Décision : ${resultat.go_no_go.decision}${resultat.go_no_go.motif === undefined ? "" : ` — ${resultat.go_no_go.motif}`}`,
     `run.json : ${LIBELLE_ISSUE[resultat.run_json]} ; checklist.json : ${LIBELLE_ISSUE[resultat.checklist_json]}`,

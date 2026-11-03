@@ -12,7 +12,8 @@
  * trahirait une note). Le motif reste dans le serveur, où il sert à construire la notation.
  */
 
-import { CATEGORIES_RETENUES, DRAPEAUX, VERDICTS_SOUTIEN } from "../../analysis/types.ts";
+import { CATEGORIES_PRIMAIRES } from "../../analysis/kappa-categorie-primaire.ts";
+import { DRAPEAUX, VERDICTS_SOUTIEN } from "../../analysis/types.ts";
 import { construireNotationHumaine } from "../../pipeline/notation/notation-humaine.ts";
 import { FichierDejaEcrit } from "../../pipeline/notation/stockage.ts";
 import { MOTIFS_INEXACTITUDE } from "../../pipeline/notation/types.ts";
@@ -42,7 +43,9 @@ function session(contexte: Contexte): Reponse {
       date_gel: run.date_gel,
       version_grille: VERSION_GRILLE_HUMAINE,
       grille: {
-        categories: CATEGORIES_RETENUES,
+        // Les quatre catégories de la grille (annexe C). D64 : « non_classee » n'est jamais saisie,
+        // la règle d'ensembles d'une Q-ATT la calcule (pipeline/notation/note-attribution.ts).
+        categories: CATEGORIES_PRIMAIRES,
         drapeaux: DRAPEAUX,
         motifs_inexactitude: MOTIFS_INEXACTITUDE,
         verdicts_soutien: VERDICTS_SOUTIEN,

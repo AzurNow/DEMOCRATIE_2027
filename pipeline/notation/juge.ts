@@ -58,7 +58,7 @@ import { fraicheurDesItems } from "./fraicheur.ts";
 import { AttributionIncoherente, noterAttribution, type NoteAttribution } from "./note-attribution.ts";
 import { NomCiteSansMot } from "./rattachement.ts";
 import { LienSansVerdictExistence, type ExistenceEtablie } from "./vue-annotateur.ts";
-import type { CandidatDuRun, LienNotation, MotifInexactitude, NotationIndividuelle, RenvoiHumain } from "./types.ts";
+import type { CandidatDuRun, LienNotation, MotifInexactitude, MotifNonClassement, NotationIndividuelle, RenvoiHumain } from "./types.ts";
 
 export interface IdentiteJuge {
   readonly juge_id: string;
@@ -176,6 +176,8 @@ interface NoteDeJuge {
   readonly categorie: CategorieRetenue;
   readonly drapeaux: readonly Drapeau[];
   readonly motif_inexactitude?: MotifInexactitude;
+  /** D64 : sur une Q-ATT non classée, calculé par la règle d'ensembles. */
+  readonly motif_non_classement?: MotifNonClassement;
   readonly attribution?: NonNullable<NotationIndividuelle["attribution"]>;
 }
 
@@ -246,6 +248,7 @@ function notationDe(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNota
     categorie: note.categorie,
     drapeaux: [...note.drapeaux],
     ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }),
+    ...(note.motif_non_classement === undefined ? {} : { motif_non_classement: note.motif_non_classement }),
     ...(fraiche === undefined ? {} : { obsolescence_fraiche: fraiche }),
     ...(note.attribution === undefined ? {} : { attribution: note.attribution }),
     sourcage: { cite: sortie.sourcage.cite, liens: liensNotes(identite.juge_id, sortie, cadre) },
@@ -273,6 +276,9 @@ function exigerChampsConnus(juge_id: string, objet_id: Ulid, sortie: SortieJuge,
 function noteOrdinaireDe(juge_id: string, sortie: SortieJuge, cadre: CadreNotationJuge): NoteDeJuge {
   exigerChampsConnus(juge_id, cadre.objet_id, sortie, CHAMPS_SORTIE_JUGE);
   if (!("categorie" in sortie)) throw new SortieJugeIncoherente(juge_id, cadre.objet_id, "sortie sans catégorie sur une question qui n'est pas d'attribution.");
+  if (sortie.categorie === "non_classee") {
+    throw new SortieJugeIncoherente(juge_id, cadre.objet_id, "« non_classee » rendue par le juge : elle n'est donnée que par la règle d'une question d'attribution (D64).");
+  }
   return { categorie: sortie.categorie, drapeaux: sortie.drapeaux, ...(sortie.motif_inexactitude === undefined ? {} : { motif_inexactitude: sortie.motif_inexactitude }) };
 }
 
@@ -287,7 +293,17 @@ function noteAttributionDe(juge_id: string, sortie: SortieJuge, cadre: CadreNota
   if (note.categorie !== "exacte" && sortie.extrait_justificatif === undefined) {
     throw new SortieJugeIncoherente(juge_id, cadre.objet_id, `note calculée « ${note.categorie} » sans extrait justificatif : sur une question d'attribution, l'extrait est exigé dès qu'un nom est cité ou que la liste attendue n'est pas vide.`);
   }
-  return { categorie: note.categorie, drapeaux: note.drapeaux, ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }), attribution: note.attribution };
+  return { ...noteCalculee(note), attribution: note.attribution };
+}
+
+/** Catégorie, drapeaux et motifs d'une note d'attribution calculée, recopiés champ par champ. */
+function noteCalculee(note: Extract<NoteAttribution, { readonly statut: "calculee" }>): NoteDeJuge {
+  return {
+    categorie: note.categorie,
+    drapeaux: note.drapeaux,
+    ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }),
+    ...(note.motif_non_classement === undefined ? {} : { motif_non_classement: note.motif_non_classement }),
+  };
 }
 
 function noterOuRefuser(juge_id: string, cadre: CadreNotationJuge, sortie: SortieJugeAttribution): NoteAttribution {

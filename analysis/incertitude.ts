@@ -56,9 +56,10 @@ export const STRATE_GLOBALE = "global";
 
 /**
  * Le nom publié de chaque taux primaire, dans la clé de sa graine : le nom de son champ dans
- * `TauxPrimaires`. Le type exige qu'aucun taux primaire ne manque ici.
+ * `TauxPrimaires`. Le type exige qu'aucun taux primaire ne manque ici. Les deux effectifs
+ * (`reponses_obtenues`, `non_classees`, D64) sont des nombres, pas des taux : sans intervalle.
  */
-const TAUX_PRIMAIRES: Readonly<Record<Exclude<keyof TauxPrimaires, "reponses_obtenues">, Statistique>> = {
+const TAUX_PRIMAIRES: Readonly<Record<Exclude<keyof TauxPrimaires, "reponses_obtenues" | "non_classees">, Statistique>> = {
   exactitude,
   non_reponse: tauxNonReponse,
   fabrication: tauxFabrication,

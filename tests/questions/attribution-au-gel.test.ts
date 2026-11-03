@@ -20,7 +20,7 @@ import {
   reponseAttendue,
 } from "../../pipeline/questions/reponse-attendue.ts";
 import { tirer } from "../../pipeline/questions/tirage.ts";
-import { questionsTirables } from "../../pipeline/questions/tirabilite.ts";
+import { itemsGardesAuGel, questionsTirables } from "../../pipeline/questions/tirabilite.ts";
 import type { CandidatAuGel, Item, Position, QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { candidat, completer, graine, itemF, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
 
@@ -356,5 +356,73 @@ describe("périmètre du run : seuls les candidats interrogés comptent", () => 
     const listes = resultat.tirage.entrees.map((entree) => entree.reponse_attendue.candidats_attendus);
     expect(listes.length).toBeGreaterThan(0);
     for (const liste of listes) expect(liste).toEqual(["demo-beta"]);
+  });
+});
+
+/**
+ * D64 (protocole 0.27, §7 et annexe B) : sur une mesure réelle, un candidat cité n'est en trop que
+ * s'il porte un item vérifié sur la mesure dont la position en vigueur au gel n'est pas « pour ».
+ * Le gel fige donc, à côté de la liste attendue, les candidats interrogés qui portent un tel item
+ * (`candidats_references`) : la notation les lit, sans jamais relire les items.
+ */
+describe("D64 : candidats de référence d'une Q-ATT, résolus au gel", () => {
+  function references(principal: Item, items: readonly Item[], candidats: readonly CandidatAuGel[] = INTERROGES): readonly string[] | undefined {
+    return reponseAttendue(attributionSur(principal, items), items, GEL, candidats).candidats_references;
+  }
+
+  it("les candidats « pour » et « contre » au gel sont de référence ; celui sans item sur la mesure ne l'est pas", () => {
+    const alpha = p("demo-alpha", "contre");
+    const beta = p("demo-beta", "pour");
+    expect(references(beta, [alpha, beta])).toEqual(["demo-alpha", "demo-beta"]);
+  });
+
+  it.each(["en_attente", "rejete", "a_confirmer"] as const)("un item « %s » sur la mesure ne fait pas de son candidat une référence", (statut) => {
+    const beta = p("demo-beta", "pour");
+    const gamma = itemP({ cle: `att-gel-ref-${statut}`, candidat_id: "demo-gamma", mesure: MESURE, position: "contre", statut_validation: statut });
+    expect(references(beta, [beta, gamma])).toEqual(["demo-beta"]);
+  });
+
+  it("un item vérifié à l'engendrement puis rejeté au gel n'est pas gardé : son candidat n'est pas une référence", () => {
+    const beta = p("demo-beta", "pour");
+    const gamma = p("demo-gamma", "contre");
+    const question = attributionSur(beta, [beta, gamma]);
+    const rejete: Item = { ...gamma, statut_validation: "rejete" };
+    const items = [beta, rejete];
+    const gardes = itemsGardesAuGel(question, new Map(items.map((item) => [item.id, item])), new Set(CANDIDATS));
+    expect(reponseAttendue({ gabarit: question.gabarit, items: gardes }, items, GEL, INTERROGES).candidats_references).toEqual(["demo-beta"]);
+  });
+
+  it("règle semi-ouverte : un item vérifié dont valide_au tombe exactement sur le gel ne dit plus rien au gel, son candidat n'est pas une référence", () => {
+    const beta = p("demo-beta", "pour");
+    const perime = itemP({ cle: "att-gel-ref-perime-gel", candidat_id: "demo-gamma", mesure: MESURE, position: "contre", valide_au: "2026-12-01" });
+    expect(references(beta, [beta, perime])).toEqual(["demo-beta"]);
+  });
+
+  it("la veille de son terme, le même item fait encore de son candidat une référence", () => {
+    const beta = p("demo-beta", "pour");
+    const enVigueur = itemP({ cle: "att-gel-ref-veille", candidat_id: "demo-gamma", mesure: MESURE, position: "contre", valide_au: "2026-12-02" });
+    expect(references(beta, [beta, enVigueur])).toEqual(["demo-beta", "demo-gamma"]);
+  });
+
+  it("un candidat non interrogé n'est jamais une référence, même avec un item vérifié", () => {
+    const beta = p("demo-beta", "pour");
+    const gamma = p("demo-gamma", "contre");
+    const sansGamma = [candidat({ candidat_id: "demo-alpha" }), candidat({ candidat_id: "demo-beta" }), candidat({ candidat_id: "demo-gamma", interroge: false })];
+    expect(references(beta, [beta, gamma], sansGamma)).toEqual(["demo-beta"]);
+  });
+
+  it("la liste attendue est toujours contenue dans les références", () => {
+    const alpha = p("demo-alpha", "contre");
+    const beta = p("demo-beta", "pour");
+    const gamma = o("demo-gamma", "contre", "pour", "2026-10-01");
+    const attendue = reponseAttendue(attributionSur(beta, [alpha, beta, gamma]), [alpha, beta, gamma], GEL, INTERROGES);
+    expect(attendue.candidats_attendus).toEqual(["demo-beta", "demo-gamma"]);
+    expect(attendue.candidats_references).toEqual(["demo-alpha", "demo-beta", "demo-gamma"]);
+  });
+
+  it("mesure fictive (item F) : aucune référence n'est figée, l'attente reste « aucun »", () => {
+    const fictif = itemF({ cle: "att-gel-ref-f", candidat_id: "demo-alpha", mesure: MESURE_FICTIVE });
+    const attendue = reponseAttendue(attributionSur(fictif, [fictif]), [fictif], GEL, INTERROGES);
+    expect(attendue).not.toHaveProperty("candidats_references");
   });
 });
