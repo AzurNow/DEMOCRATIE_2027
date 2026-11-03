@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import {
   FormulationNeutreIntrouvable,
   QUESTIONS_PAR_CANDIDAT,
+  questionsDuSousEchantillonDuRun,
   sousEchantillonApplication,
   SousEchantillonInsuffisant,
   type EntreesSousEchantillon,
@@ -209,5 +210,26 @@ describe("déterminisme et symétrie (§5)", () => {
 
     const motif = (i: number) => resultat.candidats[i]?.questions.map((x) => [x.rang, x.gabarit]);
     expect(motif(0)).toEqual(motif(1));
+  });
+});
+
+describe("questionsDuSousEchantillonDuRun : l'entrée injectée dans pnpm analyze (écart API / application)", () => {
+  it("rend les questions du sous-échantillon calculé sur les fichiers gelés, candidats triés puis ordre du tourniquet", () => {
+    const a = jeu("cand-a", { "Q-DIR": 3, "Q-FER": 3 });
+    const b = jeu("cand-b", { "Q-DIR": 5 });
+    const candidats = [
+      { candidat_id: "cand-b", interroge: true },
+      { candidat_id: "cand-a", interroge: true },
+    ];
+    const attendu = sousEchantillonApplication(entrees(candidats, [a, b])).candidats.flatMap((c) => c.questions.map((x) => x.question_id));
+
+    const lues = questionsDuSousEchantillonDuRun({
+      run: { id: RUN_ID, perimetre: { candidats } },
+      entrees_tirage: [...a.entrees, ...b.entrees],
+      questions: [...a.questions, ...b.questions],
+    });
+
+    expect(lues).toEqual(attendu);
+    expect(lues).toHaveLength(2 * QUESTIONS_PAR_CANDIDAT);
   });
 });

@@ -16,6 +16,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { analyserRun, cheminMetriques, empreinteDuRun, type EntreesDuRun } from "../../analysis/analyse-du-run.ts";
 import { cheminRecalculB, recalculB, recalculerEtEcrireB } from "../../analysis/recalcul-b.ts";
 import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
+import { questionsDuSousEchantillonDuRun } from "../../pipeline/interrogation/sous-echantillon-application.ts";
 import { dateParis } from "../../pipeline/interrogation/heure-paris.ts";
 import { echantillonHumainDuRun } from "../../pipeline/notation/echantillons.ts";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -119,7 +120,7 @@ describe("empreinte de run.json : hors des champs de statut, de publication et d
 
 describe("recalculerEtEcrireB et pnpm recalcul-b, sur un run écrit sur disque", () => {
   let fictif: RunFictif;
-  const options = () => ({ items: fictif.items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun });
+  const options = () => ({ items: fictif.items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun, sous_echantillon_application: questionsDuSousEchantillonDuRun });
 
   beforeAll(() => {
     fictif = poserRunNote();

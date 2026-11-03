@@ -23,6 +23,8 @@ export interface SpecCandidat {
   readonly sous_seuil: boolean;
   readonly items_p: number;
   readonly items_f: number;
+  /** Le nombre d'items P vérifiés lu au gel (§4) ; sans lui, 2 sous le seuil et 20 au-dessus. */
+  readonly items_p_verifies?: number;
 }
 
 export interface SpecOutil {
@@ -49,6 +51,31 @@ export interface SpecRun {
   readonly tronquee?: (contexte: ContexteReponse) => boolean;
   /** Le run lui-même, pour poser deux runs (tendance, H5) ou un autre régime (§3). */
   readonly run?: SpecDuRun;
+  /** Le canal application (§6, QR8) ; sans lui, le run n'a aucune réponse de l'application. */
+  readonly application?: SpecApplication;
+}
+
+/** Une question du run, désignée par son item principal. */
+export interface QuestionDuRun {
+  readonly candidat_id: string;
+  readonly type: "P" | "F";
+  readonly rang: number;
+}
+
+export interface SaisieApplication extends QuestionDuRun {
+  readonly outil_id: string;
+  readonly testeur: string;
+}
+
+/**
+ * §6 : le sous-échantillon de l'application et les saisies des testeurs, à la formulation neutre,
+ * échantillon 1. Le sous-échantillon est posé ici, comme `pnpm analyze` le reçoit injecté.
+ */
+export interface SpecApplication {
+  readonly dans_sous_echantillon: (question: QuestionDuRun) => boolean;
+  /** Les testeurs qui ont saisi la question dans l'application de l'outil ; vide, aucune saisie. */
+  readonly testeurs: (question: QuestionDuRun & { readonly outil_id: string }) => readonly string[];
+  readonly categorie: (saisie: SaisieApplication) => CategorieRetenue;
 }
 
 export type RegimeInclusion = RunAnalyse["perimetre"]["regime_inclusion"];
@@ -181,17 +208,59 @@ function volumeDe(spec: SpecRun, items: readonly ItemDuRun[], questions: readonl
   return volume;
 }
 
+function candidatDe(c: SpecCandidat): ReturnType<typeof candidat> {
+  const verifies = c.items_p_verifies ?? (c.sous_seuil ? 2 : 20);
+  return candidat({ candidat_id: c.id, sous_seuil: c.sous_seuil, items_p_verifies: verifies, items_p_au_gel: itemsPAuGel(`p-${c.id}`, verifies) });
+}
+
+function questionDuRun(item: ItemDuRun): QuestionDuRun {
+  return { candidat_id: item.item.candidat_id, type: item.item.type as "P" | "F", rang: item.rang };
+}
+
+function formulationNeutre(question: Question): string {
+  const neutre = question.formulations.find((f) => f.registre === "neutre");
+  if (neutre === undefined) throw new Error(`question ${question.id} sans formulation neutre`);
+  return neutre.id;
+}
+
+/** §6 : chaque saisie d'un testeur est une réponse du canal application, sans mode, notée hors échantillon humain. */
+function saisiesApplication(spec: SpecRun, items: readonly ItemDuRun[], questions: readonly Question[], volume: Volume): void {
+  const application = spec.application;
+  if (application === undefined) return;
+  for (const o of spec.outils) {
+    items.forEach((it, i) => {
+      const question = questions[i] as Question;
+      for (const testeur of application.testeurs({ ...questionDuRun(it), outil_id: o.outil_id })) {
+        const id = ulid(`app-${o.outil_id}-${question.id}-${testeur}`);
+        volume.reponses.push(
+          reponse({ id, canal: "application", mode: undefined, outil_id: o.outil_id, question_id: question.id, formulation_id: formulationNeutre(question), echantillon: 1 }),
+        );
+        const categorie = application.categorie({ ...questionDuRun(it), outil_id: o.outil_id, testeur });
+        volume.verdicts.push(verdict({ id: ulid(`v-${id}`), objet_note: { type: "reponse", id }, categorie_retenue: categorie, drapeaux_retenus: [], dans_echantillon_humain: false }));
+      }
+    });
+  }
+}
+
+function sousEchantillonDe(spec: SpecRun, items: readonly ItemDuRun[], questions: readonly Question[]): readonly string[] | null {
+  const application = spec.application;
+  if (application === undefined) return null;
+  return items.flatMap((it, i) => (application.dans_sous_echantillon(questionDuRun(it)) ? [(questions[i] as Question).id] : []));
+}
+
 export function entreesDuRunAnalysable(spec: SpecRun): EntreesDuRun {
   const items = spec.candidats.flatMap(itemsDe);
   const questions = items.map(({ item }) => questionDe(item));
   const entrees_tirage = items.map((item, i) => entreeDe(questions[i] as Question, item));
-  const { reponses, verdicts, notations } = volumeDe(spec, items, questions);
+  const volume = volumeDe(spec, items, questions);
+  saisiesApplication(spec, items, questions, volume);
+  const { reponses, verdicts, notations } = volume;
   const base = run({
     ...(spec.run?.cle === undefined ? {} : { id: ulid(spec.run.cle) }),
     date_gel: spec.run?.date_gel ?? GEL,
     perimetre: {
       candidats: spec.candidats.map((c) =>
-        candidat({ candidat_id: c.id, sous_seuil: c.sous_seuil, items_p_verifies: c.sous_seuil ? 2 : 20, items_p_au_gel: itemsPAuGel(`p-${c.id}`, c.sous_seuil ? 2 : 20) }),
+        candidatDe(c),
       ),
       outils: spec.outils.map((o) => outil({ outil_id: o.outil_id, modes: o.modes, mode_de_tete: o.modes[0] })),
     },
@@ -213,6 +282,7 @@ export function entreesDuRunAnalysable(spec: SpecRun): EntreesDuRun {
     verdicts,
     notations,
     plan: planCouvrant(reponses),
+    questions_sous_echantillon: sousEchantillonDe(spec, items, questions),
   };
 }
 
@@ -246,4 +316,32 @@ export const SPEC_REFERENCE: SpecRun = {
   // outil-alpha / web_desactivee : une seule, sous le seuil de 20 %.
   manquante: (c) => estIncompleteGamma(c) || estManquanteAlpha(c),
   tronquee: (c) => c.registre === "familier" && c.rang === 1,
+};
+
+function saisieParAlpha(q: QuestionDuRun & { readonly outil_id: string }): boolean {
+  return q.outil_id === "outil-alpha" && q.type === "P" && q.rang <= 1 && q.candidat_id !== "candidat-bas";
+}
+
+/**
+ * Un run avec le canal application (§6, QR8). Deux outils ; seul outil-alpha est saisi dans
+ * l'application. Sous-échantillon : les items P de rang 0 et 1 de candidat-a et de candidat-b. Le
+ * testeur t2 n'a pas saisi la question de candidat-b, rang 1. L'API (mode de tête web_desactivee,
+ * neutre, échantillon 1) est exacte partout sauf sur candidat-b rang 1 ; l'application est inexacte
+ * sur candidat-a rang 0, pour les deux testeurs. Écart attendu : 3/4 moins 5/7.
+ */
+export const SPEC_APPLICATION: SpecRun = {
+  candidats: SPEC_REFERENCE.candidats,
+  outils: [
+    { outil_id: "outil-alpha", modes: ["web_desactivee", "web_activee"] },
+    { outil_id: "outil-beta", modes: ["web_desactivee"] },
+  ],
+  categorie: (c) => (c.candidat_id === "candidat-b" && c.rang === 1 ? "inexacte" : "exacte"),
+  application: {
+    dans_sous_echantillon: (q) => q.type === "P" && q.rang <= 1 && q.candidat_id !== "candidat-bas",
+    testeurs: (q) => {
+      if (!saisieParAlpha(q)) return [];
+      return q.candidat_id === "candidat-b" && q.rang === 1 ? ["t1"] : ["t1", "t2"];
+    },
+    categorie: (s) => (s.candidat_id === "candidat-a" && s.rang === 0 ? "inexacte" : "exacte"),
+  },
 };

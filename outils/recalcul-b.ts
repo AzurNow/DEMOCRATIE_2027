@@ -19,6 +19,7 @@
 import { recalculerEtEcrireB } from "../analysis/recalcul-b.ts";
 import { dateParis } from "../pipeline/interrogation/heure-paris.ts";
 import { requetesDuPlanDuRun } from "../pipeline/interrogation/plan-du-run.ts";
+import { questionsDuSousEchantillonDuRun } from "../pipeline/interrogation/sous-echantillon-application.ts";
 import { echantillonHumainDuRun } from "../pipeline/notation/echantillons.ts";
 import { analyserArguments, obligatoire } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
@@ -41,7 +42,7 @@ function demande(bruts: readonly string[]): Demande {
 function principal(): void {
   try {
     const { repertoire, items } = demande(process.argv.slice(2));
-    const options = { items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun };
+    const options = { items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun, sous_echantillon_application: questionsDuSousEchantillonDuRun };
     const { chemin, document } = recalculerEtEcrireB(repertoire, options, dateParis(Date.now()));
     const identique = (document as { readonly identique_a_la_reference: boolean }).identique_a_la_reference;
     process.stdout.write(`Recalcul (b) daté — ${repertoire}\n${chemin} : écrit (${identique ? "identique" : "différent"} du (b) de metriques.json)\n`);

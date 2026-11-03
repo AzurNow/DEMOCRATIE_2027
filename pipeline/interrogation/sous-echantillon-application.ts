@@ -177,3 +177,23 @@ function formulationNeutre(formulations: ReadonlyMap<string, readonly string[]>,
   if (neutres.length !== 1 || unique === undefined) throw new FormulationNeutreIntrouvable(question_id, neutres.length);
   return unique;
 }
+
+/**
+ * Les questions du sous-échantillon d'un run lu, dans l'ordre des candidats puis du tourniquet :
+ * l'entrée de l'écart API / application (`analysis/analyse-du-run.ts:SousEchantillonDuRun`), injectée
+ * par `outils/analyze.ts` pour qu'`analysis/` n'importe pas ce module. Le calcul est celui des
+ * testeurs, sur les mêmes fichiers gelés : rien n'est recopié ailleurs.
+ */
+export function questionsDuSousEchantillonDuRun(fichiers: {
+  readonly run: { readonly id: string; readonly perimetre: { readonly candidats: readonly PorteInterroge[] } };
+  readonly entrees_tirage: EntreesSousEchantillon["entrees"];
+  readonly questions: EntreesSousEchantillon["questions"];
+}): readonly string[] {
+  const sous = sousEchantillonApplication({
+    run_id: fichiers.run.id,
+    candidats: fichiers.run.perimetre.candidats,
+    entrees: fichiers.entrees_tirage,
+    questions: fichiers.questions,
+  });
+  return sous.candidats.flatMap((c) => c.questions.map((q) => q.question_id));
+}

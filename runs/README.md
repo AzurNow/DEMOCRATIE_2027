@@ -382,7 +382,13 @@ du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.sch
   `robustesse.taux` (recalculs (a) à (d)), `hypotheses` (H1 à H5 ; un verdict non confirmé est
   `non_confirmee`, jamais « infirmé »). Chaque section est `{statut: "calcule", …}` ou
   `{statut: "sans_objet", motif}`. À venir : `robustesse.differences` (`calcul_a_venir`) ; ni les
-  comparateurs, ni le canal application, ni la liste des erreurs graves ne sont encore calculés.
+  comparateurs, ni les taux du canal application, ni la liste des erreurs graves ne sont encore calculés.
+- **Exploratoire.** `exploratoire.correlation_couverture` (Spearman par couple comparé, §2, sans
+  intervalle ; sans objet en `entre_deux_tours`, motif `moins_de_trois_candidats`) et
+  `exploratoire.ecart_api_application` (§6, QR8 ; sans objet, `aucune_reponse_application`, quand le
+  run n'a aucune réponse de l'application). Le sous-échantillon de l'application n'est calculé, depuis
+  les fichiers gelés, que si le run a au moins une réponse de ce canal. Chaque résultat porte
+  `exploratoire: true`, sans qualificatif de fragilité.
 - **H3 et H5.** H3 est publiée couple par couple, sur la différence neutre moins orientée des
   questions dont l'item principal est F ou O (clé de graine de strate `type_item:F+O`). H5 lit la
   tendance de l'exactitude entre le premier run, donné par `--premier` et lu avec son propre partage,

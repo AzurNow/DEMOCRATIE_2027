@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { analyserRun, cheminMetriques, empreinteDuRun, lireEntreesDuRun } from "../../analysis/analyse-du-run.ts";
 import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
+import { questionsDuSousEchantillonDuRun } from "../../pipeline/interrogation/sous-echantillon-application.ts";
 import { echantillonHumainDuRun } from "../../pipeline/notation/echantillons.ts";
 import { executerOutil } from "../aides/depot.ts";
 import { poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
@@ -21,7 +22,7 @@ beforeAll(() => {
 afterAll(() => fictif.nettoyer());
 
 function options(run: RunFictif) {
-  return { items: run.items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun };
+  return { items: run.items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun, sous_echantillon_application: questionsDuSousEchantillonDuRun };
 }
 
 describe("pnpm analyze sur un run lu sur disque", () => {
@@ -32,6 +33,16 @@ describe("pnpm analyze sur un run lu sur disque", () => {
     expect(JSON.stringify(document)).not.toMatch(/kappa|contrefactuel/);
     // Le seul couple du run fictif est incomplet (10 requêtes sur 12 sans réponse) : rien n'est comparé.
     expect(document).toMatchObject({ taux: { statut: "sans_objet", motif: "aucun_couple_compare" }, hypotheses: { H1: { verdict: "sans_objet" }, H4: { verdict: "indecidable" } } });
+  });
+
+  it("run sans réponse de l'application : le sous-échantillon n'est pas calculé, et l'écart est sans objet avec son motif", () => {
+    const refuse = () => {
+      throw new Error("sous-échantillon calculé sans réponse de l'application");
+    };
+    const entrees = lireEntreesDuRun(fictif.repertoire_run, { ...options(fictif), sous_echantillon_application: refuse });
+    expect(entrees.questions_sous_echantillon).toBeNull();
+    const document = analyserRun(entrees, PARAMETRES, null);
+    expect(document).toMatchObject({ exploratoire: { ecart_api_application: { statut: "sans_objet", motif: "aucune_reponse_application" } } });
   });
 
   it("l'empreinte de run.json ignore les champs que pnpm go-no-go écrit ensuite", () => {
