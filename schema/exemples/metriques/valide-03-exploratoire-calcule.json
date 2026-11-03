@@ -3653,7 +3653,14 @@
         }
       ]
     },
-    "differences": {"statut": "calcule", "tendance": {"statut": "sans_objet", "motif": "premier_run_absent"}, "resultats": []}
+    "differences": {
+      "statut": "calcule",
+      "tendance": {
+        "statut": "sans_objet",
+        "motif": "premier_run_absent"
+      },
+      "resultats": []
+    }
   },
   "variabilite_echantillons": {
     "statut": "calcule",
@@ -3675,6 +3682,10 @@
         "accord": 1
       }
     ]
+  },
+  "comparateurs": {
+    "statut": "sans_objet",
+    "motif": "aucun_comparateur_inclus"
   },
   "hypotheses": {
     "H1": {

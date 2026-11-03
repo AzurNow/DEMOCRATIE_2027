@@ -45,8 +45,9 @@ import { canoniser } from "../validation/domaine/empreinte.ts";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsPublie } from "./accord-humains.ts";
 import { estDuRun, type EntreesAnalyse } from "./filtre.ts";
 import { parModeDuRun, type RequeteDuPlan } from "./seuils.ts";
-import type { CandidatAuGel, EntreeTirage, Item, Mode, ParMode, Question, ReferenceItem, Reponse, Run, SeuilMode, Ulid } from "./types.ts";
+import type { CandidatAuGel, EntreeTirage, Item, LectureComparateur, Mode, ParMode, Question, ReferenceItem, Reponse, Run, SeuilMode, Ulid } from "./types.ts";
 import { candidatsInterroges as candidatsInterrogesAuRun } from "./candidats-interroges.ts";
+import { comparateursDuRun } from "./reference-comparateurs.ts";
 
 /* ------------------------------------------------------------------ disposition */
 
@@ -65,6 +66,8 @@ export interface DispositionRunNote {
   readonly reponses_contrefactuelles: string;
   /** Renvois d'un juge vers la notation humaine (D30 (2), `schema/renvoi-humain.schema.json`). */
   readonly renvois: string;
+  /** §6, QR9 : les lectures des comparateurs inclus, une par item P de référence et par comparateur. */
+  readonly lectures_comparateur: string;
 }
 
 export function dispositionRunNote(repertoire_run: string): DispositionRunNote {
@@ -79,6 +82,7 @@ export function dispositionRunNote(repertoire_run: string): DispositionRunNote {
     notations: join(volume, "notations"),
     reponses_contrefactuelles: join(volume, "reponses-contrefactuelles"),
     renvois: join(volume, "renvois"),
+    lectures_comparateur: join(volume, "lectures-comparateur"),
   };
 }
 
@@ -375,6 +379,20 @@ function exigerContexte<T extends Identifie & { readonly contexte: string }>(
 /** `volume/reponses/*.json`, tels quels : `assembler()` applique le filtre `contexte == run`. */
 export function lireReponses<T extends Reponse = Reponse>(repertoire_run: string, run_id: string): readonly T[] {
   return lireDossier<T>(exigerVolume(repertoire_run).reponses, "reponse", run_id);
+}
+
+/**
+ * `volume/lectures-comparateur/*.json` (§6, QR9), chaque fichier validé contre
+ * `lecture-comparateur.schema.json`. Le dossier n'est exigé que d'un run qui inclut un comparateur :
+ * absent, il lève `DossierAbsent`, jamais lu comme vide. Un run sans comparateur inclus et sans ce
+ * dossier n'a aucune lecture. Un dossier présent est toujours lu : une lecture hors des comparateurs
+ * inclus lève ensuite (`reference-comparateurs.ts:lecturesParComparateur`), jamais ignorée.
+ */
+export function lireLecturesDuRun(repertoire_run: string, run: Run): readonly LectureComparateur[] {
+  const dossier = exigerVolume(repertoire_run).lectures_comparateur;
+  if (!existsSync(dossier) && comparateursDuRun(run).length === 0) return [];
+  exigerDossier(dossier, "les lectures des comparateurs inclus du run (§6)");
+  return lireDossier<LectureComparateur & Identifie>(dossier, "lecture-comparateur", run.id);
 }
 
 /** `verdicts/*.json` (Git) : un verdict n'est écrit que pour un objet de contexte `run`. */

@@ -19,9 +19,10 @@ import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts
 import { questionsDuSousEchantillonDuRun } from "../../pipeline/interrogation/sous-echantillon-application.ts";
 import { dateParis } from "../../pipeline/interrogation/heure-paris.ts";
 import { echantillonHumainDuRun } from "../../pipeline/notation/echantillons.ts";
+import { etatsDesLectures } from "../../pipeline/notation/lectures-comparateur.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { executerOutil } from "../aides/depot.ts";
-import { ITEM_P, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
+import { ITEM_P, poserLecturesNonAffichees, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
 import { ulid } from "./fabriques.ts";
 import { entreesDuRunAnalysable, SPEC_REFERENCE } from "./run-analysable.ts";
 
@@ -120,10 +121,11 @@ describe("empreinte de run.json : hors des champs de statut, de publication et d
 
 describe("recalculerEtEcrireB et pnpm recalcul-b, sur un run écrit sur disque", () => {
   let fictif: RunFictif;
-  const options = () => ({ items: fictif.items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun, sous_echantillon_application: questionsDuSousEchantillonDuRun });
+  const options = () => ({ items: fictif.items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun, sous_echantillon_application: questionsDuSousEchantillonDuRun, etats_des_lectures: etatsDesLectures });
 
   beforeAll(() => {
     fictif = poserRunNote();
+    poserLecturesNonAffichees(fictif);
   });
   afterAll(() => fictif.nettoyer());
 

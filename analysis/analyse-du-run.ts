@@ -26,7 +26,9 @@
  *    lit la tendance entre le premier run, lu avec son propre partage, et ce run ; D70 pour un outil
  *    à deux modes), variabilité entre échantillons (diagnostic par couple comparé, §8, D70 (12),
  *    `accord-echantillons.ts`, qui lit aussi le plan d'interrogation), puis les analyses exploratoires
- *    préannoncées (corrélation de Spearman du §2, `correlation-couverture.ts` ; écart API /
+ *    préannoncées, après les comparateurs (couverture et exactitude de chaque comparateur inclus sur
+ *    les items P de référence, §8, métriques secondaires ; notes des lectures retenues par la règle de
+ *    l'échantillon, injectée), (corrélation de Spearman du §2, `correlation-couverture.ts` ; écart API /
  *    application du §6, `ecart-api-application.ts`), chacune étiquetée « exploratoire », sans
  *    qualificatif de fragilité (§8, robustesse). Chaque section est
  *    `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` : jamais une section vide qui
@@ -64,23 +66,34 @@ import { unitesParCoupleCompare } from "./couples-compares.ts";
 import { ecartsApiApplication, type EcartsApiApplication } from "./ecart-api-application.ts";
 import { assembler, estDuRun, type EntreesAnalyse, type UniteAnalyse } from "./filtre.ts";
 import { decisionH1, decisionH2, decisionH3, decisionH4, decisionH5, STRATE_H3, type FabricationDuCouple } from "./hypotheses.ts";
-import { STRATE_GLOBALE, stratesDuCalculPrincipal, tauxPubliesParCouple, type StratesPubliees, type TauxDuRun } from "./incertitude.ts";
+import {
+  STRATE_GLOBALE,
+  stratesDuCalculPrincipal,
+  tauxPubliesDuComparateur,
+  tauxPubliesParCouple,
+  type StratesPubliees,
+  type TauxDuComparateur,
+  type TauxDuRun,
+} from "./incertitude.ts";
 import {
   dispositionRunNote,
+  lireLecturesDuRun,
   lireNotationsDuRun,
   lireRun,
   type EchantillonHumainDuRun,
   type PlanDuRun,
   type RunLu,
 } from "./lecture-run.ts";
-import { exactitude } from "./metriques.ts";
+import { exactitude, lecturesNoteesParComparateur, type LectureNotee } from "./metriques.ts";
 import { corrigerFamilleAsymetrie, PERMUTATIONS_PRODUCTION, testHomogeneiteCandidats, type FamilleAsymetrie, type ResultatCouple } from "./permutation.ts";
 import { tauxRecalcules } from "./robustesse-taux.ts";
 import { fragiliteDesDifferences, restrictionDe, type FamilleDeDifferences, type FamilleDeResultats, type Recalcul, type SourcesRobustesse } from "./robustesse.ts";
+import { itemsPDeReference } from "./reference-comparateurs.ts";
 import { candidatsComparables, cleCouple, couplesComparables, type PartageCandidats, type PartageCouples, type RequeteDuPlan } from "./seuils.ts";
 import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate-recente.ts";
 import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
-import type { CandidatAuGel, CoupleOutilMode, EntreeTirage, IdentifiantCourt, Item, Mode, Notation, Question, Reponse, Run, Ulid } from "./types.ts";
+import type { CandidatAuGel, CategorieRetenue, CoupleOutilMode, EntreeTirage, IdentifiantCourt, Item, LectureComparateur, Mode, Notation, Question, Reponse, Run, Ulid } from "./types.ts";
+import type { NotationIndividuelle } from "../pipeline/notation/types.ts";
 
 /* ------------------------------------------------------------------ entrées */
 
@@ -109,6 +122,10 @@ export interface EntreesDuRun extends Omit<EntreesAnalyse, "run" | "items"> {
    * aucune réponse du canal application : le sous-échantillon n'est alors pas calculé.
    */
   readonly questions_sous_echantillon: readonly string[] | null;
+  /** §6, QR9 : les lectures des comparateurs du run (`volume/lectures-comparateur/`). */
+  readonly lectures: readonly LectureComparateur[];
+  /** L'état de chaque lecture affichée du run, par la règle de l'échantillon (`etatsDesLecturesDuRun`). */
+  readonly etats_des_lectures: readonly EtatDeLecture[];
 }
 
 /** Ce que le calcul du sous-échantillon de l'application lit d'un run : ses fichiers gelés (§6). */
@@ -125,6 +142,22 @@ export interface FichiersGelesDuRun {
  */
 export type SousEchantillonDuRun = (fichiers: FichiersGelesDuRun) => readonly string[];
 
+/**
+ * L'état d'une lecture affichée (§6) : à noter, à arbitrer, ou retenue avec sa note. Le type de
+ * `pipeline/notation/lectures-comparateur.ts:EtatLecture`, réduit à ce que l'analyse lit.
+ */
+export type EtatDeLecture =
+  | { readonly statut: "a_noter" | "a_arbitrer"; readonly lecture_id: Ulid }
+  | { readonly statut: "retenue"; readonly lecture_id: Ulid; readonly note: { readonly categorie: CategorieRetenue } };
+
+/**
+ * La règle de l'échantillon sur les notations des lectures (§6 : deux humains à l'aveugle, un
+ * troisième s'ils divergent ; une notation sans déclaration d'aveuglement refusée, D62). Injectée
+ * (`pipeline/notation/lectures-comparateur.ts:etatsDesLectures`) : `analysis/` n'importe pas le code de
+ * notation.
+ */
+export type EtatsDesLectures = (run_id: Ulid, lectures: readonly LectureComparateur[], notations: readonly NotationIndividuelle[]) => readonly EtatDeLecture[];
+
 export interface OptionsLectureAnalyse {
   /** Le répertoire des items validés, lu en Git au commit `run.versions.donnees_commit` (`lireRun`). */
   readonly items: string;
@@ -132,26 +165,41 @@ export interface OptionsLectureAnalyse {
   readonly echantillon_humain: EchantillonHumainDuRun;
   /** Appelé seulement si le run a au moins une réponse du canal application. */
   readonly sous_echantillon_application: SousEchantillonDuRun;
+  readonly etats_des_lectures: EtatsDesLectures;
 }
 
 function aDesReponsesApplication(reponses: readonly Reponse[]): boolean {
   return reponses.some((r) => estDuRun(r) && r.canal === "application");
 }
 
-/** 1. Le run lu et validé (`lireRun`), ses notations individuelles et son plan d'interrogation. */
+/** Les états des lectures du run, sur ses seules notations de lecture (celles des réponses n'y entrent pas). */
+export function etatsDesLecturesDuRun(
+  run_id: Ulid,
+  lectures: readonly LectureComparateur[],
+  notations: readonly NotationIndividuelle[],
+  etats_des_lectures: EtatsDesLectures,
+): readonly EtatDeLecture[] {
+  return etats_des_lectures(run_id, lectures, notations.filter((n) => n.objet_note.type === "lecture_comparateur"));
+}
+
+/** 1. Le run lu et validé (`lireRun`), ses notations individuelles, son plan d'interrogation et ses lectures. */
 export function lireEntreesDuRun(repertoire_run: string, options: OptionsLectureAnalyse): EntreesDuRun {
   const { entrees } = lireRun(repertoire_run, options);
   // run.schema.json exige versions, tirage et graines.bootstrap / permutation ; lireRun l'a validé.
   const run = entrees.run as RunLu & RunAnalyse;
+  const { notations } = lireNotationsDuRun(repertoire_run, run.id);
+  const lectures = lireLecturesDuRun(repertoire_run, run);
   return {
     ...entrees,
     run,
     items: entrees.items as readonly (Item & ItemDate)[],
-    notations: lireNotationsDuRun(repertoire_run, run.id).notations,
+    notations,
     plan: options.plan_du_run(repertoire_run, run),
     questions_sous_echantillon: aDesReponsesApplication(entrees.reponses)
       ? options.sous_echantillon_application({ run, entrees_tirage: entrees.entrees_tirage, questions: entrees.questions })
       : null,
+    lectures,
+    etats_des_lectures: etatsDesLecturesDuRun(run.id, lectures, notations, options.etats_des_lectures),
   };
 }
 
@@ -252,6 +300,7 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
 /* ------------------------------------------------------------------ sections */
 
 export type MotifSansObjet =
+  | "aucun_comparateur_inclus"
   | "aucun_couple_compare"
   | "moins_de_deux_candidats"
   | "premier_run_absent"
@@ -477,6 +526,68 @@ export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRu
   return surCouplesCompares(contexte, () => ({
     couples: variabiliteEntreEchantillons({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites }),
   }));
+}
+
+/** Une lecture affichée sans note retenue, ou une note sans lecture affichée du run : rien n'est publié. */
+export class LectureNonRetenue extends Error {
+  readonly lectures: readonly Ulid[];
+
+  constructor(lectures: readonly Ulid[], detail: string) {
+    super(`Lectures de comparateur ${lectures.join(", ")} : ${detail} La couverture et l'exactitude des comparateurs (§8) ne se publient pas sur une notation incomplète.`);
+    this.name = "LectureNonRetenue";
+    this.lectures = lectures;
+  }
+}
+
+/**
+ * Un verdict de lecture dans `verdicts/` : la note d'une lecture est retenue ici depuis ses notations
+ * humaines (§6), et le verdict d'une lecture n'est pas encore défini (mode de résolution, drapeau
+ * d'échantillon : `pipeline/notation/lectures-comparateur.ts`). Le lire en plus donnerait deux notes.
+ */
+export class VerdictDeLectureNonDefini extends Error {
+  constructor(verdicts: readonly Ulid[]) {
+    super(`Verdicts de lecture de comparateur ${verdicts.join(", ")} : la note d'une lecture se retient depuis ses notations humaines (§6), le verdict d'une lecture n'est pas défini.`);
+    this.name = "VerdictDeLectureNonDefini";
+  }
+}
+
+/** La note retenue de chaque lecture affichée ; une lecture à noter ou à arbitrer lève. */
+function notesRetenues(etats: readonly EtatDeLecture[]): ReadonlyMap<Ulid, CategorieRetenue> {
+  const enAttente = etats.filter((e) => e.statut !== "retenue").map((e) => `${e.lecture_id} (${e.statut})`);
+  if (enAttente.length > 0) throw new LectureNonRetenue(enAttente, "notation à compléter ou à arbitrer.");
+  return new Map(etats.flatMap((e) => (e.statut === "retenue" ? [[e.lecture_id, e.note.categorie] as const] : [])));
+}
+
+/** Chaque note retenue désigne une lecture affichée des comparateurs inclus : une note de trop n'est pas ignorée. */
+function exigerNotesConsommees(notes: ReadonlyMap<Ulid, CategorieRetenue>, groupes: ReadonlyMap<IdentifiantCourt, readonly LectureNotee[]>): void {
+  const affichees = new Set([...groupes.values()].flat().filter((l) => l.affiche).map((l) => l.lecture_id));
+  const orphelines = [...notes.keys()].filter((id) => !affichees.has(id));
+  if (orphelines.length > 0) throw new LectureNonRetenue(orphelines, "note retenue sans lecture affichée d'un comparateur inclus du run.");
+}
+
+/**
+ * Les comparateurs (§8, métriques secondaires ; QR9) : couverture et exactitude de chaque comparateur
+ * inclus, sur les items P de référence du run (`metriques.ts:lecturesNoteesParComparateur`, qui lève
+ * si les lectures ne les recouvrent pas exactement), avec leurs intervalles
+ * (`incertitude.ts:tauxPubliesDuComparateur`). Indépendante des couples d'assistants comparés. Sans
+ * comparateur inclus, elle est « sans objet » (`aucun_comparateur_inclus`) ; une lecture d'un outil
+ * qui n'est pas un comparateur inclus lève avant.
+ */
+export function sectionComparateurs(
+  contexte: ContexteDuRun,
+  entrees: EntreesDuRun,
+): Section<{ readonly items_p_de_reference: number; readonly comparateurs: readonly TauxDuComparateur[] }> {
+  const verdictsDeLecture = entrees.verdicts.filter((v) => v.objet_note.type === "lecture_comparateur").map((v) => v.id);
+  if (verdictsDeLecture.length > 0) throw new VerdictDeLectureNonDefini(verdictsDeLecture);
+  const notes = notesRetenues(entrees.etats_des_lectures);
+  const groupes = lecturesNoteesParComparateur(entrees.run, entrees.lectures, notes);
+  exigerNotesConsommees(notes, groupes);
+  if (groupes.size === 0) return sansObjet("aucun_comparateur_inclus");
+  return {
+    statut: "calcule",
+    items_p_de_reference: itemsPDeReference(entrees.run).size,
+    comparateurs: [...groupes].map(([outil_id, lectures]) => tauxPubliesDuComparateur(outil_id, lectures, optionsBootstrap(contexte))),
+  };
 }
 
 /** Le taux de fabrication, strate `global`, de chaque couple comparé : l'entrée de H1, lue dans la section des taux. */
@@ -773,6 +884,7 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
     conditions: sectionConditions(contexte, conditions),
     robustesse: sectionRobustesse(contexte, { conditions, h3, tendance }),
     variabilite_echantillons: sectionVariabilite(contexte, entrees),
+    comparateurs: sectionComparateurs(contexte, entrees),
     hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, tendance),
     exploratoire: sectionExploratoire(contexte, entrees),
   };

@@ -3164,6 +3164,10 @@
       }
     ]
   },
+  "comparateurs": {
+    "statut": "sans_objet",
+    "motif": "aucun_comparateur_inclus"
+  },
   "hypotheses": {
     "H1": {
       "statut": "calcule",

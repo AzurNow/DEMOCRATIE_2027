@@ -29,23 +29,30 @@
  * lui-même absent, avec la raison que donne `bootstrap.ts` (`aucune_grappe`,
  * `aucun_reechantillon_defini`).
  *
- * **Hors de ce module** : les comparateurs et le canal application n'ont pas de mode, et le §8
- * n'écrit la clé d'un taux qu'avec un mode ; leurs intervalles attendent cette clé.
+ * **Les comparateurs** (§8, protocole 0.27, D62 : « Un taux qui n'a pas de mode, celui d'un
+ * comparateur ou du canal application, porte à la place du mode le composant `lecture` ou
+ * `application` ») : couverture et exactitude de chaque comparateur inclus, strate `global`, l'ensemble
+ * de ses lectures, une par item P de référence (`tauxPubliesDuComparateur`). La grappe est l'item lu.
+ *
+ * **Hors de ce module** : le canal application, exploratoire, attend son lot.
  */
 
 import { comparerChaines } from "../outils/ordre-chaines.ts";
-import { intervalleNomme, tauxDegenere, valeurDuTaux, type IntervalleNomme, type Statistique, type TauxDegenere } from "./bootstrap.ts";
+import { intervalleNomme, tauxDegenere, valeurDuTaux, type Grappee, type IntervalleNomme, type Statistique, type TauxDegenere } from "./bootstrap.ts";
 import { exigerDuCouple, unitesParCoupleCompare } from "./couples-compares.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import {
   confirmationPremisse,
+  couverture,
   exactitude,
+  exactitudeDesLectures,
   repartitionDrapeaux,
   sourcageValide,
   tauxFabrication,
   tauxNonReponse,
   tauxObsolescence,
   tauxObsolescenceFraiche,
+  type LectureNotee,
   type TauxPrimaires,
 } from "./metriques.ts";
 import { repartirParCandidat, type PartageCandidats, type PartageCouples } from "./seuils.ts";
@@ -138,9 +145,9 @@ export interface OptionsIncertitude {
   readonly graine_du_run: number;
 }
 
-interface StrateDeCalcul {
+interface StrateDeCalcul<U extends Grappee = UniteAnalyse> {
   readonly strate: string;
-  readonly unites: readonly UniteAnalyse[];
+  readonly unites: readonly U[];
 }
 
 /**
@@ -184,15 +191,26 @@ function publier(
   strate: StrateDeCalcul,
   options: OptionsIncertitude,
 ): TauxPublie {
+  return publierSousCle([couple.outil_id, couple.mode], metrique, statistique, strate, options);
+}
+
+/** `tete` : l'outil, puis le mode ou, pour un taux sans mode, le composant qui le remplace (§8). */
+function publierSousCle<U extends Grappee>(
+  tete: readonly [string, string],
+  metrique: string,
+  statistique: Statistique<U>,
+  strate: StrateDeCalcul<U>,
+  options: OptionsIncertitude,
+): TauxPublie {
   const t = statistique(strate.unites);
   const intervalle = intervalleNomme(strate.unites, valeurDuTaux(statistique), {
     ...options,
-    cle: [couple.outil_id, couple.mode, metrique, strate.strate],
+    cle: [...tete, metrique, strate.strate],
   });
   return { metrique, strate: strate.strate, taux: t, motif_absence: motifAbsence(strate.unites, t), intervalle, taux_degenere: tauxDegenere(t) };
 }
 
-function motifAbsence(unites: readonly UniteAnalyse[], t: Taux): MotifTauxAbsent | null {
+function motifAbsence(unites: readonly unknown[], t: Taux): MotifTauxAbsent | null {
   if (t.valeur !== undefined) return null;
   return unites.length === 0 ? "strate_vide" : "denominateur_nul";
 }
@@ -227,5 +245,37 @@ export function tauxPubliesParCouple(
       taux: tauxPublies(membres, couple, strates, partage, options),
     })),
     couples_incomplets: couples.incomplets,
+  };
+}
+
+/** §8 : le composant qui tient la place du mode dans la clé d'un taux de comparateur. */
+export const COMPOSANT_LECTURE = "lecture";
+
+/**
+ * §8 : le nom de la couverture dans la clé de sa graine. Le §8 nomme la métrique (« couverture
+ * (items P affichés / items P de référence) ») sans l'écrire dans la liste des noms de métrique de
+ * la clé : question ouverte à l'auteur, ce nom est le seul endroit à changer.
+ */
+export const METRIQUE_COUVERTURE = "couverture";
+
+export interface TauxDuComparateur {
+  readonly outil_id: IdentifiantCourt;
+  readonly couverture: TauxPublie;
+  readonly exactitude: TauxPublie;
+}
+
+/**
+ * Couverture et exactitude d'un comparateur, strate `global` (toutes ses lectures), chacune avec son
+ * intervalle sous la clé `<outil> / lecture / <métrique> / global`. Une lecture non affichée est
+ * dans les grappes de l'exactitude et hors de son dénominateur, comme une non-réponse d'assistant
+ * (§8 : « la même règle des deux côtés »).
+ */
+export function tauxPubliesDuComparateur(outil_id: IdentifiantCourt, lectures: readonly LectureNotee[], options: OptionsIncertitude): TauxDuComparateur {
+  const globale: StrateDeCalcul<LectureNotee> = { strate: STRATE_GLOBALE, unites: lectures };
+  const tete = [outil_id, COMPOSANT_LECTURE] as const;
+  return {
+    outil_id,
+    couverture: publierSousCle(tete, METRIQUE_COUVERTURE, couverture, globale, options),
+    exactitude: publierSousCle(tete, METRIQUE_STRATIFIEE, exactitudeDesLectures, globale, options),
   };
 }
