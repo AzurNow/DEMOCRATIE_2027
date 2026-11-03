@@ -4,18 +4,7 @@
 
 ## Décisions en attente
 
-### D70 — Questions laissées ouvertes par la 0.27 (PR #246) et par les lots qui l'implémentent (#247 à #249, D64, plan de pnpm analyze), à écrire en 0.28.
-
-Relevées le 2026-11-03. Recommandation entre crochets ; « [code] » signale une lecture déjà appliquée par le code fusionné ou en cours, que la 0.28 doit écrire. (1) H5 pour un outil à deux modes [confirmée seulement si la tendance est établie et positive pour chacun de ses couples comparés ; non confirmée sinon ; sans objet sans couple comparé ; code, lot analyze D]. (2) Réponse « non classée » (D64) dans un kappa sur la catégorie primaire [exclue de tout kappa et comptée à part, comme les indéterminées (D25) ; code, lot D64]. (3) D64 : item dont valide_au est la date du run [hors vigueur, règle semi-ouverte existante : candidat sans référence ; code]. (4) D64 : nom ambigu ou candidat non interrogé cité avec un candidat sans référence [renvoi humain existant, l'humain tranchant exacte ou inexacte ; à confirmer]. (5) D65 : seuil d'accord lu sur le n publié après retrait des contestés [lecture littérale : accord observé ≥ 0,96 et au plus deux désaccords sur ce n ; code] ; verdict de J3 sans ordre défini des « deux derniers lots » [ordre de clôture des lots]. (6) D67 sondages : douze mois [mois civils, bornes comprises, lus à minuit UTC comme la fenêtre de 60 jours] ; toute notice de l'institut compte [oui, le critère porte sur l'institut] ; preuve de présence dans une hypothèse [le sondage archivé suffit, la page citée faisant foi ; champ preuves_inclusion[].notice_institut à ajouter au schéma]. (7) D68 : noms des candidats éliminés dans le contrefactuel et sur une question d'attribution [cherchés comme ceux d'un candidat retiré, non permutés ; citer un éliminé n'est pas une erreur]. (8) Taux égal à 1 [symétrique du taux nul : intervalle de largeur nulle, mention « aucun non-événement observé », différence ni établie ni non établie]. (9) Rédaction des items F [l'auteur, vérifiés absents par deux annotateurs, auteur publié]. (10) Égalité des voix au panel [statu quo : l'item reste contesté et hors tirage, opinions publiées]. (11) Dates du §12 [à recaler par l'auteur au gel ; jalon J6 sur le décret de convocation]. (12) Variabilité entre échantillons [publiée en diagnostic, accord entre les deux échantillons d'une question]. (13) Moment du recalcul (b) et version de metriques.json après une contestation postérieure [metriques.json jamais réécrit ; recalcul (b) mis à jour publié dans un fichier daté à côté, l'empreinte d'entrée excluant statut, publication et dépôt]. (14) Sous-questions de D62 non écrites en 0.27 : #230 (A), #232 (2), #233 (2) et (4), #234 (4) et (5), #235 (3) et (4) [à instruire une à une].
-
-Options :
-
-1. Retenir toutes les recommandations entre crochets et écrire la 0.28.
-2. Trancher point par point.
-
-**Recommandation :** Option 1, le point (14) instruit séparément avant la 0.28.
-
-Lots portant cette décision : aucun
+Aucune décision en attente.
 
 ## Décisions tranchées
 
@@ -287,6 +276,10 @@ Lots portant cette décision : aucun
 
 **Décision du 2026-09-20 :** Option 1 sur les sept points : item arbitré tirable si la dernière décision du panel vaut maintien ou correction ; Q-ORI sur un item O résolue par l'état en vigueur ; ni Q-FER ni Q-NEG pour une position conditionnelle ; quota par strate fixé dans config/perimetre.yaml ; budget de reprise 80 % étendu aux Q-ATT, stratifiées par thème ; date civile comparée à date_gel à minuit UTC ; gabarits déplacés vers prompts/gabarits-1.0.0.json.
 
+### D70 — Questions laissées ouvertes par la 0.27 (PR #246) et par les lots qui l'implémentent (#247 à #249, D64, plan de pnpm analyze), à écrire en 0.28.
+
+**Décision du 2026-11-03 :** Option 1 pour les points (1) à (13) (consigne durable de l'auteur : option recommandée, 2026-11-03) ; le point (14) reste ouvert, instruit une sous-question à la fois. Texte proposé pour la 0.28 (PR de protocole à part) : §2 H5 par couple comparé (1) ; §8 strate `type_item:F+O` et clé complète de la différence de H3, ajoutée par la session principale (1b) ; §7 non classées hors de tout kappa (2), vigueur semi-ouverte (3) et renvoi humain exacte ou inexacte (4), §7 et annexe B ; §4 et §12 seuil d'accord sur l'effectif publié, deux derniers lots dans l'ordre de clôture (5) ; §3 notices d'institut en mois civils, toute notice, sondage archivé comme preuve (6) ; §3 « Entre les deux tours » et §7 éliminés cherchés sans être remplacés, citation non fautive (7) ; §8 taux égal à 1, intervalle [1 ; 1] (8) ; §4 items F rédigés par l'auteur (9) ; §10 égalité des voix du panel (10) ; §12 dates recalées au gel de la v1.0, rapport de synthèse sur le décret de convocation (11) ; §8 accord entre échantillons en diagnostic (12) ; §8 et §9 metriques.json jamais réécrit, recalcul (b) daté à côté (13).
+
 ### D8 — Trois points que le §4 ne tranche pas, rencontrés en implémentant la réannotation et le registre des mesures.
 
 **Décision du 2026-09-20 :** Option 1 sur les trois points : héritage des annotateurs gardé, une autre paire supposerait un amendement au §4 disant quel kappa compte ; clé du registre élargie seulement si le §4 ouvre un jour la correction d'autre chose que le thème ; conventions d'identifiant de réannotation et de date par défaut entérinées dans schema/README.md.
@@ -338,7 +331,6 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
-  dec_D70{{"D70<br/>Questions laissées ouvertes par la 0.27 (PR #246) et par les…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
