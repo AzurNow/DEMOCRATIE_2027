@@ -97,6 +97,23 @@ describe("H3 de bout en bout", () => {
     expect(coupleH3(SANS_PREMIER, "outil-alpha/web_desactivee")).toMatchObject({ verdict: "non_confirmee", motif: null });
   });
 
+  it("n'est plus confirmée sur un intervalle [1 ; 1] dont les deux taux sont dégénérés (§8, 0.27 et 0.28)", () => {
+    // outil-beta nie chaque item F en neutre (exacte, 2/2) et le confirme en orientée (inexacte,
+    // 0/2) : différence 1 sur l'intervalle [1 ; 1], deux grappes. Avant la règle, « établie » et H3
+    // confirmée ; un taux dont aucune grappe n'observe l'événement, ou le non-événement, ne qualifie
+    // aucune différence.
+    expect(coupleH3(SANS_PREMIER, "outil-beta/web_desactivee")).toMatchObject({
+      verdict: "non_confirmee",
+      motif: null,
+      difference: {
+        difference: 1,
+        intervalle: { bas: 1, haut: 1, nombre_grappes: 2, degenere: null },
+        qualificatif: null,
+        motif_sans_qualificatif: "taux_degenere",
+      },
+    });
+  });
+
   it(`a sa propre clé de graine, strate ${STRATE_H3}, distincte de la différence des formulations sur tous les items`, () => {
     const cleH3 = ["bootstrap", "exactitude", STRATE_H3, "outil-alpha:web_activee:neutre-oriente"];
     const cleToutes = ["bootstrap", "exactitude", "global", "outil-alpha:web_activee:neutre-oriente"];

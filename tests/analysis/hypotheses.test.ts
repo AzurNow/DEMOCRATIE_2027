@@ -20,7 +20,7 @@ import {
 import { exactitude } from "../../analysis/metriques.ts";
 import type { FamilleAsymetrie } from "../../analysis/permutation.ts";
 import { taux, type Intervalle95, type Mode } from "../../analysis/types.ts";
-import { tousCompares, ulid, unite } from "./fabriques.ts";
+import { motifFabrique, tousCompares, ulid, unite } from "./fabriques.ts";
 
 function intervalle(bas: number, haut: number, partiel: Partial<Intervalle95> = {}): Intervalle95 {
   return {
@@ -258,6 +258,7 @@ function comparaisonModes(
       difference: activeeMoinsDesactivee,
       intervalle: borne,
       qualificatif,
+      motif_sans_qualificatif: motifFabrique(activeeMoinsDesactivee, borne, qualificatif),
     },
     grappes_appariees: 10,
     grappes_exclues: [],
@@ -404,13 +405,17 @@ describe("H2 : différence publiée web activée − web désactivée, strate gl
   });
 
   it("lit le sens réel de pairesParMode : exactitude plus basse sans web ⇒ confirmée", () => {
-    // Douze items, tous exacts en web activée, tous inexacts en web désactivée.
+    // Douze items : les dix premiers exacts en web activée, inexacts en web désactivée ; le
+    // onzième exact et le douzième inexact dans les deux modes, pour qu'aucun taux ne soit 0 ou 1
+    // (§8, 0.27 et 0.28 : un taux dégénéré ne qualifie aucune différence). 11/12 contre 1/12.
+    const categories = (i: number) => (i < 10 ? (["exacte", "inexacte"] as const) : i === 10 ? (["exacte", "exacte"] as const) : (["inexacte", "inexacte"] as const));
     const unites = Array.from({ length: 12 }, (_, i) => {
       const item = ulid(`item-h2-${i}`);
       const commun = { grappe_id: item, item_principal_id: item, item_ids: [item] };
+      const [activee, desactivee] = categories(i);
       return [
-        unite({ ...commun, verdict_id: ulid(`v-a-${i}`), mode: "web_activee", categorie: "exacte" }),
-        unite({ ...commun, verdict_id: ulid(`v-d-${i}`), mode: "web_desactivee", categorie: "inexacte" }),
+        unite({ ...commun, verdict_id: ulid(`v-a-${i}`), mode: "web_activee", categorie: activee }),
+        unite({ ...commun, verdict_id: ulid(`v-d-${i}`), mode: "web_desactivee", categorie: desactivee }),
       ];
     }).flat();
     const { paires, paires_exclues } = pairesParMode(unites, tousCompares(unites));
@@ -420,8 +425,8 @@ describe("H2 : différence publiée web activée − web désactivée, strate gl
       cle: ["exactitude", "global"],
     });
     const [decision] = decisionH2(["outil-alpha"], { comparaisons, paires_exclues }, VIDE);
-    // Publiée activée − désactivée : 1 − 0 = 1, positive et établie.
-    expect(decision?.global).toMatchObject({ statut: "comparee", difference: 1 });
+    // Publiée activée − désactivée : 11/12 − 1/12 = 10/12, positive et établie.
+    expect(decision?.global).toMatchObject({ statut: "comparee", difference: 11 / 12 - 1 / 12, qualificatif: "etablie" });
     expect(decision?.verdict).toBe("confirmee");
   });
 });

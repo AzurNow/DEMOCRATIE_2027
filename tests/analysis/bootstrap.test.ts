@@ -16,10 +16,12 @@ import {
   reechantillonner,
   reechantillonnerStatistique,
   REECHANTILLONNAGES_PRODUCTION,
+  tauxDegenere,
   valeurDuTaux,
 } from "../../analysis/bootstrap.ts";
 import { graineDerivee } from "../../analysis/graines.ts";
 import { exactitude } from "../../analysis/metriques.ts";
+import { taux } from "../../analysis/types.ts";
 import { generateur } from "../../validation/domaine/alea.ts";
 import { grappe, ulid } from "./fabriques.ts";
 
@@ -142,18 +144,25 @@ describe("différence appariée par grappe", () => {
   it("qualifie « établie » une différence dont l'intervalle exclut zéro, « non établie » sinon", () => {
     // §8 : « une différence est qualifiée d'établie seulement si l'intervalle de confiance de la
     // différence exclut zéro ; sinon elle est non établie ». Le rapport n'a que ces deux mots.
+    // Chaque grappe a trois réponses. Bras A : deux exactes, une inexacte (2/3) ; bras B : une
+    // exacte, deux inexactes (1/3). Aucun taux n'est 0 ou 1 (§8, 0.27 et 0.28 : un taux dégénéré
+    // ne se qualifie pas).
     const grappes = ["g1", "g2", "g3", "g4", "g5"];
-    const toutExact = grappes.flatMap((g) => grappe(g, 2, { categorie: "exacte" }));
-    const toutInexact = grappes.flatMap((g) => grappe(g, 2, { categorie: "inexacte" }));
+    const avec = (g: string, exactes: number) => [
+      ...grappe(g, exactes, { categorie: "exacte" }),
+      ...grappe(g, 3 - exactes, { categorie: "inexacte" }),
+    ];
+    const deuxTiers = grappes.flatMap((g) => avec(g, 2));
+    const unTiers = grappes.flatMap((g) => avec(g, 1));
 
-    // Exactitude 1 contre 0 sur les mêmes grappes : la différence vaut 1 dans tout rééchantillon.
-    const tranchee = differenceAppariee(toutExact, toutInexact, exactitude, OPTIONS);
-    expect(tranchee.difference).toBe(1);
-    expect(tranchee.intervalle?.bas).toBe(1);
+    // 2/3 contre 1/3 sur les mêmes grappes : la différence vaut 1/3 dans tout rééchantillon.
+    const tranchee = differenceAppariee(deuxTiers, unTiers, exactitude, OPTIONS);
+    expect(tranchee.difference).toBeCloseTo(1 / 3, 12);
+    expect(tranchee.intervalle?.bas).toBeCloseTo(1 / 3, 12);
     expect(tranchee.qualificatif).toBe("etablie");
 
     // Deux bras identiques : la différence vaut 0 partout, l'intervalle contient 0.
-    const nulle = differenceAppariee(toutExact, toutExact, exactitude, OPTIONS);
+    const nulle = differenceAppariee(deuxTiers, deuxTiers, exactitude, OPTIONS);
     expect(nulle.difference).toBe(0);
     expect(nulle.qualificatif).toBe("non_etablie");
   });
@@ -191,9 +200,15 @@ describe("différence appariée par grappe", () => {
 
   it("qualifie toujours une différence non nulle dès deux grappes", () => {
     // Même écart qu'au test précédent, sur deux grappes : l'intervalle n'est plus dégénéré et le
-    // §8 s'applique sans changement.
-    const exacte = ["g1", "g2"].flatMap((g) => grappe(g, 3, { categorie: "exacte" }));
-    const inexacte = ["g1", "g2"].flatMap((g) => grappe(g, 3, { categorie: "inexacte" }));
+    // §8 s'applique sans changement. Chaque bras garde une réponse de l'autre catégorie, pour
+    // qu'aucun taux ne soit dégénéré (§8, 0.27 et 0.28) : par grappe, deux exactes et une inexacte
+    // contre une exacte et deux inexactes, différence 1/3 dans tout rééchantillon.
+    const avec = (g: string, exactes: number) => [
+      ...grappe(g, exactes, { categorie: "exacte" }),
+      ...grappe(g, 3 - exactes, { categorie: "inexacte" }),
+    ];
+    const exacte = ["g1", "g2"].flatMap((g) => avec(g, 2));
+    const inexacte = ["g1", "g2"].flatMap((g) => avec(g, 1));
 
     const resultat = differenceAppariee(exacte, inexacte, exactitude, OPTIONS);
 
@@ -352,5 +367,124 @@ describe("statistique numérique (conformité n° 29)", () => {
     const sansClassee = intervalleNomme(grappe("nr", 2, { categorie: "non_reponse" }), valeurDuTaux(exactitude), options);
     expect(sansClassee.intervalle).toBeNull();
     expect(sansClassee.raison_sans_intervalle).toBe("aucun_reechantillon_defini");
+  });
+});
+
+describe("taux dégénéré (§8, 0.27 et 0.28)", () => {
+  // §8 : « un taux dont aucune grappe n'observe l'événement, qui reçoit l'intervalle de largeur
+  // nulle [0 ; 0] » ; « Symétriquement, un taux égal à 1, dont aucune grappe n'observe le
+  // non-événement, reçoit l'intervalle de largeur nulle [1 ; 1] » ; « Dans les deux cas, une
+  // différence qui dépend d'un tel taux n'est qualifiée ni d'« établie » ni de « non établie ». »
+  // La règle se lit sur les effectifs observés du taux, jamais sur l'égalité des bornes.
+  const CINQ = ["g1", "g2", "g3", "g4", "g5"];
+
+  /** Une réponse par grappe g1 à g5, de la catégorie dite. */
+  function bras(categories: readonly ("exacte" | "inexacte" | "non_reponse")[]) {
+    return categories.flatMap((categorie, i) => grappe(CINQ[i] as string, 1, { categorie }));
+  }
+
+  /** Une grappe d'une exacte et d'une inexacte. */
+  function melange(g: string) {
+    return [...grappe(g, 1, { categorie: "exacte" }), ...grappe(g, 1, { categorie: "inexacte" })];
+  }
+
+  it("lit la dégénérescence sur les effectifs : 0/n, n/n, et ni 0/0 ni un taux intermédiaire", () => {
+    expect(tauxDegenere(taux(0, 5))).toBe("aucun_evenement");
+    expect(tauxDegenere(taux(5, 5))).toBe("aucun_non_evenement");
+    expect(tauxDegenere(taux(1, 5))).toBeNull();
+    expect(tauxDegenere(taux(4, 5))).toBeNull();
+    // 0/0 : un taux absent n'est pas dégénéré, il est absent.
+    expect(tauxDegenere(taux(0, 0))).toBeNull();
+  });
+
+  it("0/n dans un bras : la différence n'est pas qualifiée (taux_degenere)", () => {
+    const a = bras(["exacte", "exacte", "inexacte", "exacte", "inexacte"]);
+    const b = bras(["inexacte", "inexacte", "inexacte", "inexacte", "inexacte"]);
+
+    const resultat = differenceAppariee(a, b, exactitude, OPTIONS);
+
+    expect(resultat.taux_b).toEqual(taux(0, 5));
+    expect(resultat.difference).toBeCloseTo(0.6, 12);
+    expect(resultat.intervalle).not.toBeNull();
+    expect(resultat.qualificatif).toBeNull();
+    expect(resultat.motif_sans_qualificatif).toBe("taux_degenere");
+  });
+
+  it("n/n dans un bras : la différence n'est pas qualifiée (taux_degenere)", () => {
+    const a = bras(["exacte", "exacte", "exacte", "exacte", "exacte"]);
+    const b = bras(["exacte", "inexacte", "inexacte", "exacte", "inexacte"]);
+
+    const resultat = differenceAppariee(a, b, exactitude, OPTIONS);
+
+    expect(resultat.taux_a).toEqual(taux(5, 5));
+    expect(resultat.qualificatif).toBeNull();
+    expect(resultat.motif_sans_qualificatif).toBe("taux_degenere");
+  });
+
+  it("0/n dans les deux bras : la différence nulle n'est pas « non établie » (taux_degenere)", () => {
+    const a = bras(["inexacte", "inexacte", "inexacte", "inexacte", "inexacte"]);
+
+    const resultat = differenceAppariee(a, a, exactitude, OPTIONS);
+
+    expect(resultat.difference).toBe(0);
+    expect(resultat.intervalle).toMatchObject({ bas: 0, haut: 0, nombre_grappes: 5, degenere: null });
+    expect(resultat.qualificatif).toBeNull();
+    expect(resultat.motif_sans_qualificatif).toBe("taux_degenere");
+  });
+
+  it("1/n contre 0/n : un seul bras dégénéré suffit (taux_degenere)", () => {
+    const a = bras(["exacte", "inexacte", "inexacte", "inexacte", "inexacte"]);
+    const b = bras(["inexacte", "inexacte", "inexacte", "inexacte", "inexacte"]);
+
+    const resultat = differenceAppariee(a, b, exactitude, OPTIONS);
+
+    expect(tauxDegenere(resultat.taux_a)).toBeNull();
+    expect(tauxDegenere(resultat.taux_b)).toBe("aucun_evenement");
+    expect(resultat.qualificatif).toBeNull();
+    expect(resultat.motif_sans_qualificatif).toBe("taux_degenere");
+  });
+
+  it("deux taux non dégénérés : « établie » et « non établie » inchangés, même sur un intervalle [0 ; 0]", () => {
+    // Bras A : 4 grappes de 2 exactes et 1 grappe exacte + inexacte (9/10) ; bras B : chaque grappe
+    // exacte + inexacte (5/10). Différence par grappe 0,5 sur quatre grappes, 0 sur la cinquième :
+    // un rééchantillon ne tombe à 0 que s'il ne tire que g5, (1/5)⁵ = 0,032 %.
+    const a = [...["g1", "g2", "g3", "g4"].flatMap((g) => grappe(g, 2, { categorie: "exacte" })), ...melange("g5")];
+    const b = CINQ.flatMap(melange);
+
+    const etablie = differenceAppariee(a, b, exactitude, OPTIONS);
+    expect(etablie.qualificatif).toBe("etablie");
+    expect(etablie.motif_sans_qualificatif).toBeNull();
+
+    // Deux bras identiques non dégénérés : l'intervalle de la différence est [0 ; 0], mais aucun
+    // taux n'est dégénéré. La règle se lit sur les effectifs des taux, pas sur les bornes.
+    const nulle = differenceAppariee(b, b, exactitude, OPTIONS);
+    expect(nulle.intervalle).toMatchObject({ bas: 0, haut: 0 });
+    expect(nulle.qualificatif).toBe("non_etablie");
+    expect(nulle.motif_sans_qualificatif).toBeNull();
+  });
+
+  it("0/0, dénominateur vide : la différence reste absente (difference_indefinie), jamais taux_degenere", () => {
+    const a = bras(["exacte", "inexacte", "exacte", "inexacte", "exacte"]);
+    const b = bras(["non_reponse", "non_reponse", "non_reponse", "non_reponse", "non_reponse"]);
+
+    const resultat = differenceAppariee(a, b, exactitude, OPTIONS);
+
+    expect(resultat.taux_b).toEqual(taux(0, 0));
+    expect(resultat.difference).toBeNull();
+    expect(resultat.intervalle).toBeNull();
+    expect(resultat.qualificatif).toBeNull();
+    expect(resultat.motif_sans_qualificatif).toBe("difference_indefinie");
+  });
+
+  it("une seule grappe garde son motif grappe_unique, même quand ses taux sont dégénérés", () => {
+    const resultat = differenceAppariee(
+      grappe("g-unique", 3, { categorie: "exacte" }),
+      grappe("g-unique", 3, { categorie: "inexacte" }),
+      exactitude,
+      OPTIONS,
+    );
+
+    expect(resultat.qualificatif).toBeNull();
+    expect(resultat.motif_sans_qualificatif).toBe("grappe_unique");
   });
 });

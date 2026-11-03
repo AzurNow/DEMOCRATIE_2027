@@ -42,7 +42,9 @@
  * est fragile si, dans l'un des quatre recalculs, sa différence n'est plus établie ou ne peut plus
  * être calculée. ») et y ajoute la grappe unique, sans qualificatif (`bootstrap.ts:qualifier`) :
  * un principal sur une seule grappe n'est pas établi, donc jamais fragile ; un recalcul qui tombe
- * sur une seule grappe n'est plus établi, donc rend fragile un principal établi.
+ * sur une seule grappe n'est plus établi, donc rend fragile un principal établi. Il en va de même
+ * d'un recalcul dont l'un des deux taux devient dégénéré, [0 ; 0] ou [1 ; 1] (§8, 0.27 et 0.28 ;
+ * `bootstrap.ts:qualifierDifference`, motif `taux_degenere`) : sans qualificatif, il rend fragile.
  */
 
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";

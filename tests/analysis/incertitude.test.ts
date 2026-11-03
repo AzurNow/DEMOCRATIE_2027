@@ -118,6 +118,33 @@ describe("tauxPublies", () => {
     expect(c1.intervalle.intervalle?.nombre_grappes).toBe(2);
   });
 
+  it("publie la mention d'un taux dégénéré et le nombre de grappes de son intervalle (§8, 0.27 et 0.28)", () => {
+    // Trois grappes de c1, toutes exactes (3/3, [1 ; 1]) en neutre, toutes inexactes (0/3,
+    // [0 ; 0]) en familier. « aucun non-événement observé sur 3 grappes », « aucun événement
+    // observé sur 3 grappes » : la mention et n sont publiés à côté de l'intervalle.
+    const unites = ["d1", "d2", "d3"].flatMap((g) => [
+      ...grappe(g, 1, { candidat_id: "c1", categorie: "exacte" }),
+      ...grappe(g, 1, { candidat_id: "c1", categorie: "inexacte", registre: "familier" }),
+    ]);
+    const publies = tauxPublies(unites, COUPLE, stratesDuCalculPrincipal(unites, PARTAGE), PARTAGE, OPTIONS);
+
+    const neutre = trouver(publies, "exactitude", "registre:neutre");
+    expect(neutre.taux).toEqual({ numerateur: 3, denominateur: 3, valeur: 1 });
+    expect(neutre.taux_degenere).toBe("aucun_non_evenement");
+    expect(neutre.intervalle.intervalle).toMatchObject({ bas: 1, haut: 1, nombre_grappes: 3, degenere: null });
+
+    const familier = trouver(publies, "exactitude", "registre:familier");
+    expect(familier.taux).toEqual({ numerateur: 0, denominateur: 3, valeur: 0 });
+    expect(familier.taux_degenere).toBe("aucun_evenement");
+    expect(familier.intervalle.intervalle).toMatchObject({ bas: 0, haut: 0, nombre_grappes: 3, degenere: null });
+
+    // Un taux intermédiaire n'a pas de mention ; un taux absent non plus : il a son motif d'absence.
+    expect(trouver(publies, "exactitude", "global").taux_degenere).toBeNull();
+    const fabrication = trouver(publies, "fabrication", "global");
+    expect(fabrication.motif_absence).toBe("denominateur_nul");
+    expect(fabrication.taux_degenere).toBeNull();
+  });
+
   it("publie absente, avec le motif strate_vide, une strate sans unité dans ce couple — jamais 0", () => {
     const autres = stratesDuCalculPrincipal([...unitesDuCouple, ...grappe("i5", 1, { candidat_id: "c2", theme: "immigration" })], PARTAGE);
     const vide = trouver(tauxPublies(unitesDuCouple, COUPLE, autres, PARTAGE, OPTIONS), "exactitude", "theme:immigration");
