@@ -173,3 +173,28 @@ describe("correlationsParCouple", () => {
     expect(resultat.couples_incomplets).toEqual([incomplet]);
   });
 });
+
+/*
+ * D68, protocole 0.27 (§3, « Entre les deux tours ») : « La corrélation exploratoire de la section 2,
+ * qui n'est pas calculée sous trois candidats, est publiée « sans objet » avec ce motif. »
+ */
+describe("D68 : entre les deux tours, corrélation sans objet", () => {
+  it("deux finalistes comparés, un éliminé retiré au périmètre : pas de coefficient, motif moins_de_trois_candidats", () => {
+    const elimine = candidat({
+      candidat_id: "c3",
+      items_p_verifies: 25,
+      items_p_au_gel: itemsPAuGel("c3", 25),
+      sous_seuil: false,
+      statut_au_gel: "retire",
+      interroge: false,
+    });
+    const resultat = calculer(
+      [candidatAvec("c1", 30), candidatAvec("c2", 12), elimine],
+      [...reponses("c1", 9, 1), ...reponses("c2", 6, 4)],
+    );
+    expect(resultat.coefficient).toBeNull();
+    expect(resultat.motif_absence).toBe("moins_de_trois_candidats");
+    expect(resultat.exploratoire).toBe(true);
+    expect(resultat.points.map((point) => point.candidat_id)).toEqual(["c1", "c2"]);
+  });
+});

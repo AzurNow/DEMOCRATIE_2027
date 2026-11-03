@@ -15,8 +15,9 @@
  *   3. ce que le JSON Schema ne sait pas contrôler (`PerimetreRefuse`, qui nomme chaque motif) :
  *      les dix thèmes exactement, les identifiants uniques, un `candidat_id` homonyme de l'amorce
  *      du groupe d'attribution du tirage (`tirage.ts:AMORCE_GROUPE_ATTRIBUTION`, D55 (10)), la
- *      liste officielle selon le régime, un candidat retiré non interrogé, la règle d'inclusion du
- *      §3 (`perimetre.ts:inclusionAvantListe`)
+ *      liste officielle et la proclamation du premier tour selon le régime (`PREUVES_DU_REGIME`),
+ *      exactement deux qualifiés, interrogés, entre les deux tours (§3, D68), un candidat retiré
+ *      non interrogé, la règle d'inclusion du §3 (`perimetre.ts:inclusionAvantListe`)
  *      pour chaque candidat non retiré du régime `avant_liste_officielle`, et un alias aveugle pour
  *      chaque assistant inclus, qui ne trahit ni le libellé, ni l'éditeur, ni l'`outil_id` d'un outil
  *      du périmètre (aucun de leurs mots significatifs, aucune de leurs formes collées :
@@ -109,6 +110,11 @@ interface PerimetreSaisi {
   readonly date_gel: string | null;
   readonly regime_inclusion: RegimeInclusion | null;
   readonly liste_officielle: PreuveArchivee | null;
+  /**
+   * §3 (protocole 0.27, D68). Clé facultative du schéma, tant que `config/perimetre.yaml` ne la
+   * porte pas : absente et null sont l'une et l'autre l'absence de preuve.
+   */
+  readonly proclamation_premier_tour?: PreuveArchivee | null;
   readonly themes: readonly string[];
   readonly tirage: {
     readonly questions_par_strate: number | null;
@@ -146,6 +152,7 @@ export interface OutilDeRun extends OutilCommun {
 export interface PerimetreDeRun {
   readonly regime_inclusion: RegimeInclusion;
   readonly liste_officielle?: PreuveArchivee;
+  readonly proclamation_premier_tour?: PreuveArchivee;
   readonly candidats: readonly CandidatDeRun[];
   readonly outils: readonly OutilDeRun[];
 }
@@ -267,17 +274,90 @@ function motifsIdentifiants(perimetre: PerimetrePourRun): readonly string[] {
   ];
 }
 
-/** §3 : la liste officielle est exigée dans son régime et interdite avant. Une table, pas un `if` par régime. */
-const LISTE_OFFICIELLE_EXIGEE: Readonly<Record<RegimeInclusion, boolean>> = {
-  avant_liste_officielle: false,
-  liste_officielle: true,
+/** Les deux preuves d'inclusion d'un régime, archivées, que publie le Conseil constitutionnel (§3). */
+const PREUVES_DE_REGIME = ["liste_officielle", "proclamation_premier_tour"] as const;
+type PreuveDeRegime = (typeof PREUVES_DE_REGIME)[number];
+
+type Exigence = "exigee" | "interdite" | "admise";
+
+/**
+ * §3 : chaque régime exige sa seule preuve d'inclusion. La liste officielle est exigée dans son
+ * régime et interdite avant ; la proclamation du premier tour est exigée entre les deux tours
+ * (protocole 0.27, D68) et interdite dans les deux autres régimes, qui la précèdent ; la liste reste
+ * admise entre les deux tours, sans être exigée (« la seule preuve d'inclusion exigée est cette
+ * proclamation »). Une table, pas un `if` par régime.
+ */
+const PREUVES_DU_REGIME: Readonly<Record<RegimeInclusion, Readonly<Record<PreuveDeRegime, Exigence>>>> = {
+  avant_liste_officielle: { liste_officielle: "interdite", proclamation_premier_tour: "interdite" },
+  liste_officielle: { liste_officielle: "exigee", proclamation_premier_tour: "interdite" },
+  entre_deux_tours: { liste_officielle: "admise", proclamation_premier_tour: "exigee" },
 };
 
+const NATURE_DE_LA_PREUVE: Readonly<Record<PreuveDeRegime, string>> = {
+  liste_officielle: "la liste archivée du Conseil constitutionnel",
+  proclamation_premier_tour: "la proclamation archivée des résultats du premier tour par le Conseil constitutionnel",
+};
+
+/** Absente et null sont l'une et l'autre l'absence de preuve : rendue null, jamais une preuve supposée. */
+function proclamationDe(perimetre: PerimetrePourRun): PreuveArchivee | null {
+  const proclamation = perimetre.proclamation_premier_tour;
+  return proclamation === undefined ? null : proclamation;
+}
+
+/** Le motif d'une preuve absente alors qu'exigée, ou présente alors qu'interdite ; sinon rien. */
+function motifPreuve(regime: RegimeInclusion, preuve: PreuveDeRegime, presente: boolean): readonly string[] {
+  const exigence = PREUVES_DU_REGIME[regime][preuve];
+  if (exigence === "exigee" && !presente) return [`${preuve} : absente dans le régime ${regime} ; ${NATURE_DE_LA_PREUVE[preuve]} est exigée (§3)`];
+  if (exigence === "interdite" && presente) return [`${preuve} : renseignée dans le régime ${regime} ; elle doit rester null (§3)`];
+  return [];
+}
+
 function motifsRegime(perimetre: PerimetrePourRun): readonly string[] {
-  const exigee = LISTE_OFFICIELLE_EXIGEE[perimetre.regime_inclusion];
-  if ((perimetre.liste_officielle !== null) === exigee) return [];
-  const attendu = exigee ? "la liste archivée du Conseil constitutionnel est exigée" : "elle doit rester null";
-  return [`liste_officielle : ${exigee ? "absente" : "renseignée"} dans le régime ${perimetre.regime_inclusion} ; ${attendu} (§3)`];
+  const presentes: Readonly<Record<PreuveDeRegime, boolean>> = {
+    liste_officielle: perimetre.liste_officielle !== null,
+    proclamation_premier_tour: proclamationDe(perimetre) !== null,
+  };
+  return PREUVES_DE_REGIME.flatMap((preuve) => motifPreuve(perimetre.regime_inclusion, preuve, presentes[preuve]));
+}
+
+/** §3 (protocole 0.27, D68) : « le périmètre est alors exactement les deux candidats qualifiés pour le second tour ». */
+export const QUALIFIES_ENTRE_DEUX_TOURS = 2;
+
+/**
+ * Le nombre de candidats qualifiés (non retirés) qu'un régime impose, ou null quand il n'en impose
+ * aucun : avant la liste et sur la liste, ce nombre découle de la règle d'inclusion, il n'est pas fixé.
+ */
+const QUALIFIES_DU_REGIME: Readonly<Record<RegimeInclusion, number | null>> = {
+  avant_liste_officielle: null,
+  liste_officielle: null,
+  entre_deux_tours: QUALIFIES_ENTRE_DEUX_TOURS,
+};
+
+function motifNombreDeQualifies(regime: RegimeInclusion, attendus: number, qualifies: readonly CandidatSaisi[]): readonly string[] {
+  if (qualifies.length === attendus) return [];
+  const ids = qualifies.length === 0 ? "aucun" : qualifies.map((candidat) => candidat.candidat_id).join(", ");
+  return [
+    `candidats : régime ${regime}, exactement ${attendus} candidats qualifiés (non retirés) exigés, ` +
+      `${qualifies.length} candidat(s) non retiré(s) : ${ids} ; un éliminé reste au périmètre avec ` +
+      `statut_au_gel: retire et interroge: false (§3, D68)`,
+  ];
+}
+
+/**
+ * §3 (D68) : entre les deux tours, exactement les deux qualifiés, tous deux interrogés ; un éliminé
+ * reste au périmètre « comme un candidat retiré » (statut `retire`, non interrogé : `motifsRetires`).
+ */
+function motifsQualifies(perimetre: PerimetrePourRun): readonly string[] {
+  const regime = perimetre.regime_inclusion;
+  const attendus = QUALIFIES_DU_REGIME[regime];
+  if (attendus === null) return [];
+  const qualifies = perimetre.candidats.filter((candidat) => candidat.statut_au_gel !== "retire");
+  return [
+    ...motifNombreDeQualifies(regime, attendus, qualifies),
+    ...qualifies
+      .filter((candidat) => !candidat.interroge)
+      .map((candidat) => `${candidat.candidat_id} : qualifié mais interroge: false dans le régime ${regime} ; les qualifiés sont interrogés (§3, D68)`),
+  ];
 }
 
 function motifsRetires(candidats: readonly CandidatSaisi[]): readonly string[] {
@@ -432,6 +512,7 @@ function exigerCoherent(perimetre: PerimetrePourRun, contexte: ContexteDuGel, pr
     ...motifsThemes(perimetre.themes),
     ...motifsIdentifiants(perimetre),
     ...motifsRegime(perimetre),
+    ...motifsQualifies(perimetre),
     ...motifsRetires(perimetre.candidats),
     ...motifsInclusion(perimetre),
     ...motifsAlias(perimetre.outils, contexte.alias_aveugles),
@@ -461,9 +542,11 @@ function outilAuGel(outil: OutilSaisi, alias: ReadonlyMap<string, string>): Outi
 
 function instantane(perimetre: PerimetrePourRun, contexte: ContexteDuGel): PerimetreDeRun {
   const liste = perimetre.liste_officielle === null ? {} : { liste_officielle: perimetre.liste_officielle };
+  const proclamation = proclamationDe(perimetre);
   return {
     regime_inclusion: perimetre.regime_inclusion,
     ...liste,
+    ...(proclamation === null ? {} : { proclamation_premier_tour: proclamation }),
     candidats: perimetre.candidats.map((candidat) => candidatAuGel(candidat, perimetre.date_gel, contexte)),
     outils: perimetre.outils.map((outil) => outilAuGel(outil, contexte.alias_aveugles)),
   };

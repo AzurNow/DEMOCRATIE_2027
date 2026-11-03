@@ -264,6 +264,72 @@ describe("conformité n° 10 : régime de la liste officielle", () => {
   });
 });
 
+const PROCLAMATION = {
+  url: "https://conseil.invalid/proclamation-premier-tour-2027",
+  date_publication: "2027-04-14",
+  sha256: "b".repeat(64),
+  archive_url: "https://web.archive.org/web/20270414/https://conseil.invalid/proclamation-premier-tour-2027",
+};
+
+/*
+ * D68, protocole 0.27 (§3) : régime `entre_deux_tours`, le périmètre est exactement les deux
+ * qualifiés ; la seule preuve d'inclusion exigée est la proclamation du premier tour, archivée.
+ */
+describe("D68 : régime entre les deux tours", () => {
+  /** Les candidats 0 et 1 de l'exemple sont non retirés : les deux finalistes ; le 2, retiré, tient lieu d'éliminé. */
+  function regimeEntreDeuxTours(): Objet {
+    const run = runValide();
+    perimetre(run)["regime_inclusion"] = "entre_deux_tours";
+    perimetre(run)["proclamation_premier_tour"] = PROCLAMATION;
+    for (const indice of [0, 1]) {
+      delete candidat(run, indice)["preuves_inclusion"];
+      delete candidat(run, indice)["declaration_candidature"];
+    }
+    return run;
+  }
+
+  it("accepte deux finalistes sans sondage ni déclaration et un éliminé retiré, avec la proclamation", () => {
+    expect(chemins(regimeEntreDeuxTours())).toEqual([]);
+  });
+
+  it("refuse le régime sans la proclamation archivée", () => {
+    const run = regimeEntreDeuxTours();
+    delete perimetre(run)["proclamation_premier_tour"];
+    expect(chemins(run)).toSatisfy(toutesSous("/perimetre"));
+  });
+
+  it("refuse un seul candidat non retiré", () => {
+    const run = regimeEntreDeuxTours();
+    candidat(run, 1)["statut_au_gel"] = "retire";
+    candidat(run, 1)["interroge"] = false;
+    expect(chemins(run)).toSatisfy(toutesSous("/perimetre"));
+  });
+
+  it("refuse trois candidats non retirés", () => {
+    const run = regimeEntreDeuxTours();
+    candidat(run, 2)["statut_au_gel"] = "actif";
+    candidat(run, 2)["interroge"] = true;
+    expect(chemins(run)).toSatisfy(toutesSous("/perimetre"));
+  });
+
+  it("refuse la proclamation dans le régime avant la liste et dans celui de la liste", () => {
+    const avant = runValide();
+    perimetre(avant)["proclamation_premier_tour"] = PROCLAMATION;
+    expect(chemins(avant)).toSatisfy(toutesSous("/perimetre"));
+    const liste = runValide();
+    perimetre(liste)["regime_inclusion"] = "liste_officielle";
+    perimetre(liste)["liste_officielle"] = LISTE_OFFICIELLE;
+    perimetre(liste)["proclamation_premier_tour"] = PROCLAMATION;
+    expect(chemins(liste)).toSatisfy(toutesSous("/perimetre"));
+  });
+
+  it("admet la liste officielle à côté de la proclamation, sans l'exiger", () => {
+    const run = regimeEntreDeuxTours();
+    perimetre(run)["liste_officielle"] = LISTE_OFFICIELLE;
+    expect(chemins(run)).toEqual([]);
+  });
+});
+
 describe("par_mode obligatoire pour un assistant inclus d'un run publié", () => {
   function sansParMode(statut: string): Objet {
     const run = runValide();

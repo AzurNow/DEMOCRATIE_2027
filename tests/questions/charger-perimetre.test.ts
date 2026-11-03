@@ -799,3 +799,134 @@ describe("lecture du fichier", () => {
     expect(erreur.message).toContain(chemin);
   });
 });
+
+/*
+ * D68, protocole 0.27 (§3) : « Le régime `entre_deux_tours` commence à la proclamation des résultats
+ * du premier tour par le Conseil constitutionnel : le périmètre est alors exactement les deux
+ * candidats qualifiés pour le second tour, et la seule preuve d'inclusion exigée est cette
+ * proclamation, archivée. Les candidats éliminés au premier tour restent dans le jeu de données, et
+ * aucune question ne les nomme plus, comme un candidat retiré. »
+ */
+describe("D68 : régime entre_deux_tours", () => {
+  const PROCLAMATION = {
+    url: "https://conseil.invalid/proclamation-premier-tour",
+    date_publication: "2027-04-14",
+    sha256: sha("e"),
+    archive_url: "https://web.archive.invalid/proclamation-premier-tour",
+  };
+
+  const LISTE = {
+    url: "https://conseil.invalid/liste-officielle",
+    date_publication: "2027-03-10",
+    sha256: sha("d"),
+    archive_url: "https://web.archive.invalid/liste-officielle",
+  };
+
+  /** Deux finalistes (alpha, beta), un éliminé (gamma, retiré, non interrogé), sans sondage ni déclaration. */
+  function entreDeuxTours(): Objet {
+    const perimetre = perimetreComplet();
+    perimetre["regime_inclusion"] = "entre_deux_tours";
+    perimetre["proclamation_premier_tour"] = PROCLAMATION;
+    for (const candidat of candidats(perimetre)) {
+      delete candidat["preuves_inclusion"];
+      delete candidat["declaration_candidature"];
+    }
+    return perimetre;
+  }
+
+  function finaliste(candidat_id: string): Objet {
+    const { declaration_candidature: _d, preuves_inclusion: _p, ...reste } = candidatActif(candidat_id);
+    return reste;
+  }
+
+  it("se charge avec exactement deux candidats qualifiés, sans sondage ni déclaration, et garde la proclamation", () => {
+    const charge = charger(entreDeuxTours());
+    expect(charge.perimetre.regime_inclusion).toBe("entre_deux_tours");
+    expect(charge.perimetre.proclamation_premier_tour).toEqual(PROCLAMATION);
+    expect(charge.perimetre).not.toHaveProperty("liste_officielle");
+  });
+
+  it("refuse un seul candidat qualifié, par un motif nommé", () => {
+    const perimetre = entreDeuxTours();
+    const beta = rang(candidats(perimetre), 1);
+    beta["statut_au_gel"] = "retire";
+    beta["interroge"] = false;
+    expect(refus(perimetre).motifs).toEqual([expect.stringMatching(/entre_deux_tours.*exactement 2.*1 candidat/)]);
+  });
+
+  it("refuse trois candidats qualifiés, par un motif nommé qui les cite", () => {
+    const perimetre = entreDeuxTours();
+    candidats(perimetre).push(finaliste("demo-delta"));
+    const motifs = refus(perimetre).motifs;
+    expect(motifs).toEqual([expect.stringMatching(/entre_deux_tours.*exactement 2.*3 candidat/)]);
+    expect(motifs[0]).toContain("demo-delta");
+  });
+
+  it("refuse un finaliste non interrogé : le périmètre est les deux qualifiés, tous deux interrogés", () => {
+    const perimetre = entreDeuxTours();
+    rang(candidats(perimetre), 1)["interroge"] = false;
+    expect(refus(perimetre).motifs).toEqual([expect.stringMatching(/demo-beta.*interroge: false.*entre_deux_tours/)]);
+  });
+
+  it("refuse le régime sans la proclamation archivée", () => {
+    const perimetre = entreDeuxTours();
+    delete perimetre["proclamation_premier_tour"];
+    expect(refus(perimetre).motifs).toEqual([expect.stringContaining("proclamation_premier_tour")]);
+  });
+
+  it("refuse le régime avec une proclamation à null", () => {
+    const perimetre = entreDeuxTours();
+    perimetre["proclamation_premier_tour"] = null;
+    expect(refus(perimetre).motifs).toEqual([expect.stringContaining("proclamation_premier_tour")]);
+  });
+
+  it("refuse une proclamation sans empreinte, sans archive, sans date ou sans URL (schéma)", () => {
+    for (const champ of ["sha256", "archive_url", "date_publication", "url"]) {
+      const perimetre = entreDeuxTours();
+      const proclamation: Objet = { ...PROCLAMATION };
+      delete proclamation[champ];
+      perimetre["proclamation_premier_tour"] = proclamation;
+      expect(refusDeSchema(perimetre).message, champ).toContain("proclamation_premier_tour");
+    }
+  });
+
+  it("admet la liste officielle archivée à côté de la proclamation, sans l'exiger", () => {
+    const perimetre = entreDeuxTours();
+    perimetre["liste_officielle"] = LISTE;
+    expect(charger(perimetre).perimetre.liste_officielle).toEqual(LISTE);
+  });
+
+  it("garde l'éliminé dans l'instantané, non interrogé, avec ses items P comptés", () => {
+    const gamma = charger(entreDeuxTours()).perimetre.candidats.find((c) => c.candidat_id === "demo-gamma");
+    expect(gamma).toMatchObject({ statut_au_gel: "retire", interroge: false, items_p_verifies: 2 });
+  });
+
+  it("refuse un éliminé marqué interroge: true, comme un retiré", () => {
+    const perimetre = entreDeuxTours();
+    rang(candidats(perimetre), 2)["interroge"] = true;
+    const motifs = refus(perimetre).motifs;
+    expect(motifs).toContainEqual(expect.stringMatching(/demo-gamma : retiré mais interroge: true/));
+  });
+
+  it("refuse la proclamation dans le régime avant_liste_officielle", () => {
+    const perimetre = perimetreComplet();
+    perimetre["proclamation_premier_tour"] = PROCLAMATION;
+    expect(refus(perimetre).motifs).toEqual([expect.stringContaining("proclamation_premier_tour")]);
+  });
+
+  it("refuse la proclamation dans le régime liste_officielle", () => {
+    const perimetre = perimetreComplet();
+    perimetre["regime_inclusion"] = "liste_officielle";
+    perimetre["liste_officielle"] = LISTE;
+    perimetre["proclamation_premier_tour"] = PROCLAMATION;
+    expect(refus(perimetre).motifs).toEqual([expect.stringContaining("proclamation_premier_tour")]);
+  });
+
+  it("n'impose pas le nombre de deux candidats aux autres régimes : trois candidats non retirés y restent admis", () => {
+    const perimetre = perimetreComplet();
+    perimetre["regime_inclusion"] = "liste_officielle";
+    perimetre["liste_officielle"] = LISTE;
+    candidats(perimetre).push(finaliste("demo-delta"));
+    expect(charger(perimetre).perimetre.candidats).toHaveLength(4);
+  });
+});

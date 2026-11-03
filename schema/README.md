@@ -139,7 +139,10 @@ aux deux runs ; un candidat `nouveau` en est exclu. `perimetre.regime_inclusion`
 moins deux `preuves_inclusion` (la fenêtre de 60 jours, que le schéma ne sait pas comparer, est
 contrôlée au chargement de `config/perimetre.yaml` par `pipeline/questions/charger-perimetre.ts`, qui
 applique `pipeline/questions/perimetre.ts`) ; `liste_officielle` exige la liste du Conseil
-constitutionnel archivée (`perimetre.liste_officielle`). `sous_seuil` est lié à `items_p_verifies`
+constitutionnel archivée (`perimetre.liste_officielle`) ; `entre_deux_tours` (protocole 0.27, D68)
+exige la proclamation archivée des résultats du premier tour (`perimetre.proclamation_premier_tour`,
+interdite dans les deux autres régimes) et exactement deux candidats non retirés, interrogés ; les
+éliminés restent au périmètre, `retire` et non interrogés. `sous_seuil` est lié à `items_p_verifies`
 dans les deux sens, et ce dernier se compte par `pipeline/questions/couverture.ts`.
 
 **Réponse partiellement correcte.** La catégorie primaire reste binaire, donc les métriques

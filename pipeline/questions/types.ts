@@ -329,11 +329,11 @@ export const STATUTS_AU_GEL = ["actif", "nouveau", "retire"] as const;
 export type StatutAuGel = (typeof STATUTS_AU_GEL)[number];
 
 /**
- * §3 (protocole 0.11) : chaque run déclare son régime d'inclusion.
+ * §3 (protocole 0.11 ; `entre_deux_tours` en 0.27, D68) : chaque run déclare son régime d'inclusion.
  * `schema/perimetre.schema.json#/properties/regime_inclusion` et
  * `schema/run.schema.json#/properties/perimetre/properties/regime_inclusion`.
  */
-export const REGIMES_INCLUSION = ["avant_liste_officielle", "liste_officielle"] as const;
+export const REGIMES_INCLUSION = ["avant_liste_officielle", "liste_officielle", "entre_deux_tours"] as const;
 export type RegimeInclusion = (typeof REGIMES_INCLUSION)[number];
 
 /**

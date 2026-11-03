@@ -229,3 +229,35 @@ describe("cas construit D55 (4) : l'image d'un candidat interrogé n'est jamais 
     expect(correspondancesDe(corrige)["b"]).toBeUndefined();
   });
 });
+
+/*
+ * D68, protocole 0.27 (§3, « Entre les deux tours ») : « Le dérangement du test contrefactuel des
+ * candidats (section 7), défini dès deux candidats interrogés, est leur échange : le test est
+ * calculé tel quel. » Deux finalistes interrogés, deux éliminés au périmètre, non interrogés.
+ */
+describe("D68 : entre les deux tours, le dérangement est l'échange des deux finalistes", () => {
+  const FINALISTES: CandidatDuRun[] = [
+    { candidat_id: "demo-beta", libelle: "Brune Beta", nom: "Beta" },
+    { candidat_id: "demo-alpha", libelle: "Alix Alpha", nom: "Alpha" },
+  ];
+  const ELIMINES: CandidatDuRun[] = [
+    { candidat_id: "demo-gamma", libelle: "Gil Gamma", nom: "Gamma" },
+    { candidat_id: "demo-delta", libelle: "Dora Delta", nom: "Delta" },
+  ];
+  const TOUT_LE_PERIMETRE = [...FINALISTES, ...ELIMINES];
+
+  it("échange les deux finalistes, quelle que soit la graine", () => {
+    for (let valeur = 0; valeur < 20; valeur += 1) {
+      expect(correspondancesDe(tirerDerangement(FINALISTES, TOUT_LE_PERIMETRE, graine(valeur)))).toEqual({
+        "demo-alpha": "demo-beta",
+        "demo-beta": "demo-alpha",
+      });
+    }
+  });
+
+  it("transporte les éliminés hors du dérangement, sans image, triés par identifiant", () => {
+    const derangement = tirerDerangement(FINALISTES, TOUT_LE_PERIMETRE, graine(20270420));
+    expect(derangement.hors_derangement.map((candidat) => candidat.candidat_id)).toEqual(["demo-delta", "demo-gamma"]);
+    expect(derangement.paires.map((paire) => paire.image.candidat_id).sort()).toEqual(["demo-alpha", "demo-beta"]);
+  });
+});

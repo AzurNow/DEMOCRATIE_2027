@@ -308,13 +308,18 @@
           "type": "string",
           "enum": [
             "avant_liste_officielle",
-            "liste_officielle"
+            "liste_officielle",
+            "entre_deux_tours"
           ],
-          "description": "§3 (protocole 0.11) : « chaque run déclare son régime ». Avant la liste officielle du Conseil constitutionnel, un candidat non retiré est inclus sur sa déclaration de candidature et au moins deux sondages publiés dans les 60 jours précédant l'instant de gel (la fenêtre, que le JSON Schema ne sait pas comparer, est contrôlée au chargement de config/perimetre.yaml par pipeline/questions/charger-perimetre.ts, qui applique pipeline/questions/perimetre.ts:inclusionAvantListe et refuse un candidat qui ne remplit pas la règle). À partir de la liste, le périmètre est exactement cette liste, et sa version archivée (liste_officielle) est la seule preuve d'inclusion exigée."
+          "description": "§3 (protocole 0.11, 0.27 pour entre_deux_tours, D68) : « chaque run déclare son régime ». Avant la liste officielle du Conseil constitutionnel, un candidat non retiré est inclus sur sa déclaration de candidature et au moins deux sondages publiés dans les 60 jours précédant l'instant de gel (la fenêtre, que le JSON Schema ne sait pas comparer, est contrôlée au chargement de config/perimetre.yaml par pipeline/questions/charger-perimetre.ts, qui applique pipeline/questions/perimetre.ts:inclusionAvantListe et refuse un candidat qui ne remplit pas la règle). À partir de la liste, le périmètre est exactement cette liste, et sa version archivée (liste_officielle) est la seule preuve d'inclusion exigée. À partir de la proclamation des résultats du premier tour, le périmètre est exactement les deux candidats qualifiés, et la proclamation archivée (proclamation_premier_tour) est la seule preuve d'inclusion exigée ; les éliminés restent au périmètre, retirés et non interrogés."
         },
         "liste_officielle": {
           "$ref": "#/$defs/preuve_archivee",
-          "description": "§3 : la liste officielle du Conseil constitutionnel, archivée. Exigée dans le régime liste_officielle, interdite avant : un run qui la porte ne peut plus appliquer la règle des sondages."
+          "description": "§3 : la liste officielle du Conseil constitutionnel, archivée. Exigée dans le régime liste_officielle, interdite avant : un run qui la porte ne peut plus appliquer la règle des sondages. Admise sans être exigée dans le régime entre_deux_tours, dont la seule preuve exigée est la proclamation."
+        },
+        "proclamation_premier_tour": {
+          "$ref": "#/$defs/preuve_archivee",
+          "description": "§3 (protocole 0.27, D68) : la proclamation des résultats du premier tour par le Conseil constitutionnel, archivée. Exigée dans le régime entre_deux_tours, interdite dans les deux autres : un run qui la porte est entre les deux tours."
         },
         "candidats": {
           "type": "array",
@@ -719,8 +724,17 @@
           },
           "then": {
             "not": {
-              "required": [
-                "liste_officielle"
+              "anyOf": [
+                {
+                  "required": [
+                    "liste_officielle"
+                  ]
+                },
+                {
+                  "required": [
+                    "proclamation_premier_tour"
+                  ]
+                }
               ]
             },
             "properties": {
@@ -767,7 +781,67 @@
           "then": {
             "required": [
               "liste_officielle"
+            ],
+            "not": {
+              "required": [
+                "proclamation_premier_tour"
+              ]
+            }
+          }
+        },
+        {
+          "$comment": "§3 (protocole 0.27, D68), régime entre les deux tours : la seule preuve d'inclusion exigée est la proclamation des résultats du premier tour, archivée ; le périmètre est exactement les deux qualifiés, c'est-à-dire exactement deux candidats non retirés, tous deux interrogés. Les éliminés restent au périmètre, retirés et non interrogés (perimetre.candidats[].interroge). pipeline/questions/charger-perimetre.ts refuse la même chose au chargement, par un motif nommé.",
+          "if": {
+            "properties": {
+              "regime_inclusion": {
+                "const": "entre_deux_tours"
+              }
+            },
+            "required": [
+              "regime_inclusion"
             ]
+          },
+          "then": {
+            "required": [
+              "proclamation_premier_tour"
+            ],
+            "properties": {
+              "candidats": {
+                "contains": {
+                  "not": {
+                    "properties": {
+                      "statut_au_gel": {
+                        "const": "retire"
+                      }
+                    },
+                    "required": [
+                      "statut_au_gel"
+                    ]
+                  }
+                },
+                "minContains": 2,
+                "maxContains": 2,
+                "items": {
+                  "if": {
+                    "properties": {
+                      "statut_au_gel": {
+                        "const": "retire"
+                      }
+                    },
+                    "required": [
+                      "statut_au_gel"
+                    ]
+                  },
+                  "else": {
+                    "properties": {
+                      "interroge": {
+                        "const": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       ]
