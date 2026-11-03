@@ -31,11 +31,18 @@
       "description": "§3 (protocole 0.11) : chaque run déclare son régime. null tant que le brouillon n'est pas arrêté.",
       "anyOf": [
         { "type": "null" },
-        { "type": "string", "enum": ["avant_liste_officielle", "liste_officielle"] }
+        { "type": "string", "enum": ["avant_liste_officielle", "liste_officielle", "entre_deux_tours"] }
       ]
     },
     "liste_officielle": {
-      "description": "§3 : la liste du Conseil constitutionnel, archivée. Exigée dans le régime liste_officielle, null dans le régime avant_liste_officielle (contrôlé au chargement).",
+      "description": "§3 : la liste du Conseil constitutionnel, archivée. Exigée dans le régime liste_officielle, null dans le régime avant_liste_officielle, admise sans être exigée dans le régime entre_deux_tours (contrôlé au chargement).",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "urn:banc-essai-2027:schema:run#/$defs/preuve_archivee" }
+      ]
+    },
+    "proclamation_premier_tour": {
+      "description": "§3 (protocole 0.27, D68) : la proclamation des résultats du premier tour par le Conseil constitutionnel, archivée. Exigée dans le régime entre_deux_tours, absente ou null dans les deux autres (contrôlé au chargement). Clé facultative tant que config/perimetre.yaml ne la porte pas : absente et null se lisent de même, l'absence de preuve, jamais une preuve supposée.",
       "anyOf": [
         { "type": "null" },
         { "$ref": "urn:banc-essai-2027:schema:run#/$defs/preuve_archivee" }

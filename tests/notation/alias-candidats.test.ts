@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { candidatsInterroges } from "../../analysis/candidats-interroges.ts";
 import { graineHexadecimale } from "../../analysis/graines.ts";
 import {
   aliasDeCandidat,
@@ -104,5 +105,30 @@ describe("index candidat_id ↔ alias", () => {
   it("un candidat absent de la table (non interrogé) est refusé par aliasDeCandidat, jamais deviné", () => {
     const index = inverserTable(tableAliasCandidats(candidats(2), graine(1)));
     expect(() => aliasDeCandidat(index, "candidat-fantome")).toThrow(CandidatSansAlias);
+  });
+});
+
+/*
+ * D68, protocole 0.27 (§3, « Entre les deux tours ») : « les alias aveugles sont C1 et C2 (section 7) ».
+ * Deux finalistes interrogés, un éliminé retiré et non interrogé, qui n'a pas d'alias.
+ */
+describe("D68 : entre les deux tours, alias C1 et C2", () => {
+  const PERIMETRE = [
+    { candidat_id: "demo-alpha", interroge: true },
+    { candidat_id: "demo-gamma", interroge: false },
+    { candidat_id: "demo-beta", interroge: true },
+  ] as const;
+
+  it("la table porte exactement C1 et C2, sur les deux finalistes, quelle que soit la graine", () => {
+    for (let valeur = 0; valeur < 20; valeur += 1) {
+      const table = tableAliasCandidats(candidatsInterroges(PERIMETRE), graine(valeur));
+      expect(Object.keys(table).sort()).toEqual(["C1", "C2"]);
+      expect(Object.values(table).sort()).toEqual(["demo-alpha", "demo-beta"]);
+    }
+  });
+
+  it("l'éliminé n'a pas d'alias : aliasDeCandidat le refuse", () => {
+    const index = inverserTable(tableAliasCandidats(candidatsInterroges(PERIMETRE), graine(20270420)));
+    expect(() => aliasDeCandidat(index, "demo-gamma")).toThrow(CandidatSansAlias);
   });
 });
