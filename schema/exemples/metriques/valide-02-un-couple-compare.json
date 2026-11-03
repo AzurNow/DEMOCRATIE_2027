@@ -88,7 +88,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": null
           },
           {
             "metrique": "non_reponse",
@@ -117,7 +118,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_evenement"
           },
           {
             "metrique": "fabrication",
@@ -146,7 +148,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": null
           },
           {
             "metrique": "obsolescence",
@@ -167,7 +170,8 @@
               "graine": "c3487cd1b95080b1",
               "intervalle": null,
               "raison_sans_intervalle": "aucun_reechantillon_defini"
-            }
+            },
+            "taux_degenere": null
           },
           {
             "metrique": "obsolescence_fraiche",
@@ -188,7 +192,8 @@
               "graine": "9d23da2d5cb96d3a",
               "intervalle": null,
               "raison_sans_intervalle": "aucun_reechantillon_defini"
-            }
+            },
+            "taux_degenere": null
           },
           {
             "metrique": "confirmation_premisse",
@@ -217,7 +222,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_evenement"
           },
           {
             "metrique": "sourcage_valide",
@@ -246,7 +252,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_evenement"
           },
           {
             "metrique": "repartition_drapeaux:fabrication",
@@ -275,7 +282,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_non_evenement"
           },
           {
             "metrique": "repartition_drapeaux:mauvaise_attribution",
@@ -304,7 +312,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_evenement"
           },
           {
             "metrique": "repartition_drapeaux:obsolescence",
@@ -333,7 +342,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_evenement"
           },
           {
             "metrique": "repartition_drapeaux:deformation",
@@ -362,7 +372,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_evenement"
           },
           {
             "metrique": "repartition_drapeaux:confirmation_premisse",
@@ -391,7 +402,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_evenement"
           },
           {
             "metrique": "exactitude",
@@ -420,7 +432,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_non_evenement"
           },
           {
             "metrique": "exactitude",
@@ -449,7 +462,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": null
           },
           {
             "metrique": "exactitude",
@@ -478,7 +492,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": null
           },
           {
             "metrique": "exactitude",
@@ -507,7 +522,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": null
           },
           {
             "metrique": "exactitude",
@@ -536,7 +552,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_non_evenement"
           },
           {
             "metrique": "exactitude",
@@ -565,7 +582,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": "aucun_non_evenement"
           },
           {
             "metrique": "exactitude",
@@ -594,7 +612,8 @@
                 "degenere": null
               },
               "raison_sans_intervalle": null
-            }
+            },
+            "taux_degenere": null
           }
         ]
       }
@@ -670,7 +689,8 @@
                   "degenere": null
                 },
                 "raison_sans_intervalle": null
-              }
+              },
+              "taux_degenere": "aucun_non_evenement"
             },
             {
               "candidat_id": "candidat-b",
@@ -697,7 +717,8 @@
                   "degenere": null
                 },
                 "raison_sans_intervalle": null
-              }
+              },
+              "taux_degenere": null
             }
           ],
           "candidats_rapportes_a_part": [],
@@ -748,7 +769,8 @@
                   "reechantillonnages_indefinis": 0,
                   "degenere": null
                 },
-                "qualificatif": "non_etablie"
+                "qualificatif": null,
+                "motif_sans_qualificatif": "taux_degenere"
               },
               "grappes_appariees": 4,
               "grappes_exclues": []
@@ -782,7 +804,8 @@
                   "reechantillonnages_indefinis": 0,
                   "degenere": null
                 },
-                "qualificatif": "non_etablie"
+                "qualificatif": null,
+                "motif_sans_qualificatif": "taux_degenere"
               },
               "grappes_appariees": 4,
               "grappes_exclues": []
@@ -816,7 +839,8 @@
                   "reechantillonnages_indefinis": 0,
                   "degenere": null
                 },
-                "qualificatif": "etablie"
+                "qualificatif": null,
+                "motif_sans_qualificatif": "taux_degenere"
               },
               "grappes_appariees": 4,
               "grappes_exclues": []
@@ -862,7 +886,8 @@
                   "reechantillonnages_indefinis": 0,
                   "degenere": null
                 },
-                "qualificatif": "non_etablie"
+                "qualificatif": null,
+                "motif_sans_qualificatif": "taux_degenere"
               },
               "grappes_appariees": 2,
               "grappes_exclues": []
@@ -896,7 +921,8 @@
                   "reechantillonnages_indefinis": 0,
                   "degenere": null
                 },
-                "qualificatif": "non_etablie"
+                "qualificatif": null,
+                "motif_sans_qualificatif": "taux_degenere"
               },
               "grappes_appariees": 2,
               "grappes_exclues": []
@@ -930,7 +956,8 @@
                   "reechantillonnages_indefinis": 0,
                   "degenere": null
                 },
-                "qualificatif": "non_etablie"
+                "qualificatif": null,
+                "motif_sans_qualificatif": "taux_degenere"
               },
               "grappes_appariees": 2,
               "grappes_exclues": []
@@ -981,7 +1008,8 @@
                       "degenere": "grappe_unique"
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "non_reponse",
@@ -1010,7 +1038,8 @@
                       "degenere": "grappe_unique"
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "fabrication",
@@ -1031,7 +1060,8 @@
                     "graine": "eb6aec31b9d1375d",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "obsolescence",
@@ -1052,7 +1082,8 @@
                     "graine": "c3487cd1b95080b1",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "obsolescence_fraiche",
@@ -1073,7 +1104,8 @@
                     "graine": "9d23da2d5cb96d3a",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "confirmation_premisse",
@@ -1094,7 +1126,8 @@
                     "graine": "0f565fda99ce6d99",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "sourcage_valide",
@@ -1123,7 +1156,8 @@
                       "degenere": "grappe_unique"
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:fabrication",
@@ -1144,7 +1178,8 @@
                     "graine": "6904811c45ba70c3",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "repartition_drapeaux:mauvaise_attribution",
@@ -1165,7 +1200,8 @@
                     "graine": "a9beffcb3ea0cd56",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "repartition_drapeaux:obsolescence",
@@ -1186,7 +1222,8 @@
                     "graine": "ee867058999e4914",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "repartition_drapeaux:deformation",
@@ -1207,7 +1244,8 @@
                     "graine": "27c6845de4e582d5",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "repartition_drapeaux:confirmation_premisse",
@@ -1228,7 +1266,8 @@
                     "graine": "f021da644c8ceb23",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -1249,7 +1288,8 @@
                     "graine": "04c2d32a4aa60598",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucune_grappe"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -1278,7 +1318,8 @@
                       "degenere": "grappe_unique"
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -1307,7 +1348,8 @@
                       "degenere": "grappe_unique"
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -1336,7 +1378,8 @@
                       "degenere": "grappe_unique"
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -1357,7 +1400,8 @@
                     "graine": "08ae255b10ff096d",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucune_grappe"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -1386,7 +1430,8 @@
                       "degenere": "grappe_unique"
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -1407,7 +1452,8 @@
                     "graine": "0000271b4f34fdde",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucune_grappe"
-                  }
+                  },
+                  "taux_degenere": null
                 }
               ]
             }
@@ -1450,7 +1496,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "non_reponse",
@@ -1479,7 +1526,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "fabrication",
@@ -1508,7 +1556,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "obsolescence",
@@ -1529,7 +1578,8 @@
                     "graine": "c3487cd1b95080b1",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "obsolescence_fraiche",
@@ -1550,7 +1600,8 @@
                     "graine": "9d23da2d5cb96d3a",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "confirmation_premisse",
@@ -1579,7 +1630,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "sourcage_valide",
@@ -1608,7 +1660,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:fabrication",
@@ -1637,7 +1690,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:mauvaise_attribution",
@@ -1666,7 +1720,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:obsolescence",
@@ -1695,7 +1750,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:deformation",
@@ -1724,7 +1780,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:confirmation_premisse",
@@ -1753,7 +1810,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -1782,7 +1840,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -1811,7 +1870,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -1840,7 +1900,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -1869,7 +1930,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -1898,7 +1960,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -1927,7 +1990,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -1956,7 +2020,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 }
               ]
             }
@@ -1999,7 +2064,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "non_reponse",
@@ -2028,7 +2094,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "fabrication",
@@ -2057,7 +2124,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "obsolescence",
@@ -2078,7 +2146,8 @@
                     "graine": "c3487cd1b95080b1",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "obsolescence_fraiche",
@@ -2099,7 +2168,8 @@
                     "graine": "9d23da2d5cb96d3a",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "confirmation_premisse",
@@ -2120,7 +2190,8 @@
                     "graine": "0f565fda99ce6d99",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "sourcage_valide",
@@ -2149,7 +2220,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:fabrication",
@@ -2170,7 +2242,8 @@
                     "graine": "6904811c45ba70c3",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "repartition_drapeaux:mauvaise_attribution",
@@ -2191,7 +2264,8 @@
                     "graine": "a9beffcb3ea0cd56",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "repartition_drapeaux:obsolescence",
@@ -2212,7 +2286,8 @@
                     "graine": "ee867058999e4914",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "repartition_drapeaux:deformation",
@@ -2233,7 +2308,8 @@
                     "graine": "27c6845de4e582d5",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "repartition_drapeaux:confirmation_premisse",
@@ -2254,7 +2330,8 @@
                     "graine": "f021da644c8ceb23",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -2283,7 +2360,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2312,7 +2390,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2341,7 +2420,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2370,7 +2450,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2399,7 +2480,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2428,7 +2510,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2449,7 +2532,8 @@
                     "graine": "0000271b4f34fdde",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucune_grappe"
-                  }
+                  },
+                  "taux_degenere": null
                 }
               ]
             }
@@ -2492,7 +2576,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "non_reponse",
@@ -2521,7 +2606,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "fabrication",
@@ -2550,7 +2636,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "obsolescence",
@@ -2571,7 +2658,8 @@
                     "graine": "c3487cd1b95080b1",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "obsolescence_fraiche",
@@ -2592,7 +2680,8 @@
                     "graine": "9d23da2d5cb96d3a",
                     "intervalle": null,
                     "raison_sans_intervalle": "aucun_reechantillon_defini"
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "confirmation_premisse",
@@ -2621,7 +2710,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "sourcage_valide",
@@ -2650,7 +2740,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:fabrication",
@@ -2679,7 +2770,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:mauvaise_attribution",
@@ -2708,7 +2800,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:obsolescence",
@@ -2737,7 +2830,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:deformation",
@@ -2766,7 +2860,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "repartition_drapeaux:confirmation_premisse",
@@ -2795,7 +2890,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2824,7 +2920,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2853,7 +2950,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -2882,7 +2980,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -2911,7 +3010,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 },
                 {
                   "metrique": "exactitude",
@@ -2940,7 +3040,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2969,7 +3070,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
@@ -2998,7 +3100,8 @@
                       "degenere": null
                     },
                     "raison_sans_intervalle": null
-                  }
+                  },
+                  "taux_degenere": null
                 }
               ]
             }
@@ -3072,7 +3175,8 @@
               "reechantillonnages_indefinis": 0,
               "degenere": null
             },
-            "qualificatif": "non_etablie",
+            "qualificatif": null,
+            "motif_sans_qualificatif": "taux_degenere",
             "grappes_appariees": 2,
             "grappes_exclues": []
           }

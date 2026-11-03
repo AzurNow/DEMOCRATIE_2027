@@ -34,7 +34,7 @@
  */
 
 import { comparerChaines } from "../outils/ordre-chaines.ts";
-import { intervalleNomme, valeurDuTaux, type IntervalleNomme, type Statistique } from "./bootstrap.ts";
+import { intervalleNomme, tauxDegenere, valeurDuTaux, type IntervalleNomme, type Statistique, type TauxDegenere } from "./bootstrap.ts";
 import { exigerDuCouple, unitesParCoupleCompare } from "./couples-compares.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import {
@@ -123,6 +123,13 @@ export interface TauxPublie {
   /** `null` quand le taux a une valeur. */
   readonly motif_absence: MotifTauxAbsent | null;
   readonly intervalle: IntervalleNomme;
+  /**
+   * §8 (0.27, 0.28) : « aucun événement observé sur n grappes » (`aucun_evenement`, intervalle
+   * [0 ; 0]) ou « aucun non-événement observé sur n grappes » (`aucun_non_evenement`, [1 ; 1]), n
+   * étant `intervalle.intervalle.nombre_grappes`. `null` pour un taux ni nul ni égal à 1, et pour un
+   * taux absent (`motif_absence`). Lu sur les effectifs du taux (`bootstrap.ts:tauxDegenere`).
+   */
+  readonly taux_degenere: TauxDegenere | null;
 }
 
 /** `run.graines.bootstrap.valeur` et le nombre de rééchantillonnages ; la clé est écrite ici. */
@@ -182,7 +189,7 @@ function publier(
     ...options,
     cle: [couple.outil_id, couple.mode, metrique, strate.strate],
   });
-  return { metrique, strate: strate.strate, taux: t, motif_absence: motifAbsence(strate.unites, t), intervalle };
+  return { metrique, strate: strate.strate, taux: t, motif_absence: motifAbsence(strate.unites, t), intervalle, taux_degenere: tauxDegenere(t) };
 }
 
 function motifAbsence(unites: readonly UniteAnalyse[], t: Taux): MotifTauxAbsent | null {

@@ -17,7 +17,7 @@ const PARAMETRES = { reechantillonnages: 40, permutations: 40 };
 
 type Json = Record<string, unknown>;
 interface CoupleJson { readonly outil_id: string; readonly mode: string }
-interface TauxPublieJson { readonly metrique: string; readonly strate: string; readonly taux: { numerateur: number; denominateur: number; valeur?: number }; readonly motif_absence: string | null; readonly intervalle: { intervalle: { bas: number; haut: number } | null; raison_sans_intervalle: string | null } }
+interface TauxPublieJson { readonly metrique: string; readonly strate: string; readonly taux: { numerateur: number; denominateur: number; valeur?: number }; readonly motif_absence: string | null; readonly intervalle: { intervalle: { bas: number; haut: number; nombre_grappes: number } | null; raison_sans_intervalle: string | null }; readonly taux_degenere: string | null }
 interface TauxDuCoupleJson { readonly couple: CoupleJson; readonly taux: readonly TauxPublieJson[] }
 
 const DOCUMENT = analyserRun(entreesDuRunAnalysable(SPEC_REFERENCE), PARAMETRES, null) as Json;
@@ -147,6 +147,27 @@ describe("zéro observé", () => {
     expect(obsolescence.taux).toEqual({ numerateur: 0, denominateur: 0 });
     expect(obsolescence.motif_absence).toBe("denominateur_nul");
     expect(obsolescence.intervalle).toMatchObject({ intervalle: null, raison_sans_intervalle: "aucun_reechantillon_defini" });
+  });
+
+  it("publie la mention du taux dégénéré à côté de l'intervalle, avec son nombre de grappes (§8, 0.27 et 0.28)", () => {
+    // « aucun événement observé sur n grappes » : fabrication 0/6 ; « aucun non-événement observé
+    // sur n grappes » : candidat-a, jamais inexact. 0/0 n'a pas de mention, il a son motif d'absence.
+    const fabrication = taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "fabrication");
+    expect(fabrication.taux_degenere).toBe("aucun_evenement");
+    expect(fabrication.intervalle.intervalle?.nombre_grappes).toBeGreaterThan(1);
+    const candidatA = taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "exactitude", "candidat:candidat-a");
+    expect(candidatA.taux.numerateur).toBe(candidatA.taux.denominateur);
+    expect(candidatA.taux_degenere).toBe("aucun_non_evenement");
+    expect(candidatA.intervalle.intervalle).toMatchObject({ bas: 1, haut: 1, nombre_grappes: 5 });
+    expect(taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "obsolescence").taux_degenere).toBeNull();
+    expect(taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "exactitude").taux_degenere).toBeNull();
+    // L'exactitude de chaque candidat du test d'asymétrie porte la même mention.
+    const asymetrie = section(["asymetrie"])["couples"] as { couple: CoupleJson; test: { candidats: { candidat_id: string; taux_degenere: string | null }[] } }[];
+    const alpha = asymetrie.find((c) => cle(c.couple) === "outil-alpha/web_desactivee");
+    expect(alpha?.test.candidats).toEqual([
+      expect.objectContaining({ candidat_id: "candidat-a", taux_degenere: "aucun_non_evenement" }),
+      expect.objectContaining({ candidat_id: "candidat-b", taux_degenere: null }),
+    ]);
   });
 });
 

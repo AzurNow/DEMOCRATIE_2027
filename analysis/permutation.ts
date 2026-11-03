@@ -47,10 +47,12 @@ import { generateur, melanger, type GenerateurAleatoire } from "../validation/do
 import {
   comparerGrappes,
   intervalleNomme,
+  tauxDegenere,
   valeurDuTaux,
   type IntervalleNomme,
   type OptionsBootstrap,
   type StatistiqueNumerique,
+  type TauxDegenere,
 } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import { graineDerivee, graineHexadecimale } from "./graines.ts";
@@ -93,6 +95,8 @@ export interface ExactitudeCandidat {
   readonly exactitude: Taux;
   /** Bootstrap en grappes sur les seuls items du candidat (conformité n° 29). */
   readonly intervalle: IntervalleNomme;
+  /** §8 (0.27, 0.28) : la mention d'un taux dégénéré, sur `intervalle.intervalle.nombre_grappes` grappes ; `null` sinon. */
+  readonly taux_degenere: TauxDegenere | null;
 }
 
 export interface ResultatPermutation {
@@ -232,6 +236,7 @@ export function testHomogeneiteCandidats(
       candidat_id,
       exactitude: t,
       intervalle: intervalleDuCandidat(comparees, candidat_id, bootstrap),
+      taux_degenere: tauxDegenere(t),
     })),
     candidats_rapportes_a_part: parCandidat.rapportes_a_part,
   };

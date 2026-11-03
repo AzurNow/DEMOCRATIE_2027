@@ -14,14 +14,14 @@ import { decisionH3, decisionH5, STRATE_H3, ComparaisonsH3Incoherentes, Tendance
 import { exactitude } from "../../analysis/metriques.ts";
 import type { TendanceDuRun, TendanceOutilEtMode } from "../../analysis/tendance.ts";
 import { taux, type Intervalle95, type Mode, type Registre, type TypeItem } from "../../analysis/types.ts";
-import { idQuestion, ulid, unite } from "./fabriques.ts";
+import { idQuestion, motifFabrique, ulid, unite } from "./fabriques.ts";
 
 function intervalle(bas: number, haut: number): Intervalle95 {
   return { bas, haut, nombre_grappes: 12, reechantillonnages: 2000, reechantillonnages_indefinis: 0, degenere: null };
 }
 
 function difference(valeur: number | null, borne: Intervalle95 | null, qualificatif: DifferenceTaux["qualificatif"], cle: readonly string[]): DifferenceTaux {
-  return { cle, graine: "0000000000000000", taux_a: taux(8, 10), taux_b: taux(5, 10), difference: valeur, intervalle: borne, qualificatif };
+  return { cle, graine: "0000000000000000", taux_a: taux(8, 10), taux_b: taux(5, 10), difference: valeur, intervalle: borne, qualificatif, motif_sans_qualificatif: motifFabrique(valeur, borne, qualificatif) };
 }
 
 /* ------------------------------------------------------------------ H3 */

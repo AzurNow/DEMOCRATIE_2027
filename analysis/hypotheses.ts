@@ -197,13 +197,14 @@ export interface DifferenceComparee {
   readonly difference: number | null;
   readonly intervalle: Intervalle95 | null;
   readonly qualificatif: DifferenceTaux["qualificatif"];
+  readonly motif_sans_qualificatif: DifferenceTaux["motif_sans_qualificatif"];
   readonly grappes_appariees: number;
   readonly grappes_exclues: readonly Ulid[];
 }
 
 /**
  * La règle commune de H2, H3 et H5 : « établie (section 8) et positive ». Une différence sans
- * qualificatif (une seule grappe, aucun intervalle) n'est pas établie.
+ * qualificatif (une seule grappe, aucun intervalle, un taux dégénéré du §8) n'est pas établie.
  */
 function estEtablieEtPositive(difference: { readonly difference: number | null; readonly qualificatif: DifferenceTaux["qualificatif"] }): boolean {
   return difference.qualificatif === "etablie" && difference.difference !== null && difference.difference > 0;
@@ -326,6 +327,7 @@ function differencePubliee(comparaison: ComparaisonCondition): DifferenceCompare
     difference: difference.difference,
     intervalle: difference.intervalle,
     qualificatif: difference.qualificatif,
+    motif_sans_qualificatif: difference.motif_sans_qualificatif,
     grappes_appariees: comparaison.grappes_appariees,
     grappes_exclues: comparaison.grappes_exclues,
   };
@@ -398,8 +400,8 @@ export class ComparaisonsH3Incoherentes extends Error {
  *
  * `comparaisons` : ce que `pairesDeH3` puis `comparerConditions` rendent. Une ligne par couple du
  * partage, comparés puis incomplets, dans l'ordre du partage. Une différence ni établie ni non
- * établie (une seule grappe, ou la règle du zéro observé du §8 quand elle rend un qualificatif
- * nul) n'est pas établie : le couple est `non_confirmee`.
+ * établie (une seule grappe, ou un taux dégénéré [0 ; 0] ou [1 ; 1] du §8, motif
+ * `taux_degenere`) n'est pas établie : le couple est `non_confirmee`.
  */
 export function decisionH3(couples: PartageCouples, comparaisons: ComparaisonsDeConditions): CoupleH3[] {
   const parCle = indexerH3(comparaisons, couples);
@@ -440,6 +442,7 @@ export interface TendancePubliee {
   readonly difference: number | null;
   readonly intervalle: Intervalle95 | null;
   readonly qualificatif: DifferenceTaux["qualificatif"];
+  readonly motif_sans_qualificatif: DifferenceTaux["motif_sans_qualificatif"];
   readonly questions_communes: number;
   readonly questions_exclues: readonly string[];
 }
@@ -526,6 +529,7 @@ function coupleCompareH5(ligne: TendanceOutilEtMode): CoupleH5 {
     difference: difference.difference,
     intervalle: difference.intervalle,
     qualificatif: difference.qualificatif,
+    motif_sans_qualificatif: difference.motif_sans_qualificatif,
     questions_communes: ligne.questions_communes,
     questions_exclues: ligne.questions_exclues,
   };

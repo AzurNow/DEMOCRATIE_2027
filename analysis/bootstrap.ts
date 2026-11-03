@@ -76,6 +76,22 @@ export interface IntervalleNomme {
 /** §8 : une différence est « établie » ou « non établie ». Le rapport n'a pas d'autre mot. */
 export type Qualificatif = "etablie" | "non_etablie";
 
+/**
+ * §8 (0.27, 0.28) : un taux dont aucune grappe n'observe l'événement (`aucun_evenement`, intervalle
+ * [0 ; 0], mention « aucun événement observé sur n grappes ») ou le non-événement
+ * (`aucun_non_evenement`, intervalle [1 ; 1], mention « aucun non-événement observé sur n
+ * grappes »), n étant le `nombre_grappes` de son intervalle.
+ */
+export type TauxDegenere = "aucun_evenement" | "aucun_non_evenement";
+
+/**
+ * Pourquoi une différence n'a pas de qualificatif, dans l'ordre où la règle les essaie :
+ * `difference_indefinie` (l'un des deux taux est absent, dénominateur nul), `sans_intervalle`
+ * (aucun rééchantillon défini), `grappe_unique` (§8, 0.9), `taux_degenere` (§8, 0.27 et 0.28 :
+ * l'un des deux taux au moins est dégénéré, `tauxDegenere`).
+ */
+export type MotifSansQualificatif = "difference_indefinie" | "sans_intervalle" | "grappe_unique" | "taux_degenere";
+
 export interface EchantillonBootstrap {
   /** Valeurs des rééchantillons, triées. Sans les indéfinies. */
   readonly valeurs: readonly number[];
@@ -96,8 +112,13 @@ export interface DifferenceTaux {
   /** `null` quand l'un des deux taux n'existe pas : une différence sans terme n'existe pas. */
   readonly difference: number | null;
   readonly intervalle: Intervalle95 | null;
-  /** `null` sans intervalle, et aussi sur un intervalle d'une seule grappe (§8, 0.9 : `qualifier`). */
+  /**
+   * `null` sans différence, sans intervalle, sur un intervalle d'une seule grappe (§8, 0.9) ou quand
+   * l'un des deux taux est dégénéré (§8, 0.27 et 0.28) : `qualifierDifference`.
+   */
   readonly qualificatif: Qualificatif | null;
+  /** `null` exactement quand `qualificatif` ne l'est pas : il dit pourquoi la différence n'est pas qualifiée. */
+  readonly motif_sans_qualificatif: MotifSansQualificatif | null;
 }
 
 /**
@@ -253,11 +274,45 @@ export function differenceAppariee(
   const taux_b = statistique(unitesB);
   const difference = ecart(taux_a, taux_b);
   if (difference === null) {
-    return { cle, graine, taux_a, taux_b, difference: null, intervalle: null, qualificatif: null };
+    return { cle, graine, taux_a, taux_b, difference: null, intervalle: null, qualificatif: null, motif_sans_qualificatif: "difference_indefinie" };
   }
   const echantillon = reechantillonnerDifference(unitesA, unitesB, statistique, options);
   const intervalle = intervalleDepuis(echantillon, options.reechantillonnages);
-  return { cle, graine, taux_a, taux_b, difference, intervalle, qualificatif: qualifier(intervalle) };
+  return { cle, graine, taux_a, taux_b, difference, intervalle, ...qualifierDifference(taux_a, taux_b, intervalle) };
+}
+
+/**
+ * §8 (0.27, 0.28) : la seule règle qui décide qu'un taux est dégénéré. Elle lit les effectifs
+ * observés, jamais les bornes de l'intervalle : un numérateur nul dit qu'aucune unité, donc aucune
+ * grappe, n'observe l'événement ; un numérateur égal au dénominateur, qu'aucune n'observe le
+ * non-événement. Un taux de dénominateur nul n'est pas dégénéré : il est absent (`valeur`
+ * manquante), et la différence qui en dépend l'est aussi.
+ */
+export function tauxDegenere(t: Taux): TauxDegenere | null {
+  if (t.denominateur === 0) return null;
+  if (t.numerateur === 0) return "aucun_evenement";
+  return t.numerateur === t.denominateur ? "aucun_non_evenement" : null;
+}
+
+/**
+ * Le qualificatif d'une différence définie et, quand il manque, pourquoi. §8 : « Dans les deux cas,
+ * une différence qui dépend d'un tel taux n'est qualifiée ni d'« établie » ni de « non établie ». »
+ * Un taux dégénéré dans l'un des deux bras suffit.
+ */
+export function qualifierDifference(
+  taux_a: Taux,
+  taux_b: Taux,
+  intervalle: Intervalle95 | null,
+): Pick<DifferenceTaux, "qualificatif" | "motif_sans_qualificatif"> {
+  const motif = motifSansQualificatif(taux_a, taux_b, intervalle);
+  return { qualificatif: motif === null ? qualifier(intervalle) : null, motif_sans_qualificatif: motif };
+}
+
+function motifSansQualificatif(taux_a: Taux, taux_b: Taux, intervalle: Intervalle95 | null): MotifSansQualificatif | null {
+  if (intervalle === null) return "sans_intervalle";
+  if (intervalle.degenere === "grappe_unique") return "grappe_unique";
+  if (tauxDegenere(taux_a) !== null || tauxDegenere(taux_b) !== null) return "taux_degenere";
+  return null;
 }
 
 /**
@@ -268,6 +323,9 @@ export function differenceAppariee(
  * mention « une seule grappe ». » Le qualificatif est alors `null`, mais l'intervalle, lui, est
  * rendu tel quel : c'est son `degenere: "grappe_unique"` qui porte la mention, et qui distingue ce
  * cas d'une différence sans intervalle du tout (`intervalle: null`).
+ *
+ * Ne lit que l'intervalle : la règle des taux dégénérés (§8, 0.27 et 0.28) a besoin des deux taux,
+ * et vit dans `qualifierDifference`, qui appelle celle-ci en dernier.
  */
 export function qualifier(intervalle: Intervalle95 | null): Qualificatif | null {
   if (intervalle === null || intervalle.degenere === "grappe_unique") return null;

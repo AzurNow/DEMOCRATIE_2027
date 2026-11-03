@@ -263,6 +263,14 @@
         "degenere": { "enum": [null, "grappe_unique"] }
       }
     },
+    "taux_degenere": {
+      "enum": [null, "aucun_evenement", "aucun_non_evenement"],
+      "description": "§8 (0.27, 0.28), lu sur les effectifs du taux (analysis/bootstrap.ts:tauxDegenere) : aucun_evenement, numérateur nul, intervalle [0 ; 0], mention « aucun événement observé sur n grappes » ; aucun_non_evenement, numérateur égal au dénominateur, intervalle [1 ; 1], mention « aucun non-événement observé sur n grappes » ; n est le nombre_grappes de l'intervalle. null pour un taux intermédiaire ou absent."
+    },
+    "motif_sans_qualificatif": {
+      "enum": [null, "difference_indefinie", "sans_intervalle", "grappe_unique", "taux_degenere"],
+      "description": "Pourquoi une différence n'est qualifiée ni d'« établie » ni de « non établie » (§8 ; analysis/bootstrap.ts:qualifierDifference) ; null exactement quand le qualificatif ne l'est pas. taux_degenere : l'un des deux taux au moins est dégénéré (§8, 0.27 et 0.28)."
+    },
     "intervalle_nomme": {
       "type": "object",
       "additionalProperties": false,
@@ -277,13 +285,14 @@
     "taux_publie": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["metrique", "strate", "taux", "motif_absence", "intervalle"],
+      "required": ["metrique", "strate", "taux", "motif_absence", "intervalle", "taux_degenere"],
       "properties": {
         "metrique": { "type": "string", "minLength": 1 },
         "strate": { "type": "string", "minLength": 1 },
         "taux": { "$ref": "#/$defs/taux" },
         "motif_absence": { "enum": [null, "strate_vide", "denominateur_nul"] },
-        "intervalle": { "$ref": "#/$defs/intervalle_nomme" }
+        "intervalle": { "$ref": "#/$defs/intervalle_nomme" },
+        "taux_degenere": { "$ref": "#/$defs/taux_degenere" }
       }
     },
     "taux_du_couple": {
@@ -326,11 +335,12 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["candidat_id", "exactitude", "intervalle"],
+            "required": ["candidat_id", "exactitude", "intervalle", "taux_degenere"],
             "properties": {
               "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
               "exactitude": { "$ref": "#/$defs/taux" },
-              "intervalle": { "$ref": "#/$defs/intervalle_nomme" }
+              "intervalle": { "$ref": "#/$defs/intervalle_nomme" },
+              "taux_degenere": { "$ref": "#/$defs/taux_degenere" }
             }
           }
         },
@@ -340,7 +350,7 @@
     "difference_taux": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["cle", "graine", "taux_a", "taux_b", "difference", "intervalle", "qualificatif"],
+      "required": ["cle", "graine", "taux_a", "taux_b", "difference", "intervalle", "qualificatif", "motif_sans_qualificatif"],
       "properties": {
         "cle": { "$ref": "#/$defs/cle" },
         "graine": { "$ref": "#/$defs/graine_hex" },
@@ -348,7 +358,8 @@
         "taux_b": { "$ref": "#/$defs/taux" },
         "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
         "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
-        "qualificatif": { "enum": [null, "etablie", "non_etablie"] }
+        "qualificatif": { "enum": [null, "etablie", "non_etablie"] },
+        "motif_sans_qualificatif": { "$ref": "#/$defs/motif_sans_qualificatif" }
       }
     },
     "famille_de_conditions": {
@@ -427,7 +438,7 @@
     "difference_comparee": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["statut", "cle", "graine", "difference", "intervalle", "qualificatif", "grappes_appariees", "grappes_exclues"],
+      "required": ["statut", "cle", "graine", "difference", "intervalle", "qualificatif", "motif_sans_qualificatif", "grappes_appariees", "grappes_exclues"],
       "properties": {
         "statut": { "const": "comparee" },
         "cle": { "$ref": "#/$defs/cle" },
@@ -435,6 +446,7 @@
         "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
         "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
         "qualificatif": { "enum": [null, "etablie", "non_etablie"] },
+        "motif_sans_qualificatif": { "$ref": "#/$defs/motif_sans_qualificatif" },
         "grappes_appariees": { "$ref": "#/$defs/effectif" },
         "grappes_exclues": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" } }
       }
@@ -551,13 +563,14 @@
                         {
                           "type": "object",
                           "additionalProperties": false,
-                          "required": ["cle", "graine", "difference", "intervalle", "qualificatif", "questions_communes", "questions_exclues"],
+                          "required": ["cle", "graine", "difference", "intervalle", "qualificatif", "motif_sans_qualificatif", "questions_communes", "questions_exclues"],
                           "properties": {
                             "cle": { "$ref": "#/$defs/cle" },
                             "graine": { "$ref": "#/$defs/graine_hex" },
                             "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
                             "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
                             "qualificatif": { "enum": [null, "etablie", "non_etablie"] },
+                            "motif_sans_qualificatif": { "$ref": "#/$defs/motif_sans_qualificatif" },
                             "questions_communes": { "$ref": "#/$defs/effectif" },
                             "questions_exclues": { "type": "array", "items": { "type": "string", "minLength": 1 } }
                           }

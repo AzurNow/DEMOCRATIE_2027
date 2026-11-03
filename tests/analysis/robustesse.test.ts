@@ -29,6 +29,15 @@ function surItem(cle: string, partiel: Parameters<typeof unite>[0] = {}) {
   return unite({ ...partiel, grappe_id: ulid(cle), item_principal_id: ulid(cle), item_ids: [ulid(cle)] });
 }
 
+/**
+ * Deux items témoins, identiques dans les deux bras : l'un exact, l'autre inexact. Leur différence
+ * est nulle, et ils gardent chaque bras loin de 0/n et de n/n : un taux dégénéré ne qualifie aucune
+ * différence (§8, 0.27 et 0.28), et ces tests portent sur la fragilité, pas sur cette règle.
+ */
+function temoins(partiel: Parameters<typeof unite>[0] = {}) {
+  return [surItem("t-exacte", { ...partiel, categorie: "exacte" }), surItem("t-inexacte", { ...partiel, categorie: "inexacte" })];
+}
+
 /** Chaque réponse d'un bras reçoit son propre identifiant : deux bras sont deux outils. */
 function bras(nom: string, unites: readonly UniteAnalyse[]): UniteAnalyse[] {
   return unites.map((u, i) => ({ ...u, reponse_id: ulid(`${nom}:${i}`) }));
@@ -123,10 +132,13 @@ describe("ordre des recalculs", () => {
 describe("marquage fragile", () => {
   it("laisse intact un résultat établi qui survit aux quatre recalculs", () => {
     // 4 items, toutes les réponses dans l'échantillon humain, aucune contestée, aucune orientée,
-    // aucune tronquée. Bras A : exactes. Bras B : inexactes. Différence 1 dans les cinq calculs.
+    // aucune tronquée. Bras A : exactes. Bras B : inexactes. Plus deux témoins, de différence nulle :
+    // 5/6 contre 1/6, et un rééchantillon ne tombe à 0 que s'il ne tire que les témoins, (2/6)⁶ ≈
+    // 0,14 %. Établie dans les cinq calculs.
     const cles = ["i1", "i2", "i3", "i4"];
-    const a = cles.map((c) => surItem(c, { dans_echantillon_humain: true, categorie: "exacte" }));
-    const b = cles.map((c) => surItem(c, { dans_echantillon_humain: true, categorie: "inexacte" }));
+    const echantillon = { dans_echantillon_humain: true } as const;
+    const a = [...cles.map((c) => surItem(c, { ...echantillon, categorie: "exacte" })), ...temoins(echantillon)];
+    const b = [...cles.map((c) => surItem(c, { ...echantillon, categorie: "inexacte" })), ...temoins(echantillon)];
 
     const resultat = evaluer(a, b);
 
@@ -142,21 +154,25 @@ describe("marquage fragile", () => {
   });
 
   it("marque fragile un résultat établi qui devient non établi sur la seule notation humaine", () => {
-    // 7 items. Sur l'ensemble : i1 à i5, A exactes, B inexactes ; i6 et i7, inexactes des deux
-    // côtés → 5/7 contre 0/7, établie (un rééchantillon ne tombe à 0 que s'il ne tire que i6 et
-    // i7 : (2/7)⁷ ≈ 0,015 %, loin des 2,5 %).
-    // Dans l'échantillon humain (i6 et i7, deux grappes) : les deux bras sont inexacts →
-    // différence 0, intervalle contenant 0 → non établie. Le résultat ne survit pas au recalcul
-    // (a). Deux grappes et non une : depuis la 0.9, une seule grappe ne se qualifie plus (§8).
+    // 8 items. Sur l'ensemble : i1 à i5, A exactes, B inexactes ; i6 et i7, inexactes des deux
+    // côtés ; t, exacte des deux côtés → 6/8 contre 1/8, établie (un rééchantillon ne tombe à 0 que
+    // s'il ne tire que i6, i7 et t : (3/8)⁸ ≈ 0,04 %, loin des 2,5 %).
+    // Dans l'échantillon humain (i6, i7 et t, trois grappes) : 1/3 contre 1/3, aucun taux dégénéré
+    // (§8, 0.27 et 0.28) → différence 0, intervalle contenant 0 → non établie. Le résultat ne
+    // survit pas au recalcul (a). Plusieurs grappes et non une : depuis la 0.9, une seule grappe
+    // ne se qualifie plus (§8).
     const communs = ["i1", "i2", "i3", "i4", "i5"];
     const echantillon = ["i6", "i7"];
+    const temoin = surItem("t", { categorie: "exacte", dans_echantillon_humain: true });
     const a = [
       ...communs.map((c) => surItem(c, { categorie: "exacte" })),
       ...echantillon.map((c) => surItem(c, { categorie: "inexacte", dans_echantillon_humain: true })),
+      temoin,
     ];
     const b = [
       ...communs.map((c) => surItem(c, { categorie: "inexacte" })),
       ...echantillon.map((c) => surItem(c, { categorie: "inexacte", dans_echantillon_humain: true })),
+      temoin,
     ];
 
     const resultat = evaluer(a, b);
@@ -170,12 +186,15 @@ describe("marquage fragile", () => {
 
   it("marque fragile un résultat dont un recalcul ne peut plus être calculé", () => {
     // Aucune réponse dans l'échantillon humain : le recalcul (a) n'a pas de différence à
-    // qualifier. Une absence de confirmation n'est pas une confirmation.
-    const a = [surItem("i1", { categorie: "exacte" }), surItem("i2", { categorie: "exacte" })];
-    const b = [surItem("i1", { categorie: "inexacte" }), surItem("i2", { categorie: "inexacte" })];
+    // qualifier. Une absence de confirmation n'est pas une confirmation. Cinq items et deux
+    // témoins : établie au principal ((2/7)⁷ ≈ 0,015 % de rééchantillons à 0).
+    const cles = ["i1", "i2", "i3", "i4", "i5"];
+    const a = [...cles.map((c) => surItem(c, { categorie: "exacte" })), ...temoins()];
+    const b = [...cles.map((c) => surItem(c, { categorie: "inexacte" })), ...temoins()];
 
     const resultat = evaluer(a, b);
 
+    expect(resultat.principal.qualificatif).toBe("etablie");
     expect(resultat.recalculs[0]?.difference.qualificatif).toBeNull();
     expect(resultat.fragile).toBe(true);
     expect(resultat.motifs_fragilite).toEqual(["echantillon_humain"]);
@@ -197,10 +216,11 @@ describe("marquage fragile", () => {
     // §8 (0.9) : un résultat « est fragile si, dans l'un des quatre recalculs, sa différence n'est
     // plus établie » ; sur une seule grappe, elle n'est qualifiée ni d'établie ni de non établie.
     // 5 items, A exactes, B inexactes : établie. Seul i1 est dans l'échantillon humain : le
-    // recalcul (a) garde la différence 1, mais sur une grappe, donc sans qualificatif.
+    // recalcul (a) garde la différence 1, mais sur une grappe, donc sans qualificatif. Les deux
+    // témoins, hors échantillon, gardent le principal hors des taux dégénérés (§8, 0.27 et 0.28).
     const cles = ["i1", "i2", "i3", "i4", "i5"];
-    const a = cles.map((c) => surItem(c, { categorie: "exacte", dans_echantillon_humain: c === "i1" }));
-    const b = cles.map((c) => surItem(c, { categorie: "inexacte", dans_echantillon_humain: c === "i1" }));
+    const a = [...cles.map((c) => surItem(c, { categorie: "exacte", dans_echantillon_humain: c === "i1" })), ...temoins()];
+    const b = [...cles.map((c) => surItem(c, { categorie: "inexacte", dans_echantillon_humain: c === "i1" })), ...temoins()];
 
     const resultat = evaluer(a, b);
 
@@ -208,6 +228,29 @@ describe("marquage fragile", () => {
     expect(resultat.recalculs[0]?.difference.difference).toBe(1);
     expect(resultat.recalculs[0]?.difference.intervalle?.degenere).toBe("grappe_unique");
     expect(resultat.recalculs[0]?.difference.qualificatif).toBeNull();
+    expect(resultat.fragile).toBe(true);
+    expect(resultat.motifs_fragilite).toEqual(["echantillon_humain"]);
+  });
+
+  it("marque fragile un résultat établi dont un recalcul tombe sur un taux dégénéré (§8, 0.27 et 0.28)", () => {
+    // §8 : un résultat « est fragile si, dans l'un des quatre recalculs, sa différence n'est plus
+    // établie ou ne peut plus être calculée ». i1 à i5, dans l'échantillon : A exacte, B inexacte.
+    // Les deux témoins sont hors échantillon : principal 6/7 contre 1/7, établie. Sur la seule
+    // notation humaine (i1 à i5, cinq grappes), 5/5 contre 0/5 : la différence vaut 1 sur un
+    // intervalle [1 ; 1], mais ses deux taux sont dégénérés, elle n'est plus qualifiée.
+    const cles = ["i1", "i2", "i3", "i4", "i5"];
+    const a = [...cles.map((c) => surItem(c, { categorie: "exacte", dans_echantillon_humain: true })), ...temoins()];
+    const b = [...cles.map((c) => surItem(c, { categorie: "inexacte", dans_echantillon_humain: true })), ...temoins()];
+
+    const resultat = evaluer(a, b);
+
+    expect(resultat.principal.qualificatif).toBe("etablie");
+    expect(resultat.recalculs[0]?.difference).toMatchObject({
+      difference: 1,
+      intervalle: { bas: 1, haut: 1, nombre_grappes: 5, degenere: null },
+      qualificatif: null,
+      motif_sans_qualificatif: "taux_degenere",
+    });
     expect(resultat.fragile).toBe(true);
     expect(resultat.motifs_fragilite).toEqual(["echantillon_humain"]);
   });
@@ -232,20 +275,24 @@ describe("marquage fragile", () => {
   it("marque fragile un résultat établi qui cesse de l'être seulement quand on retire les tronquées", () => {
     // 7 items, tous dans l'échantillon humain, aucun contesté, aucune formulation orientée : (a),
     // (b) et (c) recalculent sur le jeu entier et confirment le calcul principal.
-    // i1 à i5, tronquées : A exacte, B inexacte. i6 et i7, entières : A et B inexactes.
-    // Principal : 5/7 contre 0/7, établie. Sans les tronquées (i6 et i7, deux grappes) : 0/2
-    // contre 0/2, différence 0, non établie. Le résultat tient aux seules réponses tronquées.
-    // Deux grappes entières et non une : depuis la 0.9, une seule grappe ne se qualifie plus (§8).
+    // i1 à i5, tronquées : A exacte, B inexacte. i6 et i7, entières : A et B inexactes. t,
+    // entière : A et B exactes. Principal : 6/8 contre 1/8, établie. Sans les tronquées (i6, i7
+    // et t, trois grappes) : 1/3 contre 1/3, aucun taux dégénéré (§8, 0.27 et 0.28), différence 0,
+    // non établie. Le résultat tient aux seules réponses tronquées. Plusieurs grappes entières et
+    // non une : depuis la 0.9, une seule grappe ne se qualifie plus (§8).
     const tronquees = ["i1", "i2", "i3", "i4", "i5"];
     const entieres = ["i6", "i7"];
     const commun = { dans_echantillon_humain: true } as const;
+    const temoin = surItem("t", { ...commun, categorie: "exacte" });
     const a = [
       ...tronquees.map((c) => surItem(c, { ...commun, categorie: "exacte", tronquee: true })),
       ...entieres.map((c) => surItem(c, { ...commun, categorie: "inexacte" })),
+      temoin,
     ];
     const b = [
       ...tronquees.map((c) => surItem(c, { ...commun, categorie: "inexacte", tronquee: true })),
       ...entieres.map((c) => surItem(c, { ...commun, categorie: "inexacte" })),
+      temoin,
     ];
 
     const resultat = evaluer(a, b);
@@ -265,10 +312,11 @@ describe("marquage fragile", () => {
   it("marque fragile un résultat établi dont toutes les réponses sont tronquées", () => {
     // Le recalcul (d) ne laisse plus aucune réponse : il n'a pas de différence à qualifier.
     // Une absence de confirmation n'est pas une confirmation, en (d) comme en (a).
-    const cles = ["i1", "i2", "i3", "i4"];
+    // Cinq items et deux témoins tronqués : établie au principal, hors des taux dégénérés.
+    const cles = ["i1", "i2", "i3", "i4", "i5"];
     const commun = { dans_echantillon_humain: true, tronquee: true } as const;
-    const a = cles.map((c) => surItem(c, { ...commun, categorie: "exacte" }));
-    const b = cles.map((c) => surItem(c, { ...commun, categorie: "inexacte" }));
+    const a = [...cles.map((c) => surItem(c, { ...commun, categorie: "exacte" })), ...temoins(commun)];
+    const b = [...cles.map((c) => surItem(c, { ...commun, categorie: "inexacte" })), ...temoins(commun)];
 
     const resultat = evaluer(a, b);
 
@@ -512,10 +560,12 @@ describe("(a) : la note humaine de l'échantillon, lue dans les notations indivi
   it("marque fragile un résultat établi que la note humaine contredit sur tout l'échantillon", () => {
     // 4 items, tous dans l'échantillon. Verdicts : A exacte, B inexacte → différence 1, établie.
     // Les humains notent les deux bras inexacts : sur la seule notation humaine, différence 0.
-    // Avant la correction, (a) relisait les verdicts et confirmait à tort le résultat.
-    const cles = ["i1", "i2", "i3", "i4"];
-    const a = bras("a", cles.map((c) => surItem(c, { dans_echantillon_humain: true, categorie: "exacte" })));
-    const b = bras("b", cles.map((c) => surItem(c, { dans_echantillon_humain: true, categorie: "inexacte" })));
+    // Avant la correction, (a) relisait les verdicts et confirmait à tort le résultat. Cinq items et
+    // deux témoins : établie au principal, hors des taux dégénérés (§8, 0.27 et 0.28).
+    const cles = ["i1", "i2", "i3", "i4", "i5"];
+    const echantillon = { dans_echantillon_humain: true } as const;
+    const a = bras("a", [...cles.map((c) => surItem(c, { ...echantillon, categorie: "exacte" })), ...temoins(echantillon)]);
+    const b = bras("b", [...cles.map((c) => surItem(c, { ...echantillon, categorie: "inexacte" })), ...temoins(echantillon)]);
     const notations = [...a, ...b].flatMap((u) =>
       ["a1", "a2"].map((annotateur) =>
         notation({

@@ -8,9 +8,11 @@
  */
 
 import { createHash } from "node:crypto";
+import type { MotifSansQualificatif, Qualificatif } from "../../analysis/bootstrap.ts";
 import type {
   CandidatAuGel,
   EntreeTirage,
+  Intervalle95,
   Item,
   LectureComparateur,
   Notation,
@@ -25,6 +27,22 @@ import type { PartageCouples, RequeteDuPlan } from "../../analysis/seuils.ts";
 import type { CoupleOutilMode, Mode } from "../../analysis/types.ts";
 
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/**
+ * Le motif d'une différence fabriquée à la main, dont le test pose lui-même le qualificatif : sans
+ * qualificatif, `difference_indefinie` sans valeur, `sans_intervalle` sans borne, `grappe_unique` sur
+ * une seule grappe, `taux_degenere` sinon (le cas [0 ; 0] ou [1 ; 1] du §8 que ces tests posent).
+ */
+export function motifFabrique(
+  valeur: number | null,
+  borne: Intervalle95 | null,
+  qualificatif: Qualificatif | null,
+): MotifSansQualificatif | null {
+  if (qualificatif !== null) return null;
+  if (valeur === null) return "difference_indefinie";
+  if (borne === null) return "sans_intervalle";
+  return borne.degenere === "grappe_unique" ? "grappe_unique" : "taux_degenere";
+}
 
 /**
  * Partiel où `undefined` signifie « champ absent », et non « champ à undefined » : les schémas
