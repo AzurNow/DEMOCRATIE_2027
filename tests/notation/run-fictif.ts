@@ -227,3 +227,25 @@ export function poserRunNote(): RunFictif {
   depot.ecrireReponseContrefactuelle(contrefactuelle);
   return { ...gele, reponses, notations, verdicts, contrefactuelle };
 }
+
+/**
+ * Les lectures des comparateurs inclus du run fictif (§6, QR9) : une par item P de référence (les
+ * `items_p_au_gel` de ses candidats interrogés) et par comparateur, toutes non affichées, donc sans
+ * notation à poser. Écrites dans `volume/lectures-comparateur/`, que `pnpm analyze` exige d'un run
+ * qui inclut un comparateur (`analysis/lecture-run.ts:lireLecturesDuRun`).
+ */
+export function poserLecturesNonAffichees(fictif: Pick<RunFictif, "repertoire_run" | "run">): void {
+  const exemple = lireExemple("lecture-comparateur/valide-02-position-absente.json");
+  const perimetre = fictif.run["perimetre"] as { candidats: { interroge: boolean; items_p_au_gel: string[] }[]; outils: { outil_id: string; famille: string; inclus: boolean }[] };
+  const items = perimetre.candidats.filter((c) => c.interroge).flatMap((c) => c.items_p_au_gel);
+  const comparateurs = perimetre.outils.filter((o) => o.famille === "comparateur" && o.inclus).map((o) => o.outil_id);
+  const dossier = join(fictif.repertoire_run, "volume", "lectures-comparateur");
+  mkdirSync(dossier, { recursive: true });
+  for (const outil_id of comparateurs) {
+    for (const item_id of items) {
+      const reference_item = { item_id, item_version: 1, item_empreinte: createHash("sha256").update(item_id).digest("hex") };
+      const lecture = valider<{ id: string }>("lecture-comparateur", { ...exemple, id: ulid(`es-lecture-${outil_id}-${item_id}`), run_id: RUN_ID, outil_id, reference_item }, `lecture fictive ${item_id}`);
+      ecrireJson(join(dossier, `${lecture.id}.json`), lecture);
+    }
+  }
+}

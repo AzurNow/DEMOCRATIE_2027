@@ -3414,13 +3414,13 @@
       "objet": "metriques",
       "fichier": "metriques/valide-01-aucun-couple-compare.json",
       "attendu": "valide",
-      "motif": "Sortie de pnpm analyze sur le run fictif des tests (tests/notation/run-fictif.ts), régime avant_liste_officielle : son seul couple est « run incomplet », les sections par couple sont sans objet (aucun_couple_compare), H1 sans objet, H3 sans objet sur ce couple (couple_incomplet), H4 indécidable, H5 sans objet faute de premier run (premier_run_absent), robustesse des taux et des différences sans objet (aucun_couple_compare), section exploratoire sans objet (corrélation : aucun_couple_compare ; écart API / application : aucune_reponse_application), aucune graine dérivée."
+      "motif": "Sortie de pnpm analyze sur le run fictif des tests (tests/notation/run-fictif.ts), régime avant_liste_officielle : son seul couple est « run incomplet », les sections par couple sont sans objet (aucun_couple_compare), H1 sans objet, H3 sans objet sur ce couple (couple_incomplet), H4 indécidable, H5 sans objet faute de premier run (premier_run_absent), robustesse des taux et des différences sans objet (aucun_couple_compare), section exploratoire sans objet (corrélation : aucun_couple_compare ; écart API / application : aucune_reponse_application). Comparateurs : le run fictif inclut comparateur-gamma, lu sur les 31 items P de référence de son candidat interrogé sans en afficher aucun (tests/notation/run-fictif.ts:poserLecturesNonAffichees) ; couverture 0/31 (aucun événement observé sur 31 grappes), exactitude absente (dénominateur nul) ; leurs deux graines sont les seules graines dérivées du document."
     },
     {
       "objet": "metriques",
       "fichier": "metriques/valide-02-un-couple-compare.json",
       "attendu": "valide",
-      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats à un item P et un item F, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d), H1 à H4 calculées, H3 non confirmée (différence non qualifiée : son bras neutre, 2/2, est un taux dégénéré, motif taux_degenere, §8 0.27 et 0.28), H5 sans premier run ; chaque taux porte sa mention taux_degenere ; variabilité entre échantillons à douze paires comparables, toutes concordantes, accord 1. Régénéré par analyserRun sur la spécification : candidats a et b à un item P et un item F, outil-alpha en web_desactivee, seule la réponse de candidat-b à l'item F en formulation orientée inexacte. Régénéré ouvertement (D72 (7)) quand le run en mémoire est passé à deux échantillons par question (§6), notés à l'identique : effectifs doublés (entrées, taux, asymétrie, conditions, recalculs (b) à (d)), échantillon humain du recalcul (a) passé de une à trois réponses, variabilité enfin calculée ; valeurs des taux, intervalles du calcul principal, hypothèses et graines inchangés. Robustesse des différences ajoutée ensuite (D69, sous-lot B), seule section changée à sa régénération : calculée sans aucun résultat, aucune différence n'étant établie au calcul principal (tendance sans objet, premier_run_absent). Section exploratoire ajoutée ensuite, le reste régénéré identique à l'octet : corrélation de Spearman du couple sans coefficient (deux candidats, motif moins_de_trois_candidats), écart API / application sans objet (aucune_reponse_application)."
+      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats à un item P et un item F, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d), H1 à H4 calculées, H3 non confirmée (différence non qualifiée : son bras neutre, 2/2, est un taux dégénéré, motif taux_degenere, §8 0.27 et 0.28), H5 sans premier run ; chaque taux porte sa mention taux_degenere ; variabilité entre échantillons à douze paires comparables, toutes concordantes, accord 1. Régénéré par analyserRun sur la spécification : candidats a et b à un item P et un item F, outil-alpha en web_desactivee, seule la réponse de candidat-b à l'item F en formulation orientée inexacte. Régénéré ouvertement (D72 (7)) quand le run en mémoire est passé à deux échantillons par question (§6), notés à l'identique : effectifs doublés (entrées, taux, asymétrie, conditions, recalculs (b) à (d)), échantillon humain du recalcul (a) passé de une à trois réponses, variabilité enfin calculée ; valeurs des taux, intervalles du calcul principal, hypothèses et graines inchangés. Robustesse des différences ajoutée ensuite (D69, sous-lot B), seule section changée à sa régénération : calculée sans aucun résultat, aucune différence n'étant établie au calcul principal (tendance sans objet, premier_run_absent). Section exploratoire ajoutée ensuite, le reste régénéré identique à l'octet : corrélation de Spearman du couple sans coefficient (deux candidats, motif moins_de_trois_candidats), écart API / application sans objet (aucune_reponse_application). Sans comparateur inclus : section des comparateurs sans objet (aucun_comparateur_inclus)."
     },
     {
       "objet": "metriques",
@@ -3525,6 +3525,23 @@
       "erreur_visee": {
         "keyword": "oneOf",
         "instance_path": "/robustesse/differences/resultats/0"
+      }
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/valide-04-comparateur-calcule.json",
+      "attendu": "valide",
+      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur le run en mémoire de valide-02 (tests/analysis/run-analysable.ts), auquel s'ajoute un comparateur inclus, comparateur-un, lu sur les 40 items P de référence des deux candidats interrogés (§8 : ceux qui comptent pour leur seuil de couverture) : 20 affichés (un item sur deux), notés chacun par deux humains à l'aveugle, concordants (§6), dont un inexact et un indéterminé. Couverture 20/40 ; exactitude 18/19, l'indéterminée hors du dénominateur (§8, « la même règle des deux côtés »). Chaque taux a son intervalle, strate global, 40 grappes (la grappe est l'item lu ; une lecture non affichée est hors du dénominateur de l'exactitude, pas hors des grappes), sous la clé bootstrap / comparateur-un / lecture / <métrique> / global (§8, « Graines de l'analyse », composant lecture) ; les deux graines sont relevées dans graines. Les autres sections sont celles de valide-02. Robustesse des différences et section exploratoire reprises de valide-02 à la fusion des sous-lots B (le comparateur n'entre dans aucune des deux) : aucune différence établie, corrélation sans coefficient (moins_de_trois_candidats), écart API / application sans objet."
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-10-comparateurs-calcules-sans-comparateur.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-04 dont la section des comparateurs est « calculée » sur une liste vide : une section sans comparateur est sans objet avec son motif (aucun_comparateur_inclus), jamais une section vide qui passerait pour un résultat.",
+      "regle_protocole": "§8, métriques secondaires (comparateurs) ; sections de pnpm analyze",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/comparateurs/comparateurs"
       }
     },
     {

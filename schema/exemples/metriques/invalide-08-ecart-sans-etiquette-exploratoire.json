@@ -66,11 +66,75 @@
       "statut": "sans_objet",
       "motif": "aucun_couple_compare"
     },
-    "differences": {"statut": "sans_objet", "motif": "aucun_couple_compare"}
+    "differences": {
+      "statut": "sans_objet",
+      "motif": "aucun_couple_compare"
+    }
   },
   "variabilite_echantillons": {
     "statut": "sans_objet",
     "motif": "aucun_couple_compare"
+  },
+  "comparateurs": {
+    "statut": "calcule",
+    "items_p_de_reference": 31,
+    "comparateurs": [
+      {
+        "outil_id": "comparateur-gamma",
+        "couverture": {
+          "metrique": "couverture",
+          "strate": "global",
+          "taux": {
+            "numerateur": 0,
+            "denominateur": 31,
+            "valeur": 0
+          },
+          "motif_absence": null,
+          "intervalle": {
+            "cle": [
+              "bootstrap",
+              "comparateur-gamma",
+              "lecture",
+              "couverture",
+              "global"
+            ],
+            "graine": "e8071194150513b3",
+            "intervalle": {
+              "bas": 0,
+              "haut": 0,
+              "nombre_grappes": 31,
+              "reechantillonnages": 2000,
+              "reechantillonnages_indefinis": 0,
+              "degenere": null
+            },
+            "raison_sans_intervalle": null
+          },
+          "taux_degenere": "aucun_evenement"
+        },
+        "exactitude": {
+          "metrique": "exactitude",
+          "strate": "global",
+          "taux": {
+            "numerateur": 0,
+            "denominateur": 0
+          },
+          "motif_absence": "denominateur_nul",
+          "intervalle": {
+            "cle": [
+              "bootstrap",
+              "comparateur-gamma",
+              "lecture",
+              "exactitude",
+              "global"
+            ],
+            "graine": "0a2ce0f26c6f87b4",
+            "intervalle": null,
+            "raison_sans_intervalle": "aucun_reechantillon_defini"
+          },
+          "taux_degenere": null
+        }
+      }
+    ]
   },
   "hypotheses": {
     "H1": {
@@ -228,5 +292,26 @@
       "outils_sans_reponse_application": []
     }
   },
-  "graines": []
+  "graines": [
+    {
+      "cle": [
+        "bootstrap",
+        "comparateur-gamma",
+        "lecture",
+        "couverture",
+        "global"
+      ],
+      "graine": "e8071194150513b3"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "comparateur-gamma",
+        "lecture",
+        "exactitude",
+        "global"
+      ],
+      "graine": "0a2ce0f26c6f87b4"
+    }
+  ]
 }

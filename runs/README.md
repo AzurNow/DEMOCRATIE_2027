@@ -383,7 +383,13 @@ du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.sch
   établie des modes, des formulations, de H3 et de la tendance, D69 ; le recalcul (c) d'une
   différence qui compare l'orientée est « sans objet »), `hypotheses` (H1 à H5 ; un verdict non
   confirmé est `non_confirmee`, jamais « infirmé »). Chaque section est `{statut: "calcule", …}` ou
-  `{statut: "sans_objet", motif}`. Ni les comparateurs, ni les taux du canal application, ni la liste
+  `{statut: "sans_objet", motif}`. `comparateurs` (§8, métriques secondaires) : couverture et
+  exactitude de chaque comparateur inclus sur les items P de référence, avec intervalles (clé
+  `<outil> / lecture / <métrique> / global`), lues dans `volume/lectures-comparateur/*.json`
+  (`lecture-comparateur.schema.json`, dossier exigé d'un run qui inclut un comparateur) ; la note de
+  chaque lecture affichée est retenue depuis ses notations humaines du volume par la règle de
+  l'échantillon (`pipeline/notation/lectures-comparateur.ts`), jamais lue dans `verdicts/` ; sans
+  comparateur inclus, `aucun_comparateur_inclus`. Ni les taux du canal application, ni la liste
   des erreurs graves ne sont encore calculés.
 - **Exploratoire.** `exploratoire.correlation_couverture` (Spearman par couple comparé, §2, sans
   intervalle ; sans objet en `entre_deux_tours`, motif `moins_de_trois_candidats`) et

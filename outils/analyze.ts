@@ -24,6 +24,7 @@ import { analyserEtEcrire, PARAMETRES_PRODUCTION } from "../analysis/analyse-du-
 import { requetesDuPlanDuRun } from "../pipeline/interrogation/plan-du-run.ts";
 import { questionsDuSousEchantillonDuRun } from "../pipeline/interrogation/sous-echantillon-application.ts";
 import { echantillonHumainDuRun } from "../pipeline/notation/echantillons.ts";
+import { etatsDesLectures } from "../pipeline/notation/lectures-comparateur.ts";
 import { analyserArguments, obligatoire } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 
@@ -60,6 +61,7 @@ function principal(): void {
       plan_du_run: requetesDuPlanDuRun,
       echantillon_humain: echantillonHumainDuRun,
       sous_echantillon_application: questionsDuSousEchantillonDuRun,
+      etats_des_lectures: etatsDesLectures,
     };
     const resultat = analyserEtEcrire(repertoire, options, PARAMETRES_PRODUCTION, premier);
     process.stdout.write(`Analyses du §8 — ${repertoire}\n${resultat.chemin} : ${LIBELLE_ISSUE[resultat.issue]}\n`);

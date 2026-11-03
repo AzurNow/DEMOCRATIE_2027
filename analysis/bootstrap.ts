@@ -53,10 +53,19 @@ export interface OptionsBootstrap {
 /** Famille ajoutée en tête de toute clé de bootstrap (`graines.ts`). */
 export const FAMILLE_BOOTSTRAP = "bootstrap";
 
-export type Statistique = (unites: readonly UniteAnalyse[]) => Taux;
+/**
+ * Ce que le bootstrap rééchantillonne : une unité rangée dans sa grappe, l'item (§8). Une unité
+ * d'analyse d'assistant, ou une lecture de comparateur (`metriques.ts:LectureNotee`), dont la grappe
+ * est l'item P lu : le même tirage, la même règle des deux côtés.
+ */
+export interface Grappee {
+  readonly grappe_id: Ulid;
+}
+
+export type Statistique<U extends Grappee = UniteAnalyse> = (unites: readonly U[]) => Taux;
 
 /** `null` : statistique indéfinie sur ces unités (§8, écartée des bornes et comptée). */
-export type StatistiqueNumerique = (unites: readonly UniteAnalyse[]) => number | null;
+export type StatistiqueNumerique<U extends Grappee = UniteAnalyse> = (unites: readonly U[]) => number | null;
 
 /** Pourquoi un intervalle nommé est absent. Jamais un intervalle inventé à la place. */
 export type RaisonSansIntervalle = "aucune_grappe" | "aucun_reechantillon_defini";
@@ -133,8 +142,8 @@ export function comparerGrappes(a: Ulid, b: Ulid): number {
 }
 
 /** Les unités par grappe, clés rangées par `comparerGrappes` (conformité n° 19). */
-export function grapper(unites: readonly UniteAnalyse[]): Map<Ulid, UniteAnalyse[]> {
-  const grappes = new Map<Ulid, UniteAnalyse[]>();
+export function grapper<U extends Grappee>(unites: readonly U[]): Map<Ulid, U[]> {
+  const grappes = new Map<Ulid, U[]>();
   for (const unite of unites) {
     const existante = grappes.get(unite.grappe_id);
     if (existante === undefined) grappes.set(unite.grappe_id, [unite]);
@@ -156,7 +165,7 @@ export function percentile(valeursTriees: readonly number[], p: number): number 
 }
 
 /** Un taux vu comme statistique numérique : sa valeur, ou `null` quand son dénominateur est nul. */
-export function valeurDuTaux(statistique: Statistique): StatistiqueNumerique {
+export function valeurDuTaux<U = UniteAnalyse>(statistique: (unites: readonly U[]) => Taux): (unites: readonly U[]) => number | null {
   return (unites) => valeurDe(statistique(unites));
 }
 
@@ -168,9 +177,9 @@ export function reechantillonner(
   return reechantillonnerStatistique(unites, valeurDuTaux(statistique), options);
 }
 
-export function reechantillonnerStatistique(
-  unites: readonly UniteAnalyse[],
-  statistique: StatistiqueNumerique,
+export function reechantillonnerStatistique<U extends Grappee>(
+  unites: readonly U[],
+  statistique: StatistiqueNumerique<U>,
   options: OptionsBootstrap,
 ): EchantillonBootstrap {
   const grappes = [...grapper(unites).values()];
@@ -229,9 +238,9 @@ export function intervalleStatistique(
 }
 
 /** L'intervalle, sa clé complète et sa graine ; absent seulement avec sa raison. */
-export function intervalleNomme(
-  unites: readonly UniteAnalyse[],
-  statistique: StatistiqueNumerique,
+export function intervalleNomme<U extends Grappee>(
+  unites: readonly U[],
+  statistique: StatistiqueNumerique<U>,
   options: OptionsBootstrap,
 ): IntervalleNomme {
   const cle = [FAMILLE_BOOTSTRAP, ...options.cle];
@@ -376,9 +385,9 @@ function tirerAvecRemise(nombreGrappes: number, rng: GenerateurAleatoire): numbe
   return indices;
 }
 
-function rassembler(grappes: readonly (readonly UniteAnalyse[])[], indices: readonly number[]): UniteAnalyse[] {
-  const unites: UniteAnalyse[] = [];
-  for (const i of indices) unites.push(...(grappes[i] as readonly UniteAnalyse[]));
+function rassembler<U>(grappes: readonly (readonly U[])[], indices: readonly number[]): U[] {
+  const unites: U[] = [];
+  for (const i of indices) unites.push(...(grappes[i] as readonly U[]));
   return unites;
 }
 

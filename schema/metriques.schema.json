@@ -5,7 +5,7 @@
   "description": "§8 : runs/<date>/metriques/metriques.json, écrit par pnpm analyze (analysis/analyse-du-run.ts, sous-lot A), jamais réécrit : absent, il est écrit ; identique à l'octet près, rien n'est fait ; différent, la commande refuse. Toutes les sections reposent sur un seul partage de la population (population), calculé une fois au calcul principal et repris tel quel par chaque recalcul de robustesse (§8 : « les seuils de non-publication ne sont pas réappliqués à la population restreinte »). Chaque section est calculée ou sans objet, avec son motif. Les kappas et le test contrefactuel n'y sont pas recopiés : ils vivent dans run.json, que entrees.run_json_sha256 désigne.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "hypotheses", "exploratoire", "graines"],
+  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "comparateurs", "hypotheses", "exploratoire", "graines"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -229,6 +229,22 @@
         }
       ]
     },
+    "comparateurs": {
+      "description": "§8, métriques secondaires (QR9) : pour chaque comparateur inclus, dans l'ordre du périmètre, couverture (items P affichés / items P de référence) et exactitude (items affichés compatibles / items affichés classés, une lecture indéterminée hors du dénominateur), chacune avec son intervalle, strate global, clé <outil> / lecture / <métrique> / global (§8, « Graines de l'analyse »). Les items P de référence sont ceux qui comptent pour le seuil de couverture de leur candidat interrogé (analysis/reference-comparateurs.ts) ; chaque comparateur en porte une lecture. Sans comparateur inclus au run : sans_objet, motif aucun_comparateur_inclus.",
+      "oneOf": [
+        { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "items_p_de_reference", "comparateurs"],
+          "properties": {
+            "statut": { "const": "calcule" },
+            "items_p_de_reference": { "$ref": "#/$defs/effectif" },
+            "comparateurs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/taux_du_comparateur" } }
+          }
+        }
+      ]
+    },
     "hypotheses": {
       "type": "object",
       "additionalProperties": false,
@@ -309,6 +325,23 @@
 
   "$defs": {
     "effectif": { "type": "integer", "minimum": 0 },
+    "taux_du_comparateur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "couverture", "exactitude"],
+      "description": "Un comparateur inclus : ses deux taux du §8, sur la strate global (toutes ses lectures, la grappe étant l'item lu).",
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "couverture": {
+          "allOf": [{ "$ref": "#/$defs/taux_publie" }],
+          "properties": { "metrique": { "const": "couverture" }, "strate": { "const": "global" } }
+        },
+        "exactitude": {
+          "allOf": [{ "$ref": "#/$defs/taux_publie" }],
+          "properties": { "metrique": { "const": "exactitude" }, "strate": { "const": "global" } }
+        }
+      }
+    },
     "variabilite_du_couple": {
       "type": "object",
       "additionalProperties": false,
@@ -401,7 +434,7 @@
       "required": ["statut", "motif"],
       "properties": {
         "statut": { "const": "sans_objet" },
-        "motif": { "enum": ["aucun_couple_compare", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application"] }
+        "motif": { "enum": ["aucun_comparateur_inclus", "aucun_couple_compare", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application"] }
       }
     },
     "recalcul": { "enum": ["echantillon_humain", "items_contestes", "formulations_orientees", "reponses_tronquees"] },

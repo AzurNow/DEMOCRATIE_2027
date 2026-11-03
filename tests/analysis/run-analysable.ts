@@ -283,6 +283,9 @@ export function entreesDuRunAnalysable(spec: SpecRun): EntreesDuRun {
     notations,
     plan: planCouvrant(reponses),
     questions_sous_echantillon: sousEchantillonDe(spec, items, questions),
+    // Aucun comparateur inclus : aucune lecture (tests/analysis/analyse-du-run-comparateurs.test.ts les pose).
+    lectures: [],
+    etats_des_lectures: [],
   };
 }
 

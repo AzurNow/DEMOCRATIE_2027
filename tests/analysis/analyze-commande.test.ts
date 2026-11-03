@@ -10,19 +10,21 @@ import { analyserRun, cheminMetriques, empreinteDuRun, lireEntreesDuRun } from "
 import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
 import { questionsDuSousEchantillonDuRun } from "../../pipeline/interrogation/sous-echantillon-application.ts";
 import { echantillonHumainDuRun } from "../../pipeline/notation/echantillons.ts";
+import { etatsDesLectures } from "../../pipeline/notation/lectures-comparateur.ts";
 import { executerOutil } from "../aides/depot.ts";
-import { poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
+import { poserLecturesNonAffichees, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
 
 const PARAMETRES = { reechantillonnages: 20, permutations: 20 };
 let fictif: RunFictif;
 
 beforeAll(() => {
   fictif = poserRunNote();
+  poserLecturesNonAffichees(fictif);
 });
 afterAll(() => fictif.nettoyer());
 
 function options(run: RunFictif) {
-  return { items: run.items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun, sous_echantillon_application: questionsDuSousEchantillonDuRun };
+  return { items: run.items, plan_du_run: requetesDuPlanDuRun, echantillon_humain: echantillonHumainDuRun, sous_echantillon_application: questionsDuSousEchantillonDuRun, etats_des_lectures: etatsDesLectures };
 }
 
 describe("pnpm analyze sur un run lu sur disque", () => {

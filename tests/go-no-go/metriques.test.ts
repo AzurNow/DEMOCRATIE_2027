@@ -21,7 +21,7 @@ import { CODES_CRITERES } from "../../pipeline/go-no-go/types.ts";
 import { executerOutil } from "../aides/depot.ts";
 import { entreesDuRunAnalysable, SPEC_REFERENCE } from "../analysis/run-analysable.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
+import { poserLecturesNonAffichees, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
 
 const PARAMETRES = { reechantillonnages: 20, permutations: 20 };
 const TEMPS = 120_000;
@@ -133,6 +133,7 @@ describe("case 7 de l'annexe F : « robustesse calculée »", () => {
 /** Le run fictif de `tests/notation/run-fictif.ts`, ramené à l'état d'avant tout go/no-go : statut en cours, sans rien de ce que le go/no-go ou la publication écrivent. */
 function runAvantGoNoGo(): RunFictif {
   const fictif = poserRunNote();
+  poserLecturesNonAffichees(fictif);
   fictifs.push(fictif);
   const chemin = join(fictif.repertoire_run, "run.json");
   const brut = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown> & {
@@ -177,8 +178,9 @@ describe("analyze → go-no-go → analyze, sur un run écrit sur disque", () =>
       const resultat = goNoGo(run);
       expect(resultat.run_json).toBe("ecrit");
       const analyses = resultat.go_no_go.criteres.find((c) => c.code === "analyses_preenregistrees_executees");
-      // Le seul couple du run fictif est incomplet : aucune graine publiée, critère rouge, mais lu.
-      expect(analyses).toMatchObject({ statut: "rouge", valeur: "aucun résultat d'analyse" });
+      // Le seul couple du run fictif est incomplet ; seules les deux graines de son comparateur inclus
+      // (couverture et exactitude, §8) sont publiées, et le go/no-go les retrouve depuis la graine du run.
+      expect(analyses).toMatchObject({ statut: "vert", valeur: "graine publiée" });
       expect(resultat.checklist.cases.find((c) => c.rang === 7)?.motif).toContain("robustesse des différences non calculée");
 
       const seconde = executerOutil("analyze.ts", [run, `--items=${fictif.items}`]);

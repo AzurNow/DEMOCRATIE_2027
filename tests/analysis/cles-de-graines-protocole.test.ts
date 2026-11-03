@@ -43,22 +43,25 @@ const HORS_CLE: readonly string[] = ["graines.bootstrap", "graines.permutation",
 
 /**
  * Composants produits par une constante exportée nommée plutôt que par `metriques.json` : le
- * contrefactuel d'outil tire son sous-ensemble à la notation, pas à l'analyse (§7).
+ * contrefactuel d'outil tire son sous-ensemble à la notation, pas à l'analyse (§7) ; `lecture`, le
+ * composant d'un taux de comparateur, n'est publié que par un run qui inclut un comparateur, ce que
+ * le run analysable de ce test ne fait pas (tests/analysis/analyse-du-run-comparateurs.test.ts le
+ * relève dans graines[]).
  */
 const CONSTANTES_DU_CODE: readonly { readonly composant: string; readonly module: string; readonly nom: string }[] = [
   { composant: "contrefactuel_outil", module: "pipeline/notation/echantillons.ts", nom: "CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS" },
+  { composant: "lecture", module: "analysis/incertitude.ts", nom: "COMPOSANT_LECTURE" },
 ];
 
 /**
  * Sous-lot B de `pnpm analyze` : composants écrits au protocole qu'aucune graine publiée ni aucune
  * constante ne produit encore.
- * - `lecture` : le taux d'un comparateur (lu, sans mode) ;
  * - `application` : le taux du canal application (exploratoire, QR8) ;
  * - `<juge>:propre-editeur` : l'écart d'un juge sur l'outil de son éditeur (§7) —
  *   `analysis/ecart-juge-editeur.ts` l'écrit, mais `analyserRun` ne l'appelle pas encore.
  * Un composant implémenté se retire d'ici : le test échoue tant qu'il y reste.
  */
-const ATTENDUES_SOUS_LOT_B: readonly string[] = ["lecture", "application", "<juge>:propre-editeur"];
+const ATTENDUES_SOUS_LOT_B: readonly string[] = ["application", "<juge>:propre-editeur"];
 
 function trier(liste: readonly string[]): string[] {
   return [...liste].sort(comparerChaines);

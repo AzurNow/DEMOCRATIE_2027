@@ -148,14 +148,15 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides du nouveau schéma recalcul-b (autre recalcul ; sans empreinte des métriques ; sans contestations lues).
   // 376 → 377 : §8, protocole 0.28 (D70 (12)), un invalide de metriques (variabilité : accord sans paire comparable).
   // 377 → 379 : §10 et annexe E, protocole 0.29 (D71 (8)), égalité des voix : valide-07 et invalide-26 d'item.
-  // 379 → 383 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
+  // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
   // 382 → 383 : §8, robustesse des différences (sous-lot B de pnpm analyze, D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
-  it("1. les 383 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
+  it("1. les 385 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(383);
+    expect(manifeste.exemples).toHaveLength(385);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -421,9 +422,10 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides de recalcul-b.
   // 376 → 377 : §8, protocole 0.28 (D70 (12)), un invalide de metriques (variabilité : accord sans paire comparable).
   // 377 → 379 : §10 et annexe E, protocole 0.29 (D71 (8)), égalité des voix : valide-07 et invalide-26 d'item.
-  // 379 → 383 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
+  // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
   // 382 → 383 : §8, robustesse des différences (D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 383 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(383);
+  // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 385 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(385);
   });
 });

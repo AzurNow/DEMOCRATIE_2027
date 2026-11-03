@@ -39,6 +39,7 @@ import {
   type Taux,
   type Theme,
   type TypeItem,
+  type Ulid,
   type Verdict,
 } from "./types.ts";
 import { filtrerContexteRun, indexerVerdictsDuRun } from "./filtre.ts";
@@ -402,6 +403,30 @@ export interface MetriquesComparateur {
 }
 
 /**
+ * Une lecture de comparateur avec sa note retenue, rangée dans sa grappe : l'item P lu (§8, « la
+ * grappe étant l'item »). Une lecture non affichée n'a rien à noter (§6) : elle n'a pas de catégorie.
+ */
+export type LectureNotee = { readonly lecture_id: Ulid; readonly grappe_id: Ulid } & (
+  | { readonly affiche: false; readonly categorie: null }
+  | { readonly affiche: true; readonly categorie: CategorieRetenue }
+);
+
+/**
+ * Couverture d'un comparateur (§8) : items P affichés / items P de référence. Seule définition du
+ * dépôt. Le dénominateur est le nombre de lectures reçues : `lecturesNoteesParComparateur` a déjà
+ * exigé exactement une lecture par item P de référence, de sorte qu'il vaut ce nombre d'items, et
+ * qu'un rééchantillon du bootstrap (§8, grappe = item) le recompte sur les items tirés.
+ */
+export function couverture(lectures: readonly Pick<LectureNotee, "affiche">[]): Taux {
+  return tauxSur(lectures, () => true, (l) => l.affiche);
+}
+
+/** Exactitude d'un comparateur (§8) : la fonction `exactitude` sur ses seules lectures affichées. */
+export function exactitudeDesLectures(lectures: readonly LectureNotee[]): Taux {
+  return exactitude(lectures.flatMap((l) => (l.affiche ? [{ categorie: l.categorie }] : [])));
+}
+
+/**
  * QR9 : les comparateurs sont lus, pas interrogés (§6). Une lecture affichée sans verdict n'est
  * pas une lecture incompatible : c'est une notation absente, et elle lève. Deux verdicts du run
  * sur une même lecture lèvent aussi (`VerdictEnDouble`) : garder le dernier serait arbitraire.
@@ -417,10 +442,11 @@ export function metriquesComparateur(
   lectures: readonly LectureComparateur[],
   verdicts: readonly Verdict[],
 ): MetriquesComparateur[] {
-  const notes = indexVerdictsDeLecture(verdicts);
-  const reference = itemsPDeReference(run);
-  const groupes = lecturesParComparateur(filtrerContexteRun(lectures), reference, comparateursDuRun(run));
-  return [...groupes].map(([outil_id, membres]) => mesurerComparateur(outil_id, membres, reference.size, notes));
+  return [...lecturesNoteesParComparateur(run, lectures, indexVerdictsDeLecture(verdicts))].map(([outil_id, notees]) => ({
+    outil_id,
+    couverture: couverture(notees),
+    exactitude: exactitudeDesLectures(notees),
+  }));
 }
 
 function indexVerdictsDeLecture(verdicts: readonly Verdict[]): ReadonlyMap<string, CategorieRetenue> {
@@ -428,24 +454,29 @@ function indexVerdictsDeLecture(verdicts: readonly Verdict[]): ReadonlyMap<strin
   return new Map([...index].map(([id, verdict]) => [id, verdict.categorie_retenue]));
 }
 
-/** `itemsPDeReference` : le nombre d'items P de référence, dénominateur de la couverture (§8). */
-function mesurerComparateur(
-  outil_id: IdentifiantCourt,
+/**
+ * Les lectures du run (contexte `run`) de chaque comparateur inclus, dans l'ordre du périmètre, avec
+ * leur note retenue (`notes`, par identifiant de lecture) : après le contrôle de
+ * `lecturesParComparateur` (une lecture par item P de référence et par comparateur, ou levée). Une
+ * lecture affichée sans note lève. La source des notes est celle de l'appelant : les verdicts
+ * (`metriquesComparateur`), ou la règle de l'échantillon sur les notations humaines (`pnpm analyze`).
+ */
+export function lecturesNoteesParComparateur(
+  run: Run,
   lectures: readonly LectureComparateur[],
-  itemsPDeReference: number,
   notes: ReadonlyMap<string, CategorieRetenue>,
-): MetriquesComparateur {
-  const affichees = lectures.filter((l) => l.affiche);
-  const notees = affichees.map((lecture): Classable => {
-    const categorie = notes.get(lecture.id);
-    if (categorie === undefined) {
-      throw new Error(`Lecture affichée ${lecture.id} sans verdict : la compatibilité n'a pas été notée.`);
-    }
-    return { categorie };
-  });
-  return {
-    outil_id,
-    couverture: taux(affichees.length, itemsPDeReference),
-    exactitude: exactitude(notees),
-  };
+): ReadonlyMap<IdentifiantCourt, readonly LectureNotee[]> {
+  const reference = itemsPDeReference(run);
+  const groupes = lecturesParComparateur(filtrerContexteRun(lectures), reference, comparateursDuRun(run));
+  return new Map([...groupes].map(([outil_id, membres]) => [outil_id, membres.map((lecture) => noterLecture(lecture, notes))]));
+}
+
+function noterLecture(lecture: LectureComparateur, notes: ReadonlyMap<string, CategorieRetenue>): LectureNotee {
+  const base = { lecture_id: lecture.id, grappe_id: lecture.reference_item.item_id };
+  if (!lecture.affiche) return { ...base, affiche: false, categorie: null };
+  const categorie = notes.get(lecture.id);
+  if (categorie === undefined) {
+    throw new Error(`Lecture affichée ${lecture.id} sans note retenue (verdict) : la compatibilité n'a pas été notée.`);
+  }
+  return { ...base, affiche: true, categorie };
 }
