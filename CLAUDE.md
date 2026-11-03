@@ -141,11 +141,12 @@ pnpm dev               # interface de validation sur le jeu de démonstration (B
 pnpm symmetry          # tests de symétrie du tirage (bloquants avant un run)
 pnpm validate          # lance l'interface de validation humaine en local (production)
 pnpm run:dry           # run complet en mode simulé, sans appel API
+pnpm analyze           # métriques §8 d'un run noté → runs/<date>/metriques/metriques.json
 pnpm proprete          # signaux de propreté, matière de la revue de code (non bloquant)
 ```
 
 Pas encore écrites (lots à venir, ne pas les appeler) : `pnpm run:live` (run réel — jamais lancé
-par un agent), `pnpm analyze` (métriques §8 ; le code vit dans `analysis/`), `pnpm build:site`.
+par un agent), `pnpm build:site`.
 La liste complète est dans `package.json` ; chaque script pointe vers `outils/<nom>.ts` ou un
 module `pipeline.*` lancé par `uv run`.
 

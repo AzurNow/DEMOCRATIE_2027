@@ -391,8 +391,9 @@ describe("exemples de schema/exemples/", () => {
   // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
   // 352 → 354 : §6, protocole 0.24 (D59 (15)), lecture de comparateur notée par un juge, motif de lecture sur une réponse : deux invalides de notation.
   // 354 → 355 : §6, protocole 0.25 (D60 (g)), un valide de dépôt d'application (capture masquée).
-  it("charge les 355 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(355);
+  // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides de metriques.
+  it("charge les 361 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(361);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

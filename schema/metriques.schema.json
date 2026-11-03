@@ -1,0 +1,488 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:metriques",
+  "title": "Métriques d'un run",
+  "description": "§8 : runs/<date>/metriques/metriques.json, écrit par pnpm analyze (analysis/analyse-du-run.ts, sous-lot A), jamais réécrit : absent, il est écrit ; identique à l'octet près, rien n'est fait ; différent, la commande refuse. Toutes les sections reposent sur un seul partage de la population (population), calculé une fois au calcul principal et repris tel quel par chaque recalcul de robustesse (§8 : « les seuils de non-publication ne sont pas réappliqués à la population restreinte »). Chaque section est calculée ou sans objet, avec son motif. Les kappas et le test contrefactuel n'y sont pas recopiés : ils vivent dans run.json, que entrees.run_json_sha256 désigne.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "hypotheses", "graines"],
+
+  "properties": {
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "entrees": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_json_sha256", "tirage_sha256", "donnees_commit", "reponses_lues", "reponses_obtenues", "reponses_manquantes", "verdicts_lus", "notations_lues"],
+      "description": "Ce que l'analyse a lu. run_json_sha256 est le SHA-256 de la forme canonique de run.json (clés triées, validation/domaine/empreinte.ts:canoniser) sans les champs que pnpm go-no-go écrit ensuite : go_no_go, motif_provisoire, indeterminees_echantillon_humain, renvois_attribution_indecidable, refus_api_echantillon_humain, accord_humains_echantillon, juges[].kappa_echantillon_humain, juges[].motif_indefini_kappa_echantillon_humain, juges[].renvois_ecartes_kappa_echantillon et perimetre.outils[].par_mode.",
+      "properties": {
+        "run_json_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "tirage_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "donnees_commit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git" },
+        "reponses_lues": { "$ref": "#/$defs/effectif" },
+        "reponses_obtenues": { "$ref": "#/$defs/effectif" },
+        "reponses_manquantes": { "$ref": "#/$defs/effectif" },
+        "verdicts_lus": { "$ref": "#/$defs/effectif" },
+        "notations_lues": { "$ref": "#/$defs/effectif" }
+      }
+    },
+    "parametres": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reechantillonnages", "permutations"],
+      "description": "§8 : 2 000 rééchantillonnages et 10 000 permutations. Les graines sont dans run.json (graines.bootstrap, graines.permutation) ; chaque graine dérivée est publiée dans graines.",
+      "properties": {
+        "reechantillonnages": { "type": "integer", "minimum": 1 },
+        "permutations": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["couples_compares", "couples_incomplets", "candidats_compares", "candidats_rapportes_a_part", "strates", "modes_de_tete"],
+      "description": "Le seul partage de la population : couples outil × mode au seuil de 20 % compté sur le plan d'interrogation (§8), candidats au seuil de couverture lu au gel (§4), strates relevées sur les unités du calcul principal, mode de tête lu dans le périmètre.",
+      "properties": {
+        "couples_compares": { "type": "array", "items": { "$ref": "#/$defs/couple" } },
+        "couples_incomplets": { "type": "array", "items": { "$ref": "#/$defs/couple" }, "description": "§8 : « run incomplet », sans aucune statistique, exclus des comparaisons." },
+        "candidats_compares": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+        "candidats_rapportes_a_part": {
+          "type": "array",
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "description": "§4 : sous le seuil de couverture, « rapporté à part, mention couverture insuffisante » ; aucune strate dans aucun calcul."
+        },
+        "strates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidats", "themes", "gabarits", "registres"],
+          "properties": {
+            "candidats": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+            "themes": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/theme" } },
+            "gabarits": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit" } },
+            "registres": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/registre" } }
+          }
+        },
+        "modes_de_tete": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["outil_id", "mode"],
+            "properties": {
+              "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "mode": { "$ref": "#/$defs/mode" }
+            }
+          }
+        }
+      }
+    },
+    "taux": {
+      "description": "§8, métriques primaires et secondaires de chaque couple comparé, chacune avec son intervalle (analysis/incertitude.ts).",
+      "oneOf": [
+        { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "couples", "couples_incomplets"],
+          "properties": {
+            "statut": { "const": "calcule" },
+            "couples": { "type": "array", "items": { "$ref": "#/$defs/taux_du_couple" } },
+            "couples_incomplets": { "type": "array", "items": { "$ref": "#/$defs/couple" } }
+          }
+        }
+      ]
+    },
+    "asymetrie": {
+      "description": "§8, test d'asymétrie (QR3, H4) : un test de permutation par couple comparé, valeur p corrigée par Holm sur la famille des couples testés (analysis/permutation.ts).",
+      "oneOf": [
+        { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "couples", "couples_incomplets", "couples_sans_test"],
+          "properties": {
+            "statut": { "const": "calcule" },
+            "couples": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["couple", "test"],
+                "properties": {
+                  "couple": { "$ref": "#/$defs/couple" },
+                  "test": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/test_asymetrie" }] }
+                }
+              }
+            },
+            "couples_incomplets": { "type": "array", "items": { "$ref": "#/$defs/cle_couple" } },
+            "couples_sans_test": { "type": "array", "items": { "$ref": "#/$defs/cle_couple" } }
+          }
+        }
+      ]
+    },
+    "conditions": {
+      "description": "§8, effets de condition (QR6) : différences appariées entre modes et entre formulations, strates global et recents:60j (analysis/conditions.ts). Aucune valeur p.",
+      "oneOf": [
+        { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "strates"],
+          "properties": {
+            "statut": { "const": "calcule" },
+            "strates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["strate", "modes", "formulations"],
+                "properties": {
+                  "strate": { "enum": ["global", "recents:60j"] },
+                  "modes": { "$ref": "#/$defs/famille_de_conditions" },
+                  "formulations": { "$ref": "#/$defs/famille_de_conditions" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "robustesse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taux", "differences"],
+      "description": "§8, analyses de robustesse préenregistrées. taux : les métriques recalculées (a) à (d), sans qualificatif de fragilité, sur le partage et les strates du calcul principal (analysis/robustesse-taux.ts). differences : la fragilité des différences établies, à venir (sous-lot B).",
+      "properties": {
+        "taux": {
+          "oneOf": [
+            { "$ref": "#/$defs/sans_objet" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["statut", "recalculs"],
+              "properties": {
+                "statut": { "const": "calcule" },
+                "recalculs": {
+                  "type": "array",
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["recalcul", "couples", "couples_incomplets"],
+                    "properties": {
+                      "recalcul": { "enum": ["echantillon_humain", "items_contestes", "formulations_orientees", "reponses_tronquees"] },
+                      "couples": { "type": "array", "items": { "$ref": "#/$defs/taux_du_couple" } },
+                      "couples_incomplets": { "type": "array", "items": { "$ref": "#/$defs/couple" } }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "differences": { "$ref": "#/$defs/sans_objet" }
+      }
+    },
+    "hypotheses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["H1", "H2", "H3", "H4", "H5"],
+      "description": "§2 : H1, H2 et H4 décidées par analysis/hypotheses.ts sur les sections ci-dessus ; H3 et H5 sans règle de décision écrite à ce jour (regle_a_venir).",
+      "properties": {
+        "H1": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/h1" }] },
+        "H2": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/h2" }] },
+        "H3": { "$ref": "#/$defs/sans_objet" },
+        "H4": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/h4" }] },
+        "H5": { "$ref": "#/$defs/sans_objet" }
+      }
+    },
+    "graines": {
+      "type": "array",
+      "description": "§8, « Graines de l'analyse » : chaque clé publiée dans le document, une fois, triée, avec l'amorce de SplitMix64 en hexadécimal (analysis/graines.ts).",
+      "items": { "$ref": "#/$defs/graine_nommee" }
+    }
+  },
+
+  "$defs": {
+    "effectif": { "type": "integer", "minimum": 0 },
+    "mode": { "enum": ["web_activee", "web_desactivee"] },
+    "couple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "mode"],
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "mode": { "$ref": "#/$defs/mode" }
+      }
+    },
+    "cle_couple": { "type": "string", "pattern": "^[^/]+/(web_activee|web_desactivee)$" },
+    "sans_objet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statut", "motif"],
+      "properties": {
+        "statut": { "const": "sans_objet" },
+        "motif": { "enum": ["aucun_couple_compare", "calcul_a_venir", "regle_a_venir", "moins_de_deux_candidats"] }
+      }
+    },
+    "graine_hex": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+    "cle": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "graine_nommee": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cle", "graine"],
+      "properties": {
+        "cle": { "$ref": "#/$defs/cle" },
+        "graine": { "$ref": "#/$defs/graine_hex" }
+      }
+    },
+    "taux": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerateur", "denominateur"],
+      "description": "valeur absente quand le dénominateur est nul : ni null, ni 0 (analysis/types.ts:taux).",
+      "properties": {
+        "numerateur": { "$ref": "#/$defs/effectif" },
+        "denominateur": { "$ref": "#/$defs/effectif" },
+        "valeur": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "intervalle95": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bas", "haut", "nombre_grappes", "reechantillonnages", "reechantillonnages_indefinis", "degenere"],
+      "properties": {
+        "bas": { "type": "number" },
+        "haut": { "type": "number" },
+        "nombre_grappes": { "type": "integer", "minimum": 1 },
+        "reechantillonnages": { "type": "integer", "minimum": 1 },
+        "reechantillonnages_indefinis": { "$ref": "#/$defs/effectif" },
+        "degenere": { "enum": [null, "grappe_unique"] }
+      }
+    },
+    "intervalle_nomme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cle", "graine", "intervalle", "raison_sans_intervalle"],
+      "properties": {
+        "cle": { "$ref": "#/$defs/cle" },
+        "graine": { "$ref": "#/$defs/graine_hex" },
+        "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
+        "raison_sans_intervalle": { "enum": [null, "aucune_grappe", "aucun_reechantillon_defini"] }
+      }
+    },
+    "taux_publie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metrique", "strate", "taux", "motif_absence", "intervalle"],
+      "properties": {
+        "metrique": { "type": "string", "minLength": 1 },
+        "strate": { "type": "string", "minLength": 1 },
+        "taux": { "$ref": "#/$defs/taux" },
+        "motif_absence": { "enum": [null, "strate_vide", "denominateur_nul"] },
+        "intervalle": { "$ref": "#/$defs/intervalle_nomme" }
+      }
+    },
+    "taux_du_couple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["couple", "taux"],
+      "properties": {
+        "couple": { "$ref": "#/$defs/couple" },
+        "taux": { "type": "array", "items": { "$ref": "#/$defs/taux_publie" } }
+      }
+    },
+    "test_asymetrie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statut",
+        "cle",
+        "graine",
+        "statistique_observee",
+        "valeur_p",
+        "valeur_p_corrigee",
+        "permutations",
+        "exactitude_outil",
+        "intervalle_ecart_maximal",
+        "candidats",
+        "candidats_rapportes_a_part"
+      ],
+      "properties": {
+        "statut": { "const": "calcule" },
+        "cle": { "$ref": "#/$defs/cle" },
+        "graine": { "$ref": "#/$defs/graine_hex" },
+        "statistique_observee": { "type": "number", "minimum": 0, "maximum": 1 },
+        "valeur_p": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "valeur_p_corrigee": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "permutations": { "type": "integer", "minimum": 1 },
+        "exactitude_outil": { "$ref": "#/$defs/taux" },
+        "intervalle_ecart_maximal": { "$ref": "#/$defs/intervalle_nomme" },
+        "candidats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["candidat_id", "exactitude", "intervalle"],
+            "properties": {
+              "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "exactitude": { "$ref": "#/$defs/taux" },
+              "intervalle": { "$ref": "#/$defs/intervalle_nomme" }
+            }
+          }
+        },
+        "candidats_rapportes_a_part": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } }
+      }
+    },
+    "difference_taux": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cle", "graine", "taux_a", "taux_b", "difference", "intervalle", "qualificatif"],
+      "properties": {
+        "cle": { "$ref": "#/$defs/cle" },
+        "graine": { "$ref": "#/$defs/graine_hex" },
+        "taux_a": { "$ref": "#/$defs/taux" },
+        "taux_b": { "$ref": "#/$defs/taux" },
+        "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
+        "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
+        "qualificatif": { "enum": [null, "etablie", "non_etablie"] }
+      }
+    },
+    "famille_de_conditions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparaisons", "paires_exclues"],
+      "properties": {
+        "comparaisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["cle", "difference", "grappes_appariees", "grappes_exclues"],
+            "properties": {
+              "cle": { "type": "string", "minLength": 1 },
+              "difference": { "$ref": "#/$defs/difference_taux" },
+              "grappes_appariees": { "$ref": "#/$defs/effectif" },
+              "grappes_exclues": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" } }
+            }
+          }
+        },
+        "paires_exclues": {
+          "type": "array",
+          "description": "§8 : une paire dont un couple est « run incomplet » est nommée, jamais comparée.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["cle", "couples_incomplets"],
+            "properties": {
+              "cle": { "type": "string", "minLength": 1 },
+              "couples_incomplets": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/cle_couple" } }
+            }
+          }
+        }
+      }
+    },
+    "h1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statut", "verdict", "outils"],
+      "properties": {
+        "statut": { "const": "calcule" },
+        "verdict": { "enum": ["confirmee", "infirmee", "sans_objet"] },
+        "outils": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["outil_id", "verdict", "couples"],
+            "properties": {
+              "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "verdict": { "enum": ["vraie", "fausse", "sans_objet"] },
+              "couples": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["cle", "etat", "borne_inferieure", "borne_strictement_positive"],
+                  "properties": {
+                    "cle": { "$ref": "#/$defs/cle_couple" },
+                    "etat": { "enum": ["compare", "sans_objet", "incomplet"] },
+                    "borne_inferieure": { "oneOf": [{ "type": "null" }, { "type": "number" }] },
+                    "borne_strictement_positive": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "difference_modes_h2": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "cle", "graine", "difference", "intervalle", "qualificatif", "grappes_appariees", "grappes_exclues"],
+          "properties": {
+            "statut": { "const": "comparee" },
+            "cle": { "$ref": "#/$defs/cle" },
+            "graine": { "$ref": "#/$defs/graine_hex" },
+            "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
+            "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
+            "qualificatif": { "enum": [null, "etablie", "non_etablie"] },
+            "grappes_appariees": { "$ref": "#/$defs/effectif" },
+            "grappes_exclues": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "couples_incomplets"],
+          "properties": {
+            "statut": { "const": "exclue" },
+            "couples_incomplets": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/cle_couple" } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut"],
+          "properties": { "statut": { "const": "absente" } }
+        }
+      ]
+    },
+    "h2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statut", "outils"],
+      "properties": {
+        "statut": { "const": "calcule" },
+        "outils": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["outil_id", "verdict", "global", "moins_de_60_jours"],
+            "properties": {
+              "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "verdict": { "enum": ["confirmee", "non_confirmee", "sans_objet"] },
+              "global": { "$ref": "#/$defs/difference_modes_h2" },
+              "moins_de_60_jours": { "$ref": "#/$defs/difference_modes_h2" }
+            }
+          }
+        }
+      }
+    },
+    "h4": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statut", "verdict", "seuil", "couples_sous_le_seuil", "couples_testes"],
+      "properties": {
+        "statut": { "const": "calcule" },
+        "verdict": { "enum": ["confirmee", "infirmee", "indecidable"] },
+        "seuil": { "const": 0.05 },
+        "couples_sous_le_seuil": { "type": "array", "items": { "$ref": "#/$defs/cle_couple" } },
+        "couples_testes": { "$ref": "#/$defs/effectif" }
+      }
+    }
+  }
+}

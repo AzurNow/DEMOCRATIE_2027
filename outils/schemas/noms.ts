@@ -108,6 +108,11 @@
  * testeur dépose pour chaque saisie (§6, QR8 ; D59 (12), protocole 0.24) :
  * `pipeline/interrogation/sous-echantillon-application.ts` et `depot-application.ts`. Les
  * trente-neuvième et quarantième.
+ *
+ * `metriques` décrit `runs/<date>/metriques/metriques.json`, la sortie de `pnpm analyze`
+ * (`analysis/analyse-du-run.ts`, sous-lot A ; docs/DETTE.md, 2026-11-02, n° 1) : les sections du §8
+ * calculées sur un seul partage de la population, validées avant toute écriture. Le
+ * quarante et unième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -150,6 +155,7 @@ export const NOMS_SCHEMAS = [
   "lot",
   "sous-echantillon-application",
   "depot-application",
+  "metriques",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

@@ -23,7 +23,8 @@ runs/<date>/
                                     Machine qui a vérifié l'engagement, octets exacts (D47 (3)),
                                     référencée par run.json#/engagement/disponibilite
   verdicts/<id>.json          Git   un verdict par objet noté (schema/verdict.schema.json)
-  metriques/…                 Git   les sorties d'analysis/ (§8)
+  metriques/metriques.json    Git   les sorties d'analysis/ (§8, schema/metriques.schema.json),
+                                    écrites par pnpm analyze, jamais réécrites
   checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
                                     par pnpm go-no-go, contresignée par pnpm go-no-go:contresigner
   volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo
@@ -52,8 +53,8 @@ suivante).
 L'interrogation (`pipeline/interrogation/stockage.ts`) écrit `volume/reponses/` et
 `volume/tentatives/`. La notation (`pipeline/notation/stockage.ts:DepotNotation`) écrit
 `verdicts/`, `volume/notations/` et `volume/reponses-contrefactuelles/`. `run.json`, `tirage.json`
-et `questions.json` suivent l'usage déjà documenté de `pnpm symmetry` (`outils/symmetry.ts`). Le nom `metriques/` reste la disposition proposée pour le lot de l'analyse ;
-il n'a pas encore d'écrivain dans le dépôt.
+et `questions.json` suivent l'usage déjà documenté de `pnpm symmetry` (`outils/symmetry.ts`). `pnpm analyze`
+écrit `metriques/metriques.json` (section « `pnpm analyze` » ci-dessous).
 
 ## `pnpm geler` — `run.json`, `tirage.json`, `questions.json`, `balise/`, `engagement/`
 
@@ -364,6 +365,34 @@ pas par `assembler()` : les premiers servent l'audit du §6 ; les notations et l
 contrefactuelles sont relues par `lireNotationsDuRun`, pour le contrôle croisé et le recalcul de
 robustesse §8(a).
 
+## `pnpm analyze <repertoire_run> --items=<data/items>`
+
+Les analyses préenregistrées du §8 sur un run noté (`analysis/analyse-du-run.ts`, sous-lot A). Lit le
+run par `lireRun` (table ci-dessus), les notations individuelles du volume et le plan d'interrogation
+du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.schema.json` avant toute
+écriture. N'écrit rien d'autre et ne touche jamais `run.json`.
+
+- **Un seul partage de la population.** Les couples comparés et incomplets (seuil de 20 % compté sur
+  le plan, §8), les candidats comparés et rapportés à part (seuil de couverture lu au gel, §4), les
+  strates, le mode de tête et la strate de moins de 60 jours sont calculés une fois, figés, et repris
+  tels quels par chaque section, recalculs de robustesse compris ; le document les publie sous
+  `population`.
+- **Sections.** `taux` (métriques primaires et secondaires, avec intervalles), `asymetrie` (test par
+  couple comparé, Holm), `conditions` (modes et formulations, strates `global` et `recents:60j`),
+  `robustesse.taux` (recalculs (a) à (d)), `hypotheses` (H1, H2, H4). Chaque section est
+  `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}`. À venir : `robustesse.differences`
+  (`calcul_a_venir`), H3 et H5 (`regle_a_venir`) ; ni les comparateurs, ni le canal application, ni la
+  tendance, ni la liste des erreurs graves ne sont encore calculés.
+- **Entrées.** `entrees.run_json_sha256` est le SHA-256 de la forme canonique de `run.json` sans les
+  champs que `pnpm go-no-go` écrit ensuite (go/no-go, kappas de l'échantillon, accord des humains,
+  `par_mode`…) ; s'y ajoutent l'empreinte du tirage, `donnees_commit` et les effectifs lus. Les
+  kappas et le test contrefactuel ne sont pas recopiés : ils vivent dans `run.json`.
+- **Jamais réécrit.** Absent, le fichier est écrit ; identique à l'octet près, rien n'est fait et la
+  commande le dit ; différent, la commande refuse (`MetriquesDivergentes`). Sortie 0 ou 2.
+
+`pnpm go-no-go` s'arrête encore dès que `metriques/` existe (son critère des analyses ne lit pas ce
+format) : son branchement sur `metriques.json` est un lot à venir.
+
 ## `pnpm notation:controle <repertoire_run>`
 
 Le contrôle croisé n° 18 (§7 ; D13) sur un run enregistré : lit `run.json`, `volume/reponses/`,
@@ -407,8 +436,8 @@ seul calcul de ce champ, recoupé à la lecture par `analysis/lecture-run.ts:lir
 est provisoire ; écrit `checklist.json` sans contreseing. Ne touche jamais `statut`. Refuse un run
 `invalide`, `planifie`, à symétrie rouge, ou qui porte une `invalidation` (D51 (2)) ; un go/no-go déjà
 écrit (ou un `par_mode`) différent du recalcul est une
-erreur, identique un no-op. `metriques/` présent arrête la commande : aucun format n'y est encore
-défini. Sortie 0 ou 2.
+erreur, identique un no-op. `metriques/` présent arrête la commande : le critère des analyses ne lit
+pas encore `metriques.json` (`pnpm analyze`). Sortie 0 ou 2.
 
 `pnpm go-no-go:contresigner <repertoire_run> --nom="<nom>" --case=<rang>:faite --case=<rang>:non_faite:<motif>`
 déclare chaque case `declaree` de la checklist et ajoute `contreseing: { nom, date }`. Refuse une case
