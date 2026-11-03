@@ -41,6 +41,12 @@
  * Un item publié n'est pas touché : il est listé à contester par l'auteur (`pnpm contester`), la
  * contestation étant un acte de l'auteur.
  *
+ * Protocole 0.27 (§4, D62 #233 (3), D67) : un item A à écrire n'est pas promu tant qu'une
+ * proposition de position du candidat sur son corpus examiné n'est pas rattachée à sa mesure (sa
+ * mesure relue, ou l'item porté vers elle au registre des rattachements), ni quand un item T3 du
+ * candidat, « à confirmer », porte sur sa mesure (`validation/domaine/absence.ts`). Le refus est
+ * nommé avec son motif, et rien n'est écrit.
+ *
  *   pnpm promote
  *   pnpm promote --ecrire
  */
@@ -50,6 +56,7 @@ import { existsSync } from "node:fs";
 import { commandeGit, commitCourant, ecriturePermise } from "./garde-fous-git.ts";
 import { ItemFictifEnDouble, verifierFictifUnique } from "../validation/domaine/fictif-unique.ts";
 import { resolve } from "node:path";
+import { refusPromotionAbsence, type RefusPromotionAbsence } from "../validation/domaine/absence.ts";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
 import { DecisionArbitrageRefusee } from "../validation/domaine/arbitrage.ts";
 import { CorrectionMesureIncoherente } from "../validation/domaine/corrections-mesure.ts";
@@ -80,6 +87,7 @@ import { ajouterDues, controlerAjout, notificationDue } from "../validation/io/n
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
+import { lireRattachements } from "../validation/io/rattachements-fichier.ts";
 import { lireRelectures } from "../validation/io/relectures-fichier.ts";
 import { chargerStaging, type Staging } from "../validation/io/staging.ts";
 import { reecrireItemStaging } from "../validation/io/staging-renvoi.ts";
@@ -378,6 +386,43 @@ function datesIncoherentes(verdicts: readonly Verdict[], options: Options): read
   return trouves;
 }
 
+/** Un item A à promouvoir que la règle du §4 (protocole 0.27) refuse, avec ses motifs. */
+interface AbsenceRefusee {
+  readonly lot_id: string;
+  readonly item_id: string;
+  readonly refus: readonly RefusPromotionAbsence[];
+}
+
+/**
+ * §4 (protocole 0.27, D62 #233 (3), D67) : les items A que `--ecrire` écrirait, confrontés aux
+ * items connus (`staging/` et `data/`, celui de `data/` l'emportant) et aux registres des relectures
+ * et des rattachements, lus ici et jamais écrits. Un registre illisible arrête la commande.
+ */
+function absencesRefusees(verdicts: readonly Verdict[], staging: Staging, data: ReadonlyMap<string, Item>, options: Options): readonly AbsenceRefusee[] {
+  const items = [...new Map([...staging.items, ...data]).values()];
+  const relectures = lireRelectures(options.mesures);
+  const rattachements = lireRattachements(options.mesures);
+  return verdicts.flatMap((verdict) => {
+    if (verdict.issue.sort !== "promouvoir" || verdict.issue.item.type !== "A" || dejaDansData(verdict, options)) return [];
+    const refus = refusPromotionAbsence({ item: verdict.issue.item, items, relectures, rattachements });
+    return refus.length === 0 ? [] : [{ lot_id: verdict.lot_id, item_id: verdict.item.id, refus }];
+  });
+}
+
+function decrireRefusAbsence(refus: RefusPromotionAbsence): string {
+  return refus.motif === "corpus_vide" ? refus.motif : `${refus.motif} : ${refus.items.join(", ")}`;
+}
+
+function imprimerAbsencesRefusees(liste: readonly AbsenceRefusee[]): void {
+  if (liste.length === 0) return;
+  process.stdout.write(`\nItems A à promouvoir que la règle d'absence refuse (§4) : ${liste.length}\n`);
+  for (const absence of liste) {
+    for (const refus of absence.refus) {
+      process.stdout.write(`  ${absence.item_id}  [${absence.lot_id}]  ${decrireRefusAbsence(refus)}\n`);
+    }
+  }
+}
+
 function imprimerDatesIncoherentes(liste: readonly NonConforme[]): void {
   if (liste.length === 0) return;
   const items = new Set(liste.map((ecart) => ecart.item_id));
@@ -578,6 +623,7 @@ function principal(): void {
   const fautifs = nonConformes(verdicts, options);
   const dates = datesIncoherentes(verdicts, options);
   const plan = planDesMesures(verdicts, staging, options);
+  const absences = absencesRefusees(verdicts, staging, data, options);
 
   imprimerRapport(verdicts, effectifs, options);
   imprimerIntrouvables(introuvables);
@@ -586,6 +632,7 @@ function principal(): void {
   imprimerTexteErrone(texte);
   imprimerNonConformes(fautifs);
   imprimerDatesIncoherentes(dates);
+  imprimerAbsencesRefusees(absences);
   imprimerPlanMesures(plan);
   controlerFictifUnique(verdicts, options);
 
@@ -609,6 +656,14 @@ function principal(): void {
     process.stderr.write(
       "\nDes items à promouvoir ont une date de validité qui ne suit pas leur source (§4) : rien n'est\n" +
         "écrit dans data/ tant que la date n'est pas celle de la source ou que son motif n'est pas écrit.\n",
+    );
+    process.exitCode = 1;
+    return;
+  }
+  if (absences.length > 0) {
+    process.stderr.write(
+      "\nDes items A à promouvoir ont une proposition du candidat non rattachée à sa mesure ou un item\n" +
+        "T3 sur leur mesure (§4, voir ci-dessus) : rien n'est écrit dans data/.\n",
     );
     process.exitCode = 1;
     return;
