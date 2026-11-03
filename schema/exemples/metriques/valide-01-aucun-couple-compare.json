@@ -133,5 +133,15 @@
       "motif": "premier_run_absent"
     }
   },
+  "exploratoire": {
+    "correlation_couverture": {
+      "statut": "sans_objet",
+      "motif": "aucun_couple_compare"
+    },
+    "ecart_api_application": {
+      "statut": "sans_objet",
+      "motif": "aucune_reponse_application"
+    }
+  },
   "graines": []
 }

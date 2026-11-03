@@ -9,8 +9,9 @@
  *    notations individuelles (`lireNotationsDuRun`). Le plan d'interrogation et le tirage de
  *    l'échantillon humain sont **injectés** par l'appelant (`outils/analyze.ts`) : `analysis/`
  *    n'importe pas le code d'interrogation ni de notation (flux à sens unique, CLAUDE.md).
- * 2. `assembler` (`filtre.ts`) construit les unités ; seules celles du canal API entrent ici (le
- *    canal application est exploratoire, QR8, et n'est pas de ce sous-lot).
+ * 2. `assembler` (`filtre.ts`) construit les unités ; seules celles du canal API entrent dans le
+ *    partage et dans les sections du §8. Celles du canal application (QR8) n'entrent que dans l'écart
+ *    API / application, section exploratoire.
  * 3. `contexteDuRun` calcule **une seule fois** le partage des couples (`seuils.ts:couplesComparables`),
  *    celui des candidats (`candidatsComparables`), les strates (`incertitude.ts:stratesDuCalculPrincipal`),
  *    les modes de tête, la strate de moins de 60 jours (`strate-recente.ts:unitesDeLaStrateRecente`)
@@ -23,7 +24,10 @@
  *    robustesse des différences est le sous-lot B), hypothèses (H1 à H5, protocole 0.27, D63 ; H5
  *    lit la tendance entre le premier run, lu avec son propre partage, et ce run ; D70 pour un outil
  *    à deux modes), variabilité entre échantillons (diagnostic par couple comparé, §8, D70 (12),
- *    `accord-echantillons.ts`, qui lit aussi le plan d'interrogation). Chaque section est
+ *    `accord-echantillons.ts`, qui lit aussi le plan d'interrogation), puis les analyses exploratoires
+ *    préannoncées (corrélation de Spearman du §2, `correlation-couverture.ts` ; écart API /
+ *    application du §6, `ecart-api-application.ts`), chacune étiquetée « exploratoire », sans
+ *    qualificatif de fragilité (§8, robustesse). Chaque section est
  *    `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` : jamais une section vide qui
  *    passerait pour un résultat. La population publie aussi le régime d'inclusion du run (§3, D68).
  * 9. `collecterGraines` relève chaque couple `{cle, graine}` publié dans le document.
@@ -43,8 +47,10 @@ import { valider } from "../outils/schemas/valider.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import { variabiliteEntreEchantillons, type VariabiliteDuCouple } from "./accord-echantillons.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "./bootstrap.ts";
+import { correlationsParCouple, type CorrelationCouverture } from "./correlation-couverture.ts";
 import { comparerConditions, pairesDeH3, pairesParFormulation, pairesParMode, type ComparaisonCondition, type PaireExclue } from "./conditions.ts";
 import { unitesParCoupleCompare } from "./couples-compares.ts";
+import { ecartsApiApplication, type EcartsApiApplication } from "./ecart-api-application.ts";
 import { assembler, estDuRun, type EntreesAnalyse, type UniteAnalyse } from "./filtre.ts";
 import { decisionH1, decisionH2, decisionH3, decisionH4, decisionH5, STRATE_H3, type FabricationDuCouple } from "./hypotheses.ts";
 import { STRATE_GLOBALE, stratesDuCalculPrincipal, tauxPubliesParCouple, type StratesPubliees, type TauxDuRun } from "./incertitude.ts";
@@ -63,7 +69,7 @@ import type { SourcesRobustesse } from "./robustesse.ts";
 import { candidatsComparables, cleCouple, couplesComparables, type PartageCandidats, type PartageCouples, type RequeteDuPlan } from "./seuils.ts";
 import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate-recente.ts";
 import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
-import type { CoupleOutilMode, IdentifiantCourt, Item, Mode, Notation, Question, Run, Ulid } from "./types.ts";
+import type { CandidatAuGel, CoupleOutilMode, EntreeTirage, IdentifiantCourt, Item, Mode, Notation, Question, Reponse, Run, Ulid } from "./types.ts";
 
 /* ------------------------------------------------------------------ entrées */
 
@@ -87,13 +93,38 @@ export interface EntreesDuRun extends Omit<EntreesAnalyse, "run" | "items"> {
   readonly items: readonly (Item & ItemDate)[];
   readonly notations: readonly Notation[];
   readonly plan: readonly RequeteDuPlan[];
+  /**
+   * §6, QR8 : les questions du sous-échantillon de l'application. `null` exactement quand le run n'a
+   * aucune réponse du canal application : le sous-échantillon n'est alors pas calculé.
+   */
+  readonly questions_sous_echantillon: readonly string[] | null;
 }
+
+/** Ce que le calcul du sous-échantillon de l'application lit d'un run : ses fichiers gelés (§6). */
+export interface FichiersGelesDuRun {
+  readonly run: RunLu;
+  readonly entrees_tirage: readonly EntreeTirage[];
+  readonly questions: readonly Question[];
+}
+
+/**
+ * Les questions du sous-échantillon de l'application d'un run lu (§6). Injecté par l'appelant —
+ * `pipeline/interrogation/sous-echantillon-application.ts:questionsDuSousEchantillonDuRun` — comme
+ * le plan d'interrogation : `analysis/` n'importe pas le code d'interrogation.
+ */
+export type SousEchantillonDuRun = (fichiers: FichiersGelesDuRun) => readonly string[];
 
 export interface OptionsLectureAnalyse {
   /** Le répertoire des items validés, lu en Git au commit `run.versions.donnees_commit` (`lireRun`). */
   readonly items: string;
   readonly plan_du_run: PlanDuRun;
   readonly echantillon_humain: EchantillonHumainDuRun;
+  /** Appelé seulement si le run a au moins une réponse du canal application. */
+  readonly sous_echantillon_application: SousEchantillonDuRun;
+}
+
+function aDesReponsesApplication(reponses: readonly Reponse[]): boolean {
+  return reponses.some((r) => estDuRun(r) && r.canal === "application");
 }
 
 /** 1. Le run lu et validé (`lireRun`), ses notations individuelles et son plan d'interrogation. */
@@ -107,6 +138,9 @@ export function lireEntreesDuRun(repertoire_run: string, options: OptionsLecture
     items: entrees.items as readonly (Item & ItemDate)[],
     notations: lireNotationsDuRun(repertoire_run, run.id).notations,
     plan: options.plan_du_run(repertoire_run, run),
+    questions_sous_echantillon: aDesReponsesApplication(entrees.reponses)
+      ? options.sous_echantillon_application({ run, entrees_tirage: entrees.entrees_tirage, questions: entrees.questions })
+      : null,
   };
 }
 
@@ -136,6 +170,8 @@ export interface ModeDeTete {
 export interface ContexteDuRun {
   /** Les unités du canal API du run, dans l'ordre d'assemblage. */
   readonly unites: readonly UniteAnalyse[];
+  /** §6, QR8 : les unités du canal application, hors du partage ; seul l'écart API / application les lit. */
+  readonly unites_application: readonly UniteAnalyse[];
   /** §2, H2 : les unités dont la question entre dans la strate de moins de 60 jours. */
   readonly unites_recentes: readonly UniteAnalyse[];
   /** Les questions du run : la tendance (H5) les compare à celles du premier run (§8). */
@@ -187,6 +223,7 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
   // sont seulement portées par des tableaux figés.
   return Object.freeze({
     unites: Object.freeze(api),
+    unites_application: Object.freeze(unites.filter((u) => u.canal === "application")),
     unites_recentes: Object.freeze(unitesDeLaStrateRecente(api, entrees.items, entrees.run.date_gel)),
     questions: Object.freeze([...entrees.questions]),
     regime_inclusion: entrees.run.perimetre.regime_inclusion,
@@ -203,7 +240,13 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
 
 /* ------------------------------------------------------------------ sections */
 
-export type MotifSansObjet = "aucun_couple_compare" | "calcul_a_venir" | "moins_de_deux_candidats" | "premier_run_absent";
+export type MotifSansObjet =
+  | "aucun_couple_compare"
+  | "calcul_a_venir"
+  | "moins_de_deux_candidats"
+  | "premier_run_absent"
+  | "moins_de_trois_candidats"
+  | "aucune_reponse_application";
 
 export interface SansObjet {
   readonly statut: "sans_objet";
@@ -414,6 +457,69 @@ export function sectionHypotheses(
   };
 }
 
+/* ------------------------------------------------------------------ exploratoire */
+
+/** §3 (D68) : le régime où la corrélation, « non calculée sous trois candidats », est sans objet. */
+const REGIME_A_DEUX_CANDIDATS: RegimeInclusion = "entre_deux_tours";
+
+/**
+ * §2 : la corrélation de Spearman couverture / erreur, par couple comparé, sur le partage du calcul
+ * principal. §3 : « Dans le régime `entre_deux_tours` […] La corrélation exploratoire de la section 2,
+ * qui n'est pas calculée sous trois candidats, est publiée « sans objet » avec ce motif. »
+ */
+export function sectionCorrelation(
+  contexte: ContexteDuRun,
+  candidats: readonly CandidatAuGel[],
+): Section<{ readonly couples: readonly CorrelationCouverture[]; readonly couples_incomplets: readonly CoupleOutilMode[] }> {
+  if (contexte.regime_inclusion === REGIME_A_DEUX_CANDIDATS) return sansObjet("moins_de_trois_candidats");
+  return surCouplesCompares(contexte, () => {
+    const correlations = correlationsParCouple(contexte.unites, contexte.couples, contexte.candidats, candidats);
+    return { couples: correlations.compares, couples_incomplets: correlations.couples_incomplets };
+  });
+}
+
+/** Des réponses de l'application sans sous-échantillon : l'écart porterait sur des questions devinées. */
+export class SousEchantillonAbsent extends Error {
+  constructor() {
+    super(
+      "Réponses du canal application sans sous-échantillon de l'application (§6) : l'écart API / application " +
+        "n'est apparié que sur les questions du sous-échantillon, jamais sur des questions devinées.",
+    );
+    this.name = "SousEchantillonAbsent";
+  }
+}
+
+/**
+ * §6, QR8 : l'écart API / application de chaque outil saisi dans l'application, sur le partage du
+ * calcul principal. Un assistant inclus sans aucune réponse de l'application est nommé, sans chiffre.
+ */
+export function sectionEcartApiApplication(
+  contexte: ContexteDuRun,
+  questions_sous_echantillon: readonly string[] | null,
+): Section<EcartsApiApplication & { readonly outils_sans_reponse_application: readonly IdentifiantCourt[] }> {
+  if (contexte.unites_application.length === 0) return sansObjet("aucune_reponse_application");
+  if (questions_sous_echantillon === null) throw new SousEchantillonAbsent();
+  const ecarts = ecartsApiApplication(
+    {
+      unites: [...contexte.unites, ...contexte.unites_application],
+      outils: contexte.modes_de_tete.map(({ outil_id, mode }) => ({ outil_id, mode_de_tete: mode })),
+      couples: contexte.couples,
+      questions_sous_echantillon,
+    },
+    optionsBootstrap(contexte),
+  );
+  const saisis = new Set(contexte.unites_application.map((u) => u.outil_id));
+  return { statut: "calcule", ...ecarts, outils_sans_reponse_application: contexte.outils.filter((outil) => !saisis.has(outil)) };
+}
+
+/** Les analyses exploratoires préannoncées (§2, §6) : jamais une métrique primaire du §8. */
+export function sectionExploratoire(contexte: ContexteDuRun, entrees: EntreesDuRun): object {
+  return {
+    correlation_couverture: sectionCorrelation(contexte, entrees.run.perimetre.candidats),
+    ecart_api_application: sectionEcartApiApplication(contexte, entrees.questions_sous_echantillon),
+  };
+}
+
 /* ------------------------------------------------------------------ graines */
 
 export interface GrainePubliee {
@@ -553,6 +659,7 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
     robustesse: sectionRobustesse(contexte),
     variabilite_echantillons: sectionVariabilite(contexte, entrees),
     hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, premierRunDe(premier, entrees, parametres)),
+    exploratoire: sectionExploratoire(contexte, entrees),
   };
   return { ...document, graines: collecterGraines(document) };
 }

@@ -148,12 +148,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides du nouveau schéma recalcul-b (autre recalcul ; sans empreinte des métriques ; sans contestations lues).
   // 376 → 377 : §8, protocole 0.28 (D70 (12)), un invalide de metriques (variabilité : accord sans paire comparable).
   // 377 → 379 : §10 et annexe E, protocole 0.29 (D71 (8)), égalité des voix : valide-07 et invalide-26 d'item.
-  it("1. les 379 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
+  it("1. les 382 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(379);
+    expect(manifeste.exemples).toHaveLength(382);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -419,7 +420,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides de recalcul-b.
   // 376 → 377 : §8, protocole 0.28 (D70 (12)), un invalide de metriques (variabilité : accord sans paire comparable).
   // 377 → 379 : §10 et annexe E, protocole 0.29 (D71 (8)), égalité des voix : valide-07 et invalide-26 d'item.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 379 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(379);
+  // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 382 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(382);
   });
 });

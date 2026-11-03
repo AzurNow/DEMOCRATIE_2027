@@ -24,7 +24,7 @@ import { analyserRun } from "../../analysis/analyse-du-run.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
-import { entreesDuRunAnalysable, SPEC_REFERENCE } from "./run-analysable.ts";
+import { entreesDuRunAnalysable, SPEC_APPLICATION, SPEC_REFERENCE } from "./run-analysable.ts";
 
 const PROTOCOLE = readFileSync(join(RACINE_PROJET, "docs", "PROTOCOLE.md"), "utf8");
 
@@ -54,13 +54,11 @@ const CONSTANTES_DU_CODE: readonly { readonly composant: string; readonly module
  * constante ne produit encore.
  * - `lecture` : le taux d'un comparateur (lu, sans mode) ;
  * - `application` : le taux du canal application (exploratoire, QR8) ;
- * - `<outil>:api-application` : l'écart API / application (§6) — `analysis/ecart-api-application.ts`
- *   l'écrit, mais `analyserRun` ne l'appelle pas encore ;
  * - `<juge>:propre-editeur` : l'écart d'un juge sur l'outil de son éditeur (§7) —
- *   `analysis/ecart-juge-editeur.ts` l'écrit, même remarque.
+ *   `analysis/ecart-juge-editeur.ts` l'écrit, mais `analyserRun` ne l'appelle pas encore.
  * Un composant implémenté se retire d'ici : le test échoue tant qu'il y reste.
  */
-const ATTENDUES_SOUS_LOT_B: readonly string[] = ["lecture", "application", "<outil>:api-application", "<juge>:propre-editeur"];
+const ATTENDUES_SOUS_LOT_B: readonly string[] = ["lecture", "application", "<juge>:propre-editeur"];
 
 function trier(liste: readonly string[]): string[] {
   return [...liste].sort(comparerChaines);
@@ -92,13 +90,17 @@ function motifDe(composant: string): RegExp {
   return new RegExp(`^${parties.join("[^:]+")}$`);
 }
 
+/** Le run de référence, et un run qui a des réponses de l'application (écart API / application, §6). */
 function composantsPublies(): ReadonlySet<string> {
-  const document = valider<{ readonly graines: readonly { readonly cle: readonly string[] }[] }>(
-    "metriques",
-    analyserRun(entreesDuRunAnalysable(SPEC_REFERENCE), { reechantillonnages: 5, permutations: 5 }, null),
-    "metriques.json du run analysable",
-  );
-  return new Set(document.graines.flatMap((g) => g.cle));
+  const cles = [SPEC_REFERENCE, SPEC_APPLICATION].flatMap((spec) => {
+    const document = valider<{ readonly graines: readonly { readonly cle: readonly string[] }[] }>(
+      "metriques",
+      analyserRun(entreesDuRunAnalysable(spec), { reechantillonnages: 5, permutations: 5 }, null),
+      "metriques.json du run analysable",
+    );
+    return document.graines.flatMap((g) => g.cle);
+  });
+  return new Set(cles);
 }
 
 function valeursDe(valeur: unknown): readonly string[] {

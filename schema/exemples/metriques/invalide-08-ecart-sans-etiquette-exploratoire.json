@@ -1,0 +1,235 @@
+{
+  "run_id": "2W4YQ9KYJ0ARCC44VH7TCN9CDW",
+  "entrees": {
+    "run_json_sha256": "4608bc4fb0cb3c9a1757b9daa32716113cdd1249a115abf316351d8d1ca0d556",
+    "tirage_sha256": "e8f705d27e105079a4617037bda0ca4711b603b3e02a8c2eac866b0301636361",
+    "donnees_commit": "395e46f7cae294d7ee527411caf062dc3c1e66ed",
+    "reponses_lues": 2,
+    "reponses_obtenues": 2,
+    "reponses_manquantes": 0,
+    "verdicts_lus": 2,
+    "notations_lues": 6
+  },
+  "parametres": {
+    "reechantillonnages": 2000,
+    "permutations": 10000
+  },
+  "population": {
+    "regime_inclusion": "avant_liste_officielle",
+    "couples_compares": [],
+    "couples_incomplets": [
+      {
+        "outil_id": "outil-alpha",
+        "mode": "web_desactivee"
+      }
+    ],
+    "candidats_compares": [
+      "demo-alpha"
+    ],
+    "candidats_rapportes_a_part": [],
+    "strates": {
+      "candidats": [
+        "demo-alpha"
+      ],
+      "themes": [
+        "fiscalite_pouvoir_achat"
+      ],
+      "gabarits": [
+        "Q-DIR",
+        "Q-ORI"
+      ],
+      "registres": [
+        "neutre"
+      ]
+    },
+    "modes_de_tete": [
+      {
+        "outil_id": "outil-alpha",
+        "mode": "web_desactivee"
+      }
+    ]
+  },
+  "taux": {
+    "statut": "sans_objet",
+    "motif": "aucun_couple_compare"
+  },
+  "asymetrie": {
+    "statut": "sans_objet",
+    "motif": "aucun_couple_compare"
+  },
+  "conditions": {
+    "statut": "sans_objet",
+    "motif": "aucun_couple_compare"
+  },
+  "robustesse": {
+    "taux": {
+      "statut": "sans_objet",
+      "motif": "aucun_couple_compare"
+    },
+    "differences": {
+      "statut": "sans_objet",
+      "motif": "calcul_a_venir"
+    }
+  },
+  "variabilite_echantillons": {
+    "statut": "sans_objet",
+    "motif": "aucun_couple_compare"
+  },
+  "hypotheses": {
+    "H1": {
+      "statut": "calcule",
+      "verdict": "sans_objet",
+      "outils": [
+        {
+          "outil_id": "outil-alpha",
+          "verdict": "sans_objet",
+          "couples": [
+            {
+              "cle": "outil-alpha/web_desactivee",
+              "etat": "incomplet",
+              "borne_inferieure": null,
+              "borne_strictement_positive": false
+            }
+          ]
+        }
+      ]
+    },
+    "H2": {
+      "statut": "calcule",
+      "outils": [
+        {
+          "outil_id": "outil-alpha",
+          "verdict": "sans_objet",
+          "global": {
+            "statut": "absente"
+          },
+          "moins_de_60_jours": {
+            "statut": "absente"
+          }
+        }
+      ]
+    },
+    "H3": {
+      "statut": "calcule",
+      "strate": "type_item:F+O",
+      "couples": [
+        {
+          "cle": "outil-alpha/web_desactivee",
+          "verdict": "sans_objet",
+          "motif": "couple_incomplet",
+          "difference": null
+        }
+      ]
+    },
+    "H4": {
+      "statut": "calcule",
+      "verdict": "indecidable",
+      "seuil": 0.05,
+      "couples_sous_le_seuil": [],
+      "couples_testes": 0
+    },
+    "H5": {
+      "statut": "sans_objet",
+      "motif": "premier_run_absent"
+    }
+  },
+  "exploratoire": {
+    "correlation_couverture": {
+      "statut": "calcule",
+      "couples": [
+        {
+          "outil_id": "outil-alpha",
+          "mode": "web_desactivee",
+          "exploratoire": true,
+          "points": [
+            {
+              "candidat_id": "c1",
+              "taux_erreur": {
+                "numerateur": 0,
+                "denominateur": 6,
+                "valeur": 0
+              },
+              "items_p_verifies": 10
+            },
+            {
+              "candidat_id": "c2",
+              "taux_erreur": {
+                "numerateur": 6,
+                "denominateur": 6,
+                "valeur": 1
+              },
+              "items_p_verifies": 20
+            },
+            {
+              "candidat_id": "c3",
+              "taux_erreur": {
+                "numerateur": 0,
+                "denominateur": 6,
+                "valeur": 0
+              },
+              "items_p_verifies": 30
+            },
+            {
+              "candidat_id": "c4",
+              "taux_erreur": {
+                "numerateur": 6,
+                "denominateur": 12,
+                "valeur": 0.5
+              },
+              "items_p_verifies": 40
+            }
+          ],
+          "candidats_sans_exactitude": [],
+          "coefficient": 0.21081851067789195,
+          "motif_absence": null
+        }
+      ],
+      "couples_incomplets": []
+    },
+    "ecart_api_application": {
+      "statut": "calcule",
+      "par_outil": [
+        {
+          "outil_id": "outil-alpha",
+          "mode_de_tete": "web_desactivee",
+          "exploratoire": false,
+          "questions_appariees": 4,
+          "questions_exclues": [],
+          "difference": {
+            "cle": [
+              "bootstrap",
+              "exactitude",
+              "global",
+              "outil-alpha:api-application"
+            ],
+            "graine": "47363a52deb15a57",
+            "taux_a": {
+              "numerateur": 3,
+              "denominateur": 4,
+              "valeur": 0.75
+            },
+            "taux_b": {
+              "numerateur": 5,
+              "denominateur": 7,
+              "valeur": 0.7142857142857143
+            },
+            "difference": 0.0357142857142857,
+            "intervalle": {
+              "bas": -0.5,
+              "haut": 0.40625000000000017,
+              "nombre_grappes": 4,
+              "reechantillonnages": 10,
+              "reechantillonnages_indefinis": 0,
+              "degenere": null
+            },
+            "qualificatif": "non_etablie",
+            "motif_sans_qualificatif": null
+          }
+        }
+      ],
+      "outils_exclus": [],
+      "outils_sans_reponse_application": []
+    }
+  },
+  "graines": []
+}

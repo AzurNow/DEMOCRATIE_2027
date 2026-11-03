@@ -3240,6 +3240,46 @@
       "motif": "premier_run_absent"
     }
   },
+  "exploratoire": {
+    "correlation_couverture": {
+      "statut": "calcule",
+      "couples": [
+        {
+          "outil_id": "outil-alpha",
+          "mode": "web_desactivee",
+          "exploratoire": true,
+          "points": [
+            {
+              "candidat_id": "candidat-a",
+              "taux_erreur": {
+                "numerateur": 0,
+                "denominateur": 12,
+                "valeur": 0
+              },
+              "items_p_verifies": 20
+            },
+            {
+              "candidat_id": "candidat-b",
+              "taux_erreur": {
+                "numerateur": 2,
+                "denominateur": 12,
+                "valeur": 0.16666666666666666
+              },
+              "items_p_verifies": 20
+            }
+          ],
+          "candidats_sans_exactitude": [],
+          "coefficient": null,
+          "motif_absence": "moins_de_trois_candidats"
+        }
+      ],
+      "couples_incomplets": []
+    },
+    "ecart_api_application": {
+      "statut": "sans_objet",
+      "motif": "aucune_reponse_application"
+    }
+  },
   "graines": [
     {
       "cle": [

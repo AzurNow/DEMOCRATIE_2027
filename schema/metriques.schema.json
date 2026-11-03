@@ -5,7 +5,7 @@
   "description": "§8 : runs/<date>/metriques/metriques.json, écrit par pnpm analyze (analysis/analyse-du-run.ts, sous-lot A), jamais réécrit : absent, il est écrit ; identique à l'octet près, rien n'est fait ; différent, la commande refuse. Toutes les sections reposent sur un seul partage de la population (population), calculé une fois au calcul principal et repris tel quel par chaque recalcul de robustesse (§8 : « les seuils de non-publication ne sont pas réappliqués à la population restreinte »). Chaque section est calculée ou sans objet, avec son motif. Les kappas et le test contrefactuel n'y sont pas recopiés : ils vivent dans run.json, que entrees.run_json_sha256 désigne.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "hypotheses", "graines"],
+  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "hypotheses", "exploratoire", "graines"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -214,6 +214,64 @@
         "H5": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/h5" }] }
       }
     },
+    "exploratoire": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["correlation_couverture", "ecart_api_application"],
+      "description": "Analyses exploratoires préannoncées (§2, §6, §8 : « tout autre chiffre porte l'étiquette « exploratoire » »). Chaque résultat porte exploratoire: true ; aucun qualificatif de fragilité (§8, robustesse : « Les différences exploratoires […] ne reçoivent aucun qualificatif de fragilité »).",
+      "properties": {
+        "correlation_couverture": {
+          "description": "§2 : coefficient de Spearman entre le taux d'erreur d'un candidat et son nombre d'items P vérifiés, par couple comparé, sans intervalle (analysis/correlation-couverture.ts). §3 : en entre_deux_tours, sans objet (moins_de_trois_candidats).",
+          "oneOf": [
+            { "$ref": "#/$defs/sans_objet" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["statut", "couples", "couples_incomplets"],
+              "properties": {
+                "statut": { "const": "calcule" },
+                "couples": { "type": "array", "items": { "$ref": "#/$defs/correlation_du_couple" } },
+                "couples_incomplets": { "type": "array", "items": { "$ref": "#/$defs/couple" } }
+              }
+            }
+          ]
+        },
+        "ecart_api_application": {
+          "description": "§6, QR8 : exactitude de l'API (mode de tête, neutre, échantillon 1) moins celle de l'application, appariée par question sur le sous-échantillon, les saisies des deux testeurs dans la grappe de leur question ; clé bootstrap / exactitude / global / <outil>:api-application (analysis/ecart-api-application.ts). Sans objet (aucune_reponse_application) quand le run n'a aucune réponse de l'application.",
+          "oneOf": [
+            { "$ref": "#/$defs/sans_objet" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["statut", "par_outil", "outils_exclus", "outils_sans_reponse_application"],
+              "properties": {
+                "statut": { "const": "calcule" },
+                "par_outil": { "type": "array", "items": { "$ref": "#/$defs/ecart_api_application" } },
+                "outils_exclus": {
+                  "type": "array",
+                  "description": "§8 : le couple de tête de l'outil est « run incomplet » ; aucun chiffre.",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["outil_id", "mode_de_tete", "motif"],
+                    "properties": {
+                      "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+                      "mode_de_tete": { "$ref": "#/$defs/mode" },
+                      "motif": { "const": "run_incomplet" }
+                    }
+                  }
+                },
+                "outils_sans_reponse_application": {
+                  "type": "array",
+                  "description": "Assistants inclus sans aucune réponse du canal application au run : nommés, sans chiffre.",
+                  "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
     "graines": {
       "type": "array",
       "description": "§8, « Graines de l'analyse » : chaque clé publiée dans le document, une fois, triée, avec l'amorce de SplitMix64 en hexadécimal (analysis/graines.ts).",
@@ -253,6 +311,51 @@
         { "required": ["motif_absence"], "not": { "required": ["accord"] }, "properties": { "paires_comparables": { "const": 0 } } }
       ]
     },
+    "correlation_du_couple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "mode", "exploratoire", "points", "candidats_sans_exactitude", "coefficient", "motif_absence"],
+      "description": "§2 : publiée sans intervalle. Les candidats sous le seuil de couverture n'y entrent pas ; un candidat comparé sans réponse classée est nommé dans candidats_sans_exactitude. Sous trois points, ou sur un classement constant, le coefficient est absent (null) avec son motif, jamais 0.",
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "mode": { "$ref": "#/$defs/mode" },
+        "exploratoire": { "const": true },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["candidat_id", "taux_erreur", "items_p_verifies"],
+            "properties": {
+              "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "taux_erreur": { "$ref": "#/$defs/taux" },
+              "items_p_verifies": { "$ref": "#/$defs/effectif" }
+            }
+          }
+        },
+        "candidats_sans_exactitude": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+        "coefficient": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
+        "motif_absence": { "enum": [null, "moins_de_trois_candidats", "rangs_constants"] }
+      },
+      "oneOf": [
+        { "properties": { "coefficient": { "type": "number" }, "motif_absence": { "type": "null" } } },
+        { "properties": { "coefficient": { "type": "null" }, "motif_absence": { "type": "string" } } }
+      ]
+    },
+    "ecart_api_application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "mode_de_tete", "exploratoire", "questions_appariees", "questions_exclues", "difference"],
+      "description": "§6 : une ligne par outil saisi dans l'application. difference : bras A l'API, bras B l'application ; questions_exclues : questions du sous-échantillon présentes dans un seul bras, jamais complétées.",
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "mode_de_tete": { "$ref": "#/$defs/mode" },
+        "exploratoire": { "const": true },
+        "questions_appariees": { "$ref": "#/$defs/effectif" },
+        "questions_exclues": { "type": "array", "items": { "type": "string", "pattern": "^q_[0-9a-f]{32}$" } },
+        "difference": { "$ref": "#/$defs/difference_taux" }
+      }
+    },
     "mode": { "enum": ["web_activee", "web_desactivee"] },
     "couple": {
       "type": "object",
@@ -270,7 +373,7 @@
       "required": ["statut", "motif"],
       "properties": {
         "statut": { "const": "sans_objet" },
-        "motif": { "enum": ["aucun_couple_compare", "calcul_a_venir", "moins_de_deux_candidats", "premier_run_absent"] }
+        "motif": { "enum": ["aucun_couple_compare", "calcul_a_venir", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application"] }
       }
     },
     "graine_hex": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
