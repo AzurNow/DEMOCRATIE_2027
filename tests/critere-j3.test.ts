@@ -224,20 +224,62 @@ describe("instant de clôture d'un lot (§12 : clos quand ses deux annotateurs l
     expect(clotureDuLot({ lot: LOT_AB, items, etats: entrees })).toEqual(close("2026-11-05T08:30:00+01:00"));
   });
 
-  it("plusieurs contestations candidates sur l'item non couvert : clos sans instant, aucune n'est choisie", () => {
+  it("item recontesté (deux contestations sur le même item non couvert) : clos à sa première réception (§12, 0.30)", () => {
     const items = itemsAvecAConteste([contestation("2026-11-04T11:00:00+01:00"), contestation("2026-11-04T12:00:00+01:00")]);
     const entrees = etats([decide("a1", B, "2026-11-04T09:00:00+01:00")], [decide("a2", B, "2026-11-04T08:30:00+01:00")]);
-    expect(clotureDuLot({ lot: LOT_AB, items, etats: entrees })).toEqual({ clos: true, instant: null });
+    expect(clotureDuLot({ lot: LOT_AB, items, etats: entrees })).toEqual(close("2026-11-04T11:00:00+01:00"));
   });
 
-  it("deux items non couverts, chacun contesté : plusieurs contestations candidates, clos sans instant", () => {
+  it("item recontesté, contestations enregistrées hors de l'ordre chronologique : la première réception se lit sur l'instant réel", () => {
+    // 10:30Z = 11:30+01:00, plus tardive que 11:00+01:00 bien que listée d'abord et lexicographiquement plus petite.
+    const items = itemsAvecAConteste([contestation("2026-11-04T10:30:00Z"), contestation("2026-11-04T11:00:00+01:00")]);
+    const entrees = etats([decide("a1", B, "2026-11-04T09:00:00+01:00")], [decide("a2", B, "2026-11-04T08:30:00+01:00")]);
+    expect(clotureDuLot({ lot: LOT_AB, items, etats: entrees })).toEqual(close("2026-11-04T11:00:00+01:00"));
+  });
+
+  it("deux items non couverts contestés à des dates différentes : clos à la plus tardive des premières réceptions (§12, 0.30)", () => {
     const items: ReadonlyMap<string, Item> = new Map([
-      [A.id, { ...A, statut_contestation: "contestee", contestations: [contestation("2026-11-04T11:00:00+01:00")] }],
+      [
+        A.id,
+        {
+          ...A,
+          statut_contestation: "contestee",
+          contestations: [contestation("2026-11-04T11:00:00+01:00"), contestation("2026-11-04T15:00:00+01:00")],
+        },
+      ],
       [B.id, { ...B, statut_contestation: "contestee", contestations: [contestation("2026-11-04T12:00:00+01:00")] }],
     ]);
     const entrees = etats([decide("a1", A, "2026-11-04T09:00:00+01:00")], [decide("a2", B, "2026-11-04T08:30:00+01:00")]);
     expect(lesDeuxOntFini({ lot: LOT_AB, items, etats: entrees })).toBe(true);
-    expect(clotureDuLot({ lot: LOT_AB, items, etats: entrees })).toEqual({ clos: true, instant: null });
+    // A : première réception 11:00 (sa recontestation de 15:00 ne compte pas) ; B : 12:00. La plus tardive : 12:00.
+    expect(clotureDuLot({ lot: LOT_AB, items, etats: entrees })).toEqual(close("2026-11-04T12:00:00+01:00"));
+  });
+
+  it("plusieurs contestations, fin de journal plus tardive que la plus tardive des premières réceptions : la fin de journal l'emporte", () => {
+    const items: ReadonlyMap<string, Item> = new Map([
+      [A.id, { ...A, statut_contestation: "contestee", contestations: [contestation("2026-11-04T07:00:00+01:00")] }],
+      [B.id, { ...B, statut_contestation: "contestee", contestations: [contestation("2026-11-04T07:30:00+01:00")] }],
+    ]);
+    const entrees = etats([decide("a1", A, "2026-11-04T09:00:00+01:00")], [decide("a2", B, "2026-11-04T08:30:00+01:00")]);
+    expect(clotureDuLot({ lot: LOT_AB, items, etats: entrees })).toEqual(close("2026-11-04T09:00:00+01:00"));
+  });
+
+  it("lot achevé par plusieurs contestations, clos au même instant qu'un autre lot : départage par identifiant inchangé", () => {
+    const items = itemsAvecAConteste([contestation("2026-11-06T17:00:00Z"), contestation("2026-11-07T09:00:00Z")]);
+    const parContestations = clotureDuLot({
+      lot: lotDe("lot-030", [A, B], "reel"),
+      items,
+      etats: etats([decide("a1", B, "2026-11-04T09:00:00+01:00")], [decide("a2", B, "2026-11-04T08:30:00+01:00")]),
+    });
+    expect(parContestations).toEqual(close("2026-11-06T17:00:00Z"));
+    const lots = [lot("lot-009"), lot("lot-031"), lot("lot-030")];
+    const diagnostics = [diagnostic("lot-009"), diagnostic("lot-031"), diagnostic("lot-030", { accord_suffisant: false })];
+    const entrees = clotures({
+      "lot-009": close("2026-11-04T18:00:00+01:00"),
+      "lot-031": close("2026-11-06T18:00:00+01:00"),
+      "lot-030": parContestations,
+    });
+    expect(verdictJ3(diagnostics, lots, entrees)).toEqual({ atteint: false, motif: "accord_insuffisant", lots: ["lot-030", "lot-031"] });
   });
 
   it("un item non couvert contesté sans date de réception lisible : refus, jamais une date inventée", () => {

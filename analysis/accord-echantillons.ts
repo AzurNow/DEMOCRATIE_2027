@@ -8,7 +8,9 @@
  * par formulation : une paire par groupe, ses deux échantillons. La clé contient l'outil, le mode, la
  * question et la formulation : deux formulations ou deux modes ne sont jamais appariés. Partir du plan,
  * et non des réponses obtenues, rend visibles les paires dont un échantillon, ou les deux, manque. Une
- * question d'attribution a ses deux échantillons au plan comme toute question : même règle.
+ * question d'attribution a ses deux échantillons au plan comme toute question : même règle. Le plan
+ * en prévoit exactement deux, distincts, par paire (§6) ; tout autre nombre est une incohérence
+ * refusée, jamais une paire lue à un échantillon (D72 (7)).
  *
  * **Ce qui est lu.** La catégorie retenue de chaque échantillon obtenu, lue dans son unité d'analyse
  * (`filtre.ts:assembler`, verdict du run). Un refus de l'API est une réponse obtenue que la règle note
@@ -60,7 +62,7 @@ export interface EntreesVariabilite {
   readonly unites: readonly UniteAnalyse[];
 }
 
-/** Le plan prévoit plus de deux échantillons, ou deux fois le même, pour une même paire. */
+/** Le plan ne prévoit pas exactement deux échantillons distincts pour une même paire (§6, D72 (7)). */
 export class PaireDEchantillonsIncoherente extends Error {
   constructor(cle: string, detail: string) {
     super(`Paire ${cle} : ${detail} L'accord entre échantillons porte sur les deux échantillons d'une question (§8).`);
@@ -68,7 +70,7 @@ export class PaireDEchantillonsIncoherente extends Error {
   }
 }
 
-/** §6, §8 : deux échantillons par question, par formulation et par mode. */
+/** §6, §8 : deux échantillons par question, par formulation et par mode ; exactement deux au plan (D72 (7)). */
 const ECHANTILLONS_D_UNE_PAIRE = 2;
 
 type IssuePaire = MotifPaireEcartee | "concordante" | "discordante";
@@ -122,7 +124,10 @@ function pairesDuCouple(plan: readonly RequeteDuPlan[], couple: CoupleOutilMode)
 
 function verifierPaire(cle: string, requetes: readonly RequeteDuPlan[]): void {
   const lisible = cle.split("\0").join(" / ");
-  if (requetes.length > ECHANTILLONS_D_UNE_PAIRE) throw new PaireDEchantillonsIncoherente(lisible, `${requetes.length} échantillons prévus au plan.`);
+  if (requetes.length !== ECHANTILLONS_D_UNE_PAIRE) {
+    const pluriel = requetes.length > 1 ? "s" : "";
+    throw new PaireDEchantillonsIncoherente(lisible, `${requetes.length} échantillon${pluriel} prévu${pluriel} au plan, ${ECHANTILLONS_D_UNE_PAIRE} attendus.`);
+  }
   if (new Set(requetes.map((r) => r.echantillon)).size !== requetes.length) throw new PaireDEchantillonsIncoherente(lisible, "un même échantillon prévu deux fois au plan.");
 }
 

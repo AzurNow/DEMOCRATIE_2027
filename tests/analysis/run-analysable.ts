@@ -5,7 +5,7 @@
  *
  * Chaque candidat porte `items_p` items P et `items_f` items F, une question Q-DIR par item, trois
  * formulations ; chaque outil répond à chaque question dans chacun de ses modes, aux trois
- * formulations, échantillon 1. Les items P de rang pair datent de moins de 60 jours au gel, les
+ * formulations, échantillons 1 et 2 (§6), notés à l'identique. Les items P de rang pair datent de moins de 60 jours au gel, les
  * autres non. Une réponse sur sept est dans l'échantillon humain, notée à l'identique par deux humains.
  */
 
@@ -110,19 +110,39 @@ interface Volume {
   readonly notations: Notation[];
 }
 
-function contextesDe(spec: SpecRun, items: readonly ItemDuRun[], questions: readonly Question[]): { contexte: ContexteReponse; question: Question; formulation_id: string }[] {
+/** §6 : deux échantillons par question, par formulation et par mode. */
+const ECHANTILLONS = [1, 2] as const;
+
+interface RequeteDuRun {
+  readonly contexte: ContexteReponse;
+  readonly question: Question;
+  readonly formulation_id: string;
+  readonly echantillon: (typeof ECHANTILLONS)[number];
+}
+
+function contextesDe(spec: SpecRun, items: readonly ItemDuRun[], questions: readonly Question[]): RequeteDuRun[] {
   return spec.outils.flatMap((o) =>
     o.modes.flatMap((mode) =>
       items.flatMap((it, i) => {
         const question = questions[i] as Question;
-        return question.formulations.map((formulation) => ({
-          contexte: { outil_id: o.outil_id, mode, candidat_id: it.item.candidat_id, type: it.item.type as "P" | "F", rang: it.rang, registre: formulation.registre },
-          question,
-          formulation_id: formulation.id,
-        }));
+        return question.formulations.flatMap((formulation) =>
+          ECHANTILLONS.map((echantillon) => ({
+            contexte: { outil_id: o.outil_id, mode, candidat_id: it.item.candidat_id, type: it.item.type as "P" | "F", rang: it.rang, registre: formulation.registre },
+            question,
+            formulation_id: formulation.id,
+            echantillon,
+          })),
+        );
       }),
     ),
   );
+}
+
+/** L'identifiant d'une réponse : celui de l'échantillon 1 est resté celui du run à un échantillon. */
+function idReponse(requete: RequeteDuRun): string {
+  const { contexte, question, echantillon } = requete;
+  const base = `r-${contexte.outil_id}-${contexte.mode}-${question.id}-${contexte.registre}`;
+  return ulid(echantillon === 1 ? base : `${base}-e${echantillon}`);
 }
 
 function noter(spec: SpecRun, contexte: ContexteReponse, id: string, dans: boolean, volume: Volume): void {
@@ -138,8 +158,9 @@ function noter(spec: SpecRun, contexte: ContexteReponse, id: string, dans: boole
 function volumeDe(spec: SpecRun, items: readonly ItemDuRun[], questions: readonly Question[]): Volume {
   const volume: Volume = { reponses: [], verdicts: [], notations: [] };
   let rang = 0;
-  for (const { contexte, question, formulation_id } of contextesDe(spec, items, questions)) {
-    const id = ulid(`r-${contexte.outil_id}-${contexte.mode}-${question.id}-${contexte.registre}`);
+  for (const requete of contextesDe(spec, items, questions)) {
+    const { contexte, question, formulation_id, echantillon } = requete;
+    const id = idReponse(requete);
     const manquante = spec.manquante?.(contexte) === true;
     volume.reponses.push(
       reponse({
@@ -148,6 +169,7 @@ function volumeDe(spec: SpecRun, items: readonly ItemDuRun[], questions: readonl
         mode: contexte.mode,
         question_id: question.id,
         formulation_id,
+        echantillon,
         statut_reponse: manquante ? "manquante" : "obtenue",
         normalise: manquante ? undefined : { texte: "texte", liens: [], troncature: spec.tronquee?.(contexte) === true },
       }),

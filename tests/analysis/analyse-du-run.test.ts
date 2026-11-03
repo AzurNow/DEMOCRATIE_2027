@@ -105,10 +105,19 @@ describe("run incomplet", () => {
   it("la variabilité entre échantillons (§8, D70 (12)) est publiée pour chaque couple comparé, et pour eux seuls", () => {
     const variabilite = section(["variabilite_echantillons"]);
     expect(variabilite["statut"]).toBe("calcule");
-    const couples = variabilite["couples"] as { couple: CoupleJson; paires_prevues: number; paires_comparables: number }[];
+    const couples = variabilite["couples"] as { couple: CoupleJson; paires_prevues: number; paires_comparables: number; paires_ecartees: Record<string, number> }[];
     expect(couples.map((v) => cle(v.couple))).toEqual(COMPARES);
-    // Le run en mémoire n'interroge que l'échantillon 1 : aucune paire n'est comparable, l'accord est absent.
-    for (const v of couples) expect(v).toMatchObject({ paires_comparables: 0, motif_absence: "aucune_paire_comparable" });
+    // Le run en mémoire interroge deux échantillons par question (§6) et note les deux à l'identique :
+    // toute paire dont les deux échantillons sont obtenus est comparable et concordante, accord 1.
+    for (const v of couples) {
+      expect(v.paires_comparables).toBeGreaterThan(0);
+      expect(v).toMatchObject({ accord: 1, paires_concordantes: v.paires_comparables });
+    }
+    // Une paire par question × formulation, au plan : douze items (sous le seuil compris), trois formulations.
+    expect(couples.map((v) => v.paires_prevues)).toEqual([36, 36, 36, 36]);
+    // outil-alpha / web_desactivee : la réponse manquante de estManquanteAlpha manque aux deux échantillons.
+    const alpha = couples.find((v) => cle(v.couple) === "outil-alpha/web_desactivee");
+    expect(alpha).toMatchObject({ paires_comparables: 35, paires_ecartees: { aucun_echantillon_obtenu: 1, un_seul_echantillon_obtenu: 0 } });
   });
 });
 
@@ -139,17 +148,18 @@ describe("candidat sous seuil", () => {
 
 describe("réponse manquante", () => {
   it("sort de tous les dénominateurs ; elle est comptée dans les entrées", () => {
-    // outil-alpha / web_desactivee : 12 items × 3 formulations = 36 requêtes, une manquante.
-    expect(taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "non_reponse").taux.denominateur).toBe(35);
-    expect(taux(tauxPrincipaux(), "outil-alpha/web_activee", "non_reponse").taux.denominateur).toBe(36);
-    expect(section(["entrees"])).toMatchObject({ reponses_lues: 180, reponses_manquantes: 25, reponses_obtenues: 155 });
+    // outil-alpha / web_desactivee : 12 items × 3 formulations × 2 échantillons = 72 requêtes, une
+    // requête manquante à ses deux échantillons.
+    expect(taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "non_reponse").taux.denominateur).toBe(70);
+    expect(taux(tauxPrincipaux(), "outil-alpha/web_activee", "non_reponse").taux.denominateur).toBe(72);
+    expect(section(["entrees"])).toMatchObject({ reponses_lues: 360, reponses_manquantes: 50, reponses_obtenues: 310 });
   });
 });
 
 describe("zéro observé", () => {
   it("0/n donne un taux de 0 avec son intervalle ; 0/0 donne un taux absent avec son motif", () => {
     const fabrication = taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "fabrication");
-    expect(fabrication.taux).toEqual({ numerateur: 0, denominateur: 6, valeur: 0 });
+    expect(fabrication.taux).toEqual({ numerateur: 0, denominateur: 12, valeur: 0 });
     expect(fabrication.motif_absence).toBeNull();
     expect(fabrication.intervalle.intervalle).toMatchObject({ bas: 0, haut: 0 });
     const obsolescence = taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "obsolescence");
@@ -159,7 +169,7 @@ describe("zéro observé", () => {
   });
 
   it("publie la mention du taux dégénéré à côté de l'intervalle, avec son nombre de grappes (§8, 0.27 et 0.28)", () => {
-    // « aucun événement observé sur n grappes » : fabrication 0/6 ; « aucun non-événement observé
+    // « aucun événement observé sur n grappes » : fabrication 0/12 ; « aucun non-événement observé
     // sur n grappes » : candidat-a, jamais inexact. 0/0 n'a pas de mention, il a son motif d'absence.
     const fabrication = taux(tauxPrincipaux(), "outil-alpha/web_desactivee", "fabrication");
     expect(fabrication.taux_degenere).toBe("aucun_evenement");
