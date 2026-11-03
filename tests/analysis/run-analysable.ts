@@ -47,6 +47,17 @@ export interface SpecRun {
   /** Les réponses manquantes : vrai pour une requête du plan sans réponse obtenue. */
   readonly manquante?: (contexte: ContexteReponse) => boolean;
   readonly tronquee?: (contexte: ContexteReponse) => boolean;
+  /** Le run lui-même, pour poser deux runs (tendance, H5) ou un autre régime (§3). */
+  readonly run?: SpecDuRun;
+}
+
+export type RegimeInclusion = RunAnalyse["perimetre"]["regime_inclusion"];
+
+export interface SpecDuRun {
+  /** La clé de l'identifiant du run (`ulid`) ; sans elle, celle de la fabrique. */
+  readonly cle?: string;
+  readonly date_gel?: string;
+  readonly regime_inclusion?: RegimeInclusion;
 }
 
 const REGISTRES: readonly Registre[] = ["neutre", "familier", "oriente"];
@@ -153,16 +164,19 @@ export function entreesDuRunAnalysable(spec: SpecRun): EntreesDuRun {
   const questions = items.map(({ item }) => questionDe(item));
   const entrees_tirage = items.map((item, i) => entreeDe(questions[i] as Question, item));
   const { reponses, verdicts, notations } = volumeDe(spec, items, questions);
+  const base = run({
+    ...(spec.run?.cle === undefined ? {} : { id: ulid(spec.run.cle) }),
+    date_gel: spec.run?.date_gel ?? GEL,
+    perimetre: {
+      candidats: spec.candidats.map((c) =>
+        candidat({ candidat_id: c.id, sous_seuil: c.sous_seuil, items_p_verifies: c.sous_seuil ? 2 : 20, items_p_au_gel: itemsPAuGel(`p-${c.id}`, c.sous_seuil ? 2 : 20) }),
+      ),
+      outils: spec.outils.map((o) => outil({ outil_id: o.outil_id, modes: o.modes, mode_de_tete: o.modes[0] })),
+    },
+  });
   const leRun: RunAnalyse = {
-    ...run({
-      date_gel: GEL,
-      perimetre: {
-        candidats: spec.candidats.map((c) =>
-          candidat({ candidat_id: c.id, sous_seuil: c.sous_seuil, items_p_verifies: c.sous_seuil ? 2 : 20, items_p_au_gel: itemsPAuGel(`p-${c.id}`, c.sous_seuil ? 2 : 20) }),
-        ),
-        outils: spec.outils.map((o) => outil({ outil_id: o.outil_id, modes: o.modes, mode_de_tete: o.modes[0] })),
-      },
-    }),
+    ...base,
+    perimetre: { ...base.perimetre, regime_inclusion: spec.run?.regime_inclusion ?? "liste_officielle" },
     versions: { donnees_commit: "c".repeat(40) },
     tirage: { sha256: empreinte("tirage") },
     juges: [{ juge_id: "juge-1" }, { juge_id: "juge-2" }],

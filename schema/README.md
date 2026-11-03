@@ -198,7 +198,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | rattachement-item | entrée sans `mesure_avant` · version de la mesure cible à 0 · libellé recopié dans l'entrée (champ en trop) |
 | sous-echantillon-application | question d'attribution dans le sous-échantillon d'un candidat · quatre questions au lieu de cinq |
 | depot-application | compte personnel du testeur · échantillon 2 · saisie sans capture |
-| metriques | H3 décidée sans règle · section sans objet sans motif · entrées sans empreinte du run · document sans graines |
+| metriques | H3 avec un verdict global · section sans objet sans motif · entrées sans empreinte du run · document sans graines · H1 « infirmée » |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
 depuis, `pnpm check` rejoue le tout et imprime les comptes : chaque schéma au registre, chaque exemple

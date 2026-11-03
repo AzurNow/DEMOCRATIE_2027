@@ -15,6 +15,7 @@
     "permutations": 10000
   },
   "population": {
+    "regime_inclusion": "avant_liste_officielle",
     "couples_compares": [],
     "couples_incomplets": [
       {
@@ -105,8 +106,16 @@
       ]
     },
     "H3": {
-      "statut": "sans_objet",
-      "motif": "regle_a_venir"
+      "statut": "calcule",
+      "strate": "type_item:F+O",
+      "couples": [
+        {
+          "cle": "outil-alpha/web_desactivee",
+          "verdict": "sans_objet",
+          "motif": "couple_incomplet",
+          "difference": null
+        }
+      ]
     },
     "H4": {
       "statut": "calcule",
@@ -117,7 +126,7 @@
     },
     "H5": {
       "statut": "sans_objet",
-      "motif": "regle_a_venir"
+      "motif": "premier_run_absent"
     }
   }
 }

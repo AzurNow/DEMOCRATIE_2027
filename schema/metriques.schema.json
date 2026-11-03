@@ -38,9 +38,13 @@
     "population": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["couples_compares", "couples_incomplets", "candidats_compares", "candidats_rapportes_a_part", "strates", "modes_de_tete"],
-      "description": "Le seul partage de la population : couples outil × mode au seuil de 20 % compté sur le plan d'interrogation (§8), candidats au seuil de couverture lu au gel (§4), strates relevées sur les unités du calcul principal, mode de tête lu dans le périmètre.",
+      "required": ["regime_inclusion", "couples_compares", "couples_incomplets", "candidats_compares", "candidats_rapportes_a_part", "strates", "modes_de_tete"],
+      "description": "Le seul partage de la population : régime d'inclusion déclaré au gel (§3), couples outil × mode au seuil de 20 % compté sur le plan d'interrogation (§8), candidats au seuil de couverture lu au gel (§4), strates relevées sur les unités du calcul principal, mode de tête lu dans le périmètre.",
       "properties": {
+        "regime_inclusion": {
+          "enum": ["avant_liste_officielle", "liste_officielle", "entre_deux_tours"],
+          "description": "§3 (0.27, D68) : perimetre.regime_inclusion de run.json, recopié. En entre_deux_tours, les règles qui dépendent du nombre de candidats se lisent avec deux candidats (§3, « Entre les deux tours »)."
+        },
         "couples_compares": { "type": "array", "items": { "$ref": "#/$defs/couple" } },
         "couples_incomplets": { "type": "array", "items": { "$ref": "#/$defs/couple" }, "description": "§8 : « run incomplet », sans aucune statistique, exclus des comparaisons." },
         "candidats_compares": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
@@ -186,13 +190,13 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["H1", "H2", "H3", "H4", "H5"],
-      "description": "§2 : H1, H2 et H4 décidées par analysis/hypotheses.ts sur les sections ci-dessus ; H3 et H5 sans règle de décision écrite à ce jour (regle_a_venir).",
+      "description": "§2 (0.27, D63) : H1 à H5 décidées par analysis/hypotheses.ts sur les sections ci-dessus. Une hypothèse non confirmée est non_confirmee, jamais « infirmée » (D67). H3 et H2 n'ont pas de verdict global ; H5 est sans objet (premier_run_absent) quand l'analyse ne reçoit pas de premier run (--premier).",
       "properties": {
         "H1": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/h1" }] },
         "H2": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/h2" }] },
-        "H3": { "$ref": "#/$defs/sans_objet" },
+        "H3": { "$ref": "#/$defs/h3" },
         "H4": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/h4" }] },
-        "H5": { "$ref": "#/$defs/sans_objet" }
+        "H5": { "oneOf": [{ "$ref": "#/$defs/sans_objet" }, { "$ref": "#/$defs/h5" }] }
       }
     },
     "graines": {
@@ -221,7 +225,7 @@
       "required": ["statut", "motif"],
       "properties": {
         "statut": { "const": "sans_objet" },
-        "motif": { "enum": ["aucun_couple_compare", "calcul_a_venir", "regle_a_venir", "moins_de_deux_candidats"] }
+        "motif": { "enum": ["aucun_couple_compare", "calcul_a_venir", "moins_de_deux_candidats", "premier_run_absent"] }
       }
     },
     "graine_hex": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
@@ -387,7 +391,7 @@
       "required": ["statut", "verdict", "outils"],
       "properties": {
         "statut": { "const": "calcule" },
-        "verdict": { "enum": ["confirmee", "infirmee", "sans_objet"] },
+        "verdict": { "$ref": "#/$defs/verdict_hypothese" },
         "outils": {
           "type": "array",
           "items": {
@@ -416,23 +420,28 @@
         }
       }
     },
+    "verdict_hypothese": {
+      "enum": ["confirmee", "non_confirmee", "sans_objet"],
+      "description": "§2 (0.27, D67) : une hypothèse non confirmée n'est jamais dite « infirmée »."
+    },
+    "difference_comparee": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statut", "cle", "graine", "difference", "intervalle", "qualificatif", "grappes_appariees", "grappes_exclues"],
+      "properties": {
+        "statut": { "const": "comparee" },
+        "cle": { "$ref": "#/$defs/cle" },
+        "graine": { "$ref": "#/$defs/graine_hex" },
+        "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
+        "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
+        "qualificatif": { "enum": [null, "etablie", "non_etablie"] },
+        "grappes_appariees": { "$ref": "#/$defs/effectif" },
+        "grappes_exclues": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" } }
+      }
+    },
     "difference_modes_h2": {
       "oneOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["statut", "cle", "graine", "difference", "intervalle", "qualificatif", "grappes_appariees", "grappes_exclues"],
-          "properties": {
-            "statut": { "const": "comparee" },
-            "cle": { "$ref": "#/$defs/cle" },
-            "graine": { "$ref": "#/$defs/graine_hex" },
-            "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
-            "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
-            "qualificatif": { "enum": [null, "etablie", "non_etablie"] },
-            "grappes_appariees": { "$ref": "#/$defs/effectif" },
-            "grappes_exclues": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" } }
-          }
-        },
+        { "$ref": "#/$defs/difference_comparee" },
         {
           "type": "object",
           "additionalProperties": false,
@@ -478,10 +487,103 @@
       "required": ["statut", "verdict", "seuil", "couples_sous_le_seuil", "couples_testes"],
       "properties": {
         "statut": { "const": "calcule" },
-        "verdict": { "enum": ["confirmee", "infirmee", "indecidable"] },
+        "verdict": { "enum": ["confirmee", "non_confirmee", "indecidable"] },
         "seuil": { "const": 0.05 },
         "couples_sous_le_seuil": { "type": "array", "items": { "$ref": "#/$defs/cle_couple" } },
         "couples_testes": { "$ref": "#/$defs/effectif" }
+      }
+    },
+    "h3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statut", "strate", "couples"],
+      "description": "§2 (0.27, D63) : un verdict par couple du partage, aucun verdict global. La différence est neutre moins orientée sur les questions dont l'item principal est F ou O ; sa clé de graine porte la strate type_item:F+O, choisie par analysis/hypotheses.ts:STRATE_H3 (le §8 n'en nomme pas).",
+      "properties": {
+        "statut": { "const": "calcule" },
+        "strate": { "const": "type_item:F+O" },
+        "couples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["cle", "verdict", "motif", "difference"],
+            "properties": {
+              "cle": { "$ref": "#/$defs/cle_couple" },
+              "verdict": { "$ref": "#/$defs/verdict_hypothese" },
+              "motif": { "enum": [null, "couple_incomplet", "paire_absente", "exactitude_indefinie"] },
+              "difference": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/difference_comparee" }] }
+            }
+          }
+        }
+      }
+    },
+    "h5": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statut", "premier_run_id", "questions_texte_change", "outils"],
+      "description": "§2 (0.27, D63) et D70 : par outil, tendance de l'exactitude (dernier run moins premier, §8), confirmée seulement si chaque couple comparé de l'outil l'est ; chaque couple est publié.",
+      "properties": {
+        "statut": { "const": "calcule" },
+        "premier_run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+        "questions_texte_change": { "$ref": "#/$defs/effectif" },
+        "outils": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["outil_id", "verdict", "couples"],
+            "properties": {
+              "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "verdict": { "$ref": "#/$defs/verdict_hypothese" },
+              "couples": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["cle", "verdict", "motif", "tendance", "exclusion"],
+                  "properties": {
+                    "cle": { "$ref": "#/$defs/cle_couple" },
+                    "verdict": { "$ref": "#/$defs/verdict_hypothese" },
+                    "motif": { "enum": [null, "couple_exclu_de_la_tendance", "tendance_indefinie"] },
+                    "tendance": {
+                      "oneOf": [
+                        { "type": "null" },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["cle", "graine", "difference", "intervalle", "qualificatif", "questions_communes", "questions_exclues"],
+                          "properties": {
+                            "cle": { "$ref": "#/$defs/cle" },
+                            "graine": { "$ref": "#/$defs/graine_hex" },
+                            "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
+                            "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle95" }] },
+                            "qualificatif": { "enum": [null, "etablie", "non_etablie"] },
+                            "questions_communes": { "$ref": "#/$defs/effectif" },
+                            "questions_exclues": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+                          }
+                        }
+                      ]
+                    },
+                    "exclusion": {
+                      "oneOf": [
+                        { "type": "null" },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["incomplet_au_premier", "incomplet_au_dernier"],
+                          "properties": {
+                            "incomplet_au_premier": { "type": "boolean" },
+                            "incomplet_au_dernier": { "type": "boolean" }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

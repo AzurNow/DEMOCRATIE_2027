@@ -22,7 +22,7 @@ import { apparier } from "./appariement.ts";
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import { cleCouple, etatDesCouples, type EtatCouple, type PartageCouples } from "./seuils.ts";
-import type { CoupleOutilMode, Mode, Registre, Ulid } from "./types.ts";
+import type { CoupleOutilMode, Mode, Registre, TypeItem, Ulid } from "./types.ts";
 
 export interface PaireCondition {
   readonly cle: string;
@@ -132,11 +132,42 @@ export function pairesParFormulation(unites: readonly UniteAnalyse[], couples: P
       const a = membres.filter((u) => u.registre === r1);
       const b = membres.filter((u) => u.registre === r2);
       if (a.length > 0 && b.length > 0) {
-        formees.push({ paire: { cle: `${couple.outil_id}:${couple.mode}:${r1}-${r2}`, a, b }, incomplets });
+        formees.push({ paire: { cle: cleComparaisonFormulations(couple, r1, r2), a, b }, incomplets });
       }
     }
   }
   return repartirPaires(formees);
+}
+
+/** Clé d'une paire de formulations (§8, « Graines de l'analyse ») : `<outil>:<mode>:<registre>-<registre>`. */
+export function cleComparaisonFormulations(couple: CoupleOutilMode, r1: Registre, r2: Registre): string {
+  return `${couple.outil_id}:${couple.mode}:${r1}-${r2}`;
+}
+
+/**
+ * §2 (0.27, D63) : H3 lit « la différence appariée de son exactitude, formulation neutre moins
+ * formulation orientée, restreinte aux questions dont l'item principal est un item F ou O ».
+ */
+export const TYPES_ITEM_H3: readonly TypeItem[] = ["F", "O"];
+
+export function cleComparaisonH3(couple: CoupleOutilMode): string {
+  return cleComparaisonFormulations(couple, "neutre", "oriente");
+}
+
+/**
+ * Les paires de H3 : la famille des formulations (`pairesParFormulation`, mêmes règles
+ * d'appariement et d'exclusion des couples incomplets) sur les seules unités dont l'item principal
+ * est F ou O, réduite à la paire neutre − orientée de chaque couple. Un couple sans réponse F ou O
+ * dans l'un des deux registres n'a pas de paire : il n'est ni comparé, ni exclu.
+ */
+export function pairesDeH3(unites: readonly UniteAnalyse[], couples: PartageCouples): PairesDeCondition {
+  const restreintes = unites.filter((u) => u.type_item_principal !== null && TYPES_ITEM_H3.includes(u.type_item_principal));
+  const formulations = pairesParFormulation(restreintes, couples);
+  const cles = new Set([...couples.compares, ...couples.incomplets].map(cleComparaisonH3));
+  return {
+    paires: formulations.paires.filter((p) => cles.has(p.cle)),
+    paires_exclues: formulations.paires_exclues.filter((p) => cles.has(p.cle)),
+  };
 }
 
 interface PaireFormee {

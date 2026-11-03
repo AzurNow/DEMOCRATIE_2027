@@ -28,7 +28,7 @@ describe("pnpm analyze sur un run lu sur disque", () => {
   it("kappa indéfini : l'analyse s'exécute, et aucun kappa n'est recopié dans metriques.json", () => {
     const accord = (fictif.run["accord_humains_echantillon"] as Record<string, unknown>)["motif_indefini_kappa"];
     expect(accord).toBe("accord_attendu_maximal");
-    const document = analyserRun(lireEntreesDuRun(fictif.repertoire_run, options(fictif)), PARAMETRES);
+    const document = analyserRun(lireEntreesDuRun(fictif.repertoire_run, options(fictif)), PARAMETRES, null);
     expect(JSON.stringify(document)).not.toMatch(/kappa|contrefactuel/);
     // Le seul couple du run fictif est incomplet (10 requêtes sur 12 sans réponse) : rien n'est comparé.
     expect(document).toMatchObject({ taux: { statut: "sans_objet", motif: "aucun_couple_compare" }, hypotheses: { H1: { verdict: "sans_objet" }, H4: { verdict: "indecidable" } } });
@@ -69,5 +69,14 @@ describe("pnpm analyze sur un run lu sur disque", () => {
     const resultat = executerOutil("analyze.ts", [fictif.repertoire_run]);
     expect(resultat.status).toBe(2);
     expect(resultat.erreur).toContain("--items est obligatoire");
+  });
+
+  it("--premier sans répertoire, ou désignant le run analysé lui-même : refus, code 2", () => {
+    const sansValeur = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`, "--premier"]);
+    expect(sansValeur.status).toBe(2);
+    expect(sansValeur.erreur).toContain("--premier attend un répertoire de run");
+    const lui = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`, `--premier=${fictif.repertoire_run}`]);
+    expect(lui.status).toBe(2);
+    expect(lui.erreur).toContain("PremierRunInvalide");
   });
 });

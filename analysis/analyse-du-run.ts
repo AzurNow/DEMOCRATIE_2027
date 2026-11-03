@@ -20,9 +20,11 @@
  *    principal : les seuils de non-publication ne sont pas réappliqués à la population restreinte ».
  * 4. à 8. Les sections : taux, asymétrie (test par couple comparé, puis Holm), conditions (modes et
  *    formulations, strates `global` et `recents:60j`), robustesse (taux recalculés (a) à (d) ; la
- *    robustesse des différences est le sous-lot B), hypothèses (H1, H2, H4 ; H3 et H5 attendent leur
- *    règle, protocole 0.27). Chaque section est `{statut: "calcule", …}` ou `{statut: "sans_objet",
- *    motif}` : jamais une section vide qui passerait pour un résultat.
+ *    robustesse des différences est le sous-lot B), hypothèses (H1 à H5, protocole 0.27, D63 ; H5
+ *    lit la tendance entre le premier run, lu avec son propre partage, et ce run ; D70 pour un outil
+ *    à deux modes). Chaque section est `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` :
+ *    jamais une section vide qui passerait pour un résultat. La population publie aussi le régime
+ *    d'inclusion du run (§3, D68).
  * 9. `collecterGraines` relève chaque couple `{cle, graine}` publié dans le document.
  * 10. `validerEtEcrire` valide le document contre `schema/metriques.schema.json` avant toute écriture,
  *    puis écrit `runs/<date>/metriques/metriques.json` s'il est absent, ne fait rien s'il est
@@ -39,10 +41,10 @@ import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "./bootstrap.ts";
-import { comparerConditions, pairesParFormulation, pairesParMode, type ComparaisonCondition, type PaireExclue } from "./conditions.ts";
+import { comparerConditions, pairesDeH3, pairesParFormulation, pairesParMode, type ComparaisonCondition, type PaireExclue } from "./conditions.ts";
 import { unitesParCoupleCompare } from "./couples-compares.ts";
 import { assembler, estDuRun, type EntreesAnalyse, type UniteAnalyse } from "./filtre.ts";
-import { decisionH1, decisionH2, decisionH4, type FabricationDuCouple } from "./hypotheses.ts";
+import { decisionH1, decisionH2, decisionH3, decisionH4, decisionH5, STRATE_H3, type FabricationDuCouple } from "./hypotheses.ts";
 import { STRATE_GLOBALE, stratesDuCalculPrincipal, tauxPubliesParCouple, type StratesPubliees, type TauxDuRun } from "./incertitude.ts";
 import {
   dispositionRunNote,
@@ -58,12 +60,17 @@ import { tauxRecalcules } from "./robustesse-taux.ts";
 import type { SourcesRobustesse } from "./robustesse.ts";
 import { candidatsComparables, cleCouple, couplesComparables, type PartageCandidats, type PartageCouples, type RequeteDuPlan } from "./seuils.ts";
 import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate-recente.ts";
-import type { CoupleOutilMode, IdentifiantCourt, Item, Mode, Notation, Run } from "./types.ts";
+import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
+import type { CoupleOutilMode, IdentifiantCourt, Item, Mode, Notation, Question, Run, Ulid } from "./types.ts";
 
 /* ------------------------------------------------------------------ entrées */
 
+/** §3 (0.11 ; 0.27, D68) : « chaque run déclare son régime ». */
+export type RegimeInclusion = "avant_liste_officielle" | "liste_officielle" | "entre_deux_tours";
+
 /** La part de `run.json` que l'analyse lit en plus de `Run` (schema/run.schema.json l'exige). */
 export interface RunAnalyse extends Run {
+  readonly perimetre: Run["perimetre"] & { readonly regime_inclusion: RegimeInclusion };
   readonly versions: { readonly donnees_commit: string };
   readonly tirage: { readonly sha256: string };
   /** Lus seulement pour retirer de l'empreinte les champs que le go/no-go y écrit. */
@@ -129,6 +136,10 @@ export interface ContexteDuRun {
   readonly unites: readonly UniteAnalyse[];
   /** §2, H2 : les unités dont la question entre dans la strate de moins de 60 jours. */
   readonly unites_recentes: readonly UniteAnalyse[];
+  /** Les questions du run : la tendance (H5) les compare à celles du premier run (§8). */
+  readonly questions: readonly Question[];
+  /** §3 (D68) : le régime déclaré au gel, publié avec la population. */
+  readonly regime_inclusion: RegimeInclusion;
   readonly couples: PartageCouples;
   readonly candidats: PartageCandidats;
   readonly strates: StratesPubliees;
@@ -175,6 +186,8 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
   return Object.freeze({
     unites: Object.freeze(api),
     unites_recentes: Object.freeze(unitesDeLaStrateRecente(api, entrees.items, entrees.run.date_gel)),
+    questions: Object.freeze([...entrees.questions]),
+    regime_inclusion: entrees.run.perimetre.regime_inclusion,
     couples: figer(couplesComparables(entrees.reponses, entrees.plan)),
     candidats: figer(candidats),
     strates: figer(stratesDuCalculPrincipal(api, candidats)),
@@ -188,7 +201,7 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
 
 /* ------------------------------------------------------------------ sections */
 
-export type MotifSansObjet = "aucun_couple_compare" | "calcul_a_venir" | "regle_a_venir" | "moins_de_deux_candidats";
+export type MotifSansObjet = "aucun_couple_compare" | "calcul_a_venir" | "moins_de_deux_candidats" | "premier_run_absent";
 
 export interface SansObjet {
   readonly statut: "sans_objet";
@@ -323,22 +336,69 @@ function strateDesConditions(conditions: readonly ConditionsDUneStrate[], strate
   return trouvee.modes;
 }
 
-/** 8. H1, H2 et H4 lisent les sections déjà calculées ; H3 et H5 attendent leur règle (protocole 0.27). */
+/**
+ * La différence de H3 (§2, 0.27, D63) : neutre moins orientée, sur les seules questions dont l'item
+ * principal est F ou O, par couple comparé. Même calcul que la famille des formulations
+ * (`comparerFamille`), sous la clé `exactitude / type_item:F+O / <outil>:<mode>:neutre-oriente`
+ * (`hypotheses.ts:STRATE_H3`). Rendue telle quelle pour que la robustesse des différences (sous-lot
+ * B, D69 : le recalcul (c) y est « sans objet ») la reprenne sans la recalculer.
+ */
+export function calculerH3(contexte: ContexteDuRun): ComparaisonsDUneFamille {
+  return comparerFamille(contexte, pairesDeH3(contexte.unites, contexte.couples), STRATE_H3);
+}
+
+/** Le premier run de la tendance (H5) : ce run lui-même, ou un run gelé après, n'a pas de sens. */
+export class PremierRunInvalide extends Error {
+  constructor(detail: string) {
+    super(`--premier : ${detail} La tendance (§8) compare le premier run au dernier.`);
+    this.name = "PremierRunInvalide";
+  }
+}
+
+/** Le premier run, avec le contexte calculé sur son propre partage (§8, seuil de 20 % de CE run). */
+export interface PremierRun {
+  readonly run_id: Ulid;
+  readonly contexte: ContexteDuRun;
+}
+
+function verifierPremier(premier: RunAnalyse, dernier: RunAnalyse): void {
+  if (premier.id === dernier.id) throw new PremierRunInvalide(`le premier run ${premier.id} est le run analysé.`);
+  if (!(Date.parse(premier.date_gel) < Date.parse(dernier.date_gel))) {
+    throw new PremierRunInvalide(`le premier run est gelé le ${premier.date_gel}, pas avant le run analysé (${dernier.date_gel}).`);
+  }
+}
+
+/**
+ * La tendance de l'exactitude (§8, QR7) entre le premier run et ce run, strate `global`. Clé
+ * `exactitude / global`, à laquelle `tendance.ts` ajoute l'outil puis le mode (§8 : « pour la
+ * tendance, l'outil puis le mode »). Chaque run garde son partage : celui du premier run est le sien.
+ */
+export function calculerTendance(contexte: ContexteDuRun, premier: PremierRun): TendanceDuRun {
+  const etat = (c: ContexteDuRun) => ({ unites: c.unites, questions: c.questions, couples: c.couples });
+  return tendanceDuRun(etat(premier.contexte), etat(contexte), exactitude, { ...optionsBootstrap(contexte), cle: [METRIQUE_DES_CONDITIONS, STRATE_GLOBALE] });
+}
+
+function sectionH5(contexte: ContexteDuRun, premier: PremierRun | null): object {
+  if (premier === null) return sansObjet("premier_run_absent");
+  return { statut: "calcule", premier_run_id: premier.run_id, ...decisionH5(contexte.outils, calculerTendance(contexte, premier)) };
+}
+
+/** 8. Les hypothèses lisent les sections déjà calculées, la différence de H3 et la tendance. */
 export function sectionHypotheses(
   contexte: ContexteDuRun,
-  taux: TauxDuRun,
-  asymetrie: AsymetrieCalculee,
-  conditions: readonly ConditionsDUneStrate[],
+  calculs: { readonly taux: TauxDuRun; readonly asymetrie: AsymetrieCalculee; readonly conditions: readonly ConditionsDUneStrate[]; readonly h3: ComparaisonsDUneFamille },
+  premier: PremierRun | null,
 ): Readonly<Record<"H1" | "H2" | "H3" | "H4" | "H5", object>> {
+  const { taux, asymetrie, conditions, h3 } = calculs;
   return {
     H1: { statut: "calcule", ...decisionH1(contexte.outils, contexte.couples, fabricationsDe(taux)) },
     H2: {
       statut: "calcule",
       outils: decisionH2(contexte.outils, strateDesConditions(conditions, STRATE_GLOBALE), strateDesConditions(conditions, STRATE_RECENTE)),
     },
-    H3: sansObjet("regle_a_venir"),
+    H3: { statut: "calcule", strate: STRATE_H3, couples: decisionH3(contexte.couples, h3) },
     H4: { statut: "calcule", ...decisionH4(asymetrie.famille) },
-    H5: sansObjet("regle_a_venir"),
+    H5: sectionH5(contexte, premier),
   };
 }
 
@@ -435,6 +495,7 @@ function entreesPubliees(entrees: EntreesDuRun): object {
 
 function populationDe(contexte: ContexteDuRun): object {
   return {
+    regime_inclusion: contexte.regime_inclusion,
     couples_compares: contexte.couples.compares,
     couples_incomplets: contexte.couples.incomplets,
     candidats_compares: contexte.candidats.compares,
@@ -444,12 +505,24 @@ function populationDe(contexte: ContexteDuRun): object {
   };
 }
 
-/** 2. à 9. Le document `metriques.json` d'un run, sans rien écrire. */
-export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse): object {
+/** Le premier run de la tendance, sur son propre partage (§8) ; `null` : pas de `--premier`. */
+function premierRunDe(premier: EntreesDuRun | null, dernier: EntreesDuRun, parametres: ParametresAnalyse): PremierRun | null {
+  if (premier === null) return null;
+  verifierPremier(premier.run, dernier.run);
+  return { run_id: premier.run.id, contexte: contexteDuRun(premier, assembler(premier), parametres) };
+}
+
+/**
+ * 2. à 9. Le document `metriques.json` d'un run, sans rien écrire. `premier` : les entrées du premier
+ * run de la tendance (H5), ou `null` quand l'analyse n'en reçoit pas (H5 « sans objet »,
+ * `premier_run_absent`).
+ */
+export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse, premier: EntreesDuRun | null): object {
   const contexte = contexteDuRun(entrees, assembler(entrees), parametres);
   const taux = calculerTaux(contexte);
   const asymetrie = calculerAsymetrie(contexte);
   const conditions = calculerConditions(contexte);
+  const h3 = calculerH3(contexte);
   const document = {
     run_id: entrees.run.id,
     entrees: entreesPubliees(entrees),
@@ -459,7 +532,7 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
     asymetrie: sectionAsymetrie(contexte, asymetrie),
     conditions: sectionConditions(contexte, conditions),
     robustesse: sectionRobustesse(contexte),
-    hypotheses: sectionHypotheses(contexte, taux, asymetrie, conditions),
+    hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, premierRunDe(premier, entrees, parametres)),
   };
   return { ...document, graines: collecterGraines(document) };
 }
@@ -506,9 +579,18 @@ export interface ResultatAnalyse {
   readonly document: object;
 }
 
-/** `pnpm analyze` : lire, analyser, valider, écrire. */
-export function analyserEtEcrire(repertoire_run: string, options: OptionsLectureAnalyse, parametres: ParametresAnalyse): ResultatAnalyse {
-  const document = analyserRun(lireEntreesDuRun(repertoire_run, options), parametres);
+/**
+ * `pnpm analyze` : lire, analyser, valider, écrire. `repertoire_premier` : le premier run de la
+ * tendance (`--premier`), lu et validé comme le run analysé, ou `null`.
+ */
+export function analyserEtEcrire(
+  repertoire_run: string,
+  options: OptionsLectureAnalyse,
+  parametres: ParametresAnalyse,
+  repertoire_premier: string | null,
+): ResultatAnalyse {
+  const premier = repertoire_premier === null ? null : lireEntreesDuRun(repertoire_premier, options);
+  const document = analyserRun(lireEntreesDuRun(repertoire_run, options), parametres, premier);
   const chemin = cheminMetriques(repertoire_run);
   return { chemin, issue: validerEtEcrire(chemin, document), document };
 }
