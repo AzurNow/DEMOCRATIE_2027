@@ -153,7 +153,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["taux", "differences"],
-      "description": "§8, analyses de robustesse préenregistrées. taux : les métriques recalculées (a) à (d), sans qualificatif de fragilité, sur le partage et les strates du calcul principal (analysis/robustesse-taux.ts). differences : la fragilité des différences établies, à venir (sous-lot B).",
+      "description": "§8, analyses de robustesse préenregistrées. taux : les métriques recalculées (a) à (d), sans qualificatif de fragilité, sur le partage et les strates du calcul principal (analysis/robustesse-taux.ts). differences : la fragilité des différences établies (analysis/robustesse.ts:fragiliteDesDifferences).",
       "properties": {
         "taux": {
           "oneOf": [
@@ -183,7 +183,35 @@
             }
           ]
         },
-        "differences": { "$ref": "#/$defs/sans_objet" }
+        "differences": {
+          "description": "§8 (0.27, D69 ; texte de la 0.30) : la fragilité de chaque différence établie au calcul principal des familles de résultats — modes et formulations de chaque strate des conditions, différence de H3, tendance —, recalculée (a) à (d) sur les unités restreintes, avec le partage, l'appariement et la clé du calcul principal (analysis/robustesse.ts:fragiliteDesDifferences). Une différence non établie au principal n'est pas un résultat et n'y figure pas ; les différences exploratoires (écart API / application, écart juge-éditeur, Spearman) non plus. tendance dit si la famille de la tendance a été lue (premier_run_absent sinon).",
+          "oneOf": [
+            { "$ref": "#/$defs/sans_objet" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["statut", "tendance", "resultats"],
+              "properties": {
+                "statut": { "const": "calcule" },
+                "tendance": {
+                  "oneOf": [
+                    { "$ref": "#/$defs/sans_objet" },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["statut", "premier_run_id"],
+                      "properties": {
+                        "statut": { "const": "calcule" },
+                        "premier_run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }
+                      }
+                    }
+                  ]
+                },
+                "resultats": { "type": "array", "items": { "$ref": "#/$defs/fragilite_d_une_difference" } }
+              }
+            }
+          ]
+        }
       }
     },
     "variabilite_echantillons": {
@@ -373,8 +401,64 @@
       "required": ["statut", "motif"],
       "properties": {
         "statut": { "const": "sans_objet" },
-        "motif": { "enum": ["aucun_couple_compare", "calcul_a_venir", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application"] }
+        "motif": { "enum": ["aucun_couple_compare", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application"] }
       }
+    },
+    "recalcul": { "enum": ["echantillon_humain", "items_contestes", "formulations_orientees", "reponses_tronquees"] },
+    "recalcul_de_la_difference": {
+      "description": "§8 : calcule, la différence recalculée sous la clé du calcul principal ; incalculable, la comparaison ne se forme plus sur la population restreinte (un bras vidé) ; sans_objet, le recalcul (c) d'une différence qui compare le registre orienté lui-même (D69), qui ne rend pas fragile.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["recalcul", "statut", "difference"],
+          "properties": {
+            "recalcul": { "$ref": "#/$defs/recalcul" },
+            "statut": { "const": "calcule" },
+            "difference": { "$ref": "#/$defs/difference_taux" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["recalcul", "statut", "motif"],
+          "properties": {
+            "recalcul": { "$ref": "#/$defs/recalcul" },
+            "statut": { "const": "incalculable" },
+            "motif": { "const": "comparaison_absente" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["recalcul", "statut", "motif"],
+          "properties": {
+            "recalcul": { "const": "formulations_orientees" },
+            "statut": { "const": "sans_objet" },
+            "motif": { "const": "registre_oriente_compare" }
+          }
+        }
+      ]
+    },
+    "fragilite_d_une_difference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["famille", "strate", "comparaison", "cle", "graine", "recalculs", "fragile", "motifs_fragilite"],
+      "description": "Une différence établie au calcul principal. Fragile si, dans l'un des quatre recalculs, elle n'est plus établie ou ne peut plus être calculée (§8) ; motifs_fragilite nomme ces recalculs, dans l'ordre (a) à (d), et n'est vide que pour un résultat non fragile.",
+      "properties": {
+        "famille": { "enum": ["modes", "formulations", "h3", "tendance"] },
+        "strate": { "type": "string", "minLength": 1 },
+        "comparaison": { "type": "string", "minLength": 1 },
+        "cle": { "$ref": "#/$defs/cle" },
+        "graine": { "$ref": "#/$defs/graine_hex" },
+        "recalculs": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "$ref": "#/$defs/recalcul_de_la_difference" } },
+        "fragile": { "type": "boolean" },
+        "motifs_fragilite": { "type": "array", "uniqueItems": true, "maxItems": 4, "items": { "$ref": "#/$defs/recalcul" } }
+      },
+      "oneOf": [
+        { "properties": { "fragile": { "const": true }, "motifs_fragilite": { "minItems": 1 } } },
+        { "properties": { "fragile": { "const": false }, "motifs_fragilite": { "maxItems": 0 } } }
+      ]
     },
     "graine_hex": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
     "cle": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },

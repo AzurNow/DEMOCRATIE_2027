@@ -400,9 +400,10 @@ describe("exemples de schema/exemples/", () => {
   // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides de recalcul-b.
   // 376 → 377 : §8, protocole 0.28 (D70 (12)), un invalide de metriques (variabilité : accord sans paire comparable).
   // 377 → 379 : §10 et annexe E, protocole 0.29 (D71 (8)), égalité des voix : valide-07 et invalide-26 d'item.
-  // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
-  it("charge les 382 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(382);
+  // 379 → 383 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
+  // 382 → 383 : §8, robustesse des différences (D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
+  it("charge les 383 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(383);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

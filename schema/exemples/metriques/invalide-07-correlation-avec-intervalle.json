@@ -66,10 +66,7 @@
       "statut": "sans_objet",
       "motif": "aucun_couple_compare"
     },
-    "differences": {
-      "statut": "sans_objet",
-      "motif": "calcul_a_venir"
-    }
+    "differences": {"statut": "sans_objet", "motif": "aucun_couple_compare"}
   },
   "variabilite_echantillons": {
     "statut": "sans_objet",

@@ -185,8 +185,10 @@ export function reechantillonnerStatistique(
  * Les grappes tirées sont la réunion de celles des deux bras, rangée par `grappe_id`
  * (`comparerGrappes`) — et non plus « celles du bras A, puis celles du seul bras B » (décision de
  * l'auteur du 2026-10-02, conformité n° 19, texte en 0.15). Les effets de condition et la tendance
- * apparient avant d'appeler (`appariement.ts:apparier`) : la réunion y est l'intersection. La
- * robustesse n'apparie pas : une grappe d'un seul bras y est tirée et ne compte que dans ce bras.
+ * apparient avant d'appeler (`appariement.ts:apparier`) : la réunion y est l'intersection, et leurs
+ * recalculs de robustesse (`robustesse.ts:fragiliteDesDifferences`) réapparient sur la population
+ * restreinte. `robustesse.ts:evaluerRobustesse` n'apparie pas : une grappe d'un seul bras y est tirée
+ * et ne compte que dans ce bras.
  */
 export function reechantillonnerDifference(
   unitesA: readonly UniteAnalyse[],

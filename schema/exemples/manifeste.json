@@ -3414,13 +3414,13 @@
       "objet": "metriques",
       "fichier": "metriques/valide-01-aucun-couple-compare.json",
       "attendu": "valide",
-      "motif": "Sortie de pnpm analyze sur le run fictif des tests (tests/notation/run-fictif.ts), régime avant_liste_officielle : son seul couple est « run incomplet », les sections par couple sont sans objet (aucun_couple_compare), H1 sans objet, H3 sans objet sur ce couple (couple_incomplet), H4 indécidable, H5 sans objet faute de premier run (premier_run_absent), section exploratoire sans objet (corrélation : aucun_couple_compare ; écart API / application : aucune_reponse_application), aucune graine dérivée."
+      "motif": "Sortie de pnpm analyze sur le run fictif des tests (tests/notation/run-fictif.ts), régime avant_liste_officielle : son seul couple est « run incomplet », les sections par couple sont sans objet (aucun_couple_compare), H1 sans objet, H3 sans objet sur ce couple (couple_incomplet), H4 indécidable, H5 sans objet faute de premier run (premier_run_absent), robustesse des taux et des différences sans objet (aucun_couple_compare), section exploratoire sans objet (corrélation : aucun_couple_compare ; écart API / application : aucune_reponse_application), aucune graine dérivée."
     },
     {
       "objet": "metriques",
       "fichier": "metriques/valide-02-un-couple-compare.json",
       "attendu": "valide",
-      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats à un item P et un item F, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d), H1 à H4 calculées, H3 non confirmée (différence non qualifiée : son bras neutre, 2/2, est un taux dégénéré, motif taux_degenere, §8 0.27 et 0.28), H5 sans premier run ; chaque taux porte sa mention taux_degenere ; variabilité entre échantillons à douze paires comparables, toutes concordantes, accord 1. Régénéré par analyserRun sur la spécification : candidats a et b à un item P et un item F, outil-alpha en web_desactivee, seule la réponse de candidat-b à l'item F en formulation orientée inexacte. Régénéré ouvertement (D72 (7)) quand le run en mémoire est passé à deux échantillons par question (§6), notés à l'identique : effectifs doublés (entrées, taux, asymétrie, conditions, recalculs (b) à (d)), échantillon humain du recalcul (a) passé de une à trois réponses, variabilité enfin calculée ; valeurs des taux, intervalles du calcul principal, hypothèses et graines inchangés. Section exploratoire ajoutée ensuite, le reste régénéré identique à l'octet : corrélation de Spearman du couple sans coefficient (deux candidats, motif moins_de_trois_candidats), écart API / application sans objet (aucune_reponse_application)."
+      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats à un item P et un item F, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d), H1 à H4 calculées, H3 non confirmée (différence non qualifiée : son bras neutre, 2/2, est un taux dégénéré, motif taux_degenere, §8 0.27 et 0.28), H5 sans premier run ; chaque taux porte sa mention taux_degenere ; variabilité entre échantillons à douze paires comparables, toutes concordantes, accord 1. Régénéré par analyserRun sur la spécification : candidats a et b à un item P et un item F, outil-alpha en web_desactivee, seule la réponse de candidat-b à l'item F en formulation orientée inexacte. Régénéré ouvertement (D72 (7)) quand le run en mémoire est passé à deux échantillons par question (§6), notés à l'identique : effectifs doublés (entrées, taux, asymétrie, conditions, recalculs (b) à (d)), échantillon humain du recalcul (a) passé de une à trois réponses, variabilité enfin calculée ; valeurs des taux, intervalles du calcul principal, hypothèses et graines inchangés. Robustesse des différences ajoutée ensuite (D69, sous-lot B), seule section changée à sa régénération : calculée sans aucun résultat, aucune différence n'étant établie au calcul principal (tendance sans objet, premier_run_absent). Section exploratoire ajoutée ensuite, le reste régénéré identique à l'octet : corrélation de Spearman du couple sans coefficient (deux candidats, motif moins_de_trois_candidats), écart API / application sans objet (aucune_reponse_application)."
     },
     {
       "objet": "metriques",
@@ -3514,6 +3514,17 @@
       "erreur_visee": {
         "keyword": "const",
         "instance_path": "/exploratoire/ecart_api_application/par_outil/0/exploratoire"
+      }
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-09-robustesse-fragile-sans-motif.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-02 dont la robustesse des différences publie un résultat fragile sans aucun motif de fragilité. Un résultat est fragile parce que l'un des quatre recalculs ne le confirme plus, et ce recalcul est nommé ; fragile sans motif est une affirmation que rien ne permet de vérifier (§8, analyses de robustesse préenregistrées, 0.30).",
+      "regle_protocole": "§8, analyses de robustesse préenregistrées (0.27, D69 ; 0.30)",
+      "erreur_visee": {
+        "keyword": "oneOf",
+        "instance_path": "/robustesse/differences/resultats/0"
       }
     },
     {
