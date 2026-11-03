@@ -137,8 +137,9 @@ règle d'inclusion est invérifiable par un tiers), `items_p_verifies` compté a
 `interroge` (faux pour un candidat retiré). Le ratio de reprise 80/20 se calcule par candidat présent
 aux deux runs ; un candidat `nouveau` en est exclu. `perimetre.regime_inclusion` déclare le régime du
 §3 : `avant_liste_officielle` exige de tout candidat non retiré sa `declaration_candidature` et au
-moins deux `preuves_inclusion` (la fenêtre de 60 jours, que le schéma ne sait pas comparer, est
-contrôlée au chargement de `config/perimetre.yaml` par `pipeline/questions/charger-perimetre.ts`, qui
+moins deux `preuves_inclusion`, chacune avec la notice de son institut archivée (`notice_institut`,
+protocole 0.28, D70 (6)) (la fenêtre de 60 jours du sondage et celle de douze mois civils de la
+notice, que le schéma ne sait pas comparer, sont contrôlées au chargement de `config/perimetre.yaml` par `pipeline/questions/charger-perimetre.ts`, qui
 applique `pipeline/questions/perimetre.ts`) ; `liste_officielle` exige la liste du Conseil
 constitutionnel archivée (`perimetre.liste_officielle`) ; `entre_deux_tours` (protocole 0.27, D68)
 exige la proclamation archivée des résultats du premier tour (`perimetre.proclamation_premier_tour`,

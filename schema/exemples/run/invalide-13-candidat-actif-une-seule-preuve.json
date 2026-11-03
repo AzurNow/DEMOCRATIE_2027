@@ -111,6 +111,12 @@
         "preuves_inclusion": [
           {
             "institut": "Institut A",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-a-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-a-2026-06"
+            },
             "date_publication": "2026-11-05",
             "url": "https://institut-a.fr/sondage-novembre",
             "archive_url": "https://web.archive.org/web/20261106/https://institut-a.fr/sondage-novembre",
@@ -169,12 +175,24 @@
         "preuves_inclusion": [
           {
             "institut": "Institut A",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-a-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-a-2026-06"
+            },
             "date_publication": "2026-11-05",
             "url": "https://institut-a.fr/sondage-novembre",
             "archive_url": "https://web.archive.org/web/20261106/https://institut-a.fr/sondage-novembre"
           },
           {
             "institut": "Institut C",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-c-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-c-2026-06"
+            },
             "date_publication": "2026-11-22",
             "url": "https://institut-c.fr/barometre",
             "archive_url": "https://web.archive.org/web/20261123/https://institut-c.fr/barometre"

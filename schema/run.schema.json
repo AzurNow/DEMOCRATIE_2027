@@ -364,7 +364,7 @@
               },
               "preuves_inclusion": {
                 "type": "array",
-                "description": "§3 : dans le régime avant_liste_officielle, au moins deux sondages publiés dans les 60 jours précédant l'instant de gel, exigés pour tout candidat non retiré. Sans ces références, \"quiconque applique ces règles doit obtenir la même liste\" est invérifiable par un tiers.",
+                "description": "§3 : dans le régime avant_liste_officielle, au moins deux sondages publiés dans les 60 jours précédant l'instant de gel, exigés pour tout candidat non retiré, chacun avec la notice de son institut (notice_institut, protocole 0.28, D70 (6)). Sans ces références, \"quiconque applique ces règles doit obtenir la même liste\" est invérifiable par un tiers.",
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -392,6 +392,10 @@
                     },
                     "sha256": {
                       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256"
+                    },
+                    "notice_institut": {
+                      "$ref": "#/$defs/preuve_archivee",
+                      "description": "§3 (protocole 0.28, D70 (6)) : la notice de la Commission des sondages retenue pour l'institut, archivée ; date_publication est la date de la notice, lue à minuit UTC. Toute notice de l'institut compte, quel que soit le sondage qu'elle accompagne. Exigée dans le régime avant_liste_officielle pour un candidat non retiré (perimetre.allOf). La fenêtre de douze mois civils précédant l'instant de gel, que le JSON Schema ne sait pas comparer, est contrôlée au chargement de config/perimetre.yaml (pipeline/questions/perimetre.ts:noticeDansLaFenetre)."
                     }
                   }
                 }
@@ -711,7 +715,7 @@
       },
       "allOf": [
         {
-          "$comment": "§3, régime avant la liste officielle (conformité n° 10) : tout candidat non retiré porte sa déclaration de candidature et au moins deux preuves de sondage ; la liste officielle n'existe pas encore.",
+          "$comment": "§3, régime avant la liste officielle (conformité n° 10) : tout candidat non retiré porte sa déclaration de candidature et au moins deux preuves de sondage, chacune avec la notice de son institut (protocole 0.28, D70 (6)) ; la liste officielle n'existe pas encore.",
           "if": {
             "properties": {
               "regime_inclusion": {
@@ -757,7 +761,12 @@
                     ],
                     "properties": {
                       "preuves_inclusion": {
-                        "minItems": 2
+                        "minItems": 2,
+                        "items": {
+                          "required": [
+                            "notice_institut"
+                          ]
+                        }
                       }
                     }
                   }

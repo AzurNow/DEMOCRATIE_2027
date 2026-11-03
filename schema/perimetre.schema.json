@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:perimetre",
   "title": "Périmètre saisi",
-  "description": "config/perimetre.yaml, tel que l'auteur le saisit (§3, §5, §6, §10). Chaque clé porte le nom de son champ dans run.schema.json#/properties/perimetre (décision de l'auteur du 2026-10-02), sans table de traduction. Deux états sont valides ici : le brouillon (date_gel, regime_inclusion et quotas à null, listes vides) et le périmètre complet. Ce schéma ne dit pas si le fichier suffit à geler un run : pipeline/questions/charger-perimetre.ts refuse un null restant dans une clé obligatoire et des listes de candidats ou d'outils vides, applique la règle d'inclusion du §3 que le JSON Schema ne sait pas calculer (fenêtre de 60 jours, URL distinctes), puis valide l'instantané produit contre run.schema.json. Ce qui se calcule au gel (items_p_verifies, items_p_au_gel, sous_seuil, alias_aveugle, par_mode) n'est jamais saisi ici : une clé inconnue est refusée.",
+  "description": "config/perimetre.yaml, tel que l'auteur le saisit (§3, §5, §6, §10). Chaque clé porte le nom de son champ dans run.schema.json#/properties/perimetre (décision de l'auteur du 2026-10-02), sans table de traduction. Deux états sont valides ici : le brouillon (date_gel, regime_inclusion et quotas à null, listes vides) et le périmètre complet. Ce schéma ne dit pas si le fichier suffit à geler un run : pipeline/questions/charger-perimetre.ts refuse un null restant dans une clé obligatoire et des listes de candidats ou d'outils vides, applique la règle d'inclusion du §3 que le JSON Schema ne sait pas calculer (fenêtre de 60 jours, fenêtre de douze mois de la notice de l'institut, URL distinctes), puis valide l'instantané produit contre run.schema.json. Ce qui se calcule au gel (items_p_verifies, items_p_au_gel, sous_seuil, alias_aveugle, par_mode) n'est jamais saisi ici : une clé inconnue est refusée.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -73,6 +73,32 @@
       "items": { "$ref": "#/$defs/outil" }
     }
   },
+  "allOf": [
+    {
+      "$comment": "§3 (protocole 0.28, D70 (6)) : dans le régime avant_liste_officielle, chaque preuve de sondage d'un candidat non retiré déclare la notice de l'institut retenue (notice_institut). Facultative dans les deux autres régimes, où la seule preuve d'inclusion exigée est celle du Conseil constitutionnel. La fenêtre de douze mois de la notice est contrôlée au chargement (perimetre.ts:noticeDansLaFenetre).",
+      "if": {
+        "properties": { "regime_inclusion": { "const": "avant_liste_officielle" } },
+        "required": ["regime_inclusion"]
+      },
+      "then": {
+        "properties": {
+          "candidats": {
+            "items": {
+              "if": {
+                "properties": { "statut_au_gel": { "const": "retire" } },
+                "required": ["statut_au_gel"]
+              },
+              "else": {
+                "properties": {
+                  "preuves_inclusion": { "items": { "required": ["notice_institut"] } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "quota": {
       "anyOf": [
@@ -114,7 +140,7 @@
         },
         "preuves_inclusion": {
           "type": "array",
-          "description": "§3 : sondages d'intention de vote, archivés. Le décompte (fenêtre de 60 jours, URL distinctes après normalisation-url-v1, au moins deux) est fait au chargement.",
+          "description": "§3 : sondages d'intention de vote, archivés. Le décompte (fenêtre de 60 jours, notice de l'institut dans les douze mois, URL distinctes après normalisation-url-v1, au moins deux) est fait au chargement.",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -124,7 +150,11 @@
               "date_publication": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
               "url": { "$ref": "#/$defs/url" },
               "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
-              "archive_url": { "$ref": "#/$defs/url" }
+              "archive_url": { "$ref": "#/$defs/url" },
+              "notice_institut": {
+                "$ref": "urn:banc-essai-2027:schema:run#/$defs/preuve_archivee",
+                "description": "§3 (protocole 0.28, D70 (6)) : la notice de la Commission des sondages retenue pour l'institut, archivée ; date_publication est la date de la notice, lue à minuit UTC. Toute notice de l'institut compte, quel que soit le sondage qu'elle accompagne. Exigée dans le régime avant_liste_officielle pour un candidat non retiré (allOf de la racine) ; datée au chargement dans les douze mois civils précédant l'instant de gel, bornes comprises."
+              }
             }
           }
         },

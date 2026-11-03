@@ -111,6 +111,13 @@ function sondage(cle: string, date_publication: string): Record<string, unknown>
     url: `https://institut-${cle}.invalid/vague`,
     sha256: sha("a"),
     archive_url: `https://web.archive.invalid/${cle}`,
+    // D70 (6) : la notice de l'institut, dans les douze mois précédant les gels des jeux.
+    notice_institut: {
+      url: `https://commission-sondages.invalid/notices/${cle}`,
+      date_publication: "2026-06-15",
+      sha256: sha("f"),
+      archive_url: `https://web.archive.invalid/notice-${cle}`,
+    },
   };
 }
 

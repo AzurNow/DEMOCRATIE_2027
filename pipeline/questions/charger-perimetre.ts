@@ -18,7 +18,9 @@
  *      liste officielle et la proclamation du premier tour selon le régime (`PREUVES_DU_REGIME`),
  *      exactement deux qualifiés, interrogés, entre les deux tours (§3, D68), un candidat retiré
  *      non interrogé, la règle d'inclusion du §3 (`perimetre.ts:inclusionAvantListe`)
- *      pour chaque candidat non retiré du régime `avant_liste_officielle`, et un alias aveugle pour
+ *      pour chaque candidat non retiré du régime `avant_liste_officielle`, un sondage n'y
+ *      comptant que si la notice de son institut est datée dans les douze mois civils du gel
+ *      (D70 (6) : `perimetre.ts:noticeDansLaFenetre`), et un alias aveugle pour
  *      chaque assistant inclus, qui ne trahit ni le libellé, ni l'éditeur, ni l'`outil_id` d'un outil
  *      du périmètre (aucun de leurs mots significatifs, aucune de leurs formes collées :
  *      `revelationsDansAlias`, D48 (2) et (3)), qu'aucun autre outil ne partage, après
@@ -40,7 +42,7 @@ import { parse } from "yaml";
 import type { Mode } from "../../analysis/types.ts";
 import { validerFragment, valider } from "../../outils/schemas/valider.ts";
 import { itemsPAuGel } from "./couverture.ts";
-import { inclusionAvantListe, SONDAGES_MINIMUM } from "./perimetre.ts";
+import { FENETRE_NOTICES_MOIS, inclusionAvantListe, SONDAGES_MINIMUM } from "./perimetre.ts";
 import { AMORCE_GROUPE_ATTRIBUTION } from "./tirage.ts";
 import { THEMES } from "./types.ts";
 import type { Item, Mesure, ParametresTirage, RegimeInclusion, StatutAuGel } from "./types.ts";
@@ -71,6 +73,11 @@ export interface DeclarationCandidature {
 
 export interface PreuveSondage extends PreuveArchivee {
   readonly institut: string;
+  /**
+   * §3 (protocole 0.28, D70 (6)) : la notice de la Commission des sondages retenue pour l'institut.
+   * Exigée par le schéma dans le régime avant_liste_officielle pour un candidat non retiré.
+   */
+  readonly notice_institut?: PreuveArchivee;
 }
 
 interface CandidatSaisi {
@@ -373,11 +380,17 @@ function motifInclusion(candidat: CandidatSaisi, date_gel: string): readonly str
   return [
     `${candidat.candidat_id} : ne remplit pas la règle d'inclusion du §3 au gel ${date_gel} ` +
       `(déclaration de candidature ${declaration} ; ${verdict.sondages_dans_la_fenetre} sondage(s) distinct(s) ` +
-      `dans les 60 jours, ${SONDAGES_MINIMUM} exigés). Le fichier l'inclurait à tort.`,
+      `dans les 60 jours dont la notice de l'institut est dans les ${FENETRE_NOTICES_MOIS} mois, ` +
+      `${SONDAGES_MINIMUM} exigés). Le fichier l'inclurait à tort.`,
   ];
 }
 
-/** §3 : la règle des sondages ne vaut que pour un candidat non retiré du régime avant la liste. */
+/**
+ * §3 : la règle des sondages ne vaut que pour un candidat non retiré du régime avant la liste. Une
+ * notice d'institut hors des douze mois (D70 (6)) fait seulement que son sondage ne compte pas,
+ * comme un sondage hors des 60 jours (`perimetre.ts:inclusionAvantListe`) ; l'absence de notice est
+ * refusée par le schéma.
+ */
 function motifsInclusion(perimetre: PerimetrePourRun): readonly string[] {
   if (perimetre.regime_inclusion !== "avant_liste_officielle") return [];
   return perimetre.candidats

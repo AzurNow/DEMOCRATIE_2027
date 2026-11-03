@@ -113,7 +113,8 @@ describe("URL illisible", () => {
 describe("décompte du §3 avec la normalisation", () => {
   const declaration = { url: "https://candidat.invalid/d", date: "2026-06-02" };
   const gel = "2026-11-20T10:00:00Z";
-  const preuve = (url: string) => ({ date_publication: "2026-10-15", url });
+  // D70 (6) : la notice de l'institut, dans les douze mois du gel, sans quoi le sondage ne compte pas.
+  const preuve = (url: string) => ({ date_publication: "2026-10-15", url, notice_institut: { date_publication: "2026-06-15" } });
 
   it("deux écritures de la même URL ne font qu'un sondage : candidat non inclus", () => {
     const verdict = inclusionAvantListe(

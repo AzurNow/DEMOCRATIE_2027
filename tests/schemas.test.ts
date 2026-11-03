@@ -144,12 +144,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 363 → 368 : §7, protocole 0.27 (D64), « non classée, référence incomplète » : un valide et deux invalides de notation, un valide de verdict, un invalide de tirage (liste sans références).
   // 368 → 369 : §7, D64 et D70, un invalide de run (go/no-go sans non_classees_echantillon_humain).
   // 369 → 370 : §2, protocole 0.27 (D67), H1 « infirmée » refusée (invalide) ; H3 décidée sans règle devient H3 avec un verdict global.
-  it("1. les 370 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 370 → 372 : §3, protocole 0.28 (D70 (6)), notice de l'institut : deux invalides de run (preuve de sondage sans notice ; notice sans lien d'archive).
+  it("1. les 372 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(370);
+    expect(manifeste.exemples).toHaveLength(372);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -410,7 +411,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 363 → 368 : §7, protocole 0.27 (D64), non classée : trois de notation, un de verdict, un de tirage.
   // 368 → 369 : §7, D64 et D70, un invalide de run.
   // 369 → 370 : §2, protocole 0.27 (D67), un invalide de H1 « infirmée ».
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 370 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(370);
+  // 370 → 372 : §3, protocole 0.28 (D70 (6)), deux invalides de run (notice de l'institut absente ; sans archive).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 372 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(372);
   });
 });
