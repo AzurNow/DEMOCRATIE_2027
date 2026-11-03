@@ -304,14 +304,26 @@ export function qualifierDifference(
   taux_b: Taux,
   intervalle: Intervalle95 | null,
 ): Pick<DifferenceTaux, "qualificatif" | "motif_sans_qualificatif"> {
-  const motif = motifSansQualificatif(taux_a, taux_b, intervalle);
+  return qualifierSelonTaux([taux_a, taux_b], intervalle);
+}
+
+/**
+ * La même règle pour une différence qui dépend de plus de deux taux (§7, « Conflit d'intérêts »,
+ * protocole 0.29, D71 (2) : la différence d'un juge sur l'outil de son éditeur dépend de
+ * l'exactitude de chaque juge sur chaque outil comparé). Un seul taux dégénéré parmi `taux` suffit.
+ */
+export function qualifierSelonTaux(
+  taux: readonly Taux[],
+  intervalle: Intervalle95 | null,
+): Pick<DifferenceTaux, "qualificatif" | "motif_sans_qualificatif"> {
+  const motif = motifSansQualificatif(taux, intervalle);
   return { qualificatif: motif === null ? qualifier(intervalle) : null, motif_sans_qualificatif: motif };
 }
 
-function motifSansQualificatif(taux_a: Taux, taux_b: Taux, intervalle: Intervalle95 | null): MotifSansQualificatif | null {
+function motifSansQualificatif(taux: readonly Taux[], intervalle: Intervalle95 | null): MotifSansQualificatif | null {
   if (intervalle === null) return "sans_intervalle";
   if (intervalle.degenere === "grappe_unique") return "grappe_unique";
-  if (tauxDegenere(taux_a) !== null || tauxDegenere(taux_b) !== null) return "taux_degenere";
+  if (taux.some((t) => tauxDegenere(t) !== null)) return "taux_degenere";
   return null;
 }
 

@@ -33,13 +33,26 @@
  * - « Exclut 0 » est `bootstrap.ts:qualifier` : borne basse strictement positive ou borne haute
  *   strictement négative ; un intervalle d'une seule grappe ne se qualifie pas (§8) et `signale`
  *   vaut alors `null`.
+ * - §7 (protocole 0.29, D71 (2)) : « L'exactitude d'un juge sur un outil égale à 0 ou à 1 suit la
+ *   règle des intervalles de largeur nulle (section 8) : la différence qui en dépend n'est
+ *   qualifiée ni d'« établie » ni de « non établie », et elle n'est pas signalée. » La différence
+ *   dépend des exactitudes des deux juges sur l'outil de l'éditeur et sur chaque outil de la
+ *   moyenne ; un outil sorti de la moyenne n'en fait pas partie. La règle est celle des taux
+ *   dégénérés de `bootstrap.ts:qualifierSelonTaux`, jamais recopiée : `signale` vaut `null` et
+ *   `motif_sans_qualificatif` dit pourquoi.
  * - Un éditeur qui édite plusieurs outils du run : le §7 compare « l'écart sur l'outil de son propre
  *   éditeur », au singulier ; la différence est publiée absente avec le motif
  *   `plusieurs_outils_de_son_editeur`, jamais une règle de choix inventée.
  */
 
 import { comparerChaines } from "../outils/ordre-chaines.ts";
-import { intervalleNomme, qualifier, type IntervalleNomme, type OptionsBootstrap } from "./bootstrap.ts";
+import {
+  intervalleNomme,
+  qualifierSelonTaux,
+  type IntervalleNomme,
+  type MotifSansQualificatif,
+  type OptionsBootstrap,
+} from "./bootstrap.ts";
 import { filtrerContexteRun, type UniteAnalyse } from "./filtre.ts";
 import { exactitude } from "./metriques.ts";
 import type { CategorieRetenue, IdentifiantCourt, Intervalle95, Notation, Taux, Ulid } from "./types.ts";
@@ -75,8 +88,13 @@ export interface EcartJugeEditeur {
   /** Écart sur l'outil de l'éditeur moins la moyenne des écarts sur les autres outils. */
   readonly difference: number | null;
   readonly intervalle: IntervalleNomme | null;
-  /** Vrai quand l'intervalle exclut 0 ; `null` sans intervalle ou sur une seule grappe. */
+  /**
+   * Vrai quand l'intervalle exclut 0 ; `null` sans différence, sans intervalle, sur une seule
+   * grappe ou quand une exactitude dont dépend la différence vaut 0 ou 1 (§7, 0.29).
+   */
   readonly signale: boolean | null;
+  /** `null` exactement quand `signale` ne l'est pas : il dit pourquoi la différence n'est pas qualifiée. */
+  readonly motif_sans_qualificatif: MotifSansQualificatif | null;
   /** `null` quand la différence existe. */
   readonly motif_absence: MotifSansEcartEditeur | null;
 }
@@ -105,10 +123,22 @@ function composantPropreEditeur(juge_id: IdentifiantCourt): string {
   return `${juge_id}:propre-editeur`;
 }
 
-/** §7 : vrai quand l'intervalle exclut 0 ; `null` quand il n'y a rien à qualifier. */
-export function signaler(intervalle: Intervalle95 | null): boolean | null {
-  const qualificatif = qualifier(intervalle);
-  return qualificatif === null ? null : qualificatif === "etablie";
+/**
+ * §7 : vrai quand l'intervalle exclut 0 ; `null`, avec son motif, quand il n'y a rien à qualifier,
+ * dont le cas d'une exactitude à 0 ou à 1 parmi `exactitudes` (0.29, D71 (2)) : celles des deux
+ * juges sur chaque outil dont dépend la différence.
+ */
+export function signaler(
+  exactitudes: readonly Taux[],
+  intervalle: Intervalle95 | null,
+): Pick<EcartJugeEditeur, "signale" | "motif_sans_qualificatif"> {
+  const { qualificatif, motif_sans_qualificatif } = qualifierSelonTaux(exactitudes, intervalle);
+  return { signale: qualificatif === null ? null : qualificatif === "etablie", motif_sans_qualificatif };
+}
+
+/** Les exactitudes des deux juges sur les outils dont la différence dépend. */
+function exactitudesComparees(ecarts: readonly EcartSurOutil[], outils: readonly IdentifiantCourt[]): Taux[] {
+  return ecarts.filter((e) => outils.includes(e.outil_id)).flatMap((e) => [e.exactitude_juge, e.exactitude_autre_juge]);
 }
 
 /** Les deux notes d'une réponse, par juge. */
@@ -207,7 +237,7 @@ function ecartDuJuge(
     moyenne_autres_outils: moyenneDesEcarts(autres),
     difference: statistique(retenues),
     intervalle,
-    signale: signaler(intervalle.intervalle),
+    ...signaler(exactitudesComparees(ecarts, [sonOutil, ...outilsMoyenne]), intervalle.intervalle),
     motif_absence: null,
   };
 }
@@ -231,6 +261,7 @@ function absent(
     difference: null,
     intervalle: null,
     signale: null,
+    motif_sans_qualificatif: "difference_indefinie",
     motif_absence: motif,
   };
 }

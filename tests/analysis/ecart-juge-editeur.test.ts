@@ -15,7 +15,7 @@ import {
   type JugeEtSonEditeur,
 } from "../../analysis/ecart-juge-editeur.ts";
 import type { UniteAnalyse } from "../../analysis/filtre.ts";
-import type { CategorieRetenue, Intervalle95, Notation } from "../../analysis/types.ts";
+import { taux, type CategorieRetenue, type Intervalle95, type Notation } from "../../analysis/types.ts";
 import { notation, ulid, unite } from "./fabriques.ts";
 
 const OPTIONS = { reechantillonnages: 200, graine_du_run: 20261201, cle: ["ecart_juge_editeur"] };
@@ -74,43 +74,160 @@ function intervalle(bas: number, haut: number): Intervalle95 {
   return { bas, haut, nombre_grappes: 5, reechantillonnages: 200, reechantillonnages_indefinis: 0, degenere: null };
 }
 
+/**
+ * Sur chaque item, des exactitudes ni nulles ni égales à 1 : sur A, j1 à 2/3 et j2 à 1/3 (écart 1/3) ;
+ * sur les autres outils, les deux à 1/2 (écart 0). La différence de j1 vaut 1/3 sur chaque rééchantillon.
+ */
+function jeuNuanceSurA(outils: readonly string[], items = 4): Jeu {
+  const jeu: Jeu = { unites: [], notations: [] };
+  for (let i = 0; i < items; i += 1) {
+    reponseNotee(jeu, "outil-a", `item-${i}`, "exacte", "inexacte");
+    reponseNotee(jeu, "outil-a", `item-${i}`, "inexacte", "inexacte");
+    reponseNotee(jeu, "outil-a", `item-${i}`, "exacte", "exacte");
+    for (const outil of outils) {
+      reponseNotee(jeu, outil, `item-${i}`, "exacte", "exacte");
+      reponseNotee(jeu, outil, `item-${i}`, "inexacte", "inexacte");
+    }
+  }
+  return jeu;
+}
+
+/** Ajoute sur chaque item les réponses de `outil_id`, notées (j1, j2) comme `paires`. */
+function ajouter(jeu: Jeu, outil_id: string, paires: readonly (readonly [CategorieRetenue, CategorieRetenue])[], items = 4): Jeu {
+  for (let i = 0; i < items; i += 1) {
+    for (const [j1, j2] of paires) reponseNotee(jeu, outil_id, `item-${i}`, j1, j2);
+  }
+  return jeu;
+}
+
+const ORDINAIRES = [taux(1, 3), taux(2, 3), taux(1, 2), taux(1, 2)];
+
 describe("signaler", () => {
   it("signale un intervalle qui exclut 0, d'un côté ou de l'autre", () => {
-    expect(signaler(intervalle(0.1, 0.4))).toBe(true);
-    expect(signaler(intervalle(-0.4, -0.1))).toBe(true);
+    expect(signaler(ORDINAIRES, intervalle(0.1, 0.4))).toEqual({ signale: true, motif_sans_qualificatif: null });
+    expect(signaler(ORDINAIRES, intervalle(-0.4, -0.1))).toEqual({ signale: true, motif_sans_qualificatif: null });
   });
 
   it("ne signale pas un intervalle qui touche 0 exactement", () => {
-    expect(signaler(intervalle(0, 0.4))).toBe(false);
-    expect(signaler(intervalle(-0.4, 0))).toBe(false);
+    expect(signaler(ORDINAIRES, intervalle(0, 0.4)).signale).toBe(false);
+    expect(signaler(ORDINAIRES, intervalle(-0.4, 0)).signale).toBe(false);
   });
 
   it("ne se prononce pas sans intervalle, ni sur un intervalle d'une seule grappe (§8)", () => {
-    expect(signaler(null)).toBeNull();
-    expect(signaler({ ...intervalle(1, 1), nombre_grappes: 1, degenere: "grappe_unique" })).toBeNull();
+    expect(signaler(ORDINAIRES, null)).toEqual({ signale: null, motif_sans_qualificatif: "sans_intervalle" });
+    expect(signaler(ORDINAIRES, { ...intervalle(1, 1), nombre_grappes: 1, degenere: "grappe_unique" })).toEqual({
+      signale: null,
+      motif_sans_qualificatif: "grappe_unique",
+    });
+  });
+
+  it("ne se prononce pas quand une exactitude vaut 0 ou 1, même sur un intervalle qui exclut 0 (§7, 0.29, D71 (2))", () => {
+    expect(signaler([taux(0, 3), ...ORDINAIRES], intervalle(0.1, 0.4))).toEqual({ signale: null, motif_sans_qualificatif: "taux_degenere" });
+    expect(signaler([...ORDINAIRES, taux(3, 3)], intervalle(0.1, 0.4))).toEqual({ signale: null, motif_sans_qualificatif: "taux_degenere" });
   });
 });
 
 describe("ecartsJugesEditeurs", () => {
-  it("calcule l'écart signé sur l'outil de l'éditeur contre la moyenne des autres, et le signale s'il exclut 0", () => {
-    const jeu = jeuIndulgentSurA(["outil-b", "outil-c"]);
+  it("cas ordinaire : calcule l'écart signé sur l'outil de l'éditeur contre la moyenne des autres, et le signale s'il exclut 0", () => {
+    const jeu = jeuNuanceSurA(["outil-b", "outil-c"]);
     const resultat = ecartsJugesEditeurs(jeu.unites, jeu.notations, juges(["outil-a"]), OPTIONS);
     const j1 = premier(resultat);
     expect(resultat.par_juge).toHaveLength(1);
     expect(j1.juge_id).toBe("j1");
     expect(j1.autre_juge_id).toBe("j2");
     expect(j1.ecarts.map((e) => [e.outil_id, e.ecart])).toEqual([
-      ["outil-a", 1],
+      ["outil-a", 2 / 3 - 1 / 3],
       ["outil-b", 0],
       ["outil-c", 0],
     ]);
     expect(j1.moyenne_autres_outils).toBe(0);
-    expect(j1.difference).toBe(1);
+    expect(j1.difference).toBeCloseTo(1 / 3, 12);
     expect(j1.intervalle?.cle).toEqual(["bootstrap", "ecart_juge_editeur", "j1:propre-editeur"]);
-    expect(j1.intervalle?.intervalle).toMatchObject({ bas: 1, haut: 1, nombre_grappes: 4, degenere: null });
+    expect(j1.intervalle?.intervalle).toMatchObject({ nombre_grappes: 4, degenere: null });
+    expect(j1.intervalle?.intervalle?.bas).toBeCloseTo(1 / 3, 12);
     expect(j1.signale).toBe(true);
+    expect(j1.motif_sans_qualificatif).toBeNull();
     expect(j1.motif_absence).toBeNull();
     expect(resultat.juges_sans_outil_de_leur_editeur).toEqual(["j2"]);
+  });
+
+  it("intervalle qui exclurait 0 mais exactitudes à 0 et à 1 : la différence est publiée, non signalée (§7, 0.29)", () => {
+    const jeu = jeuIndulgentSurA(["outil-b", "outil-c"]);
+    const j1 = premier(ecartsJugesEditeurs(jeu.unites, jeu.notations, juges(["outil-a"]), OPTIONS));
+    expect(j1.ecarts.map((e) => [e.outil_id, e.ecart])).toEqual([
+      ["outil-a", 1],
+      ["outil-b", 0],
+      ["outil-c", 0],
+    ]);
+    expect(j1.difference).toBe(1);
+    expect(j1.intervalle?.intervalle).toMatchObject({ bas: 1, haut: 1, nombre_grappes: 4, degenere: null });
+    expect(j1.signale).toBeNull();
+    expect(j1.motif_sans_qualificatif).toBe("taux_degenere");
+  });
+
+  it("exactitude du juge à 0 sur l'outil de son éditeur : non signalée", () => {
+    const jeu = ajouter({ unites: [], notations: [] }, "outil-a", [
+      ["inexacte", "exacte"],
+      ["inexacte", "inexacte"],
+    ]);
+    ajouter(jeu, "outil-b", [
+      ["exacte", "exacte"],
+      ["inexacte", "inexacte"],
+    ]);
+    const j1 = premier(ecartsJugesEditeurs(jeu.unites, jeu.notations, juges(["outil-a"]), OPTIONS));
+    expect(j1.ecarts[0]?.exactitude_juge.valeur).toBe(0);
+    expect(j1.difference).toBe(-0.5);
+    expect(j1.intervalle?.intervalle).toMatchObject({ bas: -0.5, haut: -0.5 });
+    expect(j1.signale).toBeNull();
+    expect(j1.motif_sans_qualificatif).toBe("taux_degenere");
+  });
+
+  it("exactitude du juge à 1 sur l'outil de son éditeur : non signalée", () => {
+    const jeu = ajouter({ unites: [], notations: [] }, "outil-a", [
+      ["exacte", "exacte"],
+      ["exacte", "inexacte"],
+    ]);
+    ajouter(jeu, "outil-b", [
+      ["exacte", "exacte"],
+      ["inexacte", "inexacte"],
+    ]);
+    const j1 = premier(ecartsJugesEditeurs(jeu.unites, jeu.notations, juges(["outil-a"]), OPTIONS));
+    expect(j1.ecarts[0]?.exactitude_juge.valeur).toBe(1);
+    expect(j1.difference).toBe(0.5);
+    expect(j1.intervalle?.intervalle).toMatchObject({ bas: 0.5, haut: 0.5 });
+    expect(j1.signale).toBeNull();
+    expect(j1.motif_sans_qualificatif).toBe("taux_degenere");
+  });
+
+  it("exactitude à 0 ou à 1 sur un autre outil seulement, de l'un ou l'autre juge : la différence en dépend, non signalée", () => {
+    // Sur B, j1 à 1 (2/2) et j2 à 1/2 : écart 1/2 ; différence 1/3 − (1/2 + 0)/2 = 1/12.
+    const juge = ajouter(jeuNuanceSurA(["outil-c"]), "outil-b", [
+      ["exacte", "exacte"],
+      ["exacte", "inexacte"],
+    ]);
+    const j1 = premier(ecartsJugesEditeurs(juge.unites, juge.notations, juges(["outil-a"]), OPTIONS));
+    expect(j1.difference).toBeCloseTo(1 / 12, 12);
+    expect(j1.intervalle?.intervalle?.bas).toBeGreaterThan(0);
+    expect(j1.signale).toBeNull();
+    expect(j1.motif_sans_qualificatif).toBe("taux_degenere");
+
+    // Sur B, l'autre juge à 0 (0/2) et j1 à 1/2 : écart 1/2, même différence.
+    const autre = ajouter(jeuNuanceSurA(["outil-c"]), "outil-b", [
+      ["exacte", "inexacte"],
+      ["inexacte", "inexacte"],
+    ]);
+    const j1bis = premier(ecartsJugesEditeurs(autre.unites, autre.notations, juges(["outil-a"]), OPTIONS));
+    expect(j1bis.difference).toBeCloseTo(1 / 12, 12);
+    expect(j1bis.signale).toBeNull();
+    expect(j1bis.motif_sans_qualificatif).toBe("taux_degenere");
+  });
+
+  it("une exactitude à 1 sur un autre outil sorti de la moyenne (écart indéfini) ne compte pas : la différence n'en dépend pas", () => {
+    const jeu = ajouter(jeuNuanceSurA(["outil-b"]), "outil-c", [["exacte", "indeterminee"]]);
+    const j1 = premier(ecartsJugesEditeurs(jeu.unites, jeu.notations, juges(["outil-a"]), OPTIONS));
+    expect(j1.autres_outils_sans_ecart).toEqual(["outil-c"]);
+    expect(j1.signale).toBe(true);
+    expect(j1.motif_sans_qualificatif).toBeNull();
   });
 
   it("publie la clé §8 (0.25) : famille, métrique et strate, puis le composant <juge>:propre-editeur", () => {
@@ -120,10 +237,10 @@ describe("ecartsJugesEditeurs", () => {
   });
 
   it("garde le signe : un juge plus sévère que l'autre sur l'outil de son éditeur a une différence négative", () => {
-    const jeu = jeuIndulgentSurA(["outil-b", "outil-c"]);
+    const jeu = jeuNuanceSurA(["outil-b", "outil-c"]);
     const j2 = premier(ecartsJugesEditeurs(jeu.unites, jeu.notations, juges([], ["outil-a"]), OPTIONS));
     expect(j2.juge_id).toBe("j2");
-    expect(j2.difference).toBe(-1);
+    expect(j2.difference).toBeCloseTo(-1 / 3, 12);
     expect(j2.signale).toBe(true);
   });
 
@@ -136,15 +253,16 @@ describe("ecartsJugesEditeurs", () => {
   });
 
   it("ne signale pas une différence dont l'intervalle touche 0 exactement", () => {
-    const jeu: Jeu = { unites: [], notations: [] };
-    for (let i = 0; i < 4; i += 1) {
-      reponseNotee(jeu, "outil-a", `item-${i}`, "exacte", "exacte");
-      reponseNotee(jeu, "outil-b", `item-${i}`, "exacte", "exacte");
-    }
+    const paires = [
+      ["exacte", "exacte"],
+      ["inexacte", "inexacte"],
+    ] as const;
+    const jeu = ajouter(ajouter({ unites: [], notations: [] }, "outil-a", paires), "outil-b", paires);
     const j1 = premier(ecartsJugesEditeurs(jeu.unites, jeu.notations, juges(["outil-a"]), OPTIONS));
     expect(j1.difference).toBe(0);
     expect(j1.intervalle?.intervalle).toMatchObject({ bas: 0, haut: 0 });
     expect(j1.signale).toBe(false);
+    expect(j1.motif_sans_qualificatif).toBeNull();
   });
 
   it("publie absent, avec son motif, l'écart d'un juge dont l'éditeur n'a aucune réponse notée", () => {
@@ -153,6 +271,7 @@ describe("ecartsJugesEditeurs", () => {
     expect(j1.difference).toBeNull();
     expect(j1.intervalle).toBeNull();
     expect(j1.signale).toBeNull();
+    expect(j1.motif_sans_qualificatif).toBe("difference_indefinie");
     expect(j1.motif_absence).toBe("aucune_reponse_de_son_outil");
   });
 
@@ -187,10 +306,11 @@ describe("ecartsJugesEditeurs", () => {
   });
 
   it("ne qualifie pas une différence calculée sur une seule grappe", () => {
-    const jeu = jeuIndulgentSurA(["outil-b"], 1);
+    const jeu = jeuNuanceSurA(["outil-b"], 1);
     const j1 = premier(ecartsJugesEditeurs(jeu.unites, jeu.notations, juges(["outil-a"]), OPTIONS));
     expect(j1.intervalle?.intervalle?.degenere).toBe("grappe_unique");
     expect(j1.signale).toBeNull();
+    expect(j1.motif_sans_qualificatif).toBe("grappe_unique");
   });
 
   it("nomme les réponses qu'aucun juge n'a notées (refus de l'API, notés par règle) et les laisse hors du calcul", () => {

@@ -13,6 +13,7 @@ import {
   intervalleNomme,
   intervalleStatistique,
   percentile,
+  qualifierSelonTaux,
   reechantillonner,
   reechantillonnerStatistique,
   REECHANTILLONNAGES_PRODUCTION,
@@ -395,6 +396,20 @@ describe("taux dégénéré (§8, 0.27 et 0.28)", () => {
     expect(tauxDegenere(taux(4, 5))).toBeNull();
     // 0/0 : un taux absent n'est pas dégénéré, il est absent.
     expect(tauxDegenere(taux(0, 0))).toBeNull();
+  });
+
+  it("une différence qui dépend de plus de deux taux suit la même règle : un seul taux dégénéré suffit (§7, 0.29)", () => {
+    const exclutZero = { bas: 0.1, haut: 0.4, nombre_grappes: 5, reechantillonnages: 200, reechantillonnages_indefinis: 0, degenere: null };
+    expect(qualifierSelonTaux([taux(1, 3), taux(2, 3), taux(1, 2)], exclutZero)).toEqual({ qualificatif: "etablie", motif_sans_qualificatif: null });
+    expect(qualifierSelonTaux([taux(1, 3), taux(2, 3), taux(2, 2)], exclutZero)).toEqual({
+      qualificatif: null,
+      motif_sans_qualificatif: "taux_degenere",
+    });
+    expect(qualifierSelonTaux([taux(0, 3), taux(2, 3), taux(1, 2)], exclutZero)).toEqual({
+      qualificatif: null,
+      motif_sans_qualificatif: "taux_degenere",
+    });
+    expect(qualifierSelonTaux([taux(1, 3)], null)).toEqual({ qualificatif: null, motif_sans_qualificatif: "sans_intervalle" });
   });
 
   it("0/n dans un bras : la différence n'est pas qualifiée (taux_degenere)", () => {
