@@ -71,6 +71,10 @@
       "motif": "calcul_a_venir"
     }
   },
+  "variabilite_echantillons": {
+    "statut": "sans_objet",
+    "motif": "aucun_couple_compare"
+  },
   "hypotheses": {
     "H1": {
       "statut": "calcule",

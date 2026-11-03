@@ -3115,6 +3115,27 @@
       "motif": "calcul_a_venir"
     }
   },
+  "variabilite_echantillons": {
+    "statut": "calcule",
+    "couples": [
+      {
+        "couple": {
+          "outil_id": "outil-alpha",
+          "mode": "web_desactivee"
+        },
+        "paires_prevues": 12,
+        "paires_comparables": 0,
+        "paires_concordantes": 0,
+        "paires_ecartees": {
+          "aucun_echantillon_obtenu": 0,
+          "un_seul_echantillon_obtenu": 12,
+          "non_classee": 0,
+          "indeterminee": 0
+        },
+        "motif_absence": "aucune_paire_comparable"
+      }
+    ]
+  },
   "hypotheses": {
     "H1": {
       "statut": "calcule",

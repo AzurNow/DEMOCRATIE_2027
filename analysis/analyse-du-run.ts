@@ -22,9 +22,10 @@
  *    formulations, strates `global` et `recents:60j`), robustesse (taux recalculés (a) à (d) ; la
  *    robustesse des différences est le sous-lot B), hypothèses (H1 à H5, protocole 0.27, D63 ; H5
  *    lit la tendance entre le premier run, lu avec son propre partage, et ce run ; D70 pour un outil
- *    à deux modes). Chaque section est `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` :
- *    jamais une section vide qui passerait pour un résultat. La population publie aussi le régime
- *    d'inclusion du run (§3, D68).
+ *    à deux modes), variabilité entre échantillons (diagnostic par couple comparé, §8, D70 (12),
+ *    `accord-echantillons.ts`, qui lit aussi le plan d'interrogation). Chaque section est
+ *    `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` : jamais une section vide qui
+ *    passerait pour un résultat. La population publie aussi le régime d'inclusion du run (§3, D68).
  * 9. `collecterGraines` relève chaque couple `{cle, graine}` publié dans le document.
  * 10. `validerEtEcrire` valide le document contre `schema/metriques.schema.json` avant toute écriture,
  *    puis écrit `runs/<date>/metriques/metriques.json` s'il est absent, ne fait rien s'il est
@@ -40,6 +41,7 @@ import { join } from "node:path";
 import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
+import { variabiliteEntreEchantillons, type VariabiliteDuCouple } from "./accord-echantillons.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "./bootstrap.ts";
 import { comparerConditions, pairesDeH3, pairesParFormulation, pairesParMode, type ComparaisonCondition, type PaireExclue } from "./conditions.ts";
 import { unitesParCoupleCompare } from "./couples-compares.ts";
@@ -321,6 +323,16 @@ export function sectionRobustesse(contexte: ContexteDuRun): { readonly taux: Sec
   };
 }
 
+/**
+ * La variabilité entre échantillons (§8, D70 (12)) : un diagnostic par couple comparé, sur le partage
+ * du calcul principal. Le plan vient des entrées : il dit quelles paires étaient prévues.
+ */
+export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRun): Section<{ readonly couples: readonly VariabiliteDuCouple[] }> {
+  return surCouplesCompares(contexte, () => ({
+    couples: variabiliteEntreEchantillons({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites }),
+  }));
+}
+
 /** Le taux de fabrication, strate `global`, de chaque couple comparé : l'entrée de H1, lue dans la section des taux. */
 function fabricationsDe(taux: TauxDuRun): FabricationDuCouple[] {
   return taux.compares.map(({ couple, taux: publies }) => {
@@ -539,6 +551,7 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
     asymetrie: sectionAsymetrie(contexte, asymetrie),
     conditions: sectionConditions(contexte, conditions),
     robustesse: sectionRobustesse(contexte),
+    variabilite_echantillons: sectionVariabilite(contexte, entrees),
     hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, premierRunDe(premier, entrees, parametres)),
   };
   return { ...document, graines: collecterGraines(document) };

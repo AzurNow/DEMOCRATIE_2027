@@ -5,7 +5,7 @@
   "description": "§8 : runs/<date>/metriques/metriques.json, écrit par pnpm analyze (analysis/analyse-du-run.ts, sous-lot A), jamais réécrit : absent, il est écrit ; identique à l'octet près, rien n'est fait ; différent, la commande refuse. Toutes les sections reposent sur un seul partage de la population (population), calculé une fois au calcul principal et repris tel quel par chaque recalcul de robustesse (§8 : « les seuils de non-publication ne sont pas réappliqués à la population restreinte »). Chaque section est calculée ou sans objet, avec son motif. Les kappas et le test contrefactuel n'y sont pas recopiés : ils vivent dans run.json, que entrees.run_json_sha256 désigne.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "hypotheses", "graines"],
+  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "hypotheses", "graines"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -186,6 +186,21 @@
         "differences": { "$ref": "#/$defs/sans_objet" }
       }
     },
+    "variabilite_echantillons": {
+      "description": "§8, « Variabilité entre échantillons » (0.28, D70 (12)) : l'accord entre les deux échantillons d'une même question, dans une même formulation et un même mode, lu sur la catégorie primaire de leur note retenue, par couple comparé (analysis/accord-echantillons.ts). Un diagnostic, pas une métrique : ni intervalle, ni qualificatif, ni graine. Un couple « run incomplet » n'y figure pas (seuils de non-publication).",
+      "oneOf": [
+        { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "couples"],
+          "properties": {
+            "statut": { "const": "calcule" },
+            "couples": { "type": "array", "items": { "$ref": "#/$defs/variabilite_du_couple" } }
+          }
+        }
+      ]
+    },
     "hypotheses": {
       "type": "object",
       "additionalProperties": false,
@@ -208,6 +223,36 @@
 
   "$defs": {
     "effectif": { "type": "integer", "minimum": 0 },
+    "variabilite_du_couple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["couple", "paires_prevues", "paires_comparables", "paires_concordantes", "paires_ecartees"],
+      "description": "Une paire = les deux échantillons prévus au plan pour une question et une formulation, dans ce couple. paires_prevues = paires_comparables + somme des paires_ecartees. accord = paires_concordantes / paires_comparables ; sans paire comparable, il est absent et motif_absence dit pourquoi (ni 0, ni null).",
+      "properties": {
+        "couple": { "$ref": "#/$defs/couple" },
+        "paires_prevues": { "$ref": "#/$defs/effectif" },
+        "paires_comparables": { "$ref": "#/$defs/effectif" },
+        "paires_concordantes": { "$ref": "#/$defs/effectif" },
+        "accord": { "type": "number", "minimum": 0, "maximum": 1 },
+        "motif_absence": { "const": "aucune_paire_comparable" },
+        "paires_ecartees": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["aucun_echantillon_obtenu", "un_seul_echantillon_obtenu", "non_classee", "indeterminee"],
+          "description": "Un seul motif par paire, dans cet ordre : aucun échantillon obtenu, un seul obtenu, l'un au moins non classé (référence incomplète, sans catégorie primaire, §7, D64), l'un au moins indéterminé.",
+          "properties": {
+            "aucun_echantillon_obtenu": { "$ref": "#/$defs/effectif" },
+            "un_seul_echantillon_obtenu": { "$ref": "#/$defs/effectif" },
+            "non_classee": { "$ref": "#/$defs/effectif" },
+            "indeterminee": { "$ref": "#/$defs/effectif" }
+          }
+        }
+      },
+      "oneOf": [
+        { "required": ["accord"], "not": { "required": ["motif_absence"] }, "properties": { "paires_comparables": { "minimum": 1 } } },
+        { "required": ["motif_absence"], "not": { "required": ["accord"] }, "properties": { "paires_comparables": { "const": 0 } } }
+      ]
+    },
     "mode": { "enum": ["web_activee", "web_desactivee"] },
     "couple": {
       "type": "object",

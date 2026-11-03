@@ -101,6 +101,15 @@ describe("run incomplet", () => {
     const h2 = (section(["hypotheses", "H2"])["outils"] as { outil_id: string; verdict: string; global: { statut: string } }[]).find((o) => o.outil_id === "outil-gamma");
     expect(h2).toMatchObject({ verdict: "sans_objet", global: { statut: "exclue" } });
   });
+
+  it("la variabilité entre échantillons (§8, D70 (12)) est publiée pour chaque couple comparé, et pour eux seuls", () => {
+    const variabilite = section(["variabilite_echantillons"]);
+    expect(variabilite["statut"]).toBe("calcule");
+    const couples = variabilite["couples"] as { couple: CoupleJson; paires_prevues: number; paires_comparables: number }[];
+    expect(couples.map((v) => cle(v.couple))).toEqual(COMPARES);
+    // Le run en mémoire n'interroge que l'échantillon 1 : aucune paire n'est comparable, l'accord est absent.
+    for (const v of couples) expect(v).toMatchObject({ paires_comparables: 0, motif_absence: "aucune_paire_comparable" });
+  });
 });
 
 describe("couple sans objet", () => {
