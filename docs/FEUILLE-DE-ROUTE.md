@@ -284,6 +284,10 @@ Aucune décision en attente.
 
 **Décision du 2026-11-03 :** Option 1 pour les points (1) à (10) (consigne durable de l'auteur : option recommandée ; demande explicite du 2026-11-03 de trancher D71) ; le point (11) reste ouvert, instruit une question à la fois. Protocole 0.29 (PR à part) : §3 date douze mois avant le gel et 29 février (5, 6), éliminé reconnu au run entre_deux_tours sans statut propre (4), nom ambigu entre un éliminé et un autre candidat renvoyé à un humain (3) ; §7 écart juge-éditeur sous la règle des taux à 0 ou à 1 (2) ; §10 et annexe E opinions publiées en ajout seul à égalité (8) ; §12 clôture datée par la contestation (9), ex aequo par identifiant (10), case « robustesse calculée » non cochée sans couple comparé (1) ; (7) sans texte, aucun domaine fixé. Code restant : (2) ecart-juge-editeur.ts:signaler, (8) schéma de l'item (deliberations_sans_majorite[]), (9) critere-j3.ts (cloture_non_datee aujourd'hui).
 
+### D72 — Questions laissées ouvertes par les lots de la 0.29 et de la fin de la 0.28 (#262 à #265).
+
+**Décision du 2026-11-03 :** Option 1 (consigne durable de l'auteur : option recommandée). Protocole 0.30 (PR à part) : §8 (4), (5), (6) ; §9 (3) ; §10 et annexe E (10), (11), (12) ; §12 (8). Code restant : (1) commande des contestations postérieures, (7) run de test à deux échantillons, (8) critere-j3.ts, (12) notification d'une délibération sans majorité.
+
 ### D8 — Trois points que le §4 ne tranche pas, rencontrés en implémentant la réannotation et le registre des mesures.
 
 **Décision du 2026-09-20 :** Option 1 sur les trois points : héritage des annotateurs gardé, une autre paire supposerait un amendement au §4 disant quel kappa compte ; clé du registre élargie seulement si le §4 ouvre un jour la correction d'autre chose que le thème ; conventions d'identifiant de réannotation et de date par défaut entérinées dans schema/README.md.
