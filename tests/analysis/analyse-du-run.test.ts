@@ -20,7 +20,7 @@ interface CoupleJson { readonly outil_id: string; readonly mode: string }
 interface TauxPublieJson { readonly metrique: string; readonly strate: string; readonly taux: { numerateur: number; denominateur: number; valeur?: number }; readonly motif_absence: string | null; readonly intervalle: { intervalle: { bas: number; haut: number } | null; raison_sans_intervalle: string | null } }
 interface TauxDuCoupleJson { readonly couple: CoupleJson; readonly taux: readonly TauxPublieJson[] }
 
-const DOCUMENT = analyserRun(entreesDuRunAnalysable(SPEC_REFERENCE), PARAMETRES) as Json;
+const DOCUMENT = analyserRun(entreesDuRunAnalysable(SPEC_REFERENCE), PARAMETRES, null) as Json;
 
 function section(chemin: readonly string[]): Json {
   let courant: unknown = DOCUMENT;
@@ -109,8 +109,7 @@ describe("couple sans objet", () => {
       (o) => o.outil_id === "outil-beta",
     );
     expect(h2).toEqual({ outil_id: "outil-beta", verdict: "sans_objet", global: { statut: "absente" }, moins_de_60_jours: { statut: "absente" } });
-    expect(section(["hypotheses", "H3"])).toEqual({ statut: "sans_objet", motif: "regle_a_venir" });
-    expect(section(["hypotheses", "H5"])).toEqual({ statut: "sans_objet", motif: "regle_a_venir" });
+    expect(section(["hypotheses", "H5"])).toEqual({ statut: "sans_objet", motif: "premier_run_absent" });
   });
 });
 

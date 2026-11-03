@@ -3397,23 +3397,34 @@
       "objet": "metriques",
       "fichier": "metriques/valide-01-aucun-couple-compare.json",
       "attendu": "valide",
-      "motif": "Sortie de pnpm analyze sur le run fictif des tests (tests/notation/run-fictif.ts) : son seul couple est « run incomplet », les sections par couple sont sans objet (aucun_couple_compare), H1 sans objet, H4 indécidable, H3 et H5 sans règle (regle_a_venir), aucune graine dérivée."
+      "motif": "Sortie de pnpm analyze sur le run fictif des tests (tests/notation/run-fictif.ts), régime avant_liste_officielle : son seul couple est « run incomplet », les sections par couple sont sans objet (aucun_couple_compare), H1 sans objet, H3 sans objet sur ce couple (couple_incomplet), H4 indécidable, H5 sans objet faute de premier run (premier_run_absent), aucune graine dérivée."
     },
     {
       "objet": "metriques",
       "fichier": "metriques/valide-02-un-couple-compare.json",
       "attendu": "valide",
-      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d) et hypothèses calculés."
+      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats à un item P et un item F, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d), H1 à H4 calculées, H3 non confirmée (différence non établie), H5 sans premier run."
     },
     {
       "objet": "metriques",
-      "fichier": "metriques/invalide-01-h3-decidee-sans-regle.json",
+      "fichier": "metriques/invalide-01-h3-verdict-global.json",
       "attendu": "invalide",
-      "motif": "H3 publiée avec un verdict : aucune règle de décision n'est écrite pour H3 (§2) ; elle est sans objet, motif regle_a_venir.",
-      "regle_protocole": "§2, hypothèses préenregistrées",
+      "motif": "H3 publiée avec un verdict global : « H3 n'a pas de verdict global : elle est publiée couple par couple » (§2, 0.27, D63).",
+      "regle_protocole": "§2, hypothèses préenregistrées (0.27, D63)",
       "erreur_visee": {
-        "keyword": "const",
-        "instance_path": "/hypotheses/H3/statut"
+        "keyword": "additionalProperties",
+        "instance_path": "/hypotheses/H3"
+      }
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-05-h1-infirmee.json",
+      "attendu": "invalide",
+      "motif": "H1 publiée « infirmée » : « une hypothèse non confirmée n'est jamais dite « infirmée » » (§2, 0.27, D67) ; son verdict est non_confirmee.",
+      "regle_protocole": "§2, hypothèses préenregistrées (0.27, D67)",
+      "erreur_visee": {
+        "keyword": "enum",
+        "instance_path": "/hypotheses/H1/verdict"
       }
     },
     {

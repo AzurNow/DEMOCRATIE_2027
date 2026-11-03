@@ -30,7 +30,7 @@ const PARTAGE = [seuils.couplesComparables, seuils.candidatsComparables, incerti
 describe("contexte calculé une fois", () => {
   it("une analyse complète appelle chaque fonction de partage exactement une fois", () => {
     for (const fonction of PARTAGE) vi.mocked(fonction).mockClear();
-    analyserRun(entreesDuRunAnalysable(SPEC_REFERENCE), { reechantillonnages: 20, permutations: 20 });
+    analyserRun(entreesDuRunAnalysable(SPEC_REFERENCE), { reechantillonnages: 20, permutations: 20 }, null);
     for (const fonction of PARTAGE) expect(vi.mocked(fonction)).toHaveBeenCalledTimes(1);
   });
 

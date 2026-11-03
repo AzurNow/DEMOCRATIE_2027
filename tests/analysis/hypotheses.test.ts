@@ -78,7 +78,7 @@ describe("H1 : borne inférieure strictement positive sur un couple comparé", (
       borne_inferieure: 0,
       borne_strictement_positive: false,
     });
-    expect(decision.verdict).toBe("infirmee");
+    expect(decision.verdict).toBe("non_confirmee");
   });
 
   it("publie « sans objet » un outil sans aucun couple comparé (tous incomplets)", () => {
@@ -155,7 +155,7 @@ describe("H1 : borne inférieure strictement positive sur un couple comparé", (
       ],
     );
     expect(decision.outils.map((o) => o.verdict)).toEqual(["vraie", "fausse", "sans_objet"]);
-    expect(decision.verdict).toBe("infirmee");
+    expect(decision.verdict).toBe("non_confirmee");
   });
 
   it("est publiée « sans objet » quand aucun outil n'a de couple comparé", () => {
@@ -188,7 +188,7 @@ describe("H1 : borne inférieure strictement positive sur un couple comparé", (
       ],
     );
     expect(decision.outils.map((o) => o.verdict)).toEqual(["vraie", "fausse"]);
-    expect(decision.verdict).toBe("infirmee");
+    expect(decision.verdict).toBe("non_confirmee");
   });
 
   it("garde visible un couple comparé sans intervalle : borne absente, non comptée", () => {
@@ -447,9 +447,9 @@ describe("H4 : valeur p corrigée strictement inférieure à 0,05", () => {
     expect(decision.couples_sous_le_seuil).toEqual(["outil-alpha/web_desactivee"]);
   });
 
-  it("est infirmée quand la valeur p corrigée vaut exactement 0,05 (inégalité stricte)", () => {
+  it("n'est pas confirmée quand la valeur p corrigée vaut exactement 0,05 (inégalité stricte)", () => {
     const decision = decisionH4(famille([["outil-alpha/web_activee", 0.05]]));
-    expect(decision.verdict).toBe("infirmee");
+    expect(decision.verdict).toBe("non_confirmee");
     expect(decision.couples_sous_le_seuil).toEqual([]);
   });
 
@@ -462,7 +462,7 @@ describe("H4 : valeur p corrigée strictement inférieure à 0,05", () => {
       couples_incomplets: [],
       couples_sans_test: [],
     });
-    expect(decision.verdict).toBe("infirmee");
+    expect(decision.verdict).toBe("non_confirmee");
   });
 
   it("est indécidable quand aucun couple n'a de test, jamais infirmée", () => {

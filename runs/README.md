@@ -365,7 +365,7 @@ pas par `assembler()` : les premiers servent l'audit du §6 ; les notations et l
 contrefactuelles sont relues par `lireNotationsDuRun`, pour le contrôle croisé et le recalcul de
 robustesse §8(a).
 
-## `pnpm analyze <repertoire_run> --items=<data/items>`
+## `pnpm analyze <repertoire_run> --items=<data/items> [--premier=<repertoire_run>]`
 
 Les analyses préenregistrées du §8 sur un run noté (`analysis/analyse-du-run.ts`, sous-lot A). Lit le
 run par `lireRun` (table ci-dessus), les notations individuelles du volume et le plan d'interrogation
@@ -376,13 +376,18 @@ du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.sch
   le plan, §8), les candidats comparés et rapportés à part (seuil de couverture lu au gel, §4), les
   strates, le mode de tête et la strate de moins de 60 jours sont calculés une fois, figés, et repris
   tels quels par chaque section, recalculs de robustesse compris ; le document les publie sous
-  `population`.
+  `population`, avec le régime d'inclusion déclaré au gel (§3).
 - **Sections.** `taux` (métriques primaires et secondaires, avec intervalles), `asymetrie` (test par
   couple comparé, Holm), `conditions` (modes et formulations, strates `global` et `recents:60j`),
-  `robustesse.taux` (recalculs (a) à (d)), `hypotheses` (H1, H2, H4). Chaque section est
-  `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}`. À venir : `robustesse.differences`
-  (`calcul_a_venir`), H3 et H5 (`regle_a_venir`) ; ni les comparateurs, ni le canal application, ni la
-  tendance, ni la liste des erreurs graves ne sont encore calculés.
+  `robustesse.taux` (recalculs (a) à (d)), `hypotheses` (H1 à H5 ; un verdict non confirmé est
+  `non_confirmee`, jamais « infirmé »). Chaque section est `{statut: "calcule", …}` ou
+  `{statut: "sans_objet", motif}`. À venir : `robustesse.differences` (`calcul_a_venir`) ; ni les
+  comparateurs, ni le canal application, ni la liste des erreurs graves ne sont encore calculés.
+- **H3 et H5.** H3 est publiée couple par couple, sur la différence neutre moins orientée des
+  questions dont l'item principal est F ou O (clé de graine de strate `type_item:F+O`). H5 lit la
+  tendance de l'exactitude entre le premier run, donné par `--premier` et lu avec son propre partage,
+  et ce run ; sans `--premier`, H5 est sans objet (`premier_run_absent`). Un premier run identique au
+  run analysé, ou gelé après lui, est refusé (`PremierRunInvalide`, sortie 2).
 - **Entrées.** `entrees.run_json_sha256` est le SHA-256 de la forme canonique de `run.json` sans les
   champs que `pnpm go-no-go` écrit ensuite (go/no-go, kappas de l'échantillon, accord des humains,
   `par_mode`…) ; s'y ajoutent l'empreinte du tirage, `donnees_commit` et les effectifs lus. Les

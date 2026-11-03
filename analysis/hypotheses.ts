@@ -1,20 +1,30 @@
 /**
- * Règles de décision des hypothèses préenregistrées H1, H2 et H4 (§2, protocole 0.24, D59 (2)
- * à (4) ; protocole 0.25, D60 : outils « sans objet » de H1 et de H2, sens de lecture de H2).
+ * Règles de décision des hypothèses préenregistrées H1 à H5 (§2, protocole 0.24, D59 (2) à (4) ;
+ * protocole 0.25, D60 : outils « sans objet » de H1 et de H2, sens de lecture de H2 ; protocole
+ * 0.27, D63 : règles de H3 et de H5 ; D67 : une hypothèse non confirmée n'est jamais dite
+ * « infirmée », son verdict est `non_confirmee` ; décision D70 de la session principale : H5 d'un
+ * outil à deux modes).
  *
  * Ce module ne calcule aucune métrique : il lit des résultats déjà produits ailleurs dans
- * `analysis/` (intervalles du taux de fabrication, comparaisons de modes de `conditions.ts`,
- * famille de Holm de `permutation.ts`) et leur applique la règle écrite au §2. Chaque décision
- * rend aussi ce qu'elle a lu, pour qu'un lecteur la refasse à la main.
- *
- * H3 et H5 ne sont pas ici : D59 ne leur a pas écrit de règle de décision.
+ * `analysis/` (intervalles du taux de fabrication, comparaisons de modes et de formulations de
+ * `conditions.ts`, famille de Holm de `permutation.ts`, tendance de `tendance.ts`) et leur applique
+ * la règle écrite au §2. Chaque décision rend aussi ce qu'elle a lu, pour qu'un lecteur la refasse
+ * à la main.
  */
 
 import type { DifferenceTaux } from "./bootstrap.ts";
-import { cleComparaisonModes, type ComparaisonCondition, type PaireExclue } from "./conditions.ts";
+import { cleComparaisonH3, cleComparaisonModes, type ComparaisonCondition, type PaireExclue } from "./conditions.ts";
 import type { FamilleAsymetrie } from "./permutation.ts";
 import { cleCouple, type PartageCouples } from "./seuils.ts";
+import type { CoupleExcluDeLaTendance, TendanceDuRun, TendanceOutilEtMode } from "./tendance.ts";
 import type { CoupleOutilMode, IdentifiantCourt, Intervalle95, Taux, Ulid } from "./types.ts";
+
+/**
+ * Verdict d'une hypothèse, d'un outil ou d'un couple. §2 (0.27, D67) : « une hypothèse non
+ * confirmée n'est jamais dite « infirmée », l'absence de confirmation pouvant tenir au manque de
+ * puissance ».
+ */
+export type VerdictHypothese = "confirmee" | "non_confirmee" | "sans_objet";
 
 /** Une hypothèse décidée sur aucun outil serait vraie par vacuité : refusée. */
 export class OutilsAbsents extends Error {
@@ -68,7 +78,7 @@ export interface DecisionH1Outil {
  * §2 (0.25) : « confirmée quand elle est vraie pour tous les outils qui ont au moins un couple
  * comparé » ; « sans objet » quand aucun outil n'a de couple comparé.
  */
-export type VerdictH1 = "confirmee" | "infirmee" | "sans_objet";
+export type VerdictH1 = VerdictHypothese;
 
 export interface DecisionH1 {
   readonly verdict: VerdictH1;
@@ -108,7 +118,7 @@ export function decisionH1(
 function verdictH1(decisions: readonly DecisionH1Outil[]): VerdictH1 {
   const decides = decisions.filter((d) => d.verdict !== "sans_objet");
   if (decides.length === 0) return "sans_objet";
-  return decides.every((d) => d.verdict === "vraie") ? "confirmee" : "infirmee";
+  return decides.every((d) => d.verdict === "vraie") ? "confirmee" : "non_confirmee";
 }
 
 function indexerFabrications(
@@ -167,29 +177,44 @@ function verdictH1Outil(couples: readonly CoupleH1[]): VerdictH1Outil {
 
 /* ------------------------------------------------------------------ H2 */
 
-/** Ce que `pairesParMode` puis `comparerConditions` rendent pour une strate. */
-export interface ComparaisonsDeModes {
+/** Ce que `pairesParMode` (ou `pairesDeH3`) puis `comparerConditions` rendent pour une strate. */
+export interface ComparaisonsDeConditions {
   readonly comparaisons: readonly ComparaisonCondition[];
   readonly paires_exclues: readonly PaireExclue[];
+}
+
+export type ComparaisonsDeModes = ComparaisonsDeConditions;
+
+/**
+ * Une différence appariée de `conditions.ts` telle que publiée, dans l'ordre de sa clé (bras a
+ * moins bras b) : lue telle quelle, ni recalculée ni retournée.
+ */
+export interface DifferenceComparee {
+  readonly statut: "comparee";
+  /** La clé de bootstrap de la comparaison, telle que publiée : elle nomme le sens a − b. */
+  readonly cle: readonly string[];
+  readonly graine: string;
+  readonly difference: number | null;
+  readonly intervalle: Intervalle95 | null;
+  readonly qualificatif: DifferenceTaux["qualificatif"];
+  readonly grappes_appariees: number;
+  readonly grappes_exclues: readonly Ulid[];
+}
+
+/**
+ * La règle commune de H2, H3 et H5 : « établie (section 8) et positive ». Une différence sans
+ * qualificatif (une seule grappe, aucun intervalle) n'est pas établie.
+ */
+function estEtablieEtPositive(difference: { readonly difference: number | null; readonly qualificatif: DifferenceTaux["qualificatif"] }): boolean {
+  return difference.qualificatif === "etablie" && difference.difference !== null && difference.difference > 0;
 }
 
 /**
  * La différence de modes d'un outil telle que publiée (§8, 0.25) : web activée moins web
  * désactivée, dans l'ordre de sa clé, comme `conditions.ts` la calcule (bras a = web activée).
- * Elle est lue telle quelle, ni recalculée ni retournée.
  */
 export type DifferenceModesH2 =
-  | {
-      readonly statut: "comparee";
-      /** La clé de bootstrap de la comparaison, telle que publiée : elle nomme le sens a − b. */
-      readonly cle: readonly string[];
-      readonly graine: string;
-      readonly difference: number | null;
-      readonly intervalle: Intervalle95 | null;
-      readonly qualificatif: DifferenceTaux["qualificatif"];
-      readonly grappes_appariees: number;
-      readonly grappes_exclues: readonly Ulid[];
-    }
+  | DifferenceComparee
   /** §8 : un mode « run incomplet » exclut la comparaison. */
   | { readonly statut: "exclue"; readonly couples_incomplets: readonly string[] }
   /** L'outil n'a pas de réponses dans les deux modes : aucune paire n'a été formée. */
@@ -221,7 +246,7 @@ export class ComparaisonsDeModesIncoherentes extends Error {
 export class SigneDifferenceIncoherent extends Error {
   constructor(cle: string, difference: number, intervalle: Intervalle95) {
     super(
-      `H2 : la différence ${cle} vaut ${difference} mais son intervalle établi est [${intervalle.bas}, ${intervalle.haut}] : ` +
+      `La différence ${cle} vaut ${difference} mais son intervalle établi est [${intervalle.bas}, ${intervalle.haut}] : ` +
         "le signe de la différence n'est pas décidable.",
     );
     this.name = "SigneDifferenceIncoherent";
@@ -291,7 +316,7 @@ function outilDeLaCle(cle: string, outils: readonly IdentifiantCourt[]): Identif
   return outil_id;
 }
 
-function differencePubliee(comparaison: ComparaisonCondition): DifferenceModesH2 {
+function differencePubliee(comparaison: ComparaisonCondition): DifferenceComparee {
   const { difference } = comparaison;
   verifierSigne(comparaison.cle, difference.difference, difference.intervalle, difference.qualificatif);
   return {
@@ -324,7 +349,206 @@ function verifierSigne(
 /** Une seule grappe (qualificatif `null`) ou une différence non établie : `non_confirmee`. */
 function verdictH2Outil(difference: DifferenceModesH2): VerdictH2Outil {
   if (difference.statut !== "comparee" || difference.difference === null) return "sans_objet";
-  return difference.qualificatif === "etablie" && difference.difference > 0 ? "confirmee" : "non_confirmee";
+  return estEtablieEtPositive(difference) ? "confirmee" : "non_confirmee";
+}
+
+/* ------------------------------------------------------------------ H3 */
+
+/**
+ * La strate de la clé de graine de la différence de H3 (§8, « Graines de l'analyse »). Le §8 ne
+ * nomme pas de strate pour une restriction au type de l'item principal : ce composant est choisi
+ * ici, sur le modèle `<dimension>:<valeur>` des autres strates, pour que la différence de H3
+ * (`bootstrap / exactitude / type_item:F+O / <outil>:<mode>:neutre-oriente`) ait sa propre graine,
+ * distincte de la paire neutre − orientée sur tous les items (`… / global / …`).
+ */
+export const STRATE_H3 = "type_item:F+O";
+
+/** Pourquoi un couple est « sans objet » pour H3. */
+export type MotifSansObjetH3 =
+  /** §2 : « marqué run incomplet (section 8) ». */
+  | "couple_incomplet"
+  /** Couple comparé sans réponse à une question F ou O dans le registre neutre ou l'orienté. */
+  | "paire_absente"
+  /** La paire est formée, mais l'un des registres n'a aucune réponse classée : pas d'exactitude. */
+  | "exactitude_indefinie";
+
+export interface CoupleH3 {
+  readonly cle: string;
+  readonly verdict: VerdictHypothese;
+  /** `null` hors d'un verdict « sans objet ». */
+  readonly motif: MotifSansObjetH3 | null;
+  /** Neutre moins orientée, telle que publiée ; `null` sans paire comparée. */
+  readonly difference: DifferenceComparee | null;
+}
+
+export class ComparaisonsH3Incoherentes extends Error {
+  constructor(detail: string) {
+    super(`H3 : ${detail}`);
+    this.name = "ComparaisonsH3Incoherentes";
+  }
+}
+
+/**
+ * §2 (0.27, D63) : « H3 est confirmée pour un couple outil × mode comparé quand la différence
+ * appariée de son exactitude, formulation neutre moins formulation orientée, restreinte aux
+ * questions dont l'item principal est un item F ou O, est établie (section 8) et positive. Un
+ * couple qui n'est pas comparé, c'est-à-dire sans objet ou marqué « run incomplet » (section 8),
+ * est publié « sans objet » pour H3. H3 n'a pas de verdict global : elle est publiée couple par
+ * couple. »
+ *
+ * `comparaisons` : ce que `pairesDeH3` puis `comparerConditions` rendent. Une ligne par couple du
+ * partage, comparés puis incomplets, dans l'ordre du partage. Une différence ni établie ni non
+ * établie (une seule grappe, ou la règle du zéro observé du §8 quand elle rend un qualificatif
+ * nul) n'est pas établie : le couple est `non_confirmee`.
+ */
+export function decisionH3(couples: PartageCouples, comparaisons: ComparaisonsDeConditions): CoupleH3[] {
+  const parCle = indexerH3(comparaisons, couples);
+  return [
+    ...couples.compares.map((couple) => coupleCompareH3(cleCouple(couple), parCle.get(cleComparaisonH3(couple)))),
+    ...couples.incomplets.map((couple): CoupleH3 => ({ cle: cleCouple(couple), verdict: "sans_objet", motif: "couple_incomplet", difference: null })),
+  ];
+}
+
+function indexerH3(entree: ComparaisonsDeConditions, couples: PartageCouples): Map<string, ComparaisonCondition> {
+  const compares = new Set(couples.compares.map(cleComparaisonH3));
+  const incomplets = new Set(couples.incomplets.map(cleComparaisonH3));
+  const parCle = new Map<string, ComparaisonCondition>();
+  for (const comparaison of entree.comparaisons) {
+    if (!compares.has(comparaison.cle)) throw new ComparaisonsH3Incoherentes(`comparaison « ${comparaison.cle} » hors des couples comparés.`);
+    if (parCle.has(comparaison.cle)) throw new ComparaisonsH3Incoherentes(`comparaison « ${comparaison.cle} » fournie deux fois.`);
+    parCle.set(comparaison.cle, comparaison);
+  }
+  for (const exclue of entree.paires_exclues) {
+    if (!incomplets.has(exclue.cle)) throw new ComparaisonsH3Incoherentes(`paire exclue « ${exclue.cle} » hors des couples incomplets.`);
+  }
+  return parCle;
+}
+
+function coupleCompareH3(cle: string, comparaison: ComparaisonCondition | undefined): CoupleH3 {
+  if (comparaison === undefined) return { cle, verdict: "sans_objet", motif: "paire_absente", difference: null };
+  const difference = differencePubliee(comparaison);
+  if (difference.difference === null) return { cle, verdict: "sans_objet", motif: "exactitude_indefinie", difference };
+  return { cle, verdict: estEtablieEtPositive(difference) ? "confirmee" : "non_confirmee", motif: null, difference };
+}
+
+/* ------------------------------------------------------------------ H5 */
+
+/** La tendance d'un couple telle que publiée : dernier run moins premier (`tendance.ts`). */
+export interface TendancePubliee {
+  readonly cle: readonly string[];
+  readonly graine: string;
+  readonly difference: number | null;
+  readonly intervalle: Intervalle95 | null;
+  readonly qualificatif: DifferenceTaux["qualificatif"];
+  readonly questions_communes: number;
+  readonly questions_exclues: readonly string[];
+}
+
+/** Pourquoi un couple est « sans objet » pour H5. */
+export type MotifSansObjetH5 =
+  /** §8 : « marqué run incomplet au premier ou au dernier run », il sort de la comparaison. */
+  | "couple_exclu_de_la_tendance"
+  /** Le couple n'a pas de différence : présent à un seul run, ou sans réponse classée commune. */
+  | "tendance_indefinie";
+
+export interface CoupleH5 {
+  readonly cle: string;
+  readonly verdict: VerdictHypothese;
+  readonly motif: MotifSansObjetH5 | null;
+  readonly tendance: TendancePubliee | null;
+  /** Le run où le couple est incomplet (§8 : « rapporté avec le run où il est incomplet »). */
+  readonly exclusion: { readonly incomplet_au_premier: boolean; readonly incomplet_au_dernier: boolean } | null;
+}
+
+export interface DecisionH5Outil {
+  readonly outil_id: IdentifiantCourt;
+  readonly verdict: VerdictHypothese;
+  readonly couples: readonly CoupleH5[];
+}
+
+export interface DecisionH5 {
+  /** §8 : les questions sorties de la comparaison parce qu'un de leurs textes a changé. */
+  readonly questions_texte_change: number;
+  readonly outils: readonly DecisionH5Outil[];
+}
+
+export class TendanceIncoherente extends Error {
+  constructor(detail: string) {
+    super(`H5 : ${detail}`);
+    this.name = "TendanceIncoherente";
+  }
+}
+
+/**
+ * §2 (0.27, D63) : « H5 est confirmée pour un outil quand la tendance de son exactitude (section 8)
+ * est établie et positive. Un couple outil × mode qui sort de la comparaison de tendance (section
+ * 8) est publié « sans objet » pour H5. »
+ *
+ * D70 (décision de la session principale, que le §2 ne dit pas) : pour un outil à deux modes
+ * comparés, H5 est confirmée pour l'outil seulement quand la tendance est établie et positive pour
+ * **chacun** de ses couples comparés dans la tendance ; au moins un couple comparé sans que tous
+ * soient confirmés, l'outil est « non confirmée » ; aucun couple comparé, il est « sans objet ».
+ * Le résultat de chaque couple est publié.
+ *
+ * `outils` : les assistants inclus du dernier run. Une ligne de tendance d'un autre outil lève :
+ * le §2 ne dit pas ce que devient un outil sorti du périmètre entre les deux runs.
+ */
+export function decisionH5(outils: readonly IdentifiantCourt[], tendance: TendanceDuRun): DecisionH5 {
+  verifierOutils(outils, "H5");
+  verifierOutilsDeLaTendance(tendance, outils);
+  return {
+    questions_texte_change: tendance.questions_texte_change,
+    outils: outils.map((outil_id) => decisionH5Outil(outil_id, tendance)),
+  };
+}
+
+function verifierOutilsDeLaTendance(tendance: TendanceDuRun, outils: readonly IdentifiantCourt[]): void {
+  const declares = new Set(outils);
+  for (const couple of [...tendance.par_outil_et_mode, ...tendance.couples_exclus]) {
+    if (!declares.has(couple.outil_id)) throw new TendanceIncoherente(`couple ${cleCouple(couple)} d'un outil que le dernier run ne déclare pas.`);
+  }
+}
+
+function decisionH5Outil(outil_id: IdentifiantCourt, tendance: TendanceDuRun): DecisionH5Outil {
+  const couples = [
+    ...tendance.par_outil_et_mode.filter((l) => l.outil_id === outil_id).map(coupleCompareH5),
+    ...tendance.couples_exclus.filter((c) => c.outil_id === outil_id).map(coupleExcluH5),
+  ];
+  return { outil_id, verdict: verdictH5Outil(couples), couples };
+}
+
+function coupleCompareH5(ligne: TendanceOutilEtMode): CoupleH5 {
+  const { difference } = ligne;
+  verifierSigne(difference.cle.join(" / "), difference.difference, difference.intervalle, difference.qualificatif);
+  const tendance: TendancePubliee = {
+    cle: difference.cle,
+    graine: difference.graine,
+    difference: difference.difference,
+    intervalle: difference.intervalle,
+    qualificatif: difference.qualificatif,
+    questions_communes: ligne.questions_communes,
+    questions_exclues: ligne.questions_exclues,
+  };
+  const cle = cleCouple(ligne);
+  if (difference.difference === null) return { cle, verdict: "sans_objet", motif: "tendance_indefinie", tendance, exclusion: null };
+  return { cle, verdict: estEtablieEtPositive(difference) ? "confirmee" : "non_confirmee", motif: null, tendance, exclusion: null };
+}
+
+function coupleExcluH5(couple: CoupleExcluDeLaTendance): CoupleH5 {
+  return {
+    cle: cleCouple(couple),
+    verdict: "sans_objet",
+    motif: "couple_exclu_de_la_tendance",
+    tendance: null,
+    exclusion: { incomplet_au_premier: couple.incomplet_au_premier, incomplet_au_dernier: couple.incomplet_au_dernier },
+  };
+}
+
+/** D70 : confirmée seulement si chaque couple comparé l'est ; sans objet sans couple comparé. */
+function verdictH5Outil(couples: readonly CoupleH5[]): VerdictHypothese {
+  const compares = couples.filter((c) => c.verdict !== "sans_objet");
+  if (compares.length === 0) return "sans_objet";
+  return compares.every((c) => c.verdict === "confirmee") ? "confirmee" : "non_confirmee";
 }
 
 /* ------------------------------------------------------------------ H4 */
@@ -332,7 +556,7 @@ function verdictH2Outil(difference: DifferenceModesH2): VerdictH2Outil {
 /** §2 (0.24) : « valeur p corrigée strictement inférieure à 0,05 ». */
 export const SEUIL_H4 = 0.05;
 
-export type VerdictH4 = "confirmee" | "infirmee" | "indecidable";
+export type VerdictH4 = "confirmee" | "non_confirmee" | "indecidable";
 
 export interface DecisionH4 {
   readonly verdict: VerdictH4;
@@ -357,5 +581,5 @@ export function decisionH4(famille: FamilleAsymetrie): DecisionH4 {
 
 function verdictH4(testes: number, sousLeSeuil: number): VerdictH4 {
   if (testes === 0) return "indecidable";
-  return sousLeSeuil > 0 ? "confirmee" : "infirmee";
+  return sousLeSeuil > 0 ? "confirmee" : "non_confirmee";
 }
