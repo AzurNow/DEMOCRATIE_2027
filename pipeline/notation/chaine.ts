@@ -84,6 +84,7 @@ import { TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
 import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
 import { candidatsInterroges as candidatsInterrogesDuRun } from "../../analysis/candidats-interroges.ts";
+import { candidatsElimines } from "./elimines.ts";
 
 /** Une réponse obtenue du run, avec sa question posée, ses items épinglés et ce que le tirage a résolu au gel. */
 export interface ReponseANoter {
@@ -184,6 +185,8 @@ interface Etat {
   readonly candidats: readonly CandidatDuRun[];
   /** Les candidats interrogés au run : la note d'une Q-ATT les distingue (D29 (1)). */
   readonly interroges: readonly string[];
+  /** Les éliminés du premier tour : la note d'une Q-ATT les écarte (§7, D70 (7)). */
+  readonly elimines: readonly string[];
   readonly depot: DepotNotation;
   /** Rangées par identifiant croissant. */
   readonly reponses: readonly Preparee[];
@@ -237,6 +240,7 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
     run,
     candidats: runDeNotationDe(run).candidats,
     interroges: candidatsInterrogesDuRun(run.perimetre.candidats).map((candidat) => candidat.candidat_id),
+    elimines: candidatsElimines(run.perimetre),
     depot,
     reponses: preparees,
     parId: indexerReponses(preparees, run.id),
@@ -372,6 +376,7 @@ async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible
       reponse_attendue: cible.demande.resolu_au_gel.reponse_attendue,
       candidats: etat.candidats,
       interroges: etat.interroges,
+      elimines: etat.elimines,
       registre: cible.demande.question.registre,
       premisse_fausse: cible.demande.resolu_au_gel.premisse_fausse,
       version_charge: charge.version_charge,

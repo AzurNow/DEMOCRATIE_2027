@@ -86,7 +86,7 @@ function contexte(options: OptionsContexte = {}): ContexteNotationHumaine {
     vue,
     items,
     date_gel,
-    perimetre: { candidats: CANDIDATS_DU_RUN, interroges: CANDIDATS_DU_RUN.map((c) => c.candidat_id) },
+    perimetre: { candidats: CANDIDATS_DU_RUN, interroges: CANDIDATS_DU_RUN.map((c) => c.candidat_id), elimines: [] },
     resolu_au_gel: options.resolu ?? RESOLU_POSITION_POUR,
     ...options.surcharges,
   };
@@ -219,7 +219,7 @@ describe("notation acceptée", () => {
     expect(codes(construireNotationHumaine(incoherent, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })))).toEqual(["attribution_incoherente"]);
     // Ollivier (gamma) est au périmètre sans être interrogé : aucun texte ne dit si le citer est une erreur.
     const horsRun: SaisieHumaine = { cite: false, soutiens: [], noms_cites: ["Martinez", "Ollivier"], non_reponse: false, indeterminee: false };
-    const ctx = contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA, surcharges: { perimetre: { candidats: CANDIDATS_DU_RUN, interroges: ["demo-alpha", "demo-beta"] } } });
+    const ctx = contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA, surcharges: { perimetre: { candidats: CANDIDATS_DU_RUN, interroges: ["demo-alpha", "demo-beta"], elimines: [] } } });
     expect(codes(construireNotationHumaine(horsRun, ctx))).toEqual(["attribution_indecidable"]);
   });
 
@@ -233,7 +233,7 @@ describe("notation acceptée", () => {
       [
         "candidat du périmètre non interrogé cité sur une mesure réelle",
         releve(["Martinez", "Ollivier"]),
-        contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA, surcharges: { perimetre: { candidats: CANDIDATS_DU_RUN, interroges: ["demo-alpha", "demo-beta"] } } }),
+        contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA, surcharges: { perimetre: { candidats: CANDIDATS_DU_RUN, interroges: ["demo-alpha", "demo-beta"], elimines: [] } } }),
       ],
       [
         "nom ambigu dont un candidat possible est attendu",
@@ -241,7 +241,7 @@ describe("notation acceptée", () => {
         contexte({
           gabarit: "Q-ATT",
           resolu: { ...QATT_ALPHA, reponse_attendue: { ...QATT_ALPHA.reponse_attendue, candidats_attendus: ["demo-alpha", "demo-epsilon"], candidats_references: ["demo-alpha", "demo-beta", "demo-epsilon", "demo-gamma"] } },
-          surcharges: { perimetre: { candidats: HOMONYMES, interroges: HOMONYMES.map((c) => c.candidat_id) } },
+          surcharges: { perimetre: { candidats: HOMONYMES, interroges: HOMONYMES.map((c) => c.candidat_id), elimines: [] } },
         }),
       ],
       ["Q-ATT orientée à prémisse fausse avec un nom cité", releve(["Martinez"]), contexte({ gabarit: "Q-ATT", resolu: FICTIVE, registre: "oriente" })],

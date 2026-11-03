@@ -179,6 +179,7 @@ export const CADRE_V3 = {
   reponse_attendue: RESOLU_POSITION_POUR.reponse_attendue,
   candidats: CANDIDATS_DU_RUN,
   interroges: CANDIDATS_DU_RUN.map((c) => c.candidat_id),
+  elimines: [],
   registre: "neutre",
   premisse_fausse: false,
   version_charge: VERSION_CHARGE_JUGE,
