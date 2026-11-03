@@ -109,7 +109,7 @@ describe("les dix cases de l'annexe F", () => {
   });
 
   it("sans fichier qui les porte, les cases 2 et 7 sont non faites (D25 (3)), et restent calculées", () => {
-    const constats = [...CONSTATS_FAITS.filter((c) => c.nom !== "items_absence_reverifies" && c.nom !== "robustesse_calculee"), constatItemsAbsenceReverifies(), constatRobustesseCalculee()];
+    const constats = [...CONSTATS_FAITS.filter((c) => c.nom !== "items_absence_reverifies" && c.nom !== "robustesse_calculee"), constatItemsAbsenceReverifies(), constatRobustesseCalculee(null)];
     const checklist = construireChecklist(RUN_ID, criteres(), constats);
     const parRang = new Map(checklist.cases.map((c) => [c.rang, c]));
     expect(parRang.get(2)).toMatchObject({ nature: "calculee", etat: "non_faite" });

@@ -13,7 +13,8 @@ import type { Mode, Reponse } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ReponsesEnAttenteOperateur } from "../../pipeline/interrogation/attente-operateur.ts";
 import type { Checklist } from "../../pipeline/go-no-go/checklist.ts";
-import { FormatMetriquesNonDefini, GoNoGoDivergent, GoNoGoRefuse, goNoGo } from "../../pipeline/go-no-go/go-no-go.ts";
+import { GoNoGoDivergent, GoNoGoRefuse, goNoGo } from "../../pipeline/go-no-go/go-no-go.ts";
+import { MetriquesSansFichier } from "../../pipeline/go-no-go/metriques.ts";
 import { PlanNonReconstructible } from "../../pipeline/interrogation/plan-du-run.ts";
 import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { JournalRequete, nomJournal } from "../../pipeline/interrogation/journal.ts";
@@ -296,12 +297,13 @@ describe("pnpm go-no-go, refus", () => {
   );
 
   it(
-    "metriques/ présent sans format défini : arrêt, rien n'est écrit",
+    "metriques/ présent sans metriques.json : arrêt (MetriquesSansFichier), rien n'est écrit",
     async () => {
       const run = await runSimuleNote();
       mkdirSync(join(run, "metriques"));
       const avant = octets(run, "run.json");
-      expect(() => goNoGo(run)).toThrow(FormatMetriquesNonDefini);
+      expect(() => goNoGo(run)).toThrow(MetriquesSansFichier);
+      expect(octets(run, "checklist.json")).toBeNull();
       expect(octets(run, "run.json")).toEqual(avant);
     },
     TEMPS,

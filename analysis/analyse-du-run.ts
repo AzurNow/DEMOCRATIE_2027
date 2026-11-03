@@ -449,6 +449,7 @@ const CHAMPS_GO_NO_GO_DU_RUN = [
   "go_no_go",
   "motif_provisoire",
   "indeterminees_echantillon_humain",
+  "non_classees_echantillon_humain",
   "renvois_attribution_indecidable",
   "refus_api_echantillon_humain",
   "accord_humains_echantillon",

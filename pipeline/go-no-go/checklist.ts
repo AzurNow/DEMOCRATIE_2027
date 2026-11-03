@@ -10,14 +10,16 @@
  *
  * Une case calculée est `faite` si tous ses appuis le sont ; sinon `non_faite`, avec un motif qui
  * nomme chaque appui manquant. D25 (3) : chaque partie du texte d'une case calculée a son appui ;
- * celles qu'aucun fichier ne porte encore (« Items d'absence revérifiés », « robustesse calculée »)
- * ont un constat non fait qui le dit, jamais un constat fait par défaut.
+ * celles qu'aucun fichier ne porte encore (« Items d'absence revérifiés ») ou qu'un fichier ne porte
+ * qu'en partie (« robustesse calculée », dont la robustesse des différences est à venir) ont un
+ * constat non fait qui le dit, jamais un constat fait par défaut.
  */
 
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import type { Ulid } from "../../analysis/types.ts";
 import { FenetreRefusee, ouvrirFenetre, tentativePeutDemarrer, type Fenetre } from "../interrogation/fenetre.ts";
 import { lireInstant } from "../interrogation/heure-paris.ts";
+import type { RobustesseLue } from "./metriques.ts";
 import type { CodeCritere, Critere } from "./types.ts";
 
 export type NatureCase = "calculee" | "declaree";
@@ -119,16 +121,26 @@ export function constatItemsAbsenceReverifies(): Constat {
   };
 }
 
+/** Le libellé de chaque section de robustesse de `metriques.json` dans le motif de la case 7. */
+const SECTIONS_DE_ROBUSTESSE: readonly { readonly section: keyof RobustesseLue; readonly libelle: string }[] = [
+  { section: "taux", libelle: "robustesse des taux" },
+  { section: "differences", libelle: "robustesse des différences" },
+];
+
 /**
- * « robustesse calculée » (D25 (3)) : les recalculs de robustesse du §8 n'ont pas encore de fichier
- * (aucun format de `metriques/`). Non faite tant que rien ne les porte.
+ * « robustesse calculée » (annexe F, D25 (3)) : les deux sections `robustesse` de `metriques.json`
+ * (`pipeline/go-no-go/metriques.ts`) sont `calcule`. Une section `sans_objet`, quel qu'en soit le
+ * motif (`calcul_a_venir` pour les différences tant que le sous-lot B n'est pas écrit), laisse la
+ * case non faite et le motif la nomme ; `null` (`metriques/` absent) aussi. Jamais faite par défaut.
  */
-export function constatRobustesseCalculee(): Constat {
-  return {
-    nom: "robustesse_calculee",
-    fait: false,
-    detail: "robustesse : aucun format de runs/<date>/metriques/ ne la porte encore",
-  };
+export function constatRobustesseCalculee(robustesse: RobustesseLue | null): Constat {
+  const nom = "robustesse_calculee";
+  if (robustesse === null) return { nom, fait: false, detail: "robustesse : runs/<date>/metriques/metriques.json absent (pnpm analyze)" };
+  const manques = SECTIONS_DE_ROBUSTESSE.flatMap(({ section, libelle }) => {
+    const lue = robustesse[section];
+    return lue.statut === "calcule" ? [] : [`${libelle} non calculée (${lue.motif})`];
+  });
+  return { nom, fait: manques.length === 0, detail: manques.join(" ; ") };
 }
 
 /** Ce que le constat de la fenêtre lit d'une réponse : où elle a été obtenue, et quand chaque tentative a démarré. */

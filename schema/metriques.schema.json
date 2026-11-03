@@ -13,7 +13,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["run_json_sha256", "tirage_sha256", "donnees_commit", "reponses_lues", "reponses_obtenues", "reponses_manquantes", "verdicts_lus", "notations_lues"],
-      "description": "Ce que l'analyse a lu. run_json_sha256 est le SHA-256 de la forme canonique de run.json (clés triées, validation/domaine/empreinte.ts:canoniser) sans les champs que pnpm go-no-go écrit ensuite : go_no_go, motif_provisoire, indeterminees_echantillon_humain, renvois_attribution_indecidable, refus_api_echantillon_humain, accord_humains_echantillon, juges[].kappa_echantillon_humain, juges[].motif_indefini_kappa_echantillon_humain, juges[].renvois_ecartes_kappa_echantillon et perimetre.outils[].par_mode.",
+      "description": "Ce que l'analyse a lu. run_json_sha256 est le SHA-256 de la forme canonique de run.json (clés triées, validation/domaine/empreinte.ts:canoniser) sans les champs que pnpm go-no-go écrit ensuite : go_no_go, motif_provisoire, indeterminees_echantillon_humain, non_classees_echantillon_humain, renvois_attribution_indecidable, refus_api_echantillon_humain, accord_humains_echantillon, juges[].kappa_echantillon_humain, juges[].motif_indefini_kappa_echantillon_humain, juges[].renvois_ecartes_kappa_echantillon et perimetre.outils[].par_mode.",
       "properties": {
         "run_json_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
         "tirage_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
