@@ -397,8 +397,9 @@ describe("exemples de schema/exemples/", () => {
   // 368 → 369 : §7, D64 et D70, un invalide de run (go/no-go sans non_classees_echantillon_humain).
   // 369 → 370 : §2, protocole 0.27 (D67), un invalide de H1 « infirmée ».
   // 370 → 372 : §3, protocole 0.28 (D70 (6)), deux invalides de run (notice de l'institut absente ; sans archive).
-  it("charge les 372 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(372);
+  // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides de recalcul-b.
+  it("charge les 376 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(376);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

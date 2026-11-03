@@ -40,6 +40,7 @@
     "notation:controle": "node --experimental-strip-types outils/notation-controle.ts",
     "notation:dry": "node --experimental-strip-types outils/notation-dry.ts",
     "analyze": "node --experimental-strip-types outils/analyze.ts",
+    "recalcul-b": "node --experimental-strip-types outils/recalcul-b.ts",
     "go-no-go": "node --experimental-strip-types outils/go-no-go.ts",
     "go-no-go:contresigner": "node --experimental-strip-types outils/go-no-go-contresigner.ts",
     "proprete": "node --experimental-strip-types outils/proprete.ts",

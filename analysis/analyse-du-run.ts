@@ -215,12 +215,12 @@ function sansObjet(motif: MotifSansObjet): SansObjet {
 }
 
 /** Une section par couple comparé n'a pas d'objet quand le partage n'en compte aucun. */
-function surCouplesCompares<T>(contexte: ContexteDuRun, contenu: () => T): Section<T> {
+export function surCouplesCompares<T>(contexte: ContexteDuRun, contenu: () => T): Section<T> {
   if (contexte.couples.compares.length === 0) return sansObjet("aucun_couple_compare");
   return { statut: "calcule", ...contenu() };
 }
 
-function optionsBootstrap(contexte: ContexteDuRun): { readonly reechantillonnages: number; readonly graine_du_run: number } {
+export function optionsBootstrap(contexte: ContexteDuRun): { readonly reechantillonnages: number; readonly graine_du_run: number } {
   return { reechantillonnages: contexte.parametres.reechantillonnages, graine_du_run: contexte.graines.bootstrap };
 }
 
@@ -442,10 +442,16 @@ export function collecterGraines(document: object): GrainePubliee[] {
 /* ------------------------------------------------------------------ document */
 
 /**
- * Les champs que `pnpm go-no-go` écrit dans `run.json` après l'analyse (`pipeline/go-no-go/go-no-go.ts:
- * fusionner`) : hors de l'empreinte, pour qu'une analyse relancée après le go/no-go reste identique.
+ * Les champs que `run.json` reçoit après l'analyse, hors de l'empreinte pour qu'une analyse relancée
+ * ensuite reste identique : ceux que `pnpm go-no-go` y écrit (`pipeline/go-no-go/go-no-go.ts:
+ * fusionner`), et le statut, la publication et le dépôt (§9, protocole 0.28, D70 (13) : « celle du
+ * fichier du run étant calculée hors des champs de statut, de publication et de dépôt, que ce
+ * fichier reçoit après l'analyse »).
  */
-const CHAMPS_GO_NO_GO_DU_RUN = [
+const CHAMPS_APRES_ANALYSE_DU_RUN = [
+  "statut",
+  "publication",
+  "depot",
   "go_no_go",
   "motif_provisoire",
   "indeterminees_echantillon_humain",
@@ -468,19 +474,19 @@ function chaqueSans(liste: unknown, champs: readonly string[]): unknown {
   return liste.map((element: Objet) => sans(element, champs));
 }
 
-/** SHA-256 de la forme canonique de `run.json`, sans les champs du go/no-go. */
+/** SHA-256 de la forme canonique de `run.json`, sans les champs qu'il reçoit après l'analyse. */
 export function empreinteDuRun(run: object): string {
   const brut = run as Objet;
   const perimetre = brut["perimetre"] as Objet;
   const reduit = {
-    ...sans(brut, CHAMPS_GO_NO_GO_DU_RUN),
+    ...sans(brut, CHAMPS_APRES_ANALYSE_DU_RUN),
     juges: chaqueSans(brut["juges"], CHAMPS_GO_NO_GO_DU_JUGE),
     perimetre: { ...perimetre, outils: chaqueSans(perimetre["outils"], CHAMPS_GO_NO_GO_DE_L_OUTIL) },
   };
   return createHash("sha256").update(canoniser(reduit), "utf8").digest("hex");
 }
 
-function entreesPubliees(entrees: EntreesDuRun): object {
+export function entreesPubliees(entrees: EntreesDuRun): object {
   const duRun = entrees.reponses.filter(estDuRun);
   return {
     run_json_sha256: empreinteDuRun(entrees.run),
@@ -494,7 +500,7 @@ function entreesPubliees(entrees: EntreesDuRun): object {
   };
 }
 
-function populationDe(contexte: ContexteDuRun): object {
+export function populationDe(contexte: ContexteDuRun): object {
   return {
     regime_inclusion: contexte.regime_inclusion,
     couples_compares: contexte.couples.compares,

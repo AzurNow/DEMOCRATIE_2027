@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:recalcul-b",
+  "title": "Recalcul (b) daté d'un run",
+  "description": "§8 et §9 (protocole 0.28, D70 (13)) : runs/<date>/metriques/recalcul-b-<AAAA-MM-JJ>.json, écrit par pnpm recalcul-b (analysis/recalcul-b.ts) à côté de metriques.json, jamais à sa place ni réécrit. Le recalcul (b) du §8, « en excluant les questions dont un item, quel que soit son rôle, est contesté à un run ultérieur », mis à jour sur les contestations postérieures connues à la date du calcul, avec le partage, les strates, les paramètres et les graines du calcul principal de metriques.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "date", "reference", "entrees", "parametres", "recalcul", "identique_a_la_reference", "graines"],
+  "properties": {
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile", "description": "Le jour du calcul, heure de Paris ; il nomme le fichier." },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fichier", "metriques_json_sha256", "run_json_sha256"],
+      "description": "Le fichier des métriques du run, à côté duquel ce recalcul est publié : son nom, le SHA-256 de ses octets et l'empreinte de run.json qu'il épingle (entrees.run_json_sha256).",
+      "properties": {
+        "fichier": { "const": "metriques.json" },
+        "metriques_json_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "run_json_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+      }
+    },
+    "entrees": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_json_sha256", "tirage_sha256", "donnees_commit", "reponses_lues", "reponses_obtenues", "reponses_manquantes", "verdicts_lus", "notations_lues", "contestations_lues", "contestations_sha256"],
+      "description": "Ce que le recalcul a lu, comme metriques.json#/entrees (run_json_sha256 calculé de la même façon, hors des champs que run.json reçoit après l'analyse), plus les contestations postérieures lues dans run.json, triées par contestation_id, et le SHA-256 de leur forme canonique. Hors run_json_sha256, ces entrées sont égales à celles de metriques.json : sinon le recalcul est refusé.",
+      "properties": {
+        "run_json_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "tirage_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "donnees_commit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git" },
+        "reponses_lues": { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/effectif" },
+        "reponses_obtenues": { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/effectif" },
+        "reponses_manquantes": { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/effectif" },
+        "verdicts_lus": { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/effectif" },
+        "notations_lues": { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/effectif" },
+        "contestations_lues": {
+          "type": "array",
+          "description": "run.json#/contestations_posterieures au moment du calcul, l'entrée exacte de (b) ; vide quand run.json n'en porte aucune.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["item_id", "contestation_id", "date_reception"],
+            "properties": {
+              "item_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+              "contestation_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+              "date_reception": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+            }
+          }
+        },
+        "contestations_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+      }
+    },
+    "parametres": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reechantillonnages", "permutations"],
+      "description": "Repris de metriques.json#/parametres, jamais choisis ici.",
+      "properties": {
+        "reechantillonnages": { "type": "integer", "minimum": 1 },
+        "permutations": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "recalcul": {
+      "description": "Le recalcul (b) seul, sous la forme de son entrée dans metriques.json#/robustesse/taux, sur le partage du calcul principal : sans objet quand aucun couple n'est comparé.",
+      "oneOf": [
+        { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "recalcul", "couples", "couples_incomplets"],
+          "properties": {
+            "statut": { "const": "calcule" },
+            "recalcul": { "const": "items_contestes" },
+            "couples": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/taux_du_couple" } },
+            "couples_incomplets": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/couple" } }
+          }
+        }
+      ]
+    },
+    "identique_a_la_reference": {
+      "type": "boolean",
+      "description": "Vrai si ce recalcul est égal, à la forme canonique près, au recalcul (b) de metriques.json : aucune contestation postérieure n'a changé (b) depuis son calcul. Constaté, jamais supposé."
+    },
+    "graines": {
+      "type": "array",
+      "description": "Chaque clé publiée dans recalcul, une fois, triée (analysis/analyse-du-run.ts:collecterGraines) : celles du calcul principal (§8, « Les recalculs de robustesse gardent la clé de la comparaison principale »).",
+      "items": { "$ref": "urn:banc-essai-2027:schema:metriques#/$defs/graine_nommee" }
+    }
+  }
+}

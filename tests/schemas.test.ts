@@ -145,12 +145,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 368 → 369 : §7, D64 et D70, un invalide de run (go/no-go sans non_classees_echantillon_humain).
   // 369 → 370 : §2, protocole 0.27 (D67), H1 « infirmée » refusée (invalide) ; H3 décidée sans règle devient H3 avec un verdict global.
   // 370 → 372 : §3, protocole 0.28 (D70 (6)), notice de l'institut : deux invalides de run (preuve de sondage sans notice ; notice sans lien d'archive).
-  it("1. les 372 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides du nouveau schéma recalcul-b (autre recalcul ; sans empreinte des métriques ; sans contestations lues).
+  it("1. les 376 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(372);
+    expect(manifeste.exemples).toHaveLength(376);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -171,9 +172,10 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 37 → 38 : lot (manifeste de lot de validation), revue du 2026-10-12, constat 4 (D55 (3)).
   // 38 → 40 : sous-echantillon-application et depot-application (§6, D59 (12), protocole 0.24).
   // 40 → 41 : metriques (runs/<date>/metriques/metriques.json, pnpm analyze, sous-lot A).
-  it("2. les quarante et un schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  // 41 → 42 : recalcul-b (runs/<date>/metriques/recalcul-b-<AAAA-MM-JJ>.json, pnpm recalcul-b, D70 (13)).
+  it("2. les quarante-deux schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(41);
+    expect(conformites).toHaveLength(42);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
@@ -412,7 +414,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 368 → 369 : §7, D64 et D70, un invalide de run.
   // 369 → 370 : §2, protocole 0.27 (D67), un invalide de H1 « infirmée ».
   // 370 → 372 : §3, protocole 0.28 (D70 (6)), deux invalides de run (notice de l'institut absente ; sans archive).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 372 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(372);
+  // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides de recalcul-b.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 376 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(376);
   });
 });
