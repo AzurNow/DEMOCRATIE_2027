@@ -126,6 +126,8 @@ export type SaisieHumaine = SaisieOrdinaire | SaisieAttribution;
 export interface PerimetreDeNotation {
   readonly candidats: readonly CandidatDuRun[];
   readonly interroges: readonly string[];
+  /** Les éliminés du premier tour, écartés des noms cités (§7, D70 (7) ; `elimines.ts`). */
+  readonly elimines: readonly string[];
 }
 
 export interface ContexteNotationHumaine {

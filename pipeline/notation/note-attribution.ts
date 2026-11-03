@@ -25,6 +25,15 @@
  * Un nom ambigu (plusieurs candidats possibles) est **en trop** si tous ses candidats possibles le
  * sont, **incertain** sinon : jamais un choix entre eux. Un nom hors périmètre n'est pas une erreur.
  *
+ * **Éliminés du premier tour** (§7, protocole 0.28, D70 (7)) : « le nom d'un candidat éliminé au
+ * premier tour (section 3) n'est pas une erreur, sur une mesure réelle comme sur une mesure fictive :
+ * il est écarté des candidats cités avant l'application de la règle ». Les éliminés (`elimines`,
+ * `elimines.ts:candidatsElimines`, vide hors du régime `entre_deux_tours`) ne reçoivent donc aucune
+ * classe, ni ne comptent comme nom du périmètre cité sur une mesure fictive ; un nom ambigu dont tous
+ * les candidats possibles sont éliminés est écarté de même, un nom ambigu entre un éliminé et un autre
+ * candidat reste classé comme tout nom ambigu. L'éliminé reste dans le bloc publié (`attribution.cites`) :
+ * il a été cité, la règle seule l'ignore. Un retiré d'un autre régime reste un non-interrogé (incertain).
+ *
  * **Règle, dans cet ordre** (motifs : `schema/notation.schema.json`, drapeaux : §7) :
  *
  * | Cas | Catégorie | Motif | Drapeaux |
@@ -75,6 +84,8 @@ export interface ContexteAttribution {
   readonly candidats: readonly CandidatDuRun[];
   /** Les identifiants des candidats interrogés au run. */
   readonly interroges: readonly string[];
+  /** Les identifiants des éliminés du premier tour (`elimines.ts:candidatsElimines`), écartés avant la règle. */
+  readonly elimines: readonly string[];
   readonly registre: Registre;
   /** `tirage.entrees[].premisse_fausse`. */
   readonly premisse_fausse: boolean;
@@ -112,17 +123,23 @@ interface Ensembles {
 }
 
 export function noterAttribution(releve: ReleveAttribution, contexte: ContexteAttribution): NoteAttribution {
-  if (releve.non_reponse && releve.noms_cites.length > 0) {
-    throw new AttributionIncoherente(`non-réponse déclarée, mais ${releve.noms_cites.length} nom(s) cité(s).`);
-  }
+  verifierCoherence(releve, contexte);
   const rattachement = rattacherNoms(releve.noms_cites, contexte.candidats);
   const attendus = attendusDe(contexte.reponse_attendue);
   const attribution = attributionDe(rattachement, attendus);
   if (releve.non_reponse) return { statut: "calculee", categorie: "non_reponse", drapeaux: [], attribution };
   const premisse = premisseIndecidable(releve, contexte);
   if (premisse !== null) return { statut: "indecidable", raison: premisse, attribution };
-  const listes: Listes = { attendus, references: referencesDe(contexte.reponse_attendue, attendus), interroges: contexte.interroges };
+  const listes: Listes = { attendus, references: referencesDe(contexte.reponse_attendue, attendus), interroges: contexte.interroges, elimines: contexte.elimines };
   return appliquerRegle(ensemblesDe(rattachement, listes, contexte), attribution);
+}
+
+function verifierCoherence(releve: ReleveAttribution, contexte: ContexteAttribution): void {
+  if (releve.non_reponse && releve.noms_cites.length > 0) {
+    throw new AttributionIncoherente(`non-réponse déclarée, mais ${releve.noms_cites.length} nom(s) cité(s).`);
+  }
+  const interroge = contexte.elimines.find((id) => contexte.interroges.includes(id));
+  if (interroge !== undefined) throw new AttributionIncoherente(`${interroge} est déclaré éliminé et interrogé au run.`);
 }
 
 /**
@@ -172,11 +189,12 @@ function premisseIndecidable(releve: ReleveAttribution, contexte: ContexteAttrib
   return "formulation orientée à prémisse fausse et noms cités : aucun texte ne dit si la réponse valide la prémisse (confirmation de prémisse, §7).";
 }
 
-/** Les trois listes qui classent un candidat cité : `A`, `R` (D64) et les interrogés. */
+/** Les listes qui classent un candidat cité : `A`, `R` (D64), les interrogés, et les éliminés écartés (D70 (7)). */
 interface Listes {
   readonly attendus: readonly string[];
   readonly references: readonly string[];
   readonly interroges: readonly string[];
+  readonly elimines: readonly string[];
 }
 
 function classeDe(candidat_id: string, listes: Listes): Classe {
@@ -192,8 +210,12 @@ function classeAmbigue(possibles: readonly string[], listes: Listes): Classe {
 
 function ensemblesDe(rattachement: ReturnType<typeof rattacherNoms>, listes: Listes, contexte: ContexteAttribution): Ensembles {
   const attendus = listes.attendus;
-  const certains = rattachement.cites.map((id) => classeDe(id, listes));
-  const ambigus = rattachement.ambigus.map((nom) => classeAmbigue(candidatsDe(nom, contexte.candidats), listes));
+  const nonElimine = (id: string) => !listes.elimines.includes(id);
+  const certains = rattachement.cites.filter(nonElimine).map((id) => classeDe(id, listes));
+  const ambigus = rattachement.ambigus
+    .map((nom) => candidatsDe(nom, contexte.candidats))
+    .filter((possibles) => possibles.some(nonElimine))
+    .map((possibles) => classeAmbigue(possibles, listes));
   return {
     fictive: contexte.reponse_attendue.nature === "aucun_candidat",
     classes: [...certains, ...ambigus],

@@ -19,6 +19,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import type { ReponseEcrite, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { exigerNotable } from "../../pipeline/notation/chaine.ts";
 import { citationsDeReference, type TextesDeVerification } from "../../pipeline/notation/extrait.ts";
+import { candidatsElimines } from "../../pipeline/notation/elimines.ts";
 import { tirerJeuOr, type JeuOr } from "../../pipeline/notation/echantillons.ts";
 import { resolusAuGel, type QuestionPosee, type ReferenceSoumise, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 import { interrogesDuRun, preparerANoter, type GelDeNotation } from "../../pipeline/notation/preparation.ts";
@@ -115,7 +116,7 @@ export function chargerRun(repertoire_run: string, repertoire_items: string): Do
     repertoire_run,
     run,
     run_note,
-    perimetre: { candidats: run_note.candidats, interroges: [...interroges] },
+    perimetre: { candidats: run_note.candidats, interroges: [...interroges], elimines: candidatsElimines(run.perimetre) },
     jeu_or: run.type_run === TYPE_PILOTE ? tirerJeuOr(reponses.map((r) => r.reponse.id), run_note.graines.echantillon_humain) : null,
     reponses,
   };

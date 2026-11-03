@@ -39,7 +39,7 @@ import type { NomSchema } from "../outils/schemas/noms.ts";
 import { dateParis, lireInstant } from "../pipeline/interrogation/heure-paris.ts";
 import { tableAliasCandidats, type TableAliasCandidats } from "../pipeline/notation/alias-candidats.ts";
 import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain, VerdictProduit } from "../pipeline/notation/types.ts";
-import type { GraineTirage } from "../pipeline/questions/types.ts";
+import type { GraineTirage, RegimeInclusion } from "../pipeline/questions/types.ts";
 import type { StatutRun, TypeRun } from "../pipeline/run/types.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsPublie } from "./accord-humains.ts";
@@ -244,7 +244,12 @@ export interface RunLu extends Run {
   readonly statut: StatutRun;
   /** `run.schema.json`, `type_run` : `pilote` désigne le run qui porte le jeu d'or (D18). */
   readonly type_run: TypeRun;
-  readonly perimetre: { readonly candidats: readonly CandidatDuRunLu[]; readonly outils: Run["perimetre"]["outils"] };
+  readonly perimetre: {
+    /** `run.schema.json#/properties/perimetre/properties/regime_inclusion`, exigé par le schéma ; lu par la notation (D70 (7)). */
+    readonly regime_inclusion: RegimeInclusion;
+    readonly candidats: readonly CandidatDuRunLu[];
+    readonly outils: Run["perimetre"]["outils"];
+  };
   readonly versions: { readonly donnees_commit: string };
   readonly tirage: { readonly chemin: string; readonly sha256: string };
   readonly depot?: { readonly archives: readonly { readonly nom: string; readonly sha256: string }[] };

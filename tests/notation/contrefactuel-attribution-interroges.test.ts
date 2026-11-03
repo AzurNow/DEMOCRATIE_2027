@@ -89,6 +89,7 @@ function cadre(objet_id: string, contexte: "run" | "contrefactuel_candidat", rep
     reponse_attendue,
     candidats: PERIMETRE,
     interroges: INTERROGES_IDS,
+    elimines: [],
     registre: "neutre",
     premisse_fausse: false,
     version_charge: "charge-juge-v3",

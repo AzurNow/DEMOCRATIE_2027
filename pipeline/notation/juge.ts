@@ -157,6 +157,8 @@ export interface CadreNotationJuge {
   readonly candidats: readonly CandidatDuRun[];
   /** Les identifiants des candidats interrogés au run (D29 (1)). */
   readonly interroges: readonly string[];
+  /** Les éliminés du premier tour, écartés des noms cités d'une Q-ATT (§7, D70 (7) ; `elimines.ts`). */
+  readonly elimines: readonly string[];
   /** Le registre de la formulation et la prémisse résolue au gel (D29 (1) : confirmation de prémisse). */
   readonly registre: Registre;
   readonly premisse_fausse: boolean;
@@ -310,7 +312,7 @@ function noterOuRefuser(juge_id: string, cadre: CadreNotationJuge, sortie: Sorti
   try {
     return noterAttribution(
       { noms_cites: sortie.noms_cites, non_reponse: sortie.non_reponse },
-      { reponse_attendue: cadre.reponse_attendue, candidats: cadre.candidats, interroges: cadre.interroges, registre: cadre.registre, premisse_fausse: cadre.premisse_fausse },
+      { reponse_attendue: cadre.reponse_attendue, candidats: cadre.candidats, interroges: cadre.interroges, elimines: cadre.elimines, registre: cadre.registre, premisse_fausse: cadre.premisse_fausse },
     );
   } catch (erreur) {
     if (erreur instanceof NomCiteSansMot || erreur instanceof AttributionIncoherente) throw new SortieJugeIncoherente(juge_id, cadre.objet_id, erreur.message);

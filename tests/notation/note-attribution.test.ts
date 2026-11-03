@@ -30,7 +30,7 @@ const CANDIDATS = [
 const INTERROGES = ["demo-alpha", "demo-beta", "demo-gamma", "demo-epsilon", "demo-zeta"];
 
 function contexte(reponse_attendue: ReponseAttendue = LISTE, surcharges: Partial<ContexteAttribution> = {}): ContexteAttribution {
-  return { reponse_attendue, candidats: CANDIDATS, interroges: INTERROGES, registre: "neutre", premisse_fausse: false, ...surcharges };
+  return { reponse_attendue, candidats: CANDIDATS, interroges: INTERROGES, elimines: [], registre: "neutre", premisse_fausse: false, ...surcharges };
 }
 
 const cites = (noms: readonly string[], c: ContexteAttribution = contexte()) => noterAttribution({ noms_cites: noms, non_reponse: false }, c);
