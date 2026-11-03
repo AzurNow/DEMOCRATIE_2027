@@ -58,8 +58,18 @@ interface DecisionPanelPubliee {
   readonly statut_validation_anterieur: string;
 }
 
-interface ContestationPubliee extends Contestation {
+/** §10 et annexe E (0.29, D71 (8)) : délibération sans majorité, publiée en ajout seul. */
+export interface DeliberationPubliee {
+  readonly date: string;
+  readonly version_jugee: number;
+  /** Une opinion par membre votant, désigné par son nom publié (§10) ; les déportés n'en ont pas. */
+  readonly opinions: readonly { readonly membre: string; readonly vote: DecisionPanel; readonly motivation: string }[];
+  readonly deportes: readonly string[];
+}
+
+export interface ContestationPubliee extends Contestation {
   readonly decision_panel?: DecisionPanelPubliee;
+  readonly deliberations_sans_majorite?: readonly DeliberationPubliee[];
 }
 
 export interface DecisionDuPanel {
@@ -161,11 +171,11 @@ function requis<T>(valeur: readonly T[] | undefined, item: Item, cle: string): r
   return valeur;
 }
 
-function contestationsDe(item: Item): readonly ContestationPubliee[] {
+export function contestationsDe(item: Item): readonly ContestationPubliee[] {
   return requis(item.contestations, item, "contestations") as readonly ContestationPubliee[];
 }
 
-function entreeHistorique(item: Item, version: number, trace: TraceEcriture, changement: string, motif: string) {
+export function entreeHistorique(item: Item, version: number, trace: TraceEcriture, changement: string, motif: string) {
   return [
     ...requis(item.historique, item, "historique"),
     { date: trace.date, changement, motif, commit: trace.commit, version_resultante: version },

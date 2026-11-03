@@ -296,6 +296,49 @@
                 "description": "§10 : si le panel n'est pas constitué, l'auteur arbitre seul et la faiblesse est signalée en tête de rapport. Ce booléen est ce signalement, en données."
               }
             }
+          },
+          "deliberations_sans_majorite": {
+            "type": "array",
+            "minItems": 1,
+            "description": "§10 et annexe E (protocole 0.29, D71 (8)) : « À égalité des voix, rien ne change : l'item reste contesté et hors du tirage, et les opinions de chaque membre sont publiées à côté de l'item, en ajout seul, avec la contestation qu'elles tranchent. » Une entrée par délibération sans majorité sur cette contestation, dans l'ordre où pnpm panel les a enregistrées ; aucune n'est modifiée ni retirée (verifierAjoutSeul). Absent tant qu'aucune délibération sans majorité n'a eu lieu.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["date", "version_jugee", "opinions", "deportes"],
+              "properties": {
+                "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+                "version_jugee": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "La version de l'item sur laquelle le panel a délibéré."
+                },
+                "opinions": {
+                  "type": "array",
+                  "minItems": 2,
+                  "description": "L'opinion motivée de chaque membre votant, et d'eux seuls : le nombre de votants est la longueur de ce tableau. Aucune décision n'y réunit la majorité des votants (contrôlé par pnpm panel).",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["membre", "vote", "motivation"],
+                    "properties": {
+                      "membre": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Le nom publié du membre du panel (§10 : membres nommés publiquement)."
+                      },
+                      "vote": { "$ref": "#/properties/contestations/items/properties/decision_panel/properties/decision" },
+                      "motivation": { "type": "string", "minLength": 1 }
+                    }
+                  }
+                },
+                "deportes": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "description": "§10 : les membres qui se sont déportés de cette délibération, par leur nom publié ; ils ne votent pas et n'ont pas d'opinion publiée. Vide si personne ne s'est déporté.",
+                  "items": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
           }
         }
       }

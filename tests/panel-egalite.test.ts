@@ -7,8 +7,8 @@
  * `item.schema.json`) : une égalité n'en est pas une, et rien ne permet de l'enregistrer comme
  * telle. Ce fichier prouve la moitié conforme de la règle — sans majorité, aucune décision n'est
  * posée, la contestation reste ouverte et l'item hors du tirage — et la non-régression d'une
- * décision à la majorité. La publication des opinions de chaque membre à égalité n'a ni champ ni
- * commande : elle n'est pas testée ici, faute d'exister (question ouverte du lot D70 (10)).
+ * décision à la majorité. La publication des opinions de chaque membre à égalité (protocole 0.29,
+ * D71 (8)) est testée dans `tests/panel-sans-majorite.test.ts`.
  */
 
 import { describe, expect, it } from "vitest";
