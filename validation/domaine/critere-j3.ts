@@ -1,10 +1,12 @@
 /**
- * Critère de passage du jalon J3 (§12, protocole 0.28, D70 (5) ; 0.29, D71 (9)) : « Accord
+ * Critère de passage du jalon J3 (§12, protocole 0.28, D70 (5) ; 0.29, D71 (9) ; 0.30, D72 (8)) : « Accord
  * suffisant […] lu sur l'effectif publié du lot, sur les deux derniers lots réels ou de
  * réannotation de taille conforme (50 items, hors entraînement), dans l'ordre de leur clôture, un
  * lot étant clos quand ses deux annotateurs l'ont terminé, ou, s'il est achevé par une
  * contestation qu'aucun journal d'annotation ne date, à la date de réception de cette
- * contestation, […] celui du lot de réannotation comptant seul quand un lot a été réannoté
+ * contestation, ou, s'il est achevé par plusieurs contestations, à la plus tardive des premières
+ * réceptions de ses items contestés, la fin de ses journaux l'emportant si elle est plus tardive,
+ * […] celui du lot de réannotation comptant seul quand un lot a été réannoté
  * (section 4) ».
  *
  * Rien n'est recalculé ici. L'accord suffisant d'un lot est le champ publié `accord_suffisant`
@@ -22,9 +24,8 @@
  * clôture : la dernière entrée qui achève est donc bien celle de la clôture. Un lot que
  * `lesDeuxOntFini` dit terminé sans que les journaux couvrent chaque item (un item contesté jamais
  * atteint ni journalisé, la contestation ayant achevé le lot après la dernière écriture) est clos,
- * au plus tard, à la date de réception de cette contestation (0.29, voir `clotureDuLot`). Plus
- * d'une contestation candidate : rendu clos sans instant, jamais daté par un choix, et J3 n'est
- * alors pas décidable.
+ * au plus tard, à la date de réception de cette contestation (0.29) ; achevé par plusieurs, à la
+ * plus tardive des premières réceptions de ses items contestés (0.30, voir `clotureDuLot`).
  *
  * **Ex aequo.** Deux lots clos au même instant sont départagés par leur identifiant
  * (`comparerChaines`), comme le §12 l'écrit depuis la 0.29.
@@ -127,16 +128,21 @@ export class ContestationSansDateDeReception extends Error {
   }
 }
 
+function plusPrecoce(a: string, b: string): string {
+  return Date.parse(b) < Date.parse(a) ? b : a;
+}
+
 /**
- * Frontière d'entrée : `Item.contestations` est typé `unknown[]`. Les dates de réception des
- * contestations d'un item non couvert, que `lesDeuxOntFini` a donc sorti du lot pour contestation.
+ * Frontière d'entrée : `Item.contestations` est typé `unknown[]`. Première réception (instant réel
+ * le plus précoce) des contestations d'un item non couvert, que `lesDeuxOntFini` a donc sorti du
+ * lot pour contestation (§12, 0.30) : une recontestation ne déplace pas la clôture.
  */
-function receptionsDe(items: EntreeCloture["items"], item_id: string): string[] {
+function premiereReceptionDe(items: EntreeCloture["items"], item_id: string): string {
   const contestations = items.get(item_id)?.contestations;
   if (contestations === undefined || contestations.length === 0) {
     throw new ContestationSansDateDeReception(item_id, "item sorti pour contestation sans contestation enregistrée");
   }
-  return contestations.map((contestation) => receptionDe(contestation, item_id));
+  return contestations.map((contestation) => receptionDe(contestation, item_id)).reduce(plusPrecoce);
 }
 
 function receptionDe(contestation: unknown, item_id: string): string {
@@ -147,23 +153,23 @@ function receptionDe(contestation: unknown, item_id: string): string {
 }
 
 /**
- * Clôture d'un lot (§12, protocole 0.29, D71 (9)) : « un lot étant clos quand ses deux annotateurs
- * l'ont terminé, ou, s'il est achevé par une contestation qu'aucun journal d'annotation ne date, à
- * la date de réception de cette contestation ».
+ * Clôture d'un lot (§12, protocole 0.29, D71 (9) ; 0.30, D72 (8)) : « un lot étant clos quand ses
+ * deux annotateurs l'ont terminé, ou, s'il est achevé par une contestation qu'aucun journal
+ * d'annotation ne date, à la date de réception de cette contestation, ou, s'il est achevé par
+ * plusieurs contestations, à la plus tardive des premières réceptions de ses items contestés, la
+ * fin de ses journaux l'emportant si elle est plus tardive ».
  *
- * L'instant est le plus tardif des fins lues sur les journaux, chacune sur les items que le journal
- * couvre à la fin, et de la date de réception de la contestation d'un item qu'aucun journal ne
- * couvre. Un lot que les journaux couvrent entièrement est daté par eux seuls, même contesté
- * ensuite. Plus d'une contestation candidate (un item non couvert contesté plusieurs fois, ou
- * plusieurs items non couverts) : « cette contestation » n'est pas identifiable sans choisir, le
- * lot est rendu clos sans instant (question ouverte du lot D71 (9)).
+ * Pour chaque item qu'un journal ne couvre pas à la fin : sa première réception. L'instant est le
+ * plus tardif de ces premières réceptions et des fins lues sur les journaux, chacune sur les items
+ * que le journal couvre à la fin. Un lot que les journaux couvrent entièrement est daté par eux
+ * seuls, même contesté ensuite. `instant` reste `null` si rien ne le date (aucun item couvert,
+ * aucune réception) : jamais une date par défaut.
  */
 export function clotureDuLot(entree: EntreeCloture): Cloture {
   if (!lesDeuxOntFini(entree)) return { clos: false };
   const etats = [...entree.etats.values()];
   const nonCouverts = [...new Set(etats.flatMap((etat) => itemsNonCouverts(entree.lot, etat)))];
-  const receptions = nonCouverts.flatMap((item_id) => receptionsDe(entree.items, item_id));
-  if (receptions.length > 1) return { clos: true, instant: null };
+  const receptions = nonCouverts.map((item_id) => premiereReceptionDe(entree.items, item_id));
   const instants = [...receptions, ...etats.flatMap((etat) => finSurLesItemsCouverts(entree.lot, etat))];
   return { clos: true, instant: instants.length === 0 ? null : instants.reduce(plusTardif) };
 }

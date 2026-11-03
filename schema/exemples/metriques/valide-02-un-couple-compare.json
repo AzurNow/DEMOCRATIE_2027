@@ -4,11 +4,11 @@
     "run_json_sha256": "e5dd49c58802a19613e046f5d326f0b5b69bf68ef79b8502354f412954df0b23",
     "tirage_sha256": "b81afeaf6d6c6567e717c6b5fdef91cacf4bf0b7ec6c70792ec338c83aba6541",
     "donnees_commit": "cccccccccccccccccccccccccccccccccccccccc",
-    "reponses_lues": 12,
-    "reponses_obtenues": 12,
+    "reponses_lues": 24,
+    "reponses_obtenues": 24,
     "reponses_manquantes": 0,
-    "verdicts_lus": 12,
-    "notations_lues": 2
+    "verdicts_lus": 24,
+    "notations_lues": 6
   },
   "parametres": {
     "reechantillonnages": 10,
@@ -65,8 +65,8 @@
             "metrique": "exactitude",
             "strate": "global",
             "taux": {
-              "numerateur": 11,
-              "denominateur": 12,
+              "numerateur": 22,
+              "denominateur": 24,
               "valeur": 0.9166666666666666
             },
             "motif_absence": null,
@@ -96,7 +96,7 @@
             "strate": "global",
             "taux": {
               "numerateur": 0,
-              "denominateur": 12,
+              "denominateur": 24,
               "valeur": 0
             },
             "motif_absence": null,
@@ -125,8 +125,8 @@
             "metrique": "fabrication",
             "strate": "global",
             "taux": {
-              "numerateur": 1,
-              "denominateur": 6,
+              "numerateur": 2,
+              "denominateur": 12,
               "valeur": 0.16666666666666666
             },
             "motif_absence": null,
@@ -200,7 +200,7 @@
             "strate": "global",
             "taux": {
               "numerateur": 0,
-              "denominateur": 2,
+              "denominateur": 4,
               "valeur": 0
             },
             "motif_absence": null,
@@ -230,7 +230,7 @@
             "strate": "global",
             "taux": {
               "numerateur": 0,
-              "denominateur": 12,
+              "denominateur": 24,
               "valeur": 0
             },
             "motif_absence": null,
@@ -259,8 +259,8 @@
             "metrique": "repartition_drapeaux:fabrication",
             "strate": "global",
             "taux": {
-              "numerateur": 1,
-              "denominateur": 1,
+              "numerateur": 2,
+              "denominateur": 2,
               "valeur": 1
             },
             "motif_absence": null,
@@ -290,7 +290,7 @@
             "strate": "global",
             "taux": {
               "numerateur": 0,
-              "denominateur": 1,
+              "denominateur": 2,
               "valeur": 0
             },
             "motif_absence": null,
@@ -320,7 +320,7 @@
             "strate": "global",
             "taux": {
               "numerateur": 0,
-              "denominateur": 1,
+              "denominateur": 2,
               "valeur": 0
             },
             "motif_absence": null,
@@ -350,7 +350,7 @@
             "strate": "global",
             "taux": {
               "numerateur": 0,
-              "denominateur": 1,
+              "denominateur": 2,
               "valeur": 0
             },
             "motif_absence": null,
@@ -380,7 +380,7 @@
             "strate": "global",
             "taux": {
               "numerateur": 0,
-              "denominateur": 1,
+              "denominateur": 2,
               "valeur": 0
             },
             "motif_absence": null,
@@ -409,8 +409,8 @@
             "metrique": "exactitude",
             "strate": "candidat:candidat-a",
             "taux": {
-              "numerateur": 6,
-              "denominateur": 6,
+              "numerateur": 12,
+              "denominateur": 12,
               "valeur": 1
             },
             "motif_absence": null,
@@ -439,8 +439,8 @@
             "metrique": "exactitude",
             "strate": "candidat:candidat-b",
             "taux": {
-              "numerateur": 5,
-              "denominateur": 6,
+              "numerateur": 10,
+              "denominateur": 12,
               "valeur": 0.8333333333333334
             },
             "motif_absence": null,
@@ -469,8 +469,8 @@
             "metrique": "exactitude",
             "strate": "theme:retraites",
             "taux": {
-              "numerateur": 11,
-              "denominateur": 12,
+              "numerateur": 22,
+              "denominateur": 24,
               "valeur": 0.9166666666666666
             },
             "motif_absence": null,
@@ -499,8 +499,8 @@
             "metrique": "exactitude",
             "strate": "gabarit:Q-DIR",
             "taux": {
-              "numerateur": 11,
-              "denominateur": 12,
+              "numerateur": 22,
+              "denominateur": 24,
               "valeur": 0.9166666666666666
             },
             "motif_absence": null,
@@ -529,8 +529,8 @@
             "metrique": "exactitude",
             "strate": "registre:familier",
             "taux": {
-              "numerateur": 4,
-              "denominateur": 4,
+              "numerateur": 8,
+              "denominateur": 8,
               "valeur": 1
             },
             "motif_absence": null,
@@ -559,8 +559,8 @@
             "metrique": "exactitude",
             "strate": "registre:neutre",
             "taux": {
-              "numerateur": 4,
-              "denominateur": 4,
+              "numerateur": 8,
+              "denominateur": 8,
               "valeur": 1
             },
             "motif_absence": null,
@@ -589,8 +589,8 @@
             "metrique": "exactitude",
             "strate": "registre:oriente",
             "taux": {
-              "numerateur": 3,
-              "denominateur": 4,
+              "numerateur": 6,
+              "denominateur": 8,
               "valeur": 0.75
             },
             "motif_absence": null,
@@ -640,8 +640,8 @@
           "valeur_p": 1,
           "permutations": 10,
           "exactitude_outil": {
-            "numerateur": 11,
-            "denominateur": 12,
+            "numerateur": 22,
+            "denominateur": 24,
             "valeur": 0.9166666666666666
           },
           "intervalle_ecart_maximal": {
@@ -667,8 +667,8 @@
             {
               "candidat_id": "candidat-a",
               "exactitude": {
-                "numerateur": 6,
-                "denominateur": 6,
+                "numerateur": 12,
+                "denominateur": 12,
                 "valeur": 1
               },
               "intervalle": {
@@ -695,8 +695,8 @@
             {
               "candidat_id": "candidat-b",
               "exactitude": {
-                "numerateur": 5,
-                "denominateur": 6,
+                "numerateur": 10,
+                "denominateur": 12,
                 "valeur": 0.8333333333333334
               },
               "intervalle": {
@@ -751,13 +751,13 @@
                 ],
                 "graine": "8a55d587b98457ed",
                 "taux_a": {
-                  "numerateur": 4,
-                  "denominateur": 4,
+                  "numerateur": 8,
+                  "denominateur": 8,
                   "valeur": 1
                 },
                 "taux_b": {
-                  "numerateur": 4,
-                  "denominateur": 4,
+                  "numerateur": 8,
+                  "denominateur": 8,
                   "valeur": 1
                 },
                 "difference": 0,
@@ -786,13 +786,13 @@
                 ],
                 "graine": "ca797ab213597aaf",
                 "taux_a": {
-                  "numerateur": 4,
-                  "denominateur": 4,
+                  "numerateur": 8,
+                  "denominateur": 8,
                   "valeur": 1
                 },
                 "taux_b": {
-                  "numerateur": 3,
-                  "denominateur": 4,
+                  "numerateur": 6,
+                  "denominateur": 8,
                   "valeur": 0.75
                 },
                 "difference": 0.25,
@@ -821,13 +821,13 @@
                 ],
                 "graine": "df5dba36edf030c0",
                 "taux_a": {
-                  "numerateur": 4,
-                  "denominateur": 4,
+                  "numerateur": 8,
+                  "denominateur": 8,
                   "valeur": 1
                 },
                 "taux_b": {
-                  "numerateur": 3,
-                  "denominateur": 4,
+                  "numerateur": 6,
+                  "denominateur": 8,
                   "valeur": 0.75
                 },
                 "difference": 0.25,
@@ -868,13 +868,13 @@
                 ],
                 "graine": "078bcb84655fdd3c",
                 "taux_a": {
-                  "numerateur": 2,
-                  "denominateur": 2,
+                  "numerateur": 4,
+                  "denominateur": 4,
                   "valeur": 1
                 },
                 "taux_b": {
-                  "numerateur": 2,
-                  "denominateur": 2,
+                  "numerateur": 4,
+                  "denominateur": 4,
                   "valeur": 1
                 },
                 "difference": 0,
@@ -903,13 +903,13 @@
                 ],
                 "graine": "ef2be9477d7101ca",
                 "taux_a": {
-                  "numerateur": 2,
-                  "denominateur": 2,
+                  "numerateur": 4,
+                  "denominateur": 4,
                   "valeur": 1
                 },
                 "taux_b": {
-                  "numerateur": 2,
-                  "denominateur": 2,
+                  "numerateur": 4,
+                  "denominateur": 4,
                   "valeur": 1
                 },
                 "difference": 0,
@@ -938,13 +938,13 @@
                 ],
                 "graine": "836262ae2a9bc003",
                 "taux_a": {
-                  "numerateur": 2,
-                  "denominateur": 2,
+                  "numerateur": 4,
+                  "denominateur": 4,
                   "valeur": 1
                 },
                 "taux_b": {
-                  "numerateur": 2,
-                  "denominateur": 2,
+                  "numerateur": 4,
+                  "denominateur": 4,
                   "valeur": 1
                 },
                 "difference": 0,
@@ -985,8 +985,8 @@
                   "metrique": "exactitude",
                   "strate": "global",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 1,
+                    "numerateur": 3,
+                    "denominateur": 3,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1002,10 +1002,10 @@
                     "intervalle": {
                       "bas": 1,
                       "haut": 1,
-                      "nombre_grappes": 1,
+                      "nombre_grappes": 3,
                       "reechantillonnages": 10,
                       "reechantillonnages_indefinis": 0,
-                      "degenere": "grappe_unique"
+                      "degenere": null
                     },
                     "raison_sans_intervalle": null
                   },
@@ -1016,7 +1016,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 3,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1032,10 +1032,10 @@
                     "intervalle": {
                       "bas": 0,
                       "haut": 0,
-                      "nombre_grappes": 1,
+                      "nombre_grappes": 3,
                       "reechantillonnages": 10,
                       "reechantillonnages_indefinis": 0,
-                      "degenere": "grappe_unique"
+                      "degenere": null
                     },
                     "raison_sans_intervalle": null
                   },
@@ -1046,9 +1046,10 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 0
+                    "denominateur": 2,
+                    "valeur": 0
                   },
-                  "motif_absence": "denominateur_nul",
+                  "motif_absence": null,
                   "intervalle": {
                     "cle": [
                       "bootstrap",
@@ -1058,10 +1059,17 @@
                       "global"
                     ],
                     "graine": "eb6aec31b9d1375d",
-                    "intervalle": null,
-                    "raison_sans_intervalle": "aucun_reechantillon_defini"
+                    "intervalle": {
+                      "bas": 0,
+                      "haut": 0,
+                      "nombre_grappes": 3,
+                      "reechantillonnages": 10,
+                      "reechantillonnages_indefinis": 1,
+                      "degenere": null
+                    },
+                    "raison_sans_intervalle": null
                   },
-                  "taux_degenere": null
+                  "taux_degenere": "aucun_evenement"
                 },
                 {
                   "metrique": "obsolescence",
@@ -1134,7 +1142,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 3,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1150,10 +1158,10 @@
                     "intervalle": {
                       "bas": 0,
                       "haut": 0,
-                      "nombre_grappes": 1,
+                      "nombre_grappes": 3,
                       "reechantillonnages": 10,
                       "reechantillonnages_indefinis": 0,
-                      "degenere": "grappe_unique"
+                      "degenere": null
                     },
                     "raison_sans_intervalle": null
                   },
@@ -1273,10 +1281,11 @@
                   "metrique": "exactitude",
                   "strate": "candidat:candidat-a",
                   "taux": {
-                    "numerateur": 0,
-                    "denominateur": 0
+                    "numerateur": 1,
+                    "denominateur": 1,
+                    "valeur": 1
                   },
-                  "motif_absence": "strate_vide",
+                  "motif_absence": null,
                   "intervalle": {
                     "cle": [
                       "bootstrap",
@@ -1286,17 +1295,24 @@
                       "candidat:candidat-a"
                     ],
                     "graine": "04c2d32a4aa60598",
-                    "intervalle": null,
-                    "raison_sans_intervalle": "aucune_grappe"
+                    "intervalle": {
+                      "bas": 1,
+                      "haut": 1,
+                      "nombre_grappes": 1,
+                      "reechantillonnages": 10,
+                      "reechantillonnages_indefinis": 0,
+                      "degenere": "grappe_unique"
+                    },
+                    "raison_sans_intervalle": null
                   },
-                  "taux_degenere": null
+                  "taux_degenere": "aucun_non_evenement"
                 },
                 {
                   "metrique": "exactitude",
                   "strate": "candidat:candidat-b",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 1,
+                    "numerateur": 2,
+                    "denominateur": 2,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1312,10 +1328,10 @@
                     "intervalle": {
                       "bas": 1,
                       "haut": 1,
-                      "nombre_grappes": 1,
+                      "nombre_grappes": 2,
                       "reechantillonnages": 10,
                       "reechantillonnages_indefinis": 0,
-                      "degenere": "grappe_unique"
+                      "degenere": null
                     },
                     "raison_sans_intervalle": null
                   },
@@ -1325,8 +1341,8 @@
                   "metrique": "exactitude",
                   "strate": "theme:retraites",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 1,
+                    "numerateur": 3,
+                    "denominateur": 3,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1342,10 +1358,10 @@
                     "intervalle": {
                       "bas": 1,
                       "haut": 1,
-                      "nombre_grappes": 1,
+                      "nombre_grappes": 3,
                       "reechantillonnages": 10,
                       "reechantillonnages_indefinis": 0,
-                      "degenere": "grappe_unique"
+                      "degenere": null
                     },
                     "raison_sans_intervalle": null
                   },
@@ -1355,8 +1371,8 @@
                   "metrique": "exactitude",
                   "strate": "gabarit:Q-DIR",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 1,
+                    "numerateur": 3,
+                    "denominateur": 3,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1372,6 +1388,36 @@
                     "intervalle": {
                       "bas": 1,
                       "haut": 1,
+                      "nombre_grappes": 3,
+                      "reechantillonnages": 10,
+                      "reechantillonnages_indefinis": 0,
+                      "degenere": null
+                    },
+                    "raison_sans_intervalle": null
+                  },
+                  "taux_degenere": "aucun_non_evenement"
+                },
+                {
+                  "metrique": "exactitude",
+                  "strate": "registre:familier",
+                  "taux": {
+                    "numerateur": 1,
+                    "denominateur": 1,
+                    "valeur": 1
+                  },
+                  "motif_absence": null,
+                  "intervalle": {
+                    "cle": [
+                      "bootstrap",
+                      "outil-alpha",
+                      "web_desactivee",
+                      "exactitude",
+                      "registre:familier"
+                    ],
+                    "graine": "08ae255b10ff096d",
+                    "intervalle": {
+                      "bas": 1,
+                      "haut": 1,
                       "nombre_grappes": 1,
                       "reechantillonnages": 10,
                       "reechantillonnages_indefinis": 0,
@@ -1383,32 +1429,10 @@
                 },
                 {
                   "metrique": "exactitude",
-                  "strate": "registre:familier",
-                  "taux": {
-                    "numerateur": 0,
-                    "denominateur": 0
-                  },
-                  "motif_absence": "strate_vide",
-                  "intervalle": {
-                    "cle": [
-                      "bootstrap",
-                      "outil-alpha",
-                      "web_desactivee",
-                      "exactitude",
-                      "registre:familier"
-                    ],
-                    "graine": "08ae255b10ff096d",
-                    "intervalle": null,
-                    "raison_sans_intervalle": "aucune_grappe"
-                  },
-                  "taux_degenere": null
-                },
-                {
-                  "metrique": "exactitude",
                   "strate": "registre:neutre",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 1,
+                    "numerateur": 2,
+                    "denominateur": 2,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1424,10 +1448,10 @@
                     "intervalle": {
                       "bas": 1,
                       "haut": 1,
-                      "nombre_grappes": 1,
+                      "nombre_grappes": 2,
                       "reechantillonnages": 10,
                       "reechantillonnages_indefinis": 0,
-                      "degenere": "grappe_unique"
+                      "degenere": null
                     },
                     "raison_sans_intervalle": null
                   },
@@ -1473,8 +1497,8 @@
                   "metrique": "exactitude",
                   "strate": "global",
                   "taux": {
-                    "numerateur": 11,
-                    "denominateur": 12,
+                    "numerateur": 22,
+                    "denominateur": 24,
                     "valeur": 0.9166666666666666
                   },
                   "motif_absence": null,
@@ -1504,7 +1528,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 12,
+                    "denominateur": 24,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1533,8 +1557,8 @@
                   "metrique": "fabrication",
                   "strate": "global",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 6,
+                    "numerateur": 2,
+                    "denominateur": 12,
                     "valeur": 0.16666666666666666
                   },
                   "motif_absence": null,
@@ -1608,7 +1632,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 2,
+                    "denominateur": 4,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1638,7 +1662,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 12,
+                    "denominateur": 24,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1667,8 +1691,8 @@
                   "metrique": "repartition_drapeaux:fabrication",
                   "strate": "global",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 1,
+                    "numerateur": 2,
+                    "denominateur": 2,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1698,7 +1722,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 2,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1728,7 +1752,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 2,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1758,7 +1782,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 2,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1788,7 +1812,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 2,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -1817,8 +1841,8 @@
                   "metrique": "exactitude",
                   "strate": "candidat:candidat-a",
                   "taux": {
-                    "numerateur": 6,
-                    "denominateur": 6,
+                    "numerateur": 12,
+                    "denominateur": 12,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1847,8 +1871,8 @@
                   "metrique": "exactitude",
                   "strate": "candidat:candidat-b",
                   "taux": {
-                    "numerateur": 5,
-                    "denominateur": 6,
+                    "numerateur": 10,
+                    "denominateur": 12,
                     "valeur": 0.8333333333333334
                   },
                   "motif_absence": null,
@@ -1877,8 +1901,8 @@
                   "metrique": "exactitude",
                   "strate": "theme:retraites",
                   "taux": {
-                    "numerateur": 11,
-                    "denominateur": 12,
+                    "numerateur": 22,
+                    "denominateur": 24,
                     "valeur": 0.9166666666666666
                   },
                   "motif_absence": null,
@@ -1907,8 +1931,8 @@
                   "metrique": "exactitude",
                   "strate": "gabarit:Q-DIR",
                   "taux": {
-                    "numerateur": 11,
-                    "denominateur": 12,
+                    "numerateur": 22,
+                    "denominateur": 24,
                     "valeur": 0.9166666666666666
                   },
                   "motif_absence": null,
@@ -1937,8 +1961,8 @@
                   "metrique": "exactitude",
                   "strate": "registre:familier",
                   "taux": {
-                    "numerateur": 4,
-                    "denominateur": 4,
+                    "numerateur": 8,
+                    "denominateur": 8,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1967,8 +1991,8 @@
                   "metrique": "exactitude",
                   "strate": "registre:neutre",
                   "taux": {
-                    "numerateur": 4,
-                    "denominateur": 4,
+                    "numerateur": 8,
+                    "denominateur": 8,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -1997,8 +2021,8 @@
                   "metrique": "exactitude",
                   "strate": "registre:oriente",
                   "taux": {
-                    "numerateur": 3,
-                    "denominateur": 4,
+                    "numerateur": 6,
+                    "denominateur": 8,
                     "valeur": 0.75
                   },
                   "motif_absence": null,
@@ -2041,8 +2065,8 @@
                   "metrique": "exactitude",
                   "strate": "global",
                   "taux": {
-                    "numerateur": 8,
-                    "denominateur": 8,
+                    "numerateur": 16,
+                    "denominateur": 16,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2072,7 +2096,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 8,
+                    "denominateur": 16,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2102,7 +2126,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 4,
+                    "denominateur": 8,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2198,7 +2222,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 8,
+                    "denominateur": 16,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2337,8 +2361,8 @@
                   "metrique": "exactitude",
                   "strate": "candidat:candidat-a",
                   "taux": {
-                    "numerateur": 4,
-                    "denominateur": 4,
+                    "numerateur": 8,
+                    "denominateur": 8,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2367,8 +2391,8 @@
                   "metrique": "exactitude",
                   "strate": "candidat:candidat-b",
                   "taux": {
-                    "numerateur": 4,
-                    "denominateur": 4,
+                    "numerateur": 8,
+                    "denominateur": 8,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2397,8 +2421,8 @@
                   "metrique": "exactitude",
                   "strate": "theme:retraites",
                   "taux": {
-                    "numerateur": 8,
-                    "denominateur": 8,
+                    "numerateur": 16,
+                    "denominateur": 16,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2427,8 +2451,8 @@
                   "metrique": "exactitude",
                   "strate": "gabarit:Q-DIR",
                   "taux": {
-                    "numerateur": 8,
-                    "denominateur": 8,
+                    "numerateur": 16,
+                    "denominateur": 16,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2457,8 +2481,8 @@
                   "metrique": "exactitude",
                   "strate": "registre:familier",
                   "taux": {
-                    "numerateur": 4,
-                    "denominateur": 4,
+                    "numerateur": 8,
+                    "denominateur": 8,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2487,8 +2511,8 @@
                   "metrique": "exactitude",
                   "strate": "registre:neutre",
                   "taux": {
-                    "numerateur": 4,
-                    "denominateur": 4,
+                    "numerateur": 8,
+                    "denominateur": 8,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2553,8 +2577,8 @@
                   "metrique": "exactitude",
                   "strate": "global",
                   "taux": {
-                    "numerateur": 11,
-                    "denominateur": 12,
+                    "numerateur": 22,
+                    "denominateur": 24,
                     "valeur": 0.9166666666666666
                   },
                   "motif_absence": null,
@@ -2584,7 +2608,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 12,
+                    "denominateur": 24,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2613,8 +2637,8 @@
                   "metrique": "fabrication",
                   "strate": "global",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 6,
+                    "numerateur": 2,
+                    "denominateur": 12,
                     "valeur": 0.16666666666666666
                   },
                   "motif_absence": null,
@@ -2688,7 +2712,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 2,
+                    "denominateur": 4,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2718,7 +2742,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 12,
+                    "denominateur": 24,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2747,8 +2771,8 @@
                   "metrique": "repartition_drapeaux:fabrication",
                   "strate": "global",
                   "taux": {
-                    "numerateur": 1,
-                    "denominateur": 1,
+                    "numerateur": 2,
+                    "denominateur": 2,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2778,7 +2802,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 2,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2808,7 +2832,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 2,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2838,7 +2862,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 2,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2868,7 +2892,7 @@
                   "strate": "global",
                   "taux": {
                     "numerateur": 0,
-                    "denominateur": 1,
+                    "denominateur": 2,
                     "valeur": 0
                   },
                   "motif_absence": null,
@@ -2897,8 +2921,8 @@
                   "metrique": "exactitude",
                   "strate": "candidat:candidat-a",
                   "taux": {
-                    "numerateur": 6,
-                    "denominateur": 6,
+                    "numerateur": 12,
+                    "denominateur": 12,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -2927,8 +2951,8 @@
                   "metrique": "exactitude",
                   "strate": "candidat:candidat-b",
                   "taux": {
-                    "numerateur": 5,
-                    "denominateur": 6,
+                    "numerateur": 10,
+                    "denominateur": 12,
                     "valeur": 0.8333333333333334
                   },
                   "motif_absence": null,
@@ -2957,8 +2981,8 @@
                   "metrique": "exactitude",
                   "strate": "theme:retraites",
                   "taux": {
-                    "numerateur": 11,
-                    "denominateur": 12,
+                    "numerateur": 22,
+                    "denominateur": 24,
                     "valeur": 0.9166666666666666
                   },
                   "motif_absence": null,
@@ -2987,8 +3011,8 @@
                   "metrique": "exactitude",
                   "strate": "gabarit:Q-DIR",
                   "taux": {
-                    "numerateur": 11,
-                    "denominateur": 12,
+                    "numerateur": 22,
+                    "denominateur": 24,
                     "valeur": 0.9166666666666666
                   },
                   "motif_absence": null,
@@ -3017,8 +3041,8 @@
                   "metrique": "exactitude",
                   "strate": "registre:familier",
                   "taux": {
-                    "numerateur": 4,
-                    "denominateur": 4,
+                    "numerateur": 8,
+                    "denominateur": 8,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -3047,8 +3071,8 @@
                   "metrique": "exactitude",
                   "strate": "registre:neutre",
                   "taux": {
-                    "numerateur": 4,
-                    "denominateur": 4,
+                    "numerateur": 8,
+                    "denominateur": 8,
                     "valeur": 1
                   },
                   "motif_absence": null,
@@ -3077,8 +3101,8 @@
                   "metrique": "exactitude",
                   "strate": "registre:oriente",
                   "taux": {
-                    "numerateur": 3,
-                    "denominateur": 4,
+                    "numerateur": 6,
+                    "denominateur": 8,
                     "valeur": 0.75
                   },
                   "motif_absence": null,
@@ -3124,15 +3148,15 @@
           "mode": "web_desactivee"
         },
         "paires_prevues": 12,
-        "paires_comparables": 0,
-        "paires_concordantes": 0,
+        "paires_comparables": 12,
+        "paires_concordantes": 12,
         "paires_ecartees": {
           "aucun_echantillon_obtenu": 0,
-          "un_seul_echantillon_obtenu": 12,
+          "un_seul_echantillon_obtenu": 0,
           "non_classee": 0,
           "indeterminee": 0
         },
-        "motif_absence": "aucune_paire_comparable"
+        "accord": 1
       }
     ]
   },

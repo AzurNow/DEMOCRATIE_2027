@@ -3420,7 +3420,7 @@
       "objet": "metriques",
       "fichier": "metriques/valide-02-un-couple-compare.json",
       "attendu": "valide",
-      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats à un item P et un item F, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d), H1 à H4 calculées, H3 non confirmée (différence non qualifiée : son bras neutre, 2/2, est un taux dégénéré, motif taux_degenere, §8 0.27 et 0.28), H5 sans premier run ; chaque taux porte sa mention taux_degenere ; variabilité entre échantillons sans paire comparable (le run en mémoire n'interroge que l'échantillon 1), accord absent avec son motif. Régénéré par analyserRun sur la spécification : candidats a et b à un item P et un item F, outil-alpha en web_desactivee, seule la réponse de candidat-b à l'item F en formulation orientée inexacte."
+      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats à un item P et un item F, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d), H1 à H4 calculées, H3 non confirmée (différence non qualifiée : son bras neutre, 2/2, est un taux dégénéré, motif taux_degenere, §8 0.27 et 0.28), H5 sans premier run ; chaque taux porte sa mention taux_degenere ; variabilité entre échantillons à douze paires comparables, toutes concordantes, accord 1. Régénéré par analyserRun sur la spécification : candidats a et b à un item P et un item F, outil-alpha en web_desactivee, seule la réponse de candidat-b à l'item F en formulation orientée inexacte. Régénéré ouvertement (D72 (7)) quand le run en mémoire est passé à deux échantillons par question (§6), notés à l'identique : effectifs doublés (entrées, taux, asymétrie, conditions, recalculs (b) à (d)), échantillon humain du recalcul (a) passé de une à trois réponses, variabilité enfin calculée ; valeurs des taux, intervalles du calcul principal, hypothèses et graines inchangés."
     },
     {
       "objet": "metriques",
@@ -3481,7 +3481,7 @@
       "objet": "metriques",
       "fichier": "metriques/invalide-06-variabilite-accord-sans-paire-comparable.json",
       "attendu": "invalide",
-      "motif": "Copie de valide-02 dont la variabilité entre échantillons du couple publie un accord de 0 alors qu'aucune paire n'est comparable (toutes écartées, un seul échantillon obtenu). Sans paire comparable, l'accord est absent avec son motif, jamais 0 : un 0 publierait une discordance que personne n'a observée (§8, variabilité entre échantillons, 0.28, D70 (12) ; CLAUDE.md, valeurs par défaut silencieuses).",
+      "motif": "Copie de valide-02 dans sa version d'avant D72 (7) (run en mémoire à un échantillon par question), dont la variabilité entre échantillons du couple publie un accord de 0 alors qu'aucune paire n'est comparable (toutes écartées, un seul échantillon obtenu). Sans paire comparable, l'accord est absent avec son motif, jamais 0 : un 0 publierait une discordance que personne n'a observée (§8, variabilité entre échantillons, 0.28, D70 (12) ; CLAUDE.md, valeurs par défaut silencieuses).",
       "regle_protocole": "§8, variabilité entre échantillons (0.28, D70 (12))",
       "erreur_visee": {
         "keyword": "oneOf",

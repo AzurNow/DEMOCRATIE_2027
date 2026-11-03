@@ -7,6 +7,8 @@
  * Chaque cas limite du brief a son test nommé ; les effectifs se calculent sur papier.
  */
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   PaireDEchantillonsIncoherente,
@@ -278,13 +280,43 @@ describe("§8, variabilité entre échantillons : incohérences refusées", () =
     expect(() => variabiliteEntreEchantillons({ ...e, plan: [...e.plan, troisieme] })).toThrow(PaireDEchantillonsIncoherente);
   });
 
+  it("une paire à un seul échantillon prévu au plan : refus nommé, le §6 prévoit deux échantillons par question (D72 (7))", () => {
+    const e = entrees([{ question: "q1", echantillon: 1, issue: "exacte" }, ...paire("q2", "exacte", "exacte")], UN_COUPLE);
+    expect(() => variabiliteEntreEchantillons(e)).toThrow(PaireDEchantillonsIncoherente);
+    expect(() => variabiliteEntreEchantillons(e)).toThrow(/1 échantillon prévu au plan/);
+  });
+
   it("un même échantillon prévu deux fois au plan : refus", () => {
     const e = entrees(paire("q1", "exacte", "exacte"), UN_COUPLE);
     expect(() => variabiliteEntreEchantillons({ ...e, plan: [...e.plan, e.plan[0] as RequeteDuPlan] })).toThrow(PaireDEchantillonsIncoherente);
   });
 
+  it("deux requêtes au plan pour une paire, toutes deux échantillon 1 : refus, deux échantillons distincts sont exigés", () => {
+    const e = entrees([{ question: "q1", echantillon: 1, issue: "exacte" }], UN_COUPLE);
+    expect(() => variabiliteEntreEchantillons({ ...e, plan: [...e.plan, e.plan[0] as RequeteDuPlan] })).toThrow(/un même échantillon prévu deux fois/);
+  });
+
   it("une réponse obtenue d'un couple comparé sans unité notée : refus, jamais lue comme manquante", () => {
     const e = entrees(paire("q1", "exacte", "exacte"), UN_COUPLE);
     expect(() => variabiliteEntreEchantillons({ ...e, unites: e.unites.slice(1) })).toThrow(/sans unité notée/);
+  });
+});
+
+describe("§8, variabilité entre échantillons : l'exemple publié (D72 (7))", () => {
+  it("valide-02, régénéré sur le run en mémoire à deux échantillons, publie un accord sur des paires comparables", () => {
+    const document = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../schema/exemples/metriques/valide-02-un-couple-compare.json"), "utf8")) as {
+      variabilite_echantillons: { statut: string; couples: VariabiliteDuCouple[] };
+    };
+    expect(document.variabilite_echantillons.statut).toBe("calcule");
+    expect(document.variabilite_echantillons.couples).toEqual([
+      {
+        couple: ALPHA_SANS,
+        paires_prevues: 12,
+        paires_comparables: 12,
+        paires_concordantes: 12,
+        paires_ecartees: AUCUNE_ECARTEE,
+        accord: 1,
+      },
+    ]);
   });
 });
