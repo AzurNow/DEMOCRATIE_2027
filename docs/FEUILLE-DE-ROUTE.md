@@ -4,87 +4,7 @@
 
 ## Décisions en attente
 
-### D62 — Questions laissées ouvertes par les lots D59 (#230, #232 à #235), que D60 n'a pas couvertes et qui n'avaient pas été inscrites : association juge → outils de son éditeur, clé d'un taux sans mode, réponses prévues, renvoi à la réextraction, recherche d'absence, sous-échantillon et dépôts de l'application, contrefactuel d'outil, lecture de comparateur.
-
-Relevées à la clôture du 2026-11-02 dans les corps des PR fusionnées. Le code fusionné applique déjà une lecture sur plusieurs points (indiquée entre crochets) ; aucune n'est écrite au protocole. #230 : (A) quels outils édite l'éditeur d'un juge [paramètre, en attente] ; (B) clé de graine d'un taux sans mode, comparateur ou canal application [recommandé : `lecture` ou `application` à la place du mode] ; (C) clé, population et cas d'un éditeur à plusieurs outils de l'écart juge-éditeur ; (D) même exactitude par candidat publiée sous deux clés. #232 : (1) qui inscrit les réponses obtenues et quand [recommandé : au début de la notation] ; (2) où publier dans run.json les comptes du jeu d'or ; (3) Q-ATT renvoyée qui est aussi un refus de l'API [traitée en incohérence] ; (4) sous-échantillon de l'application hors des réponses prévues [à confirmer]. #233 : (1) rejets « texte extrait erroné » seulement affichés : un seul des deux rejets porte le motif, rejet tranché par l'arbitre (decision-arbitrage sans motif), item O à deux sources [recommandé : renvoyer dans les trois cas, motif ajouté à l'arbitrage] ; (2) aucun mécanisme ne consomme la liste des renvois : pnpm extraire ne relance pas une source journalisée et l'extracteur épinglé rendrait le même texte ; (3) une proposition non rattachée à la mesure est invisible de rechercheAbsence, d'où une fausse absence [recommandé : exiger le rattachement avant de promouvoir un item A] ; (4) une proposition rejetée par le test verbatim compte-t-elle comme position ; (5) docs/CONTRATS.md §1 dit « commentaire » où la 0.24 dit « motif » (CONTRATS fait partie du protocole : amendement). #234 : (2) candidat interrogé à moins de 5 questions tirées [refusé ; recommandé : toutes ses questions] ; (4) sous-échantillon non écrit au gel, run du mois testé et outils à application non dits ; (5) aucune conversion d'un dépôt de testeur vers reponse, faute de règle de normalisation ; (6) sous-échantillon sans graine [ordre trié seul, à confirmer]. #235 : (1) outils du dérangement [recommandé : assistants inclus] ; (2) libellé et éditeur absents de run.json [recommandé : instantané du gel] ; (3) verdict d'une lecture de comparateur : mode_resolution, dans_echantillon_humain, motif divergent à note égale ; (4) trois refus stricts à confirmer : deux outils du même éditeur, notation de lecture sans déclaration d'aveuglement, juges retirés non mesurés.
-
-Options :
-
-1. Option recommandée de chaque PR, écrite à la prochaine révision du protocole (0.27), puis le code des points sans lecture appliquée.
-2. Trancher point par point, en commençant par #233 (3) et #234 (5), qui bloquent un item A juste et l'écart API / application.
-
-**Recommandation :** Commencer par #233 (3) (fausse absence, DETTE 2026-11-02 point 2) et #233 (2) (renvoi sans consommateur), qui touchent une mesure publiée ; le reste avant le gel de la 1.0.
-
-Lots portant cette décision : aucun
-
-### D63 — Règles de décision de H3 et H5, absentes du §2 (critique du 2026-11-02, constat 1, bloquant).
-
-Le §2 énonce H3 et H5 sans métrique, population ni règle ; analysis/hypotheses.ts l. 10 le constate. « Confirmation erronée » n'existe pas sur une formulation neutre (§5). Sans règle, le verdict se choisira après les données. Détail : docs/critiques/2026-11-02.md.
-
-Options :
-
-1. H3 : confirmée pour un couple outil × mode comparé quand la différence appariée d'exactitude, neutre moins orientée, restreinte aux items F et O, est établie et positive ; H5 : confirmée pour un outil quand la tendance de son exactitude (§8) est établie et positive, « sans objet » si le couple sort de la tendance.
-2. H3 et H5 sur le seul mode de tête de chaque outil.
-3. Retirer H3 et H5 des hypothèses et les publier comme analyses descriptives (§8) sans verdict.
-
-**Recommandation :** Option 1 : elle n'utilise que des quantités que le §8 et analysis/conditions.ts calculent déjà.
-
-Lots portant cette décision : aucun
-
-### D64 — Que vaut, dans une question d'attribution, un candidat interrogé cité par l'outil qui n'a aucun item vérifié sur la mesure ? (critique du 2026-11-02, constat 2, bloquant)
-
-Le code (pipeline/notation/note-attribution.ts l. 14, 142) le compte « en trop » : réponse inexacte, drapeau mauvaise attribution, publiée in extenso au nom du candidat (§8), alors que le §4 n'admet une absence qu'après recherche et double confirmation et que le §10 exclut toute affirmation non sourcée. Avec ~30 items P par candidat, la plupart des positions réelles ne sont pas enregistrées. Détail : docs/critiques/2026-11-02.md.
-
-Options :
-
-1. Réponse « non classée, référence incomplète », notée par règle, hors dénominateur de l'exactitude, nombre publié ; « en trop » seulement pour un candidat qui porte un item vérifié dont la position en vigueur n'est pas « pour ».
-2. Renvoi à la notation humaine, comme un candidat du périmètre non interrogé (D30 (2)) : l'humain ne voit que la charge du juge et ne peut pas mieux trancher ; coût humain élevé.
-3. Garder la note inexacte mais sans drapeau mauvaise attribution ni publication in extenso, et déclarer au §11 que l'exactitude d'une question d'attribution mesure la conformité à la liste enregistrée.
-
-**Recommandation :** Option 1 : aucun temps humain, aucune affirmation non sourcée sur un candidat.
-
-Lots portant cette décision : aucun
-
-### D65 — Seuil d'accord des lots de validation quand les annotateurs retiennent plus de 90 % des items (critique du 2026-11-02, constat 3).
-
-Sur 50 items, 49 accords peuvent donner κ = 0 ; deux désaccords sur des marges 46/3/1 (accord 0,96) donnent κ = 0,73 et déclenchent une réannotation (§4) et un échec de J3 (§12). Un annotateur qui rejette davantage fait monter le kappa. Détail : docs/critiques/2026-11-02.md.
-
-Options :
-
-1. Critère alternatif au §4 et au §12 : kappa ≥ 0,80, ou accord observé ≥ 0,96 avec au plus deux désaccords sur 50.
-2. Kappa calculé sur des lots cumulés de 100 items.
-3. Ne rien changer et déclarer au §11 l'instabilité du kappa sur des marges déséquilibrées.
-
-**Recommandation :** Option 1 : l'accord observé est déjà publié dans tous les cas, aucun calcul nouveau.
-
-Lots portant cette décision : aucun
-
-### D66 — Plafonds de coût et de charge d'annotation du §12 (critique du 2026-11-02, constat 4).
-
-Le coût API estimé dépasse 600 € par mois d'un facteur 1,7 à 3,3 même avec le levier 2 → 1 et l'API par lots (selon 250 à 490 questions par run) ; les heures des annotateurs rémunérés (double notation de 10 %, désaccords, erreurs graves, comparateurs) ne figurent dans aucun plafond, les « 3 heures » du §12 étant celles de l'auteur. Détail : docs/critiques/2026-11-02.md.
-
-Options :
-
-1. Mesurer coût et charge au run pilote et écrire à la v1.0 les plafonds mesurés, avec un plafond d'heures d'annotation ; ajouter un levier sans effet sur la validité : une lecture de comparateur dont la page archivée a la même empreinte qu'au run précédent reprend sa note.
-2. Garder les plafonds et réduire le nombre de questions par run (quota), au prix d'intervalles plus larges.
-3. Passer au rythme bimensuel plutôt qu'hebdomadaire de février à mai 2027.
-
-**Recommandation :** Option 1 : le §12 fait déjà des plafonds mesurés le critère du rythme hebdomadaire ; il s'agit de les mesurer avant de les écrire.
-
-Lots portant cette décision : aucun
-
-### D67 — Précisions de texte de la critique du 2026-11-02 (majeurs 5 à 21 et mineurs), à écrire en 0.27 avec D62 à D66.
-
-Chaque précision tient en une phrase ou un mot et ne change aucune métrique : sondages (hypothèses testées, critère d'institut à choisir), « non confirmée » au lieu d'« infirmée », limite de multiplicité, dénominateur des taux, intervalle nul, conflit d'intérêts Mistral AI, limite de sortie de l'API, traces d'identité dans les URL, juge défaillant, diagnostic d'accord par candidat et par type, remplacement d'un juge retiré (Mistral Large 3 retiré le 2027-04-30), corpus des items A et F, positions incompatibles, correction d'une notation et erratum, fenêtre des runs supplémentaires, reproductibilité des juges, liste de ce qui n'est pas publié ; plus deux questions pour l'avocat (licences et conditions d'utilisation, consentement). Liste complète : docs/critiques/2026-11-02.md.
-
-Options :
-
-1. Accepter le lot tel que proposé par le rapport, l'auteur retirant les points qu'il refuse, et choisir le critère d'institut des sondages.
-2. Trancher point par point.
-
-**Recommandation :** Option 1, en commençant par le choix du modèle Mistral à figer : un modèle retiré pendant la campagne casserait le juge et l'extraction.
-
-Lots portant cette décision : aucun
+Aucune décision en attente.
 
 ## Décisions tranchées
 
@@ -320,6 +240,38 @@ Lots portant cette décision : aucun
 
 **Décision du 2026-11-02 :** Option 1 sur les deux points (décision de l'auteur du 2026-11-02 ; code fusionné dans #238 et #239). Texte écrit en 0.26, PR à part. Suites réglées le 2026-11-02 sans décision de l'auteur (option recommandée) : une saisie de l'application hors neutre ou échantillon 1 est refusée à l'analyse et la description de version de schema/item.schema.json cite le retour en attente (#242) ; la liste « à contester » de pnpm promote reste non filtrée, son statut de contestation étant affiché (DETTE 2026-11-02, point 6).
 
+### D62 — Questions laissées ouvertes par les lots D59 (#230, #232 à #235), que D60 n'a pas couvertes et qui n'avaient pas été inscrites : association juge → outils de son éditeur, clé d'un taux sans mode, réponses prévues, renvoi à la réextraction, recherche d'absence, sous-échantillon et dépôts de l'application, contrefactuel d'outil, lecture de comparateur.
+
+**Décision du 2026-11-03 :** Option recommandée, prise le 2026-11-03 sur la consigne durable de l'auteur (« prends systématiquement l'option recommandée »). Texte proposé pour la 0.27 (PR de protocole à part). Écrits : #230 (B) composant `lecture` ou `application` à la place du mode (§8), (C) population, clé et éditeur à plusieurs outils de l'écart juge-éditeur (§7), (D) noms des métriques des clés et exactitude par candidat sous deux clés (§8) ; #232 (1) réponses obtenues inscrites au début de la notation, (3) refus renvoyé tenu pour incohérent, (4) sous-échantillon de l'application hors des réponses prévues (§5, §7) ; #233 (1) renvoi dans les trois cas, motif à l'arbitrage, deux sources d'un item O, (3) rattachement exigé avant de promouvoir un item A (§4), (5) « motif » dans docs/CONTRATS.md §1 ; #234 (2) toutes ses questions sous cinq, (6) sans graine (§6) ; #235 (1) assistants seuls au dérangement, (2) libellé et éditeur de l'instantané du gel, (4) refus sans déclaration d'aveuglement et juges retirés non mesurés (§6, §7). Restent sans lecture écrite, faute de règle dans le code ou de cohérence établie : #230 (A), #232 (2) (emplacement dans run.json, hors protocole), #233 (2) et (4), #234 (4) et (5), #235 (3) et le refus de deux outils du même éditeur de (4).
+
+### D63 — Règles de décision de H3 et H5, absentes du §2 (critique du 2026-11-02, constat 1, bloquant).
+
+**Décision du 2026-11-03 :** Option recommandée, prise le 2026-11-03 sur la consigne durable de l'auteur (« prends systématiquement l'option recommandée »). Texte proposé pour la 0.27 (PR de protocole à part). H3 par couple outil × mode comparé : différence appariée d'exactitude, neutre moins orientée, restreinte aux items F et O, établie et positive ; H5 par outil : tendance de l'exactitude établie et positive, « sans objet » pour un couple hors de la tendance (§2). « Confirmations erronées » remplacé par l'exactitude.
+
+### D64 — Que vaut, dans une question d'attribution, un candidat interrogé cité par l'outil qui n'a aucun item vérifié sur la mesure ? (critique du 2026-11-02, constat 2, bloquant)
+
+**Décision du 2026-11-03 :** Option recommandée, prise le 2026-11-03 sur la consigne durable de l'auteur (« prends systématiquement l'option recommandée »). Texte proposé pour la 0.27 (PR de protocole à part). « Non classée, référence incomplète » pour un candidat interrogé cité sans item vérifié sur la mesure, par règle, hors du dénominateur de l'exactitude, nombre publié ; « en trop » réservé à un candidat porteur d'un item vérifié dont la position en vigueur n'est pas « pour » (§7, §8, annexe B).
+
+### D65 — Seuil d'accord des lots de validation quand les annotateurs retiennent plus de 90 % des items (critique du 2026-11-02, constat 3).
+
+**Décision du 2026-11-03 :** Option recommandée, prise le 2026-11-03 sur la consigne durable de l'auteur (« prends systématiquement l'option recommandée »). Texte proposé pour la 0.27 (PR de protocole à part). Accord suffisant : kappa ≥ 0,80, ou accord observé ≥ 0,96 avec au plus deux désaccords sur 50 (§4, §12 J3).
+
+### D66 — Plafonds de coût et de charge d'annotation du §12 (critique du 2026-11-02, constat 4).
+
+**Décision du 2026-11-03 :** Option recommandée, prise le 2026-11-03 sur la consigne durable de l'auteur (« prends systématiquement l'option recommandée »). Texte proposé pour la 0.27 (PR de protocole à part). Coût et charge, heures d'annotation comprises, mesurés au run pilote ; plafonds écrits à la v1.0 d'après ces mesures, dont un plafond d'heures d'annotation ; levier ajouté : une lecture de comparateur dont la page archivée a la même empreinte qu'au run précédent garde sa note (§12).
+
+### D67 — Précisions de texte de la critique du 2026-11-02 (majeurs 5 à 21 et mineurs), à écrire en 0.27 avec D62 à D66.
+
+**Décision du 2026-11-03 :** Option recommandée, prise le 2026-11-03 sur la consigne durable de l'auteur (« prends systématiquement l'option recommandée »). Texte proposé pour la 0.27 (PR de protocole à part). Toutes les réponses minimales des majeurs 5 à 21 et des mineurs, sauf celles qui exigent un choix non fait (voir le rapport de la 0.27). Choix de l'auteur du 2026-11-03 : (constat 5) un sondage compte s'il est publié par un institut dont au moins une notice figure sur le site de la Commission des sondages au cours des douze mois précédant l'instant de gel, en plus de la présence dans au moins une des hypothèses de candidatures testées ; (constat 15) le modèle Mistral du juge et de l'extraction est figé à la v1.0 : Mistral Large 4 si, au gel, il est en disponibilité générale sans retrait annoncé avant le second tour, sinon le plus récent modèle Mistral en disponibilité générale qui remplit la même condition, identifiant et page archivée de la liste des modèles publiés avec la v1.0 ; tout juge dont le modèle ou les réglages changent est remesuré sur le jeu d'or et la tendance porte la mention. Constats 22 et 23 écrits comme questions à l'avocat (§10).
+
+### D68 — Quelle règle d'inclusion entre les deux tours, et que font avec deux candidats les règles qui dépendent de leur nombre ?
+
+**Décision du 2026-11-03 :** Option recommandée, prise le 2026-11-03 sur la consigne durable de l'auteur (« prends systématiquement l'option recommandée »). Texte proposé pour la 0.27 (PR de protocole à part). §3 : régime et paragraphe « Entre les deux tours » (Spearman sans objet, couverture et test d'asymétrie tels quels ou « test sans objet », symétrie, alias C1 et C2, contrefactuel par échange, comparateurs non réappliqués, sous-échantillon de dix, go/no-go tels quels, critère de huit candidats réservé au premier run public). Restent ouverts : noms des éliminés dans la recherche du contrefactuel et dans la notation des questions d'attribution (un nom hors périmètre n'y est pas une erreur, y compris sur une mesure fictive).
+
+### D69 — Sur quelles différences porte le contrôle de robustesse du §8, et que fait le recalcul (c), qui exclut les formulations orientées, d'une différence qui compare le registre orienté ?
+
+**Décision du 2026-11-03 :** Option 1 (consigne durable de l'auteur : option recommandée, 2026-11-03). Texte proposé pour la 0.27, §8 « Analyses de robustesse préenregistrées » (PR de protocole à part).
+
 ### D7 — Sept conventions du tirage que le protocole n'écrit pas, retenues au plus restrictif par le lot questions.
 
 **Décision du 2026-09-20 :** Option 1 sur les sept points : item arbitré tirable si la dernière décision du panel vaut maintien ou correction ; Q-ORI sur un item O résolue par l'état en vigueur ; ni Q-FER ni Q-NEG pour une position conditionnelle ; quota par strate fixé dans config/perimetre.yaml ; budget de reprise 80 % étendu aux Q-ATT, stratifiées par thème ; date civile comparée à date_gel à minuit UTC ; gabarits déplacés vers prompts/gabarits-1.0.0.json.
@@ -375,12 +327,6 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
-  dec_D62{{"D62<br/>Questions laissées ouvertes par les lots D59 (#230, #232 à #…"}}:::decision
-  dec_D63{{"D63<br/>Règles de décision de H3 et H5, absentes du §2 (critique du …"}}:::decision
-  dec_D64{{"D64<br/>Que vaut, dans une question d'attribution, un candidat inter…"}}:::decision
-  dec_D65{{"D65<br/>Seuil d'accord des lots de validation quand les annotateurs …"}}:::decision
-  dec_D66{{"D66<br/>Plafonds de coût et de charge d'annotation du §12 (critique …"}}:::decision
-  dec_D67{{"D67<br/>Précisions de texte de la critique du 2026-11-02 (majeurs 5 …"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction

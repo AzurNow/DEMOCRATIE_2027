@@ -34,8 +34,8 @@ les offsets à **montrer**. Confondre les deux produit un surlignage décalé de
 toute source contenant des guillemets typographiques.
 
 **Personne ne corrige un texte canonique depuis l'interface de validation.** Un texte extrait faux
-(OCR défaillant, transcription erronée) se solde par un rejet de l'item avec le commentaire
-« texte extrait erroné », qui renvoie la source à la réextraction. L'interface n'a aucun chemin
+(OCR défaillant, transcription erronée) se solde par un rejet de l'item sous le motif
+énuméré « texte extrait erroné », qui renvoie la source à la réextraction. L'interface n'a aucun chemin
 d'écriture vers `staging/textes/`.
 
 Le texte est écrit tel que l'extracteur le rend, après les deux seules transformations du tableau
