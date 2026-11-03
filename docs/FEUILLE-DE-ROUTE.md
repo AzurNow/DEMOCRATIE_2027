@@ -4,7 +4,18 @@
 
 ## Décisions en attente
 
-Aucune décision en attente.
+### D71 — Questions laissées ouvertes par les lots de la 0.28 (#255 à #259), à écrire dans une prochaine révision du protocole.
+
+Relevées le 2026-11-03. Recommandation entre crochets ; « [code] » signale la lecture déjà appliquée par le code fusionné. (1) Case 7 « robustesse calculée » quand robustesse.taux est sans objet (aucun_couple_compare) [non faite ; code, #255]. (2) Règle des taux à 0 ou à 1 (D70 (8)) sur l'écart juge-éditeur du §7, ecart-juge-editeur.ts:signaler [l'appliquer, signaler recevant les taux par juge]. (3) Nom ambigu entre un candidat éliminé et un autre candidat sur une question d'attribution [renvoi humain, comme tout nom ambigu ; code, #257]. (4) Reconnaissance d'un éliminé : retiré d'un run entre_deux_tours, sans statut propre au schéma [garder ; statut elimine_premier_tour seulement si un retiré antérieur restait au périmètre ; code, #257]. (5) Fenêtre des notices pour un gel un 29 février [28 février de l'année précédente ; code, #258]. (6) « Même date douze mois avant » [date civile UTC de l'instant de gel ; code, #258]. (7) Hôte de l'URL d'une notice non contrôlé [ne pas en fixer tant que le protocole ne nomme pas le domaine]. (8) Opinions du panel publiées à égalité des voix (§10) : aucun champ ne les porte [tableau deliberations_sans_majorite[] en ajout seul dans contestations[], lot dédié, schéma de l'item]. (9) Lot achevé par une contestation qu'aucun journal ne date [dater la clôture à la date_reception de la contestation, à écrire au §12 ; code actuel : cloture_non_datee, J3 jamais vert]. (10) Ex aequo de clôture de deux lots [départage par identifiant du lot ; code, #259]. (11) Reportés d'avant : H5 quand un outil n'existe que dans le premier run (TendanceIncoherente) ; modèle de chaque outil par run dans la tendance ; écran humain pour un renvoi de D70 (4).
+
+Options :
+
+1. Retenir toutes les recommandations entre crochets et les écrire à la prochaine révision.
+2. Trancher point par point.
+
+**Recommandation :** Option 1 ; le point (11) instruit à part, une question à la fois.
+
+Lots portant cette décision : aucun
 
 ## Décisions tranchées
 
@@ -331,6 +342,7 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
+  dec_D71{{"D71<br/>Questions laissées ouvertes par les lots de la 0.28 (#255 à …"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
