@@ -235,6 +235,14 @@ refuser, jamais pour admettre.
 
 ## Méthode
 
+**Faire relire les calculs d'une critique par une défense, pas seulement les citations.** Lors de la
+critique du protocole du 2 novembre, toutes les citations des quatre relecteurs étaient exactes, mais
+trois constats chiffrés ne tenaient pas tels quels : un taux de recouvrement de 1,4 % que le script
+lui-même corrigeait à 34 %, un taux de rejet à tort de 30 % qui ne valait que pour un scénario extrême,
+et un dépassement de budget « ×3 à ×10 » qui ignorait le levier préenregistré et l'API par lots. La
+défense a relancé chaque script et relu ses hypothèses : c'est elle qui a ramené 15 majeurs au rang
+de mineurs. Un chiffre d'une critique se vérifie comme un chiffre publié.
+
 **Clôturer chaque session, et écrire dans chaque PR ce qui pourrait casser.** Du 7 au 10 octobre,
 seize PR (#93 à #108) ont été fusionnées sans clôture, et leurs descriptions ne disaient presque
 jamais ce qui pourrait casser. Le 12, le tri a dû repartir de 21 000 lignes de diff. C'est là

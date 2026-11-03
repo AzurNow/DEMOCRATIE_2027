@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-02.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-03.
 
 ## Décisions en attente
 
@@ -14,6 +14,75 @@ Options :
 2. Trancher point par point, en commençant par #233 (3) et #234 (5), qui bloquent un item A juste et l'écart API / application.
 
 **Recommandation :** Commencer par #233 (3) (fausse absence, DETTE 2026-11-02 point 2) et #233 (2) (renvoi sans consommateur), qui touchent une mesure publiée ; le reste avant le gel de la 1.0.
+
+Lots portant cette décision : aucun
+
+### D63 — Règles de décision de H3 et H5, absentes du §2 (critique du 2026-11-02, constat 1, bloquant).
+
+Le §2 énonce H3 et H5 sans métrique, population ni règle ; analysis/hypotheses.ts l. 10 le constate. « Confirmation erronée » n'existe pas sur une formulation neutre (§5). Sans règle, le verdict se choisira après les données. Détail : docs/critiques/2026-11-02.md.
+
+Options :
+
+1. H3 : confirmée pour un couple outil × mode comparé quand la différence appariée d'exactitude, neutre moins orientée, restreinte aux items F et O, est établie et positive ; H5 : confirmée pour un outil quand la tendance de son exactitude (§8) est établie et positive, « sans objet » si le couple sort de la tendance.
+2. H3 et H5 sur le seul mode de tête de chaque outil.
+3. Retirer H3 et H5 des hypothèses et les publier comme analyses descriptives (§8) sans verdict.
+
+**Recommandation :** Option 1 : elle n'utilise que des quantités que le §8 et analysis/conditions.ts calculent déjà.
+
+Lots portant cette décision : aucun
+
+### D64 — Que vaut, dans une question d'attribution, un candidat interrogé cité par l'outil qui n'a aucun item vérifié sur la mesure ? (critique du 2026-11-02, constat 2, bloquant)
+
+Le code (pipeline/notation/note-attribution.ts l. 14, 142) le compte « en trop » : réponse inexacte, drapeau mauvaise attribution, publiée in extenso au nom du candidat (§8), alors que le §4 n'admet une absence qu'après recherche et double confirmation et que le §10 exclut toute affirmation non sourcée. Avec ~30 items P par candidat, la plupart des positions réelles ne sont pas enregistrées. Détail : docs/critiques/2026-11-02.md.
+
+Options :
+
+1. Réponse « non classée, référence incomplète », notée par règle, hors dénominateur de l'exactitude, nombre publié ; « en trop » seulement pour un candidat qui porte un item vérifié dont la position en vigueur n'est pas « pour ».
+2. Renvoi à la notation humaine, comme un candidat du périmètre non interrogé (D30 (2)) : l'humain ne voit que la charge du juge et ne peut pas mieux trancher ; coût humain élevé.
+3. Garder la note inexacte mais sans drapeau mauvaise attribution ni publication in extenso, et déclarer au §11 que l'exactitude d'une question d'attribution mesure la conformité à la liste enregistrée.
+
+**Recommandation :** Option 1 : aucun temps humain, aucune affirmation non sourcée sur un candidat.
+
+Lots portant cette décision : aucun
+
+### D65 — Seuil d'accord des lots de validation quand les annotateurs retiennent plus de 90 % des items (critique du 2026-11-02, constat 3).
+
+Sur 50 items, 49 accords peuvent donner κ = 0 ; deux désaccords sur des marges 46/3/1 (accord 0,96) donnent κ = 0,73 et déclenchent une réannotation (§4) et un échec de J3 (§12). Un annotateur qui rejette davantage fait monter le kappa. Détail : docs/critiques/2026-11-02.md.
+
+Options :
+
+1. Critère alternatif au §4 et au §12 : kappa ≥ 0,80, ou accord observé ≥ 0,96 avec au plus deux désaccords sur 50.
+2. Kappa calculé sur des lots cumulés de 100 items.
+3. Ne rien changer et déclarer au §11 l'instabilité du kappa sur des marges déséquilibrées.
+
+**Recommandation :** Option 1 : l'accord observé est déjà publié dans tous les cas, aucun calcul nouveau.
+
+Lots portant cette décision : aucun
+
+### D66 — Plafonds de coût et de charge d'annotation du §12 (critique du 2026-11-02, constat 4).
+
+Le coût API estimé dépasse 600 € par mois d'un facteur 1,7 à 3,3 même avec le levier 2 → 1 et l'API par lots (selon 250 à 490 questions par run) ; les heures des annotateurs rémunérés (double notation de 10 %, désaccords, erreurs graves, comparateurs) ne figurent dans aucun plafond, les « 3 heures » du §12 étant celles de l'auteur. Détail : docs/critiques/2026-11-02.md.
+
+Options :
+
+1. Mesurer coût et charge au run pilote et écrire à la v1.0 les plafonds mesurés, avec un plafond d'heures d'annotation ; ajouter un levier sans effet sur la validité : une lecture de comparateur dont la page archivée a la même empreinte qu'au run précédent reprend sa note.
+2. Garder les plafonds et réduire le nombre de questions par run (quota), au prix d'intervalles plus larges.
+3. Passer au rythme bimensuel plutôt qu'hebdomadaire de février à mai 2027.
+
+**Recommandation :** Option 1 : le §12 fait déjà des plafonds mesurés le critère du rythme hebdomadaire ; il s'agit de les mesurer avant de les écrire.
+
+Lots portant cette décision : aucun
+
+### D67 — Précisions de texte de la critique du 2026-11-02 (majeurs 5 à 21 et mineurs), à écrire en 0.27 avec D62 à D66.
+
+Chaque précision tient en une phrase ou un mot et ne change aucune métrique : sondages (hypothèses testées, critère d'institut à choisir), « non confirmée » au lieu d'« infirmée », limite de multiplicité, dénominateur des taux, intervalle nul, conflit d'intérêts Mistral AI, limite de sortie de l'API, traces d'identité dans les URL, juge défaillant, diagnostic d'accord par candidat et par type, remplacement d'un juge retiré (Mistral Large 3 retiré le 2027-04-30), corpus des items A et F, positions incompatibles, correction d'une notation et erratum, fenêtre des runs supplémentaires, reproductibilité des juges, liste de ce qui n'est pas publié ; plus deux questions pour l'avocat (licences et conditions d'utilisation, consentement). Liste complète : docs/critiques/2026-11-02.md.
+
+Options :
+
+1. Accepter le lot tel que proposé par le rapport, l'auteur retirant les points qu'il refuse, et choisir le critère d'institut des sondages.
+2. Trancher point par point.
+
+**Recommandation :** Option 1, en commençant par le choix du modèle Mistral à figer : un modèle retiré pendant la campagne casserait le juge et l'extraction.
 
 Lots portant cette décision : aucun
 
@@ -303,13 +372,22 @@ flowchart LR
     lot_go_no_go["go-no-go<br/>Critères go/no-go du §12 et contreseing de la checklist de l'annexe F<br/>T3"]:::T3
     lot_site["site<br/>Site statique généré depuis runs/<br/>T0"]:::T0
   end
+  subgraph jalon_J6["J6 · 1 juin 2027"]
+    lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
+  end
   dec_D62{{"D62<br/>Questions laissées ouvertes par les lots D59 (#230, #232 à #…"}}:::decision
+  dec_D63{{"D63<br/>Règles de décision de H3 et H5, absentes du §2 (critique du …"}}:::decision
+  dec_D64{{"D64<br/>Que vaut, dans une question d'attribution, un candidat inter…"}}:::decision
+  dec_D65{{"D65<br/>Seuil d'accord des lots de validation quand les annotateurs …"}}:::decision
+  dec_D66{{"D66<br/>Plafonds de coût et de charge d'annotation du §12 (critique …"}}:::decision
+  dec_D67{{"D67<br/>Précisions de texte de la critique du 2026-11-02 (majeurs 5 …"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
   lot_mesures_validees --> lot_gel
   lot_questions_tirage_symetrie --> lot_gel
   lot_reformulation --> lot_gel
+  lot_site --> lot_generalisation_politique_francaise
   lot_analyse --> lot_go_no_go
   lot_interrogation --> lot_go_no_go
   lot_notation --> lot_go_no_go
@@ -365,6 +443,7 @@ flowchart LR
 | analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | débloqué | opus | L | 1 | — |
 | go-no-go | Critères go/no-go du §12 et contreseing de la checklist de l'annexe F | J5 | T3 | atteint | opus | M | 1 | analyse, interrogation, notation, validation-interface (informe) |
 | site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse | sonnet | M | 2 | analyse, go-no-go |
+| generalisation-politique-francaise | Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes | J6 | T0 | bloqué par site | opus | XL | 8 | site |
 
 ## Jalons
 
@@ -375,6 +454,7 @@ flowchart LR
 | J3 | 2026-11-15 | Annotateurs formés ; 200 items vérifiés ; panel constitué ou faiblesse déclarée | Kappa ≥ 0,80 sur les deux derniers lots |
 | J4 | 2026-11-22 | Run pilote complet ; jeu d'or de 300 réponses | Kappa juge-humain ≥ 0,75 ; taux de changement contrefactuel ≤ 3 % |
 | J5 | 2026-12-01 | Premier run public mensuel | Tous les critères précédents ; au moins 8 candidats au-dessus du seuil de couverture |
+| J6 | 2027-06-01 | Rapport de synthèse de la présidentielle 2027 | Rapport de synthèse publié sous 30 jours après le second tour (§12). Date calculée sur le second tour du 2 mai 2027 annoncé en Conseil des ministres le 1er juillet 2026 (service-public.gouv.fr, actualité A15053) ; à recaler sur le décret de convocation au Journal officiel, attendu au plus tard le 7 février 2027 |
 
 ### J1
 
@@ -414,6 +494,10 @@ flowchart LR
 - analyse (T2)
 - go-no-go (T3)
 - site (T0)
+
+### J6
+
+- generalisation-politique-francaise (T0)
 
 ## Échelle de preuve
 

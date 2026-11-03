@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-11-02",
+  "date_maj": "2026-11-03",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -38,6 +38,12 @@
       "date": "2026-12-01",
       "titre": "Premier run public mensuel",
       "critere": "Tous les critères précédents ; au moins 8 candidats au-dessus du seuil de couverture"
+    },
+    {
+      "id": "J6",
+      "date": "2027-06-01",
+      "titre": "Rapport de synthèse de la présidentielle 2027",
+      "critere": "Rapport de synthèse publié sous 30 jours après le second tour (§12). Date calculée sur le second tour du 2 mai 2027 annoncé en Conseil des ministres le 1er juillet 2026 (service-public.gouv.fr, actualité A15053) ; à recaler sur le décret de convocation au Journal officiel, attendu au plus tard le 7 février 2027"
     }
   ],
   "decisions": [
@@ -853,6 +859,65 @@
         "Trancher point par point, en commençant par #233 (3) et #234 (5), qui bloquent un item A juste et l'écart API / application."
       ],
       "recommandation": "Commencer par #233 (3) (fausse absence, DETTE 2026-11-02 point 2) et #233 (2) (renvoi sans consommateur), qui touchent une mesure publiée ; le reste avant le gel de la 1.0."
+    },
+    {
+      "id": "D63",
+      "statut": "en_attente",
+      "question": "Règles de décision de H3 et H5, absentes du §2 (critique du 2026-11-02, constat 1, bloquant).",
+      "contexte": "Le §2 énonce H3 et H5 sans métrique, population ni règle ; analysis/hypotheses.ts l. 10 le constate. « Confirmation erronée » n'existe pas sur une formulation neutre (§5). Sans règle, le verdict se choisira après les données. Détail : docs/critiques/2026-11-02.md.",
+      "options": [
+        "H3 : confirmée pour un couple outil × mode comparé quand la différence appariée d'exactitude, neutre moins orientée, restreinte aux items F et O, est établie et positive ; H5 : confirmée pour un outil quand la tendance de son exactitude (§8) est établie et positive, « sans objet » si le couple sort de la tendance.",
+        "H3 et H5 sur le seul mode de tête de chaque outil.",
+        "Retirer H3 et H5 des hypothèses et les publier comme analyses descriptives (§8) sans verdict."
+      ],
+      "recommandation": "Option 1 : elle n'utilise que des quantités que le §8 et analysis/conditions.ts calculent déjà."
+    },
+    {
+      "id": "D64",
+      "statut": "en_attente",
+      "question": "Que vaut, dans une question d'attribution, un candidat interrogé cité par l'outil qui n'a aucun item vérifié sur la mesure ? (critique du 2026-11-02, constat 2, bloquant)",
+      "contexte": "Le code (pipeline/notation/note-attribution.ts l. 14, 142) le compte « en trop » : réponse inexacte, drapeau mauvaise attribution, publiée in extenso au nom du candidat (§8), alors que le §4 n'admet une absence qu'après recherche et double confirmation et que le §10 exclut toute affirmation non sourcée. Avec ~30 items P par candidat, la plupart des positions réelles ne sont pas enregistrées. Détail : docs/critiques/2026-11-02.md.",
+      "options": [
+        "Réponse « non classée, référence incomplète », notée par règle, hors dénominateur de l'exactitude, nombre publié ; « en trop » seulement pour un candidat qui porte un item vérifié dont la position en vigueur n'est pas « pour ».",
+        "Renvoi à la notation humaine, comme un candidat du périmètre non interrogé (D30 (2)) : l'humain ne voit que la charge du juge et ne peut pas mieux trancher ; coût humain élevé.",
+        "Garder la note inexacte mais sans drapeau mauvaise attribution ni publication in extenso, et déclarer au §11 que l'exactitude d'une question d'attribution mesure la conformité à la liste enregistrée."
+      ],
+      "recommandation": "Option 1 : aucun temps humain, aucune affirmation non sourcée sur un candidat."
+    },
+    {
+      "id": "D65",
+      "statut": "en_attente",
+      "question": "Seuil d'accord des lots de validation quand les annotateurs retiennent plus de 90 % des items (critique du 2026-11-02, constat 3).",
+      "contexte": "Sur 50 items, 49 accords peuvent donner κ = 0 ; deux désaccords sur des marges 46/3/1 (accord 0,96) donnent κ = 0,73 et déclenchent une réannotation (§4) et un échec de J3 (§12). Un annotateur qui rejette davantage fait monter le kappa. Détail : docs/critiques/2026-11-02.md.",
+      "options": [
+        "Critère alternatif au §4 et au §12 : kappa ≥ 0,80, ou accord observé ≥ 0,96 avec au plus deux désaccords sur 50.",
+        "Kappa calculé sur des lots cumulés de 100 items.",
+        "Ne rien changer et déclarer au §11 l'instabilité du kappa sur des marges déséquilibrées."
+      ],
+      "recommandation": "Option 1 : l'accord observé est déjà publié dans tous les cas, aucun calcul nouveau."
+    },
+    {
+      "id": "D66",
+      "statut": "en_attente",
+      "question": "Plafonds de coût et de charge d'annotation du §12 (critique du 2026-11-02, constat 4).",
+      "contexte": "Le coût API estimé dépasse 600 € par mois d'un facteur 1,7 à 3,3 même avec le levier 2 → 1 et l'API par lots (selon 250 à 490 questions par run) ; les heures des annotateurs rémunérés (double notation de 10 %, désaccords, erreurs graves, comparateurs) ne figurent dans aucun plafond, les « 3 heures » du §12 étant celles de l'auteur. Détail : docs/critiques/2026-11-02.md.",
+      "options": [
+        "Mesurer coût et charge au run pilote et écrire à la v1.0 les plafonds mesurés, avec un plafond d'heures d'annotation ; ajouter un levier sans effet sur la validité : une lecture de comparateur dont la page archivée a la même empreinte qu'au run précédent reprend sa note.",
+        "Garder les plafonds et réduire le nombre de questions par run (quota), au prix d'intervalles plus larges.",
+        "Passer au rythme bimensuel plutôt qu'hebdomadaire de février à mai 2027."
+      ],
+      "recommandation": "Option 1 : le §12 fait déjà des plafonds mesurés le critère du rythme hebdomadaire ; il s'agit de les mesurer avant de les écrire."
+    },
+    {
+      "id": "D67",
+      "statut": "en_attente",
+      "question": "Précisions de texte de la critique du 2026-11-02 (majeurs 5 à 21 et mineurs), à écrire en 0.27 avec D62 à D66.",
+      "contexte": "Chaque précision tient en une phrase ou un mot et ne change aucune métrique : sondages (hypothèses testées, critère d'institut à choisir), « non confirmée » au lieu d'« infirmée », limite de multiplicité, dénominateur des taux, intervalle nul, conflit d'intérêts Mistral AI, limite de sortie de l'API, traces d'identité dans les URL, juge défaillant, diagnostic d'accord par candidat et par type, remplacement d'un juge retiré (Mistral Large 3 retiré le 2027-04-30), corpus des items A et F, positions incompatibles, correction d'une notation et erratum, fenêtre des runs supplémentaires, reproductibilité des juges, liste de ce qui n'est pas publié ; plus deux questions pour l'avocat (licences et conditions d'utilisation, consentement). Liste complète : docs/critiques/2026-11-02.md.",
+      "options": [
+        "Accepter le lot tel que proposé par le rapport, l'auteur retirant les points qu'il refuse, et choisir le critère d'institut des sondages.",
+        "Trancher point par point."
+      ],
+      "recommandation": "Option 1, en commençant par le choix du modèle Mistral à figer : un modèle retiré pendant la campagne casserait le juge et l'extraction."
     }
   ],
   "lots": [
@@ -1334,6 +1399,23 @@
         "D43"
       ],
       "note": "Livré le 2026-10-15 (PR #122 à #124) : règles et contrôles déterministes, pnpm reformuler (Mistral réel ou simulé), staging/formulations/, écran de relecture, data/formulations/, lecture au gel (D43). Inclut le contrôle sur la mesure contractée (D35 (4)). Prompt 1.0.1 aligné sur D42 le 2026-10-17 (Q-ATT sans position, mesure fictive comprise), à relire par l'auteur. Délai d'abandon et code de sortie réglés le 2026-10-16 par la PR #128 (docs/DETTE.md, 2026-10-15, point 2). Reste : jamais exercé sur un vrai appel."
+    },
+    {
+      "id": "generalisation-politique-francaise",
+      "titre": "Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes",
+      "jalon": "J6",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "XL",
+      "temps_auteur_h": 8,
+      "depend_de": [
+        {
+          "lot": "site",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [],
+      "note": "Décidé le 2026-11-03 : la présidentielle 2027 d'abord (premier run, itérations, rapport de synthèse), la généralisation ensuite, sous un protocole distinct préenregistré avant ses propres runs. Toutes nationalités écarté : coût surtout humain par pays (règles d'inclusion, cadre légal, avocat, panel, annotateurs, jeu d'or, prompts revalidés) ; code estimé à 2 à 3 mois (gabarits et grammaire française dans pipeline/questions/gabarits.ts, prompts français, transcription fixée à fr dans schema/transcription.schema.json, noms supposés en alphabet latin dans pipeline/questions/libelles.ts et pipeline/notation/candidats.ts, fuseau Europe/Paris codé dans pipeline/interrogation/conditions.ts). Politique française estimée à 3 à 5 semaines. Acquis : ne pas renommer candidat (environ 1 800 occurrences, 104 identifiants, schémas publiés) mais le redéfinir au protocole ; un item appartient à une personne, pas à une élection, donc data/ resservira tel quel et le périmètre du run choisit. Chantiers : (1) régimes de périmètre fondés sur des règles (présidentielle paramétrée par l'année, hors élection : gouvernement au JO, présidents de groupe parlementaire) et objet election facultatif ; (2) types de sources institutionnels (compte rendu des débats, question écrite, exposé des motifs, discours officiel), les votes en scrutin public restant hors périmètre faute de citation ; (3) sous un régime présidentielle, seuls les items sourcés pendant la campagne en cours entrent au tirage ; (4) dates d'une élection en paramètres (veille électorale, conservation des contestations, calendrier du §12 relatif au jour du vote), Le Chat d'office au §3 à revoir. Questions ouvertes, recommandations entre crochets : partis comme unités [non, sources seulement] ; premier régime hors élection [gouvernement et présidents de groupe] ; renommage du projet et de l'URN urn:banc-essai-2027 [à l'auteur, plus coûteux une fois les identifiants publiés]. À compléter du bilan du premier run réel. Discipline d'ici là : ne rien coder en dur de propre à 2027 qui soit déjà paramètre ou donnée."
     }
   ],
   "anomalies": [
