@@ -10,6 +10,7 @@
  *   promotion, qui a eu lieu une fois.
  * - `contestations[]`, `historique[]` et `absence.reverifications[]` gardent leur préfixe. Une
  *   `decision_panel` s'ajoute à une contestation qui n'en avait pas ; elle n'est jamais remplacée.
+ *   Les `deliberations_sans_majorite[]` d'une contestation gardent leur préfixe (§10, D71 (8)).
  * - Exactement une entrée d'historique est ajoutée, et sa `version_resultante` est celle de l'item.
  * - Le contenu notant ne change que par les chemins de la liste blanche des corrections
  *   (`cheminModifiable`), et seulement si la commande l'autorise (décision « correction » du
@@ -116,28 +117,43 @@ function champDe(valeur: unknown, cle: string): unknown {
   return (valeur as Record<string, unknown>)[cle];
 }
 
-function sansDecision(contestation: unknown): unknown {
+/** Ce qu'une contestation conservée peut recevoir : une décision du panel, des délibérations sans majorité. */
+function sansAjouts(contestation: unknown): unknown {
   if (typeof contestation !== "object" || contestation === null) return contestation;
-  const { decision_panel: _decision, ...reste } = contestation as Record<string, unknown>;
+  const { decision_panel: _decision, deliberations_sans_majorite: _deliberations, ...reste } = contestation as Record<string, unknown>;
   return reste;
 }
 
-/** Une contestation conservée : même contenu, et une décision du panel ajoutée au plus, jamais changée. */
-function motifContestation(avant: unknown, apres: unknown, rang: number): string | null {
-  if (!identiques(sansDecision(avant), sansDecision(apres))) return `contestations[${rang}] réécrite`;
+function motifsDecision(avant: unknown, apres: unknown, rang: number): readonly string[] {
   const decisionAvant = champDe(avant, "decision_panel");
-  if (decisionAvant === undefined) return null;
-  if (identiques(decisionAvant, champDe(apres, "decision_panel"))) return null;
-  return `contestations[${rang}].decision_panel remplacée ou retirée`;
+  if (decisionAvant === undefined) return [];
+  if (identiques(decisionAvant, champDe(apres, "decision_panel"))) return [];
+  return [`contestations[${rang}].decision_panel remplacée ou retirée`];
+}
+
+/** §10 et annexe E (0.29, D71 (8)) : les délibérations sans majorité gardent leur préfixe. */
+function motifsDeliberations(avant: unknown, apres: unknown, rang: number): readonly string[] {
+  const anciennes = champDe(avant, "deliberations_sans_majorite");
+  if (anciennes === undefined) return [];
+  const nouvelles = champDe(apres, "deliberations_sans_majorite");
+  if (Array.isArray(anciennes) && Array.isArray(nouvelles) && prefixeGarde(anciennes, nouvelles)) return [];
+  return [`contestations[${rang}].deliberations_sans_majorite[] : une délibération réécrite ou retirée`];
+}
+
+/**
+ * Une contestation conservée : même contenu ; une décision du panel ajoutée au plus, jamais
+ * changée ; des délibérations sans majorité ajoutées, jamais changées ni retirées.
+ */
+function motifsContestation(avant: unknown, apres: unknown, rang: number): readonly string[] {
+  if (!identiques(sansAjouts(avant), sansAjouts(apres))) return [`contestations[${rang}] réécrite`];
+  return [...motifsDecision(avant, apres, rang), ...motifsDeliberations(avant, apres, rang)];
 }
 
 function motifsContestations(avant: Item, apres: Item): readonly string[] {
   const anciennes = requis(avant, "contestations");
   const nouvelles = requis(apres, "contestations");
   if (nouvelles.length < anciennes.length) return ["contestations[] : une contestation a disparu"];
-  return anciennes
-    .map((contestation, rang) => motifContestation(contestation, nouvelles[rang], rang))
-    .filter((motif): motif is string => motif !== null);
+  return anciennes.flatMap((contestation, rang) => motifsContestation(contestation, nouvelles[rang], rang));
 }
 
 /* ------------------------------------------------------------------- historique */

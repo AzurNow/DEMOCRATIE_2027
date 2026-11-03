@@ -1914,6 +1914,23 @@
       }
     },
     {
+      "objet": "item",
+      "fichier": "item/valide-07-egalite-des-voix-opinions-publiees.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01 contestée, sur laquelle le panel s'est partagé à deux voix contre deux, un membre déporté. §10 et annexe E (protocole 0.29, D71 (8)) : à égalité des voix, rien ne change, l'item reste contesté (aucune decision_panel) et hors du tirage, et l'opinion motivée de chaque membre votant est publiée à côté de la contestation qu'elle tranche, en ajout seul (deliberations_sans_majorite) ; le déporté est nommé à part et n'a pas d'opinion. Deux entrées d'historique ajoutées, version inchangée."
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-26-egalite-votant-sans-motivation.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-07 dont un membre votant n'a pas d'opinion motivée. §10 et annexe E (D71 (8)) : à égalité des voix, l'opinion de chaque membre est publiée ; un vote sans motivation n'en est pas une. Erreur : /contestations/0/deliberations_sans_majorite/0/opinions/2 (required, motivation).",
+      "regle_protocole": "§10, panel d'arbitrage ; annexe E, point 5",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/contestations/0/deliberations_sans_majorite/0/opinions/2"
+      }
+    },
+    {
       "objet": "decision-arbitrage",
       "fichier": "decision-arbitrage/valide-01-auteur-contenu-original.json",
       "attendu": "valide",

@@ -1,0 +1,148 @@
+{
+  "id": "YARYX9NM753C0AF6CDVVE6SVGM",
+  "version": 1,
+  "empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2",
+  "libelle_lisible": "TVA énergie à 5,5 %",
+  "type": "P",
+  "candidat_id": "cand-a",
+  "mesure_id": "JE6Y9CC6TBCK6K7H6WNNZ7353S",
+  "mesure_version": 1,
+  "statut_validation": "verifie",
+  "statut_contestation": "contestee",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "assertion": {
+    "position": "pour",
+    "paraphrase": "Ramener la TVA sur les produits énergétiques de 20 % à 5,5 %.",
+    "citation_verbatim": "Nous ramènerons la TVA sur les produits énergétiques à 5,5 %.",
+    "quantification": {
+      "dimensions": [
+        {
+          "type": "taux",
+          "valeur": 5.5,
+          "unite": "%",
+          "operateur": "exact"
+        },
+        {
+          "type": "perimetre",
+          "valeur": "carburants, fioul, gaz, électricité"
+        }
+      ]
+    },
+    "source": {
+      "tier": "T1",
+      "url": "https://exemple-candidat.fr/programme-2027.pdf",
+      "type_document": "programme_pdf",
+      "format": "pdf",
+      "page": 14,
+      "sha256": "2c6ed1182b4176016ebb10fdc541e61c92c45c8d37e04ec8481a5d398b6e460e",
+      "archive_url": "https://web.archive.org/web/20260901120000/https://exemple-candidat.fr/programme-2027.pdf",
+      "date_source": "2026-09-01",
+      "date_collecte": "2026-09-03T09:12:00+02:00",
+      "publication": "publique"
+    },
+    "test_verbatim": {
+      "passe": true,
+      "date": "2026-09-03T09:20:00+02:00",
+      "version_normalisation": "norm-1.0.0",
+      "offset_debut": 48120,
+      "offset_fin": 48181
+    },
+    "extraction": {
+      "modeles": [
+        "famille-x/modele-1",
+        "famille-y/modele-2"
+      ],
+      "accord": "accord"
+    }
+  },
+  "validations": [
+    {
+      "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a2",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    }
+  ],
+  "contestations": [
+    {
+      "id": "01JBANCESSA1C0NTESTAT10N07",
+      "date_reception": "2026-10-01T09:00:00+02:00",
+      "texte": "La citation est sortie de son contexte.",
+      "contestataire_type": "campagne",
+      "caviardage": false,
+      "deliberations_sans_majorite": [
+        {
+          "date": "2026-10-10T18:00:00+02:00",
+          "version_jugee": 1,
+          "opinions": [
+            {
+              "membre": "Membre A",
+              "vote": "maintien",
+              "motivation": "La citation figure telle quelle dans la source."
+            },
+            {
+              "membre": "Membre B",
+              "vote": "maintien",
+              "motivation": "Le contexte ne change pas le sens de l'engagement."
+            },
+            {
+              "membre": "Membre C",
+              "vote": "retrait"
+            },
+            {
+              "membre": "Membre D",
+              "vote": "retrait",
+              "motivation": "La paraphrase omet la condition posée par la source."
+            }
+          ],
+          "deportes": [
+            "Membre E"
+          ]
+        }
+      ]
+    }
+  ],
+  "historique": [
+    {
+      "date": "2026-09-20T10:05:00+02:00",
+      "changement": "création",
+      "commit": "2f22765d04931a078909145ca628d2264c852d7d",
+      "version_resultante": 1
+    },
+    {
+      "date": "2026-10-01T09:05:00+02:00",
+      "changement": "contestation reçue",
+      "motif": "contestation 01JBANCESSA1C0NTESTAT10N07",
+      "commit": "3a1f5c9e0b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d",
+      "version_resultante": 1
+    },
+    {
+      "date": "2026-10-10T18:05:00+02:00",
+      "changement": "délibération du panel sans majorité",
+      "motif": "contestation 01JBANCESSA1C0NTESTAT10N07, 4 votant(s), 1 déporté(s)",
+      "commit": "4b2e6d0f1c8e3b5d7f9a1c2e4a6c8e0b2d3f5a7c",
+      "version_resultante": 1
+    }
+  ]
+}
