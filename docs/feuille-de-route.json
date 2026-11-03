@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-11-02",
+  "date_maj": "2026-11-03",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -38,6 +38,12 @@
       "date": "2026-12-01",
       "titre": "Premier run public mensuel",
       "critere": "Tous les critères précédents ; au moins 8 candidats au-dessus du seuil de couverture"
+    },
+    {
+      "id": "J6",
+      "date": "2027-06-01",
+      "titre": "Rapport de synthèse de la présidentielle 2027",
+      "critere": "Rapport de synthèse publié sous 30 jours après le second tour (§12). Date calculée sur le second tour du 2 mai 2027 annoncé en Conseil des ministres le 1er juillet 2026 (service-public.gouv.fr, actualité A15053) ; à recaler sur le décret de convocation au Journal officiel, attendu au plus tard le 7 février 2027"
     }
   ],
   "decisions": [
@@ -1393,6 +1399,23 @@
         "D43"
       ],
       "note": "Livré le 2026-10-15 (PR #122 à #124) : règles et contrôles déterministes, pnpm reformuler (Mistral réel ou simulé), staging/formulations/, écran de relecture, data/formulations/, lecture au gel (D43). Inclut le contrôle sur la mesure contractée (D35 (4)). Prompt 1.0.1 aligné sur D42 le 2026-10-17 (Q-ATT sans position, mesure fictive comprise), à relire par l'auteur. Délai d'abandon et code de sortie réglés le 2026-10-16 par la PR #128 (docs/DETTE.md, 2026-10-15, point 2). Reste : jamais exercé sur un vrai appel."
+    },
+    {
+      "id": "generalisation-politique-francaise",
+      "titre": "Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes",
+      "jalon": "J6",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "XL",
+      "temps_auteur_h": 8,
+      "depend_de": [
+        {
+          "lot": "site",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [],
+      "note": "Décidé le 2026-11-03 : la présidentielle 2027 d'abord (premier run, itérations, rapport de synthèse), la généralisation ensuite, sous un protocole distinct préenregistré avant ses propres runs. Toutes nationalités écarté : coût surtout humain par pays (règles d'inclusion, cadre légal, avocat, panel, annotateurs, jeu d'or, prompts revalidés) ; code estimé à 2 à 3 mois (gabarits et grammaire française dans pipeline/questions/gabarits.ts, prompts français, transcription fixée à fr dans schema/transcription.schema.json, noms supposés en alphabet latin dans pipeline/questions/libelles.ts et pipeline/notation/candidats.ts, fuseau Europe/Paris codé dans pipeline/interrogation/conditions.ts). Politique française estimée à 3 à 5 semaines. Acquis : ne pas renommer candidat (environ 1 800 occurrences, 104 identifiants, schémas publiés) mais le redéfinir au protocole ; un item appartient à une personne, pas à une élection, donc data/ resservira tel quel et le périmètre du run choisit. Chantiers : (1) régimes de périmètre fondés sur des règles (présidentielle paramétrée par l'année, hors élection : gouvernement au JO, présidents de groupe parlementaire) et objet election facultatif ; (2) types de sources institutionnels (compte rendu des débats, question écrite, exposé des motifs, discours officiel), les votes en scrutin public restant hors périmètre faute de citation ; (3) sous un régime présidentielle, seuls les items sourcés pendant la campagne en cours entrent au tirage ; (4) dates d'une élection en paramètres (veille électorale, conservation des contestations, calendrier du §12 relatif au jour du vote), Le Chat d'office au §3 à revoir. Questions ouvertes, recommandations entre crochets : partis comme unités [non, sources seulement] ; premier régime hors élection [gouvernement et présidents de groupe] ; renommage du projet et de l'URN urn:banc-essai-2027 [à l'auteur, plus coûteux une fois les identifiants publiés]. À compléter du bilan du premier run réel. Discipline d'ici là : ne rien coder en dur de propre à 2027 qui soit déjà paramètre ou donnée."
     }
   ],
   "anomalies": [

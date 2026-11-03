@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-02.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-03.
 
 ## Décisions en attente
 
@@ -372,6 +372,9 @@ flowchart LR
     lot_go_no_go["go-no-go<br/>Critères go/no-go du §12 et contreseing de la checklist de l'annexe F<br/>T3"]:::T3
     lot_site["site<br/>Site statique généré depuis runs/<br/>T0"]:::T0
   end
+  subgraph jalon_J6["J6 · 1 juin 2027"]
+    lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
+  end
   dec_D62{{"D62<br/>Questions laissées ouvertes par les lots D59 (#230, #232 à #…"}}:::decision
   dec_D63{{"D63<br/>Règles de décision de H3 et H5, absentes du §2 (critique du …"}}:::decision
   dec_D64{{"D64<br/>Que vaut, dans une question d'attribution, un candidat inter…"}}:::decision
@@ -384,6 +387,7 @@ flowchart LR
   lot_mesures_validees --> lot_gel
   lot_questions_tirage_symetrie --> lot_gel
   lot_reformulation --> lot_gel
+  lot_site --> lot_generalisation_politique_francaise
   lot_analyse --> lot_go_no_go
   lot_interrogation --> lot_go_no_go
   lot_notation --> lot_go_no_go
@@ -439,6 +443,7 @@ flowchart LR
 | analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | débloqué | opus | L | 1 | — |
 | go-no-go | Critères go/no-go du §12 et contreseing de la checklist de l'annexe F | J5 | T3 | atteint | opus | M | 1 | analyse, interrogation, notation, validation-interface (informe) |
 | site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse | sonnet | M | 2 | analyse, go-no-go |
+| generalisation-politique-francaise | Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes | J6 | T0 | bloqué par site | opus | XL | 8 | site |
 
 ## Jalons
 
@@ -449,6 +454,7 @@ flowchart LR
 | J3 | 2026-11-15 | Annotateurs formés ; 200 items vérifiés ; panel constitué ou faiblesse déclarée | Kappa ≥ 0,80 sur les deux derniers lots |
 | J4 | 2026-11-22 | Run pilote complet ; jeu d'or de 300 réponses | Kappa juge-humain ≥ 0,75 ; taux de changement contrefactuel ≤ 3 % |
 | J5 | 2026-12-01 | Premier run public mensuel | Tous les critères précédents ; au moins 8 candidats au-dessus du seuil de couverture |
+| J6 | 2027-06-01 | Rapport de synthèse de la présidentielle 2027 | Rapport de synthèse publié sous 30 jours après le second tour (§12). Date calculée sur le second tour du 2 mai 2027 annoncé en Conseil des ministres le 1er juillet 2026 (service-public.gouv.fr, actualité A15053) ; à recaler sur le décret de convocation au Journal officiel, attendu au plus tard le 7 février 2027 |
 
 ### J1
 
@@ -488,6 +494,10 @@ flowchart LR
 - analyse (T2)
 - go-no-go (T3)
 - site (T0)
+
+### J6
+
+- generalisation-politique-francaise (T0)
 
 ## Échelle de preuve
 
