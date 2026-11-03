@@ -50,6 +50,7 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `journal-extraction.schema.json` | journal de l'extraction d'une source | §4, décisions D52 et D53 (2) : `staging/journal-extraction/<cle_source>/<sha256>.json`, écrit en dernier par `pnpm extraire`, après les items et les mesures ; marque la source traitée. Issue `extraite` (identifiants déposés, rejets du cœur) ou `refusee` (une sortie rejetée en entier, `extraction_double_incomplete`, aucun item) |
 | `sous-echantillon-application.schema.json` | sous-échantillon de l'application grand public | §6, QR8, D59 (12) (protocole 0.24) : les cinq questions par candidat interrogé que chacun des deux testeurs saisit à la main, réparties entre les gabarits du candidat en tourniquet (codes de gabarit, puis identifiants de question, triés), formulation neutre, échantillon 1. Calculé sans graine par `pipeline/interrogation/sous-echantillon-application.ts` depuis les fichiers gelés du run ; les questions d'attribution n'y entrent pas |
 | `depot-application.schema.json` | dépôt d'une saisie dans l'application | §6, QR8, D59 (12) : ce qu'un testeur rapporte d'une saisie du sous-échantillon — texte copié par le bouton de copie, tel quel (règle 7), empreinte SHA-256 de chaque capture, pseudonyme du testeur, compte employé (`aucun` ou `dedie`, jamais un compte personnel). Contrôlé contre le sous-échantillon par `pipeline/interrogation/depot-application.ts:bilanDesDepots`. Une capture masquée porte aussi l'empreinte de la capture masquée (`sha256_masquee`, facultative ; protocole 0.25, D60 (g)) ; son égalité avec l'empreinte d'origine est refusée par le code, pas par le schéma |
+| `metriques.schema.json` | métriques d'un run | §8 : `runs/<date>/metriques/metriques.json`, écrit par `pnpm analyze` (`analysis/analyse-du-run.ts`, sous-lot A), jamais réécrit. Un seul partage de la population (`population`) pour toutes les sections ; chaque section calculée ou sans objet avec son motif ; empreinte de `run.json` sans les champs du go/no-go ; kappas et test contrefactuel non recopiés |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
@@ -197,6 +198,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | rattachement-item | entrée sans `mesure_avant` · version de la mesure cible à 0 · libellé recopié dans l'entrée (champ en trop) |
 | sous-echantillon-application | question d'attribution dans le sous-échantillon d'un candidat · quatre questions au lieu de cinq |
 | depot-application | compte personnel du testeur · échantillon 2 · saisie sans capture |
+| metriques | H3 décidée sans règle · section sans objet sans motif · entrées sans empreinte du run · document sans graines |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
 depuis, `pnpm check` rejoue le tout et imprime les comptes : chaque schéma au registre, chaque exemple

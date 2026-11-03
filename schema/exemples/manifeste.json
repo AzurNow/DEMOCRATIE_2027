@@ -3375,6 +3375,62 @@
         "keyword": "minItems",
         "instance_path": "/captures"
       }
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/valide-01-aucun-couple-compare.json",
+      "attendu": "valide",
+      "motif": "Sortie de pnpm analyze sur le run fictif des tests (tests/notation/run-fictif.ts) : son seul couple est « run incomplet », les sections par couple sont sans objet (aucun_couple_compare), H1 sans objet, H4 indécidable, H3 et H5 sans règle (regle_a_venir), aucune graine dérivée."
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/valide-02-un-couple-compare.json",
+      "attendu": "valide",
+      "motif": "Sortie d'analysis/analyse-du-run.ts:analyserRun sur un run en mémoire (tests/analysis/run-analysable.ts) : un couple comparé, deux candidats, dix rééchantillonnages et dix permutations ; taux, asymétrie, conditions, recalculs (a) à (d) et hypothèses calculés."
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-01-h3-decidee-sans-regle.json",
+      "attendu": "invalide",
+      "motif": "H3 publiée avec un verdict : aucune règle de décision n'est écrite pour H3 (§2) ; elle est sans objet, motif regle_a_venir.",
+      "regle_protocole": "§2, hypothèses préenregistrées",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/hypotheses/H3/statut"
+      }
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-02-section-sans-objet-sans-motif.json",
+      "attendu": "invalide",
+      "motif": "Section des taux sans objet sans son motif : une section absente dit pourquoi, jamais en silence.",
+      "regle_protocole": "§8, sous-lot A de pnpm analyze (docs/DETTE.md, 2026-11-02, n° 1)",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/taux"
+      }
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-03-sans-empreinte-du-run.json",
+      "attendu": "invalide",
+      "motif": "Entrées sans l'empreinte de run.json : les métriques ne désignent plus le run dont elles viennent (§9, publication intégrale).",
+      "regle_protocole": "§9, transparence et reproductibilité",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/entrees"
+      }
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-04-sans-graines.json",
+      "attendu": "invalide",
+      "motif": "Document sans la liste des graines dérivées : chaque intervalle et chaque test publie sa graine (§8, « Graines de l'analyse »).",
+      "regle_protocole": "§8, « Graines de l'analyse »",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": ""
+      }
     }
   ]
 }

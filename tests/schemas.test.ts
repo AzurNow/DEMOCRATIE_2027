@@ -139,12 +139,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application (un valide, deux invalides) et dépôt d'une saisie (un valide, trois invalides).
   // 352 → 354 : §6, protocole 0.24 (D59 (15)), lecture de comparateur notée par un juge, motif de lecture sur une réponse : deux invalides de notation.
   // 354 → 355 : §6, protocole 0.25 (D60 (g)), dépôt d'une capture masquée avec ses deux empreintes : un valide (l'égalité des deux empreintes ne s'exprime pas en JSON Schema : garde du code).
-  it("1. les 355 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides du nouveau schéma metriques.
+  it("1. les 361 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(355);
+    expect(manifeste.exemples).toHaveLength(361);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -164,9 +165,10 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 36 → 37 : rattachement-item (registre des rattachements d'item, pnpm mesures --rattacher), décision D53 (1) de l'auteur.
   // 37 → 38 : lot (manifeste de lot de validation), revue du 2026-10-12, constat 4 (D55 (3)).
   // 38 → 40 : sous-echantillon-application et depot-application (§6, D59 (12), protocole 0.24).
-  it("2. les quarante schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  // 40 → 41 : metriques (runs/<date>/metriques/metriques.json, pnpm analyze, sous-lot A).
+  it("2. les quarante et un schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(40);
+    expect(conformites).toHaveLength(41);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
@@ -399,7 +401,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
   // 352 → 354 : §6, protocole 0.24 (D59 (15)), deux invalides de notation (juge sur une lecture, motif de lecture sur une réponse).
   // 354 → 355 : §6, protocole 0.25 (D60 (g)), un valide de dépôt d'application (capture masquée).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 355 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(355);
+  // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides de metriques.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 361 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(361);
   });
 });

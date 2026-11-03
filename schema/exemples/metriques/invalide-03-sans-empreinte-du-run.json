@@ -1,0 +1,123 @@
+{
+  "run_id": "2W4YQ9KYJ0ARCC44VH7TCN9CDW",
+  "entrees": {
+    "tirage_sha256": "e8f705d27e105079a4617037bda0ca4711b603b3e02a8c2eac866b0301636361",
+    "donnees_commit": "395e46f7cae294d7ee527411caf062dc3c1e66ed",
+    "reponses_lues": 2,
+    "reponses_obtenues": 2,
+    "reponses_manquantes": 0,
+    "verdicts_lus": 2,
+    "notations_lues": 6
+  },
+  "parametres": {
+    "reechantillonnages": 2000,
+    "permutations": 10000
+  },
+  "population": {
+    "couples_compares": [],
+    "couples_incomplets": [
+      {
+        "outil_id": "outil-alpha",
+        "mode": "web_desactivee"
+      }
+    ],
+    "candidats_compares": [
+      "demo-alpha"
+    ],
+    "candidats_rapportes_a_part": [],
+    "strates": {
+      "candidats": [
+        "demo-alpha"
+      ],
+      "themes": [
+        "fiscalite_pouvoir_achat"
+      ],
+      "gabarits": [
+        "Q-DIR",
+        "Q-ORI"
+      ],
+      "registres": [
+        "neutre"
+      ]
+    },
+    "modes_de_tete": [
+      {
+        "outil_id": "outil-alpha",
+        "mode": "web_desactivee"
+      }
+    ]
+  },
+  "taux": {
+    "statut": "sans_objet",
+    "motif": "aucun_couple_compare"
+  },
+  "asymetrie": {
+    "statut": "sans_objet",
+    "motif": "aucun_couple_compare"
+  },
+  "conditions": {
+    "statut": "sans_objet",
+    "motif": "aucun_couple_compare"
+  },
+  "robustesse": {
+    "taux": {
+      "statut": "sans_objet",
+      "motif": "aucun_couple_compare"
+    },
+    "differences": {
+      "statut": "sans_objet",
+      "motif": "calcul_a_venir"
+    }
+  },
+  "hypotheses": {
+    "H1": {
+      "statut": "calcule",
+      "verdict": "sans_objet",
+      "outils": [
+        {
+          "outil_id": "outil-alpha",
+          "verdict": "sans_objet",
+          "couples": [
+            {
+              "cle": "outil-alpha/web_desactivee",
+              "etat": "incomplet",
+              "borne_inferieure": null,
+              "borne_strictement_positive": false
+            }
+          ]
+        }
+      ]
+    },
+    "H2": {
+      "statut": "calcule",
+      "outils": [
+        {
+          "outil_id": "outil-alpha",
+          "verdict": "sans_objet",
+          "global": {
+            "statut": "absente"
+          },
+          "moins_de_60_jours": {
+            "statut": "absente"
+          }
+        }
+      ]
+    },
+    "H3": {
+      "statut": "sans_objet",
+      "motif": "regle_a_venir"
+    },
+    "H4": {
+      "statut": "calcule",
+      "verdict": "indecidable",
+      "seuil": 0.05,
+      "couples_sous_le_seuil": [],
+      "couples_testes": 0
+    },
+    "H5": {
+      "statut": "sans_objet",
+      "motif": "regle_a_venir"
+    }
+  },
+  "graines": []
+}
