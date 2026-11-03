@@ -1,9 +1,11 @@
 /**
- * Critère de passage du jalon J3 (§12, protocole 0.28, D70 (5)) : « Accord suffisant […] lu sur
- * l'effectif publié du lot, sur les deux derniers lots réels ou de réannotation de taille conforme
- * (50 items, hors entraînement), dans l'ordre de leur clôture, un lot étant clos quand ses deux
- * annotateurs l'ont terminé, celui du lot de réannotation comptant seul quand un lot a été
- * réannoté (section 4) ».
+ * Critère de passage du jalon J3 (§12, protocole 0.28, D70 (5) ; 0.29, D71 (9)) : « Accord
+ * suffisant […] lu sur l'effectif publié du lot, sur les deux derniers lots réels ou de
+ * réannotation de taille conforme (50 items, hors entraînement), dans l'ordre de leur clôture, un
+ * lot étant clos quand ses deux annotateurs l'ont terminé, ou, s'il est achevé par une
+ * contestation qu'aucun journal d'annotation ne date, à la date de réception de cette
+ * contestation, […] celui du lot de réannotation comptant seul quand un lot a été réannoté
+ * (section 4) ».
  *
  * Rien n'est recalculé ici. L'accord suffisant d'un lot est le champ publié `accord_suffisant`
  * (`kappa.ts:accordSuffisant`, via `analyse-lot.ts:diagnostiquerLot`) ; les lots qui comptent sont
@@ -19,16 +21,17 @@
  * comparés). Le verrou d'un lot terminé (`verrou-lot.ts`) interdit toute écriture après la
  * clôture : la dernière entrée qui achève est donc bien celle de la clôture. Un lot que
  * `lesDeuxOntFini` dit terminé sans que les journaux couvrent chaque item (un item contesté jamais
- * atteint ni journalisé, la contestation ayant achevé le lot après la dernière écriture) est clos
- * à un instant qu'aucun journal ne porte : il est rendu clos sans instant, jamais daté par
- * approximation, et J3 n'est alors pas décidable.
+ * atteint ni journalisé, la contestation ayant achevé le lot après la dernière écriture) est clos,
+ * au plus tard, à la date de réception de cette contestation (0.29, voir `clotureDuLot`). Plus
+ * d'une contestation candidate : rendu clos sans instant, jamais daté par un choix, et J3 n'est
+ * alors pas décidable.
  *
  * **Ex aequo.** Deux lots clos au même instant sont départagés par leur identifiant
- * (`comparerChaines`). Le protocole ne fixe pas ce second critère : question ouverte, signalée
- * avec le lot.
+ * (`comparerChaines`), comme le §12 l'écrit depuis la 0.29.
  */
 
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import { instantDe } from "../../pipeline/questions/reponse-attendue.ts";
 import { lesDeuxOntFini } from "./analyse-lot.ts";
 import { derniersCalculs, kappasRetenusSection12, type DiagnosticPublie } from "./diagnostic-publie.ts";
 import { rejouer, type EtatAnnotateur } from "./journal.ts";
@@ -69,9 +72,14 @@ export class ClotureInconnue extends Error {
 
 /* ---------------------------------------------------------------- clôture */
 
-/** Chaque item du lot porte, dans ce journal, une décision active ou un retrait journalisé. */
+/** L'item porte, dans ce journal, une décision active ou un retrait journalisé. */
+function journalCouvre(etat: EtatAnnotateur, item_id: string): boolean {
+  return etat.decisions.has(item_id) || etat.retires.has(item_id);
+}
+
+/** Chaque item du lot est couvert par ce journal. */
 function journalCouvreLeLot(lot: Lot, etat: EtatAnnotateur): boolean {
-  return lot.items.every((reference) => etat.decisions.has(reference.item_id) || etat.retires.has(reference.item_id));
+  return lot.items.every((reference) => journalCouvre(etat, reference.item_id));
 }
 
 /**
@@ -92,12 +100,72 @@ function plusTardif(a: string, b: string): string {
   return Date.parse(b) > Date.parse(a) ? b : a;
 }
 
-/** Clôture d'un lot (§12) : le plus tardif des deux instants de fin, si les deux ont terminé. */
-export function clotureDuLot(entree: Parameters<typeof lesDeuxOntFini>[0]): Cloture {
+type EntreeCloture = Parameters<typeof lesDeuxOntFini>[0];
+
+/** Les items du lot que le journal de cet annotateur ne couvre pas à la fin. */
+function itemsNonCouverts(lot: Lot, etat: EtatAnnotateur): string[] {
+  return lot.items.map((reference) => reference.item_id).filter((item_id) => !journalCouvre(etat, item_id));
+}
+
+/**
+ * Fin de cet annotateur sur les items que son journal couvre à la fin ; aucune s'il n'en couvre
+ * aucun (le reste du lot, contesté, n'est daté que par sa contestation).
+ */
+function finSurLesItemsCouverts(lot: Lot, etat: EtatAnnotateur): string[] {
+  const nonCouverts = new Set(itemsNonCouverts(lot, etat));
+  const couverts = lot.items.filter((reference) => !nonCouverts.has(reference.item_id));
+  if (couverts.length === 0) return [];
+  const fin = finAnnotateur({ ...lot, items: couverts }, etat);
+  return fin === null ? [] : [fin];
+}
+
+/** Une contestation d'un item non couvert dont la date de réception n'est pas lisible. */
+export class ContestationSansDateDeReception extends Error {
+  constructor(item_id: string, detail: string) {
+    super(`Item ${item_id} : ${detail}. La clôture du lot qu'elle achève n'est pas datée par défaut.`);
+    this.name = "ContestationSansDateDeReception";
+  }
+}
+
+/**
+ * Frontière d'entrée : `Item.contestations` est typé `unknown[]`. Les dates de réception des
+ * contestations d'un item non couvert, que `lesDeuxOntFini` a donc sorti du lot pour contestation.
+ */
+function receptionsDe(items: EntreeCloture["items"], item_id: string): string[] {
+  const contestations = items.get(item_id)?.contestations;
+  if (contestations === undefined || contestations.length === 0) {
+    throw new ContestationSansDateDeReception(item_id, "item sorti pour contestation sans contestation enregistrée");
+  }
+  return contestations.map((contestation) => receptionDe(contestation, item_id));
+}
+
+function receptionDe(contestation: unknown, item_id: string): string {
+  const date = typeof contestation === "object" && contestation !== null ? (contestation as Record<string, unknown>)["date_reception"] : undefined;
+  if (typeof date !== "string") throw new ContestationSansDateDeReception(item_id, "contestation sans date_reception textuelle");
+  instantDe(date);
+  return date;
+}
+
+/**
+ * Clôture d'un lot (§12, protocole 0.29, D71 (9)) : « un lot étant clos quand ses deux annotateurs
+ * l'ont terminé, ou, s'il est achevé par une contestation qu'aucun journal d'annotation ne date, à
+ * la date de réception de cette contestation ».
+ *
+ * L'instant est le plus tardif des fins lues sur les journaux, chacune sur les items que le journal
+ * couvre à la fin, et de la date de réception de la contestation d'un item qu'aucun journal ne
+ * couvre. Un lot que les journaux couvrent entièrement est daté par eux seuls, même contesté
+ * ensuite. Plus d'une contestation candidate (un item non couvert contesté plusieurs fois, ou
+ * plusieurs items non couverts) : « cette contestation » n'est pas identifiable sans choisir, le
+ * lot est rendu clos sans instant (question ouverte du lot D71 (9)).
+ */
+export function clotureDuLot(entree: EntreeCloture): Cloture {
   if (!lesDeuxOntFini(entree)) return { clos: false };
-  const fins = [...entree.etats.values()].map((etat) => finAnnotateur(entree.lot, etat));
-  if (fins.some((fin) => fin === null)) return { clos: true, instant: null };
-  return { clos: true, instant: (fins as string[]).reduce(plusTardif) };
+  const etats = [...entree.etats.values()];
+  const nonCouverts = [...new Set(etats.flatMap((etat) => itemsNonCouverts(entree.lot, etat)))];
+  const receptions = nonCouverts.flatMap((item_id) => receptionsDe(entree.items, item_id));
+  if (receptions.length > 1) return { clos: true, instant: null };
+  const instants = [...receptions, ...etats.flatMap((etat) => finSurLesItemsCouverts(entree.lot, etat))];
+  return { clos: true, instant: instants.length === 0 ? null : instants.reduce(plusTardif) };
 }
 
 /* ---------------------------------------------------------------- verdict */
@@ -139,7 +207,7 @@ function lotsClosEligibles(
   return eligibles;
 }
 
-/** Ordre de clôture, instant réel croissant, puis identifiant du lot (départage non fixé par le §12). */
+/** Ordre de clôture, instant réel croissant, puis identifiant du lot (§12, 0.29). */
 function comparerClotures(a: { readonly instant: string; readonly lot_id: string }, b: typeof a): number {
   return Date.parse(a.instant) - Date.parse(b.instant) || comparerChaines(a.lot_id, b.lot_id);
 }
