@@ -54,6 +54,16 @@ function sha(cle: string): string {
   return cle.repeat(64).slice(0, 64);
 }
 
+/** D70 (6) : une notice de l'institut, archivée, dans les douze mois du gel de référence. */
+function notice(cle: string, date_publication = "2026-06-15"): Objet {
+  return {
+    url: `https://commission-sondages.invalid/notices/${cle}`,
+    date_publication,
+    sha256: sha("f"),
+    archive_url: `https://web.archive.invalid/notice-${cle}`,
+  };
+}
+
 function sondage(cle: string, date_publication: string, url = `https://institut-${cle}.invalid/vague`): Objet {
   return {
     institut: `Institut ${cle}`,
@@ -61,6 +71,7 @@ function sondage(cle: string, date_publication: string, url = `https://institut-
     url,
     sha256: sha("a"),
     archive_url: `https://web.archive.invalid/${cle}`,
+    notice_institut: notice(cle),
   };
 }
 
@@ -928,5 +939,153 @@ describe("D68 : régime entre_deux_tours", () => {
     perimetre["liste_officielle"] = LISTE;
     candidats(perimetre).push(finaliste("demo-delta"));
     expect(charger(perimetre).perimetre.candidats).toHaveLength(4);
+  });
+});
+
+/*
+ * D70 (6), protocole 0.28 (§3) : « un sondage compte s'il est publié par un institut dont au moins une
+ * notice figure sur le site de la Commission des sondages au cours des douze mois précédant l'instant
+ * de gel […] ; les douze mois sont des mois civils, de la même date douze mois avant l'instant de gel
+ * jusqu'à cet instant, bornes comprises, la date d'une notice se lisant à minuit UTC comme celle d'un
+ * sondage ; […] la notice de l'institut retenue est déclarée avec chaque preuve ». Le gel de
+ * référence est 2026-11-20T00:00:00Z : la borne basse est 2025-11-20.
+ */
+describe("D70 (6) : la notice de l'institut déclarée avec chaque preuve de sondage", () => {
+  /**
+   * Le périmètre de référence gelé à `date_gel`, les deux candidats non retirés portant deux sondages
+   * datés `sondages` (dans les 60 jours de ce gel) avec une notice valide datée `notice_valide`, sauf
+   * la première preuve de demo-alpha, dont la notice est datée `notice_testee`.
+   */
+  function auGel(date_gel: string, sondages: readonly [string, string], notice_valide: string, notice_testee: string): Objet {
+    const perimetre = perimetreComplet();
+    perimetre["date_gel"] = date_gel;
+    for (const candidat of candidats(perimetre).slice(0, 2)) {
+      const preuves = [sondage("x", sondages[0]), sondage("y", sondages[1])];
+      for (const preuve of preuves) preuve["notice_institut"] = notice("valide", notice_valide);
+      candidat["preuves_inclusion"] = preuves;
+    }
+    premierePreuve(perimetre)["notice_institut"] = notice("x", notice_testee);
+    return perimetre;
+  }
+
+  function premierePreuve(perimetre: Objet): Objet {
+    return rang(rang(candidats(perimetre), 0)["preuves_inclusion"] as Objet[], 0);
+  }
+
+  function avecNotice(date_notice: string, date_gel = GEL): Objet {
+    return auGel(date_gel, ["2026-10-05", "2026-11-01"], "2026-06-15", date_notice);
+  }
+
+  /**
+   * Une notice hors fenêtre fait seulement que son sondage ne compte pas (§3, comme un sondage hors
+   * des 60 jours) : demo-alpha n'a plus qu'un sondage, et c'est le seul motif de refus.
+   */
+  function refuseFauteDeSondage(perimetre: Objet): void {
+    expect(refus(perimetre).motifs).toEqual([expect.stringMatching(/^demo-alpha : ne remplit pas la règle d'inclusion.*1 sondage.*12 mois/)]);
+  }
+
+  it("compte une notice datée exactement douze mois civils avant l'instant de gel", () => {
+    expect(() => charger(avecNotice("2025-11-20"))).not.toThrow();
+  });
+
+  it("ne compte pas le sondage dont la notice est datée de la veille de cette date", () => {
+    refuseFauteDeSondage(avecNotice("2025-11-19"));
+  });
+
+  it("compte une notice datée du jour du gel, gel à 23:59 UTC", () => {
+    expect(() => charger(avecNotice("2026-11-20", "2026-11-20T23:59:00Z"))).not.toThrow();
+  });
+
+  it("ne compte pas le sondage dont la notice est datée du lendemain du gel", () => {
+    refuseFauteDeSondage(avecNotice("2026-11-21", "2026-11-20T23:59:00Z"));
+  });
+
+  it("gel un 29 février : la notice du 28 février de l'année précédente compte, celle du 27 ne compte pas", () => {
+    const gel = "2028-02-29T10:00:00Z";
+    expect(() => charger(auGel(gel, ["2028-02-01", "2028-02-15"], "2027-06-01", "2027-02-28"))).not.toThrow();
+    refuseFauteDeSondage(auGel(gel, ["2028-02-01", "2028-02-15"], "2027-06-01", "2027-02-27"));
+  });
+
+  it("gel un 31 du mois : la notice du 31 du même mois douze mois avant compte, celle du 30 ne compte pas", () => {
+    const gel = "2027-03-31T10:00:00Z";
+    expect(() => charger(auGel(gel, ["2027-03-01", "2027-03-15"], "2026-12-01", "2026-03-31"))).not.toThrow();
+    refuseFauteDeSondage(auGel(gel, ["2027-03-01", "2027-03-15"], "2026-12-01", "2026-03-30"));
+  });
+
+  it("n'ajoute aucun refus pour une notice hors fenêtre quand deux autres sondages suffisent", () => {
+    const perimetre = avecNotice("2025-11-19");
+    (rang(candidats(perimetre), 0)["preuves_inclusion"] as Objet[]).push(sondage("z", "2026-11-02"));
+    expect(() => charger(perimetre)).not.toThrow();
+  });
+
+  it("compte une notice qui accompagne un autre sondage du même institut, déclarée pour les deux preuves", () => {
+    const perimetre = perimetreComplet();
+    const notice_d_un_autre_sondage = notice("autre-sondage-de-l-institut", "2026-02-10");
+    for (const preuve of rang(candidats(perimetre), 0)["preuves_inclusion"] as Objet[]) {
+      preuve["notice_institut"] = notice_d_un_autre_sondage;
+    }
+    const alpha = rang(charger(perimetre).perimetre.candidats, 0);
+    expect(alpha.preuves_inclusion?.map((preuve) => preuve.notice_institut)).toEqual([notice_d_un_autre_sondage, notice_d_un_autre_sondage]);
+  });
+
+  it("garde la notice déclarée dans l'instantané run.perimetre", () => {
+    const alpha = rang(charger(perimetreComplet()).perimetre.candidats, 0);
+    expect(rang(alpha.preuves_inclusion ?? [], 0).notice_institut).toEqual(notice("x"));
+  });
+
+  it("refuse une preuve de sondage sans notice dans le régime avant_liste_officielle (schéma, chemin nommé)", () => {
+    const perimetre = perimetreComplet();
+    delete rang(rang(candidats(perimetre), 1)["preuves_inclusion"] as Objet[], 1)["notice_institut"];
+    const erreur = refusDeSchema(perimetre);
+    expect(erreur.chemins).toContain("/candidats/1/preuves_inclusion/1");
+    expect(erreur.message).toContain("notice_institut");
+  });
+
+  it("refuse une notice hors forme : sans empreinte, sans archive, sans date ou sans URL (schéma)", () => {
+    for (const champ of ["sha256", "archive_url", "date_publication", "url"]) {
+      const perimetre = perimetreComplet();
+      const incomplete = notice("x");
+      delete incomplete[champ];
+      premierePreuve(perimetre)["notice_institut"] = incomplete;
+      expect(refusDeSchema(perimetre).chemins, champ).toContain("/candidats/0/preuves_inclusion/0/notice_institut");
+    }
+  });
+
+  it("n'exige aucune notice des preuves d'un candidat retiré", () => {
+    const perimetre = perimetreComplet();
+    const sans_notice = sondage("r", "2026-10-05");
+    delete sans_notice["notice_institut"];
+    rang(candidats(perimetre), 2)["preuves_inclusion"] = [sans_notice];
+    expect(() => charger(perimetre)).not.toThrow();
+  });
+
+  for (const [regime, preuve_du_regime] of [
+    ["liste_officielle", "liste_officielle"],
+    ["entre_deux_tours", "proclamation_premier_tour"],
+  ] as const) {
+    it(`régime ${regime} : aucune notice exigée des preuves de sondage, l'instantané reste valide`, () => {
+      const perimetre = perimetreComplet();
+      perimetre["regime_inclusion"] = regime;
+      perimetre[preuve_du_regime] = {
+        url: "https://conseil.invalid/preuve",
+        date_publication: "2027-03-10",
+        sha256: sha("d"),
+        archive_url: "https://web.archive.invalid/preuve",
+      };
+      for (const candidat of candidats(perimetre).slice(0, 2)) {
+        for (const preuve of candidat["preuves_inclusion"] as Objet[]) delete preuve["notice_institut"];
+      }
+      const alpha = rang(charger(perimetre).perimetre.candidats, 0);
+      expect(rang(alpha.preuves_inclusion ?? [], 0)).not.toHaveProperty("notice_institut");
+    });
+  }
+
+  it("deux preuves de la même URL normalisée, chacune avec sa notice valide : toujours un seul sondage", () => {
+    const perimetre = perimetreComplet();
+    const a = sondage("x", "2026-10-05", "http://Institut-X.invalid/vague/#resultats");
+    const b = sondage("y", "2026-11-01", "https://institut-x.invalid/vague?utm_source=lettre");
+    b["notice_institut"] = notice("y", "2026-09-01");
+    rang(candidats(perimetre), 0)["preuves_inclusion"] = [a, b];
+    expect(refus(perimetre).motifs).toEqual([expect.stringMatching(/^demo-alpha : ne remplit pas.*1 sondage/)]);
   });
 });
