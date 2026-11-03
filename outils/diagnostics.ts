@@ -41,9 +41,15 @@ function libelleKappa(diagnostic: DiagnosticPublie): string {
   return `kappa absent (${String(diagnostic.motif_indefini)})`;
 }
 
+/** §4 (D65) : le champ publié, jamais recalculé ici. */
+function libelleAccord(diagnostic: DiagnosticPublie): string {
+  if (diagnostic.accord_suffisant === null) return "accord non décidable (aucun item commun)";
+  return diagnostic.accord_suffisant ? "accord suffisant" : "accord insuffisant";
+}
+
 function ligneRetenue(diagnostic: DiagnosticPublie): string {
   const taille = diagnostic.taille_conforme ? "" : ` — effectif non conforme (${diagnostic.taille_lot}/${diagnostic.taille_attendue})`;
-  return `  ${diagnostic.lot_id} (${diagnostic.nature}) : ${libelleKappa(diagnostic)}, n = ${diagnostic.n}, calculé le ${diagnostic.date_calcul}${taille}`;
+  return `  ${diagnostic.lot_id} (${diagnostic.nature}) : ${libelleAccord(diagnostic)}, ${libelleKappa(diagnostic)}, n = ${diagnostic.n}, calculé le ${diagnostic.date_calcul}${taille}`;
 }
 
 function principal(): void {

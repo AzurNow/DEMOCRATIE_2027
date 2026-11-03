@@ -13,6 +13,7 @@ import {
   ReferenceHumaineIndefinie,
   referenceHumaine,
   RefusNoteParUnJuge,
+  SEUIL_KAPPA_ECHANTILLON,
 } from "../../pipeline/go-no-go/kappa-echantillon.ts";
 import { AUCUN_JUGE_RETENU } from "../../pipeline/go-no-go/types.ts";
 import { JugeIndetermine } from "../../pipeline/notation/decision.ts";
@@ -61,6 +62,17 @@ describe("kappa de l'échantillon, seuil de 0,75 (§12)", () => {
     expect(kappa?.kappa).toBe(0.75);
     expect(kappa?.atteint_seuil).toBe(true);
     expect(critereKappaJugesHumains(kappaUnJuge(matrice("j1", 3, 0, 1, 4)))).toEqual({ code: "kappa_juges_humains", statut: "vert", valeur: 0.75, seuil: 0.75 });
+  });
+
+  it("D65 ne touche pas ce seuil : 0,75 en fraction exacte, et un accord observé de 0,96 avec deux désaccords reste rouge", () => {
+    // La seconde branche de l'accord suffisant (§4, D65) vaut pour les lots de validation, jamais
+    // pour le kappa juges-humains du §12. Matrice 48/1/1/0 : A = 48, lignes et colonnes (49, 1),
+    // B = 49² + 1 = 2402 ; κ = (48·50 − 2402)/(2500 − 2402) = −2/98.
+    expect(SEUIL_KAPPA_ECHANTILLON).toEqual({ numerateur: 3, denominateur: 4 });
+    const kappas = kappaUnJuge(matrice("j1", 48, 1, 1, 0));
+    expect(kappas[0]?.kappa).toBe(-2 / 98);
+    expect(kappas[0]?.atteint_seuil).toBe(false);
+    expect(critereKappaJugesHumains(kappas)).toEqual({ code: "kappa_juges_humains", statut: "rouge", valeur: -2 / 98, seuil: 0.75 });
   });
 
   it("kappa juste en dessous de 0,75 (50/67) : rouge", () => {

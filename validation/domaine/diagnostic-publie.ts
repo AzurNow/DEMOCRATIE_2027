@@ -41,6 +41,12 @@ export interface DiagnosticPublie {
   readonly accord_observe: number | null;
   readonly n: number;
   /**
+   * §4 (D65) : l'accord du lot est-il suffisant, tel que `analyse-lot.ts:diagnostiquerLot` l'a
+   * décidé (`kappa.ts:accordSuffisant`). `null` si et seulement si aucun item n'est commun. C'est
+   * ce champ, sur les diagnostics retenus par `kappasRetenusSection12`, que lit le critère J3 (§12).
+   */
+  readonly accord_suffisant: boolean | null;
+  /**
    * §4 : « Un kappa par question de la grille est publié comme diagnostic secondaire ». Une clé
    * par question de la grille ; la réponse à `position_univoque` y est publiée sans entrer dans
    * le sort de l'item.
@@ -128,6 +134,7 @@ export function projeterDiagnostic(
     nature: lot.nature,
     date_calcul,
     ...kappaPublie(diagnostic.kappa, `Lot ${diagnostic.lot_id}`),
+    accord_suffisant: diagnostic.accord_suffisant,
     kappa_par_question: kappaParQuestionPublie(diagnostic),
     exclus_contestation: diagnostic.exclus_contestation,
     taille_lot: diagnostic.taille_lot,

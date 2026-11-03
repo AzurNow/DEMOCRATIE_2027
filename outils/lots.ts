@@ -19,7 +19,7 @@
  *   pnpm lots --nature=entrainement --annotateurs=a1,a2 --graine=lot-ent-2026-11
  *   pnpm lots --nature=reel --annotateurs=a1,a2 --graine=lots-2026-11
  *
- * Réannotation (§4) : un lot dont le kappa tombe strictement sous 0,80 est rejugé après une
+ * Réannotation (§4) : un lot dont l'accord n'est pas suffisant (`kappa.ts:accordSuffisant`) est rejugé après une
  * séance de calibration, dont la date est exigée — sans elle, le kappa du nouveau lot n'est pas
  * interprétable. Le lot produit reprend les items du lot d'origine et le supersède.
  *

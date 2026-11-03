@@ -55,7 +55,11 @@ export function kappaCohen<T extends string>(
   paires: readonly PaireCategories<T>[],
   categories: readonly T[],
 ): ResultatKappa {
-  const { n, accords, attendus } = comptesKappa(paires, categories);
+  return kappaDepuisComptes(comptesKappa(paires, categories));
+}
+
+/** Le kappa publié tiré des trois entiers : seul endroit où il devient un flottant. */
+export function kappaDepuisComptes({ n, accords, attendus }: ComptesKappa): ResultatKappa {
   if (n === 0) {
     return { kappa: null, motif_indefini: "aucun_item_commun", accord_observe: null, accord_attendu: null, n: 0 };
   }
@@ -145,12 +149,17 @@ function sommeProduitsMarginaux(matrice: readonly (readonly number[])[], taille:
   return total;
 }
 
+/** Les trois entiers du kappa publié : trois catégories dérivées de la décision. */
+export function comptesKappaPublie(paires: readonly PaireCategories<Decision>[]): ComptesKappa {
+  const categories = paires.map((paire) => ({ a: categorieDe(paire.a), b: categorieDe(paire.b) }));
+  return comptesKappa(categories, CATEGORIES_KAPPA);
+}
+
 /**
  * Le kappa publié, et le seul critère go/no-go : trois catégories dérivées de la décision.
  */
 export function kappaPublie(paires: readonly PaireCategories<Decision>[]): ResultatKappa {
-  const categories = paires.map((paire) => ({ a: categorieDe(paire.a), b: categorieDe(paire.b) }));
-  return kappaCohen(categories, CATEGORIES_KAPPA);
+  return kappaDepuisComptes(comptesKappaPublie(paires));
 }
 
 const CATEGORIES_BINAIRES: readonly ["oui", "non"] = ["oui", "non"];
@@ -171,13 +180,54 @@ export function kappaQuestion(
   return kappaCohen(retenues, CATEGORIES_BINAIRES);
 }
 
-/** Seuil du §4 : sous 0,80, le lot est réannoté après séance de calibration. */
-export const SEUIL_KAPPA = 0.8;
+/* ------------------------------------------------- accord suffisant d'un lot (§4, D65) */
+
+/** §4 : « kappa supérieur ou égal à 0,80 », en fraction exacte ; 0,80 exactement suffit. */
+export const SEUIL_KAPPA_LOT = { numerateur: 4, denominateur: 5 } as const;
+/** §4 : « accord observé supérieur ou égal à 0,96 », en fraction exacte. */
+export const SEUIL_ACCORD_OBSERVE_LOT = { numerateur: 24, denominateur: 25 } as const;
+/** §4 : « avec au plus deux désaccords ». */
+export const DESACCORDS_MAX_LOT = 2;
 
 /**
- * L'alerte se déclenche **sous** 0,80, pas **à** 0,80. Un kappa indéfini ne la déclenche pas :
- * un accord observé parfait n'est pas un désaccord.
+ * §4 (0.27, D65) : l'accord d'un lot est suffisant quand son kappa est ≥ 0,80, ou quand son
+ * accord observé est ≥ 0,96 avec au plus deux désaccords. Seule définition du projet : l'alerte de
+ * réannotation, le diagnostic publié et la lecture du critère J3 (§12) en dérivent tous.
+ *
+ * Décidé en entiers sur les comptes du kappa publié, comme le seuil du go/no-go : avec
+ * `κ = (A·n − B) / (n² − B)`, `κ ≥ 4/5 ⇔ 5·(A·n − B) ≥ 4·(n² − B)` quand `n² − B > 0` ;
+ * `A/n ≥ 24/25 ⇔ 25·A ≥ 24·n` ; un désaccord est une paire hors de la diagonale, `n − A`.
+ * L'effectif est `n`, celui du kappa publié, contestations déduites : sur un lot qui n'a pas 50
+ * paires, les deux conditions de la seconde branche s'appliquent telles quelles.
+ *
+ * Kappa indéfini, lecture retenue (sans réinterpréter la règle d'avant D65) :
+ * - accord attendu maximal : le kappa est absent, mais l'accord observé existe et vaut 1, sans
+ *   désaccord ; la seconde branche s'applique telle qu'écrite, l'accord est suffisant, et aucune
+ *   alerte n'est levée, comme avant (« un kappa indéfini ne déclenche pas de réannotation ») ;
+ * - aucun item commun : rien n'est observé, l'accord n'est pas décidable, `null`. Ni suffisant
+ *   ni insuffisant ; aucune alerte non plus, comme avant.
  */
-export function alerteReannotation(resultat: ResultatKappa): boolean {
-  return resultat.kappa !== null && resultat.kappa < SEUIL_KAPPA;
+export function accordSuffisant({ n, accords, attendus }: ComptesKappa): boolean | null {
+  if (n === 0) return null;
+  return kappaAtteintSeuilLot(n, accords, attendus) || accordObserveSuffit(n, accords);
+}
+
+function kappaAtteintSeuilLot(n: number, accords: number, attendus: number): boolean {
+  const denominateur = n * n - attendus;
+  if (denominateur === 0) return false;
+  const { numerateur, denominateur: base } = SEUIL_KAPPA_LOT;
+  return base * (accords * n - attendus) >= numerateur * denominateur;
+}
+
+function accordObserveSuffit(n: number, accords: number): boolean {
+  const { numerateur, denominateur } = SEUIL_ACCORD_OBSERVE_LOT;
+  return denominateur * accords >= numerateur * n && n - accords <= DESACCORDS_MAX_LOT;
+}
+
+/**
+ * Alerte de réannotation : l'accord du lot n'est pas suffisant (§4). Un accord non décidable
+ * (aucun item commun) ne la déclenche pas : une absence de mesure n'est pas un désaccord.
+ */
+export function alerteReannotation(comptes: ComptesKappa): boolean {
+  return accordSuffisant(comptes) === false;
 }

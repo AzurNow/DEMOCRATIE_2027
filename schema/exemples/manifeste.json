@@ -1491,6 +1491,23 @@
       }
     },
     {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/valide-04-accord-observe-suffisant.json",
+      "attendu": "valide",
+      "motif": "Marges 46/3/1 avec deux désaccords sur 50 : kappa 274/374 (≈ 0,73) sous 0,80, accord observé 0,96, accord suffisant par la seconde branche du §4 (D65) ; dernier maillon, il compte pour J3."
+    },
+    {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/invalide-06-accord-non-decide-kappa-defini.json",
+      "attendu": "invalide",
+      "motif": "Accord publié non décidable (null) sur un lot dont le kappa et l'accord observé sont définis. §4 (D65) : l'accord n'est indécidable que faute d'item commun.",
+      "regle_protocole": "§4, réannotation (D65)",
+      "erreur_visee": {
+        "keyword": "type",
+        "instance_path": "/accord_suffisant"
+      }
+    },
+    {
       "objet": "gabarits",
       "fichier": "gabarits/valide-01-six-gabarits.json",
       "attendu": "valide",

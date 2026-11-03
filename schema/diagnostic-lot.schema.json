@@ -11,6 +11,7 @@
     "date_calcul",
     "accord_observe",
     "n",
+    "accord_suffisant",
     "kappa_par_question",
     "exclus_contestation",
     "taille_lot",
@@ -97,6 +98,11 @@
       "description": "Effectif publié avec le kappa : paires de décisions comparées, contestations déduites (§4)."
     },
 
+    "accord_suffisant": {
+      "type": ["boolean", "null"],
+      "description": "§4 (0.27, D65) : l'accord du lot est suffisant quand son kappa est ≥ 0,80, ou quand son accord observé est ≥ 0,96 avec au plus deux désaccords, sur l'effectif `n`. Décidé par `validation/domaine/kappa.ts:accordSuffisant`, seule définition. Faux : le lot est réannoté après séance de calibration. Un kappa indéfini par accord attendu maximal a un accord observé de 1 sans désaccord : vrai. `null` si et seulement si aucun item n'est commun : rien n'est observé. C'est ce champ que lit le critère J3 (§12)."
+    },
+
     "kappa_par_question": {
       "type": "object",
       "additionalProperties": false,
@@ -151,10 +157,10 @@
       ]
     },
     {
-      "$comment": "Aucun item commun : ni accord observé ni effectif.",
+      "$comment": "Aucun item commun : ni accord observé, ni effectif, ni accord décidable.",
       "if": { "properties": { "motif_indefini": { "const": "aucun_item_commun" } }, "required": ["motif_indefini"] },
-      "then": { "properties": { "accord_observe": { "type": "null" }, "n": { "const": 0 } } },
-      "else": { "properties": { "accord_observe": { "type": "number" }, "n": { "minimum": 1 } } }
+      "then": { "properties": { "accord_observe": { "type": "null" }, "n": { "const": 0 }, "accord_suffisant": { "type": "null" } } },
+      "else": { "properties": { "accord_observe": { "type": "number" }, "n": { "minimum": 1 }, "accord_suffisant": { "type": "boolean" } } }
     },
     {
       "$comment": "§4 : un lot de réannotation porte la référence du lot d'origine et la date de calibration ; un autre lot ne porte ni l'une ni l'autre.",

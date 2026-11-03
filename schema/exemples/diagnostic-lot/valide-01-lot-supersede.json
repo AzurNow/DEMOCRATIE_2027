@@ -5,6 +5,7 @@
   "kappa": 0.72,
   "accord_observe": 0.86,
   "n": 50,
+  "accord_suffisant": false,
   "kappa_par_question": {
     "citation_fidele": {
       "kappa": 0.7,
