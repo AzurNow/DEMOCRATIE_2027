@@ -288,6 +288,10 @@ Aucune décision en attente.
 
 **Décision du 2026-11-03 :** Option 1 (consigne durable de l'auteur : option recommandée). Protocole 0.30 (PR à part) : §8 (4), (5), (6) ; §9 (3) ; §10 et annexe E (10), (11), (12) ; §12 (8). Code restant : (1) commande des contestations postérieures, (7) run de test à deux échantillons, (8) critere-j3.ts, (12) notification d'une délibération sans majorité.
 
+### D73 — Questions laissées ouvertes par les lots de la 0.30 (#267, #268), sous-questions de D62 non écrites en 0.27 (D70 (14)) et questions reportées de la tendance et de l'écran humain (D71 (11)).
+
+**Décision du 2026-11-03 :** Option 1 (consigne durable de l'auteur : option recommandée). Protocole 0.31 (PR à part) : §2 (16) ; §4 (9), (10) ; §5 et §8 (2) ; §6 (11), (12), (13), (14) ; §7 (7), (14), (15), (18) ; §8 (4), (6), (17) ; §12 (1) ; annexe E (3) ; sans texte : (5), (8). Code restant : (2) contestations-posterieures.ts lu contre le commit des données du gel ; (4) runs non invalides et contrôle avant pnpm analyze ; (5) table des libellés dans courriel.py ; (6) accord-echantillons.ts ; (7) juges[].outils_de_son_editeur et branchement de ecart-juge-editeur.ts ; (8) comptes du jeu d'or dans juges[] ; (9) journal d'extraction indexé par texte ; (11) run.json#/application_testee ; (12) conversion dépôt → réponse ; (13) valeur de mode_resolution ; (14) decision.ts, file-humaine.ts, lectures-comparateur.ts ; (15) derangement-outils.ts sans erreur bloquante ; (16) hypotheses.ts et analyse-du-run.ts ; (17) modèles dans la tendance.
+
 ### D8 — Trois points que le §4 ne tranche pas, rencontrés en implémentant la réannotation et le registre des mesures.
 
 **Décision du 2026-09-20 :** Option 1 sur les trois points : héritage des annotateurs gardé, une autre paire supposerait un amendement au §4 disant quel kappa compte ; clé du registre élargie seulement si le §4 ouvre un jour la correction d'autre chose que le thème ; conventions d'identifiant de réannotation et de date par défaut entérinées dans schema/README.md.
