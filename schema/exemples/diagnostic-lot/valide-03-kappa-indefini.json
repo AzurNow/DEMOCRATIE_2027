@@ -5,6 +5,7 @@
   "motif_indefini": "accord_attendu_maximal",
   "accord_observe": 1,
   "n": 50,
+  "accord_suffisant": true,
   "kappa_par_question": {
     "citation_fidele": {
       "kappa": 0.7,

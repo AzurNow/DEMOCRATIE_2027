@@ -10,7 +10,14 @@
 
 import { empreinteContenuNotant } from "./empreinte.ts";
 import { CLES_GRILLE, reduireEtats } from "./grille.ts";
-import { alerteReannotation, kappaPublie, kappaQuestion, type ResultatKappa } from "./kappa.ts";
+import {
+  accordSuffisant,
+  alerteReannotation,
+  comptesKappaPublie,
+  kappaDepuisComptes,
+  kappaQuestion,
+  type ResultatKappa,
+} from "./kappa.ts";
 import type { EtatAnnotateur } from "./journal.ts";
 import { appliquerCorrections } from "./promotion.ts";
 import type { CleGrille, Decision, EntreeDecision, Grille, Item, Lot } from "./types.ts";
@@ -28,6 +35,12 @@ export interface DiagnosticLot {
    * désaccord sur leur contenu — ce que le kappa, par construction, ne peut pas voir.
    */
   readonly taux_double_correction_divergente: number | null;
+  /**
+   * §4 (D65) : kappa ≥ 0,80, ou accord observé ≥ 0,96 avec au plus deux désaccords
+   * (`kappa.ts:accordSuffisant`). `null` quand aucun item n'est commun : rien n'est observé.
+   */
+  readonly accord_suffisant: boolean | null;
+  /** L'accord n'est pas suffisant : séance de calibration, puis réannotation décidée par l'auteur. */
   readonly alerte_reannotation: boolean;
   /**
    * Items du lot qu'une contestation vise au moment du calcul, sortis du dénominateur (§4). Un
@@ -119,7 +132,8 @@ export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
   const [etatA, etatB] = etatsDesDeux(entree.etats);
   const exclus = exclusPourContestation(entree);
   const paires = apparier(entree, etatA, etatB, exclus);
-  const kappa = kappaPublie(paires.map((paire) => ({ a: paire.a.decision, b: paire.b.decision })));
+  const comptes = comptesKappaPublie(paires.map((paire) => ({ a: paire.a.decision, b: paire.b.decision })));
+  const kappa = kappaDepuisComptes(comptes);
 
   return {
     lot_id: entree.lot.lot_id,
@@ -127,7 +141,8 @@ export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
     kappa,
     kappa_par_question: kappaParQuestion(paires),
     taux_double_correction_divergente: tauxDivergence(paires),
-    alerte_reannotation: alerteReannotation(kappa),
+    accord_suffisant: accordSuffisant(comptes),
+    alerte_reannotation: alerteReannotation(comptes),
     exclus_contestation: exclus.size,
     taille_lot: entree.lot.items.length,
     taille_attendue: entree.taille_attendue,

@@ -140,12 +140,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 352 → 354 : §6, protocole 0.24 (D59 (15)), lecture de comparateur notée par un juge, motif de lecture sur une réponse : deux invalides de notation.
   // 354 → 355 : §6, protocole 0.25 (D60 (g)), dépôt d'une capture masquée avec ses deux empreintes : un valide (l'égalité des deux empreintes ne s'exprime pas en JSON Schema : garde du code).
   // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides du nouveau schéma metriques.
-  it("1. les 361 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 361 → 363 : §4, protocole 0.27 (D65), diagnostic de lot : accord suffisant par l'accord observé (valide), accord non décidable sur un kappa défini (invalide).
+  it("1. les 363 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(361);
+    expect(manifeste.exemples).toHaveLength(363);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -402,7 +403,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 352 → 354 : §6, protocole 0.24 (D59 (15)), deux invalides de notation (juge sur une lecture, motif de lecture sur une réponse).
   // 354 → 355 : §6, protocole 0.25 (D60 (g)), un valide de dépôt d'application (capture masquée).
   // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides de metriques.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 361 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(361);
+  // 361 → 363 : §4, protocole 0.27 (D65), un valide et un invalide de diagnostic de lot (accord suffisant).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 363 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(363);
   });
 });

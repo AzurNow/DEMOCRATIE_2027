@@ -42,7 +42,7 @@
     "lot_nature": {
       "type": "string",
       "enum": ["entrainement", "reel", "reannotation"],
-      "description": "§4 : 30 items d'entraînement communs avant tout lot réel. Les décisions d'un lot d'entraînement ne promeuvent jamais un item vers data/. reannotation : lot rejoué après une séance de calibration, quand le kappa du lot d'origine est sous 0,80."
+      "description": "§4 : 30 items d'entraînement communs avant tout lot réel. Les décisions d'un lot d'entraînement ne promeuvent jamais un item vers data/. reannotation : lot rejoué après une séance de calibration, quand l'accord du lot d'origine n'est pas suffisant (§4 : kappa sous 0,80, et accord observé sous 0,96 ou plus de deux désaccords)."
     },
 
     "item_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },

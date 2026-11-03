@@ -705,8 +705,9 @@ function bilanKappa(diagnostic: Diagnostic): readonly HTMLElement[] {
   if (diagnostic.alerte_reannotation === true) {
     blocs.push(
       alerte(
-        "Kappa sous 0,80 : le §4 prévoit une séance de calibration, puis une réannotation du " +
-          "lot. La réannotation crée un nouveau lot ; les deux kappas restent au journal.",
+        "Accord insuffisant (kappa sous 0,80, et accord observé sous 0,96 ou plus de deux " +
+          "désaccords) : le §4 prévoit une séance de calibration, puis une réannotation du lot. " +
+          "La réannotation crée un nouveau lot ; les deux kappas restent au journal.",
       ),
     );
   }

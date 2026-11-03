@@ -5,6 +5,7 @@
   "kappa": 0.72,
   "accord_observe": 0.86,
   "n": 50,
+  "accord_suffisant": false,
   "exclus_contestation": 0,
   "taille_lot": 50,
   "taille_attendue": 50,

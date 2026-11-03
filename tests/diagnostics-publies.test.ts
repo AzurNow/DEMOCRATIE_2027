@@ -161,10 +161,13 @@ describe("sélection du kappa du §12", () => {
     expect(origines.map((d) => d.supersede_par)).toEqual([null, "lot-003-r1"]);
     const kappaOrigine = origines[1]?.kappa;
     expect(kappaOrigine).toBeLessThan(0.8);
+    expect(origines.map((d) => d.accord_suffisant)).toEqual([false, false]);
 
     const retenus = kappasRetenusSection12(diagnostics, lireLots(chemins.lots));
     expect(retenus.map((d) => d.lot_id)).toEqual(["lot-003-r1"]);
     expect(retenus[0]?.kappa).toBe(1);
+    // J3 (§12, D65) lit l'accord du seul lot de réannotation, jamais celui du lot d'origine.
+    expect(retenus[0]?.accord_suffisant).toBe(true);
     expect(retenus[0]?.reannote).toBe("lot-003");
     expect(retenus[0]?.date_calibration).toBe("2026-10-15");
   });
@@ -188,6 +191,7 @@ describe("sélection du kappa du §12", () => {
       kappa: 0.9,
       accord_observe: 0.95,
       n: 50,
+      accord_suffisant: true,
       kappa_par_question: KAPPA_PAR_QUESTION,
       exclus_contestation: 0,
       taille_lot: 50,
@@ -209,6 +213,29 @@ describe("sélection du kappa du §12", () => {
     // Même instant écrit avec un autre décalage : lequel compte n'est pas décidable.
     const simultane = { ...base, date_calcul: "2026-10-12T16:00:00Z", kappa: 0.5 };
     expect(() => kappasRetenusSection12([base, simultane], lots)).toThrow(CalculsSimultanes);
+  });
+});
+
+describe("accord suffisant publié (§4, D65)", () => {
+  it("marges 46/3/1, deux désaccords : kappa sous 0,80, accord observé 0,96, publié suffisant et retenu pour J3", () => {
+    const liste = items("5", 50);
+    ecrireItems(liste);
+    const lot = lotDe("lot-005", liste, "reel");
+    bac.ecrireLot(lot);
+    // a1 : 46 retenus, 3 rejetés, 1 non évaluable ; a2 : idem, deux désaccords croisés.
+    decider(lot, liste, [...repete("accepter", 46), ...repete("rejeter", 3), "non_evaluable"], [
+      ...repete("accepter", 45),
+      "rejeter",
+      "accepter",
+      ...repete("rejeter", 2),
+      "non_evaluable",
+    ]);
+    publierDiagnostics(chemins, T1);
+    const retenus = kappasRetenusSection12(lireDiagnostics(chemins.diagnostics), lireLots(chemins.lots));
+    expect(retenus.map((d) => d.lot_id)).toEqual(["lot-005"]);
+    expect(retenus[0]?.kappa).toBeCloseTo(274 / 374, 12);
+    expect(retenus[0]?.accord_observe).toBe(0.96);
+    expect(retenus[0]?.accord_suffisant).toBe(true);
   });
 });
 
@@ -381,6 +408,7 @@ describe("ajout seul : deux calculs successifs du même lot", () => {
       motif_indefini: "accord_attendu_maximal",
       accord_observe: 1,
       n: 50,
+      accord_suffisant: true,
       kappa_par_question: KAPPA_PAR_QUESTION,
       exclus_contestation: 0,
       taille_lot: 50,
@@ -422,6 +450,7 @@ describe("pnpm diagnostics", () => {
     expect(resultat.stderr).not.toMatch(/Error/);
     expect(resultat.status).toBe(0);
     expect(resultat.stdout).toContain("lot-003");
+    expect(resultat.stdout).toMatch(/lot-003 \(reel\) : accord insuffisant, kappa 0\.583/);
     expect(fichiers("lot-003")).toHaveLength(1);
   });
 });
@@ -434,6 +463,7 @@ describe("ordre canonique des diagnostics (indépendant de la locale)", () => {
     kappa: 0.8,
     accord_observe: 0.9,
     n: 50,
+    accord_suffisant: true,
     kappa_par_question: KAPPA_PAR_QUESTION,
     exclus_contestation: 0,
     taille_lot: 50,

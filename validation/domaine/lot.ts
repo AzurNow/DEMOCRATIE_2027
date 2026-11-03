@@ -271,7 +271,7 @@ export function adjacenceRespectee(ordre: readonly ItemDuLot[]): boolean {
 /**
  * Réannotation et supersession.
  *
- * Un lot dont le kappa tombe strictement sous 0,80 est réannoté après séance de calibration.
+ * Un lot dont l'accord n'est pas suffisant (`kappa.ts:accordSuffisant`, §4) est réannoté après séance de calibration.
  * Le lot de réannotation porte **les mêmes items**, la référence du lot d'origine et la date de
  * la séance, sans laquelle son kappa n'est pas interprétable. Il supersède le lot d'origine :
  * ses décisions remplacent celles du lot d'origine pour les items concernés. Le lot d'origine
