@@ -50,3 +50,22 @@ export function tauxRecalcules(
     taux: tauxPubliesParCouple(restreindre(unites), couples, strates, partage, options),
   }));
 }
+
+/**
+ * Un seul des quatre recalculs, sur la même restriction et le même partage que `tauxRecalcules` :
+ * le recalcul (b) daté publié après une contestation postérieure (§8, §9, protocole 0.28, D70 (13) ;
+ * `recalcul-b.ts`) ne recalcule que lui.
+ */
+export function tauxRecalcule(
+  recalcul: Recalcul,
+  unites: readonly UniteAnalyse[],
+  sources: SourcesRobustesse,
+  couples: PartageCouples,
+  strates: StratesPubliees,
+  partage: PartageCandidats,
+  options: OptionsIncertitude,
+): TauxRecalcules {
+  const restriction = restrictions(sources).find((r) => r.recalcul === recalcul);
+  if (restriction === undefined) throw new Error(`Recalcul de robustesse inconnu : ${recalcul}.`);
+  return { recalcul, taux: tauxPubliesParCouple(restriction.restreindre(unites), couples, strates, partage, options) };
+}

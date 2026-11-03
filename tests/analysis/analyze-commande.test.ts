@@ -40,7 +40,9 @@ describe("pnpm analyze sur un run lu sur disque", () => {
     const juges = (brut["juges"] as Record<string, unknown>[]).map((j) => ({ ...j, kappa_echantillon_humain: 0.1 }));
     const apresGoNoGo = { ...brut, juges, go_no_go: { autre: true }, accord_humains_echantillon: { autre: true } };
     expect(empreinteDuRun(apresGoNoGo)).toBe(empreinteDuRun(brut));
-    expect(empreinteDuRun({ ...brut, statut: "autre" })).not.toBe(empreinteDuRun(brut));
+    // §9 (0.28, D70 (13)) : le statut, la publication et le dépôt sont aussi hors de l'empreinte
+    // (tests/analysis/recalcul-b.test.ts) ; tout autre champ y reste.
+    expect(empreinteDuRun({ ...brut, taux_echantillon_humain: 0.25 })).not.toBe(empreinteDuRun(brut));
   });
 
   it("réécriture identique : la commande ne réécrit rien et le dit (code 0)", () => {

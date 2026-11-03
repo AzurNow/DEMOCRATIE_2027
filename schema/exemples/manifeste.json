@@ -3537,6 +3537,45 @@
         "keyword": "required",
         "instance_path": "/perimetre/candidats/0/preuves_inclusion/0/notice_institut"
       }
+    },
+    {
+      "objet": "recalcul-b",
+      "fichier": "recalcul-b/valide-01-contestation-posterieure.json",
+      "attendu": "valide",
+      "motif": "Sortie d'analysis/recalcul-b.ts:recalculB sur un run en mémoire (tests/analysis/run-analysable.ts) : candidats a et b à un item P et un item F, outil-alpha en web_desactivee, seule la réponse de candidat-b à l'item F en formulation orientée inexacte, dix rééchantillonnages ; metriques.json calculé sans contestation, puis une contestation postérieure de l'item F de candidat-b : le (b) mis à jour diffère de celui de metriques.json (identique_a_la_reference faux)."
+    },
+    {
+      "objet": "recalcul-b",
+      "fichier": "recalcul-b/invalide-01-autre-recalcul.json",
+      "attendu": "invalide",
+      "motif": "Un autre recalcul que (b) publié dans le fichier daté : seul le recalcul (b) est mis à jour après une contestation postérieure (§8, protocole 0.28, D70 (13)).",
+      "regle_protocole": "§8, analyses de robustesse préenregistrées (0.28, D70 (13))",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/recalcul/recalcul"
+      }
+    },
+    {
+      "objet": "recalcul-b",
+      "fichier": "recalcul-b/invalide-02-sans-empreinte-des-metriques.json",
+      "attendu": "invalide",
+      "motif": "Recalcul daté sans l'empreinte du metriques.json à côté duquel il est publié : rien ne le rattache au fichier qu'il met à jour (§9, 0.28, D70 (13)).",
+      "regle_protocole": "§9, reproductibilité (0.28, D70 (13))",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/reference"
+      }
+    },
+    {
+      "objet": "recalcul-b",
+      "fichier": "recalcul-b/invalide-03-sans-contestations-lues.json",
+      "attendu": "invalide",
+      "motif": "Recalcul daté sans les contestations qu'il a lues : l'entrée exacte de (b) ne serait pas publiée (§9 : tout ce qui a servi à produire un chiffre est public).",
+      "regle_protocole": "§9, transparence (0.28, D70 (13))",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/entrees"
+      }
     }
   ]
 }

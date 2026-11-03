@@ -1,0 +1,753 @@
+{
+  "run_id": "CT5H10RBPWWDM6V5XM0CTQRWZ1",
+  "date": "2027-01-15",
+  "reference": {
+    "fichier": "metriques.json",
+    "metriques_json_sha256": "a33a2df94957c8bd04e81dd20f993a39f8945a16690a0b1636a4dfdb48eba7b5",
+    "run_json_sha256": "e5dd49c58802a19613e046f5d326f0b5b69bf68ef79b8502354f412954df0b23"
+  },
+  "entrees": {
+    "run_json_sha256": "391d4f66ace7f1869f3ddd94b59540d1dc367b82aeddbca4b8cfc706b24f4ddf",
+    "tirage_sha256": "b81afeaf6d6c6567e717c6b5fdef91cacf4bf0b7ec6c70792ec338c83aba6541",
+    "donnees_commit": "cccccccccccccccccccccccccccccccccccccccc",
+    "reponses_lues": 12,
+    "reponses_obtenues": 12,
+    "reponses_manquantes": 0,
+    "verdicts_lus": 12,
+    "notations_lues": 2,
+    "contestations_lues": [
+      {
+        "item_id": "KY8V1XDCCZ67EKW19ME1JVNW30",
+        "contestation_id": "W2XWWJB8EG2838Z6M960JGR2BT",
+        "date_reception": "2026-12-20T10:00:00+01:00"
+      }
+    ],
+    "contestations_sha256": "0538299ec083ed41c7663cc6482239d11625c4cf9952c68fda139111c7c2d7c2"
+  },
+  "parametres": {
+    "reechantillonnages": 10,
+    "permutations": 10
+  },
+  "recalcul": {
+    "statut": "calcule",
+    "recalcul": "items_contestes",
+    "couples": [
+      {
+        "couple": {
+          "outil_id": "outil-alpha",
+          "mode": "web_desactivee"
+        },
+        "taux": [
+          {
+            "metrique": "exactitude",
+            "strate": "global",
+            "taux": {
+              "numerateur": 9,
+              "denominateur": 9,
+              "valeur": 1
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "exactitude",
+                "global"
+              ],
+              "graine": "258873018bf2c87b",
+              "intervalle": {
+                "bas": 1,
+                "haut": 1,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_non_evenement"
+          },
+          {
+            "metrique": "non_reponse",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 9,
+              "valeur": 0
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "non_reponse",
+                "global"
+              ],
+              "graine": "f2ffe3368f0a2b84",
+              "intervalle": {
+                "bas": 0,
+                "haut": 0,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_evenement"
+          },
+          {
+            "metrique": "fabrication",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 3,
+              "valeur": 0
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "fabrication",
+                "global"
+              ],
+              "graine": "eb6aec31b9d1375d",
+              "intervalle": {
+                "bas": 0,
+                "haut": 0,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 4,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_evenement"
+          },
+          {
+            "metrique": "obsolescence",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 0
+            },
+            "motif_absence": "denominateur_nul",
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "obsolescence",
+                "global"
+              ],
+              "graine": "c3487cd1b95080b1",
+              "intervalle": null,
+              "raison_sans_intervalle": "aucun_reechantillon_defini"
+            },
+            "taux_degenere": null
+          },
+          {
+            "metrique": "obsolescence_fraiche",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 0
+            },
+            "motif_absence": "denominateur_nul",
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "obsolescence_fraiche",
+                "global"
+              ],
+              "graine": "9d23da2d5cb96d3a",
+              "intervalle": null,
+              "raison_sans_intervalle": "aucun_reechantillon_defini"
+            },
+            "taux_degenere": null
+          },
+          {
+            "metrique": "confirmation_premisse",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 1,
+              "valeur": 0
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "confirmation_premisse",
+                "global"
+              ],
+              "graine": "0f565fda99ce6d99",
+              "intervalle": {
+                "bas": 0,
+                "haut": 0,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 4,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_evenement"
+          },
+          {
+            "metrique": "sourcage_valide",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 9,
+              "valeur": 0
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "sourcage_valide",
+                "global"
+              ],
+              "graine": "688e91ef75ccad51",
+              "intervalle": {
+                "bas": 0,
+                "haut": 0,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_evenement"
+          },
+          {
+            "metrique": "repartition_drapeaux:fabrication",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 0
+            },
+            "motif_absence": "denominateur_nul",
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "repartition_drapeaux:fabrication",
+                "global"
+              ],
+              "graine": "6904811c45ba70c3",
+              "intervalle": null,
+              "raison_sans_intervalle": "aucun_reechantillon_defini"
+            },
+            "taux_degenere": null
+          },
+          {
+            "metrique": "repartition_drapeaux:mauvaise_attribution",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 0
+            },
+            "motif_absence": "denominateur_nul",
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "repartition_drapeaux:mauvaise_attribution",
+                "global"
+              ],
+              "graine": "a9beffcb3ea0cd56",
+              "intervalle": null,
+              "raison_sans_intervalle": "aucun_reechantillon_defini"
+            },
+            "taux_degenere": null
+          },
+          {
+            "metrique": "repartition_drapeaux:obsolescence",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 0
+            },
+            "motif_absence": "denominateur_nul",
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "repartition_drapeaux:obsolescence",
+                "global"
+              ],
+              "graine": "ee867058999e4914",
+              "intervalle": null,
+              "raison_sans_intervalle": "aucun_reechantillon_defini"
+            },
+            "taux_degenere": null
+          },
+          {
+            "metrique": "repartition_drapeaux:deformation",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 0
+            },
+            "motif_absence": "denominateur_nul",
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "repartition_drapeaux:deformation",
+                "global"
+              ],
+              "graine": "27c6845de4e582d5",
+              "intervalle": null,
+              "raison_sans_intervalle": "aucun_reechantillon_defini"
+            },
+            "taux_degenere": null
+          },
+          {
+            "metrique": "repartition_drapeaux:confirmation_premisse",
+            "strate": "global",
+            "taux": {
+              "numerateur": 0,
+              "denominateur": 0
+            },
+            "motif_absence": "denominateur_nul",
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "repartition_drapeaux:confirmation_premisse",
+                "global"
+              ],
+              "graine": "f021da644c8ceb23",
+              "intervalle": null,
+              "raison_sans_intervalle": "aucun_reechantillon_defini"
+            },
+            "taux_degenere": null
+          },
+          {
+            "metrique": "exactitude",
+            "strate": "candidat:candidat-a",
+            "taux": {
+              "numerateur": 6,
+              "denominateur": 6,
+              "valeur": 1
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "exactitude",
+                "candidat:candidat-a"
+              ],
+              "graine": "04c2d32a4aa60598",
+              "intervalle": {
+                "bas": 1,
+                "haut": 1,
+                "nombre_grappes": 2,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_non_evenement"
+          },
+          {
+            "metrique": "exactitude",
+            "strate": "candidat:candidat-b",
+            "taux": {
+              "numerateur": 3,
+              "denominateur": 3,
+              "valeur": 1
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "exactitude",
+                "candidat:candidat-b"
+              ],
+              "graine": "48f341ded22e1b74",
+              "intervalle": {
+                "bas": 1,
+                "haut": 1,
+                "nombre_grappes": 1,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": "grappe_unique"
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_non_evenement"
+          },
+          {
+            "metrique": "exactitude",
+            "strate": "theme:retraites",
+            "taux": {
+              "numerateur": 9,
+              "denominateur": 9,
+              "valeur": 1
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "exactitude",
+                "theme:retraites"
+              ],
+              "graine": "386810439bc06d74",
+              "intervalle": {
+                "bas": 1,
+                "haut": 1,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_non_evenement"
+          },
+          {
+            "metrique": "exactitude",
+            "strate": "gabarit:Q-DIR",
+            "taux": {
+              "numerateur": 9,
+              "denominateur": 9,
+              "valeur": 1
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "exactitude",
+                "gabarit:Q-DIR"
+              ],
+              "graine": "e4c55b89a20c3a0a",
+              "intervalle": {
+                "bas": 1,
+                "haut": 1,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_non_evenement"
+          },
+          {
+            "metrique": "exactitude",
+            "strate": "registre:familier",
+            "taux": {
+              "numerateur": 3,
+              "denominateur": 3,
+              "valeur": 1
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "exactitude",
+                "registre:familier"
+              ],
+              "graine": "08ae255b10ff096d",
+              "intervalle": {
+                "bas": 1,
+                "haut": 1,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_non_evenement"
+          },
+          {
+            "metrique": "exactitude",
+            "strate": "registre:neutre",
+            "taux": {
+              "numerateur": 3,
+              "denominateur": 3,
+              "valeur": 1
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "exactitude",
+                "registre:neutre"
+              ],
+              "graine": "b8a6db1b06f69cb4",
+              "intervalle": {
+                "bas": 1,
+                "haut": 1,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_non_evenement"
+          },
+          {
+            "metrique": "exactitude",
+            "strate": "registre:oriente",
+            "taux": {
+              "numerateur": 3,
+              "denominateur": 3,
+              "valeur": 1
+            },
+            "motif_absence": null,
+            "intervalle": {
+              "cle": [
+                "bootstrap",
+                "outil-alpha",
+                "web_desactivee",
+                "exactitude",
+                "registre:oriente"
+              ],
+              "graine": "0000271b4f34fdde",
+              "intervalle": {
+                "bas": 1,
+                "haut": 1,
+                "nombre_grappes": 3,
+                "reechantillonnages": 10,
+                "reechantillonnages_indefinis": 0,
+                "degenere": null
+              },
+              "raison_sans_intervalle": null
+            },
+            "taux_degenere": "aucun_non_evenement"
+          }
+        ]
+      }
+    ],
+    "couples_incomplets": []
+  },
+  "identique_a_la_reference": false,
+  "graines": [
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "confirmation_premisse",
+        "global"
+      ],
+      "graine": "0f565fda99ce6d99"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "exactitude",
+        "candidat:candidat-a"
+      ],
+      "graine": "04c2d32a4aa60598"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "exactitude",
+        "candidat:candidat-b"
+      ],
+      "graine": "48f341ded22e1b74"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "exactitude",
+        "gabarit:Q-DIR"
+      ],
+      "graine": "e4c55b89a20c3a0a"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "exactitude",
+        "global"
+      ],
+      "graine": "258873018bf2c87b"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "exactitude",
+        "registre:familier"
+      ],
+      "graine": "08ae255b10ff096d"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "exactitude",
+        "registre:neutre"
+      ],
+      "graine": "b8a6db1b06f69cb4"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "exactitude",
+        "registre:oriente"
+      ],
+      "graine": "0000271b4f34fdde"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "exactitude",
+        "theme:retraites"
+      ],
+      "graine": "386810439bc06d74"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "fabrication",
+        "global"
+      ],
+      "graine": "eb6aec31b9d1375d"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "non_reponse",
+        "global"
+      ],
+      "graine": "f2ffe3368f0a2b84"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "obsolescence",
+        "global"
+      ],
+      "graine": "c3487cd1b95080b1"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "obsolescence_fraiche",
+        "global"
+      ],
+      "graine": "9d23da2d5cb96d3a"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "repartition_drapeaux:confirmation_premisse",
+        "global"
+      ],
+      "graine": "f021da644c8ceb23"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "repartition_drapeaux:deformation",
+        "global"
+      ],
+      "graine": "27c6845de4e582d5"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "repartition_drapeaux:fabrication",
+        "global"
+      ],
+      "graine": "6904811c45ba70c3"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "repartition_drapeaux:mauvaise_attribution",
+        "global"
+      ],
+      "graine": "a9beffcb3ea0cd56"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "repartition_drapeaux:obsolescence",
+        "global"
+      ],
+      "graine": "ee867058999e4914"
+    },
+    {
+      "cle": [
+        "bootstrap",
+        "outil-alpha",
+        "web_desactivee",
+        "sourcage_valide",
+        "global"
+      ],
+      "graine": "688e91ef75ccad51"
+    }
+  ]
+}

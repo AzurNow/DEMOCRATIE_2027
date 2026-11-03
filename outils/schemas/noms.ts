@@ -113,6 +113,10 @@
  * (`analysis/analyse-du-run.ts`, sous-lot A ; docs/DETTE.md, 2026-11-02, n° 1) : les sections du §8
  * calculées sur un seul partage de la population, validées avant toute écriture. Le
  * quarante et unième.
+ *
+ * `recalcul-b` décrit `runs/<date>/metriques/recalcul-b-<AAAA-MM-JJ>.json`, le recalcul (b) mis à jour
+ * après une contestation postérieure, publié à côté de `metriques.json` sans le réécrire (§8 et §9,
+ * protocole 0.28, D70 (13) ; `analysis/recalcul-b.ts`). Le quarante-deuxième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -156,6 +160,7 @@ export const NOMS_SCHEMAS = [
   "sous-echantillon-application",
   "depot-application",
   "metriques",
+  "recalcul-b",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];
