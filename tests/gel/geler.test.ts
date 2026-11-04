@@ -22,7 +22,7 @@ import { ConfigurationGelIncomplete } from "../../pipeline/gel/configuration.ts"
 import { DEPOT_PUBLIC, EngagementRefuse } from "../../pipeline/gel/engagement.ts";
 import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../../pipeline/gel/reseau.ts";
 import type { Envoi } from "../../pipeline/gel/reseau.ts";
-import { geler, GelBloque } from "../../pipeline/gel/geler.ts";
+import { geler, GelBloque, texteItemsAContester } from "../../pipeline/gel/geler.ts";
 import { OrdreDesInstantsRefuse } from "../../pipeline/gel/instants.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
@@ -421,6 +421,57 @@ describe("V3-1 : item principal d'un candidat non interrogé", () => {
     const tirage = json(run, "tirage.json") as { entrees: { question_id: string; items_au_gel: { reference: { item_id: string }; role: string }[] }[] };
     const entree = tirage.entrees.find((une) => une.question_id === identifiantAttribution(MESURE_FISC_1.id, "Q-ATT"));
     expect(entree?.items_au_gel.find((item) => item.reference.item_id === P_RETIRE.id)?.role).toBe("attendu_dans_liste");
+  });
+});
+
+/**
+ * §5.60 et §5.61 (protocole 0.27, D67 ; conformité du 2026-11-03, constat n° 3) : deux items en vigueur
+ * d'un même candidat interrogé aux positions différentes sur une mesure ne font plus refuser le gel
+ * (`PositionsContradictoires`) : leurs questions et la Q-ATT de la mesure sont exclues, motif
+ * `positions_incompatibles`, et le gel rend la liste des items que l'auteur conteste dès le gel.
+ */
+describe("§5.60 : positions incompatibles au gel", () => {
+  const P_CONTRE = itemPDeData({ cle: "gel-p1-contre", candidat_id: ALPHA.candidat_id, mesure: MESURE_FISC_1, position: "contre" });
+
+  it("deux items d'ALPHA « pour » et « contre » sur une mesure ⇒ gel écrit, questions exclues et comptées, items à contester rendus", async () => {
+    const nominal = jeuNominal();
+    expect(ITEM_P1.candidat_id).toBe(ALPHA.candidat_id);
+    expect(ITEM_P1.mesure_id).toBe(MESURE_FISC_1.id);
+    expect(ITEM_P1.assertion?.position).toBe("pour");
+    const { run, resultat } = await gelNominal({ ...nominal, items: [...nominal.items, P_CONTRE] });
+    const tirage = json(run, "tirage.json") as {
+      entrees: { question_id: string }[];
+      exclusions: { question_id: string; motif: string; detail: string; candidat_id?: string }[];
+    };
+    const exclues = tirage.exclusions.filter((exclusion) => exclusion.motif === "positions_incompatibles");
+    const attribution = identifiantAttribution(MESURE_FISC_1.id, "Q-ATT");
+    expect(exclues.map((exclusion) => exclusion.question_id)).toContain(attribution);
+    expect(exclues.some((exclusion) => exclusion.candidat_id === ALPHA.candidat_id)).toBe(true);
+    const tirees = new Set(tirage.entrees.map((entree) => entree.question_id));
+    for (const exclusion of exclues) expect(tirees.has(exclusion.question_id)).toBe(false);
+    expect(resultat.items_a_contester).toEqual([
+      {
+        candidat_id: ALPHA.candidat_id,
+        mesure_id: MESURE_FISC_1.id,
+        items: [
+          { item_id: ITEM_P1.id, position: "pour" },
+          { item_id: P_CONTRE.id, position: "contre" },
+        ].sort((a, b) => (a.item_id < b.item_id ? -1 : 1)),
+      },
+    ]);
+    const texte = texteItemsAContester(resultat.items_a_contester);
+    expect(texte).toContain("à contester dès le gel");
+    expect(texte).toContain(`candidat ${ALPHA.candidat_id}, mesure ${MESURE_FISC_1.id}`);
+    expect(texte).toContain(`${ITEM_P1.id} (pour)`);
+    expect(texte).toContain(`${P_CONTRE.id} (contre)`);
+  });
+
+  it("aucun conflit ⇒ aucune exclusion de ce motif, aucun item à contester (non-régression)", async () => {
+    const { run, resultat } = await gelNominal();
+    const tirage = json(run, "tirage.json") as { exclusions: { motif: string }[] };
+    expect(tirage.exclusions.filter((exclusion) => exclusion.motif === "positions_incompatibles")).toEqual([]);
+    expect(resultat.items_a_contester).toEqual([]);
+    expect(texteItemsAContester(resultat.items_a_contester)).toBe("");
   });
 });
 

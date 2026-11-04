@@ -9253,27 +9253,42 @@
       "section": "5",
       "citation": "Deux items d'un même candidat sur la même mesure, tous deux en vigueur au gel, dont les positions diffèrent, sans qu'une source postérieure ait retiré l'une d'elles, ne disent pas laquelle fait foi : les deux items sont exclus du tirage et comptés à part dans le rapport du run, la mesure n'engendre aucune question d'attribution tant qu'ils le sont",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/reponse-attendue.ts:PositionsContradictoires",
-        "pipeline/questions/tirabilite.ts:motifDExclusion"
+        "pipeline/questions/tirabilite.ts:positionsIncompatiblesAuGel",
+        "pipeline/questions/tirabilite.ts:incompatibilite",
+        "pipeline/questions/types.ts:MOTIFS_EXCLUSION (positions_incompatibles)",
+        "schema/tirage.schema.json#/properties/exclusions/items/properties/motif"
       ],
-      "tests": [],
+      "tests": [
+        "tests/questions/tirabilite-au-gel.test.ts « deux items P incompatibles du même candidat : toutes leurs questions exclues, motif positions_incompatibles »",
+        "tests/questions/tirabilite-au-gel.test.ts « la Q-ATT de la mesure est exclue même si un autre candidat y porte un item valide, dont les questions restent tirées »",
+        "tests/questions/tirabilite-au-gel.test.ts « un seul des deux en vigueur (l'autre obsolète exactement à l'instant du gel) : pas d'exclusion pour incompatibilité »",
+        "tests/gel/geler.test.ts « deux items d'ALPHA « pour » et « contre » sur une mesure ⇒ gel écrit, questions exclues et comptées, items à contester rendus »"
+      ],
       "lot": null,
       "constat": 3,
-      "note": "Le code lève PositionsContradictoires depuis la Q-ATT de la mesure et arrête tout le tirage, sans motif d'exclusion ; tests/questions/attribution-au-gel.test.ts verrouille ce refus. Les questions propres des deux items ne sont pas exclues en tant que telles."
+      "note": "Réglé (constat n° 3 du 2026-11-03) : les questions de tout item retenu d'un candidat interrogé dont les positions en vigueur au gel diffèrent sur la mesure, et la Q-ATT de la mesure, sont exclues, motif positions_incompatibles, comptées dans tirage.exclusions. Lecture : seuls les candidats interrogés comptent (comme pour un item contesté) ; « diffèrent » pris à la lettre (toute paire de positions distinctes, conditionnel et sans_objet compris), plus large que PositionsContradictoires, qui ne garde plus qu'un appel direct de reponseAttendue."
     },
     {
       "id": "§5.61",
       "section": "5",
       "citation": "et l'auteur les conteste dès le gel, comme un item contesté ci-dessus",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "questions (avec §5.60)",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/tirage.ts:tirer (rapport.positions_incompatibles)",
+        "pipeline/gel/geler.ts:texteItemsAContester",
+        "outils/geler.ts:imprimer"
+      ],
+      "tests": [
+        "tests/questions/tirabilite-au-gel.test.ts « le rapport du tirage liste les items à contester, par candidat et par mesure »",
+        "tests/gel/geler.test.ts « deux items d'ALPHA « pour » et « contre » sur une mesure ⇒ gel écrit, questions exclues et comptées, items à contester rendus »",
+        "tests/gel/geler.test.ts « aucun conflit ⇒ aucune exclusion de ce motif, aucun item à contester (non-régression) »"
+      ],
+      "lot": null,
       "constat": 3,
-      "note": "Suppose l'exclusion de §5.60 ; aucun outil ne liste ces items à contester au gel."
+      "note": "Réglé (constat n° 3 du 2026-11-03) : pnpm geler imprime les items à contester, par candidat et mesure, avec leur position en vigueur. La contestation elle-même reste un acte de l'auteur ; la liste n'est pas publiée dans tirage.json en tant que telle, seulement dans le détail des exclusions."
     },
     {
       "id": "§5.62",

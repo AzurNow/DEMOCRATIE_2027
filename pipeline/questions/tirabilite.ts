@@ -13,10 +13,14 @@
  * définie au gel — item hors de sa fenêtre de validité, position « sans objet » sur un gabarit
  * fermé, négatif ou orienté, liste d'attribution non définie — est exclue. Une question dont l'item
  * principal est celui d'un candidat non interrogé au run est exclue aussi (`principal_non_interroge`,
- * D57 (1), protocole 0.22). Chaque exclusion est inscrite dans `tirage.exclusions` avec un seul motif,
- * le premier dans l'ordre : `attribution_contestee`, `mesure_version_depassee`, `hors_validite` ou
- * `reponse_attendue_indecidable`, puis `principal_non_interroge`. Ces règles sont évaluées avant tout
- * usage de la graine : aucune graine ne fait échouer ni réussir le tirage pour ces motifs.
+ * D57 (1), protocole 0.22). Deux items retenus d'un même candidat interrogé sur une même mesure, en
+ * vigueur au gel et de positions différentes, excluent toutes leurs questions et la question
+ * d'attribution de la mesure (`positions_incompatibles`, protocole 0.27, D67), au lieu d'arrêter le
+ * tirage. Chaque exclusion est inscrite dans `tirage.exclusions` avec un seul motif, le premier dans
+ * l'ordre : `attribution_contestee`, `mesure_version_depassee`, `positions_incompatibles`,
+ * `hors_validite` ou `reponse_attendue_indecidable`, puis `principal_non_interroge`. Ces règles sont
+ * évaluées avant tout usage de la graine : aucune graine ne fait échouer ni réussir le tirage pour ces
+ * motifs.
  *
  * Une formulation dont la relecture conclut à un sens changé (`relecture.sens_preserve: false`)
  * n'est jamais interrogée (§5, conformité n° 58) : si sa question est tirable, `separer` lève
@@ -34,6 +38,7 @@ import { effetSurAttribution, placeAuGel } from "./place-au-gel.ts";
 import {
   ItemHorsValidite,
   ItemIntrouvable,
+  positionEnVigueur,
   premisseFausseAuGel,
   reponseAttendue,
   ReponseNonDefinieAuGel,
@@ -47,6 +52,7 @@ import type {
   ItemDeQuestion,
   Mesure,
   MotifExclusion,
+  Position,
   Question,
   RunAuGel,
   Theme,
@@ -208,21 +214,154 @@ function versionDepassee(gardes: readonly ItemDeQuestion[], index: Index): Motif
   };
 }
 
-function lireAuGel(question: Question, index: Index, interroges: ReadonlySet<string>): LectureAuGel {
+/* ------------------------------------------------- positions incompatibles */
+
+/**
+ * §5 (protocole 0.27, D67) : « Deux items d'un même candidat sur la même mesure, tous deux en vigueur
+ * au gel, dont les positions diffèrent, sans qu'une source postérieure ait retiré l'une d'elles, ne
+ * disent pas laquelle fait foi : les deux items sont exclus du tirage et comptés à part dans le rapport
+ * du run, la mesure n'engendre aucune question d'attribution tant qu'ils le sont, et l'auteur les
+ * conteste dès le gel. »
+ *
+ * Un groupe par candidat × mesure : tous les items retenus au gel (`placeAuGel`) qui donnent au
+ * candidat une position en vigueur (`positionEnVigueur` : item P, ou état en vigueur d'un item O), dès
+ * qu'au moins deux de ces positions diffèrent. Tous les items du groupe y sont, même deux qui
+ * s'accordent entre eux : chacun forme avec l'item discordant une paire dont aucune ne fait foi. Un item
+ * dont la fin de validité est l'instant de gel n'est plus en vigueur et n'y entre pas (intervalles
+ * semi-ouverts, §4) ; une source postérieure qui retire une position la rend obsolète, donc hors de
+ * vigueur. Seuls les candidats interrogés au run comptent, comme pour un item contesté : le tirage
+ * n'examine que leurs questions, et la liste d'une question d'attribution ne lit qu'eux.
+ */
+export interface PositionsIncompatibles {
+  readonly candidat_id: string;
+  readonly mesure_id: string;
+  /** Les items du groupe et leur position en vigueur au gel, triés par identifiant d'item. */
+  readonly items: readonly PositionDItem[];
+}
+
+export interface PositionDItem {
+  readonly item_id: string;
+  readonly position: Position;
+}
+
+interface PositionLue {
+  readonly item: Item;
+  readonly position: Position;
+}
+
+function positionRetenueAuGel(item: Item, date_gel: string, interroges: ReadonlySet<string>): PositionLue | undefined {
+  if (!interroges.has(item.candidat_id) || placeAuGel(item) !== "retenu") return undefined;
+  const position = positionEnVigueur(item, date_gel);
+  return position === undefined ? undefined : { item, position };
+}
+
+function enConflit(lues: readonly PositionLue[]): PositionsIncompatibles | undefined {
+  const premiere = lues[0];
+  if (premiere === undefined || new Set(lues.map((lue) => lue.position)).size < 2) return undefined;
+  return {
+    candidat_id: premiere.item.candidat_id,
+    mesure_id: premiere.item.mesure_id,
+    items: lues
+      .map((lue) => ({ item_id: lue.item.id, position: lue.position }))
+      .sort((a, b) => comparerChaines(a.item_id, b.item_id)),
+  };
+}
+
+/** Les groupes incompatibles au gel, triés par candidat puis par mesure. Évalué sans la graine. */
+export function positionsIncompatiblesAuGel(
+  items: readonly Item[],
+  date_gel: string,
+  interroges: ReadonlySet<string>,
+): readonly PositionsIncompatibles[] {
+  const groupes = new Map<string, PositionLue[]>();
+  for (const item of items) {
+    const lue = positionRetenueAuGel(item, date_gel, interroges);
+    if (lue === undefined) continue;
+    const cle = `${item.candidat_id}|${item.mesure_id}`;
+    const groupe = groupes.get(cle);
+    if (groupe === undefined) groupes.set(cle, [lue]);
+    else groupe.push(lue);
+  }
+  return [...groupes.entries()]
+    .sort(([a], [b]) => comparerChaines(a, b))
+    .map(([, lues]) => enConflit(lues))
+    .filter((conflit): conflit is PositionsIncompatibles => conflit !== undefined);
+}
+
+/**
+ * Les groupes qui touchent la question : ceux dont un item est parmi ses items gardés au gel, et, pour
+ * une question d'attribution (sans candidat), ceux de la mesure de ses items.
+ */
+function conflitsDeLaQuestion(
+  question: Pick<Question, "candidat_id">,
+  gardes: readonly ItemDeQuestion[],
+  contexte: ContexteDuGel,
+): readonly PositionsIncompatibles[] {
+  const ids = new Set(gardes.map((entree) => entree.reference.item_id));
+  const mesures = new Set(
+    question.candidat_id === undefined ? [...ids].map((id) => itemDe(id, contexte.index.items).mesure_id) : [],
+  );
+  return contexte.incompatibles.filter(
+    (conflit) => mesures.has(conflit.mesure_id) || conflit.items.some((lu) => ids.has(lu.item_id)),
+  );
+}
+
+function decrireConflit(conflit: PositionsIncompatibles): string {
+  const items = conflit.items.map((lu) => `${lu.item_id} (${lu.position})`).join(", ");
+  return `le candidat interrogé ${conflit.candidat_id} porte au gel, sur la mesure ${conflit.mesure_id}, des positions en vigueur différentes : ${items}`;
+}
+
+function incompatibilite(
+  question: Pick<Question, "candidat_id">,
+  gardes: readonly ItemDeQuestion[],
+  contexte: ContexteDuGel,
+): MotifEtDetail | undefined {
+  const conflits = conflitsDeLaQuestion(question, gardes, contexte);
+  if (conflits.length === 0) return undefined;
+  return {
+    motif: "positions_incompatibles",
+    detail:
+      `${conflits.map(decrireConflit).join(" ; ")}. Aucun de ces items ne dit laquelle fait foi : ils sont exclus ` +
+      `du tirage, la mesure n'engendre aucune question d'attribution, et l'auteur les conteste dès le gel (§5).`,
+  };
+}
+
+/** Ce que le jugement d'une question lit du gel, calculé une fois pour toutes les questions. */
+interface ContexteDuGel {
+  readonly index: Index;
+  readonly run: GelDuRun;
+  readonly interroges: ReadonlySet<string>;
+  readonly incompatibles: readonly PositionsIncompatibles[];
+}
+
+function contexteDuGel(items: readonly Item[], index: Index, run: GelDuRun, interroges: ReadonlySet<string>): ContexteDuGel {
+  return { index, run, interroges, incompatibles: positionsIncompatiblesAuGel(items, run.date_gel, interroges) };
+}
+
+function lireAuGel(question: Question, contexte: ContexteDuGel): LectureAuGel {
+  const { index, interroges } = contexte;
   if (!existeAuGel(question, index.items)) return { sorte: "absente" };
   const gardes = itemsGardesAuGel(question, index.items, interroges);
-  const contestee = contestationBloquante(gardes, index.items);
-  if (contestee !== undefined) return { sorte: "exclue", exclusion: contestee };
-  const perimee = versionDepassee(gardes, index);
-  if (perimee !== undefined) return { sorte: "exclue", exclusion: perimee };
+  // Dans l'ordre des motifs : le premier qui s'applique est le seul inscrit.
+  const controles: readonly (() => MotifEtDetail | undefined)[] = [
+    () => contestationBloquante(gardes, index.items),
+    () => versionDepassee(gardes, index),
+    () => incompatibilite(question, gardes, contexte),
+  ];
+  for (const controle of controles) {
+    const exclusion = controle();
+    if (exclusion !== undefined) return { sorte: "exclue", exclusion };
+  }
   return { sorte: "admise", items: gardes };
 }
 
 /**
  * §5 (protocole 0.9) : la réponse attendue est-elle définie au gel ? La règle est celle de
  * `reponseAttendue`, appelée telle quelle sur les items gardés au gel : seuls ses deux refus « non
- * défini au gel » deviennent un motif d'exclusion. Tout autre refus (question mal formée, positions
- * contradictoires, référence absente) remonte et arrête le tirage.
+ * défini au gel » deviennent un motif d'exclusion. Tout autre refus (question mal formée, référence
+ * absente) remonte et arrête le tirage. Des positions contradictoires n'arrivent plus jusqu'ici : la
+ * question est déjà exclue (`positions_incompatibles`) ; `PositionsContradictoires` ne garde plus
+ * qu'un appel direct de `reponseAttendue`.
  */
 function motifDExclusion(
   question: Pick<Question, "gabarit" | "items">,
@@ -244,8 +383,9 @@ function motifDExclusion(
 /** Le verdict du gel sur une question : absente, exclue avec son motif, ou tirable. */
 type Verdict = { readonly sorte: "absente" | "tirable" } | { readonly sorte: "exclue"; readonly exclusion: MotifEtDetail };
 
-function juger(question: Question, index: Index, run: GelDuRun, interroges: ReadonlySet<string>): Verdict {
-  const lecture = lireAuGel(question, index, interroges);
+function juger(question: Question, contexte: ContexteDuGel): Verdict {
+  const { index, run, interroges } = contexte;
+  const lecture = lireAuGel(question, contexte);
   if (lecture.sorte !== "admise") return lecture;
   const exclusion = motifDExclusion({ gabarit: question.gabarit, items: lecture.items }, [...index.items.values()], run);
   if (exclusion !== undefined) return { sorte: "exclue", exclusion };
@@ -295,9 +435,8 @@ export function questionsTirables(
   mesures: readonly Mesure[],
   run: GelDuRun,
 ): readonly Question[] {
-  const index = indexer(items, mesures);
-  const interroges = interrogesDe(run);
-  return questions.filter((question) => juger(question, index, run, interroges).sorte === "tirable");
+  const contexte = contexteDuGel(items, indexer(items, mesures), run, interrogesDe(run));
+  return questions.filter((question) => juger(question, contexte).sorte === "tirable");
 }
 
 /** Clé d'une strate candidat × thème × gabarit, partagée avec la symétrie (`symetrie.ts`). */
@@ -331,6 +470,8 @@ export function tirablesParStrate(
 interface Separation {
   readonly tirables: readonly Question[];
   readonly exclusions: readonly ExclusionTirage[];
+  /** §5 (0.27, D67) : les items que l'auteur conteste dès le gel (`positionsIncompatiblesAuGel`). */
+  readonly incompatibles: readonly PositionsIncompatibles[];
 }
 
 /**
@@ -346,11 +487,12 @@ export function separer(
   run: GelDuRun,
   interroges: ReadonlySet<string>,
 ): Separation {
+  const contexte = contexteDuGel(items, index, run, interroges);
   const tirables: Question[] = [];
   const exclusions: ExclusionTirage[] = [];
   for (const question of questions) {
     if (!concerneLeRun(question, interroges)) continue;
-    const verdict = juger(question, index, run, interroges);
+    const verdict = juger(question, contexte);
     if (verdict.sorte === "absente") continue;
     if (verdict.sorte === "exclue") {
       exclusions.push(exclusionDe(question, index, verdict.exclusion));
@@ -362,7 +504,11 @@ export function separer(
     verifierRelecture(question);
     tirables.push(question);
   }
-  return { tirables, exclusions: exclusions.sort((a, b) => comparerChaines(a.question_id, b.question_id)) };
+  return {
+    tirables,
+    exclusions: exclusions.sort((a, b) => comparerChaines(a.question_id, b.question_id)),
+    incompatibles: contexte.incompatibles,
+  };
 }
 
 /**
