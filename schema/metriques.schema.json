@@ -215,9 +215,18 @@
       }
     },
     "variabilite_echantillons": {
-      "description": "§8, « Variabilité entre échantillons » (0.28, D70 (12)) : l'accord entre les deux échantillons d'une même question, dans une même formulation et un même mode, lu sur la catégorie primaire de leur note retenue, par couple comparé (analysis/accord-echantillons.ts). Un diagnostic, pas une métrique : ni intervalle, ni qualificatif, ni graine. Un couple « run incomplet » n'y figure pas (seuils de non-publication).",
+      "description": "§8, « Variabilité entre échantillons » (0.28, D70 (12)) : l'accord entre les deux échantillons d'une même question, dans une même formulation et un même mode, lu sur la catégorie primaire de leur note retenue, par couple comparé (analysis/accord-echantillons.ts). Un diagnostic, pas une métrique : ni intervalle, ni qualificatif, ni graine. Un couple « run incomplet » n'y figure pas (seuils de non-publication). Quand le plan d'interrogation ne prévoit qu'un échantillon par question (levier « 2 → 1 » du §12), la section est sans objet, motif un_seul_echantillon_au_plan, propre à cette section (0.31, D73 (6)).",
       "oneOf": [
         { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "motif"],
+          "properties": {
+            "statut": { "const": "sans_objet" },
+            "motif": { "const": "un_seul_echantillon_au_plan" }
+          }
+        },
         {
           "type": "object",
           "additionalProperties": false,
