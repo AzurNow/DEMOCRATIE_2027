@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:sous-echantillon-application",
   "title": "Sous-échantillon de l'application",
-  "description": "§6, QR8 (protocole 0.24, D59 (12)) : les questions qu'un testeur saisit à la main dans l'application grand public de chaque éditeur. Cinq par candidat interrogé, réparties entre ses gabarits en tourniquet, gabarits et questions pris dans l'ordre trié de leurs codes et identifiants ; chacune dans sa formulation neutre, en un seul échantillon, numéroté 1 ; chacun des deux testeurs saisit tout le sous-échantillon. Calculé sans graine par pipeline/interrogation/sous-echantillon-application.ts depuis les fichiers gelés du run (tirage.json, questions.json, run.json#/perimetre/candidats) : quiconque les relit retrouve le même sous-échantillon. Les questions d'attribution, qui ne nomment aucun candidat, n'y entrent pas.",
+  "description": "§6, QR8 (protocole 0.24, D59 (12)) : les questions qu'un testeur saisit à la main dans l'application grand public de chaque éditeur. Cinq par candidat interrogé, toutes ses questions tirées pour un candidat interrogé qui en a moins de cinq (protocole 0.27), réparties entre ses gabarits en tourniquet, gabarits et questions pris dans l'ordre trié de leurs codes et identifiants ; chacune dans sa formulation neutre, en un seul échantillon, numéroté 1 ; chacun des deux testeurs saisit tout le sous-échantillon. Calculé sans graine par pipeline/interrogation/sous-echantillon-application.ts depuis les fichiers gelés du run (tirage.json, questions.json, run.json#/perimetre/candidats) : quiconque les relit retrouve le même sous-échantillon. Les questions d'attribution, qui ne nomment aucun candidat, n'y entrent pas.",
   "type": "object",
   "additionalProperties": false,
   "required": ["run_id", "questions_par_candidat", "registre", "echantillon", "testeurs", "candidats"],
@@ -25,9 +25,9 @@
           "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
           "questions": {
             "type": "array",
-            "minItems": 5,
+            "minItems": 0,
             "maxItems": 5,
-            "description": "Dans l'ordre du tourniquet. Un candidat interrogé qui a moins de cinq questions tirées n'a pas de sous-échantillon : le calcul est refusé (le §6 ne dit pas quoi faire).",
+            "description": "Dans l'ordre du tourniquet. Cinq questions ; toutes ses questions tirées pour un candidat interrogé qui en a moins de cinq (§6, 0.27), aucune pour celui qui n'en a aucune : le bloc reste, vide, pour que l'absence soit visible.",
             "items": {
               "type": "object",
               "additionalProperties": false,

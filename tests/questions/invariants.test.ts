@@ -405,8 +405,9 @@ describe("exemples de schema/exemples/", () => {
   // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
   // 385 → 387 : §4 (protocole 0.27), motif de rejet de l'arbitre, un valide (valide-03, rejet sous texte_extrait_errone) et un invalide (invalide-04, motif sur une issue non_evaluable) de decision-arbitrage.
   // 387 → 388 : §5 (0.27, D67), un valide de tirage (valide-03, exclusion positions_incompatibles).
-  it("charge les 388 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(388);
+  // 388 → 389 : §6 (0.27), sous-échantillon de l'application à moins de cinq questions, un invalide (invalide-02, six questions) ; invalide-02-quatre-questions devient valide-02.
+  it("charge les 389 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(389);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

@@ -193,7 +193,7 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   const commit = exigerDepotPropre(options.racine);
   const chemins = disposition(options.racine);
   const entrees = lireEntrees(chemins);
-  const prepare = preparer(entrees);
+  const prepare = preparer(entrees, options.type_run);
   const destination = destinationDuRun(options.racine, options.sortie, prepare.date_repertoire);
   const protocole_sha256 = sha256DuFichier(chemins.protocole);
 

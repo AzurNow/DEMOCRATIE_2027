@@ -1,0 +1,50 @@
+{
+  "run_id": "01JDQ7XK2M8N3P4R5S6T7V8W9X",
+  "questions_par_candidat": 5,
+  "registre": "neutre",
+  "echantillon": 1,
+  "testeurs": 2,
+  "candidats": [
+    {
+      "candidat_id": "cand-a",
+      "questions": [
+        {
+          "rang": 1,
+          "question_id": "q_0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a",
+          "gabarit": "Q-ACT",
+          "formulation_id": "01JDQ7XK2M8N3P4R5S6T7V8W9A"
+        },
+        {
+          "rang": 2,
+          "question_id": "q_1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b",
+          "gabarit": "Q-DIR",
+          "formulation_id": "01JDQ7XK2M8N3P4R5S6T7V8W9B"
+        },
+        {
+          "rang": 3,
+          "question_id": "q_2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c",
+          "gabarit": "Q-FER",
+          "formulation_id": "01JDQ7XK2M8N3P4R5S6T7V8W9C"
+        },
+        {
+          "rang": 4,
+          "question_id": "q_3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d",
+          "gabarit": "Q-NEG",
+          "formulation_id": "01JDQ7XK2M8N3P4R5S6T7V8W9D"
+        },
+        {
+          "rang": 5,
+          "question_id": "q_4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e",
+          "gabarit": "Q-ORI",
+          "formulation_id": "01JDQ7XK2M8N3P4R5S6T7V8W9E"
+        },
+        {
+          "rang": 5,
+          "question_id": "q_5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f",
+          "gabarit": "Q-ORI",
+          "formulation_id": "01JDQ7XK2M8N3P4R5S6T7V8W9F"
+        }
+      ]
+    }
+  ]
+}
