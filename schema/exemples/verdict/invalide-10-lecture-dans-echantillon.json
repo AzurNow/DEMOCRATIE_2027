@@ -1,0 +1,30 @@
+{
+  "id": "V7CMPRTR0HVMN1QZ8K4X2D7Y9B",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "objet_note": {
+    "type": "lecture_comparateur",
+    "id": "AVN8DW091CRS3J4Z7XA4V341D8"
+  },
+  "categorie_retenue": "exacte",
+  "drapeaux_retenus": [],
+  "sourcage_retenu": {
+    "cite": false,
+    "au_moins_un_lien_existant": false,
+    "au_moins_un_lien_soutenant": false
+  },
+  "notations_sources": [
+    "8MW7RXP7W4CG9GM671HHNK5J9E",
+    "PMMABG5K5WKP4GCQSBJQ8NAAY9"
+  ],
+  "mode_resolution": "lecture_comparateur_humaine",
+  "desaccord_juges": false,
+  "dans_echantillon_humain": true,
+  "erreur_grave": false,
+  "revue_humaine": {
+    "effectuee": true,
+    "date": "2026-12-05T09:30:00+01:00",
+    "annotateurs": ["a1", "a2"]
+  },
+  "date": "2026-12-06T12:00:00+01:00"
+}

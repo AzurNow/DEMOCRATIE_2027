@@ -27,16 +27,23 @@
  * schéma par `lireRunJson`) et les items contestés à son commit des données, calcule tous les ajouts,
  * valide chaque run modifié, puis seulement l'écrit par renommage (`ecriture.ts`). L'empreinte de
  * `run.json` change avec l'ajout : c'est voulu (§9, D72 (2)), Git est le journal.
+ *
+ * Avant `pnpm analyze`, `exigerContestationsInscrites` ne reçoit que le répertoire du run : les items
+ * se lisent dans le `data/items` de la racine du dépôt Git qui porte ce run
+ * (`repertoireDesItemsDuRun`), jamais dans un répertoire désigné à la main, qui pourrait être vide ou
+ * d'un autre dépôt et rendre le contrôle muet (DETTE 2026-11-04 n° 1).
  */
 
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { dispositionRunNote, lireItemAuCommit, lireRunJson, ouvrirDepotDesItems, type RunLu } from "../../analysis/lecture-run.ts";
 import type { ContestationPosterieure } from "../../analysis/types.ts";
+import { executerGit } from "../../outils/executer-git.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { contestationsDe } from "../../validation/domaine/contestation-item.ts";
 import type { Item } from "../../validation/domaine/types.ts";
+import { lireItemsData } from "../../validation/io/data-items.ts";
 import { lireInstant } from "../interrogation/heure-paris.ts";
 import { ecrireParRenommage } from "./ecriture.ts";
 import { STATUT_INVALIDE, type StatutRun } from "./types.ts";
@@ -225,14 +232,57 @@ export class ContestationsPosterieuresNonInscrites extends Error {
   }
 }
 
+/** Le répertoire du run n'est dans aucun dépôt Git : ni ses items ni son commit des données ne se lisent. */
+export class DepotDuRunIntrouvable extends Error {
+  constructor(repertoire_run: string, cause: string) {
+    super(
+      `${repertoire_run} n'est dans aucun dépôt Git lisible (${cause}). Les contestations connues se lisent dans le ` +
+        `data/items du dépôt qui porte le run, et son commit des données dans ce même dépôt (D73 (2) et (4)).`,
+    );
+    this.name = "DepotDuRunIntrouvable";
+  }
+}
+
+/**
+ * Le dépôt du run n'a pas de `data/items`, ou n'y porte aucun item. Aucune contestation n'y est
+ * lisible : c'est une donnée absente, jamais « zéro contestation connue ».
+ */
+export class ItemsDuDepotAbsents extends Error {
+  constructor(repertoire_items: string) {
+    super(
+      `${repertoire_items} est absent ou ne porte aucun item. Un run gelé épingle des items validés : sans eux, ` +
+        `les contestations connues sont illisibles, et le recalcul (b) ne peut pas les porter (§8, D73 (4)).`,
+    );
+    this.name = "ItemsDuDepotAbsents";
+  }
+}
+
+/**
+ * Le `data/items` de la racine du dépôt Git qui porte `repertoire_run` : le seul répertoire où se
+ * lisent les contestations connues de ce run, et où son commit des données se relit. Il se déduit,
+ * il ne se demande pas : un répertoire désigné à la main (vide, ou d'un autre dépôt) rendrait le
+ * contrôle muet. Lève `DepotDuRunIntrouvable` hors d'un dépôt, `ItemsDuDepotAbsents` sans item.
+ */
+export function repertoireDesItemsDuRun(repertoire_run: string): string {
+  const racine = executerGit(repertoire_run, ["rev-parse", "--show-toplevel"]);
+  if (!racine.ok) throw new DepotDuRunIntrouvable(repertoire_run, racine.erreur);
+  const repertoire_items = join(racine.sortie.trim(), "data", "items");
+  if (!existsSync(repertoire_items) || !readdirSync(repertoire_items).some((nom) => nom.endsWith(".json"))) {
+    throw new ItemsDuDepotAbsents(repertoire_items);
+  }
+  return repertoire_items;
+}
+
 /**
  * Lève `ContestationsPosterieuresNonInscrites` si le run de `repertoire_run` n'inscrit pas une
- * contestation postérieure que portent les items de `data` (même règle que
+ * contestation postérieure que portent aujourd'hui les items du `data/items` de son dépôt
+ * (`repertoireDesItemsDuRun`), lue contre le commit des données de son gel (même règle que
  * `synchroniserContestationsPosterieures`, sans rien écrire). Une divergence lève
  * `ContestationPosterieureDivergente`.
  */
-export function exigerContestationsInscrites(repertoire_run: string, data: string, items: Iterable<Item>): void {
+export function exigerContestationsInscrites(repertoire_run: string): void {
+  const data = repertoireDesItemsDuRun(repertoire_run);
   const run = lireRunJson(repertoire_run);
-  const manquantes = aAjouterAuRun(run, data, contestationsRecues(items));
+  const manquantes = aAjouterAuRun(run, data, contestationsRecues(lireItemsData(data).values()));
   if (manquantes.length > 0) throw new ContestationsPosterieuresNonInscrites(run.id, repertoire_run, manquantes);
 }

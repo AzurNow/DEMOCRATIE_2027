@@ -169,7 +169,7 @@ describe("analyze → go-no-go → analyze, sur un run écrit sur disque", () =>
     () => {
       const fictif = runAvantGoNoGo();
       const run = fictif.repertoire_run;
-      const premiere = executerOutil("analyze.ts", [run, `--items=${fictif.items}`]);
+      const premiere = executerOutil("analyze.ts", [run]);
       expect(premiere.erreur).toBe("");
       expect(premiere.status).toBe(0);
       expect(existsSync(cheminMetriques(run))).toBe(true);
@@ -183,7 +183,7 @@ describe("analyze → go-no-go → analyze, sur un run écrit sur disque", () =>
       expect(analyses).toMatchObject({ statut: "vert", valeur: "graine publiée" });
       expect(resultat.checklist.cases.find((c) => c.rang === 7)?.motif).toContain("robustesse des différences non calculée");
 
-      const seconde = executerOutil("analyze.ts", [run, `--items=${fictif.items}`]);
+      const seconde = executerOutil("analyze.ts", [run]);
       expect(seconde.erreur).toBe("");
       expect(seconde.status).toBe(0);
       expect(seconde.sortie).toContain("inchangé");
