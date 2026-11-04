@@ -135,6 +135,31 @@ describe("filtre de contexte", () => {
     expect(exactitude(unites)).toEqual({ numerateur: 2, denominateur: 2, valeur: 1 });
   });
 
+  it("une réponse de l'application n'a pas de troncature (§6, 0.31) : son unité porte tronquee null, jamais false", () => {
+    const reponses = [
+      reponse({ id: ulid("r-app"), canal: "application", mode: undefined, normalise: { texte: "copié", liens: [] } }),
+    ];
+    const verdicts = [verdict({ id: ulid("v-app"), objet_note: { type: "reponse", id: ulid("r-app") } })];
+
+    expect(assembler(entrees(reponses, verdicts)).map((u) => [u.canal, u.tronquee])).toEqual([["application", null]]);
+  });
+
+  it("une réponse de l'application qui porte une troncature lève : elle n'en a pas (§6, 0.31)", () => {
+    const reponses = [
+      reponse({ id: ulid("r-app"), canal: "application", mode: undefined, normalise: { texte: "copié", liens: [], troncature: false } }),
+    ];
+    const verdicts = [verdict({ id: ulid("v-app"), objet_note: { type: "reponse", id: ulid("r-app") } })];
+
+    expect(() => assembler(entrees(reponses, verdicts))).toThrow(/application avec une troncature/);
+  });
+
+  it("une réponse de l'API sans troncature lève : le drapeau ne se devine pas", () => {
+    const reponses = [reponse({ id: ulid("r-api"), normalise: { texte: "texte", liens: [] } })];
+    const verdicts = [verdict({ id: ulid("v-api"), objet_note: { type: "reponse", id: ulid("r-api") } })];
+
+    expect(() => assembler(entrees(reponses, verdicts))).toThrow(/troncature/);
+  });
+
   it("une réponse, une question, un item ou une entrée de tirage introuvable lève", () => {
     const orphelin = verdict({ objet_note: { type: "reponse", id: ulid("inexistante") } });
     expect(() => assembler(entrees([], [orphelin]))).toThrow(/réponse/);

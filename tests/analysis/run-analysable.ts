@@ -248,7 +248,17 @@ function saisiesApplication(spec: SpecRun, items: readonly ItemDuRun[], question
       for (const testeur of application.testeurs({ ...questionDuRun(it), outil_id: o.outil_id })) {
         const id = ulid(`app-${o.outil_id}-${question.id}-${testeur}`);
         volume.reponses.push(
-          reponse({ id, canal: "application", mode: undefined, outil_id: o.outil_id, question_id: question.id, formulation_id: formulationNeutre(question), echantillon: 1 }),
+          reponse({
+            id,
+            canal: "application",
+            mode: undefined,
+            outil_id: o.outil_id,
+            question_id: question.id,
+            formulation_id: formulationNeutre(question),
+            echantillon: 1,
+            // §6 (0.31) : une saisie ne porte pas de troncature.
+            normalise: { texte: "texte", liens: [] },
+          }),
         );
         const categorie = application.categorie({ ...questionDuRun(it), outil_id: o.outil_id, testeur });
         volume.verdicts.push(verdict({ id: ulid(`v-${id}`), objet_note: { type: "reponse", id }, categorie_retenue: categorie, drapeaux_retenus: [], dans_echantillon_humain: false }));

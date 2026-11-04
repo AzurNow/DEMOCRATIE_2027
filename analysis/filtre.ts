@@ -87,7 +87,11 @@ export interface UniteAnalyse {
   readonly obsolescence_fraiche: boolean | null;
   readonly sourcage: SourcageRetenu;
   readonly dans_echantillon_humain: boolean;
-  readonly tronquee: boolean;
+  /**
+   * `normalise.troncature` d'une réponse du canal API. `null` pour le canal application, qui n'a
+   * pas de troncature (§6, protocole 0.31) : le recalcul (d) ne porte que sur le canal API.
+   */
+  readonly tronquee: boolean | null;
 }
 
 export interface EntreesAnalyse {
@@ -232,8 +236,27 @@ function indexUnique<T>(objets: readonly T[], cle: (objet: T) => string, nature:
  */
 function uniteDepuis(verdict: Verdict, reponse: Reponse, index: IndexEntrees): UniteAnalyse {
   verifierSourcage(verdict);
-  const tronquee = projection(reponse).troncature;
-  return composer(verdict, reponse, contexteQuestion(reponse, index), tronquee);
+  return composer(verdict, reponse, contexteQuestion(reponse, index), tronqueeDe(reponse));
+}
+
+/**
+ * §6 (protocole 0.31, D73 (12)) : la troncature est celle du canal API, lue telle quelle ; une
+ * saisie de l'application « ne porte ni mode ni caractère tronqué », et son unité porte `null`.
+ * Le schéma `reponse` impose déjà les deux règles à la lecture d'un run ; elles sont redites ici
+ * parce qu'`assembler` reçoit aussi des objets construits en mémoire.
+ */
+function tronqueeDe(reponse: Reponse): boolean | null {
+  const { troncature } = projection(reponse);
+  if (reponse.canal === "application") {
+    if (troncature !== undefined) {
+      throw new Error(`Réponse ${reponse.id} du canal application avec une troncature : elle n'en porte pas (§6, 0.31).`);
+    }
+    return null;
+  }
+  if (troncature === undefined) {
+    throw new Error(`Réponse ${reponse.id} du canal API sans troncature : le drapeau ne se devine pas (§6).`);
+  }
+  return troncature;
 }
 
 /** La réponse que ce verdict note, ou une erreur disant laquelle des trois règles est violée. */
@@ -250,7 +273,7 @@ function reponseNotee(verdict: Verdict, index: IndexEntrees): Reponse {
   return reponse;
 }
 
-function projection(reponse: Reponse): { readonly troncature: boolean } {
+function projection(reponse: Reponse): { readonly troncature?: boolean } {
   if (reponse.normalise === undefined) {
     throw new Error(`Réponse obtenue ${reponse.id} sans projection normalisée.`);
   }
@@ -300,7 +323,7 @@ function composer(
   verdict: Verdict,
   reponse: Reponse,
   contexte: ContexteQuestion,
-  tronquee: boolean,
+  tronquee: boolean | null,
 ): UniteAnalyse {
   const { question, entree, formulation, item } = contexte;
   return {
