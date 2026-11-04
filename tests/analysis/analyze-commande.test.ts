@@ -4,15 +4,19 @@
  * (absent : écrit ; identique : rien ; différent : refus, code 2). Lancements réels de la commande.
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { analyserRun, cheminMetriques, empreinteDuRun, lireEntreesDuRun } from "../../analysis/analyse-du-run.ts";
 import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
 import { questionsDuSousEchantillonDuRun } from "../../pipeline/interrogation/sous-echantillon-application.ts";
 import { echantillonHumainDuRun } from "../../pipeline/notation/echantillons.ts";
 import { etatsDesLectures } from "../../pipeline/notation/lectures-comparateur.ts";
+import { synchroniserContestationsPosterieures } from "../../pipeline/run/contestations-posterieures.ts";
+import { lireItemsData } from "../../validation/io/data-items.ts";
+import { contestationRecue, itemConteste } from "../aides/data.ts";
 import { executerOutil } from "../aides/depot.ts";
-import { poserLecturesNonAffichees, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
+import { ecrireJson, ITEM_P, poserLecturesNonAffichees, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
 
 const PARAMETRES = { reechantillonnages: 20, permutations: 20 };
 let fictif: RunFictif;
@@ -93,5 +97,36 @@ describe("pnpm analyze sur un run lu sur disque", () => {
     const lui = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`, `--premier=${fictif.repertoire_run}`]);
     expect(lui.status).toBe(2);
     expect(lui.erreur).toContain("PremierRunInvalide");
+  });
+});
+
+/**
+ * D73 (4) : le recalcul (b) de `metriques.json` porte les contestations connues à son calcul. Un run
+ * où manque une contestation postérieure connue (ici, ITEM_P contesté après le commit des données
+ * du gel) n'est pas analysé ; inscrite par `pnpm contestations-posterieures`, il l'est.
+ */
+describe("pnpm analyze et les contestations postérieures (D73 (4))", () => {
+  let conteste: RunFictif;
+
+  beforeAll(() => {
+    conteste = poserRunNote();
+    poserLecturesNonAffichees(conteste);
+    const item = itemConteste(ITEM_P);
+    ecrireJson(join(conteste.items, `${item.id}.json`), { ...item, contestations: [{ ...contestationRecue(), date_reception: "2026-12-03T09:00:00+01:00" }] });
+  });
+  afterAll(() => conteste.nettoyer());
+
+  it("refuse un run où une contestation postérieure connue manque (code 2, rien n'est écrit), accepte quand tout est inscrit", () => {
+    const refus = executerOutil("analyze.ts", [conteste.repertoire_run, `--items=${conteste.items}`]);
+    expect(refus.status).toBe(2);
+    expect(refus.erreur).toContain("ContestationsPosterieuresNonInscrites");
+    expect(refus.erreur).toContain("pnpm contestations-posterieures");
+    expect(existsSync(cheminMetriques(conteste.repertoire_run))).toBe(false);
+
+    const ajouts = synchroniserContestationsPosterieures(join(conteste.bac, "runs"), conteste.items, lireItemsData(conteste.items).values(), true);
+    expect(ajouts).toHaveLength(1);
+    const accepte = executerOutil("analyze.ts", [conteste.repertoire_run, `--items=${conteste.items}`]);
+    expect(accepte.status, accepte.erreur).toBe(0);
+    expect(existsSync(cheminMetriques(conteste.repertoire_run))).toBe(true);
   });
 });

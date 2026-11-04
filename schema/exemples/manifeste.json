@@ -730,6 +730,12 @@
     },
     {
       "objet": "tirage",
+      "fichier": "tirage/valide-03-positions-incompatibles.json",
+      "attendu": "valide",
+      "motif": "§5 (protocole 0.27, D67 ; conformité du 2026-11-03, constat n° 3) : le candidat interrogé cand-b porte au gel, sur une même mesure, deux items en vigueur de positions différentes. La question fermée de l'un et la question d'attribution de la mesure sont exclues, motif positions_incompatibles, et comptées dans exclusions (la Q-ATT sans candidat_id) ; le tirage aboutit au lieu de s'arrêter. Le détail nomme les deux items, que l'auteur conteste dès le gel."
+    },
+    {
+      "objet": "tirage",
       "fichier": "tirage/invalide-01-attribution-nommant-un-candidat.json",
       "attendu": "invalide",
       "motif": "Entrée Q-ATT portant un candidat_id. §5, garantie de symétrie bloquante : les questions d'attribution ne nomment que la mesure. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (D64, protocole 0.27) : la réponse attendue porte candidats_references, exigé de toute liste de candidats ; rien d'autre ne change.",
@@ -1973,6 +1979,23 @@
       "erreur_visee": {
         "keyword": "not",
         "instance_path": ""
+      }
+    },
+    {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/valide-03-rejet-texte-extrait-errone.json",
+      "attendu": "valide",
+      "motif": "Rejet arbitré sous le motif « texte extrait erroné ». §4 (protocole 0.27) : la décision de l'arbitre porte le motif comme celle d'un annotateur, et c'est ce motif qui renvoie la source à la réextraction."
+    },
+    {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/invalide-04-motif-rejet-sans-rejet.json",
+      "attendu": "invalide",
+      "motif": "Motif de rejet sur une issue « non_evaluable ». §4 : le motif énuméré est celui d'un rejet ; porté par une autre issue, il renverrait une source à la réextraction sans rejet qui le fonde.",
+      "regle_protocole": "§4, contrat des artefacts (protocole 0.27)",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/issue"
       }
     },
     {
@@ -3390,12 +3413,18 @@
     },
     {
       "objet": "sous-echantillon-application",
-      "fichier": "sous-echantillon-application/invalide-02-quatre-questions.json",
+      "fichier": "sous-echantillon-application/valide-02-quatre-questions-toutes-tirees.json",
+      "attendu": "valide",
+      "motif": "Quatre questions pour un candidat interrogé qui n'en a que quatre de tirées : il les prend toutes (§6, protocole 0.27), rien n'est complété."
+    },
+    {
+      "objet": "sous-echantillon-application",
+      "fichier": "sous-echantillon-application/invalide-02-six-questions.json",
       "attendu": "invalide",
-      "motif": "Quatre questions pour un candidat interrogé : le §6 en fixe cinq, et ne dit pas quoi faire d'un candidat qui en a moins ; le calcul refuse plutôt que de raccourcir.",
-      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24",
+      "motif": "Six questions pour un candidat interrogé : le §6 en prend cinq au plus.",
+      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24 ; 0.27",
       "erreur_visee": {
-        "keyword": "minItems",
+        "keyword": "maxItems",
         "instance_path": "/candidats/0/questions"
       }
     },

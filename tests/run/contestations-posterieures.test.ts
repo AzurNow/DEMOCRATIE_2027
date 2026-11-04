@@ -1,8 +1,9 @@
 /**
- * D72 (1), §8 recalcul (b) : `run.json#/contestations_posterieures` reçoit, en ajout seul, chaque
- * contestation reçue strictement après le gel d'un run publié
- * (`pipeline/run/contestations-posterieures.ts`, `pnpm contestations-posterieures`). Les runs de
- * fixture sont rangés sous un `runs/` temporaire, jamais sous celui du projet.
+ * D72 (1), D73 (2) et (4), §8 recalcul (b) : `run.json#/contestations_posterieures` reçoit, en ajout
+ * seul, chaque contestation que ne porte pas le commit des données inscrit au gel
+ * (`versions.donnees_commit`), quelle que soit sa date, dans tout run gelé non invalide
+ * (`pipeline/run/contestations-posterieures.ts`, `pnpm contestations-posterieures`). Les runs et les
+ * items de fixture sont rangés dans un dépôt Git temporaire, jamais dans celui du projet.
  */
 
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -12,16 +13,20 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { ContestationPosterieure } from "../../analysis/types.ts";
 import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import {
+  cleDeContestation,
   ContestationPosterieureDivergente,
+  ContestationsPosterieuresNonInscrites,
   contestationsAAjouter,
+  contestationsAuCommit,
   contestationsRecues,
+  exigerContestationsInscrites,
   synchroniserContestationsPosterieures,
   type RunEtSesContestations,
 } from "../../pipeline/run/contestations-posterieures.ts";
 import type { Item } from "../../validation/domaine/types.ts";
-import { creerItem } from "../../validation/io/data-items.ts";
+import { lireItemsData } from "../../validation/io/data-items.ts";
 import { contestationRecue, itemConteste, itemPromu } from "../aides/data.ts";
-import { commiterTout, executerOutil, initialiserDepot } from "../aides/depot.ts";
+import { commiterTout, executerOutil, head, initialiserDepot } from "../aides/depot.ts";
 
 type Objet = Record<string, unknown>;
 
@@ -35,53 +40,73 @@ function contestation(numero: number, date_reception: string): ContestationPoste
   return { item_id: `01JBANCESSA1000000000TEM${numero}`, contestation_id: `01JBANCESSA1C0NTESTAT10N${numero}`, date_reception };
 }
 
-const APRES = contestation(11, "2026-12-03T10:00:00+01:00");
-const AVANT = contestation(12, "2026-11-30T10:00:00+01:00");
-
-function run(statut: RunEtSesContestations["statut"], contestations_posterieures?: readonly ContestationPosterieure[]): RunEtSesContestations {
-  return { id: "01JBANCESSA1RXN00000000001", date_gel: GEL, statut, ...(contestations_posterieures === undefined ? {} : { contestations_posterieures }) };
+function auGel(...contestations: readonly ContestationPosterieure[]): ReadonlySet<string> {
+  return new Set(contestations.map((c) => cleDeContestation(c.item_id, c.contestation_id)));
 }
 
-describe("contestationsAAjouter (D72 (1))", () => {
-  it("reçue après le gel d'un run publié ⇒ ajoutée, publie_provisoire compris", () => {
-    expect(contestationsAAjouter(run("publie"), [APRES])).toEqual([APRES]);
-    expect(contestationsAAjouter(run("publie_provisoire"), [APRES])).toEqual([APRES]);
+const APRES = contestation(11, "2026-12-03T10:00:00+01:00");
+const AVANT = contestation(12, "2026-11-30T10:00:00+01:00");
+const AUCUNE = auGel();
+
+function run(statut: RunEtSesContestations["statut"], contestations_posterieures?: readonly ContestationPosterieure[]): RunEtSesContestations {
+  return { id: "01JBANCESSA1RXN00000000001", statut, ...(contestations_posterieures === undefined ? {} : { contestations_posterieures }) };
+}
+
+describe("contestationsAAjouter (D73 (2) et (4))", () => {
+  it("absente du commit gelé, reçue après le gel ⇒ ajoutée", () => {
+    expect(contestationsAAjouter(run("publie"), [APRES], AUCUNE)).toEqual([APRES]);
   });
 
-  it("reçue avant le gel ⇒ non ajoutée", () => {
-    expect(contestationsAAjouter(run("publie"), [AVANT])).toEqual([]);
+  it("absente du commit gelé, reçue à l'instant exact du gel ⇒ postérieure, ajoutée", () => {
+    const aLInstant = contestation(13, GEL);
+    expect(contestationsAAjouter(run("publie"), [aLInstant], AUCUNE)).toEqual([aLInstant]);
+    const memeInstantAutreDecalage = contestation(14, "2026-12-01T05:00:00Z");
+    expect(contestationsAAjouter(run("publie"), [memeInstantAutreDecalage], AUCUNE)).toEqual([memeInstantAutreDecalage]);
   });
 
-  it("run non publié (planifie, en_cours, invalide) ⇒ non ajoutée", () => {
-    for (const statut of ["planifie", "en_cours", "invalide"] as const) expect(contestationsAAjouter(run(statut), [APRES])).toEqual([]);
+  it("absente du commit gelé, reçue avant le gel ⇒ postérieure, ajoutée", () => {
+    expect(contestationsAAjouter(run("publie"), [AVANT], AUCUNE)).toEqual([AVANT]);
   });
 
-  it("reçue exactement à l'instant du gel ⇒ non ajoutée : elle est du gel, pas postérieure ; une seconde après ⇒ ajoutée", () => {
-    expect(contestationsAAjouter(run("publie"), [contestation(13, GEL)])).toEqual([]);
-    // Le même instant écrit dans un autre décalage : la comparaison porte sur l'instant, pas la chaîne.
-    expect(contestationsAAjouter(run("publie"), [contestation(13, "2026-12-01T05:00:00Z")])).toEqual([]);
-    const uneSecondeApres = contestation(14, "2026-12-01T06:00:01+01:00");
-    expect(contestationsAAjouter(run("publie"), [uneSecondeApres])).toEqual([uneSecondeApres]);
+  it("présente au commit gelé ⇒ jamais postérieure, quelle que soit sa date", () => {
+    for (const portee of [AVANT, APRES, contestation(13, GEL)]) {
+      expect(contestationsAAjouter(run("publie"), [portee], auGel(portee))).toEqual([]);
+    }
+  });
+
+  it("la même contestation au commit, sous un autre item, ne vaut pas pour celui-ci", () => {
+    const autreItem = { ...APRES, item_id: "01JBANCESSA1000000000TEM99" };
+    expect(contestationsAAjouter(run("publie"), [APRES], auGel(autreItem))).toEqual([APRES]);
+  });
+
+  it("tout run gelé non invalide la reçoit : planifie, en_cours, publie, publie_provisoire", () => {
+    for (const statut of ["planifie", "en_cours", "publie", "publie_provisoire"] as const) {
+      expect(contestationsAAjouter(run(statut), [APRES], AUCUNE)).toEqual([APRES]);
+    }
+  });
+
+  it("run invalide ⇒ rien", () => {
+    expect(contestationsAAjouter(run("invalide"), [APRES, AVANT], AUCUNE)).toEqual([]);
   });
 
   it("même contestation ajoutée deux fois ⇒ une seule entrée", () => {
-    expect(contestationsAAjouter(run("publie"), [APRES, APRES])).toEqual([APRES]);
-    expect(contestationsAAjouter(run("publie", [APRES]), [APRES])).toEqual([]);
+    expect(contestationsAAjouter(run("publie"), [APRES, APRES], AUCUNE)).toEqual([APRES]);
+    expect(contestationsAAjouter(run("publie", [APRES]), [APRES], AUCUNE)).toEqual([]);
   });
 
   it("entrée existante jamais réécrite : une contestation de même identifiant qui en diffère est refusée", () => {
     const autreDate = { ...APRES, date_reception: "2026-12-04T10:00:00+01:00" };
     const autreItem = { ...APRES, item_id: "01JBANCESSA1000000000TEM99" };
     for (const divergente of [autreDate, autreItem]) {
-      expect(() => contestationsAAjouter(run("publie", [APRES]), [divergente])).toThrow(ContestationPosterieureDivergente);
+      expect(() => contestationsAAjouter(run("publie", [APRES]), [divergente], AUCUNE)).toThrow(ContestationPosterieureDivergente);
     }
-    expect(() => contestationsAAjouter(run("publie"), [APRES, autreDate])).toThrow(ContestationPosterieureDivergente);
+    expect(() => contestationsAAjouter(run("publie"), [APRES, autreDate], AUCUNE)).toThrow(ContestationPosterieureDivergente);
   });
 
   it("les ajouts sont rangés par instant de réception puis par identifiant", () => {
     const tot = contestation(15, "2026-12-02T08:00:00+01:00");
     const memeInstant = contestation(16, "2026-12-02T07:00:00Z");
-    expect(contestationsAAjouter(run("publie"), [APRES, memeInstant, tot])).toEqual([tot, memeInstant, APRES]);
+    expect(contestationsAAjouter(run("publie"), [APRES, memeInstant, tot, AVANT], AUCUNE)).toEqual([AVANT, tot, memeInstant, APRES]);
   });
 
   it("contestationsRecues : une entrée par contestation d'item, item sans contestation ignoré", () => {
@@ -100,8 +125,8 @@ afterEach(() => {
   for (const chemin of temporaires.splice(0)) rmSync(chemin, { recursive: true, force: true });
 });
 
-function exemple(): Objet {
-  return JSON.parse(readFileSync(join(EXEMPLES, "valide-01-mensuel-publie.json"), "utf8")) as Objet;
+function exemple(nom = "valide-01-mensuel-publie.json"): Objet {
+  return JSON.parse(readFileSync(join(EXEMPLES, nom), "utf8")) as Objet;
 }
 
 /** `valide-01` ramené au statut `en_cours` : sans go/no-go, publication ni dépôt. */
@@ -127,23 +152,43 @@ function listeDe(repertoire: string): unknown {
   return (JSON.parse(texteRun(repertoire)) as Objet)["contestations_posterieures"];
 }
 
-/** Un item contesté, reçu à `date_reception`. */
-function itemContesteLe(numero: number, date_reception: string): Item {
-  const item = itemConteste(itemPromu({ id: `01JBANCESSA1000000000TEM${numero}` }));
-  return { ...item, contestations: [{ ...contestationRecue(`01JBANCESSA1C0NTESTAT10N${numero}`), date_reception }] };
+type Contestations = NonNullable<Item["contestations"]>;
+
+/** `item` avec une contestation de plus, reçue à `date_reception` (statut et historique par `itemConteste`). */
+function contesteLe(item: Item, numero: number, date_reception: string): Item {
+  const conteste = itemConteste(item);
+  const anterieures = (conteste.contestations as Contestations).slice(0, -1);
+  return { ...conteste, contestations: [...anterieures, { ...contestationRecue(`01JBANCESSA1C0NTESTAT10N${numero}`), date_reception }] };
 }
 
-/**
- * Trois runs : `valide-01` publié (gel 2026-12-01, porte déjà `PRESENTE`), un second publié gelé le
- * 2026-12-08, un troisième en cours gelé le 2026-12-15.
- */
-function troisRuns(racine: string): { readonly premier: string; readonly second: string; readonly troisieme: string } {
-  const runs = join(racine, "runs");
-  const premier = poser(runs, "2026-12-01", exemple());
-  const { contestations_posterieures: _presentes, ...sansListe } = exemple();
-  const second = poser(runs, "2026-12-08", { ...sansListe, id: "01JBANCESSA1RXN00000000002", date_gel: "2026-12-08T06:00:00+01:00" });
-  const troisieme = poser(runs, "2026-12-15", { ...enCours(), id: "01JBANCESSA1RXN00000000003", date_gel: "2026-12-15T06:00:00+01:00" });
-  return { premier, second, troisieme };
+function poserItem(data: string, item: Item): void {
+  mkdirSync(data, { recursive: true });
+  expect(erreurDeSchema("item", item, "fixture")).toBeNull();
+  writeFileSync(join(data, `${item.id}.json`), `${JSON.stringify(item, null, 2)}\n`, "utf8");
+}
+
+/** L'entrée de la contestation `numero`, portée par l'item `item` (le même numéro sauf pour C43, sur l'item 41). */
+function entree(numero: number, date_reception: string, item = numero): ContestationPosterieure {
+  return { item_id: `01JBANCESSA1000000000TEM${item}`, contestation_id: `01JBANCESSA1C0NTESTAT10N${numero}`, date_reception };
+}
+
+/** Reçue avant tout gel, portée par les deux commits des données. */
+const C41 = "2026-11-20T09:00:00+01:00";
+/** Reçue avant tout gel, sur l'item 41 encore ; portée par le second commit seulement. */
+const C43 = "2026-11-25T09:00:00+01:00";
+/** Reçue à l'instant exact du gel du premier run, sur l'item 42 : portée par aucun commit. */
+const C42 = "2026-12-01T05:00:00Z";
+/** Reçue après les gels, sur l'item 44, absent des commits et de tout tirage. */
+const C44 = "2026-12-10T09:00:00+01:00";
+
+interface Bac {
+  readonly racine: string;
+  readonly runs: string;
+  readonly data: string;
+  readonly premier: string;
+  readonly second: string;
+  readonly troisieme: string;
+  readonly quatrieme: string;
 }
 
 function racineTemporaire(): string {
@@ -152,77 +197,142 @@ function racineTemporaire(): string {
   return racine;
 }
 
-describe("synchroniserContestationsPosterieures (D72 (1))", () => {
-  it("deux runs publiés antérieurs ⇒ ajoutée aux deux ; le run en cours ne reçoit rien", () => {
-    const racine = racineTemporaire();
-    const { premier, second, troisieme } = troisRuns(racine);
-    const avantTroisieme = texteRun(troisieme);
-    const item = itemContesteLe(31, "2026-12-10T09:00:00+01:00");
-    const ajouts = synchroniserContestationsPosterieures(join(racine, "runs"), [item], true);
-    const entree = { item_id: item.id, contestation_id: "01JBANCESSA1C0NTESTAT10N31", date_reception: "2026-12-10T09:00:00+01:00" };
-    expect(ajouts.map((ajout) => ajout.repertoire)).toEqual([premier, second]);
-    expect(listeDe(premier)).toEqual([PRESENTE, entree]);
-    expect(listeDe(second)).toEqual([entree]);
-    expect(texteRun(troisieme)).toBe(avantTroisieme);
-    for (const repertoire of [premier, second]) expect(erreurDeSchema("run", JSON.parse(texteRun(repertoire)), repertoire)).toBeNull();
+/**
+ * Un dépôt Git et quatre runs :
+ * - commit 1 : item 41 contesté (C41), item 42 sans contestation ;
+ * - commit 2 : item 41 contesté une seconde fois (C43, reçue avant tout gel) ;
+ * - `premier` : `valide-01` publié, gelé le 2026-12-01 au commit 1 (porte déjà `PRESENTE`) ;
+ * - `second` : publié, gelé le 2026-12-08 au commit 2 ;
+ * - `troisieme` : en cours, gelé le 2026-12-15 au commit 2 ;
+ * - `quatrieme` : invalide (`valide-04`), gelé le 2026-12-22 au commit 2.
+ * Puis, dans l'arbre de travail, après les gels : l'item 42 contesté (C42, daté de l'instant du gel
+ * du premier run) et l'item 44 créé contesté (C44), hors de tout tirage.
+ */
+function bac(): Bac {
+  const racine = racineTemporaire();
+  const runs = join(racine, "runs");
+  const data = join(racine, "data", "items");
+  const i41 = contesteLe(itemPromu({ id: "01JBANCESSA1000000000TEM41" }), 41, C41);
+  const i42 = itemPromu({ id: "01JBANCESSA1000000000TEM42" });
+  poserItem(data, i41);
+  poserItem(data, i42);
+  initialiserDepot(racine);
+  const commit1 = head(racine);
+  poserItem(data, contesteLe(i41, 43, C43));
+  commiterTout(racine, "seconde contestation de l'item 41");
+  const commit2 = head(racine);
+
+  const auCommit = (brut: Objet, commit: string): Objet => ({ ...brut, versions: { ...(brut["versions"] as Objet), donnees_commit: commit } });
+  const premier = poser(runs, "2026-12-01", auCommit(exemple(), commit1));
+  const { contestations_posterieures: _presentes, ...sansListe } = exemple();
+  const second = poser(runs, "2026-12-08", auCommit({ ...sansListe, id: "01JBANCESSA1RXN00000000002", date_gel: "2026-12-08T06:00:00+01:00" }, commit2));
+  const troisieme = poser(runs, "2026-12-15", auCommit({ ...enCours(), id: "01JBANCESSA1RXN00000000003", date_gel: "2026-12-15T06:00:00+01:00" }, commit2));
+  const quatrieme = poser(runs, "2026-12-22", auCommit({ ...exemple("valide-04-invalide-symetrie-rouge-sans-go-no-go.json"), id: "01JBANCESSA1RXN00000000004", date_gel: "2026-12-22T06:00:00+01:00" }, commit2));
+
+  poserItem(data, contesteLe(i42, 42, C42));
+  poserItem(data, contesteLe(itemPromu({ id: "01JBANCESSA1000000000TEM44" }), 44, C44));
+  return { racine, runs, data, premier, second, troisieme, quatrieme };
+}
+
+function items(b: Bac): Iterable<Item> {
+  return lireItemsData(b.data).values();
+}
+
+describe("contestationsAuCommit (D73 (2))", () => {
+  it("lit les contestations des items contestés au commit ; un item absent du commit n'en porte aucune", () => {
+    const b = bac();
+    const recues = contestationsRecues(items(b));
+    const commit1 = (JSON.parse(texteRun(b.premier)) as { versions: { donnees_commit: string } }).versions.donnees_commit;
+    const commit2 = (JSON.parse(texteRun(b.second)) as { versions: { donnees_commit: string } }).versions.donnees_commit;
+    const cle = (n: number, item = n) => cleDeContestation(`01JBANCESSA1000000000TEM${item}`, `01JBANCESSA1C0NTESTAT10N${n}`);
+    expect([...contestationsAuCommit(b.data, commit1, recues)]).toEqual([cle(41)]);
+    expect([...contestationsAuCommit(b.data, commit2, recues)].sort()).toEqual([cle(41), cle(43, 41)]);
+    expect(contestationsAuCommit(b.data, commit1, [])).toEqual(new Set());
+  });
+});
+
+describe("synchroniserContestationsPosterieures (D73 (2) et (4))", () => {
+  it("chaque run gelé non invalide reçoit ce que son commit des données ne porte pas ; le run invalide ne reçoit rien", () => {
+    const b = bac();
+    const avantQuatrieme = texteRun(b.quatrieme);
+    const ajouts = synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
+    expect(ajouts.map((ajout) => ajout.repertoire)).toEqual([b.premier, b.second, b.troisieme]);
+    // Premier, au commit 1 : C43 (avant le gel, absente du commit), C42 (à l'instant du gel), C44
+    // (après, item hors tirage) ; C41, portée par le commit, n'entre jamais.
+    expect(listeDe(b.premier)).toEqual([PRESENTE, entree(43, C43, 41), entree(42, C42), entree(44, C44)]);
+    // Second et troisième, au commit 2, qui porte C43 : en cours compris.
+    expect(listeDe(b.second)).toEqual([entree(42, C42), entree(44, C44)]);
+    expect(listeDe(b.troisieme)).toEqual([entree(42, C42), entree(44, C44)]);
+    expect(texteRun(b.quatrieme)).toBe(avantQuatrieme);
+    for (const repertoire of [b.premier, b.second, b.troisieme]) expect(erreurDeSchema("run", JSON.parse(texteRun(repertoire)), repertoire)).toBeNull();
   });
 
-  it("reçue entre deux gels ⇒ ajoutée au seul run gelé avant elle", () => {
-    const racine = racineTemporaire();
-    const { premier, second } = troisRuns(racine);
-    const avantSecond = texteRun(second);
-    synchroniserContestationsPosterieures(join(racine, "runs"), [itemContesteLe(32, "2026-12-05T09:00:00+01:00")], true);
-    expect(listeDe(premier)).toHaveLength(2);
-    expect(texteRun(second)).toBe(avantSecond);
+  it("ajout seul : relancer n'écrit rien de nouveau, et une divergence n'écrit rien nulle part", () => {
+    const b = bac();
+    synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
+    const apres = [texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)];
+    expect(synchroniserContestationsPosterieures(b.runs, b.data, items(b), true)).toEqual([]);
+    expect([texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)]).toEqual(apres);
+    const i44 = lireItemsData(b.data).get("01JBANCESSA1000000000TEM44") as Item;
+    const divergent = { ...i44, contestations: [{ ...contestationRecue("01JBANCESSA1C0NTESTAT10N44"), date_reception: "2026-12-11T09:00:00+01:00" }] };
+    poserItem(b.data, divergent);
+    expect(() => synchroniserContestationsPosterieures(b.runs, b.data, items(b), true)).toThrow(ContestationPosterieureDivergente);
+    expect([texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)]).toEqual(apres);
   });
 
-  it("entrée existante jamais réécrite : relancer n'ajoute rien, et une divergence n'écrit rien nulle part", () => {
-    const racine = racineTemporaire();
-    const { premier, second } = troisRuns(racine);
-    const item = itemContesteLe(33, "2026-12-10T09:00:00+01:00");
-    synchroniserContestationsPosterieures(join(racine, "runs"), [item], true);
-    const apres = [texteRun(premier), texteRun(second)];
-    expect(synchroniserContestationsPosterieures(join(racine, "runs"), [item], true)).toEqual([]);
-    expect([texteRun(premier), texteRun(second)]).toEqual(apres);
-    const divergent = itemContesteLe(33, "2026-12-11T09:00:00+01:00");
-    expect(() => synchroniserContestationsPosterieures(join(racine, "runs"), [divergent], true)).toThrow(ContestationPosterieureDivergente);
-    expect([texteRun(premier), texteRun(second)]).toEqual(apres);
+  it("sans écrire : le résultat dit les ajouts, aucun fichier ne change", () => {
+    const b = bac();
+    const avant = [texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)];
+    expect(synchroniserContestationsPosterieures(b.runs, b.data, items(b), false)).toHaveLength(3);
+    expect([texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)]).toEqual(avant);
   });
 
-  it("sans écrire : le résultat dit l'ajout, aucun fichier ne change", () => {
-    const racine = racineTemporaire();
-    const { premier } = troisRuns(racine);
-    const avant = texteRun(premier);
-    const ajouts = synchroniserContestationsPosterieures(join(racine, "runs"), [itemContesteLe(34, "2026-12-03T09:00:00+01:00")], false);
-    expect(ajouts).toHaveLength(1);
-    expect(texteRun(premier)).toBe(avant);
+  it("commit des données introuvable : refus nommé, rien n'est écrit", () => {
+    const b = bac();
+    const brut = JSON.parse(texteRun(b.second)) as Objet;
+    writeFileSync(join(b.second, "run.json"), `${JSON.stringify({ ...brut, versions: { ...(brut["versions"] as Objet), donnees_commit: "f".repeat(40) } }, null, 2)}\n`, "utf8");
+    const avant = texteRun(b.premier);
+    expect(() => synchroniserContestationsPosterieures(b.runs, b.data, items(b), true)).toThrow(/ItemsDuGelIllisibles|introuvable/);
+    expect(texteRun(b.premier)).toBe(avant);
+  });
+});
+
+describe("exigerContestationsInscrites (D73 (4), avant pnpm analyze)", () => {
+  it("refuse un run où manque une contestation postérieure connue, accepte quand tout est inscrit", () => {
+    const b = bac();
+    expect(() => exigerContestationsInscrites(b.troisieme, b.data, items(b))).toThrow(ContestationsPosterieuresNonInscrites);
+    synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
+    expect(() => exigerContestationsInscrites(b.troisieme, b.data, items(b))).not.toThrow();
+    expect(() => exigerContestationsInscrites(b.premier, b.data, items(b))).not.toThrow();
+  });
+
+  it("run invalide : rien n'est exigé", () => {
+    const b = bac();
+    expect(() => exigerContestationsInscrites(b.quatrieme, b.data, items(b))).not.toThrow();
   });
 });
 
 describe("pnpm contestations-posterieures", () => {
   it("simule par défaut, écrit avec --ecrire sur un arbre propre, puis n'ajoute plus rien", () => {
-    const racine = racineTemporaire();
-    const { premier } = troisRuns(racine);
-    const item = itemContesteLe(35, "2026-12-03T09:00:00+01:00");
-    creerItem(join(racine, "data/items"), item);
-    initialiserDepot(racine);
-    const options = [`--racine=${racine}`];
-    const avant = texteRun(premier);
+    const b = bac();
+    commiterTout(b.racine, "contestations reçues après les gels");
+    const options = [`--racine=${b.racine}`];
+    const avant = texteRun(b.premier);
 
     const simulation = executerOutil("contestations-posterieures.ts", options);
     expect(simulation.status, simulation.erreur).toBe(0);
     expect(simulation.sortie).toMatch(/Simulation/);
-    expect(texteRun(premier)).toBe(avant);
+    expect(texteRun(b.premier)).toBe(avant);
 
     const ecriture = executerOutil("contestations-posterieures.ts", [...options, "--ecrire"]);
     expect(ecriture.status, ecriture.erreur).toBe(0);
-    // Reçue le 3 décembre : après le gel du 1er, avant celui du 8 ; seul le premier run change.
-    expect(ecriture.sortie).toMatch(/git add runs\/2026-12-01\/run\.json\n/);
-    expect(listeDe(premier)).toEqual([PRESENTE, { item_id: item.id, contestation_id: "01JBANCESSA1C0NTESTAT10N35", date_reception: "2026-12-03T09:00:00+01:00" }]);
+    // Séparateur du système dans la commande proposée : `/` sous POSIX, `\` sous Windows.
+    expect(ecriture.sortie).toMatch(/git add runs[\\/]2026-12-01[\\/]run\.json runs[\\/]2026-12-08[\\/]run\.json runs[\\/]2026-12-15[\\/]run\.json\n/);
+    expect(listeDe(b.premier)).toEqual([PRESENTE, entree(43, C43, 41), entree(42, C42), entree(44, C44)]);
 
     const sale = executerOutil("contestations-posterieures.ts", [...options, "--ecrire"]);
     expect(sale.status).toBe(1);
-    commiterTout(racine, "contestations postérieures");
+    commiterTout(b.racine, "contestations postérieures");
     const relance = executerOutil("contestations-posterieures.ts", [...options, "--ecrire"]);
     expect(relance.status, relance.erreur).toBe(0);
     expect(relance.sortie).toMatch(/Aucune contestation postérieure à ajouter/);

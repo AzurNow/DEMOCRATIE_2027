@@ -18,6 +18,10 @@
  * `date_gel` ou que la Wayback Machine ne sert pas, deux relais en désaccord ou l'un d'eux injoignable,
  * un appel réseau sans réponse en 30 s (D47 (4), aucune nouvelle tentative), et un run que la barrière de symétrie refuse (`pipeline/gel/barriere.ts`).
  *
+ * Imprime, après le gel, les items qu'un même candidat porte sur une mesure avec des positions en
+ * vigueur différentes : exclus du tirage (motif `positions_incompatibles`), l'auteur les conteste dès
+ * le gel (§5, protocole 0.27, D67).
+ *
  * D41 : seul l'auteur gèle un vrai run, c'est-à-dire lance cette commande sans `--sortie`. Un agent
  * ou un test gèle toujours vers un répertoire hors de `runs/`, et jamais avec le réseau : cette
  * commande appelle les deux relais drand et la Wayback Machine (D44, D46), et rien d'autre.
@@ -38,7 +42,7 @@ import { resolve } from "node:path";
 import { analyserArguments, obligatoire } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 import { validerFragment } from "./schemas/valider.ts";
-import { geler } from "../pipeline/gel/geler.ts";
+import { geler, texteItemsAContester } from "../pipeline/gel/geler.ts";
 import type { ResultatGel } from "../pipeline/gel/geler.ts";
 import { ecrireExclusif } from "../pipeline/gel/ecriture.ts";
 import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../pipeline/gel/reseau.ts";
@@ -57,7 +61,8 @@ function imprimer(resultat: ResultatGel): void {
       `  id ${resultat.run_id}, commit ${resultat.commit}, tour drand ${resultat.tour}\n` +
       `  ${resultat.questions.length} question(s) engendrée(s) au gel, ${resultat.tirage.entrees.length} tirée(s)\n` +
       `  ${resultat.tirage.exclusions.length} exclue(s) du tirage${exclusions.length === 0 ? "" : ` (${exclusions})`}\n` +
-      `  symétrie : ${resultat.symetrie.statut_global}\n`,
+      `  symétrie : ${resultat.symetrie.statut_global}\n` +
+      texteItemsAContester(resultat.items_a_contester),
   );
 }
 

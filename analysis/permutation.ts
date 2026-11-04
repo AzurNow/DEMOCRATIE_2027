@@ -59,7 +59,7 @@ import { graineDerivee, graineHexadecimale } from "./graines.ts";
 import { corrigerHolm, type ValeurP, type ValeurPCorrigee } from "./holm.ts";
 import { exactitude, exactitudeParCandidat } from "./metriques.ts";
 import { cleCouple, repartirParCandidat, type PartageCandidats, type PartageCouples } from "./seuils.ts";
-import { taux, type CoupleOutilMode, type IdentifiantCourt, type Taux, type Ulid } from "./types.ts";
+import { taux, TYPES_ITEM, type CoupleOutilMode, type IdentifiantCourt, type Taux, type TypeItem, type Ulid } from "./types.ts";
 
 /** §8. Les tests en utilisent beaucoup moins, à graine fixe. */
 export const PERMUTATIONS_PRODUCTION = 10000;
@@ -97,7 +97,16 @@ export interface ExactitudeCandidat {
   readonly intervalle: IntervalleNomme;
   /** §8 (0.27, 0.28) : la mention d'un taux dégénéré, sur `intervalle.intervalle.nombre_grappes` grappes ; `null` sinon. */
   readonly taux_degenere: TauxDegenere | null;
+  /**
+   * §8 (0.27, conformité 2026-11-03 n° 9) : « pour chaque candidat, le nombre de ses items P, A, O
+   * et F entrés dans le test ». Un item compte une fois, s'il entre dans la permutation ; un type
+   * sans item vaut 0, jamais une clé absente.
+   */
+  readonly items_par_type: ItemsParType;
 }
+
+/** Effectif d'items par type, les quatre types toujours présents, dans l'ordre de `TYPES_ITEM`. */
+export type ItemsParType = Readonly<Record<TypeItem, number>>;
 
 export interface ResultatPermutation {
   /**
@@ -220,6 +229,7 @@ export function testHomogeneiteCandidats(
   if (candidats.size < 2) return null;
   const observee = ecartMaximal(grappes);
   const parCandidat = exactitudeParCandidat(unites, partage);
+  const effectifs = itemsParTypeDuTest(comparees, grappes, [...parCandidat.compares.keys()]);
   const cle = [FAMILLE_PERMUTATION, ...options.cle];
   return {
     cle,
@@ -237,9 +247,68 @@ export function testHomogeneiteCandidats(
       exactitude: t,
       intervalle: intervalleDuCandidat(comparees, candidat_id, bootstrap),
       taux_degenere: tauxDegenere(t),
+      items_par_type: effectifsDe(effectifs, candidat_id),
     })),
     candidats_rapportes_a_part: parCandidat.rapportes_a_part,
   };
+}
+
+/**
+ * §8 (0.27) : par candidat, le nombre de ses items P, A, O et F entrés dans le test. Les items
+ * comptés sont les `grappes` de la permutation (`grappesEtiquetees`), et eux seuls : un item sans
+ * réponse classée, une question d'attribution ou un candidat sous le seuil n'y sont pas. Chaque
+ * candidat de `candidats` reçoit ses quatre effectifs, à 0 quand aucun de ses items n'entre au test.
+ *
+ * Le type d'un item est lu sur ses unités (`type_item_principal`) : un item de candidat sans type,
+ * ou dont les réponses portent deux types, lève — jamais un type choisi parmi plusieurs.
+ */
+export function itemsParTypeDuTest(
+  comparees: readonly UniteAnalyse[],
+  grappes: readonly GrappeEtiquetee[],
+  candidats: readonly IdentifiantCourt[],
+): Map<IdentifiantCourt, ItemsParType> {
+  const types = typesDesItems(comparees);
+  const comptes = new Map(candidats.map((c) => [c, zeroParType()]));
+  for (const grappe of grappes) {
+    const compte = comptes.get(grappe.candidat_id);
+    if (compte === undefined) {
+      throw new Error(`Item ${grappe.grappe_id} du test porté par ${grappe.candidat_id}, hors des candidats comparés.`);
+    }
+    compte[typeDeLItem(types, grappe.grappe_id)] += 1;
+  }
+  return comptes;
+}
+
+function zeroParType(): Record<TypeItem, number> {
+  return Object.fromEntries(TYPES_ITEM.map((t) => [t, 0])) as Record<TypeItem, number>;
+}
+
+/** Le type de chaque item de candidat, `null` quand une unité n'en porte pas. */
+function typesDesItems(unites: readonly UniteAnalyse[]): Map<Ulid, TypeItem | null> {
+  const types = new Map<Ulid, TypeItem | null>();
+  for (const unite of unites) {
+    if (unite.candidat_id === null) continue;
+    const connu = types.get(unite.grappe_id);
+    if (connu !== undefined && connu !== unite.type_item_principal) {
+      throw new Error(`Item ${unite.grappe_id} portant deux types différents (${connu}, ${unite.type_item_principal}) : effectif par type indécidable.`);
+    }
+    types.set(unite.grappe_id, unite.type_item_principal);
+  }
+  return types;
+}
+
+function typeDeLItem(types: ReadonlyMap<Ulid, TypeItem | null>, grappe_id: Ulid): TypeItem {
+  const type = types.get(grappe_id);
+  if (type === undefined || type === null) {
+    throw new Error(`Item ${grappe_id} du test sans type d'item : effectif par type indécidable.`);
+  }
+  return type;
+}
+
+function effectifsDe(effectifs: ReadonlyMap<IdentifiantCourt, ItemsParType>, candidat_id: IdentifiantCourt): ItemsParType {
+  const trouve = effectifs.get(candidat_id);
+  if (trouve === undefined) throw new Error(`Candidat ${candidat_id} sans effectifs par type : incohérence interne du test.`);
+  return trouve;
 }
 
 /** Composants de clé de graine des intervalles du test (`graines.ts`) : lisibles, stables. */

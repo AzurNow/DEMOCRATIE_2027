@@ -5,8 +5,11 @@
  * et l'assemblage des items appartiennent au cœur (`extraction.ts:extraireSource`).
  *
  * Par source :
- * 1. journal présent ⇒ sautée, aucun appel : une source traitée, refusée comprise, n'est jamais
- *    relancée automatiquement ;
+ * 1. entrée lue, texte qu'elle désigne (fiche de l'extracteur qu'elle épingle) ; texte d'une source
+ *    renvoyée à la réextraction, celui qu'un rejet sous « texte extrait erroné » a jugé faux ⇒ refus
+ *    nommé, aucun appel, rien d'écrit (D73 (9), `renvoi.ts`) ; journal présent pour ce texte ⇒
+ *    sautée, aucun appel : un texte traité, refusé compris, n'est jamais relancé automatiquement, et
+ *    un autre texte du même document a son propre journal (`staging.ts`) ;
  * 2. entrée lue et validée, fiche choisie, texte et transcription relus (`entrees.ts`) ; une
  *    incohérence est nommée et la source laissée non traitée, rien n'est écrit pour elle ;
  * 3. prompt rendu (`prompt.ts`), puis, pour chaque extracteur **dans l'ordre de la configuration** :
@@ -43,7 +46,7 @@ import { instantParis } from "../interrogation/heure-paris.ts";
 import { AucunTexteEpingle, FicheDUneAutreSource, PlusieursTextesEpingles } from "./choix-texte.ts";
 import type { ConfigurationExtraction } from "./configuration.ts";
 import { appelerExtracteur, estEchecTransportHttp, lectureDe, type EditeurExtraction, type LectureTexteModele } from "./editeur.ts";
-import { EntreeExtractionIncoherente, EpinglageExtracteurPerime, lireEntree, materiauDe, type EntreeLue, type Materiau } from "./entrees.ts";
+import { EntreeExtractionIncoherente, EpinglageExtracteurPerime, lireEntree, materiauDe, texteDesigne, type EntreeLue, type Materiau } from "./entrees.ts";
 import type { EpinglageEnService } from "./epinglage-en-service.ts";
 import {
   extraireSource,
@@ -55,6 +58,7 @@ import {
   type ResultatExtraction,
 } from "./extraction.ts";
 import { rendrePromptExtraction, type VariablesExtraction } from "./prompt.ts";
+import { exigerTexteNonRenvoye, TexteRenvoyeALaReextraction, type TexteRenvoye } from "./renvoi.ts";
 import type { SortieModele } from "./types.ts";
 import {
   ecrireIdentifiantsRepris,
@@ -83,6 +87,8 @@ export interface ContexteExtraction {
   /** Le texte du prompt (`chargerPromptExtraction`), variables non remplacées. */
   readonly texte_prompt: string;
   readonly configuration: ConfigurationExtraction;
+  /** Les sources renvoyées à la réextraction, recalculées au démarrage (D73 (9), `renvoi.ts`). */
+  readonly renvois: readonly TexteRenvoye[];
   /** Les deux éditeurs, dans l'ordre de `configuration.modeles`, prêts pour cette demande. */
   readonly editeurs: (demande: VariablesExtraction) => readonly [EditeurExtraction, EditeurExtraction];
   /** Nombre maximal d'appels ; `null` : aucun plafond (mode simulé seulement). */
@@ -121,6 +127,7 @@ const INCOHERENCES = [
   SourceDejaLocalisee,
   PagesAbsentes,
   TranscriptionIncoherente,
+  TexteRenvoyeALaReextraction,
 ];
 
 type IssueSource =
@@ -307,12 +314,13 @@ function reponseJournal(lue: Lue): ReponseJournal {
 
 function deposer(demande: Demande, materiau: Materiau, lues: readonly Lue[], contexte: ContexteExtraction): IssueJournal {
   const { cle_source, sha256_source } = demande.lue.entree;
-  const repris = lireIdentifiantsRepris(contexte.sortie, cle_source, sha256_source) ?? [];
+  const cle = { cle_source, sha256_source, texte_sha256: materiau.fiche.texte_sha256 };
+  const repris = lireIdentifiantsRepris(contexte.sortie, cle) ?? [];
   const reprise = nouvelUlidDeReprise(contexte.nouvelUlid, repris);
   const resultat = extraire(demande, materiau, lues, contexte, reprise.nouvelUlid);
   const emis = reprise.tousEmis();
   exigerReprisesCoherentes(`${cle_source}/${sha256_source}`, repris, emis);
-  if (repris.length === 0 && emis.length > 0) ecrireIdentifiantsRepris(contexte.sortie, cle_source, sha256_source, emis);
+  if (repris.length === 0 && emis.length > 0) ecrireIdentifiantsRepris(contexte.sortie, cle, emis);
   resultat.items.forEach((item) => ecrireItemRepris(contexte.sortie, item));
   resultat.mesures.forEach((mesure) => ecrireMesureRepris(contexte.sortie, mesure));
   const journal: JournalExtraction = {
@@ -363,7 +371,10 @@ async function traiterLue(lue: EntreeLue, contexte: ContexteExtraction, compteur
 async function traiterSource(cle: string, contexte: ContexteExtraction, compteurs: Compteurs): Promise<IssueSource> {
   try {
     const lue = lireEntree(contexte.staging, cle);
-    if (journalPresent(contexte.sortie, lue.entree.cle_source, lue.entree.sha256_source)) return { genre: "sautee" };
+    const designe = texteDesigne(contexte.staging, lue);
+    exigerTexteNonRenvoye(cle, designe, contexte.renvois);
+    const texte = { cle_source: lue.entree.cle_source, sha256_source: lue.entree.sha256_source, texte_sha256: designe.texte_sha256 };
+    if (journalPresent(contexte.sortie, texte)) return { genre: "sautee" };
     return await traiterLue(lue, contexte, compteurs);
   } catch (erreur) {
     if (INCOHERENCES.some((classe) => erreur instanceof classe)) return { genre: "incoherente", message: (erreur as Error).message };

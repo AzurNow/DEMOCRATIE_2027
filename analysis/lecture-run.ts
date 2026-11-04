@@ -499,13 +499,13 @@ function epingles(questions: readonly Question[], chemin: string): readonly Refe
 }
 
 /** Lit dans Git, au commit du gel : `<prefixe>` est le chemin de `repertoire_items` dans son dépôt. */
-interface DepotDesItems {
+export interface DepotDesItems {
   readonly repertoire: string;
   readonly commit: string;
   readonly prefixe: string;
 }
 
-function ouvrirDepotDesItems(repertoire_items: string, commit: string): DepotDesItems {
+export function ouvrirDepotDesItems(repertoire_items: string, commit: string): DepotDesItems {
   const prefixe = executerGit(repertoire_items, ["rev-parse", "--show-prefix"], commit);
   if (!prefixe.ok) throw new ItemsDuGelIllisibles(repertoire_items, `répertoire hors d'un dépôt Git (${prefixe.erreur})`);
   if (!executerGit(repertoire_items, ["cat-file", "-e", `${commit}^{commit}`], commit).ok) {
@@ -523,6 +523,23 @@ function lireItemAuGel(depot: DepotDesItems, reference: ReferenceItem): Item {
   if (item.id !== reference.item_id || item.version !== reference.item_version || item.empreinte !== reference.item_empreinte) {
     throw new ItemEpingleIntrouvable(reference, `${provenance} porte l'item ${item.id} à la version ${item.version} (empreinte ${item.empreinte})`);
   }
+  return item;
+}
+
+/**
+ * L'item `item_id` tel que le commit du dépôt le porte, validé contre `item.schema.json` ; `null`
+ * s'il est absent de ce commit (D73 (2) : une contestation d'un item absent du commit du gel est
+ * postérieure, `pipeline/run/contestations-posterieures.ts`). Un fichier présent mais illisible, ou
+ * qui porte un autre item, lève `ItemsDuGelIllisibles`.
+ */
+export function lireItemAuCommit<T extends { readonly id: string }>(depot: DepotDesItems, item_id: string): T | null {
+  const chemin = `${depot.prefixe}${item_id}.json`;
+  const provenance = `${depot.commit}:${chemin}`;
+  if (!executerGit(depot.repertoire, ["cat-file", "-e", provenance], depot.commit).ok) return null;
+  const lu = executerGit(depot.repertoire, ["show", provenance], depot.commit);
+  if (!lu.ok) throw new ItemsDuGelIllisibles(depot.repertoire, `${provenance} présent mais illisible (${lu.erreur})`);
+  const item = valider<T>("item", lireJson(provenance, lu.sortie), provenance);
+  if (item.id !== item_id) throw new ItemsDuGelIllisibles(depot.repertoire, `${provenance} porte l'item ${item.id}`);
   return item;
 }
 

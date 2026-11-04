@@ -52,6 +52,8 @@ export class RunGeleRefuse extends Error {
 /** Ce que l'interrogation lit d'un `run.json` validé ; tout autre champ est recopié tel quel. */
 export interface RunJsonGele extends RunAvecStatut {
   readonly id: string;
+  /** §6 (0.27) : règle l'ouverture de la fenêtre, avec `date_gel` (`fenetre.ts:ouvrirFenetre`). */
+  readonly type_run: string;
   readonly fenetre: { readonly debut: string; readonly fin: string };
   readonly perimetre: { readonly outils: readonly OutilDeRun[] };
 }
@@ -90,7 +92,7 @@ function fichiersVerifies(repertoire: string, chemin: string, texte: string): Fi
 }
 
 function fenetreDuGel(repertoire: string, run: RunJsonGele): Fenetre {
-  const fenetre = ouvrirFenetre(run.fenetre.debut);
+  const fenetre = ouvrirFenetre(run.fenetre.debut, run);
   if (lireInstant(run.fenetre.fin, "run.json#/fenetre/fin") === fenetre.fin_ms) return fenetre;
   throw new RunGeleRefuse(
     "fenetre_incoherente",

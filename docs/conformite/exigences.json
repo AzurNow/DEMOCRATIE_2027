@@ -5012,7 +5012,7 @@
       ],
       "lot": "analyse",
       "constat": 25,
-      "note": "Texte 0.24. Fait pour chaque taux primaire, chaque part de drapeau et l'exactitude par candidat:, theme:, gabarit:, registre:, de chaque couple comparé. Partielle : couverture et exactitude des comparateurs (composant lecture) et taux du canal application : sous-lot B en cours ; exactitude_outil du test d'asymétrie publiée sans intervalle (constat)."
+      "note": "Texte 0.24. Fait pour chaque taux primaire, chaque part de drapeau et l'exactitude par candidat:, theme:, gabarit:, registre:, de chaque couple comparé. Partielle : couverture et exactitude des comparateurs (composant lecture) et taux du canal application : sous-lot B en cours ; exactitude_outil du test d'asymétrie publiée sans intervalle (constat 25, ouvert : le §8 n'écrit pas la clé de graine d'un intervalle de cette exactitude ; question posée à l'auteur le 2026-11-04)."
     },
     {
       "id": "§8.19",
@@ -9007,43 +9007,63 @@
       "section": "4",
       "citation": "Le renvoi a lieu dès que l'item est rejeté et qu'une décision de rejet qui le fonde porte ce motif : quand un seul des deux « rejeter » concordants le porte, comme quand les deux le portent",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "validation/domaine/renvoi-reextraction.ts:examiner"
+        "validation/domaine/renvoi-reextraction.ts:examiner",
+        "validation/domaine/renvoi-reextraction.ts:motifsQuiFondent"
       ],
-      "tests": [],
+      "tests": [
+        "tests/renvoi-reextraction.test.ts « deux « rejeter », un seul sous le motif : la source est renvoyée »",
+        "tests/renvoi-reextraction.test.ts « deux « rejeter », le second seul sous le motif : l'ordre des décisions ne compte pas »",
+        "tests/renvoi-texte-errone.test.ts « un seul « rejeter » sous le motif : l'item non publié sur ce texte retourne en attente, le publié est à contester »",
+        "tests/promote-renvoi-reextraction.test.ts « renvoie aussi la source du rejet dont un seul « rejeter » porte le motif (§4, protocole 0.27) »"
+      ],
       "lot": null,
       "constat": 1,
-      "note": "Le code rapporte ce cas « à trancher » (motifs_discordants) et ne renvoie pas la source ; tests/renvoi-reextraction.test.ts « deux « rejeter », un seul sous le motif : à trancher, motifs discordants, aucune source renvoyée » verrouille la lecture antérieure à la 0.27."
+      "note": "Corrigé (constat n° 1 du 2026-11-03) : le renvoi a lieu dès qu'une décision de rejet qui fonde le rejet porte le motif ; le cas « à trancher » motifs_discordants a disparu. L'énumération MOTIFS_REJET n'a qu'une valeur : « deux motifs différents dont un est le motif » se réduit à un seul « rejeter » sous le motif."
     },
     {
       "id": "§4.114",
       "section": "4",
       "citation": "quand le rejet est tranché par l'arbitre, sa décision porte le motif comme celle d'un annotateur",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "validation/domaine/renvoi-reextraction.ts:examiner",
-        "schema/decision-arbitrage.schema.json"
+        "validation/domaine/renvoi-reextraction.ts:motifsQuiFondent",
+        "validation/domaine/arbitrage.ts:motifsRejet",
+        "validation/domaine/arbitrage.ts:blocArbitrage",
+        "outils/arbitrer.ts:motifRejetEventuel",
+        "schema/decision-arbitrage.schema.json",
+        "schema/item.schema.json"
       ],
-      "tests": [],
+      "tests": [
+        "tests/renvoi-reextraction.test.ts « rejet tranché par l'arbitre, dont la décision porte le motif : la source est renvoyée, même si aucun annotateur ne l'a donné »",
+        "tests/renvoi-reextraction.test.ts « rejet tranché par l'arbitre sans le motif : rien n'est renvoyé, même si un annotateur l'avait donné (sa décision ne fonde pas le rejet) »",
+        "tests/arbitrage.test.ts « un rejet sous le motif le recopie dans le bloc arbitrage de l'item promu »",
+        "tests/arbitrer.test.ts « pnpm promote écrit l'item rejeté avec le motif dans son bloc arbitrage, et renvoie sa source »",
+        "tests/renvoi-texte-errone.test.ts « rejet arbitré dont l'arbitre porte le motif : l'item sur ce texte retourne en attente »"
+      ],
       "lot": null,
       "constat": 1,
-      "note": "decision-arbitrage.schema.json n'a pas de motif de rejet (son « motif » est le désaccord tranché) ; un rejet arbitré est rapporté « à trancher » (rejet_arbitre), verrouillé par tests/renvoi-reextraction.test.ts « rejet tranché par l'arbitre, dont un annotateur avait donné le motif : à trancher, rejet arbitré »."
+      "note": "Corrigé (constat n° 1 du 2026-11-03) : motif_rejet facultatif (même énumération que decision.schema.json) sur decision-arbitrage.schema.json et pnpm arbitrer (--motif-rejet), issue « rejete » seulement, refusé sur un item sans source de contenu ; recopié dans item.arbitrage.motif_rejet. Un rejet arbitré n'est fondé que par la décision de l'arbitre : le motif d'un annotateur départagé ne renvoie rien."
     },
     {
       "id": "§4.115",
       "section": "4",
       "citation": "sur un item O à deux sources, le motif ne disant pas laquelle est fausse, les deux sources sont renvoyées",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "validation/domaine/renvoi-reextraction.ts:examinerSources"
+        "validation/domaine/renvoi-reextraction.ts:sourcesRenvoyees"
       ],
-      "tests": [],
+      "tests": [
+        "tests/renvoi-reextraction.test.ts « item O à deux sources distinctes : les deux sources sont renvoyées, chacune nommant l'item »",
+        "tests/renvoi-reextraction.test.ts « item O dont les deux états citent la même source : une source, renvoyée »",
+        "tests/renvoi-texte-errone.test.ts « item O à deux sources distinctes : les items sur l'un comme sur l'autre texte retournent en attente »"
+      ],
       "lot": null,
       "constat": 1,
-      "note": "Le code rapporte « à trancher » (plusieurs_sources) et ne renvoie aucune des deux, verrouillé par tests/renvoi-reextraction.test.ts « item O à deux sources distinctes : à trancher, le motif ne dit pas laquelle est fausse »."
+      "note": "Corrigé (constat n° 1 du 2026-11-03) : chaque source de contenu distincte (document et texte) est renvoyée ; le cas « à trancher » plusieurs_sources a disparu."
     },
     {
       "id": "§4.116",
@@ -9231,18 +9251,25 @@
       "section": "4",
       "citation": "Il n'est vérifié que si deux annotateurs confirment, par la grille de son type, que la mesure est absente des corpus balayés (section 5).",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "validation/domaine/grille.ts:controlerSpecifiques",
-        "validation/domaine/promotion.ts:verifier"
+        "validation/domaine/promotion.ts:verifier",
+        "validation/domaine/promotion.ts:confirmationManquante",
+        "validation/domaine/arbitrage.ts:confirmationsManquantes"
       ],
       "tests": [
         "tests/friction.test.ts « un item F ne pose que le thème, plus la fictivité et la plausibilité »",
-        "tests/promotion.test.ts « deux « accepter » sur la même version : item vérifié »"
+        "tests/promotion.test.ts « deux « accepter » qui confirment tous deux la fictivité : item vérifié »",
+        "tests/promotion.test.ts « deux « accepter », un oui un non à la fictivité : arbitrage « confirmation_fictivite_manquante » »",
+        "tests/promotion.test.ts « deux « accepter », deux non à la fictivité : arbitrage « confirmation_fictivite_manquante » »",
+        "tests/promotion.test.ts « réponse absente à la fictivité : refusée dès la décision par le contrôle de la grille »",
+        "tests/promotion.test.ts « deux « accepter » sans réponse à la fictivité (ligne écrite hors de l'interface) : jamais vérifié »",
+        "tests/arbitrage.test.ts « l'arbitre ne peut pas le vérifier : deux annotateurs doivent confirmer (§4) »"
       ],
       "lot": null,
       "constat": 2,
-      "note": "La grille F pose fictivite_verifiee et deux décisions concordantes vérifient l'item ; mais promotion.ts:verifier n'exige une réponse oui que pour la confirmation d'absence d'un item A (absenceConfirmee) : deux « accepter » avec fictivite_verifiee à non vérifient un item F."
+      "note": "Corrigé (constat n° 2 du 2026-11-03) : un item F n'est vérifié que si les deux décisions répondent oui à fictivite_verifiee ; sinon arbitrage sous le motif confirmation_fictivite_manquante (ajouté à decision-arbitrage.schema.json et item.schema.json), où l'arbitre peut rejeter ou dire non évaluable mais pas vérifier, comme pour la confirmation d'absence d'un item A."
     },
     {
       "id": "§4.127",
@@ -9261,27 +9288,42 @@
       "section": "5",
       "citation": "Deux items d'un même candidat sur la même mesure, tous deux en vigueur au gel, dont les positions diffèrent, sans qu'une source postérieure ait retiré l'une d'elles, ne disent pas laquelle fait foi : les deux items sont exclus du tirage et comptés à part dans le rapport du run, la mesure n'engendre aucune question d'attribution tant qu'ils le sont",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/reponse-attendue.ts:PositionsContradictoires",
-        "pipeline/questions/tirabilite.ts:motifDExclusion"
+        "pipeline/questions/tirabilite.ts:positionsIncompatiblesAuGel",
+        "pipeline/questions/tirabilite.ts:incompatibilite",
+        "pipeline/questions/types.ts:MOTIFS_EXCLUSION (positions_incompatibles)",
+        "schema/tirage.schema.json#/properties/exclusions/items/properties/motif"
       ],
-      "tests": [],
+      "tests": [
+        "tests/questions/tirabilite-au-gel.test.ts « deux items P incompatibles du même candidat : toutes leurs questions exclues, motif positions_incompatibles »",
+        "tests/questions/tirabilite-au-gel.test.ts « la Q-ATT de la mesure est exclue même si un autre candidat y porte un item valide, dont les questions restent tirées »",
+        "tests/questions/tirabilite-au-gel.test.ts « un seul des deux en vigueur (l'autre obsolète exactement à l'instant du gel) : pas d'exclusion pour incompatibilité »",
+        "tests/gel/geler.test.ts « deux items d'ALPHA « pour » et « contre » sur une mesure ⇒ gel écrit, questions exclues et comptées, items à contester rendus »"
+      ],
       "lot": null,
       "constat": 3,
-      "note": "Le code lève PositionsContradictoires depuis la Q-ATT de la mesure et arrête tout le tirage, sans motif d'exclusion ; tests/questions/attribution-au-gel.test.ts verrouille ce refus. Les questions propres des deux items ne sont pas exclues en tant que telles."
+      "note": "Réglé (constat n° 3 du 2026-11-03) : les questions de tout item retenu d'un candidat interrogé dont les positions en vigueur au gel diffèrent sur la mesure, et la Q-ATT de la mesure, sont exclues, motif positions_incompatibles, comptées dans tirage.exclusions. Lecture : seuls les candidats interrogés comptent (comme pour un item contesté) ; « diffèrent » pris à la lettre (toute paire de positions distinctes, conditionnel et sans_objet compris), plus large que PositionsContradictoires, qui ne garde plus qu'un appel direct de reponseAttendue."
     },
     {
       "id": "§5.61",
       "section": "5",
       "citation": "et l'auteur les conteste dès le gel, comme un item contesté ci-dessus",
       "nature": "processus",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "questions (avec §5.60)",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/tirage.ts:tirer (rapport.positions_incompatibles)",
+        "pipeline/gel/geler.ts:texteItemsAContester",
+        "outils/geler.ts:imprimer"
+      ],
+      "tests": [
+        "tests/questions/tirabilite-au-gel.test.ts « le rapport du tirage liste les items à contester, par candidat et par mesure »",
+        "tests/gel/geler.test.ts « deux items d'ALPHA « pour » et « contre » sur une mesure ⇒ gel écrit, questions exclues et comptées, items à contester rendus »",
+        "tests/gel/geler.test.ts « aucun conflit ⇒ aucune exclusion de ce motif, aucun item à contester (non-régression) »"
+      ],
+      "lot": null,
       "constat": 3,
-      "note": "Suppose l'exclusion de §5.60 ; aucun outil ne liste ces items à contester au gel."
+      "note": "Réglé (constat n° 3 du 2026-11-03) : pnpm geler imprime les items à contester, par candidat et mesure, avec leur position en vigueur. La contestation elle-même reste un acte de l'auteur ; la liste n'est pas publiée dans tirage.json en tant que telle, seulement dans le détail des exclusions."
     },
     {
       "id": "§5.62",
@@ -9438,35 +9480,46 @@
       "section": "6",
       "citation": "un run supplémentaire ouvre sa fenêtre à 6 h, heure de Paris, le premier jour qui suit son gel",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "pipeline/interrogation/fenetre.ts:ouvrirFenetre",
-        "pipeline/gel/assemblage.ts (fenetre_debut)",
+        "pipeline/interrogation/fenetre.ts:ouvrirFenetre (REGLE_PAR_TYPE)",
+        "pipeline/gel/assemblage.ts:preparer",
         "pipeline/interrogation/run-gele.ts",
-        "pipeline/go-no-go/checklist.ts"
+        "pipeline/go-no-go/checklist.ts:constatInterrogationDansLaFenetre",
+        "pipeline/interrogation/run-simule.ts"
       ],
       "tests": [
-        "tests/interrogation/fenetre.test.ts « refuse %s »"
+        "tests/interrogation/fenetre.test.ts « %s gelé un samedi : ouvre le dimanche à 06:00 »",
+        "tests/interrogation/fenetre.test.ts « gelé un samedi : un mardi qui n'est pas le lendemain du gel est refusé, le lundi aussi »",
+        "tests/interrogation/fenetre.test.ts « le jour du gel se lit à Paris, pas en UTC : gelé le mardi 00:30 Paris d'été (lundi 22:30 UTC), ouvre le mercredi »",
+        "tests/interrogation/fenetre.test.ts « gel à minuit moins une milliseconde, heure de Paris : ouvre le lendemain ; à minuit pile : le surlendemain »",
+        "tests/interrogation/fenetre.test.ts « gelé la veille du passage à l'heure d'été (samedi 27 mars 2027) : ouvre le dimanche à 06:00 +02:00 »",
+        "tests/interrogation/fenetre.test.ts « gelé la veille du passage à l'heure d'hiver (samedi 30 octobre 2027) : ouvre le dimanche à 06:00 +01:00 »",
+        "tests/interrogation/fenetre.test.ts « %s : mardi 06:00 exigé, quel que soit le jour du gel ; le lendemain d'un gel du samedi, un dimanche, est refusé »",
+        "tests/go-no-go/checklist.test.ts « run supplémentaire dont la fenêtre ouvre le mardi suivant, pas le lendemain du gel : non faite, le jour attendu nommé »"
       ],
       "lot": null,
       "constat": 5,
-      "note": "0.27 (D67). ouvrirFenetre refuse tout début qui n'est pas un mardi à 06:00, quel que soit type_run (supplementaire_liste_officielle, supplementaire_debat), et le test « refuse %s » le garde (cas « un lundi ») : un run supplémentaire ne peut ouvrir sa fenêtre le lendemain de son gel que si ce lendemain est un mardi."
+      "note": "0.27 (D67). Constat 5 réglé le 2026-11-04 : ouvrirFenetre reçoit type_run et date_gel ; run régulier (pilote, mensuel, hebdomadaire, reexecution) : mardi 06:00 heure de Paris ; run supplementaire_* : 06:00 heure de Paris le jour civil de Paris qui suit celui de date_gel. Un type_run inconnu est refusé (TypeRunInconnu). La réexécution est traitée en run régulier : le §6 ne dit pas si celle d'un run supplémentaire suit la règle du supplémentaire."
     },
     {
       "id": "§6.35",
       "section": "6",
       "citation": "toutes ses questions tirées pour un candidat interrogé qui en a moins de cinq",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "pipeline/interrogation/sous-echantillon-application.ts:sousEchantillonApplication (SousEchantillonInsuffisant)"
+        "pipeline/interrogation/sous-echantillon-application.ts:sousEchantillonApplication",
+        "schema/sous-echantillon-application.schema.json (questions : 0 à 5)"
       ],
       "tests": [
-        "tests/interrogation/sous-echantillon-application.test.ts « moins de cinq questions tirées pour un candidat interrogé : refus nommé, aucune question inventée »"
+        "tests/interrogation/sous-echantillon-application.test.ts « %i question(s) tirée(s) pour un candidat interrogé : toutes ses questions, dans l'ordre du tourniquet, aucune inventée (§6, 0.27) »",
+        "tests/interrogation/sous-echantillon-application.test.ts « zéro question tirée : le candidat interrogé reste visible, avec un sous-échantillon vide »",
+        "tests/interrogation/sous-echantillon-application.test.ts « %i questions tirées : exactement cinq, le choix du tourniquet est inchangé »"
       ],
       "lot": null,
       "constat": 6,
-      "note": "0.27 (D62 #234 (2)). Le code lève SousEchantillonInsuffisant et le test garde ce refus ; la docstring dit encore « n'a pas de règle au §6 »."
+      "note": "0.27 (D62 #234 (2)). Constat 6 réglé le 2026-11-04 : SousEchantillonInsuffisant est retiré ; un candidat interrogé qui a moins de cinq questions tirées les prend toutes, dans l'ordre du tourniquet, et un candidat sans question tirée garde un bloc vide. Le schéma admet de 0 à 5 questions (exemple valide-02, invalide-02 à six questions)."
     },
     {
       "id": "§6.36",
@@ -10484,12 +10537,22 @@
       "section": "8",
       "citation": "et, pour chaque candidat, le nombre de ses items P, A, O et F entrés dans le test, dont la composition pèse sur son exactitude (section 11)",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/permutation.ts:itemsParTypeDuTest",
+        "analysis/permutation.ts:testHomogeneiteCandidats (items_par_type)",
+        "schema/metriques.schema.json#/$defs/test_asymetrie (candidats[].items_par_type)"
+      ],
+      "tests": [
+        "tests/analysis/permutation.test.ts « compte les items, pas les réponses, et publie 0 pour un type sans item — jamais une clé absente »",
+        "tests/analysis/permutation.test.ts « ne compte pas un item sans réponse classée (§8, 0.15), ni une question d'attribution »",
+        "tests/analysis/permutation.test.ts « publie quatre zéros pour un candidat comparé dont aucun item n'entre au test »",
+        "tests/analysis/permutation.test.ts « somme des effectifs de tous les candidats = population du test ; un candidat sous le seuil n'y entre pas »",
+        "tests/analysis/permutation.test.ts « refuse un item dont les réponses portent deux types différents, ou un item de candidat sans type »"
+      ],
       "lot": "analyse",
       "constat": 9,
-      "note": "Protocole 0.27. Ni permutation.ts:ExactitudeCandidat ni schema/metriques.schema.json#/$defs/test_asymetrie ne portent ces effectifs ; hors du périmètre annoncé du sous-lot B (constat)."
+      "note": "Protocole 0.27. Chaque candidat comparé du test porte items_par_type {P, A, O, F}, compté sur les items entrés dans la permutation (grappesEtiquetees, après repartirParCandidat) ; un type sans item vaut 0. Constat 9 corrigé."
     },
     {
       "id": "§8.82",
