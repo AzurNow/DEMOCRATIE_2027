@@ -155,12 +155,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 387 → 388 : §5 (0.27, D67), un valide de tirage (valide-03, exclusion positions_incompatibles).
   // 388 → 389 : §6 (0.27), sous-échantillon de l'application à moins de cinq questions, un invalide (invalide-02, six questions) ; invalide-02-quatre-questions devient valide-02.
   // 389 → 393 : conformité 2026-11-03, constats 8 et 11 (protocole 0.27) : un valide et un invalide de renvoi-humain (juge défaillant), un valide et un invalide de notation (réponse au texte vide).
-  it("1. les 393 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 393 → 395 : §6 (0.31, D73 (13)), verdict d'une lecture de comparateur : un valide (valide-06) et un invalide (invalide-10, lecture dans l'échantillon humain).
+  it("1. les 395 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(393);
+    expect(manifeste.exemples).toHaveLength(395);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -433,7 +434,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 387 → 388 : §5 (0.27, D67), un valide de tirage (valide-03, exclusion positions_incompatibles).
   // 388 → 389 : §6 (0.27), sous-échantillon de l'application à moins de cinq questions, un invalide (invalide-02, six questions) ; invalide-02-quatre-questions devient valide-02.
   // 389 → 393 : conformité 2026-11-03, constats 8 et 11 (renvoi d'un juge défaillant, réponse au texte vide).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 393 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(393);
+  // 393 → 395 : §6 (0.31, D73 (13)), verdict d'une lecture de comparateur (valide-06, invalide-10).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 395 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(395);
   });
 });

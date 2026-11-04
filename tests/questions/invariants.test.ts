@@ -408,8 +408,9 @@ describe("exemples de schema/exemples/", () => {
   // 388 → 389 : §6 (0.27), sous-échantillon de l'application à moins de cinq questions, un invalide (invalide-02, six questions) ; invalide-02-quatre-questions devient valide-02.
   // 389 → 393 : §7 (0.27, constat 8) et annexe C (C.04, constat 11), un valide et un invalide de
   // renvoi-humain (juge défaillant), un valide et un invalide de notation (réponse au texte vide).
-  it("charge les 393 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(393);
+  // 393 → 395 : §6 (0.31, D73 (13)), un valide et un invalide de verdict d'une lecture de comparateur.
+  it("charge les 395 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(395);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -465,7 +466,9 @@ describe("exemples de schema/exemples/", () => {
     // 47 → 49 : annexe C (C.04, constat 11), deux notations (une valide, une invalide) sur une réponse
     // au texte vide (valide-12, de juge ; invalide-23, copie de valide-09 aux deux marqueurs), de
     // contexte run ; leur contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(49);
+    // 49 → 51 : D73 (13), deux verdicts d'une lecture de comparateur (valide-06, invalide-10), de
+    // contexte run, sur lecture-comparateur/valide-01 ; leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(51);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

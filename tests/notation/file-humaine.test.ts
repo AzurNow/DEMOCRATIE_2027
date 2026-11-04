@@ -12,7 +12,7 @@ import { PseudonymeVide } from "../../pipeline/notation/notation-humaine.ts";
 import type { NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
-import { inexacte, notationHumaine, notationJuge, notationRegle, renvoiDefaillant, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
+import { inexacte, lien, notationHumaine, notationJuge, notationRegle, renvoiDefaillant, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
 
 const TEXTES = { reponse: REPONSE_PROJETEE, citations_reference: ["Nous ne toucherons pas à la taxe foncière."] };
 
@@ -214,11 +214,50 @@ describe("§7 (0.27) : renvoi d'un juge défaillant", () => {
   });
 });
 
-describe("échantillon : deux humains qui s'accordent sans note commune", () => {
-  it("ni tâche, ni arbitrage (§7 retient leur note) : la réponse est rapportée à part", () => {
+describe("§7 (0.31, D73 (14)) : échantillon, deux humains d'accord sur la note mais motifs différents", () => {
+  const humains = [
+    notationHumaine("a1", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte() }),
+    notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte(), motif_inexactitude: "position_opposee" }),
+  ];
+
+  it("une tâche d'arbitrage, fermée aux deux premiers ; plus rien « sans motif admis »", () => {
+    const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains]));
+    expect(tachesDe(file, DANS)).toEqual([{ reponse_id: DANS, motif_notation: "arbitrage_echantillon_10", places_restantes: 1, deja_notee_par: ["a1", "a2"] }]);
+    expect(file.sans_motif_admis).toEqual([]);
+    expect(file.tachesPour("a3")).toContainEqual({ reponse_id: DANS, motif_notation: "arbitrage_echantillon_10" });
+  });
+
+  it("le troisième humain a noté (troisième motif compris) : la tâche se ferme, decider rend un verdict", () => {
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...sur(DANS), ...inexacte(), motif_inexactitude: "omission" });
+    const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains, arbitre]));
+    expect(tachesDe(file, DANS)).toEqual([]);
+    expect(file.sans_motif_admis).toEqual([]);
+  });
+
+  it("un arbitrage alors que les deux humains ont le même motif : incohérent, levé par decider", () => {
+    const memes = [notationHumaine("a1", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte() }), notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte() })];
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...sur(DANS), ...inexacte() });
+    expect(() => construireFile(entree(IDS, [...jugesDAccord(IDS), ...memes, arbitre]))).toThrow(NotationsIncoherentes);
+  });
+
+  it("juges encore absents : la tâche d'arbitrage est ouverte quand même (elle ne dépend pas des juges)", () => {
+    const file = construireFile(entree(IDS, [...jugesDAccord(HORS), ...humains]));
+    expect(tachesDe(file, DANS).map((t) => t.motif_notation)).toEqual(["arbitrage_echantillon_10"]);
+    expect(file.attend_juge.map((a) => a.reponse_id)).toContain(DANS);
+  });
+
+  it("juges encore absents, arbitrage de deux humains au même motif : FileIncoherente (contrôle propre à la file)", () => {
+    const memes = [notationHumaine("a1", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte() }), notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte() })];
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...sur(DANS), ...inexacte() });
+    expect(() => construireFile(entree(IDS, [...jugesDAccord(HORS), ...memes, arbitre]))).toThrow(FileIncoherente);
+  });
+});
+
+describe("échantillon : deux humains d'accord, même motif, sourçage partiel divergent (question ouverte)", () => {
+  it("ni tâche, ni arbitrage (le §7 ne nomme que le motif) : la réponse est rapportée à part", () => {
     const humains = [
-      notationHumaine("a1", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte() }),
-      notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte(), motif_inexactitude: "position_opposee" }),
+      notationHumaine("a1", "echantillon_aleatoire_10", { ...sur(DANS), sourcage: { cite: true, liens: [lien("mort", "non_applicable")] } }),
+      notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } }),
     ];
     const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains]));
     expect(tachesDe(file, DANS)).toEqual([]);

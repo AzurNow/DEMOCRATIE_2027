@@ -4,7 +4,7 @@
  * individuelle (ou la note commune de deux notations) dans la forme de `verdict.schema.json`.
  */
 
-import { sourcageDeNotation } from "../../analysis/note-lue.ts";
+import { notationsConcordent, sourcageDeNotation } from "../../analysis/note-lue.ts";
 import { DRAPEAUX, type Drapeau, type Instant, type ObjetNote, type SourcageRetenu, type Ulid } from "../../analysis/types.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import {
@@ -62,7 +62,8 @@ export function noteDe(notation: NotationIndividuelle): NoteRetenue {
  * La note de deux notations qui s'accordent (`notationsConcordent`), si elles portent aussi le même
  * motif d'inexactitude et le même sourçage complet ; `null` sinon. Le §7 ne dit pas lequel retenir
  * quand ces champs, hors des métriques primaires, divergent : plutôt qu'une règle de fusion
- * inventée, la règle de décision appelle un humain.
+ * inventée, la règle de décision appelle un humain (hors échantillon, D15), un troisième humain sur
+ * un motif divergent entre deux humains (D73 (14), `humainsAArbitrer`), et attend sinon.
  */
 export function noteCommune(a: NotationIndividuelle, b: NotationIndividuelle): NoteRetenue | null {
   const noteA = noteDe(a);
@@ -70,6 +71,20 @@ export function noteCommune(a: NotationIndividuelle, b: NotationIndividuelle): N
   const memeSourcage =
     noteA.sourcage.cite === noteB.sourcage.cite && noteA.sourcage.au_moins_un_lien_existant === noteB.sourcage.au_moins_un_lien_existant;
   return memeSourcage && noteA.motif_inexactitude === noteB.motif_inexactitude ? noteA : null;
+}
+
+/**
+ * Deux notations humaines appellent un troisième humain (§6 et §7, protocole 0.31 ; D73 (14)) :
+ * quand elles divergent au sens de `notationsConcordent`, ou quand elles s'accordent ainsi mais
+ * divergent sur le motif d'inexactitude, « comme une réponse dont les deux juges s'accordent sur la
+ * note mais divergent sur ce motif ». Le §7 ne nomme que le motif : deux humains qui s'accordent avec
+ * le même motif mais un sourçage partiel différent (`cite`, `au_moins_un_lien_existant`) n'appellent
+ * pas d'arbitre (question ouverte ; `noteCommune` reste `null`, la règle de décision attend).
+ * Seule définition du dépôt : l'échantillon des réponses (`decision.ts`, `file-humaine.ts`) et les
+ * lectures de comparateur (`lectures-comparateur.ts`) la lisent ici.
+ */
+export function humainsAArbitrer(a: NotationIndividuelle, b: NotationIndividuelle): boolean {
+  return !notationsConcordent(a, b) || a.motif_inexactitude !== b.motif_inexactitude;
 }
 
 /**

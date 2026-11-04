@@ -507,6 +507,48 @@ describe("échantillon humain", () => {
   });
 });
 
+describe("§7 (0.31, D73 (14)) : deux humains de l'échantillon d'accord sur la note, motifs différents → troisième humain", () => {
+  const ECH = { dans_echantillon_humain: true } as const;
+  const H1 = notationHumaine("a1", "echantillon_aleatoire_10", inexacte());
+  const H2 = notationHumaine("a2", "echantillon_aleatoire_10", { ...inexacte(), motif_inexactitude: "position_opposee" });
+
+  it("sans troisième humain : en attente de l'arbitrage, jamais une note en repli ni un cas sans issue", () => {
+    expect(decide([J1, J2, H1, H2], ECH)).toEqual({ statut: "en_attente", attend: "humain", motifs: ["arbitrage_echantillon_manquant"] });
+  });
+
+  it("le troisième humain rejoint le motif de l'un des deux : sa note est retenue, avec les trois humains pour sources", () => {
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...inexacte(), motif_inexactitude: "position_opposee", date: "2026-12-07T10:00:00+01:00" });
+    const v = verdictDe(decide([J1, J2, H1, H2, arbitre], ECH));
+    expect(v).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "inexacte", motif_inexactitude_retenu: "position_opposee", dans_echantillon_humain: true });
+    expect(v.notations_sources).toEqual([J1.id, J2.id, H1.id, H2.id, arbitre.id]);
+    expect(v.revue_humaine).toEqual({ effectuee: true, date: arbitre.date, annotateurs: ["a1", "a2", "a3"] });
+  });
+
+  it("le troisième humain donne un troisième motif : §7 retient sa note, ce motif compris", () => {
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...inexacte(), motif_inexactitude: "omission" });
+    const v = verdictDe(decide([J1, J2, H1, H2, arbitre], ECH));
+    expect(v).toMatchObject({ mode_resolution: "echantillon_humain_10", motif_inexactitude_retenu: "omission" });
+  });
+
+  it("le troisième humain change aussi la note : sa note est retenue, comme pour toute réponse arbitrée", () => {
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10");
+    expect(verdictDe(decide([J1, J2, H1, H2, arbitre], ECH))).toMatchObject({ categorie_retenue: "exacte", mode_resolution: "echantillon_humain_10" });
+  });
+
+  it("l'arbitre ne peut pas être l'un des deux premiers", () => {
+    const arbitre = notationHumaine("a2", "arbitrage_echantillon_10", inexacte());
+    expect(() => decide([J1, J2, H1, H2, arbitre], ECH)).toThrow(/troisième humain/);
+  });
+
+  it("question ouverte : même motif, mais l'existence d'un lien diverge → en attente sans arbitrage admis (le §7 ne nomme que le motif)", () => {
+    const s1 = notationHumaine("a1", "echantillon_aleatoire_10", { sourcage: { cite: true, liens: [lien("mort", "non_applicable")] } });
+    const s2 = notationHumaine("a2", "echantillon_aleatoire_10", { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } });
+    expect(decide([J1, J2, s1, s2], ECH)).toEqual({ statut: "en_attente", attend: "humain", motifs: ["accord_sans_note_commune"] });
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10");
+    expect(() => decide([J1, J2, s1, s2, arbitre], ECH)).toThrow(NotationsIncoherentes);
+  });
+});
+
 describe("entrées rejetées", () => {
   it("cas 14 : notation de juge indeterminee → erreur", () => {
     const indetermine = { ...notationJuge("j2"), categorie: "indeterminee" as const };
