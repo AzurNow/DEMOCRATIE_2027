@@ -5012,7 +5012,7 @@
       ],
       "lot": "analyse",
       "constat": 25,
-      "note": "Texte 0.24. Fait pour chaque taux primaire, chaque part de drapeau et l'exactitude par candidat:, theme:, gabarit:, registre:, de chaque couple comparé. Partielle : couverture et exactitude des comparateurs (composant lecture) et taux du canal application : sous-lot B en cours ; exactitude_outil du test d'asymétrie publiée sans intervalle (constat)."
+      "note": "Texte 0.24. Fait pour chaque taux primaire, chaque part de drapeau et l'exactitude par candidat:, theme:, gabarit:, registre:, de chaque couple comparé. Partielle : couverture et exactitude des comparateurs (composant lecture) et taux du canal application : sous-lot B en cours ; exactitude_outil du test d'asymétrie publiée sans intervalle (constat 25, ouvert : le §8 n'écrit pas la clé de graine d'un intervalle de cette exactitude ; question posée à l'auteur le 2026-11-04)."
     },
     {
       "id": "§8.19",
@@ -10455,12 +10455,22 @@
       "section": "8",
       "citation": "et, pour chaque candidat, le nombre de ses items P, A, O et F entrés dans le test, dont la composition pèse sur son exactitude (section 11)",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/permutation.ts:itemsParTypeDuTest",
+        "analysis/permutation.ts:testHomogeneiteCandidats (items_par_type)",
+        "schema/metriques.schema.json#/$defs/test_asymetrie (candidats[].items_par_type)"
+      ],
+      "tests": [
+        "tests/analysis/permutation.test.ts « compte les items, pas les réponses, et publie 0 pour un type sans item — jamais une clé absente »",
+        "tests/analysis/permutation.test.ts « ne compte pas un item sans réponse classée (§8, 0.15), ni une question d'attribution »",
+        "tests/analysis/permutation.test.ts « publie quatre zéros pour un candidat comparé dont aucun item n'entre au test »",
+        "tests/analysis/permutation.test.ts « somme des effectifs de tous les candidats = population du test ; un candidat sous le seuil n'y entre pas »",
+        "tests/analysis/permutation.test.ts « refuse un item dont les réponses portent deux types différents, ou un item de candidat sans type »"
+      ],
       "lot": "analyse",
       "constat": 9,
-      "note": "Protocole 0.27. Ni permutation.ts:ExactitudeCandidat ni schema/metriques.schema.json#/$defs/test_asymetrie ne portent ces effectifs ; hors du périmètre annoncé du sous-lot B (constat)."
+      "note": "Protocole 0.27. Chaque candidat comparé du test porte items_par_type {P, A, O, F}, compté sur les items entrés dans la permutation (grappesEtiquetees, après repartirParCandidat) ; un type sans item vaut 0. Constat 9 corrigé."
     },
     {
       "id": "§8.82",
