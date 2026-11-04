@@ -6,14 +6,22 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { erreurDeSchema, valider } from "../../outils/schemas/valider.ts";
 import { CODE_PLAFOND_ATTEINT, CODE_SOURCES_NON_TRAITEES } from "../../pipeline/extraction/commande.ts";
 import { transportSousDelai } from "../../pipeline/extraction/delai.ts";
 import { MODELE_SIMULE_ANTHROPIC, MODELE_SIMULE_MISTRAL } from "../../pipeline/extraction/editeur-simule.ts";
-import { cheminJournal, cheminReponse, type JournalExtraction, type ReponseGardee } from "../../pipeline/extraction/staging.ts";
+import {
+  cheminIdentifiants,
+  cheminIdentifiantsParDocument,
+  cheminJournal,
+  cheminJournalParDocument,
+  cheminReponse,
+  type JournalExtraction,
+  type ReponseGardee,
+} from "../../pipeline/extraction/staging.ts";
 import { ErreurReseau } from "../../pipeline/interrogation/editeur.ts";
 import type { IssueAttente } from "../../pipeline/interrogation/horloge.ts";
 import { chargerStaging } from "../../validation/io/staging.ts";
@@ -45,6 +53,9 @@ function sha256(texte: string): string {
   return createHash("sha256").update(texte, "utf8").digest("hex");
 }
 
+/** Le texte canonique de la source de `racineDeTest()` : le journal est indexé par lui (D73 (9)). */
+const TEXTE_SHA = sha256(TEXTE);
+
 function reel(racine: string, ...autres: string[]): readonly string[] {
   return [`--racine=${racine}`, "--plafond=10", ...autres];
 }
@@ -53,8 +64,8 @@ function simule(racine: string, sortie: string, ...autres: string[]): readonly s
   return ["--simule", `--racine=${racine}`, `--sortie=${sortie}`, ...autres];
 }
 
-function journal(sortie: string): JournalExtraction {
-  return JSON.parse(readFileSync(cheminJournal(sortie, CLE_SOURCE, SHA_SOURCE), "utf8")) as JournalExtraction;
+function journal(sortie: string, texte_sha256 = TEXTE_SHA): JournalExtraction {
+  return JSON.parse(readFileSync(cheminJournal(sortie, CLE_SOURCE, SHA_SOURCE, texte_sha256), "utf8")) as JournalExtraction;
 }
 
 function reponses(sortie: string): readonly ReponseGardee[] {
@@ -209,7 +220,7 @@ describe("cas 8 : échec de transport sur le second extracteur", () => {
     expect(premiere.code).toBe(CODE_SOURCES_NON_TRAITEES);
     expect(premiere.envois).toEqual(["anthropic", "mistral"]);
     expect(reponses(staging).map((reponse) => reponse.modele)).toEqual([MODELE_A]);
-    expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE))).toBe(false);
+    expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA))).toBe(false);
     expect(premiere.sortie).toContain("Source laissée à traiter.");
 
     const seconde = await lancer(reel(racine));
@@ -241,7 +252,7 @@ describe("constat 2 du 2026-10-17 (D54 (2)) : 408, 429 et 5xx sont un échec de 
       expect(execution.sortie).toContain(`HTTP ${statut}`);
       expect(execution.sortie).toContain(MODELE_B);
       expect(execution.sortie).toContain("Source laissée à traiter.");
-      expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE))).toBe(false);
+      expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA))).toBe(false);
       expect(existsSync(join(staging, "items"))).toBe(false);
       expect(existsSync(join(staging, "mesures"))).toBe(false);
       expect(reponses(staging)).toHaveLength(2);
@@ -255,7 +266,7 @@ describe("constat 2 du 2026-10-17 (D54 (2)) : 408, 429 et 5xx sont un échec de 
     const premiere = await lancer(reel(racine), { repondre: echec });
     expect(premiere.code).toBe(CODE_SOURCES_NON_TRAITEES);
     expect(premiere.envois).toEqual(["anthropic"]);
-    expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE))).toBe(false);
+    expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA))).toBe(false);
     expect(reponses(staging).map((reponse) => reponse.statut_http)).toEqual([503]);
 
     const relance = await lancer(reel(racine));
@@ -371,7 +382,7 @@ describe("constat 3 : arrêt entre les items et le journal", () => {
 
     // Simule un arrêt entre l'écriture des items et celle du journal : seul le journal manque,
     // comme si le processus avait été tué juste avant de l'écrire (constat 3).
-    rmSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE));
+    rmSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA));
 
     // Le même compteur d'identifiants continue : sans la reprise, la relance tirerait de nouveaux
     // identifiants (comme `ulid()` en production) et déposerait un second item et une seconde mesure.
@@ -393,11 +404,142 @@ describe("constat 3 : arrêt entre les items et le journal", () => {
     const racine = racineDeTest();
     const staging = join(racine, "staging");
     expect((await lancer(reel(racine))).code).toBe(0);
-    rmSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE));
+    rmSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA));
     const relance = await lancer(reel(racine));
     expect(relance.code).toBe(0);
     expect(relance.sortie).not.toContain("DejaEcrit");
     expect(cheminsSous(staging, "items/")).toHaveLength(1);
+  });
+});
+
+/* ------------------------------------------------- D73 (9) : réextraction */
+
+describe("D73 (9) : réextraction sur un texte d'empreinte différente, jamais sur le texte rejeté", () => {
+  const RECENT = { ...HTML, version: "3.13.0" };
+  /** Le texte de la seconde fiche de `racineDeTest({ fiches: [HTML, RECENT] })`. */
+  const TEXTE_RECENT_SHA = sha256(`${TEXTE}\nVariante 1.`);
+  const URL = "https://demonstration.invalid/propositions";
+  const RENVOI = { sha256: SHA_SOURCE, texte_sha256: TEXTE_SHA, url: URL };
+
+  /** Nouvelle version épinglée : l'entrée régénérée et le code en service désignent la seconde fiche. */
+  function epinglerRecent(racine: string): void {
+    const cheminEntree = join(racine, "staging", "entrees-extraction", CLE_SOURCE, `${SHA_SOURCE}.json`);
+    const entree = JSON.parse(readFileSync(cheminEntree, "utf8")) as Record<string, unknown>;
+    writeFileSync(cheminEntree, `${JSON.stringify({ ...entree, extracteur_epingle: RECENT }, null, 2)}\n`);
+    const enService = join(racine, "pipeline", "collecte", "textes", "epinglage.json");
+    writeFileSync(enService, `${JSON.stringify(enServiceHtml({ version: RECENT.version }), null, 2)}\n`);
+  }
+
+  async function refusee(racine: string, renvois: readonly (typeof RENVOI)[]): Promise<void> {
+    const avant = instantane(join(racine, "staging"));
+    const execution = await lancer(reel(racine), { renvois });
+    expect(execution.code).toBe(CODE_SOURCES_NON_TRAITEES);
+    expect(execution.envois).toEqual([]);
+    expect(execution.sortie).toContain(`texte ${TEXTE_SHA}`);
+    expect(execution.sortie).toMatch(/renvoyée à la réextraction.*empreinte différente/u);
+    expect(instantane(join(racine, "staging"))).toEqual(avant);
+  }
+
+  it("source renvoyée, même empreinte de texte ⇒ refus nommé, aucun appel, rien d'écrit ; la commande lit les renvois de sa racine", async () => {
+    const racine = racineDeTest();
+    expect((await lancer(reel(racine))).code).toBe(0);
+    const racines: string[] = [];
+    await lancer(reel(racine), { renvois: [RENVOI], racines_des_renvois: racines });
+    expect(racines).toEqual([resolve(racine)]);
+    await refusee(racine, [RENVOI]);
+  });
+
+  it("source renvoyée, même empreinte, journal du texte rejeté retiré à la main ⇒ toujours refusée", async () => {
+    const racine = racineDeTest();
+    expect((await lancer(reel(racine))).code).toBe(0);
+    rmSync(cheminJournal(join(racine, "staging"), CLE_SOURCE, SHA_SOURCE, TEXTE_SHA));
+    await refusee(racine, [RENVOI]);
+  });
+
+  it("nouvelle capture du même texte (autre document, même URL) ⇒ refusée : c'est le texte rejeté", async () => {
+    const racine = racineDeTest();
+    await refusee(racine, [{ ...RENVOI, sha256: "b".repeat(64) }]);
+  });
+
+  it("source non renvoyée, même empreinte ⇒ comportement inchangé : journal présent, sautée", async () => {
+    const racine = racineDeTest();
+    expect((await lancer(reel(racine))).code).toBe(0);
+    const autres = [
+      { sha256: "b".repeat(64), texte_sha256: TEXTE_SHA, url: "https://autre.invalid/page" },
+      { ...RENVOI, texte_sha256: "d".repeat(64) },
+    ];
+    const relance = await lancer(reel(racine), { renvois: autres });
+    expect(relance.code).toBe(0);
+    expect(relance.envois).toEqual([]);
+    expect(relance.sortie).toContain(`${CLE} : journal présent, sautée.`);
+  });
+
+  it("source renvoyée, empreinte différente (nouvelle version épinglée) ⇒ extraite ; les deux textes coexistent au journal", async () => {
+    const racine = racineDeTest({ fiches: [HTML, RECENT] });
+    const staging = join(racine, "staging");
+    const ulid = compteurUlid();
+    expect((await lancer(reel(racine), { nouvelUlid: ulid })).code).toBe(0);
+    epinglerRecent(racine);
+
+    const reextraction = await lancer(reel(racine), { renvois: [RENVOI], nouvelUlid: ulid });
+    expect(reextraction.code).toBe(0);
+    expect(reextraction.envois).toEqual(["anthropic", "mistral"]);
+    expect(journal(staging, TEXTE_SHA).texte_sha256).toBe(TEXTE_SHA);
+    expect(journal(staging, TEXTE_RECENT_SHA)).toMatchObject({ texte_sha256: TEXTE_RECENT_SHA, issue: { statut: "extraite" } });
+    const parTexte = (repertoire: string): readonly string[] => readdirSync(join(staging, repertoire, CLE_SOURCE, SHA_SOURCE)).sort();
+    const attendus = [`${TEXTE_SHA}.json`, `${TEXTE_RECENT_SHA}.json`].sort();
+    expect(parTexte("journal-extraction")).toEqual(attendus);
+    expect(parTexte("identifiants-extraction")).toEqual(attendus);
+    const textes = [...chargerStaging(staging).items.values()].map((item) => item.assertion?.source.texte_sha256).sort();
+    expect(textes).toEqual([TEXTE_SHA, TEXTE_RECENT_SHA].sort());
+  });
+
+  it("journal d'avant D73 (9), un par document : même texte ⇒ sautée ; texte nouveau ⇒ extrait, sans reprendre ses identifiants", async () => {
+    const racine = racineDeTest({ fiches: [HTML, RECENT] });
+    const staging = join(racine, "staging");
+    const ulid = compteurUlid();
+    expect((await lancer(reel(racine), { nouvelUlid: ulid })).code).toBe(0);
+    renameSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA), cheminJournalParDocument(staging, CLE_SOURCE, SHA_SOURCE));
+    renameSync(cheminIdentifiants(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA), cheminIdentifiantsParDocument(staging, CLE_SOURCE, SHA_SOURCE));
+
+    const relance = await lancer(reel(racine), { nouvelUlid: ulid });
+    expect(relance.envois).toEqual([]);
+    expect(relance.sortie).toContain(`${CLE} : journal présent, sautée.`);
+
+    epinglerRecent(racine);
+    const nouvelle = await lancer(reel(racine), { nouvelUlid: ulid });
+    expect(nouvelle.code).toBe(0);
+    expect(journal(staging, TEXTE_RECENT_SHA).issue.statut).toBe("extraite");
+    expect(chargerStaging(staging).items.size).toBe(2);
+  });
+
+  it("identifiants d'avant D73 (9) sans aucun journal (arrêt avant le journal) ⇒ repris, rien de dupliqué (constat 3)", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    const ulid = compteurUlid();
+    expect((await lancer(reel(racine), { nouvelUlid: ulid })).code).toBe(0);
+    const items = cheminsSous(staging, "items/");
+    rmSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA));
+    renameSync(cheminIdentifiants(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA), cheminIdentifiantsParDocument(staging, CLE_SOURCE, SHA_SOURCE));
+
+    const relance = await lancer(reel(racine), { nouvelUlid: ulid });
+    expect(relance.code).toBe(0);
+    expect(cheminsSous(staging, "items/")).toEqual(items);
+    expect(journal(staging).issue.statut).toBe("extraite");
+  });
+
+  it("journal d'avant D73 (9) qui décrit une autre source que son chemin ⇒ arrêt nommé, jamais ignoré", async () => {
+    const racine = racineDeTest();
+    const staging = join(racine, "staging");
+    expect((await lancer(reel(racine))).code).toBe(0);
+    const ancien = cheminJournalParDocument(staging, CLE_SOURCE, SHA_SOURCE);
+    const lu = journal(staging);
+    rmSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA));
+    writeFileSync(ancien, `${JSON.stringify({ ...lu, sha256_source: "b".repeat(64) }, null, 2)}\n`);
+    const relance = await lancer(reel(racine));
+    expect(relance.code).toBe(1);
+    expect(relance.sortie).toContain("pas celle de son chemin");
+    expect(relance.envois).toEqual([]);
   });
 });
 
@@ -409,7 +551,7 @@ describe("cas 10 : plafond atteint au milieu d'une source", () => {
     expect(execution.code).toBe(CODE_PLAFOND_ATTEINT);
     expect(execution.envois).toEqual(["anthropic"]);
     expect(reponses(staging).map((reponse) => reponse.modele)).toEqual([MODELE_A]);
-    expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE))).toBe(false);
+    expect(existsSync(cheminJournal(staging, CLE_SOURCE, SHA_SOURCE, TEXTE_SHA))).toBe(false);
     expect(execution.sortie).toContain("Plafond atteint");
   });
 });
