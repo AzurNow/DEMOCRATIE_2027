@@ -29,8 +29,10 @@
  *    une notation humaine à extrait invalide n'est jamais enregistrée. La provenance déclarée doit
  *    contenir l'extrait (`provenance_inexacte`), vérifiée par `testerVerbatim` seul (règle 5) ; un
  *    extrait accepté porte `verifie_deterministe: true`. Sans extrait, rien n'est contrôlé ici : le
- *    schéma exige l'extrait hors d'une note exacte, sauf sur un refus de l'API (D33) : la notation
- *    porte alors `sur_refus_api`, posé d'après la vue (`normalise.refus_api`), jamais d'après la saisie.
+ *    schéma exige l'extrait hors d'une note exacte, sauf sur un refus de l'API (D33) ou sur une
+ *    réponse au texte vide (annexe C, protocole 0.27) : la notation porte alors `sur_refus_api` ou
+ *    `sur_texte_vide`, posé d'après la vue (`normalise.refus_api`, `normalise.texte`), jamais
+ *    d'après la saisie.
  * 3. **Fraîcheur de l'obsolescence**, calculée, jamais saisie, et seulement si le drapeau
  *    `obsolescence` est posé (D17) : `fraicheur.ts:obsolescenceFraiche`, sur la date du changement
  *    de l'item O soumis et la date de gel. Sans item O parmi les items soumis, la date du changement
@@ -53,7 +55,7 @@ import type { CategorieRetenue, Drapeau, Instant, MotifNotation, ObjetNote, Ulid
 import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
 import type { Item } from "../../validation/domaine/types.ts";
-import { citationsDeReference, controlerExtrait, type MotifExtraitInvalide, type TextesDeVerification } from "./extrait.ts";
+import { citationsDeReference, controlerExtrait, reponseAuTexteVide, type MotifExtraitInvalide, type TextesDeVerification } from "./extrait.ts";
 import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "./charge-juge.ts";
 import { fraicheurDesItems } from "./fraicheur.ts";
 import { attributionRelevee, AttributionIncoherente, noterAttribution, type ContexteAttribution, type NoteAttribution } from "./note-attribution.ts";
@@ -74,6 +76,7 @@ export const MOTIFS_HUMAINS = [
   "extrait_invalide",
   "accord_partiel_juges",
   "attribution_indecidable",
+  "juge_defaillant",
   "calibration_jeu_or",
 ] as const satisfies readonly MotifNotation[];
 export type MotifHumain = (typeof MOTIFS_HUMAINS)[number];
@@ -405,7 +408,7 @@ function assembler(saisie: SaisieHumaine, note: NoteSaisie, contexte: ContexteNo
     // D29 (4) : l'humain a vu le contenu de la charge de cette version (D18).
     version_charge: VERSION_CHARGE_JUGE,
     // D33 : le marqueur vient de la réponse (la vue recopie normalise.refus_api), jamais de la saisie.
-    ...(contexte.vue.reponse.refus_api ? { sur_refus_api: true as const } : {}),
+    ...marqueurDeLaReponse(contexte.vue.reponse),
     gabarit: contexte.vue.question.gabarit,
     references_item: contexte.vue.references.map((r) => ({ item_id: r.item_id, item_version: r.item_version, item_empreinte: r.item_empreinte })),
     categorie: note.categorie,
@@ -419,6 +422,16 @@ function assembler(saisie: SaisieHumaine, note: NoteSaisie, contexte: ContexteNo
     date: contexte.date,
     motif_notation: contexte.motif_notation,
   };
+}
+
+/**
+ * D33 et annexe C (protocole 0.27) : le marqueur qui exempte de l'extrait vient de la réponse (la vue
+ * recopie `normalise.refus_api` et `normalise.texte`), jamais de la saisie. Un refus de l'API, au
+ * texte vide lui aussi, porte `sur_refus_api` seul.
+ */
+function marqueurDeLaReponse(reponse: { readonly refus_api: boolean; readonly texte: string }): Pick<NotationIndividuelle, "sur_refus_api" | "sur_texte_vide"> {
+  if (reponse.refus_api) return { sur_refus_api: true };
+  return reponseAuTexteVide(reponse.texte) ? { sur_texte_vide: true } : {};
 }
 
 /**

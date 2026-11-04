@@ -12,7 +12,7 @@ import { PseudonymeVide } from "../../pipeline/notation/notation-humaine.ts";
 import type { NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
-import { inexacte, notationHumaine, notationJuge, notationRegle, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
+import { inexacte, notationHumaine, notationJuge, notationRegle, renvoiDefaillant, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
 
 const TEXTES = { reponse: REPONSE_PROJETEE, citations_reference: ["Nous ne toucherons pas à la taxe foncière."] };
 
@@ -190,6 +190,27 @@ describe("D30 (2) : renvoi d'un juge sur une Q-ATT indécidable", () => {
     expect(tache?.motif_notation).toBe("attribution_indecidable");
     const humain = notationHumaine("a1", "attribution_indecidable", { ...sur(H1), ...qatt });
     expect(tachesDe(construireFile(entree(IDS, [...autres, j2, humain], { renvois })), H1)).toEqual([]);
+  });
+});
+
+describe("§7 (0.27) : renvoi d'un juge défaillant", () => {
+  it("la réponse hors échantillon devient une tâche humaine sous juge_defaillant, puis sort de la file une fois notée", () => {
+    const autres = jugesDAccord(IDS.filter((id) => id !== H1));
+    const j2 = notationJuge("j2", sur(H1));
+    const renvois = [renvoiDefaillant("j1", sur(H1))];
+    const file = construireFile(entree(IDS, [...autres, j2], { renvois }));
+    expect(tachesDe(file, H1)).toEqual([{ reponse_id: H1, motif_notation: "juge_defaillant", places_restantes: 1, deja_notee_par: [] }]);
+    expect(file.comptes.juge_defaillant).toEqual({ taches: 1, places: 1 });
+    const humain = notationHumaine("a1", "juge_defaillant", sur(H1));
+    expect(tachesDe(construireFile(entree(IDS, [...autres, j2, humain], { renvois })), H1)).toEqual([]);
+  });
+
+  it("les deux juges défaillants sur la même réponse : une seule tâche, jamais une attente de juge", () => {
+    const autres = jugesDAccord(IDS.filter((id) => id !== H1));
+    const renvois = [renvoiDefaillant("j1", sur(H1)), renvoiDefaillant("j2", { ...sur(H1), motif: "sortie_refusee" })];
+    const file = construireFile(entree(IDS, autres, { renvois }));
+    expect(tachesDe(file, H1).map((t) => t.motif_notation)).toEqual(["juge_defaillant"]);
+    expect(file.attend_juge.map((a) => a.reponse_id)).not.toContain(H1);
   });
 });
 

@@ -135,6 +135,7 @@ export const MOTIFS_NOTATION = [
   "extrait_invalide",
   "accord_partiel_juges",
   "attribution_indecidable",
+  "juge_defaillant",
   "regle_refus_api",
   "double_notation_comparateur",
   "arbitrage_comparateur",

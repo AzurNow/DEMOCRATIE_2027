@@ -1,0 +1,32 @@
+{
+  "id": "Q695GEG0HGFC9Q19GPBPPHTYS0",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "objet_note": {
+    "type": "reponse",
+    "id": "YPWCRSKQA9C9VVYJ9Z3SFNQX2F"
+  },
+  "notateur": {
+    "type": "juge",
+    "id": "juge-2",
+    "famille_modele": "famille-y",
+    "modele": "famille-y/modele-juge-2",
+    "version_prompt": "prompts/judge-primaire-1.0.0",
+    "a_vu_identite_outil": false
+  },
+  "version_charge": "charge-juge-v3",
+  "gabarit": "Q-ATT",
+  "references_item": [
+    {
+      "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "item_version": 1,
+      "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+    }
+  ],
+  "motif": "erreur_api_persistante",
+  "raison": "l'appel au juge a échoué après ses tentatives.",
+  "noms_cites": [
+    "Prénom A"
+  ],
+  "date": "2026-12-03T11:00:00+01:00"
+}

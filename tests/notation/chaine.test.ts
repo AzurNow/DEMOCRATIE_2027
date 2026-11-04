@@ -22,7 +22,7 @@ import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { tailleEchantillonHumain, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { VERSION_CHARGE_JUGE, type ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
-import type { SortieJuge } from "../../pipeline/notation/juge.ts";
+import { JugeDefaillant, type SortieJuge } from "../../pipeline/notation/juge.ts";
 import { ContrefactuelDejaInscrit } from "../../pipeline/notation/inscription-contrefactuel.ts";
 import {
   environnementSimule,
@@ -661,6 +661,60 @@ describe("12. D19 : un juge dit « soutient » sur un lien que le test HTTP dit 
       for (const l of liensMorts) expect(l).toMatchObject({ verdict_existence: "mort", verdict_soutien: "non_applicable" });
     }
     expect(violations(prepare.repertoire_run)).toEqual([]);
+  });
+});
+
+describe("§5 « Tailles » (§5.64, §5.65 ; conformité 2026-11-03, constat 4) : réponses obtenues inscrites par la chaîne", () => {
+  function reponsesEcrites(repertoire_run: string): readonly { readonly statut_reponse: string; readonly canal: string; readonly normalise?: { readonly refus_api: boolean } }[] {
+    const dossier = dispositionRunNote(repertoire_run).reponses;
+    return readdirSync(dossier).map((f) => JSON.parse(readFileSync(join(dossier, f), "utf8")) as { statut_reponse: string; canal: string; normalise?: { refus_api: boolean } });
+  }
+
+  /** run.json lu brut : `RunLu` (analysis/lecture-run.ts) ne projette pas le bloc `reponses`. */
+  function tailles(repertoire_run: string): { readonly prevues: number; readonly obtenues?: number } {
+    return (JSON.parse(readFileSync(dispositionRunNote(repertoire_run).run_json, "utf8")) as { reponses: { prevues: number; obtenues?: number } }).reponses;
+  }
+
+  it("run.json porte le nombre de réponses obtenues du canal API, refus de l'API compris, à côté des prévues", async () => {
+    const preparation = await preparerNotationSimulee(options(nouvelleSortie()));
+    expect(tailles(preparation.repertoire_run).obtenues).toBeUndefined();
+    await noterRun(preparation.reponses, environnementSimule(preparation.repertoire_run, parametresDeReference()));
+    const obtenues = reponsesEcrites(preparation.repertoire_run).filter((r) => r.canal === "api" && r.statut_reponse === "obtenue");
+    expect(obtenues.some((r) => r.normalise?.refus_api === true)).toBe(true);
+    const { prevues, obtenues: inscrites } = tailles(preparation.repertoire_run);
+    expect(inscrites).toBe(obtenues.length);
+    expect(inscrites).toBeLessThanOrEqual(prevues);
+  });
+
+  it("une relance retrouve le nombre déjà inscrit : run.json n'est pas réécrit", async () => {
+    const preparation = await preparerNotationSimulee(options(nouvelleSortie()));
+    const env = environnementSimule(preparation.repertoire_run, parametresDeReference());
+    await noterRun(preparation.reponses, env);
+    const avant = readFileSync(dispositionRunNote(preparation.repertoire_run).run_json, "utf8");
+    await noterRun(preparation.reponses, environnementSimule(preparation.repertoire_run, parametresDeReference()));
+    expect(readFileSync(dispositionRunNote(preparation.repertoire_run).run_json, "utf8")).toBe(avant);
+  });
+});
+
+describe("§7 (0.27, §7.59 ; conformité 2026-11-03, constat 8) : un juge défaillant ne bloque pas la chaîne", () => {
+  it("un juge qui lève JugeDefaillant sur une réponse : renvoi écrit sous son motif, la réponse attend un humain (juge_defaillant), les autres sont notées", async () => {
+    let cible: string | undefined;
+    const { prepare, resultat } = await noter(nouvelleSortie(), parametresDeReference(), (env) => ({
+      ...env,
+      juges: env.juges.map((juge) => ({
+        identite: juge.identite,
+        noter: async (charge: ChargeJuge) => {
+          cible ??= charge.reponse_id;
+          if (juge.identite.juge_id === "juge-simule-a" && charge.reponse_id === cible) throw new JugeDefaillant("juge-simule-a", "erreur_api_persistante", "trois tentatives sans réponse");
+          return juge.noter(charge);
+        },
+      })),
+    }));
+    if (cible === undefined) throw new Error("aucune charge reçue");
+    const renvois = lireNotationsDuRun(prepare.repertoire_run, resultat.run_id).renvois.filter((r) => r.objet_note.id === cible);
+    expect(renvois).toEqual([expect.objectContaining({ motif: "erreur_api_persistante", notateur: expect.objectContaining({ id: "juge-simule-a" }) })]);
+    expect(resultat.attentes.find((a) => a.reponse_id === cible)?.motifs).toContain("juge_defaillant");
+    expect(lireVerdicts(prepare.repertoire_run, resultat.run_id).length).toBeGreaterThan(0);
   });
 });
 

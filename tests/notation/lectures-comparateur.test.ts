@@ -136,6 +136,19 @@ describe("refus nommés : rien n'est ignoré, aucun juge automatique", () => {
     expect(refus([vue]).motif).toBe("non_aveugle");
   });
 
+  it("§6.42 : une notation sans déclaration d'aveuglement (champ absent) : refusée, non_aveugle — une déclaration absente n'est pas une preuve", () => {
+    const sansDeclaration = double("a1", L1, { notateur: { type: "humain", id: "a1", sensibilite_declaree_famille: "famille-1" } });
+    expect("a_vu_identite_outil" in sansDeclaration.notateur).toBe(false);
+    expect(refus([sansDeclaration]).motif).toBe("non_aveugle");
+    // Seule la seconde porte la déclaration manquante : le refus ne dépend pas de l'ordre.
+    expect(refus([double("a2"), sansDeclaration]).motif).toBe("non_aveugle");
+  });
+
+  it("§6.42 : une déclaration explicite false est admise, la notation compte", () => {
+    const aveugle = double("a1", L1, { notateur: { type: "humain", id: "a1", sensibilite_declaree_famille: "famille-1", a_vu_identite_outil: false } });
+    expect(etat([aveugle])).toEqual({ statut: "a_noter", lecture_id: L1, notations_manquantes: 1 });
+  });
+
   it("deux notations du même annotateur : refusées", () => {
     const bis = { ...double("a1"), id: ulid("bis") };
     expect(refus([double("a1"), bis]).motif).toBe("meme_annotateur");

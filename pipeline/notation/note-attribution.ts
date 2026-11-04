@@ -112,6 +112,18 @@ export class AttributionIncoherente extends Error {
   }
 }
 
+/**
+ * Un contexte de run incohérent (un éliminé aussi interrogé) : un défaut du banc, ni du juge ni de
+ * l'annotateur. Distinct d'`AttributionIncoherente`, que le juge convertit en renvoi `sortie_illisible`
+ * (§7, 0.27) : celui-ci arrête la notation.
+ */
+export class ContexteAttributionIncoherent extends Error {
+  constructor(detail: string) {
+    super(`Contexte d'attribution incohérent : ${detail}`);
+    this.name = "ContexteAttributionIncoherent";
+  }
+}
+
 type Classe = "attendu" | "en_trop" | "sans_reference" | "incertain";
 
 interface Ensembles {
@@ -139,7 +151,7 @@ function verifierCoherence(releve: ReleveAttribution, contexte: ContexteAttribut
     throw new AttributionIncoherente(`non-réponse déclarée, mais ${releve.noms_cites.length} nom(s) cité(s).`);
   }
   const interroge = contexte.elimines.find((id) => contexte.interroges.includes(id));
-  if (interroge !== undefined) throw new AttributionIncoherente(`${interroge} est déclaré éliminé et interrogé au run.`);
+  if (interroge !== undefined) throw new ContexteAttributionIncoherent(`${interroge} est déclaré éliminé et interrogé au run.`);
 }
 
 /**

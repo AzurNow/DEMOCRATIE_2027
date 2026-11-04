@@ -86,6 +86,19 @@ describe("D59 (17) : réponses obtenues après l'interrogation", () => {
     expect(() => reponsesObtenues([hors], [])).toThrow(ReponseHorsPlan);
   });
 
+  it("§5 « Tailles » (0.27) : une saisie du canal application n'est pas comptée, même obtenue, et n'est rapprochée d'aucune requête du plan", () => {
+    const api = reponseApi("outil-alpha", "web_desactivee", "obtenue");
+    const { mode: _sansMode, ...saisie } = reponseApi("outil-alpha", "web_desactivee", "obtenue");
+    const application: Reponse = { ...saisie, canal: "application" };
+    expect(reponsesObtenues([api, application], [requeteDe(api)])).toBe(1);
+    // Seule saisie du run : zéro réponse obtenue, et non une ReponseHorsPlan.
+    expect(reponsesObtenues([application], [])).toBe(0);
+  });
+
+  it("zéro réponse écrite et un plan vide (aucune question tirée) : zéro, inscrit tel quel", () => {
+    expect(reponsesObtenues([], [])).toBe(0);
+  });
+
   it("les réponses d'un autre contexte que run ne comptent pas", () => {
     const run = reponseApi("outil-alpha", "web_desactivee", "obtenue");
     const autre: Reponse = { ...reponseApi("outil-alpha", "web_desactivee", "obtenue"), contexte: "contrefactuel_candidat" };

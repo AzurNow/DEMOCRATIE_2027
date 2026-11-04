@@ -2454,11 +2454,28 @@
       "objet": "renvoi-humain",
       "fichier": "renvoi-humain/invalide-01-hors-attribution.json",
       "attendu": "invalide",
-      "motif": "Renvoi sur une question qui n'est pas d'attribution : hors Q-ATT, le juge rend sa note, il n'y a rien à renvoyer.",
+      "motif": "Renvoi attribution_indecidable sur une question qui n'est pas d'attribution : hors Q-ATT, la règle d'ensembles ne s'applique pas, il n'y a rien d'indécidable à renvoyer sous ce motif. Modifié ouvertement (protocole 0.27, §7) : le schéma admet désormais tout gabarit pour un renvoi de juge défaillant ; seul ce motif reste réservé à la Q-ATT, et l'erreur visée ne change pas.",
       "regle_protocole": "§7 ; décisions D29 (1) et D30 (2) de l'auteur",
       "erreur_visee": {
         "keyword": "const",
         "instance_path": "/gabarit"
+      }
+    },
+    {
+      "objet": "renvoi-humain",
+      "fichier": "renvoi-humain/valide-02-sortie-illisible.json",
+      "attendu": "valide",
+      "motif": "§7 (protocole 0.27, D67) : sur une Q-DIR, la sortie du juge ne se lit pas dans le format de la charge (sans catégorie). La réponse est renvoyée à un humain sous le motif sortie_illisible, avec le détail en raison ; un juge défaillant n'a relevé aucun nom et ne porte ni noms_cites ni bloc d'attribution."
+    },
+    {
+      "objet": "renvoi-humain",
+      "fichier": "renvoi-humain/invalide-02-defaillance-avec-noms-cites.json",
+      "attendu": "invalide",
+      "motif": "Renvoi d'un juge défaillant (erreur_api_persistante) qui porte des noms relevés : un juge dont l'appel a échoué n'a rien relevé, et les noms cités n'appartiennent qu'au renvoi attribution_indecidable.",
+      "regle_protocole": "§7 (protocole 0.27, D67) ; décision D30 (2) de l'auteur",
+      "erreur_visee": {
+        "keyword": "not",
+        "instance_path": ""
       }
     },
     {
@@ -2547,6 +2564,23 @@
       "regle_protocole": "§7, annexe C ; décision D32 de l'auteur",
       "erreur_visee": {
         "keyword": "required",
+        "instance_path": ""
+      }
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/valide-12-juge-texte-vide-sans-extrait.json",
+      "attendu": "valide",
+      "motif": "Copie d'invalide-16 (juge, non-réponse sans extrait) sur une réponse au texte vide, hors refus de l'API : sur_texte_vide posé par le code d'après reponse.normalise.texte. Annexe C (protocole 0.27, D67) : une réponse au texte vide n'a rien à citer, l'extrait n'est pas exigé."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-23-refus-api-et-texte-vide.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-09 (notation par règle d'un refus de l'API) qui porte aussi sur_texte_vide : un refus de l'API, au texte vide lui aussi, porte sur_refus_api seul, jamais les deux marqueurs.",
+      "regle_protocole": "annexe C (protocole 0.27, D67) ; D33",
+      "erreur_visee": {
+        "keyword": "not",
         "instance_path": ""
       }
     },

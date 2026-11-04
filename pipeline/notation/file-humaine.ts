@@ -141,6 +141,8 @@ export function separerCalibration(notations: readonly NotationIndividuelle[]): 
 const MOTIF_HUMAIN_DE_L_ATTENTE: readonly (readonly [MotifAttente, MotifHumain])[] = [
   // D30 (2) : un renvoi de juge prime, comme dans `decision.ts:motifsHumainsAdmis`.
   ["attribution_indecidable", "attribution_indecidable"],
+  // §7 (0.27) : le renvoi d'un juge défaillant, après celui d'une Q-ATT indécidable.
+  ["juge_defaillant", "juge_defaillant"],
   ["extrait_invalide", "extrait_invalide"],
   ["desaccord_juges", "desaccord_juges"],
   ["drapeau_grave", "erreur_grave"],

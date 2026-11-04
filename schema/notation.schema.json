@@ -25,7 +25,12 @@
 
     "sur_refus_api": {
       "const": true,
-      "description": "Décision D33 de l'auteur (2026-10-10) : la notation porte sur un refus de l'API (reponse.normalise.refus_api vrai). Posé par le code d'après la réponse, jamais d'après une saisie (pipeline/notation/regle-refus.ts, pipeline/notation/notation-humaine.ts) ; absent sinon. Exigé de la notation par règle, admis pour un humain, interdit pour un juge. Il exempte de l'extrait justificatif de l'annexe C, et lui seul. pipeline/notation/controle-croise.ts vérifie marqueur ⇔ refus_api."
+      "description": "Décision D33 de l'auteur (2026-10-10) : la notation porte sur un refus de l'API (reponse.normalise.refus_api vrai). Posé par le code d'après la réponse, jamais d'après une saisie (pipeline/notation/regle-refus.ts, pipeline/notation/notation-humaine.ts) ; absent sinon. Exigé de la notation par règle, admis pour un humain, interdit pour un juge. Il exempte de l'extrait justificatif de l'annexe C, comme sur_texte_vide (protocole 0.27), et aucun autre champ. pipeline/notation/controle-croise.ts vérifie marqueur ⇔ refus_api."
+    },
+
+    "sur_texte_vide": {
+      "const": true,
+      "description": "Annexe C (protocole 0.27, D67) : la notation porte sur une réponse au texte vide (reponse.normalise.texte vaut exactement \"\"), hors refus de l'API, qui a son propre marqueur (sur_refus_api). Posé par le code d'après la réponse notée, jamais d'après une saisie (pipeline/notation/juge.ts, pipeline/notation/notation-humaine.ts) ; absent sinon. Il exempte de l'extrait justificatif de l'annexe C : une réponse au texte vide n'a rien à citer. Un extrait, s'il est donné, ne peut venir que de la référence. Interdit avec sur_refus_api et sur une lecture de comparateur. pipeline/notation/extrait.ts:controlerExtrait ne lit pas le marqueur : il exempte d'après le texte lui-même."
     },
 
     "version_charge": {
@@ -238,7 +243,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["provenance", "texte", "verifie_deterministe"],
-      "description": "Annexe C : obligatoire pour toute note autre qu'exacte, sauf sur un refus de l'API (sur_refus_api, D33). L'annexe ne disait pas d'où l'extrait provient ; un juge qui cite un extrait absent de la réponse fabrique sa justification, exactement le défaut qu'on mesure chez les outils.",
+      "description": "Annexe C : obligatoire pour toute note autre qu'exacte, sauf sur un refus de l'API (sur_refus_api, D33) ou sur une réponse au texte vide (sur_texte_vide, protocole 0.27). L'annexe ne disait pas d'où l'extrait provient ; un juge qui cite un extrait absent de la réponse fabrique sa justification, exactement le défaut qu'on mesure chez les outils.",
       "properties": {
         "provenance": { "type": "string", "enum": ["reponse", "reference"] },
         "texte": { "type": "string", "minLength": 1 },
@@ -269,11 +274,12 @@
         "extrait_invalide",
         "accord_partiel_juges",
         "attribution_indecidable",
+        "juge_defaillant",
         "regle_refus_api",
         "double_notation_comparateur",
         "arbitrage_comparateur"
       ],
-      "description": "Pourquoi CE notateur a noté CET objet. double_notation_comparateur et arbitrage_comparateur (protocole 0.24, §6, D59 (15)) : une lecture de comparateur n'est notée par aucun juge automatique ; elle est doublement notée par des humains à l'aveugle (double_notation_comparateur) puis, quand ils divergent, arbitrée par un troisième humain (arbitrage_comparateur), comme une réponse de l'échantillon ; ces deux motifs ne valent que pour elle, et elle n'en admet pas d'autre (pipeline/notation/lectures-comparateur.ts). §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E). extrait_invalide (décision D15 de l'auteur) est l'humain appelé, hors échantillon, parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : « invalide la notation du juge ; la réponse est alors notée par un humain ») ; il est exigé dans ce cas, même si un drapeau grave est aussi posé (pipeline/notation/decision.ts). accord_partiel_juges (décision D15 de l'auteur : « accord partiel → humain ») est l'humain appelé, hors échantillon, parce que les deux juges s'accordent au sens de analysis/note-lue.ts:notationsConcordent mais diffèrent sur un champ porté par la note retenue (motif d'inexactitude, citation d'une source, existence d'un lien) ; il n'est admis que dans ce cas. attribution_indecidable (décision D30 (2) de l'auteur) est l'humain appelé, hors échantillon, parce qu'un juge a renvoyé une question d'attribution qu'aucun texte ne permet de noter (schema/renvoi-humain.schema.json) ; il n'est admis que dans ce cas. regle_refus_api (décision D32 de l'auteur) est le motif de la notation par règle d'un refus de l'API, et de nulle autre."
+      "description": "Pourquoi CE notateur a noté CET objet. double_notation_comparateur et arbitrage_comparateur (protocole 0.24, §6, D59 (15)) : une lecture de comparateur n'est notée par aucun juge automatique ; elle est doublement notée par des humains à l'aveugle (double_notation_comparateur) puis, quand ils divergent, arbitrée par un troisième humain (arbitrage_comparateur), comme une réponse de l'échantillon ; ces deux motifs ne valent que pour elle, et elle n'en admet pas d'autre (pipeline/notation/lectures-comparateur.ts). §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E). extrait_invalide (décision D15 de l'auteur) est l'humain appelé, hors échantillon, parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : « invalide la notation du juge ; la réponse est alors notée par un humain ») ; il est exigé dans ce cas, même si un drapeau grave est aussi posé (pipeline/notation/decision.ts). accord_partiel_juges (décision D15 de l'auteur : « accord partiel → humain ») est l'humain appelé, hors échantillon, parce que les deux juges s'accordent au sens de analysis/note-lue.ts:notationsConcordent mais diffèrent sur un champ porté par la note retenue (motif d'inexactitude, citation d'une source, existence d'un lien) ; il n'est admis que dans ce cas. attribution_indecidable (décision D30 (2) de l'auteur) est l'humain appelé, hors échantillon, parce qu'un juge a renvoyé une question d'attribution qu'aucun texte ne permet de noter (schema/renvoi-humain.schema.json) ; il n'est admis que dans ce cas. juge_defaillant (§7, protocole 0.27, D67) est l'humain appelé, hors échantillon, parce qu'un juge n'a pas pu noter la réponse (erreur persistante de son API, charge qui dépasse sa fenêtre de contexte, sortie refusée ou illisible) et l'a renvoyée (schema/renvoi-humain.schema.json) ; un renvoi attribution_indecidable sur la même réponse prime, comme il prime sur un extrait invalide. regle_refus_api (décision D32 de l'auteur) est le motif de la notation par règle d'un refus de l'API, et de nulle autre."
     }
   },
 
@@ -320,6 +326,11 @@
     {
       "$comment": "D30 (2) : attribution_indecidable est le motif de l'HUMAIN appelé quand un juge renvoie une question d'attribution indécidable. Un juge sous ce motif noterait à la place de l'humain.",
       "if": { "properties": { "motif_notation": { "const": "attribution_indecidable" } }, "required": ["motif_notation"] },
+      "then": { "properties": { "notateur": { "properties": { "type": { "const": "humain" } } } } }
+    },
+    {
+      "$comment": "§7 (protocole 0.27) : juge_defaillant est le motif de l'HUMAIN appelé quand un juge renvoie une réponse qu'il ne peut pas noter. Un juge sous ce motif noterait à la place de l'humain.",
+      "if": { "properties": { "motif_notation": { "const": "juge_defaillant" } }, "required": ["motif_notation"] },
       "then": { "properties": { "notateur": { "properties": { "type": { "const": "humain" } } } } }
     },
     {
@@ -386,13 +397,23 @@
       "else": { "required": ["motif_inexactitude"] }
     },
     {
-      "$comment": "Annexe C : extrait justificatif obligatoire pour toute note autre qu'exacte, de juge comme d'humain. D32 et D33 : seule une notation marquée sur_refus_api en est exemptée, par règle ou humaine (un refus de l'API n'a ni texte ni lien, et sur un item A ou F aucune citation n'est à recopier).",
+      "$comment": "Annexe C : extrait justificatif obligatoire pour toute note autre qu'exacte, de juge comme d'humain, « sauf sur un refus de l'API ou sur une réponse au texte vide, qui n'ont rien à citer » (protocole 0.27, D67). D32 et D33 : une notation marquée sur_refus_api en est exemptée, par règle ou humaine ; une notation marquée sur_texte_vide aussi, de juge ou humaine. Aucune autre.",
       "if": {
         "properties": { "categorie": { "not": { "const": "exacte" } } },
         "required": ["categorie"],
-        "not": { "required": ["sur_refus_api"] }
+        "not": { "anyOf": [{ "required": ["sur_refus_api"] }, { "required": ["sur_texte_vide"] }] }
       },
       "then": { "required": ["extrait_justificatif"] }
+    },
+    {
+      "$comment": "Annexe C : le marqueur sur_texte_vide ne vaut que pour une réponse, et un refus de l'API (texte vide aussi) porte sur_refus_api seul. Un extrait éventuel reste contrôlé par le test verbatim (pipeline/notation/extrait.ts) : un extrait dit tiré d'une réponse vide y échoue, et la notation passe à l'humain (extrait_invalide), comme tout extrait introuvable.",
+      "if": { "required": ["sur_texte_vide"] },
+      "then": {
+        "properties": {
+          "objet_note": { "properties": { "type": { "const": "reponse" } } }
+        },
+        "not": { "required": ["sur_refus_api"] }
+      }
     },
     {
       "$comment": "D33 : la notation par règle porte toujours le marqueur ; un juge jamais (aucun juge ne note un refus, D32). Le marqueur ne porte que sur une réponse de contexte run.",
