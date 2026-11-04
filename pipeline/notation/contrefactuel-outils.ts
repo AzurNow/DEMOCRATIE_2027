@@ -17,12 +17,16 @@
  * incohérence nommée, jamais ignorée. Les deux juges retirés invalident le run (§7) : ce test ne
  * se joue pas, refus nommé.
  *
- * **Sous deux outils** au run, le dérangement n'est pas défini (§7 0.24) : l'appelant rend
- * `ContrefactuelOutilsFauteDOutils`, sans sous-ensemble ni paire, et n'appelle pas ce module.
+ * **Test absent.** Sous deux outils au run, le dérangement n'est pas défini (§7 0.24) ; deux outils
+ * du dérangement du même éditeur rendent le test « absent, avec ce motif, sans bloquer le run »
+ * (§7 0.31, D73 (15)). Dans les deux cas, `derangement-outils.ts:derangementOutilsOuAbsence` rend
+ * `ContrefactuelOutilsAbsent`, sans sous-ensemble ni paire : l'appelant le publie et n'appelle pas
+ * ce module.
  */
 
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { compterChangements, ContrefactuelIncoherent, mentionsResiduellesDes, type ComptesDuJuge, type EntreeContrefactuel, type PaireIncomplete, type TauxDeChangement } from "./contrefactuel.ts";
+import type { AbsenceContrefactuelOutils } from "./derangement-outils.ts";
 import type { RunDeNotation } from "./types.ts";
 
 export type ResultatJugeOutils =
@@ -39,11 +43,8 @@ export type ResultatContrefactuelOutils =
   | (CommunOutils & { readonly statut: "indefini"; readonly motif: "aucune_reponse_eligible" })
   | (CommunOutils & { readonly statut: "termine"; readonly juges: readonly ResultatJugeOutils[] });
 
-/** §7 0.24 : sous deux outils au run, le dérangement, donc le test, n'est pas défini. Jamais 0 %. */
-export interface ContrefactuelOutilsFauteDOutils {
-  readonly statut: "indefini";
-  readonly motif: "moins_de_deux_outils";
-}
+/** §7 0.24 et 0.31 : le test absent, avec son motif (`moins_de_deux_outils`, `outils_du_meme_editeur`). Jamais 0 %. */
+export type ContrefactuelOutilsAbsent = AbsenceContrefactuelOutils;
 
 export function testerContrefactuelOutils(entree: EntreeContrefactuel): ResultatContrefactuelOutils {
   const comptage = compterChangements(entree, jugesMesures(entree.run), "contrefactuel_outil");
