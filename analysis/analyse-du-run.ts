@@ -48,7 +48,7 @@ import { join } from "node:path";
 import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
-import { variabiliteEntreEchantillons, type VariabiliteDuCouple } from "./accord-echantillons.ts";
+import { variabiliteDuRun, type VariabiliteDesEchantillons } from "./accord-echantillons.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "./bootstrap.ts";
 import { correlationsParCouple, type CorrelationCouverture } from "./correlation-couverture.ts";
 import {
@@ -524,12 +524,12 @@ export function sectionRobustesse(contexte: ContexteDuRun, principal: Difference
 
 /**
  * La variabilité entre échantillons (§8, D70 (12)) : un diagnostic par couple comparé, sur le partage
- * du calcul principal. Le plan vient des entrées : il dit quelles paires étaient prévues.
+ * du calcul principal. Le plan vient des entrées : il dit quelles paires étaient prévues, et combien
+ * d'échantillons par question ; à un seul (§12, « 2 → 1 »), la section est absente avec son motif (D73 (6)).
  */
-export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRun): Section<{ readonly couples: readonly VariabiliteDuCouple[] }> {
-  return surCouplesCompares(contexte, () => ({
-    couples: variabiliteEntreEchantillons({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites }),
-  }));
+export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRun): SansObjet | VariabiliteDesEchantillons {
+  if (contexte.couples.compares.length === 0) return sansObjet("aucun_couple_compare");
+  return variabiliteDuRun({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites });
 }
 
 /** Une lecture affichée sans note retenue, ou une note sans lecture affichée du run : rien n'est publié. */
@@ -664,8 +664,11 @@ export function tendanceCalculee(contexte: ContexteDuRun, premier: PremierRun | 
 
 function sectionH5(contexte: ContexteDuRun, calculee: TendanceCalculee | null): object {
   if (calculee === null) return sansObjet("premier_run_absent");
+  // §2 (0.31, D73 (16)) : chaque assistant inclus au premier ou au dernier run est rendu.
+  const outils = { premier: calculee.premier.contexte.outils, dernier: contexte.outils };
+  // §8 (0.31, D73 (17)) : modèle demandé et identifiants renvoyés de chaque outil, aux deux runs.
   const modeles = { premier: calculee.premier.contexte.modeles, dernier: contexte.modeles };
-  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(contexte.outils, calculee.tendance), modeles };
+  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(outils, calculee.tendance), modeles };
 }
 
 /** 8. Les hypothèses lisent les sections déjà calculées, la différence de H3 et la tendance. */

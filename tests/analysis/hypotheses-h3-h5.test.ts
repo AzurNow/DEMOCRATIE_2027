@@ -10,7 +10,15 @@
 import { describe, expect, it } from "vitest";
 import type { DifferenceTaux } from "../../analysis/bootstrap.ts";
 import { cleComparaisonH3, comparerConditions, pairesDeH3, type ComparaisonCondition } from "../../analysis/conditions.ts";
-import { decisionH3, decisionH5, STRATE_H3, ComparaisonsH3Incoherentes, TendanceIncoherente } from "../../analysis/hypotheses.ts";
+import {
+  decisionH3,
+  decisionH5,
+  STRATE_H3,
+  ComparaisonsH3Incoherentes,
+  OutilsAbsents,
+  TendanceIncoherente,
+  type OutilsDeLaTendance,
+} from "../../analysis/hypotheses.ts";
 import { exactitude } from "../../analysis/metriques.ts";
 import type { TendanceDuRun, TendanceOutilEtMode } from "../../analysis/tendance.ts";
 import { taux, type Intervalle95, type Mode, type Registre, type TypeItem } from "../../analysis/types.ts";
@@ -144,9 +152,14 @@ function tendance(par_outil_et_mode: readonly TendanceOutilEtMode[], couples_exc
 
 const ETABLIE_POSITIVE = [0.2, intervalle(0.05, 0.35), "etablie"] as const;
 
+/** Les mêmes assistants inclus au premier et au dernier run. */
+function auxDeuxRuns(outils: readonly string[]): OutilsDeLaTendance {
+  return { premier: outils, dernier: outils };
+}
+
 describe("H5 : tendance de l'exactitude, dernier − premier, établie et positive (D70 pour deux modes)", () => {
   it("est confirmée pour un outil dont les deux modes comparés sont confirmés", () => {
-    const decision = decisionH5(["outil-alpha"], tendance([ligne("outil-alpha", "web_activee", ...ETABLIE_POSITIVE), ligne("outil-alpha", "web_desactivee", ...ETABLIE_POSITIVE)]));
+    const decision = decisionH5(auxDeuxRuns(["outil-alpha"]), tendance([ligne("outil-alpha", "web_activee", ...ETABLIE_POSITIVE), ligne("outil-alpha", "web_desactivee", ...ETABLIE_POSITIVE)]));
     expect(decision.questions_texte_change).toBe(1);
     expect(decision.outils[0]?.verdict).toBe("confirmee");
     expect(decision.outils[0]?.couples.map((c) => [c.cle, c.verdict])).toEqual([
@@ -158,7 +171,7 @@ describe("H5 : tendance de l'exactitude, dernier − premier, établie et positi
 
   it("n'est pas confirmée quand l'un des deux modes n'est pas établi", () => {
     const decision = decisionH5(
-      ["outil-alpha"],
+      auxDeuxRuns(["outil-alpha"]),
       tendance([ligne("outil-alpha", "web_activee", ...ETABLIE_POSITIVE), ligne("outil-alpha", "web_desactivee", 0.1, intervalle(-0.05, 0.25), "non_etablie")]),
     );
     expect(decision.outils[0]?.verdict).toBe("non_confirmee");
@@ -166,30 +179,31 @@ describe("H5 : tendance de l'exactitude, dernier − premier, établie et positi
   });
 
   it("n'est pas confirmée sur une tendance établie mais négative", () => {
-    const decision = decisionH5(["outil-alpha"], tendance([ligne("outil-alpha", "web_activee", -0.2, intervalle(-0.35, -0.05), "etablie")]));
+    const decision = decisionH5(auxDeuxRuns(["outil-alpha"]), tendance([ligne("outil-alpha", "web_activee", -0.2, intervalle(-0.35, -0.05), "etablie")]));
     expect(decision.outils[0]?.verdict).toBe("non_confirmee");
   });
 
   it("est sans objet pour un outil sans couple comparé : exclu de la tendance, ou absent", () => {
     const decision = decisionH5(
-      ["outil-alpha", "outil-beta"],
+      auxDeuxRuns(["outil-alpha", "outil-beta"]),
       tendance([], [{ outil_id: "outil-alpha", mode: "web_activee", incomplet_au_premier: true, incomplet_au_dernier: false }]),
     );
     expect(decision.outils).toEqual([
       {
         outil_id: "outil-alpha",
         verdict: "sans_objet",
+        motif: null,
         couples: [
           { cle: "outil-alpha/web_activee", verdict: "sans_objet", motif: "couple_exclu_de_la_tendance", tendance: null, exclusion: { incomplet_au_premier: true, incomplet_au_dernier: false } },
         ],
       },
-      { outil_id: "outil-beta", verdict: "sans_objet", couples: [] },
+      { outil_id: "outil-beta", verdict: "sans_objet", motif: null, couples: [] },
     ]);
   });
 
   it("D70 : un couple sorti de la tendance n'empêche pas la confirmation par les couples comparés", () => {
     const decision = decisionH5(
-      ["outil-alpha"],
+      auxDeuxRuns(["outil-alpha"]),
       tendance([ligne("outil-alpha", "web_desactivee", ...ETABLIE_POSITIVE)], [{ outil_id: "outil-alpha", mode: "web_activee", incomplet_au_premier: false, incomplet_au_dernier: true }]),
     );
     expect(decision.outils[0]?.verdict).toBe("confirmee");
@@ -200,14 +214,89 @@ describe("H5 : tendance de l'exactitude, dernier − premier, établie et positi
   });
 
   it("publie sans objet, motif tendance_indefinie, un couple sans différence (présent à un seul run)", () => {
-    const decision = decisionH5(["outil-alpha"], tendance([ligne("outil-alpha", "web_activee", null, null, null)]));
+    const decision = decisionH5(auxDeuxRuns(["outil-alpha"]), tendance([ligne("outil-alpha", "web_activee", null, null, null)]));
     expect(decision.outils[0]).toMatchObject({ verdict: "sans_objet", couples: [{ verdict: "sans_objet", motif: "tendance_indefinie" }] });
   });
 
-  it("refuse une ligne de tendance d'un outil que le dernier run ne déclare pas", () => {
-    expect(() => decisionH5(["outil-alpha"], tendance([ligne("outil-gamma", "web_activee", ...ETABLIE_POSITIVE)]))).toThrow(TendanceIncoherente);
+  it("refuse une ligne de tendance d'un outil qu'aucun des deux runs ne déclare", () => {
+    expect(() => decisionH5(auxDeuxRuns(["outil-alpha"]), tendance([ligne("outil-gamma", "web_activee", ...ETABLIE_POSITIVE)]))).toThrow(TendanceIncoherente);
     expect(() =>
-      decisionH5(["outil-alpha"], tendance([], [{ outil_id: "outil-gamma", mode: "web_activee", incomplet_au_premier: true, incomplet_au_dernier: true }])),
+      decisionH5(auxDeuxRuns(["outil-alpha"]), tendance([], [{ outil_id: "outil-gamma", mode: "web_activee", incomplet_au_premier: true, incomplet_au_dernier: true }])),
     ).toThrow(TendanceIncoherente);
+  });
+
+  it("refuse un outil déclaré deux fois au même run, et deux runs sans aucun assistant", () => {
+    expect(() => decisionH5({ premier: ["outil-alpha", "outil-alpha"], dernier: ["outil-alpha"] }, tendance([]))).toThrow(/deux fois/);
+    expect(() => decisionH5({ premier: ["outil-alpha"], dernier: ["outil-alpha", "outil-alpha"] }, tendance([]))).toThrow(/deux fois/);
+    expect(() => decisionH5({ premier: [], dernier: [] }, tendance([]))).toThrow(OutilsAbsents);
+  });
+});
+
+/*
+ * D73 (16), §2 (0.31) : « H5 est rendue pour chaque assistant inclus au premier ou au dernier run ;
+ * un assistant qui manque à l'un des deux runs est publié « sans objet ». »
+ */
+describe("H5 : assistant inclus à un seul des deux runs (D73 (16))", () => {
+  it("inclus aux deux runs : verdict inchangé, motif null", () => {
+    const decision = decisionH5(auxDeuxRuns(["outil-alpha"]), tendance([ligne("outil-alpha", "web_activee", ...ETABLIE_POSITIVE)]));
+    expect(decision.outils).toEqual([expect.objectContaining({ outil_id: "outil-alpha", verdict: "confirmee", motif: null })]);
+  });
+
+  it("inclus au premier run seulement : rendu, sans objet, motif absent_du_dernier_run, ses couples publiés", () => {
+    const decision = decisionH5(
+      { premier: ["outil-alpha", "outil-gamma"], dernier: ["outil-alpha"] },
+      tendance(
+        [ligne("outil-alpha", "web_activee", ...ETABLIE_POSITIVE), ligne("outil-gamma", "web_desactivee", null, null, null)],
+        [{ outil_id: "outil-gamma", mode: "web_activee", incomplet_au_premier: true, incomplet_au_dernier: false }],
+      ),
+    );
+    expect(decision.outils.map((o) => [o.outil_id, o.verdict, o.motif])).toEqual([
+      ["outil-alpha", "confirmee", null],
+      ["outil-gamma", "sans_objet", "absent_du_dernier_run"],
+    ]);
+    expect(decision.outils[1]?.couples.map((c) => [c.cle, c.verdict, c.motif])).toEqual([
+      ["outil-gamma/web_desactivee", "sans_objet", "tendance_indefinie"],
+      ["outil-gamma/web_activee", "sans_objet", "couple_exclu_de_la_tendance"],
+    ]);
+  });
+
+  it("inclus au dernier run seulement : rendu, sans objet, motif absent_du_premier_run", () => {
+    const decision = decisionH5(
+      { premier: ["outil-alpha"], dernier: ["outil-alpha", "outil-delta"] },
+      tendance([ligne("outil-alpha", "web_activee", ...ETABLIE_POSITIVE), ligne("outil-delta", "web_activee", null, null, null)]),
+    );
+    expect(decision.outils.map((o) => [o.outil_id, o.verdict, o.motif])).toEqual([
+      ["outil-alpha", "confirmee", null],
+      ["outil-delta", "sans_objet", "absent_du_premier_run"],
+    ]);
+    expect(decision.outils[1]?.couples.map((c) => [c.cle, c.motif])).toEqual([["outil-delta/web_activee", "tendance_indefinie"]]);
+  });
+
+  it("absent d'un run : sans objet même si une ligne de tendance porte une différence établie et positive", () => {
+    const decision = decisionH5({ premier: ["outil-alpha"], dernier: ["outil-alpha", "outil-delta"] }, tendance([ligne("outil-delta", "web_activee", ...ETABLIE_POSITIVE)]));
+    expect(decision.outils[1]).toMatchObject({ outil_id: "outil-delta", verdict: "sans_objet", motif: "absent_du_premier_run" });
+  });
+
+  it("inclus aux deux runs sans réponse notée à l'un : il ne manque pas, sans objet par ses seuls couples", () => {
+    // Un couple sans réponse obtenue à l'un des runs n'a pas de différence (tendance.ts) ; un outil
+    // sans réponse commune n'a aucune ligne. Ni l'un ni l'autre ne manque au périmètre d'un run.
+    const decision = decisionH5(auxDeuxRuns(["outil-alpha", "outil-beta"]), tendance([ligne("outil-alpha", "web_activee", null, null, null)]));
+    expect(decision.outils).toEqual([
+      expect.objectContaining({ outil_id: "outil-alpha", verdict: "sans_objet", motif: null, couples: [expect.objectContaining({ motif: "tendance_indefinie" })] }),
+      { outil_id: "outil-beta", verdict: "sans_objet", motif: null, couples: [] },
+    ]);
+  });
+
+  it("aucun assistant commun aux deux runs : H5 entière publiée, chaque outil sans objet, aucune erreur", () => {
+    const decision = decisionH5(
+      { premier: ["outil-alpha", "outil-beta"], dernier: ["outil-gamma"] },
+      tendance([ligne("outil-alpha", "web_activee", null, null, null), ligne("outil-gamma", "web_activee", null, null, null)]),
+    );
+    expect(decision.questions_texte_change).toBe(1);
+    expect(decision.outils.map((o) => [o.outil_id, o.verdict, o.motif])).toEqual([
+      ["outil-gamma", "sans_objet", "absent_du_premier_run"],
+      ["outil-alpha", "sans_objet", "absent_du_dernier_run"],
+      ["outil-beta", "sans_objet", "absent_du_dernier_run"],
+    ]);
   });
 });
