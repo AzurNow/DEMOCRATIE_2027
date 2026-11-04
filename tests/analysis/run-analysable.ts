@@ -49,6 +49,11 @@ export interface SpecRun {
   /** Les réponses manquantes : vrai pour une requête du plan sans réponse obtenue. */
   readonly manquante?: (contexte: ContexteReponse) => boolean;
   readonly tronquee?: (contexte: ContexteReponse) => boolean;
+  /**
+   * §6, §8 (D73 (17)) : l'identifiant de modèle renvoyé par l'API pour chaque réponse obtenue,
+   * `null` quand elle n'en renvoie pas. Sans lui, chaque réponse renvoie le modèle demandé au gel.
+   */
+  readonly modele_renvoye?: (contexte: ContexteReponse) => string | null;
   /** Le run lui-même, pour poser deux runs (tendance, H5) ou un autre régime (§3). */
   readonly run?: SpecDuRun;
   /** Le canal application (§6, QR8) ; sans lui, le run n'a aucune réponse de l'application. */
@@ -199,6 +204,7 @@ function volumeDe(spec: SpecRun, items: readonly ItemDuRun[], questions: readonl
         echantillon,
         statut_reponse: manquante ? "manquante" : "obtenue",
         normalise: manquante ? undefined : { texte: "texte", liens: [], troncature: spec.tronquee?.(contexte) === true },
+        metadonnees: manquante ? undefined : { modele_renvoye: modeleRenvoye(spec, contexte) },
       }),
     );
     if (manquante) continue;
@@ -206,6 +212,15 @@ function volumeDe(spec: SpecRun, items: readonly ItemDuRun[], questions: readonl
     noter(spec, contexte, id, rang % 7 === 0, volume);
   }
   return volume;
+}
+
+/** Le modèle demandé au gel de chaque outil des runs en mémoire. */
+export function modeleDemande(outil_id: string): string {
+  return `famille-test/${outil_id}`;
+}
+
+function modeleRenvoye(spec: SpecRun, contexte: ContexteReponse): string | null {
+  return spec.modele_renvoye === undefined ? modeleDemande(contexte.outil_id) : spec.modele_renvoye(contexte);
 }
 
 function candidatDe(c: SpecCandidat): ReturnType<typeof candidat> {
@@ -272,7 +287,7 @@ export function entreesDuRunAnalysable(spec: SpecRun): EntreesDuRun {
       candidats: spec.candidats.map((c) =>
         candidatDe(c),
       ),
-      outils: spec.outils.map((o) => outil({ outil_id: o.outil_id, modes: o.modes, mode_de_tete: o.modes[0] })),
+      outils: spec.outils.map((o) => outil({ outil_id: o.outil_id, modes: o.modes, mode_de_tete: o.modes[0], modele_demande: modeleDemande(o.outil_id) })),
     },
   });
   const leRun: RunAnalyse = {

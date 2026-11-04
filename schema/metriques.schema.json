@@ -215,9 +215,18 @@
       }
     },
     "variabilite_echantillons": {
-      "description": "§8, « Variabilité entre échantillons » (0.28, D70 (12)) : l'accord entre les deux échantillons d'une même question, dans une même formulation et un même mode, lu sur la catégorie primaire de leur note retenue, par couple comparé (analysis/accord-echantillons.ts). Un diagnostic, pas une métrique : ni intervalle, ni qualificatif, ni graine. Un couple « run incomplet » n'y figure pas (seuils de non-publication).",
+      "description": "§8, « Variabilité entre échantillons » (0.28, D70 (12)) : l'accord entre les deux échantillons d'une même question, dans une même formulation et un même mode, lu sur la catégorie primaire de leur note retenue, par couple comparé (analysis/accord-echantillons.ts). Un diagnostic, pas une métrique : ni intervalle, ni qualificatif, ni graine. Un couple « run incomplet » n'y figure pas (seuils de non-publication). Quand le plan d'interrogation ne prévoit qu'un échantillon par question (levier « 2 → 1 » du §12), la section est sans objet, motif un_seul_echantillon_au_plan, propre à cette section (0.31, D73 (6)).",
       "oneOf": [
         { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "motif"],
+          "properties": {
+            "statut": { "const": "sans_objet" },
+            "motif": { "const": "un_seul_echantillon_au_plan" }
+          }
+        },
         {
           "type": "object",
           "additionalProperties": false,
@@ -325,6 +334,29 @@
 
   "$defs": {
     "effectif": { "type": "integer", "minimum": 0 },
+    "modele_d_un_outil": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "modele_demande", "identifiants_renvoyes", "reponses_sans_identifiant"],
+      "description": "§8 (0.31, D73 (17)) : réponses obtenues du canal api et du contexte run, tous modes ensemble ; une réponse manquante ne compte nulle part. Chaque identifiant est publié tel que l'API l'a renvoyé (règle 7), dans l'ordre des unités de code UTF-16.",
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "modele_demande": { "type": "string", "minLength": 1 },
+        "identifiants_renvoyes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["identifiant", "reponses"],
+            "properties": {
+              "identifiant": { "type": "string" },
+              "reponses": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "reponses_sans_identifiant": { "$ref": "#/$defs/effectif" }
+      }
+    },
     "taux_du_comparateur": {
       "type": "object",
       "additionalProperties": false,
@@ -809,21 +841,35 @@
     "h5": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["statut", "premier_run_id", "questions_texte_change", "outils"],
+      "required": ["statut", "premier_run_id", "questions_texte_change", "outils", "modeles"],
       "description": "§2 (0.27, D63) et D70 : par outil, tendance de l'exactitude (dernier run moins premier, §8), confirmée seulement si chaque couple comparé de l'outil l'est ; chaque couple est publié.",
       "properties": {
         "statut": { "const": "calcule" },
         "premier_run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
         "questions_texte_change": { "$ref": "#/$defs/effectif" },
+        "modeles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["premier", "dernier"],
+          "description": "§8 (0.31, D73 (17)) : le modèle de chaque outil à chaque run, publié avec la tendance — le modèle demandé inscrit au gel, les identifiants renvoyés par l'API avec leurs effectifs, les réponses sans identifiant renvoyé comptées à part (analysis/modeles-du-run.ts). Une ligne par assistant inclus au gel du run.",
+          "properties": {
+            "premier": { "type": "array", "items": { "$ref": "#/$defs/modele_d_un_outil" } },
+            "dernier": { "type": "array", "items": { "$ref": "#/$defs/modele_d_un_outil" } }
+          }
+        },
         "outils": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["outil_id", "verdict", "couples"],
+            "required": ["outil_id", "verdict", "motif", "couples"],
+            "description": "§2 (0.31, D73 (16)) : un outil par assistant inclus au premier ou au dernier run ; celui qui manque à l'un des deux est sans objet, avec pour motif le run où il manque.",
+            "if": { "properties": { "motif": { "type": "string" } }, "required": ["motif"] },
+            "then": { "properties": { "verdict": { "const": "sans_objet" } } },
             "properties": {
               "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
               "verdict": { "$ref": "#/$defs/verdict_hypothese" },
+              "motif": { "enum": [null, "absent_du_premier_run", "absent_du_dernier_run"] },
               "couples": {
                 "type": "array",
                 "items": {

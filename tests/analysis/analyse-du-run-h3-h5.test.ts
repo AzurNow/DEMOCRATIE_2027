@@ -23,6 +23,7 @@ interface CoupleH5Json {
 interface OutilH5Json {
   readonly outil_id: string;
   readonly verdict: string;
+  readonly motif: string | null;
   readonly couples: readonly CoupleH5Json[];
 }
 interface CoupleH3Json {
@@ -152,6 +153,30 @@ describe("H5 de bout en bout", () => {
   it("publie le premier run lu et le nombre de questions au texte changé", () => {
     const h5 = hypothese(AVEC_PREMIER, "H5");
     expect(h5).toMatchObject({ statut: "calcule", premier_run_id: PREMIER.run.id, questions_texte_change: 0 });
+  });
+
+  it("D73 (16) : un assistant du premier run sorti du dernier est rendu sans objet, motif absent_du_dernier_run, sans erreur", () => {
+    const sansGamma = entreesDuRunAnalysable({ ...SPEC_REFERENCE, outils: SPEC_REFERENCE.outils.filter((o) => o.outil_id !== "outil-gamma") });
+    const document = analyserRun(sansGamma, PARAMETRES, PREMIER) as Json;
+    expect(() => valider("metriques", document, "assistant sorti du dernier run")).not.toThrow();
+    expect((hypothese(document, "H5")["outils"] as OutilH5Json[]).map((o) => [o.outil_id, o.verdict, o.motif])).toEqual([
+      ["outil-alpha", "confirmee", null],
+      ["outil-beta", outilH5(AVEC_PREMIER, "outil-beta").verdict, null],
+      ["outil-gamma", "sans_objet", "absent_du_dernier_run"],
+    ]);
+    // Ses couples, présents au seul premier run (où ils sont complets), sont publiés sans différence.
+    expect(outilH5(document, "outil-gamma").couples.map((c) => [c.cle, c.verdict, c.motif])).toEqual([
+      ["outil-gamma/web_desactivee", "sans_objet", "tendance_indefinie"],
+      ["outil-gamma/web_activee", "sans_objet", "tendance_indefinie"],
+    ]);
+  });
+
+  it("D73 (16) : un assistant entré au dernier run est rendu sans objet, motif absent_du_premier_run", () => {
+    const premierSansGamma = entreesDuRunAnalysable({ ...SPEC_PREMIER, outils: SPEC_PREMIER.outils.filter((o) => o.outil_id !== "outil-gamma") });
+    const document = analyserRun(DERNIER, PARAMETRES, premierSansGamma) as Json;
+    expect(() => valider("metriques", document, "assistant entré au dernier run")).not.toThrow();
+    expect(outilH5(document, "outil-gamma")).toMatchObject({ verdict: "sans_objet", motif: "absent_du_premier_run" });
+    expect(outilH5(document, "outil-alpha")).toMatchObject({ verdict: "confirmee", motif: null });
   });
 
   it("refuse un premier run qui est le même run, ou qui n'est pas gelé avant le dernier", () => {

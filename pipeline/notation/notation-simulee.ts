@@ -13,8 +13,8 @@
  * 3. **Gel simulé.** `pnpm run:dry` n'écrit que le volume ; la notation lit aussi `run.json`,
  *    `questions.json` et `tirage.json` (réponse attendue et prémisse résolues au gel, que la charge
  *    v3 transmet, D27). Ils sont posés depuis les fixtures, par ouverture exclusive : un fichier déjà
- *    là n'est jamais réécrit, et il doit être celui des fixtures (pour `run.json`, à l'inscription du
- *    test contrefactuel près), sinon `GelDivergent`.
+ *    là n'est jamais réécrit, et il doit être celui des fixtures (pour `run.json`, aux champs écrits
+ *    après le gel près, `pipeline/run/champs-posterieurs-au-gel.ts`), sinon `GelDivergent`.
  * 4. **Lecture.** Le run, les questions, les réponses obtenues du contexte `run`, chaque fichier
  *    validé contre son schéma (`analysis/lecture-run.ts`), et les items épinglés. Les items d'un run
  *    simulé ne sont pas dans `data/` (aucun item fictif n'y entre, règle 3) : ils sont lus dans les
@@ -36,7 +36,6 @@ import { dispositionRunNote, ItemEpingleIntrouvable, lireDossier, lireRunJson, l
 import { estDuRun } from "../../analysis/filtre.ts";
 import type { Instant } from "../../analysis/types.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
-import { canoniser } from "../../validation/domaine/empreinte.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { lancerRunSimule, type ResultatRunSimule } from "../interrogation/run-simule.ts";
 import type { ReponseEcrite, ReponseObtenue } from "../interrogation/types.ts";
@@ -46,7 +45,7 @@ import { noterRun, type EnvironnementChaine, type ReponseANoter, type ResultatCh
 import { resolusAuGel } from "./charge-juge.ts";
 import { fournisseurSimule, type TexteSimule } from "./fournisseur-simule.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
-import { CHAMPS_DU_TEST } from "./inscription-contrefactuel.ts";
+import { memeGel } from "../run/champs-posterieurs-au-gel.ts";
 import { interrogesDuRun, preparerANoter, type GelDeNotation } from "./preparation.ts";
 import { jugesSimules, type BiaisSimule, type JugeSimuleDeclare, type ParametresJugeSimule } from "./juge-simule.ts";
 import type { ExistenceEtablie } from "./vue-annotateur.ts";
@@ -129,7 +128,7 @@ function poserGel(repertoire_run: string, options: OptionsNotationSimulee): void
   poserFichier(join(options.fixtures_interrogation, "questions.json"), disposition.questions, (lu, source) => lu === source);
   // D27 : la charge v3 recopie la réponse attendue et la prémisse que le tirage a résolues au gel.
   poserFichier(join(options.fixtures_notation, "tirage.json"), join(repertoire_run, "tirage.json"), (lu, source) => lu === source);
-  poserFichier(join(options.fixtures_notation, "run.json"), disposition.run_json, (lu, source) => canoniser(formeAuGel(lu)) === canoniser(formeAuGel(source)));
+  poserFichier(join(options.fixtures_notation, "run.json"), disposition.run_json, memeRunAuGel);
 }
 
 function poserFichier(source: string, cible: string, identiques: (lu: string, source: string) => boolean): void {
@@ -141,22 +140,12 @@ function poserFichier(source: string, cible: string, identiques: (lu: string, so
 }
 
 /**
- * `run.json` sans ce que la notation y inscrit : le test contrefactuel, et le nombre de réponses
- * obtenues (§5 « Tailles », inscrit en tête de la notation, `inscription-reponses.ts`).
+ * `run.json` est celui des fixtures hors de tout ce qui s'écrit après le gel (notation, go/no-go,
+ * statut, publication, dépôt, invalidation, contestations postérieures) : la liste vit dans
+ * `pipeline/run/champs-posterieurs-au-gel.ts`, une seule fois.
  */
-function formeAuGel(texte: string): unknown {
-  const { contrefactuel_candidats: _test, taux_echantillon_humain: _taux, juges, reponses, ...reste } = JSON.parse(texte) as Record<string, unknown>;
-  const sansTest = Array.isArray(juges)
-    ? juges.map((juge: Record<string, unknown>) => Object.fromEntries(Object.entries(juge).filter(([cle]) => !(CHAMPS_DU_TEST as readonly string[]).includes(cle))))
-    : juges;
-  return { ...reste, juges: sansTest, reponses: reponsesAuGel(reponses) };
-}
-
-/** Le bloc `reponses` tel que le gel l'écrit : les prévues seules. */
-function reponsesAuGel(reponses: unknown): unknown {
-  if (typeof reponses !== "object" || reponses === null) return reponses;
-  const { obtenues: _obtenues, ...auGel } = reponses as Record<string, unknown>;
-  return auGel;
+function memeRunAuGel(lu: string, source: string): boolean {
+  return memeGel(JSON.parse(lu) as object, JSON.parse(source) as object);
 }
 
 /* ------------------------------------------------------------------ lecture */

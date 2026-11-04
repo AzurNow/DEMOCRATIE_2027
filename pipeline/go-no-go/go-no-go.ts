@@ -55,6 +55,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { tirerEchantillonHumain } from "../notation/echantillons.ts";
 import type { GraineTirage, Symetrie } from "../questions/types.ts";
+import { CHAMPS_DU_GO_NO_GO, partDesChamps, retirerChamps } from "../run/champs-posterieurs-au-gel.ts";
 import { STATUT_INVALIDE, STATUT_PLANIFIE, type StatutRun, type TypeRun } from "../run/types.ts";
 import {
   constatGraineDuTirage,
@@ -258,37 +259,18 @@ function fusionner(brut: Objet, calcul: Calcul): Objet {
   };
 }
 
-/** Ce que la commande écrit dans `run.json`, et rien d'autre : la base de la comparaison au recalcul. */
+/**
+ * Ce que la commande écrit dans `run.json`, et rien d'autre : la base de la comparaison au recalcul.
+ * La liste de ces champs vit avec les autres champs écrits après le gel
+ * (`pipeline/run/champs-posterieurs-au-gel.ts:CHAMPS_DU_GO_NO_GO`).
+ */
 function partEcrite(run: Objet): string {
-  const juges = run["juges"];
-  const outils = outilsDe(run);
-  return canoniser({
-    go_no_go: run["go_no_go"],
-    motif_provisoire: run["motif_provisoire"],
-    indeterminees_echantillon_humain: run["indeterminees_echantillon_humain"],
-    non_classees_echantillon_humain: run["non_classees_echantillon_humain"],
-    renvois_attribution_indecidable: run["renvois_attribution_indecidable"],
-    refus_api_echantillon_humain: run["refus_api_echantillon_humain"],
-    accord_humains_echantillon: run["accord_humains_echantillon"],
-    juges: Array.isArray(juges)
-      ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"], juge["renvois_ecartes_kappa_echantillon"]])
-      : null,
-    outils: outils === null ? null : outils.map((outil) => outil["par_mode"]),
-  });
-}
-
-function partVide(run: Objet): string {
-  const juges = run["juges"];
-  const outils = outilsDe(run);
-  return canoniser({
-    juges: Array.isArray(juges) ? juges.map(() => [undefined, undefined, undefined]) : null,
-    outils: outils === null ? null : outils.map(() => undefined),
-  });
+  return canoniser(partDesChamps(run, CHAMPS_DU_GO_NO_GO));
 }
 
 function issueRun(chemin: string, actuel: Objet, fusionne: Objet): IssueEcriture | null {
   const ecrite = partEcrite(actuel);
-  if (ecrite === partVide(actuel)) return null;
+  if (ecrite === partEcrite(retirerChamps(actuel, CHAMPS_DU_GO_NO_GO))) return null;
   if (ecrite === partEcrite(fusionne)) return "inchange";
   throw new GoNoGoDivergent(chemin, "un go/no-go, un kappa d'échantillon, un accord des humains ou un motif provisoire");
 }
