@@ -12,6 +12,12 @@
  *     --motivation-fichier=<chemin> [--ecrire]
  *   pnpm arbitrer --item=<id> --issue=non_evaluable --arbitre=auteur --arbitre-seul \
  *     --motivation-fichier=<chemin> [--ecrire]
+ *   pnpm arbitrer --item=<id> --issue=rejete --motif-rejet=texte_extrait_errone --arbitre=auteur \
+ *     --motivation-fichier=<chemin> [--ecrire]
+ *
+ * `--motif-rejet` (facultatif, issue « rejete » seulement) : §4, protocole 0.27, « quand le rejet est
+ * tranché par l'arbitre, sa décision porte le motif comme celle d'un annotateur ». Sous
+ * `texte_extrait_errone`, `pnpm promote` renvoie les sources de contenu de l'item à la réextraction.
  *
  * L'arbitre choisit un contenu proposé (`original`, `correction:<annotateur>`,
  * `paraphrase:<annotateur>`) et n'en rédige aucun ; la motivation, elle, est rédigée par lui, dans
@@ -34,7 +40,14 @@ import {
 } from "../validation/domaine/arbitrage.ts";
 import { ancienneteEnJours } from "../validation/domaine/corrections-mesure.ts";
 import type { IssueArbitrage } from "../validation/domaine/promotion.ts";
-import { ARBITRES, ISSUES_ARBITRAGE, type Arbitre, type IssueDecisionArbitrage } from "../validation/domaine/types.ts";
+import {
+  ARBITRES,
+  ISSUES_ARBITRAGE,
+  MOTIFS_REJET,
+  type Arbitre,
+  type IssueDecisionArbitrage,
+  type MotifRejet,
+} from "../validation/domaine/types.ts";
 import { ulid } from "../validation/domaine/ulid.ts";
 import { ajouterDecisionArbitrage, cheminRegistreArbitrage, lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { lireItemsData } from "../validation/io/data-items.ts";
@@ -59,6 +72,7 @@ const OPTIONS: readonly string[] = [
   "arbitre",
   "arbitre-seul",
   "motivation-fichier",
+  "motif-rejet",
 ];
 
 interface Options {
@@ -155,6 +169,13 @@ function contenuEventuel(table: Arguments, issue: IssueDecisionArbitrage): { rea
   return { contenu_retenu: obligatoire(table, "retenu", "vérifier un item, c'est retenir un contenu proposé (§4).") };
 }
 
+/** Absent de la ligne de commande, absent de la décision : jamais remplacé par une valeur. */
+function motifRejetEventuel(table: Arguments): { readonly motif_rejet?: MotifRejet } {
+  const valeur = table.get("motif-rejet");
+  if (valeur === undefined) return {};
+  return { motif_rejet: dansListe(valeur, MOTIFS_REJET, "motif-rejet") };
+}
+
 function construire(table: Arguments, verdict: Verdict, maintenant: string): DecisionArbitrage {
   const issue = dansListe(obligatoire(table, "issue", "l'issue de l'arbitrage n'est jamais implicite."), ISSUES_ARBITRAGE, "issue");
   const arbitre: Arbitre = dansListe(obligatoire(table, "arbitre", "« auteur » ou « panel »."), ARBITRES, "arbitre");
@@ -167,6 +188,7 @@ function construire(table: Arguments, verdict: Verdict, maintenant: string): Dec
     motif: (verdict.issue as IssueArbitrage).motif,
     issue,
     ...contenuEventuel(table, issue),
+    ...motifRejetEventuel(table),
     arbitre,
     arbitre_seul: drapeau(table, "arbitre-seul"),
     motivation: lireTexteAuteur(obligatoire(table, "motivation-fichier", "§4 : la motivation est publiée."), "motivation"),

@@ -17,7 +17,7 @@ import type { DecisionCorrectionMesure } from "../validation/domaine/corrections
 import { evaluerPromotion, type Dossier, type Issue } from "../validation/domaine/promotion.ts";
 import type { Correction, EntreeDecision, Item } from "../validation/domaine/types.ts";
 import { valider } from "../outils/schemas/valider.ts";
-import { decision, itemA, itemP, mesure, OPTIONS_PROMOTION } from "./aides/fabriques.ts";
+import { decision, itemA, itemF, itemP, mesure, OPTIONS_PROMOTION } from "./aides/fabriques.ts";
 
 function dossier(item: Item, decisions: readonly EntreeDecision[], surcharges: Partial<Dossier> = {}): Dossier {
   return {
@@ -318,6 +318,64 @@ describe("item A en désaccord, absence confirmée par les deux", () => {
   it("vérifié par arbitrage : la confirmation initiale est inscrite", () => {
     const issue = evaluer(cas, [decisionArbitrage(cas, {})]);
     expect(issue.sort === "promouvoir" && issue.item.absence?.confirmation_initiale?.annotateurs).toEqual(["a1", "a2"]);
+  });
+});
+
+/* -------------------------------------------------------------------- item F */
+
+describe("item F sans confirmation de fictivité (§4, conformité 2026-11-03 n° 2)", () => {
+  const item = itemF();
+  const fictif = { fictivite_verifiee: true, plausibilite: true };
+  const cas = dossier(item, [
+    decision({ annotateur_id: "a1", item, decision: "accepter", questions_specifiques: fictif }),
+    decision({ annotateur_id: "a2", item, decision: "accepter", questions_specifiques: { ...fictif, fictivite_verifiee: false } }),
+  ]);
+
+  it("le motif est « confirmation_fictivite_manquante »", () => {
+    const issue = evaluer(cas, []);
+    expect(issue.sort === "arbitrage" && issue.motif).toBe("confirmation_fictivite_manquante");
+  });
+
+  it("l'arbitre ne peut pas le vérifier : deux annotateurs doivent confirmer (§4)", () => {
+    const issue = evaluer(cas, [decisionArbitrage(cas, {})]);
+    expect(motifsInapplicables(issue).join()).toMatch(/confirmé la fictivité/);
+  });
+
+  it("il peut le rejeter", () => {
+    const issue = evaluer(cas, [sansContenu(decisionArbitrage(cas, { issue: "rejete" }))]);
+    expect(issue.sort === "promouvoir" && issue.statut).toBe("rejete");
+  });
+
+  it("il ne peut pas le rejeter sous le motif « texte extrait erroné » : un item F n'a aucune source de contenu", () => {
+    const issue = evaluer(cas, [sansContenu(decisionArbitrage(cas, { issue: "rejete", motif_rejet: "texte_extrait_errone" }))]);
+    expect(motifsInapplicables(issue).join()).toMatch(/aucune source de contenu/);
+  });
+});
+
+/* ---------------------------------------------- motif de rejet de l'arbitre (0.27) */
+
+describe("motif de rejet porté par l'arbitre (§4, protocole 0.27)", () => {
+  const item = itemP();
+  const cas = dossier(item, [
+    decision({ annotateur_id: "a1", item, decision: "accepter" }),
+    decision({ annotateur_id: "a2", item, decision: "rejeter" }),
+  ]);
+
+  it("un rejet sous le motif le recopie dans le bloc arbitrage de l'item promu", () => {
+    const issue = evaluer(cas, [sansContenu(decisionArbitrage(cas, { issue: "rejete", motif_rejet: "texte_extrait_errone" }))]);
+    if (issue.sort !== "promouvoir") throw new Error(`Attendu : promouvoir, obtenu ${issue.sort}`);
+    expect(issue.item.arbitrage?.motif_rejet).toBe("texte_extrait_errone");
+    expect(() => valider("item", issue.item, "item arbitré")).not.toThrow();
+  });
+
+  it("un rejet sans motif n'en écrit aucun : le champ est absent, jamais une valeur", () => {
+    const issue = evaluer(cas, [sansContenu(decisionArbitrage(cas, { issue: "rejete" }))]);
+    expect(issue.sort === "promouvoir" && issue.item.arbitrage !== undefined && "motif_rejet" in issue.item.arbitrage).toBe(false);
+  });
+
+  it("un motif de rejet sur une autre issue ne s'applique pas", () => {
+    const issue = evaluer(cas, [sansContenu(decisionArbitrage(cas, { issue: "non_evaluable", motif_rejet: "texte_extrait_errone" }))]);
+    expect(motifsInapplicables(issue).join()).toMatch(/ne se porte que sur l'issue « rejete »/);
   });
 });
 
