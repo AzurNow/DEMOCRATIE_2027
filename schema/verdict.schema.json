@@ -118,9 +118,10 @@
         "revue_erreur_grave",
         "arbitrage_panel",
         "juge_unique_apres_retrait",
-        "regle_refus_api"
+        "regle_refus_api",
+        "lecture_comparateur_humaine"
       ],
-      "description": "§7 : accord des deux juges ⇒ note retenue ; désaccord ⇒ notation humaine qui tranche. juge_unique_apres_retrait couvre le cas du §7 où un juge dépasse 3 % de changement au test contrefactuel et est retiré du run. regle_refus_api (décision D32 de l'auteur) : hors échantillon humain, un refus de l'API reçoit la note que D12 fixe d'avance, non-réponse, inscrite par le code dans une notation par règle (notation.schema.json, notateur.type regle), sa seule source ; aucun juge n'est appelé."
+      "description": "§7 : accord des deux juges ⇒ note retenue ; désaccord ⇒ notation humaine qui tranche. juge_unique_apres_retrait couvre le cas du §7 où un juge dépasse 3 % de changement au test contrefactuel et est retiré du run. regle_refus_api (décision D32 de l'auteur) : hors échantillon humain, un refus de l'API reçoit la note que D12 fixe d'avance, non-réponse, inscrite par le code dans une notation par règle (notation.schema.json, notateur.type regle), sa seule source ; aucun juge n'est appelé. lecture_comparateur_humaine (§6, protocole 0.31, D73 (13)) : la note d'une lecture de comparateur, résolue par ses seules notations humaines (deux humains à l'aveugle, un troisième s'ils divergent sur la note ou sur le motif), hors de l'échantillon humain des réponses ; mode de toute lecture et des seules lectures."
     },
 
     "desaccord_juges": {
@@ -171,7 +172,7 @@
         "properties": {
           "erreur_grave": { "const": true },
           "mode_resolution": {
-            "enum": ["tranche_humain", "echantillon_humain_10", "revue_erreur_grave", "arbitrage_panel"]
+            "enum": ["tranche_humain", "echantillon_humain_10", "revue_erreur_grave", "arbitrage_panel", "lecture_comparateur_humaine"]
           }
         },
         "required": ["revue_humaine"]
@@ -204,7 +205,7 @@
       "then": {
         "properties": {
           "mode_resolution": {
-            "enum": ["tranche_humain", "echantillon_humain_10", "revue_erreur_grave", "arbitrage_panel"]
+            "enum": ["tranche_humain", "echantillon_humain_10", "revue_erreur_grave", "arbitrage_panel", "lecture_comparateur_humaine"]
           }
         }
       }
@@ -232,6 +233,25 @@
           "erreur_grave": { "const": false }
         },
         "not": { "required": ["revue_humaine"] }
+      }
+    },
+    {
+      "$comment": "§6 (0.31, D73 (13)) : le verdict d'une lecture de comparateur porte lecture_comparateur_humaine, et ce mode n'est que celui d'une lecture.",
+      "if": { "properties": { "objet_note": { "properties": { "type": { "const": "lecture_comparateur" } } } }, "required": ["objet_note"] },
+      "then": { "properties": { "mode_resolution": { "const": "lecture_comparateur_humaine" } } },
+      "else": { "properties": { "mode_resolution": { "not": { "const": "lecture_comparateur_humaine" } } } }
+    },
+    {
+      "$comment": "§6 (0.31, D73 (13)) : une lecture n'appartient pas à l'échantillon humain des réponses ; aucun juge ne la note, donc aucun désaccord de juges ; deux humains au moins l'ont notée, et leur revue est consignée.",
+      "if": { "properties": { "mode_resolution": { "const": "lecture_comparateur_humaine" } }, "required": ["mode_resolution"] },
+      "then": {
+        "properties": {
+          "dans_echantillon_humain": { "const": false },
+          "desaccord_juges": { "const": false },
+          "notations_sources": { "minItems": 2 },
+          "revue_humaine": { "properties": { "effectuee": { "const": true } } }
+        },
+        "required": ["revue_humaine"]
       }
     },
     {

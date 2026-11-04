@@ -3619,6 +3619,23 @@
       }
     },
     {
+      "objet": "metriques",
+      "fichier": "metriques/valide-05-variabilite-un-seul-echantillon-au-plan.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-02 dont la variabilité entre échantillons est sans objet, motif un_seul_echantillon_au_plan : le plan d'interrogation ne prévoit qu'un échantillon par question, le levier « 2 → 1 » du §12 ayant été appliqué ; la variabilité est publiée absente, avec ce motif, jamais une liste de couples aux paires toutes écartées (analysis/accord-echantillons.ts:variabiliteDuRun)."
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-11-motif-un-seul-echantillon-hors-variabilite.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-05 dont la section des taux est sans objet sous le motif un_seul_echantillon_au_plan : ce motif est propre à la variabilité entre échantillons ; un plan à un échantillon par question laisse les taux calculés (§8, §12), et aucune autre section ne s'en dit sans objet.",
+      "regle_protocole": "§8, variabilité entre échantillons, et §12, levier « 2 → 1 » (0.31, D73 (6))",
+      "erreur_visee": {
+        "keyword": "oneOf",
+        "instance_path": "/taux"
+      }
+    },
+    {
       "objet": "tirage",
       "fichier": "tirage/invalide-12-attribution-sans-references.json",
       "attendu": "invalide",
@@ -3662,6 +3679,23 @@
       "fichier": "verdict/valide-05-non-classee-accord-des-juges.json",
       "attendu": "valide",
       "motif": "Copie de valide-01 dont la note retenue, sur accord des deux juges, est « non classée, référence incomplète » (D64, protocole 0.27) : sans drapeau ni motif d'inexactitude, hors erreur grave, hors du dénominateur de l'exactitude (analysis/metriques.ts)."
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/valide-06-lecture-comparateur-humaine.json",
+      "attendu": "valide",
+      "motif": "Verdict d'une lecture de comparateur (lecture-comparateur/valide-01) : deux humains à l'aveugle s'accordent, aucun juge. §6 (0.31, D73 (13)) : mode lecture_comparateur_humaine, hors de l'échantillon humain des réponses, sans désaccord de juges, revue humaine consignée."
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/invalide-10-lecture-dans-echantillon.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-06 marquée dans l'échantillon humain. §6 (0.31, D73 (13)) : une lecture n'appartient pas à l'échantillon humain des réponses ; la compter dedans fausserait l'accord juges-humains et le recalcul (a) du §8.",
+      "regle_protocole": "§6, lectures de comparateur ; décision D73 (13) de l'auteur",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/dans_echantillon_humain"
+      }
     },
     {
       "objet": "run",

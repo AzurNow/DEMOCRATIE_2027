@@ -4,7 +4,8 @@
  * (absent : écrit ; identique : rien ; différent : refus, code 2). Lancements réels de la commande.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { analyserRun, cheminMetriques, empreinteDuRun, lireEntreesDuRun } from "../../analysis/analyse-du-run.ts";
@@ -64,11 +65,11 @@ describe("pnpm analyze sur un run lu sur disque", () => {
 
   it("réécriture identique : la commande ne réécrit rien et le dit (code 0)", () => {
     const chemin = cheminMetriques(fictif.repertoire_run);
-    const premier = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`]);
+    const premier = executerOutil("analyze.ts", [fictif.repertoire_run]);
     expect(premier.status).toBe(0);
     expect(premier.sortie).toContain("écrit");
     const octets = readFileSync(chemin, "utf8");
-    const second = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`]);
+    const second = executerOutil("analyze.ts", [fictif.repertoire_run]);
     expect(second.status).toBe(0);
     expect(second.sortie).toContain("inchangé");
     expect(readFileSync(chemin, "utf8")).toBe(octets);
@@ -78,23 +79,46 @@ describe("pnpm analyze sur un run lu sur disque", () => {
     const chemin = cheminMetriques(fictif.repertoire_run);
     const altere = readFileSync(chemin, "utf8").replace('"permutations": 10000', '"permutations": 9999');
     writeFileSync(chemin, altere, "utf8");
-    const resultat = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`]);
+    const resultat = executerOutil("analyze.ts", [fictif.repertoire_run]);
     expect(resultat.status).toBe(2);
     expect(resultat.erreur).toContain("MetriquesDivergentes");
     expect(readFileSync(chemin, "utf8")).toBe(altere);
   });
 
-  it("--items absent : refus, code 2, rien n'est écrit", () => {
-    const resultat = executerOutil("analyze.ts", [fictif.repertoire_run]);
-    expect(resultat.status).toBe(2);
-    expect(resultat.erreur).toContain("--items est obligatoire");
+  it("--items n'existe plus : vers un répertoire vide ou vers le data/items d'un autre dépôt, refus, code 2, rien n'est écrit", () => {
+    const vide = mkdtempSync(join(tmpdir(), "banc-analyze-items-vide-"));
+    const autre = poserRunNote();
+    try {
+      for (const items of [vide, autre.items, fictif.items]) {
+        const resultat = executerOutil("analyze.ts", [autre.repertoire_run, `--items=${items}`]);
+        expect(resultat.status).toBe(2);
+        expect(resultat.erreur).toContain("OptionsInconnues");
+        expect(existsSync(cheminMetriques(autre.repertoire_run))).toBe(false);
+      }
+    } finally {
+      rmSync(vide, { recursive: true, force: true });
+      autre.nettoyer();
+    }
+  });
+
+  it("data/items absent du dépôt du run : refus ItemsDuDepotAbsents, code 2, rien n'est écrit", () => {
+    const sansItems = poserRunNote();
+    try {
+      rmSync(sansItems.items, { recursive: true, force: true });
+      const resultat = executerOutil("analyze.ts", [sansItems.repertoire_run]);
+      expect(resultat.status).toBe(2);
+      expect(resultat.erreur).toContain("ItemsDuDepotAbsents");
+      expect(existsSync(cheminMetriques(sansItems.repertoire_run))).toBe(false);
+    } finally {
+      sansItems.nettoyer();
+    }
   });
 
   it("--premier sans répertoire, ou désignant le run analysé lui-même : refus, code 2", () => {
-    const sansValeur = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`, "--premier"]);
+    const sansValeur = executerOutil("analyze.ts", [fictif.repertoire_run, "--premier"]);
     expect(sansValeur.status).toBe(2);
     expect(sansValeur.erreur).toContain("--premier attend un répertoire de run");
-    const lui = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`, `--premier=${fictif.repertoire_run}`]);
+    const lui = executerOutil("analyze.ts", [fictif.repertoire_run, `--premier=${fictif.repertoire_run}`]);
     expect(lui.status).toBe(2);
     expect(lui.erreur).toContain("PremierRunInvalide");
   });
@@ -117,7 +141,7 @@ describe("pnpm analyze et les contestations postérieures (D73 (4))", () => {
   afterAll(() => conteste.nettoyer());
 
   it("refuse un run où une contestation postérieure connue manque (code 2, rien n'est écrit), accepte quand tout est inscrit", () => {
-    const refus = executerOutil("analyze.ts", [conteste.repertoire_run, `--items=${conteste.items}`]);
+    const refus = executerOutil("analyze.ts", [conteste.repertoire_run]);
     expect(refus.status).toBe(2);
     expect(refus.erreur).toContain("ContestationsPosterieuresNonInscrites");
     expect(refus.erreur).toContain("pnpm contestations-posterieures");
@@ -125,7 +149,7 @@ describe("pnpm analyze et les contestations postérieures (D73 (4))", () => {
 
     const ajouts = synchroniserContestationsPosterieures(join(conteste.bac, "runs"), conteste.items, lireItemsData(conteste.items).values(), true);
     expect(ajouts).toHaveLength(1);
-    const accepte = executerOutil("analyze.ts", [conteste.repertoire_run, `--items=${conteste.items}`]);
+    const accepte = executerOutil("analyze.ts", [conteste.repertoire_run]);
     expect(accepte.status, accepte.erreur).toBe(0);
     expect(existsSync(cheminMetriques(conteste.repertoire_run))).toBe(true);
   });

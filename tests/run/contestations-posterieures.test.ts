@@ -6,7 +6,7 @@
  * items de fixture sont rangés dans un dépôt Git temporaire, jamais dans celui du projet.
  */
 
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -19,7 +19,10 @@ import {
   contestationsAAjouter,
   contestationsAuCommit,
   contestationsRecues,
+  DepotDuRunIntrouvable,
   exigerContestationsInscrites,
+  ItemsDuDepotAbsents,
+  repertoireDesItemsDuRun,
   synchroniserContestationsPosterieures,
   type RunEtSesContestations,
 } from "../../pipeline/run/contestations-posterieures.ts";
@@ -300,15 +303,66 @@ describe("synchroniserContestationsPosterieures (D73 (2) et (4))", () => {
 describe("exigerContestationsInscrites (D73 (4), avant pnpm analyze)", () => {
   it("refuse un run où manque une contestation postérieure connue, accepte quand tout est inscrit", () => {
     const b = bac();
-    expect(() => exigerContestationsInscrites(b.troisieme, b.data, items(b))).toThrow(ContestationsPosterieuresNonInscrites);
+    expect(() => exigerContestationsInscrites(b.troisieme)).toThrow(ContestationsPosterieuresNonInscrites);
     synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
-    expect(() => exigerContestationsInscrites(b.troisieme, b.data, items(b))).not.toThrow();
-    expect(() => exigerContestationsInscrites(b.premier, b.data, items(b))).not.toThrow();
+    expect(() => exigerContestationsInscrites(b.troisieme)).not.toThrow();
+    expect(() => exigerContestationsInscrites(b.premier)).not.toThrow();
+  });
+
+  it("connue, absente du commit gelé et de run.json ⇒ refus qui la nomme ; portée par le commit gelé, absente de run.json ⇒ jamais exigée (D73 (2))", () => {
+    const b = bac();
+    // Le premier run, au commit 1, porte PRESENTE mais ni C43, ni C42, ni C44 : refus, qui les nomme.
+    expect(() => exigerContestationsInscrites(b.premier)).toThrow(
+      expect.objectContaining({ name: "ContestationsPosterieuresNonInscrites", manquantes: [entree(43, C43, 41), entree(42, C42), entree(44, C44)] }),
+    );
+    // C41, que le commit 1 porte, n'entre pas dans run.json et n'est jamais exigée.
+    synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
+    expect(JSON.stringify(listeDe(b.premier))).not.toContain("01JBANCESSA1C0NTESTAT10N41");
+    expect(() => exigerContestationsInscrites(b.premier)).not.toThrow();
   });
 
   it("run invalide : rien n'est exigé", () => {
     const b = bac();
-    expect(() => exigerContestationsInscrites(b.quatrieme, b.data, items(b))).not.toThrow();
+    expect(() => exigerContestationsInscrites(b.quatrieme)).not.toThrow();
+  });
+
+  it("les items se lisent dans le data/items du dépôt du run : un autre dépôt sans contestation n'a aucun moyen de rendre le contrôle muet", () => {
+    const b = bac();
+    const autre = racineTemporaire();
+    poserItem(join(autre, "data", "items"), itemPromu({ id: "01JBANCESSA1000000000TEM41" }));
+    initialiserDepot(autre);
+    expect(() => exigerContestationsInscrites(b.troisieme)).toThrow(ContestationsPosterieuresNonInscrites);
+    expect(realpathSync.native(repertoireDesItemsDuRun(b.troisieme))).toBe(realpathSync.native(b.data));
+  });
+});
+
+describe("repertoireDesItemsDuRun : le data/items du dépôt qui porte le run", () => {
+  it("rend le data/items de la racine du dépôt Git qui porte le run", () => {
+    const b = bac();
+    for (const repertoire of [b.premier, b.second, b.troisieme]) {
+      expect(realpathSync.native(repertoireDesItemsDuRun(repertoire))).toBe(realpathSync.native(b.data));
+    }
+  });
+
+  it("run hors de tout dépôt Git : refus DepotDuRunIntrouvable", () => {
+    const hors = racineTemporaire();
+    const repertoire = poser(join(hors, "runs"), "2026-12-01", exemple());
+    expect(() => repertoireDesItemsDuRun(repertoire)).toThrow(DepotDuRunIntrouvable);
+    expect(() => exigerContestationsInscrites(repertoire)).toThrow(DepotDuRunIntrouvable);
+  });
+
+  it("data/items absent du dépôt (aucune donnée validée) : refus ItemsDuDepotAbsents, jamais « zéro contestation »", () => {
+    const b = bac();
+    rmSync(join(b.racine, "data"), { recursive: true, force: true });
+    expect(() => repertoireDesItemsDuRun(b.troisieme)).toThrow(ItemsDuDepotAbsents);
+    expect(() => exigerContestationsInscrites(b.troisieme)).toThrow(ItemsDuDepotAbsents);
+  });
+
+  it("data/items présent mais sans aucun item : refus ItemsDuDepotAbsents", () => {
+    const b = bac();
+    rmSync(b.data, { recursive: true, force: true });
+    mkdirSync(b.data, { recursive: true });
+    expect(() => repertoireDesItemsDuRun(b.troisieme)).toThrow(ItemsDuDepotAbsents);
   });
 });
 

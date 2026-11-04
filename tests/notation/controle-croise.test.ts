@@ -5,10 +5,11 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { ulid } from "../analysis/fabriques.ts";
+import { lectureComparateur, ulid } from "../analysis/fabriques.ts";
 import { controleCroise, type EntreeControleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { decider } from "../../pipeline/notation/decision.ts";
 import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
+import { MOTIF_DOUBLE_NOTATION_COMPARATEUR, verdictDeLecture } from "../../pipeline/notation/lectures-comparateur.ts";
 import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { inexacte, notationHumaine, notationJuge, notationRegle, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
@@ -260,5 +261,32 @@ describe("D32 : verdict d'un refus de l'API noté par règle", () => {
     const avecRegle = avecRefusParRegle(propre, i);
     const entree = avecVerdict(avecRegle, i, (v) => ({ ...v, mode_resolution: "juge_unique_apres_retrait" }));
     expect(codes(entree)).toEqual(expect.arrayContaining(["notation_par_regle_incoherente"]));
+  });
+});
+
+describe("D73 (13) : verdict d'une lecture de comparateur", () => {
+  const LECTURE = ulid("lecture-croise");
+  const surLecture = { objet_note: { type: "lecture_comparateur" as const, id: LECTURE } };
+
+  /** Notation humaine de lecture, sans version de charge (D30 (4)). */
+  function lecture(annotateur: string): NotationIndividuelle {
+    const { version_charge: _sans, ...humaine } = notationHumaine(annotateur, MOTIF_DOUBLE_NOTATION_COMPARATEUR, surLecture);
+    return valider<NotationIndividuelle>("notation", humaine, `notation de lecture ${annotateur}`);
+  }
+
+  function avecLecture(propre: EntreeControleCroise, notations: readonly NotationIndividuelle[]): EntreeControleCroise {
+    const lectures = [lectureComparateur({ id: LECTURE, run_id: propre.run.id })];
+    const verdict = valider<VerdictProduit>("verdict", verdictDeLecture(propre.run.id, lectures, notations, LECTURE, { verdict_id: ulid("verdict-lecture-croise"), date: "2026-12-08T12:00:00+01:00" }), "verdict de lecture");
+    return { ...propre, notations: [...propre.notations, ...notations], verdicts: [...propre.verdicts, verdict] };
+  }
+
+  it("un verdict de lecture propre (deux humains d'accord) : aucune violation, ni d'appartenance à l'échantillon", () => {
+    expect(codes(avecLecture(runPropre(runDeNotation()), [lecture("a1"), lecture("a2")]))).toEqual([]);
+  });
+
+  it("un verdict de lecture dont les deux sources sont d'un seul humain : notation_humaine_absente", () => {
+    const entree = avecLecture(runPropre(runDeNotation()), [lecture("a1"), lecture("a2")]);
+    const notations = entree.notations.map((n) => (n.notateur.id === "a2" && n.objet_note.id === LECTURE ? { ...n, notateur: { ...n.notateur, id: "a1" } } : n));
+    expect(codes({ ...entree, notations })).toEqual(["notation_humaine_absente"]);
   });
 });

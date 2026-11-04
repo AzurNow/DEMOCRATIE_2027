@@ -72,6 +72,8 @@ const HUMAINS_EXIGES: ReadonlyMap<ModeResolution, number> = new Map<ModeResoluti
   ["revue_erreur_grave", 1],
   ["arbitrage_panel", 1],
   ["echantillon_humain_10", 2],
+  // §6 (0.31, D73 (13)) : une lecture est doublement notée par des humains, aucun juge.
+  ["lecture_comparateur_humaine", 2],
 ]);
 
 /** Modes où la note retenue vient des seuls juges. */

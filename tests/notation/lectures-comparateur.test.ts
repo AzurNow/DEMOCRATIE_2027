@@ -8,17 +8,19 @@
 import { describe, expect, it } from "vitest";
 import {
   etatsDesLectures,
+  LectureSansVerdict,
   lecturesANoter,
   MOTIF_ARBITRAGE_COMPARATEUR,
   MOTIF_DOUBLE_NOTATION_COMPARATEUR,
   NotationLectureRefusee,
+  verdictDeLecture,
   type EtatLecture,
 } from "../../pipeline/notation/lectures-comparateur.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle, VerdictProduit } from "../../pipeline/notation/types.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { lectureComparateur, ulid } from "../analysis/fabriques.ts";
-import { inexacte, notationHumaine, notationJuge } from "./fabriques.ts";
+import { inexacte, lien, notationHumaine, notationJuge } from "./fabriques.ts";
 
 const RUN = ulid("run");
 const L1 = ulid("lecture-1");
@@ -117,6 +119,124 @@ describe("double notation humaine et arbitrage", () => {
     const deux = [lectureComparateur({ id: L1, run_id: RUN }), lectureComparateur({ id: L2, run_id: RUN })];
     const etats = etatsDesLectures(RUN, deux, [double("a1", L2), double("a2", L2)]);
     expect(etats.map((e) => [e.lecture_id, e.statut])).toEqual([L1, L2].sort().map((id) => [id, id === L2 ? "retenue" : "a_noter"]));
+  });
+});
+
+describe("§6 (0.31, D73 (14)) : deux humains d'accord sur la note mais motifs différents → troisième humain", () => {
+  const OPPOSEE: Surcharges = { ...inexacte(), motif_inexactitude: "position_opposee" };
+
+  it("sans arbitre : à arbitrer, jamais retenue sur la note de l'un des deux", () => {
+    const [a, b] = [double("a1", L1, inexacte()), double("a2", L1, OPPOSEE)];
+    expect(etat([a, b])).toEqual({ statut: "a_arbitrer", lecture_id: L1, notations: [a.id, b.id].sort() });
+  });
+
+  it("l'arbitre rejoint l'un des deux motifs : sa note est retenue", () => {
+    const [a, b, c] = [double("a1", L1, inexacte()), double("a2", L1, OPPOSEE), arbitre("a3", L1, OPPOSEE)];
+    const retenu = etat([a, b, c]);
+    expect(retenu).toMatchObject({ statut: "retenue", mode: "arbitrage", note: { categorie: "inexacte" } });
+    if (retenu.statut === "retenue") expect([...retenu.notations_sources].sort()).toEqual([a.id, b.id, c.id].sort());
+  });
+
+  it("l'arbitre donne un troisième motif : sa note est retenue (§7, la note du troisième humain)", () => {
+    const retenu = etat([double("a1", L1, inexacte()), double("a2", L1, OPPOSEE), arbitre("a3", L1, { ...inexacte(), motif_inexactitude: "omission" })]);
+    expect(retenu).toMatchObject({ statut: "retenue", mode: "arbitrage" });
+  });
+
+  it("même motif : aucun arbitrage admis", () => {
+    expect(refus([double("a1", L1, inexacte()), double("a2", L1, inexacte()), arbitre("a3", L1, inexacte())]).motif).toBe("arbitrage_sans_divergence");
+  });
+});
+
+describe("§6 (0.31, D73 (13)) : le verdict d'une lecture", () => {
+  const CADRE = { verdict_id: ulid("verdict-lecture"), date: "2026-12-08T12:00:00+01:00" };
+
+  function verdict(notations: readonly NotationIndividuelle[]): VerdictProduit {
+    const produit = verdictDeLecture(RUN, lectures, notations, L1, CADRE);
+    return valider<VerdictProduit>("verdict", produit, "verdict de lecture");
+  }
+
+  function sansVerdict(notations: readonly NotationIndividuelle[]): LectureSansVerdict {
+    try {
+      verdictDeLecture(RUN, lectures, notations, L1, CADRE);
+    } catch (erreur) {
+      if (erreur instanceof LectureSansVerdict) return erreur;
+      throw erreur;
+    }
+    throw new Error("aurait dû être refusé");
+  }
+
+  it("deux humains d'accord : mode lecture_comparateur_humaine, hors échantillon humain, sans désaccord de juges, revue humaine", () => {
+    const [a, b] = [double("a1"), double("a2", L1, { date: "2026-12-06T09:30:00+01:00" })];
+    const v = verdict([a, b]);
+    expect(v).toMatchObject({
+      id: CADRE.verdict_id,
+      run_id: RUN,
+      contexte: "run",
+      objet_note: { type: "lecture_comparateur", id: L1 },
+      categorie_retenue: "exacte",
+      mode_resolution: "lecture_comparateur_humaine",
+      dans_echantillon_humain: false,
+      desaccord_juges: false,
+      erreur_grave: false,
+      date: CADRE.date,
+    });
+    expect([...v.notations_sources].sort()).toEqual([a.id, b.id].sort());
+    expect(v.revue_humaine).toEqual({ effectuee: true, date: b.date, annotateurs: ["a1", "a2"] });
+  });
+
+  it("après arbitrage (motif divergent) : la note de l'arbitre, son motif, trois humains pour sources", () => {
+    const [a, b, c] = [double("a1", L1, inexacte()), double("a2", L1, { ...inexacte(), motif_inexactitude: "position_opposee" }), arbitre("a3", L1, { ...inexacte(), motif_inexactitude: "omission" })];
+    const v = verdict([a, b, c]);
+    expect(v).toMatchObject({ mode_resolution: "lecture_comparateur_humaine", dans_echantillon_humain: false, categorie_retenue: "inexacte", motif_inexactitude_retenu: "omission" });
+    expect([...v.notations_sources].sort()).toEqual([a.id, b.id, c.id].sort());
+    expect(v.revue_humaine?.annotateurs).toEqual(["a1", "a2", "a3"]);
+  });
+
+  it("après arbitrage d'une divergence de note : « indéterminée » de l'arbitre retenue", () => {
+    expect(verdict([double("a1"), double("a2", L1, inexacte()), arbitre("a3", L1, INDETERMINEE)])).toMatchObject({ categorie_retenue: "indeterminee", mode_resolution: "lecture_comparateur_humaine" });
+  });
+
+  it("une fabrication confirmée par les deux humains : erreur grave, revue humaine", () => {
+    const v = verdict([double("a1", L1, inexacte(["fabrication"])), double("a2", L1, inexacte(["fabrication"]))]);
+    expect(v).toMatchObject({ erreur_grave: true, drapeaux_retenus: ["fabrication"], revue_humaine: { effectuee: true } });
+  });
+
+  it("lecture à noter ou à arbitrer : pas de verdict, refus nommé avec l'état", () => {
+    expect(sansVerdict([double("a1")]).statut).toBe("a_noter");
+    expect(sansVerdict([double("a1"), double("a2", L1, inexacte())]).statut).toBe("a_arbitrer");
+  });
+
+  it("question ouverte : accord, même motif, mais l'existence d'un lien diverge : pas de note commune, refus nommé", () => {
+    const a = double("a1", L1, { sourcage: { cite: true, liens: [lien("mort", "non_applicable")] } });
+    const b = double("a2", L1, { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } });
+    expect(sansVerdict([a, b]).statut).toBe("sans_note_commune");
+  });
+
+  it("une lecture qui n'est pas à noter : refus nommé", () => {
+    expect(() => verdictDeLecture(RUN, lectures, [], ulid("lecture-inconnue"), CADRE)).toThrow(NotationLectureRefusee);
+  });
+});
+
+describe("schéma : le mode d'une lecture lui est propre (D73 (13))", () => {
+  const base = (): Record<string, unknown> => {
+    const v = verdictDeLecture(RUN, lectures, [double("a1"), double("a2")], L1, { verdict_id: ulid("v-schema"), date: "2026-12-08T12:00:00+01:00" });
+    return JSON.parse(JSON.stringify(v)) as Record<string, unknown>;
+  };
+
+  it("une lecture dans l'échantillon humain est invalide", () => {
+    expect(() => valider("verdict", { ...base(), dans_echantillon_humain: true }, "lecture dans l'échantillon")).toThrow();
+  });
+
+  it("une lecture sous un autre mode, ou ce mode sur une réponse, est invalide", () => {
+    expect(() => valider("verdict", { ...base(), mode_resolution: "tranche_humain" }, "lecture tranchée")).toThrow();
+    expect(() => valider("verdict", { ...base(), objet_note: { type: "reponse", id: L1 } }, "réponse en mode lecture")).toThrow();
+  });
+
+  it("un verdict de lecture sans revue humaine, ou sur une seule notation, est invalide", () => {
+    const { revue_humaine: _r, ...sansRevue } = base();
+    expect(() => valider("verdict", sansRevue, "sans revue")).toThrow();
+    const une = base();
+    expect(() => valider("verdict", { ...une, notations_sources: (une["notations_sources"] as string[]).slice(0, 1) }, "une source")).toThrow();
   });
 });
 
