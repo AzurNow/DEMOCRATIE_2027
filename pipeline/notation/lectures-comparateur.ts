@@ -25,14 +25,26 @@
  * retenue. Jamais de note en repli, jamais d'arbitre parmi les deux premiers, jamais d'arbitrage sans
  * divergence établie.
  *
- * Ce module ne construit pas le verdict (`verdict.schema.json`) : le mode de résolution et le
- * drapeau d'échantillon d'une lecture ne sont pas encore définis (rapport du lot D59).
+ * **Motif divergent** (§6 et §7, protocole 0.31 ; D73 (14)) : deux humains qui s'accordent sur la
+ * note mais divergent sur le motif d'inexactitude sont arbitrés de même par un troisième humain
+ * (`note-retenue.ts:humainsAArbitrer`, la règle de l'échantillon des réponses), dont la note est
+ * retenue, qu'il rejoigne l'un des deux motifs ou en donne un troisième.
+ *
+ * **Verdict** (§6, 0.31 ; D73 (13)) : `verdictDeLecture` construit le verdict d'une lecture retenue
+ * (`verdict.schema.json`), sous le mode `lecture_comparateur_humaine`, hors de l'échantillon humain
+ * des réponses (`dans_echantillon_humain: false`), sans désaccord de juges (aucun juge), ses sources
+ * et sa revue humaine étant les notations humaines qui l'ont résolu. Deux humains qui s'accordent,
+ * même motif, mais divergent sur le sourçage partiel (`cite`, `au_moins_un_lien_existant`) n'ont pas
+ * de note commune à porter au verdict : refus nommé (`sans_note_commune`, question ouverte).
+ * Aucun appelant n'écrit encore ces verdicts : `analysis/analyse-du-run.ts` retient la note d'une
+ * lecture depuis ses notations (`etatsDesLectures`) et refuse un verdict de lecture dans `verdicts/`.
  */
 
-import { lireNote, notationsConcordent, type NoteLue } from "../../analysis/note-lue.ts";
-import type { LectureComparateur, Ulid } from "../../analysis/types.ts";
+import { lireNote, type NoteLue } from "../../analysis/note-lue.ts";
+import type { Instant, LectureComparateur, Ulid } from "../../analysis/types.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import type { NotationIndividuelle } from "./types.ts";
+import { construireVerdict, humainsAArbitrer, noteCommune, noteDe, type NoteRetenue } from "./note-retenue.ts";
+import type { NotationIndividuelle, VerdictProduit } from "./types.ts";
 
 export const MOTIF_DOUBLE_NOTATION_COMPARATEUR = "double_notation_comparateur";
 export const MOTIF_ARBITRAGE_COMPARATEUR = "arbitrage_comparateur";
@@ -131,8 +143,8 @@ function etatLecture(lecture_id: Ulid, notations: readonly NotationIndividuelle[
     exigerSansArbitrage(lecture_id, arbitrages, "la double notation n'est pas complète");
     return { statut: "a_noter", lecture_id, notations_manquantes: 2 - doubles.length };
   }
-  if (notationsConcordent(premiere, seconde)) {
-    exigerSansArbitrage(lecture_id, arbitrages, "les deux humains s'accordent");
+  if (!humainsAArbitrer(premiere, seconde)) {
+    exigerSansArbitrage(lecture_id, arbitrages, "les deux humains s'accordent, sur la note et sur le motif");
     return { statut: "retenue", lecture_id, mode: "accord_humains", note: lireNote(premiere), notations_sources: idsDe(doubles) };
   }
   return apresDivergence(lecture_id, doubles, arbitrages);
@@ -162,4 +174,77 @@ function apresDivergence(lecture_id: Ulid, doubles: readonly NotationIndividuell
 
 function idsDe(notations: readonly NotationIndividuelle[]): readonly Ulid[] {
   return notations.map((n) => n.id).sort(comparerChaines);
+}
+
+/* ------------------------------------------------------------------ verdict (D73 (13)) */
+
+/** §6 (0.31) : le mode de résolution propre aux lectures de comparateur (`verdict.schema.json`). */
+export const MODE_RESOLUTION_LECTURE = "lecture_comparateur_humaine";
+
+export type RaisonSansVerdict = "a_noter" | "a_arbitrer" | "sans_note_commune";
+
+/** Une lecture qui n'a pas (encore) de note à porter au verdict : jamais un verdict par défaut. */
+export class LectureSansVerdict extends Error {
+  readonly statut: RaisonSansVerdict;
+  readonly lecture_id: Ulid;
+
+  constructor(statut: RaisonSansVerdict, lecture_id: Ulid, detail: string) {
+    super(`Lecture de comparateur ${lecture_id} sans verdict (${statut}) : ${detail}`);
+    this.name = "LectureSansVerdict";
+    this.statut = statut;
+    this.lecture_id = lecture_id;
+  }
+}
+
+/** Ce que le verdict reçoit de l'appelant : le noyau n'engendre ni identifiant ni date. */
+export interface CadreVerdictLecture {
+  readonly verdict_id: Ulid;
+  readonly date: Instant;
+}
+
+/**
+ * Le verdict d'une lecture à noter du run, une fois sa note retenue par la règle de l'échantillon
+ * (`etatsDesLectures`, qui contrôle toutes les notations reçues). Lecture à noter ou à arbitrer, ou
+ * sans note commune : `LectureSansVerdict`. Lecture hors sélection : `NotationLectureRefusee`.
+ */
+export function verdictDeLecture(
+  run_id: Ulid,
+  lectures: readonly LectureComparateur[],
+  notations: readonly NotationIndividuelle[],
+  lecture_id: Ulid,
+  cadre: CadreVerdictLecture,
+): VerdictProduit {
+  const etat = etatsDesLectures(run_id, lectures, notations).find((e) => e.lecture_id === lecture_id);
+  if (etat === undefined) throw new NotationLectureRefusee("lecture_hors_selection", lecture_id, "la lecture n'est pas une lecture à noter du run.");
+  if (etat.statut !== "retenue") throw new LectureSansVerdict(etat.statut, lecture_id, "notation humaine à compléter ou à arbitrer.");
+  const sources = etat.notations_sources.map((id) => sourceDe(notations, id, lecture_id));
+  return construireVerdict(
+    { verdict_id: cadre.verdict_id, run_id, objet_note: { type: "lecture_comparateur", id: lecture_id }, dans_echantillon_humain: false, date: cadre.date },
+    { note: noteDeLecture(lecture_id, etat.mode, sources), mode: MODE_RESOLUTION_LECTURE, sources, humains: sources, desaccord: false },
+  );
+}
+
+function sourceDe(notations: readonly NotationIndividuelle[], id: Ulid, lecture_id: Ulid): NotationIndividuelle {
+  const notation = notations.find((n) => n.id === id);
+  if (notation === undefined) throw new Error(`Lecture ${lecture_id} : notation source ${id} absente des notations reçues (incohérence interne).`);
+  return notation;
+}
+
+/** Arbitrage : la note de l'arbitre. Accord : la note commune des deux, ou un refus nommé. */
+function noteDeLecture(lecture_id: Ulid, mode: "accord_humains" | "arbitrage", sources: readonly NotationIndividuelle[]): NoteRetenue {
+  if (mode === "arbitrage") {
+    const arbitre = sources.find((n) => n.motif_notation === MOTIF_ARBITRAGE_COMPARATEUR);
+    if (arbitre === undefined) throw new Error(`Lecture ${lecture_id} : arbitrage retenu sans notation d'arbitre (incohérence interne).`);
+    return noteDe(arbitre);
+  }
+  const [premiere, seconde] = sources;
+  const note = premiere === undefined || seconde === undefined ? null : noteCommune(premiere, seconde);
+  if (note === null) {
+    throw new LectureSansVerdict(
+      "sans_note_commune",
+      lecture_id,
+      "les deux humains s'accordent, même motif, mais divergent sur la citation d'une source ou l'existence d'un lien ; le §7 n'y admet pas d'arbitre (question ouverte).",
+    );
+  }
+  return note;
 }

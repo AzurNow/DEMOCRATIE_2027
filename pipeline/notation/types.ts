@@ -56,6 +56,8 @@ export const MODES_RESOLUTION = [
   "arbitrage_panel",
   "juge_unique_apres_retrait",
   "regle_refus_api",
+  // §6 (0.31, D73 (13)) : la note d'une lecture de comparateur, résolue par ses seules notations humaines.
+  "lecture_comparateur_humaine",
 ] as const;
 export type ModeResolution = (typeof MODES_RESOLUTION)[number];
 

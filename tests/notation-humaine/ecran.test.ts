@@ -211,12 +211,14 @@ describe("11. réponses en attente", () => {
     if (h1 === undefined || h2 === undefined || h3 === undefined) throw new Error("trois réponses attendues");
     // `hors` : deux réponses closes par les juges, une qui attend encore un juge.
     m.ecrire(...[h1, h2].flatMap((r) => JUGES.map((j) => juge(m, j, r))), juge(m, "juge-1", h3));
-    // Dans l'échantillon : deux humains s'accordent sans note commune (D15, question ouverte).
-    const inexacte = { categorie: "inexacte" as const, drapeaux: [], extrait_justificatif: { provenance: "reponse" as const, texte: "ramener la TVA", verifie_deterministe: true } };
+    // Dans l'échantillon : deux humains s'accordent, même motif, mais l'un dit citer une source et
+    // l'autre non : pas de note commune, et le §7 (0.31) n'admet d'arbitre que sur le motif
+    // (question ouverte).
+    const inexacte = { categorie: "inexacte" as const, drapeaux: [], motif_inexactitude: "omission" as const, extrait_justificatif: { provenance: "reponse" as const, texte: "ramener la TVA", verifie_deterministe: true } };
     m.ecrire(
       ...JUGES.map((j) => juge(m, j, m.dans)),
-      humain(m, "a1", "echantillon_aleatoire_10", m.dans, { ...inexacte, motif_inexactitude: "omission" }),
-      humain(m, "a2", "echantillon_aleatoire_10", m.dans, { ...inexacte, motif_inexactitude: "position_opposee" }),
+      humain(m, "a1", "echantillon_aleatoire_10", m.dans, inexacte),
+      humain(m, "a2", "echantillon_aleatoire_10", m.dans, { ...inexacte, sourcage: { cite: true, liens: [] } }),
     );
     const contexte = m.contexte("a3");
     const corps = file(contexte);
@@ -224,6 +226,19 @@ describe("11. réponses en attente", () => {
     expect(corps.sans_motif_admis).toBe(1);
     expect(corps.a_noter).toEqual([]);
     expect(corps.en_attente_test_des_liens).toBe(0);
+  });
+
+  it("§7 (0.31, D73 (14)) : même note, motifs différents dans l'échantillon → arbitrage proposé au troisième, plus rien sans motif admis", () => {
+    const m = poser();
+    const inexacte = { categorie: "inexacte" as const, drapeaux: [], extrait_justificatif: { provenance: "reponse" as const, texte: "ramener la TVA", verifie_deterministe: true } };
+    m.ecrire(
+      ...jugesFermentTout(m),
+      humain(m, "a1", "echantillon_aleatoire_10", m.dans, { ...inexacte, motif_inexactitude: "omission" }),
+      humain(m, "a2", "echantillon_aleatoire_10", m.dans, { ...inexacte, motif_inexactitude: "position_opposee" }),
+    );
+    expect(file(m.contexte("a3")).sans_motif_admis).toBe(0);
+    expect(aNoter(m.contexte("a3"))).toEqual([m.dans.id]);
+    expect(aNoter(m.contexte("a1"))).toEqual([]);
   });
 });
 
