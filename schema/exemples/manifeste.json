@@ -3608,6 +3608,23 @@
       }
     },
     {
+      "objet": "metriques",
+      "fichier": "metriques/valide-05-variabilite-un-seul-echantillon-au-plan.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-02 dont la variabilité entre échantillons est sans objet, motif un_seul_echantillon_au_plan : le plan d'interrogation ne prévoit qu'un échantillon par question, le levier « 2 → 1 » du §12 ayant été appliqué ; la variabilité est publiée absente, avec ce motif, jamais une liste de couples aux paires toutes écartées (analysis/accord-echantillons.ts:variabiliteDuRun)."
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-11-motif-un-seul-echantillon-hors-variabilite.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-05 dont la section des taux est sans objet sous le motif un_seul_echantillon_au_plan : ce motif est propre à la variabilité entre échantillons ; un plan à un échantillon par question laisse les taux calculés (§8, §12), et aucune autre section ne s'en dit sans objet.",
+      "regle_protocole": "§8, variabilité entre échantillons, et §12, levier « 2 → 1 » (0.31, D73 (6))",
+      "erreur_visee": {
+        "keyword": "oneOf",
+        "instance_path": "/taux"
+      }
+    },
+    {
       "objet": "tirage",
       "fichier": "tirage/invalide-12-attribution-sans-references.json",
       "attendu": "invalide",
