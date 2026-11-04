@@ -43,6 +43,9 @@ const CONSTATS_FAITS: readonly Constat[] = [
 
 /** Mardi 1er décembre 2026, 6 h, heure de Paris : la fenêtre du §6, semi-ouverte [debut, fin). */
 const FENETRE = { debut: "2026-12-01T06:00:00+01:00", fin: "2026-12-03T06:00:00+01:00" };
+/** Le run mensuel dont `FENETRE` est la fenêtre : type et instant de gel règlent l'ouverture (§6). */
+const MENSUEL = { type_run: "mensuel", date_gel: "2026-11-27T09:00:00+01:00" } as const;
+const RUN = { ...MENSUEL, fenetre: FENETRE };
 
 function demarree(...horodatages: string[]): DemarragesDeReponse {
   const [reussie, ...echecs] = horodatages;
@@ -128,39 +131,59 @@ describe("les dix cases de l'annexe F", () => {
 describe("interrogation dans la fenêtre de 48 h (case 4 ; §6, fenêtre semi-ouverte [debut, fin))", () => {
   it("toutes les tentatives démarrent dans la fenêtre, la première à l'ouverture exacte : fait", () => {
     const reponses = [demarree("2026-12-01T06:00:00+01:00"), demarree("2026-12-03T05:59:59+01:00", "2026-12-03T05:57:00+01:00")];
-    expect(constatInterrogationDansLaFenetre(FENETRE, reponses)).toMatchObject({ nom: "interrogation_dans_la_fenetre", fait: true });
+    expect(constatInterrogationDansLaFenetre(RUN, reponses)).toMatchObject({ nom: "interrogation_dans_la_fenetre", fait: true });
   });
 
   it("une tentative qui démarre exactement à la fin : non faite (aucune tentative ne démarre à fin)", () => {
-    const constat = constatInterrogationDansLaFenetre(FENETRE, [demarree("2026-12-02T10:00:00+01:00", "2026-12-03T06:00:00+01:00")]);
+    const constat = constatInterrogationDansLaFenetre(RUN, [demarree("2026-12-02T10:00:00+01:00", "2026-12-03T06:00:00+01:00")]);
     expect(constat).toMatchObject({ fait: false, detail: "1 tentative(s) démarrée(s) hors de la fenêtre [debut, fin)" });
   });
 
   it("une tentative avant l'ouverture : non faite", () => {
-    expect(constatInterrogationDansLaFenetre(FENETRE, [demarree("2026-12-01T05:59:59+01:00")]).fait).toBe(false);
+    expect(constatInterrogationDansLaFenetre(RUN, [demarree("2026-12-01T05:59:59+01:00")]).fait).toBe(false);
   });
 
   it("une manquante hors fenêtre sans tentative n'a rien démarré : elle ne compte pas", () => {
     const jamaisEnvoyee: DemarragesDeReponse = { contexte: "run", canal: "api", statut_reponse: "manquante" };
-    expect(constatInterrogationDansLaFenetre(FENETRE, [demarree("2026-12-01T07:00:00+01:00"), jamaisEnvoyee]).fait).toBe(true);
+    expect(constatInterrogationDansLaFenetre(RUN, [demarree("2026-12-01T07:00:00+01:00"), jamaisEnvoyee]).fait).toBe(true);
   });
 
   it("une réponse hors du canal API ou hors du contexte run n'est pas jugée sur la fenêtre", () => {
     const application = { ...demarree("2026-12-10T10:00:00+01:00"), canal: "application" as const };
     const contrefactuelle = { ...demarree("2026-12-04T10:00:00+01:00"), contexte: "contrefactuel_candidat" as const };
-    expect(constatInterrogationDansLaFenetre(FENETRE, [application, contrefactuelle]).fait).toBe(true);
+    expect(constatInterrogationDansLaFenetre(RUN, [application, contrefactuelle]).fait).toBe(true);
   });
 
   it("une fenêtre de 47 h dans run.json : non faite", () => {
-    const constat = constatInterrogationDansLaFenetre({ ...FENETRE, fin: "2026-12-03T05:00:00+01:00" }, [demarree("2026-12-01T07:00:00+01:00")]);
+    const constat = constatInterrogationDansLaFenetre({ ...MENSUEL, fenetre: { ...FENETRE, fin: "2026-12-03T05:00:00+01:00" } }, [demarree("2026-12-01T07:00:00+01:00")]);
     expect(constat).toMatchObject({ fait: false });
     expect(constat.detail).toContain("48 h");
   });
 
   it("une fenêtre qui n'ouvre pas un mardi à 6 h, heure de Paris : non faite", () => {
-    const constat = constatInterrogationDansLaFenetre({ debut: "2026-12-02T06:00:00+01:00", fin: "2026-12-04T06:00:00+01:00" }, []);
+    const constat = constatInterrogationDansLaFenetre({ ...MENSUEL, fenetre: { debut: "2026-12-02T06:00:00+01:00", fin: "2026-12-04T06:00:00+01:00" } }, []);
     expect(constat).toMatchObject({ fait: false });
     expect(constat.detail).toContain("mardi");
+  });
+
+  it("run supplémentaire gelé un samedi, fenêtre ouverte le dimanche à 6 h (§6, 0.27) : faite", () => {
+    const run = {
+      type_run: "supplementaire_debat",
+      date_gel: "2027-03-13T10:00:00+01:00",
+      fenetre: { debut: "2027-03-14T06:00:00+01:00", fin: "2027-03-16T06:00:00+01:00" },
+    };
+    expect(constatInterrogationDansLaFenetre(run, [demarree("2027-03-14T06:00:00+01:00")])).toMatchObject({ fait: true });
+  });
+
+  it("run supplémentaire dont la fenêtre ouvre le mardi suivant, pas le lendemain du gel : non faite, le jour attendu nommé", () => {
+    const run = {
+      type_run: "supplementaire_debat",
+      date_gel: "2027-03-13T10:00:00+01:00",
+      fenetre: { debut: "2027-03-16T06:00:00+01:00", fin: "2027-03-18T06:00:00+01:00" },
+    };
+    const constat = constatInterrogationDansLaFenetre(run, []);
+    expect(constat).toMatchObject({ fait: false });
+    expect(constat.detail).toContain("2027-03-14");
   });
 });
 

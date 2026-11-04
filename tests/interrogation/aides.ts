@@ -19,7 +19,7 @@ import type { ReponseEcrite, RequetePlanifiee } from "../../pipeline/interrogati
 export const DEBUT = "2026-12-01T06:00:00+01:00";
 export const RUN_ID = "01KBCS0G00TE5T0R0N0000000A";
 export const CLE_API = "cle-api-de-test-a-ne-jamais-ecrire";
-export const FENETRE: Fenetre = ouvrirFenetre(DEBUT);
+export const FENETRE: Fenetre = ouvrirFenetre(DEBUT, { type_run: "mensuel", date_gel: "2026-11-27T09:00:00+01:00" });
 
 export function issue(nom: string): IssueSimulee {
   const trouvee = ISSUES_NOMMEES[nom];

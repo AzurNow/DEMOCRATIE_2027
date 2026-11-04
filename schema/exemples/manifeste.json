@@ -3356,12 +3356,18 @@
     },
     {
       "objet": "sous-echantillon-application",
-      "fichier": "sous-echantillon-application/invalide-02-quatre-questions.json",
+      "fichier": "sous-echantillon-application/valide-02-quatre-questions-toutes-tirees.json",
+      "attendu": "valide",
+      "motif": "Quatre questions pour un candidat interrogé qui n'en a que quatre de tirées : il les prend toutes (§6, protocole 0.27), rien n'est complété."
+    },
+    {
+      "objet": "sous-echantillon-application",
+      "fichier": "sous-echantillon-application/invalide-02-six-questions.json",
       "attendu": "invalide",
-      "motif": "Quatre questions pour un candidat interrogé : le §6 en fixe cinq, et ne dit pas quoi faire d'un candidat qui en a moins ; le calcul refuse plutôt que de raccourcir.",
-      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24",
+      "motif": "Six questions pour un candidat interrogé : le §6 en prend cinq au plus.",
+      "regle_protocole": "§6, « Applications grand public (QR8, exploratoire) » ; D59 (12), protocole 0.24 ; 0.27",
       "erreur_visee": {
-        "keyword": "minItems",
+        "keyword": "maxItems",
         "instance_path": "/candidats/0/questions"
       }
     },
