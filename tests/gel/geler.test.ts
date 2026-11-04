@@ -656,7 +656,9 @@ describe("balise, cas 11 : run.json porte la balise et l'engagement", () => {
     const { run } = await gelNominal();
     const objet = json(run, "run.json");
     expect(() => valider("run", objet, "run.json du gel")).not.toThrow();
-    expect(() => valider("run", { ...objet, type_run: "mensuel" }, "run.json du gel, mensuel")).not.toThrow();
+    // D73 (11) : un run mensuel ne porte jamais le motif type_run_exclu du pilote ; sa désignation suit son type.
+    const mensuel = { ...objet, type_run: "mensuel", application_testee: { designe: true, mois_utc: "2026-12" } };
+    expect(() => valider("run", mensuel, "run.json du gel, mensuel")).not.toThrow();
     const { balise: _b, ...sans_balise } = objet;
     expect(() => valider("run", { ...sans_balise, type_run: "mensuel" }, "sans balise")).toThrow(/balise/);
     const { engagement: _e, ...sans_engagement } = objet;
