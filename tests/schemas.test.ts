@@ -152,12 +152,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 382 → 383 : §8, robustesse des différences (sous-lot B de pnpm analyze, D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
   // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
   // 385 → 387 : §4 (protocole 0.27), motif de rejet de l'arbitre, un valide (valide-03, rejet sous texte_extrait_errone) et un invalide (invalide-04, motif sur une issue non_evaluable) de decision-arbitrage.
-  it("1. les 387 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 387 → 388 : §5 (0.27, D67), un valide de tirage (valide-03, exclusion positions_incompatibles).
+  it("1. les 388 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(387);
+    expect(manifeste.exemples).toHaveLength(388);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -427,7 +428,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 382 → 383 : §8, robustesse des différences (D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
   // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
   // 385 → 387 : §4 (protocole 0.27), motif de rejet de l'arbitre, un valide (valide-03, rejet sous texte_extrait_errone) et un invalide (invalide-04, motif sur une issue non_evaluable) de decision-arbitrage.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 387 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(387);
+  // 387 → 388 : §5 (0.27, D67), un valide de tirage (valide-03, exclusion positions_incompatibles).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 388 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(388);
   });
 });
