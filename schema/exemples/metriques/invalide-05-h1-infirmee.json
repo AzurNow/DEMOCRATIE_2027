@@ -136,6 +136,10 @@
       }
     ]
   },
+  "ecart_juge_editeur": {
+    "statut": "sans_objet",
+    "motif": "outils_de_son_editeur_non_declares"
+  },
   "hypotheses": {
     "H1": {
       "statut": "calcule",

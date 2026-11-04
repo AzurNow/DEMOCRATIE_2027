@@ -5,7 +5,7 @@
   "description": "§8 : runs/<date>/metriques/metriques.json, écrit par pnpm analyze (analysis/analyse-du-run.ts, sous-lot A), jamais réécrit : absent, il est écrit ; identique à l'octet près, rien n'est fait ; différent, la commande refuse. Toutes les sections reposent sur un seul partage de la population (population), calculé une fois au calcul principal et repris tel quel par chaque recalcul de robustesse (§8 : « les seuils de non-publication ne sont pas réappliqués à la population restreinte »). Chaque section est calculée ou sans objet, avec son motif. Les kappas et le test contrefactuel n'y sont pas recopiés : ils vivent dans run.json, que entrees.run_json_sha256 désigne.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "comparateurs", "hypotheses", "exploratoire", "graines"],
+  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "comparateurs", "ecart_juge_editeur", "hypotheses", "exploratoire", "graines"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -254,6 +254,23 @@
         }
       ]
     },
+    "ecart_juge_editeur": {
+      "description": "§7, « Conflit d'intérêts » (protocole 0.31, D73 (7)) : pour chaque juge dont la liste déclarée au gel (run.json#/juges[]/outils_de_son_editeur) n'est pas vide, l'écart signé entre son exactitude et celle de l'autre juge sur les réponses de chaque outil du canal API, et la différence entre l'écart sur l'outil de son éditeur et la moyenne des écarts sur les autres outils, avec son intervalle, clé bootstrap / exactitude / global / <juge>:propre-editeur (analysis/ecart-juge-editeur.ts). Un juge dont la liste déclarée est vide est nommé dans juges_sans_outil_de_leur_editeur, sans chiffre. Sans objet : juge_retire (§7, les notations du juge retiré sont écartées de tout le run) ; outils_de_son_editeur_non_declares (un juge sans liste déclarée, run gelé avant la 0.31 : jamais lue comme vide).",
+      "oneOf": [
+        { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "par_juge", "juges_sans_outil_de_leur_editeur", "reponses_sans_note_de_juge"],
+          "properties": {
+            "statut": { "const": "calcule" },
+            "par_juge": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/ecart_juge_editeur" } },
+            "juges_sans_outil_de_leur_editeur": { "type": "array", "maxItems": 2, "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+            "reponses_sans_note_de_juge": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }, "description": "Réponses du run qu'aucun juge n'a notées (refus de l'API, notés par règle) : hors du calcul, nommées." }
+          }
+        }
+      ]
+    },
     "hypotheses": {
       "type": "object",
       "additionalProperties": false,
@@ -449,6 +466,39 @@
         "difference": { "$ref": "#/$defs/difference_taux" }
       }
     },
+    "ecart_sur_outil": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "exactitude_juge", "exactitude_autre_juge", "ecart"],
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "exactitude_juge": { "$ref": "#/$defs/taux" },
+        "exactitude_autre_juge": { "$ref": "#/$defs/taux" },
+        "ecart": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] }
+      }
+    },
+    "ecart_juge_editeur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["juge_id", "autre_juge_id", "outils_de_son_editeur", "ecarts", "autres_outils_sans_ecart", "moyenne_autres_outils", "difference", "intervalle", "signale", "motif_sans_qualificatif", "motif_absence"],
+      "description": "§7 : un juge dont l'éditeur édite au moins un outil du run, selon la liste déclarée au gel. difference : écart sur l'outil de son éditeur moins la moyenne des écarts sur les autres outils ; null avec motif_absence (plusieurs_outils_de_son_editeur, aucune_reponse_de_son_outil, ecart_indefini_sur_son_outil, aucun_autre_outil_avec_ecart). signale : l'intervalle exclut 0 ; null quand rien n'est qualifié, motif_sans_qualificatif dit pourquoi (§7, 0.29).",
+      "properties": {
+        "juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "autre_juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "outils_de_son_editeur": { "type": "array", "minItems": 1, "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+        "ecarts": { "type": "array", "items": { "$ref": "#/$defs/ecart_sur_outil" } },
+        "autres_outils_sans_ecart": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+        "moyenne_autres_outils": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
+        "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -2, "maximum": 2 }] },
+        "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle_nomme" }] },
+        "signale": { "enum": [null, true, false] },
+        "motif_sans_qualificatif": { "$ref": "#/$defs/motif_sans_qualificatif" },
+        "motif_absence": { "enum": [null, "plusieurs_outils_de_son_editeur", "aucune_reponse_de_son_outil", "ecart_indefini_sur_son_outil", "aucun_autre_outil_avec_ecart"] }
+      },
+      "if": { "properties": { "motif_absence": { "const": null } } },
+      "then": { "properties": { "difference": { "type": "number" }, "intervalle": { "$ref": "#/$defs/intervalle_nomme" } } },
+      "else": { "properties": { "difference": { "const": null }, "intervalle": { "const": null }, "signale": { "const": null } } }
+    },
     "mode": { "enum": ["web_activee", "web_desactivee"] },
     "couple": {
       "type": "object",
@@ -466,7 +516,7 @@
       "required": ["statut", "motif"],
       "properties": {
         "statut": { "const": "sans_objet" },
-        "motif": { "enum": ["aucun_comparateur_inclus", "aucun_couple_compare", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application"] }
+        "motif": { "enum": ["aucun_comparateur_inclus", "aucun_couple_compare", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application", "outils_de_son_editeur_non_declares", "juge_retire"] }
       }
     },
     "recalcul": { "enum": ["echantillon_humain", "items_contestes", "formulations_orientees", "reponses_tronquees"] },

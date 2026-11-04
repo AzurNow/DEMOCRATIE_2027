@@ -19,6 +19,7 @@ import { BaliseRefusee, identifiantDuRun, QUICKNET, RELAIS, urlTour, valeursDesG
 import { DepotSale } from "../../pipeline/gel/depot.ts";
 import { RunDejaGele, SortieSousRuns } from "../../pipeline/gel/destination.ts";
 import { ConfigurationGelIncomplete } from "../../pipeline/gel/configuration.ts";
+import { OutilDeSonEditeurHorsDuRun } from "../../pipeline/gel/editeurs.ts";
 import { DEPOT_PUBLIC, EngagementRefuse } from "../../pipeline/gel/engagement.ts";
 import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../../pipeline/gel/reseau.ts";
 import type { Envoi } from "../../pipeline/gel/reseau.ts";
@@ -331,6 +332,23 @@ describe("§7.12 : familles de juges au gel", () => {
   it("deux familles distinctes ⇒ le gel s'écrit", async () => {
     const { run } = await gelNominal();
     expect(existsSync(join(run, "run.json"))).toBe(true);
+  });
+
+  // §7 (protocole 0.31, D73 (7)) : la liste déclarée au gel, vide comprise, est publiée avec le run.
+  it("D73 (7) : run.json porte la liste déclarée des outils de l'éditeur de chaque juge, vide comprise", async () => {
+    const { run } = await gelNominal();
+    const juges = json(run, "run.json")["juges"] as { juge_id: string; outils_de_son_editeur: string[] }[];
+    expect(juges.map((j) => [j.juge_id, j.outils_de_son_editeur])).toEqual([
+      ["juge-1", ["outil-alpha"]],
+      ["juge-2", []],
+    ]);
+  });
+
+  it("D73 (7) : un outil de la liste hors du périmètre du run ⇒ OutilDeSonEditeurHorsDuRun, rien écrit", async () => {
+    const { erreur, sortie } = await refusAvecJuges([premier, { ...second, outils_de_son_editeur: ["outil-inconnu"] }]);
+    expect(erreur).toBeInstanceOf(OutilDeSonEditeurHorsDuRun);
+    expect(erreur.message).toContain("outil-inconnu");
+    expect(arborescence(sortie)).toEqual([]);
   });
 });
 

@@ -7,13 +7,15 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  inscriptionsJeuOr,
   JeuOrIncoherent,
   kappasJeuOr,
   type JugeDeclare,
   type ReponseDuJeuOr,
 } from "../../analysis/kappa-jeu-or.ts";
 import { categorieHumaineRetenue, kappaDeLaPaire } from "../../analysis/kappa-categorie-primaire.ts";
-import type { CategorieRetenue, Notation } from "../../analysis/types.ts";
+import type { CategorieRetenue, Notation, Ulid } from "../../analysis/types.ts";
+import { validerFragment } from "../../outils/schemas/valider.ts";
 import { ulid } from "./fabriques.ts";
 import { inexacte, notationHumaine, notationJuge, notationRegle, renvoiJuge } from "../notation/fabriques.ts";
 
@@ -398,5 +400,101 @@ describe("D64, D70 : réponse non classée sur le jeu d'or", () => {
     const avec = kappasJeuOr(JUGES, jeu([...BASE, accord("exacte", "non_classee", "exacte")]));
     expect(avec.kappas).toEqual(sans.kappas);
     expect(avec.non_classees).toBe(1);
+  });
+});
+
+/**
+ * D73 (8), décision de forme hors protocole : les comptes du jeu d'or sont publiés à côté de
+ * `kappa_juge_humain`, dans `run.json#/juges[]`. Ils viennent du même calcul que le kappa, sur la même
+ * population : un compte recalculé ailleurs, sur d'autres réponses, ferait échouer ces tests.
+ */
+describe("D73 (8) : comptes du jeu d'or inscrits à côté du kappa de chaque juge", () => {
+  function objetDe(id: Ulid) {
+    return { objet_note: { type: "reponse" as const, id } };
+  }
+
+  function refusApi(rang: number): ReponseDuJeuOr {
+    const id = ulid(`reponse-jeu-or-comptes-refus-${rang}`);
+    return {
+      reponse_id: id,
+      calibration: [
+        notationHumaine("annotateur-1", "calibration_jeu_or", { ...objetDe(id), categorie: "non_reponse" }),
+        notationHumaine("annotateur-2", "calibration_jeu_or", { ...objetDe(id), categorie: "non_reponse" }),
+      ],
+      troisieme: null,
+      juges: [],
+      refus_api: notationRegle(objetDe(id)),
+      renvois: [],
+    };
+  }
+
+  /** Six réponses : trois comparables, dont une que j2 renvoie, une indéterminée, une non classée, un refus. */
+  function jeuMele(): readonly ReponseDuJeuOr[] {
+    const comparables = jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "exacte"), accord("non_reponse", "non_reponse", "non_reponse")]);
+    const [premiere, ...autres] = comparables;
+    if (premiere === undefined) throw new Error("jeu vide");
+    const renvoyeeParJ2: ReponseDuJeuOr = {
+      ...premiere,
+      juges: premiere.juges.filter((n) => n.notateur.id !== "j2"),
+      renvois: [renvoiJuge("j2", objetDe(premiere.reponse_id))],
+    };
+    return [
+      renvoyeeParJ2,
+      ...autres,
+      reponse(10, { humains: ["indeterminee", "indeterminee"], juges: { j1: "exacte", j2: "exacte" } }),
+      reponse(11, { humains: ["non_classee", "non_classee"], juges: { j1: "exacte", j2: "exacte" } }),
+      refusApi(0),
+    ];
+  }
+
+  it("comptes et kappa d'un seul calcul : comparees = n du kappa, et la somme rend toutes les réponses lues", () => {
+    const reponses = jeuMele();
+    const calcul = kappasJeuOr(JUGES, reponses);
+    const inscriptions = inscriptionsJeuOr(JUGES, reponses);
+    expect(inscriptions.map((i) => i.comptes_jeu_or)).toEqual([
+      { reponses: 6, comparees: 3, renvois_ecartes: 0, indeterminees: 1, non_classees: 1, refus_api: 1 },
+      { reponses: 6, comparees: 2, renvois_ecartes: 1, indeterminees: 1, non_classees: 1, refus_api: 1 },
+    ]);
+    for (const [rang, inscription] of inscriptions.entries()) {
+      const kappa = calcul.kappas[rang];
+      expect(inscription.juge_id).toBe(kappa?.juge_id);
+      expect(inscription.comptes_jeu_or.comparees).toBe(kappa?.n);
+      expect("kappa_juge_humain" in inscription ? inscription.kappa_juge_humain : null).toBe(kappa?.kappa);
+      const c = inscription.comptes_jeu_or;
+      expect(c.comparees + c.renvois_ecartes + c.indeterminees + c.non_classees + c.refus_api).toBe(reponses.length);
+    }
+  });
+
+  it("kappa défini : kappa_juge_humain sans motif ; indéfini : le motif sans kappa, jamais 0, 1 ni null", () => {
+    const [defini] = inscriptionsJeuOr(JUGES, jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "inexacte")]));
+    expect(defini).toEqual({
+      juge_id: "j1",
+      kappa_juge_humain: 1,
+      comptes_jeu_or: { reponses: 2, comparees: 2, renvois_ecartes: 0, indeterminees: 0, non_classees: 0, refus_api: 0 },
+    });
+    const [indefini] = inscriptionsJeuOr(JUGES, [refusApi(0), refusApi(1)]);
+    expect(indefini).toEqual({
+      juge_id: "j1",
+      motif_indefini_kappa_juge_humain: "aucune_reponse_comparable",
+      comptes_jeu_or: { reponses: 2, comparees: 0, renvois_ecartes: 0, indeterminees: 0, non_classees: 0, refus_api: 2 },
+    });
+    expect(Object.keys(indefini ?? {})).not.toContain("kappa_juge_humain");
+  });
+
+  it("chaque inscription passe le schéma de run.json#/juges[] une fois jointe aux champs du gel", () => {
+    for (const inscription of [...inscriptionsJeuOr(JUGES, jeuMele()), ...inscriptionsJeuOr(JUGES, [refusApi(0)])]) {
+      const juge = { famille_modele: "famille-x", modele: "famille-x/m", version_prompt: "prompts/judge-1.0.0", retire: false, ...inscription };
+      expect(() => validerFragment("run", "#/properties/juges/items", juge, `juge ${inscription.juge_id}`)).not.toThrow();
+    }
+  });
+
+  it("juge retiré (D13) : hors de l'accord, aucune inscription calculée pour lui ; celle du juge restant porte sur toutes les réponses", () => {
+    const retire: readonly JugeDeclare[] = [
+      { juge_id: "j1", retire: false },
+      { juge_id: "j2", retire: true },
+    ];
+    const inscriptions = inscriptionsJeuOr(retire, jeu([accord("exacte", "exacte", "inexacte"), accord("inexacte", "inexacte", "exacte")]));
+    expect(inscriptions.map((i) => i.juge_id)).toEqual(["j1"]);
+    expect(inscriptions[0]?.comptes_jeu_or).toEqual({ reponses: 2, comparees: 2, renvois_ecartes: 0, indeterminees: 0, non_classees: 0, refus_api: 0 });
   });
 });

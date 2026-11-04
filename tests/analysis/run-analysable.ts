@@ -295,7 +295,7 @@ export function entreesDuRunAnalysable(spec: SpecRun): EntreesDuRun {
     perimetre: { ...base.perimetre, regime_inclusion: spec.run?.regime_inclusion ?? "liste_officielle" },
     versions: { donnees_commit: "c".repeat(40) },
     tirage: { sha256: empreinte("tirage") },
-    juges: [{ juge_id: "juge-1" }, { juge_id: "juge-2" }],
+    juges: [{ juge_id: "juge-1", retire: false }, { juge_id: "juge-2", retire: false }],
     graines: { bootstrap: { valeur: 20261203 }, permutation: { valeur: 20261204 } },
   };
   return {
@@ -373,3 +373,38 @@ export const SPEC_APPLICATION: SpecRun = {
     categorie: (s) => (s.candidat_id === "candidat-a" && s.rang === 0 ? "inexacte" : "exacte"),
   },
 };
+
+/** D73 (7) : un juge du run, tel que run.json le publie, avec ou sans la liste déclarée au gel. */
+export interface JugeDuRunAnalysable {
+  readonly juge_id: string;
+  readonly retire: boolean;
+  readonly outils_de_son_editeur?: readonly string[];
+}
+
+/**
+ * Le run `entrees` noté par deux juges (§7) : `juges` remplace les juges du run, et chaque réponse
+ * obtenue du canal API reçoit une notation de chaque juge, de catégorie `note(retenue, outil, juge)`.
+ * Les refus de l'API, notés par règle, ne reçoivent rien (aucun ici).
+ */
+export function avecNotesDeJuges(
+  entrees: EntreesDuRun,
+  juges: readonly JugeDuRunAnalysable[],
+  note: (categorie_retenue: CategorieRetenue, outil_id: string, juge_id: string) => CategorieRetenue,
+): EntreesDuRun {
+  const verdicts = new Map(entrees.verdicts.map((v) => [v.objet_note.id, v.categorie_retenue]));
+  const notees = entrees.reponses.filter((r) => r.canal === "api" && r.statut_reponse === "obtenue");
+  const deJuges = notees.flatMap((r) =>
+    juges.map((juge) => {
+      const retenue = verdicts.get(r.id);
+      if (retenue === undefined) throw new Error(`réponse ${r.id} sans verdict`);
+      return notation({
+        id: ulid(`nj-${r.id}-${juge.juge_id}`),
+        objet_note: { type: "reponse", id: r.id },
+        notateur: { type: "juge", id: juge.juge_id },
+        categorie: note(retenue, r.outil_id, juge.juge_id),
+        motif_notation: "notation_juge",
+      });
+    }),
+  );
+  return { ...entrees, run: { ...entrees.run, juges }, notations: [...entrees.notations, ...deJuges] };
+}

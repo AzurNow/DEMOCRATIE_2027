@@ -22,6 +22,11 @@ export interface JugeAuGel {
   readonly famille_modele: string;
   readonly modele: string;
   readonly version_prompt: string;
+  /**
+   * §7 (protocole 0.31, D73 (7)) : les outils du run qu'édite l'éditeur de ce juge, déclarés par
+   * l'auteur, vide comprise ; jamais déduits. Recopiés dans `run.json#/juges[]`.
+   */
+  readonly outils_de_son_editeur: readonly string[];
 }
 
 /** `config/gel.json`, une fois conforme au schéma : un brouillon y est conforme. */

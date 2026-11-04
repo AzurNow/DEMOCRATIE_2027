@@ -48,6 +48,7 @@ import { archivesDeLaBalise, baliseDuRun } from "./balise.ts";
 import type { ApplicationTestee } from "./application.ts";
 import type { BaliseLue } from "./balise.ts";
 import type { ConfigurationGel, JugeAuGel } from "./configuration.ts";
+import { exigerOutilsDesEditeursDuRun } from "./editeurs.ts";
 import { ARCHIVE_WAYBACK, engagementDuRun } from "./engagement.ts";
 import type { EngagementVerifie } from "./engagement.ts";
 import { grainesDuRun } from "./graines.ts";
@@ -101,6 +102,8 @@ export function preparer(entrees: EntreesGel, type_run: string): GelPrepare {
     { items: entrees.items, mesures: entrees.mesures, alias_aveugles: entrees.configuration.alias_aveugles },
     entrees.provenance_perimetre,
   );
+  // §7 (0.31, D73 (7)) : la liste déclarée des outils de l'éditeur de chaque juge ne nomme que des outils du run.
+  exigerOutilsDesEditeursDuRun(entrees.configuration.juges, perimetre.perimetre.outils);
   const fenetre = ouvrirFenetre(entrees.configuration.fenetre_debut, { type_run, date_gel: perimetre.date_gel });
   const taches = tachesDe({ items: entrees.items, mesures: entrees.mesures, candidats: perimetre.perimetre.candidats });
   const questions = questionsAuGel(taches, entrees.formulations, perimetre.date_gel);
