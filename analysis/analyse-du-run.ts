@@ -48,7 +48,7 @@ import { join } from "node:path";
 import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
-import { variabiliteEntreEchantillons, type VariabiliteDuCouple } from "./accord-echantillons.ts";
+import { variabiliteDuRun, type VariabiliteDesEchantillons } from "./accord-echantillons.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "./bootstrap.ts";
 import { correlationsParCouple, type CorrelationCouverture } from "./correlation-couverture.ts";
 import {
@@ -520,12 +520,12 @@ export function sectionRobustesse(contexte: ContexteDuRun, principal: Difference
 
 /**
  * La variabilité entre échantillons (§8, D70 (12)) : un diagnostic par couple comparé, sur le partage
- * du calcul principal. Le plan vient des entrées : il dit quelles paires étaient prévues.
+ * du calcul principal. Le plan vient des entrées : il dit quelles paires étaient prévues, et combien
+ * d'échantillons par question ; à un seul (§12, « 2 → 1 »), la section est absente avec son motif (D73 (6)).
  */
-export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRun): Section<{ readonly couples: readonly VariabiliteDuCouple[] }> {
-  return surCouplesCompares(contexte, () => ({
-    couples: variabiliteEntreEchantillons({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites }),
-  }));
+export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRun): SansObjet | VariabiliteDesEchantillons {
+  if (contexte.couples.compares.length === 0) return sansObjet("aucun_couple_compare");
+  return variabiliteDuRun({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites });
 }
 
 /** Une lecture affichée sans note retenue, ou une note sans lecture affichée du run : rien n'est publié. */

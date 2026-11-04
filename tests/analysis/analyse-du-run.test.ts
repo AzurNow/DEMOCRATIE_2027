@@ -204,6 +204,28 @@ describe("graines", () => {
   });
 });
 
+describe("plan à un seul échantillon par question (§12, levier « 2 → 1 », D73 (6))", () => {
+  /** Le run de référence réduit à son échantillon 1 : plan, réponses API, verdicts et notations de ces réponses. */
+  function aUnEchantillon(): ReturnType<typeof entreesDuRunAnalysable> {
+    const entrees = entreesDuRunAnalysable(SPEC_REFERENCE);
+    const reponses = entrees.reponses.filter((r) => r.canal !== "api" || r.echantillon === 1);
+    const gardees = new Set(reponses.map((r) => r.id));
+    return {
+      ...entrees,
+      plan: entrees.plan.filter((r) => r.echantillon === 1),
+      reponses,
+      verdicts: entrees.verdicts.filter((v) => gardees.has(v.objet_note.id)),
+      notations: entrees.notations.filter((n) => gardees.has(n.objet_note.id)),
+    };
+  }
+
+  it("la variabilité est publiée sans objet, motif un_seul_echantillon_au_plan, et le document reste conforme", () => {
+    const document = analyserRun(aUnEchantillon(), PARAMETRES, null) as Json;
+    expect(document["variabilite_echantillons"]).toEqual({ statut: "sans_objet", motif: "un_seul_echantillon_au_plan" });
+    expect(() => valider("metriques", document, "document à un échantillon")).not.toThrow();
+  });
+});
+
 describe("validerEtEcrire : schéma invalide en sortie", () => {
   const repertoire = mkdtempSync(join(tmpdir(), "banc-metriques-schema-"));
   afterAll(() => rmSync(repertoire, { recursive: true, force: true }));
