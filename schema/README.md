@@ -128,9 +128,11 @@ archive à DOI ne se réécrit pas.
 (§7) sont des textes qu'aucun outil n'a produits. Le filtre `contexte == "run"` est la seule barrière
 entre elles et un chiffre publié ; il vit dans `analysis/`, une fois.
 
-**Contestation pendant un run.** Le tirage fige `statut_contestation_au_gel`. Une contestation reçue
-après le gel n'entre pas dans le critère §12 — elle atterrit dans `run.contestations_posterieures[]`,
-qui est exactement l'entrée de l'analyse de robustesse §8(b).
+**Contestation pendant un run.** Le tirage fige `statut_contestation_au_gel`. Une contestation que
+ne porte pas le commit des données du gel (`versions.donnees_commit`), quelle que soit sa date
+(D73 (2)), n'entre pas dans le critère §12 — elle atterrit dans `run.contestations_posterieures[]`,
+qui est exactement l'entrée de l'analyse de robustesse §8(b), inscrite dans tout run gelé non
+invalide avant `pnpm analyze` (D73 (4)).
 
 **Candidat entrant ou sortant.** `run.perimetre.candidats[]` est un instantané : `statut_au_gel`
 (actif / nouveau / retire), `preuves_inclusion[]` (les deux sondages du §3, archivés, sans quoi la
