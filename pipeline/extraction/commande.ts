@@ -27,8 +27,10 @@
  * Code de sortie :
  * - 0 : chaque source est traitée (extraite ou refusée, D53 (2)) ou l'était déjà ;
  * - 1 : refus de partir ou erreur ;
- * - 2 : allée au bout, mais au moins une source est restée non traitée : incohérence d'entrée nommée,
- *   ou échec de transport (délai compris) ; elle sera reprise au prochain lancement ;
+ * - 2 : allée au bout, mais au moins une source est restée non traitée : incohérence d'entrée nommée
+ *   (dont le texte rejeté d'une source renvoyée à la réextraction, D73 (9), qui ne sera repris
+ *   qu'avec un texte d'empreinte différente), ou échec de transport (délai compris), repris au
+ *   prochain lancement ;
  * - 3 : plafond atteint : un appel nécessaire a été refusé, la commande s'est arrêtée, bilan imprimé.
  */
 
@@ -53,6 +55,7 @@ import { listerEntrees } from "./entrees.ts";
 import { EpinglageEnServiceIllisible, lireEpinglageEnService } from "./epinglage-en-service.ts";
 import { executer, type Bilan, type ContexteExtraction } from "./executer.ts";
 import { chargerPromptExtraction, VERSION_PROMPT_EXTRACTION, type VariablesExtraction } from "./prompt.ts";
+import type { TexteRenvoye } from "./renvoi.ts";
 
 export const OPTIONS_EXTRAIRE: readonly string[] = ["simule", "source", "plafond", "racine", "sortie"];
 
@@ -81,6 +84,12 @@ export interface Dependances {
   readonly arbreDuCodePropre: () => boolean;
   /** L'issue simulée de chaque demande, par enveloppe : `choixParEmpreinte` hors des tests. */
   readonly choixSimule: (enveloppe: NomEditeur) => Choix;
+  /**
+   * Les sources que la validation de cette racine renvoie à la réextraction, recalculées comme
+   * `pnpm promote` les imprime (`outils/extraire.ts`) : leur texte rejeté n'est jamais réextrait
+   * (D73 (9), `renvoi.ts`).
+   */
+  readonly renvoisAReextraction: (racine: string) => readonly TexteRenvoye[];
 }
 
 const REFUS_ATTENDUS = [RefusDePartir, ConfigurationEditeursRefusee, OptionsInconnues, SimuleSousZoneProtegee, EpinglageEnServiceIllisible];
@@ -202,6 +211,7 @@ async function derouler(argv: readonly string[], dependances: Dependances, impri
     sortie: mode.sortie,
     texte_prompt,
     configuration: mode.configuration,
+    renvois: dependances.renvoisAReextraction(racine),
     editeurs: mode.editeurs(texte_prompt),
     plafond: mode.plafond,
     commit: dependances.commit(),

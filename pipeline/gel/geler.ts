@@ -40,6 +40,7 @@ import { parse } from "yaml";
 import { lireInstant } from "../interrogation/heure-paris.ts";
 import { lireFormulationsData } from "../../validation/io/data-formulations.ts";
 import type { Violation } from "../questions/invariants.ts";
+import type { PositionsIncompatibles } from "../questions/tirabilite.ts";
 import type { Item, Mesure, Question, Symetrie, Tirage } from "../questions/types.ts";
 import type { FormulationsValidees } from "../reformulation/relecture.ts";
 import { fichiersDuGel, preparer, runAuGel, tirerAuGel } from "./assemblage.ts";
@@ -90,6 +91,25 @@ export interface ResultatGel {
   readonly symetrie: Symetrie;
   readonly questions: readonly Question[];
   readonly tirage: Tirage;
+  /**
+   * §5 (protocole 0.27, D67) : les items aux positions en vigueur incompatibles, exclus du tirage
+   * (motif `positions_incompatibles`), que l'auteur conteste dès le gel. `pnpm geler` les imprime.
+   */
+  readonly items_a_contester: readonly PositionsIncompatibles[];
+}
+
+/**
+ * §5 (protocole 0.27, D67) : ce que `pnpm geler` imprime des items à contester dès le gel, une ligne
+ * par candidat et mesure, chaque item avec sa position en vigueur. Chaîne vide sans conflit : la
+ * sortie du gel est alors celle d'avant ce lot.
+ */
+export function texteItemsAContester(conflits: readonly PositionsIncompatibles[]): string {
+  if (conflits.length === 0) return "";
+  const lignes = conflits.map((conflit) => {
+    const items = conflit.items.map((entree) => `${entree.item_id} (${entree.position})`).join(", ");
+    return `    candidat ${conflit.candidat_id}, mesure ${conflit.mesure_id} : ${items}\n`;
+  });
+  return `  ${conflits.length} groupe(s) d'items aux positions incompatibles, exclus du tirage, à contester dès le gel (§5) :\n${lignes.join("")}`;
 }
 
 /** La barrière refuse le run : rien n'est écrit. */
@@ -200,5 +220,14 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   const symetrie = verdict.symetrie;
   const meta = { type_run: options.type_run, commit, symetrie, protocole_sha256, balise, engagement, run_remplace_id };
   const repertoire = ecrireToutOuRien(destination, fichiersDuGel(prepare, entrees, tire, meta), options.ecrire);
-  return { repertoire, run_id, commit, tour: balise.tour, symetrie, questions: prepare.questions, tirage: tire.resultat.tirage };
+  return {
+    repertoire,
+    run_id,
+    commit,
+    tour: balise.tour,
+    symetrie,
+    questions: prepare.questions,
+    tirage: tire.resultat.tirage,
+    items_a_contester: tire.resultat.rapport.positions_incompatibles,
+  };
 }

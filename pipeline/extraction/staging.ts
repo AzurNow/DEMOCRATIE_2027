@@ -6,9 +6,17 @@
  * | Fichier | Schéma | Quand |
  * | --- | --- | --- |
  * | `reponses-extraction/<cle_source>/<sha256>/<modèle encodé>.<prompt_sha256>.json` | `reponse-extraction` | dès la réception, avant toute lecture du corps (règle 7) |
- * | `identifiants-extraction/<cle_source>/<sha256>.json` | aucun (tableau d'ULID validés individuellement) | avant le premier item ou la première mesure déposés |
+ * | `identifiants-extraction/<cle_source>/<sha256>/<texte_sha256>.json` | aucun (tableau d'ULID validés individuellement) | avant le premier item ou la première mesure déposés |
  * | `items/<id>.json`, `mesures/<id>.json` | `item`, `mesure` | après l'extraction, lus par `validation/io/staging.ts:chargerStaging` |
- * | `journal-extraction/<cle_source>/<sha256>.json` | `journal-extraction` | en dernier : il marque la source traitée |
+ * | `journal-extraction/<cle_source>/<sha256>/<texte_sha256>.json` | `journal-extraction` | en dernier : il marque le texte de la source traité |
+ *
+ * Journal et identifiants sont indexés par l'empreinte du texte canonique lu (D73 (9)) : une
+ * réextraction sur un nouveau texte du même document (nouvelle version épinglée) a sa propre place,
+ * à côté de celle du texte rejeté, qui n'est jamais relancé. Le code antérieur écrivait un fichier
+ * par document (`<cle_source>/<sha256>.json`) ; ces fichiers sont **lus**, jamais écrits ni
+ * déplacés : un journal par document vaut pour le texte qu'il porte (`texte_sha256`), et des
+ * identifiants par document ne sont repris que si aucun journal de ce document n'existe (arrêt avant
+ * le journal sous le code antérieur, constat 3).
  *
  * Chaque fichier est validé contre son schéma avant l'écriture (une donnée non conforme est une
  * erreur de code, rien n'est écrit), puis écrit une fois, de façon atomique : un temporaire du même
@@ -32,7 +40,7 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { existsSync, linkSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { NomSchema } from "../../outils/schemas/noms.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
@@ -86,6 +94,13 @@ export interface JournalExtraction {
   readonly issue: IssueJournal;
 }
 
+/** Un texte canonique d'une source : la clé du journal et des identifiants repris (D73 (9)). */
+export interface CleTexte {
+  readonly cle_source: string;
+  readonly sha256_source: string;
+  readonly texte_sha256: string;
+}
+
 export interface CleReponse {
   readonly cle_source: string;
   readonly sha256_source: string;
@@ -113,7 +128,12 @@ export function cheminReponse(sortie: string, cle: CleReponse): string {
   return join(sortie, REPERTOIRE_REPONSES, cle.cle_source, cle.sha256_source, `${encodeURIComponent(cle.modele)}.${cle.prompt_sha256}.json`);
 }
 
-export function cheminJournal(sortie: string, cle_source: string, sha256_source: string): string {
+export function cheminJournal(sortie: string, cle_source: string, sha256_source: string, texte_sha256: string): string {
+  return join(sortie, REPERTOIRE_JOURNAUX, cle_source, sha256_source, `${texte_sha256}.json`);
+}
+
+/** Le journal d'un document entier, écrit par le code antérieur à D73 (9) : lu, jamais écrit. */
+export function cheminJournalParDocument(sortie: string, cle_source: string, sha256_source: string): string {
   return join(sortie, REPERTOIRE_JOURNAUX, cle_source, `${sha256_source}.json`);
 }
 
@@ -182,13 +202,34 @@ export function ecrireMesureRepris(sortie: string, mesure: MesureStaging): strin
 }
 
 export function ecrireJournal(sortie: string, journal: JournalExtraction): string {
-  return ecrireUneFois("journal-extraction", cheminJournal(sortie, journal.cle_source, journal.sha256_source), journal);
+  const chemin = cheminJournal(sortie, journal.cle_source, journal.sha256_source, journal.texte_sha256);
+  return ecrireUneFois("journal-extraction", chemin, journal);
 }
 
 /* ------------------------------------------------------------------- reprise */
 
-export function journalPresent(sortie: string, cle_source: string, sha256_source: string): boolean {
-  return existsSync(cheminJournal(sortie, cle_source, sha256_source));
+/** Le texte que porte le journal par document du code antérieur, ou `null` s'il n'y en a pas. */
+function texteDuJournalParDocument(sortie: string, cle_source: string, sha256_source: string): string | null {
+  const chemin = cheminJournalParDocument(sortie, cle_source, sha256_source);
+  if (!existsSync(chemin)) return null;
+  const journal = valider<JournalExtraction>("journal-extraction", lireJson(chemin), chemin);
+  if (journal.cle_source !== cle_source || journal.sha256_source !== sha256_source) {
+    throw new StagingExtractionIllisible(chemin, `décrit la source ${journal.cle_source}/${journal.sha256_source}, pas celle de son chemin.`);
+  }
+  return journal.texte_sha256;
+}
+
+/** Ce texte de la source a déjà été extrait ou refusé : journal par texte, ou par document qui le porte. */
+export function journalPresent(sortie: string, cle: CleTexte): boolean {
+  if (existsSync(cheminJournal(sortie, cle.cle_source, cle.sha256_source, cle.texte_sha256))) return true;
+  return texteDuJournalParDocument(sortie, cle.cle_source, cle.sha256_source) === cle.texte_sha256;
+}
+
+/** Aucun texte de ce document n'a de journal, sous aucune des deux formes. */
+function aucunJournalDuDocument(sortie: string, cle_source: string, sha256_source: string): boolean {
+  const parTexte = join(sortie, REPERTOIRE_JOURNAUX, cle_source, sha256_source);
+  const journaux = existsSync(parTexte) ? readdirSync(parTexte).filter((nom) => nom.endsWith(".json")) : [];
+  return journaux.length === 0 && !existsSync(cheminJournalParDocument(sortie, cle_source, sha256_source));
 }
 
 function lireJson(chemin: string): unknown {
@@ -227,7 +268,12 @@ export function lireReponseGardeeUtilisable(sortie: string, cle: CleReponse): Re
   return null;
 }
 
-export function cheminIdentifiants(sortie: string, cle_source: string, sha256_source: string): string {
+export function cheminIdentifiants(sortie: string, cle_source: string, sha256_source: string, texte_sha256: string): string {
+  return join(sortie, REPERTOIRE_IDENTIFIANTS, cle_source, sha256_source, `${texte_sha256}.json`);
+}
+
+/** Les identifiants d'un document entier, écrits par le code antérieur à D73 (9) : lus, jamais écrits. */
+export function cheminIdentifiantsParDocument(sortie: string, cle_source: string, sha256_source: string): string {
   return join(sortie, REPERTOIRE_IDENTIFIANTS, cle_source, `${sha256_source}.json`);
 }
 
@@ -245,17 +291,25 @@ function exigerTableauDeChaines(valeur: unknown, chemin: string): readonly strin
  * `deposer` réutilise alors exactement ces identifiants plutôt que d'en tirer de nouveaux, ce qui
  * déposerait les mêmes items une seconde fois sous un autre nom. Ce fichier n'est ni un item, ni
  * une mesure, ni un journal, et n'est jamais lu par la validation : pas de schéma JSON propre pour
- * lui, mais chaque identifiant qu'il porte est validé contre `commun#/$defs/ulid`.
+ * lui, mais chaque identifiant qu'il porte est validé contre `commun#/$defs/ulid`. Des identifiants
+ * par document (code antérieur à D73 (9)) ne sont repris que si aucun journal de ce document
+ * n'existe : sinon ils appartiennent à un texte déjà extrait, jamais à un nouveau.
  */
-export function lireIdentifiantsRepris(sortie: string, cle_source: string, sha256_source: string): readonly string[] | null {
-  const chemin = cheminIdentifiants(sortie, cle_source, sha256_source);
-  if (!existsSync(chemin)) return null;
+export function lireIdentifiantsRepris(sortie: string, cle: CleTexte): readonly string[] | null {
+  const chemin = cheminIdentifiants(sortie, cle.cle_source, cle.sha256_source, cle.texte_sha256);
+  if (existsSync(chemin)) return lireIdentifiants(chemin);
+  const ancien = cheminIdentifiantsParDocument(sortie, cle.cle_source, cle.sha256_source);
+  if (existsSync(ancien) && aucunJournalDuDocument(sortie, cle.cle_source, cle.sha256_source)) return lireIdentifiants(ancien);
+  return null;
+}
+
+function lireIdentifiants(chemin: string): readonly string[] {
   const identifiants = exigerTableauDeChaines(lireJson(chemin), chemin);
   return identifiants.map((id, index) => validerFragment<string>("commun", "#/$defs/ulid", id, `${chemin}[${index}]`));
 }
 
-export function ecrireIdentifiantsRepris(sortie: string, cle_source: string, sha256_source: string, identifiants: readonly string[]): string {
-  const chemin = cheminIdentifiants(sortie, cle_source, sha256_source);
+export function ecrireIdentifiantsRepris(sortie: string, cle: CleTexte, identifiants: readonly string[]): string {
+  const chemin = cheminIdentifiants(sortie, cle.cle_source, cle.sha256_source, cle.texte_sha256);
   identifiants.forEach((id, index) => validerFragment<string>("commun", "#/$defs/ulid", id, `${chemin}[${index}] à écrire`));
   ecrireAtomique(chemin, `${JSON.stringify(identifiants, null, 2)}\n`);
   return chemin;

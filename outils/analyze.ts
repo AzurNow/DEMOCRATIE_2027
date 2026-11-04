@@ -15,9 +15,15 @@
  * `--premier` désigne le premier run de la tendance (§8, QR7, H5), lu et validé de la même façon,
  * avec son propre partage. Sans lui, H5 est publiée « sans objet » (`premier_run_absent`).
  *
+ * Avant toute lecture du run, la commande refuse (`ContestationsPosterieuresNonInscrites`) un run
+ * qui n'inscrit pas toutes les contestations postérieures que portent aujourd'hui les items de
+ * `--items` (D73 (4) : le recalcul (b) de `metriques.json` porte les contestations connues à son
+ * calcul ; règle de `pipeline/run/contestations-posterieures.ts`). Lancer d'abord
+ * `pnpm contestations-posterieures --ecrire`.
+ *
  * Codes de sortie : 0, le fichier est écrit ou déjà là à l'identique ; 2, la commande est mal
- * appelée, un fichier du run est illisible ou non conforme, le document n'est pas conforme à son
- * schéma, ou `metriques.json` existe et diffère. Dans ces cas, rien n'est écrit.
+ * appelée, un fichier du run est illisible ou non conforme, une contestation postérieure connue n'y
+ * est pas inscrite, le document n'est pas conforme à son schéma, ou `metriques.json` existe et diffère. Dans ces cas, rien n'est écrit.
  */
 
 import { analyserEtEcrire, PARAMETRES_PRODUCTION } from "../analysis/analyse-du-run.ts";
@@ -25,6 +31,8 @@ import { requetesDuPlanDuRun } from "../pipeline/interrogation/plan-du-run.ts";
 import { questionsDuSousEchantillonDuRun } from "../pipeline/interrogation/sous-echantillon-application.ts";
 import { echantillonHumainDuRun } from "../pipeline/notation/echantillons.ts";
 import { etatsDesLectures } from "../pipeline/notation/lectures-comparateur.ts";
+import { exigerContestationsInscrites } from "../pipeline/run/contestations-posterieures.ts";
+import { lireItemsData } from "../validation/io/data-items.ts";
 import { analyserArguments, obligatoire } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 
@@ -56,6 +64,7 @@ const LIBELLE_ISSUE = { ecrit: "écrit", inchange: "inchangé (déjà identique 
 function principal(): void {
   try {
     const { repertoire, items, premier } = demande(process.argv.slice(2));
+    exigerContestationsInscrites(repertoire, items, lireItemsData(items).values());
     const options = {
       items,
       plan_du_run: requetesDuPlanDuRun,

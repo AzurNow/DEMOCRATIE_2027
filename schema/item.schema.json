@@ -233,9 +233,14 @@
         },
         "motif": {
           "type": "string",
-          "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee", "transcription_non_verifiee"]
+          "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee", "transcription_non_verifiee", "confirmation_fictivite_manquante"]
         },
         "issue": { "type": "string", "enum": ["verifie", "rejete", "non_evaluable"] },
+        "motif_rejet": {
+          "type": "string",
+          "enum": ["texte_extrait_errone"],
+          "description": "§4 (protocole 0.27) : motif énuméré du rejet arbitré, recopié de la décision d'arbitrage ; texte_extrait_errone renvoie les sources de contenu de l'item à la réextraction. Absent sur un rejet arbitré sans motif énuméré, comme sur toute autre issue."
+        },
         "motivation": { "type": "string", "minLength": 1, "description": "§4 : « avec une motivation publiée »." }
       }
     },

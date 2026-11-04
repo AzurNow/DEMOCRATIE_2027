@@ -13,6 +13,7 @@ import {
   evaluerPromotion,
   type Dossier,
 } from "../validation/domaine/promotion.ts";
+import { controlerSpecifiques } from "../validation/domaine/grille.ts";
 import type { Correction, EntreeDecision, Item } from "../validation/domaine/types.ts";
 import {
   decision,
@@ -415,6 +416,67 @@ describe("items d'absence", () => {
           decision: "rejeter",
           questions_specifiques: { ...CONFIRME, confirmation_absence: false },
         }),
+      ]),
+      OPTIONS_PROMOTION,
+    );
+    expect(issue.sort === "promouvoir" && issue.statut).toBe("rejete");
+  });
+});
+
+/**
+ * §4.126 (conformité 2026-11-03 n° 2) : « Il n'est vérifié que si deux annotateurs confirment, par
+ * la grille de son type, que la mesure est absente des corpus balayés. » La question de la grille F
+ * qui le confirme est `fictivite_verifiee` ; même mécanique que la confirmation d'absence d'un item A.
+ */
+describe("items fictifs", () => {
+  const FICTIF = { fictivite_verifiee: true, plausibilite: true };
+
+  function deuxAccepter(item: Item, premiere: boolean, seconde: boolean) {
+    return evaluerPromotion(
+      dossier(item, [
+        decision({ annotateur_id: "a1", item, decision: "accepter", questions_specifiques: { ...FICTIF, fictivite_verifiee: premiere } }),
+        decision({ annotateur_id: "a2", item, decision: "accepter", questions_specifiques: { ...FICTIF, fictivite_verifiee: seconde } }),
+      ]),
+      OPTIONS_PROMOTION,
+    );
+  }
+
+  it("deux « accepter » qui confirment tous deux la fictivité : item vérifié", () => {
+    const issue = deuxAccepter(itemF(), true, true);
+    expect(issue.sort === "promouvoir" && issue.statut).toBe("verifie");
+  });
+
+  it("deux « accepter », un oui un non à la fictivité : arbitrage « confirmation_fictivite_manquante »", () => {
+    expect(deuxAccepter(itemF(), true, false)).toEqual({ sort: "arbitrage", motif: "confirmation_fictivite_manquante" });
+    expect(deuxAccepter(itemF(), false, true)).toEqual({ sort: "arbitrage", motif: "confirmation_fictivite_manquante" });
+  });
+
+  it("deux « accepter », deux non à la fictivité : arbitrage « confirmation_fictivite_manquante »", () => {
+    expect(deuxAccepter(itemF(), false, false)).toEqual({ sort: "arbitrage", motif: "confirmation_fictivite_manquante" });
+  });
+
+  it("réponse absente à la fictivité : refusée dès la décision par le contrôle de la grille", () => {
+    expect(controlerSpecifiques(itemF(), { plausibilite: true })).toEqual([{ cle: "fictivite_verifiee", probleme: "sans_reponse" }]);
+  });
+
+  it("deux « accepter » sans réponse à la fictivité (ligne écrite hors de l'interface) : jamais vérifié", () => {
+    const item = itemF();
+    const issue = evaluerPromotion(
+      dossier(item, [
+        decision({ annotateur_id: "a1", item, decision: "accepter", questions_specifiques: FICTIF }),
+        decision({ annotateur_id: "a2", item, decision: "accepter" }),
+      ]),
+      OPTIONS_PROMOTION,
+    );
+    expect(issue).toEqual({ sort: "arbitrage", motif: "confirmation_fictivite_manquante" });
+  });
+
+  it("deux « rejeter » d'un item F n'exigent aucune confirmation de fictivité", () => {
+    const item = itemF();
+    const issue = evaluerPromotion(
+      dossier(item, [
+        decision({ annotateur_id: "a1", item, decision: "rejeter", questions_specifiques: { ...FICTIF, fictivite_verifiee: false } }),
+        decision({ annotateur_id: "a2", item, decision: "rejeter", questions_specifiques: { ...FICTIF, fictivite_verifiee: false } }),
       ]),
       OPTIONS_PROMOTION,
     );

@@ -1,7 +1,8 @@
 /**
  * `pnpm promote` nomme les sources renvoyées à la réextraction (§4, protocole 0.24, D59 (9)), sur la
  * simulation : deux « rejeter » sous le motif « texte extrait erroné » renvoient la source de l'item,
- * deux « rejeter » dont un seul porte le motif sont nommés à part, à trancher. Rien n'est écrit.
+ * et, depuis le protocole 0.27 (conformité 2026-11-03 n° 1), deux « rejeter » dont un seul porte le
+ * motif la renvoient aussi. Rien n'est écrit.
  */
 import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
@@ -63,14 +64,12 @@ describe("pnpm promote : renvoi à la réextraction", () => {
 
   it("nomme la source renvoyée, son texte et l'item rejeté sous le motif", () => {
     expect(resultat.erreur).toBe("");
-    expect(resultat.sortie).toContain("Sources renvoyées à la réextraction (motif « texte extrait erroné ») : 1");
     expect(resultat.sortie).toMatch(new RegExp(`${"9".repeat(64)}\\s+texte ${"2".repeat(64)}.*items : ${renvoye.id}`));
   });
 
-  it("nomme à part le rejet aux motifs discordants, sans renvoyer sa source", () => {
-    expect(resultat.sortie).toMatch(/sans renvoi établi : 1/);
-    expect(resultat.sortie).toMatch(new RegExp(`${discordant.id}\\s+motifs_discordants`));
-    expect(resultat.sortie).not.toMatch(new RegExp(`${"8".repeat(64)}\\s+texte`));
+  it("renvoie aussi la source du rejet dont un seul « rejeter » porte le motif (§4, protocole 0.27)", () => {
+    expect(resultat.sortie).toContain("Sources renvoyées à la réextraction (motif « texte extrait erroné ») : 2");
+    expect(resultat.sortie).toMatch(new RegExp(`${"8".repeat(64)}\\s+texte ${"2".repeat(64)}.*items : ${discordant.id}`));
   });
 
   it("les deux items restent promus « rejeté » : le motif ne change pas le sort", () => {
