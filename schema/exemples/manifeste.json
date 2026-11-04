@@ -1982,6 +1982,23 @@
       }
     },
     {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/valide-03-rejet-texte-extrait-errone.json",
+      "attendu": "valide",
+      "motif": "Rejet arbitré sous le motif « texte extrait erroné ». §4 (protocole 0.27) : la décision de l'arbitre porte le motif comme celle d'un annotateur, et c'est ce motif qui renvoie la source à la réextraction."
+    },
+    {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/invalide-04-motif-rejet-sans-rejet.json",
+      "attendu": "invalide",
+      "motif": "Motif de rejet sur une issue « non_evaluable ». §4 : le motif énuméré est celui d'un rejet ; porté par une autre issue, il renverrait une source à la réextraction sans rejet qui le fonde.",
+      "regle_protocole": "§4, contrat des artefacts (protocole 0.27)",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/issue"
+      }
+    },
+    {
       "objet": "notification-due",
       "fichier": "notification-due/valide-01-creation.json",
       "attendu": "valide",

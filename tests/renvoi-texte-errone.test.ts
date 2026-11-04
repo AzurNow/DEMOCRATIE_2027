@@ -23,7 +23,7 @@ import {
   renvoyerEnAttente,
   type ContexteTexteErrone,
 } from "../validation/domaine/renvoi-texte-errone.ts";
-import type { Decision, EntreeDecision, Item, Source } from "../validation/domaine/types.ts";
+import type { BlocArbitrage, Decision, EntreeDecision, Item, Source } from "../validation/domaine/types.ts";
 import { decision, itemA, itemO, itemP, source } from "./aides/fabriques.ts";
 
 const DOCUMENT = "1".repeat(64);
@@ -186,7 +186,11 @@ describe("texte extrait erroné : les autres items validés sur ce texte", () =>
   });
 });
 
-describe("texte extrait erroné : seuls les renvois tranchés déclenchent le retour en attente", () => {
+/**
+ * Protocole 0.27 (conformité 2026-11-03 n° 1) : les trois cas que la 0.24 laissait « à trancher »
+ * renvoient désormais leurs sources, et la validation des autres items sur ces textes tombe.
+ */
+describe("texte extrait erroné : du rejet qui renvoie aux autres items du même texte (protocole 0.27)", () => {
   const MOTIF = "texte_extrait_errone" as const;
 
   function rejet(annotateur_id: string, item: Item, motif: boolean): EntreeDecision {
@@ -194,35 +198,76 @@ describe("texte extrait erroné : seuls les renvois tranchés déclenchent le re
     return motif ? { ...entree, motif_rejet: MOTIF } : entree;
   }
 
-  function verdictRejete(item: Item, decisions: readonly EntreeDecision[]): VerdictRejet {
-    const issue: Issue = { sort: "promouvoir", statut: "rejete", item, corrections_appliquees: false };
+  function verdictRejete(item: Item, decisions: readonly EntreeDecision[], arbitrage?: BlocArbitrage): VerdictRejet {
+    const promu = arbitrage === undefined ? item : { ...item, arbitrage };
+    const issue: Issue = { sort: "promouvoir", statut: "rejete", item: promu, corrections_appliquees: false };
     return { item, dossier: { decisions }, issue };
   }
 
-  it("renvoi « à trancher » (motifs discordants, rejet arbitré, plusieurs sources) : aucun item touché", () => {
+  function blocArbitre(motif: boolean): BlocArbitrage {
+    return {
+      decision_id: "01JBANCESSA1ARB1TRAGE00001",
+      date: "2026-10-02T10:00:00+02:00",
+      arbitre: "auteur",
+      arbitre_seul: false,
+      motif: "desaccord",
+      issue: "rejete",
+      motivation: "Motivation publiée de la décision.",
+      ...(motif ? { motif_rejet: MOTIF } : {}),
+    };
+  }
+
+  function plan(verdicts: readonly VerdictRejet[], autres: readonly Item[], publies: readonly Item[] = []) {
+    const renvois = renvoisAReextraction(verdicts);
+    const items = [...verdicts.map((verdict) => verdict.item), ...autres];
+    return planifierTexteErrone({
+      renvois: renvois.sources,
+      items,
+      publies: new Map(publies.map((item) => [item.id, item])),
+      jugements: jugementsComplets(items),
+    });
+  }
+
+  it("un seul « rejeter » sous le motif : l'item non publié sur ce texte retourne en attente, le publié est à contester", () => {
     const discordant = itemSur("01JBANCESSA1000000000TEMD1");
+    const y = itemSur("01JBANCESSA1000000000TEMY1");
+    const publie = itemSur("01JBANCESSA1000000000TEMY2");
+    const resultat = plan([verdictRejete(discordant, [rejet("a1", discordant, true), rejet("a2", discordant, false)])], [y, publie], [publie]);
+    expect(resultat.retours.map((retour) => [retour.item.id, retour.sort])).toEqual([[y.id, "renvoyer"]]);
+    expect(resultat.a_contester.map((entree) => entree.item.id)).toEqual([publie.id]);
+  });
+
+  it("rejet arbitré dont l'arbitre porte le motif : l'item sur ce texte retourne en attente", () => {
     const arbitre = itemSur("01JBANCESSA1000000000TEMD2");
+    const y = itemSur("01JBANCESSA1000000000TEMY1");
+    const accepte = decision({ annotateur_id: "a2", item: arbitre, decision: "accepter" });
+    const resultat = plan([verdictRejete(arbitre, [rejet("a1", arbitre, false), accepte], blocArbitre(true))], [y]);
+    expect(resultat.retours.map((retour) => retour.item.id)).toEqual([y.id]);
+  });
+
+  it("rejet arbitré dont l'arbitre ne porte pas le motif : aucun item touché, même si un annotateur l'avait donné", () => {
+    const arbitre = itemSur("01JBANCESSA1000000000TEMD2");
+    const y = itemSur("01JBANCESSA1000000000TEMY1");
+    const accepte = decision({ annotateur_id: "a2", item: arbitre, decision: "accepter" });
+    const resultat = plan([verdictRejete(arbitre, [rejet("a1", arbitre, true), accepte], blocArbitre(false))], [y]);
+    expect(resultat).toEqual({ retours: [], a_contester: [], sans_texte: [] });
+  });
+
+  it("item O à deux sources distinctes : les items sur l'un comme sur l'autre texte retournent en attente", () => {
     const bloc = itemO().obsolescence as NonNullable<Item["obsolescence"]>;
     const deuxSources = itemO({
       id: "01JBANCESSA1000000000TEMD3",
       obsolescence: { ...bloc, etat_posterieur: { ...bloc.etat_posterieur, source: source({ sha256: "8".repeat(64) }) } },
     });
-    const temoin = itemSur("01JBANCESSA1000000000TEMY1");
-    const renvois = renvoisAReextraction([
-      verdictRejete(discordant, [rejet("a1", discordant, true), rejet("a2", discordant, false)]),
-      verdictRejete(arbitre, [rejet("a1", arbitre, true), decision({ annotateur_id: "a2", item: arbitre, decision: "accepter" })]),
-      verdictRejete(deuxSources, [rejet("a1", deuxSources, true), rejet("a2", deuxSources, true)]),
+    const surPremiere = itemSur("01JBANCESSA1000000000TEMY1");
+    const surSeconde = itemSur("01JBANCESSA1000000000TEMY2", source({ sha256: "8".repeat(64) }));
+    const temoin = itemSur("01JBANCESSA1000000000TEMY3", source({ sha256: "7".repeat(64) }));
+    const resultat = plan([verdictRejete(deuxSources, [rejet("a1", deuxSources, true), rejet("a2", deuxSources, true)])], [
+      surPremiere,
+      surSeconde,
+      temoin,
     ]);
-    expect(renvois.a_trancher.map((rejetATrancher) => rejetATrancher.raison).sort()).toEqual([
-      "motifs_discordants",
-      "plusieurs_sources",
-      "rejet_arbitre",
-    ]);
-
-    const items = [discordant, arbitre, deuxSources, temoin];
-    const publies = new Map([[temoin.id, temoin]]);
-    const plan = planifierTexteErrone({ renvois: renvois.sources, items, publies, jugements: jugementsComplets(items) });
-    expect(plan).toEqual({ retours: [], a_contester: [], sans_texte: [] });
+    expect(resultat.retours.map((retour) => retour.item.id)).toEqual([surPremiere.id, surSeconde.id]);
   });
 });
 

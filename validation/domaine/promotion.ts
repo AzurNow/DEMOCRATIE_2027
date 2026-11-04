@@ -28,6 +28,7 @@ import { empreinteContenuNotant } from "./empreinte.ts";
 import { reduireEtats } from "./grille.ts";
 import type {
   BlocArbitrage,
+  CleSpecifique,
   Correction,
   Decision,
   EntreeDecision,
@@ -54,6 +55,9 @@ export const MOTIFS_ARBITRAGE = [
   // Conformité n° 12 : item à source T2 que les deux annotateurs n'ont pas tous deux déclaré
   // avoir écouté, transcription fidèle. Même mécanique que `confirmation_absence_manquante`.
   "transcription_non_verifiee",
+  // Conformité 2026-11-03 n° 2 (§4) : item F dont les deux annotateurs n'ont pas tous deux confirmé
+  // la fictivité. Même mécanique que `confirmation_absence_manquante`.
+  "confirmation_fictivite_manquante",
 ] as const;
 export type MotifArbitrage = (typeof MOTIFS_ARBITRAGE)[number];
 
@@ -272,14 +276,8 @@ function verifier(
   seconde: EntreeDecision,
   options: OptionsPromotion,
 ): Issue {
-  const manqueConfirmation = dossier.item.type === "A" && !absenceConfirmee(premiere, seconde);
-  if (manqueConfirmation) {
-    return { sort: "arbitrage", motif: "confirmation_absence_manquante" };
-  }
-  // §4, §9 (conformité n° 12) : une transcription T2 est vérifiée à l'oreille, par les deux.
-  if (porteUneSourceT2(dossier.item) && !transcriptionEcouteeParLesDeux([premiere, seconde])) {
-    return { sort: "arbitrage", motif: "transcription_non_verifiee" };
-  }
+  const manquante = confirmationManquante(dossier.item, premiere, seconde);
+  if (manquante !== null) return { sort: "arbitrage", motif: manquante };
 
   const corrige = fusionnerCorrections(dossier.item, premiere, seconde);
   if (corrige.sort === "arbitrage") return corrige;
@@ -292,11 +290,28 @@ function verifier(
   };
 }
 
-function absenceConfirmee(premiere: EntreeDecision, seconde: EntreeDecision): boolean {
-  return (
-    premiere.questions_specifiques?.confirmation_absence === true &&
-    seconde.questions_specifiques?.confirmation_absence === true
-  );
+/**
+ * Ce que les deux annotateurs doivent avoir confirmé, par la grille du type, pour que deux décisions
+ * concordantes vérifient l'item ; null si rien ne manque. Une réponse absente ne vaut jamais oui.
+ */
+function confirmationManquante(item: Item, premiere: EntreeDecision, seconde: EntreeDecision): MotifArbitrage | null {
+  if (item.type === "A" && !confirmeeParLesDeux("confirmation_absence", premiere, seconde)) {
+    return "confirmation_absence_manquante";
+  }
+  // §4 (conformité 2026-11-03 n° 2) : « Il n'est vérifié que si deux annotateurs confirment, par la
+  // grille de son type, que la mesure est absente des corpus balayés. »
+  if (item.type === "F" && !confirmeeParLesDeux("fictivite_verifiee", premiere, seconde)) {
+    return "confirmation_fictivite_manquante";
+  }
+  // §4, §9 (conformité n° 12) : une transcription T2 est vérifiée à l'oreille, par les deux.
+  if (porteUneSourceT2(item) && !transcriptionEcouteeParLesDeux([premiere, seconde])) {
+    return "transcription_non_verifiee";
+  }
+  return null;
+}
+
+function confirmeeParLesDeux(cle: CleSpecifique, premiere: EntreeDecision, seconde: EntreeDecision): boolean {
+  return premiere.questions_specifiques?.[cle] === true && seconde.questions_specifiques?.[cle] === true;
 }
 
 interface FusionReussie {
