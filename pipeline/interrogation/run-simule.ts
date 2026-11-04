@@ -7,7 +7,7 @@
  *   - `perimetre.yaml`, chargé par `pipeline/questions/charger-perimetre.ts` (même chargeur que
  *     `config/perimetre.yaml`) ;
  *   - `questions.json`, chaque question validée contre `schema/question.schema.json` ;
- *   - `run-simule.json` : identifiant du run, début de fenêtre, clé d'API fictive, alias aveugles,
+ *   - `run-simule.json` : identifiant du run, type du run, début de fenêtre, clé d'API fictive, alias aveugles,
  *     profil d'éditeur simulé de chaque outil interrogé.
  * Sortie : la disposition de `runs/README.md` sous la racine donnée — jamais `runs/` par défaut.
  *
@@ -47,6 +47,8 @@ interface Simulation {
 
 interface ParametresSimulation extends Simulation {
   readonly run_id: string;
+  /** §6 (0.27) : règle l'ouverture de la fenêtre, avec `date_gel` du périmètre ; exigé, jamais supposé. */
+  readonly type_run: string;
   readonly fenetre_debut: string;
   readonly alias_aveugles: ReadonlyMap<string, string>;
 }
@@ -109,6 +111,7 @@ function lireParametres(chemin: string): ParametresSimulation {
   return {
     ...simulationDe(brut, chemin),
     run_id: exigerTexte(brut, "run_id", chemin),
+    type_run: exigerTexte(brut, "type_run", chemin),
     fenetre_debut: exigerTexte(brut, "fenetre_debut", chemin),
     alias_aveugles: exigerTable(brut, "alias_aveugles", chemin, texteOuNull),
   };
@@ -180,7 +183,7 @@ export async function lancerRunSimule(options: OptionsRunSimule): Promise<Result
   return executerSimulation({
     plan: planifier(perimetre.perimetre.outils, lireQuestions(join(fixtures, "questions.json"))),
     run_id: parametres.run_id,
-    fenetre: ouvrirFenetre(parametres.fenetre_debut),
+    fenetre: ouvrirFenetre(parametres.fenetre_debut, { type_run: parametres.type_run, date_gel: perimetre.date_gel }),
     disposition: dispositionRun(options.sortie, perimetre.date_gel),
     simulation: parametres,
     avant_premiere_tentative: () => undefined,

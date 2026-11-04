@@ -2,7 +2,8 @@
  * Le sous-échantillon de l'application grand public (§6, QR8, exploratoire ; D59 (12), protocole 0.24).
  *
  * §6 : « deux testeurs saisissent à la main un sous-échantillon stratifié des questions du run, cinq
- * par candidat interrogé […]. Les cinq questions d'un candidat sont réparties entre ses gabarits en
+ * par candidat interrogé (60 pour 12 candidats), toutes ses questions tirées pour un candidat
+ * interrogé qui en a moins de cinq […]. Les cinq questions d'un candidat sont réparties entre ses gabarits en
  * tourniquet, gabarits et questions pris dans l'ordre trié de leurs codes et identifiants ; chacune
  * est saisie dans sa formulation neutre, en un seul échantillon, numéroté 1. Chacun des deux testeurs
  * saisit tout le sous-échantillon. »
@@ -24,9 +25,11 @@
  * ni son seuil de couverture, ni son statut, ni son nom n'y entrent.
  *
  * **Ce qui n'est pas décidé ici.** Les questions d'attribution ne nomment aucun candidat (§5) et ne
- * sont « cinq par candidat » d'aucun : elles n'y entrent pas. Un candidat interrogé qui a moins de
- * cinq questions tirées n'a pas de règle au §6 : le calcul lève `SousEchantillonInsuffisant`, qui
- * les nomme tous, plutôt que de compléter ou de raccourcir en silence.
+ * sont « cinq par candidat » d'aucun : elles n'y entrent pas.
+ *
+ * **Moins de cinq questions tirées** (§6, 0.27, D62) : le candidat interrogé prend toutes ses
+ * questions tirées, dans l'ordre du tourniquet ; rien n'est complété. Un candidat interrogé sans
+ * aucune question tirée garde son bloc, vide, pour que l'absence reste visible.
  */
 
 import { candidatsInterroges, type PorteInterroge } from "../../analysis/candidats-interroges.ts";
@@ -79,21 +82,6 @@ export interface SousEchantillonApplication {
   readonly candidats: readonly SousEchantillonCandidat[];
 }
 
-/** Des candidats interrogés qui ont moins de cinq questions tirées : aucune règle au §6. */
-export class SousEchantillonInsuffisant extends Error {
-  readonly candidats: readonly { readonly candidat_id: string; readonly questions: number }[];
-
-  constructor(candidats: readonly { readonly candidat_id: string; readonly questions: number }[]) {
-    const liste = candidats.map((c) => `${c.candidat_id} (${c.questions})`).join(", ");
-    super(
-      `Sous-échantillon de l'application impossible : moins de ${QUESTIONS_PAR_CANDIDAT} questions tirées pour ` +
-        `${liste}. Le §6 ne dit ni de compléter ni de raccourcir ; aucune question n'est inventée.`,
-    );
-    this.name = "SousEchantillonInsuffisant";
-    this.candidats = candidats;
-  }
-}
-
 /** Une question tirée sans formulation neutre unique dans `questions.json`. */
 export class FormulationNeutreIntrouvable extends Error {
   constructor(question_id: string, trouvees: number) {
@@ -109,10 +97,6 @@ export function sousEchantillonApplication(entrees: EntreesSousEchantillon): Sou
   const formulations = formulationsNeutres(entrees.questions);
   const ids = candidatsInterroges(entrees.candidats).map((c) => c.candidat_id).sort(comparerChaines);
   const choix = ids.map((candidat_id) => ({ candidat_id, retenues: tourniquet(filesParGabarit(entrees.entrees, candidat_id)) }));
-  const insuffisants = choix.filter((c) => c.retenues.length < QUESTIONS_PAR_CANDIDAT);
-  if (insuffisants.length > 0) {
-    throw new SousEchantillonInsuffisant(insuffisants.map((c) => ({ candidat_id: c.candidat_id, questions: c.retenues.length })));
-  }
   const sortie: SousEchantillonApplication = {
     run_id: entrees.run_id,
     questions_par_candidat: QUESTIONS_PAR_CANDIDAT,
@@ -148,7 +132,7 @@ function filesParGabarit(entrees: readonly EntreeTiree[], candidat_id: string): 
     .map(([, file]) => [...file].sort((a, b) => comparerChaines(a.question_id, b.question_id)));
 }
 
-/** Une question de chaque file à tour de rôle, une file épuisée sautée, jusqu'à cinq. */
+/** Une question de chaque file à tour de rôle, une file épuisée sautée, jusqu'à cinq ou jusqu'à épuisement de toutes. */
 function tourniquet(files: readonly (readonly EntreeTiree[])[]): readonly EntreeTiree[] {
   const retenues: EntreeTiree[] = [];
   const longueur = Math.max(0, ...files.map((file) => file.length));

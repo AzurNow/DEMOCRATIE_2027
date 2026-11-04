@@ -26,6 +26,7 @@ import type { Source } from "../../validation/domaine/types.ts";
 import { lireTexteCanonique, lireTranscription } from "../../validation/io/staging.ts";
 import { choisirFiche, type ExtracteurEpingle, type FicheExtraction } from "./choix-texte.ts";
 import { decrireEnService, estEnService, type EpinglageEnService } from "./epinglage-en-service.ts";
+import type { TexteDesigne } from "./renvoi.ts";
 
 export const REPERTOIRE_ENTREES = "entrees-extraction";
 const REPERTOIRE_FICHES = "extractions";
@@ -154,6 +155,17 @@ function vttDe(staging: string, lue: EntreeLue, source: Source): string | null {
 function exigerEpinglageEnService(lue: EntreeLue, enService: EpinglageEnService): void {
   const inscrit = lue.entree.extracteur_epingle;
   if (!estEnService(enService, inscrit)) throw new EpinglageExtracteurPerime(lue.cle, inscrit, decrireEnService(enService, inscrit.outil));
+}
+
+/**
+ * Le texte que l'entrée désigne, par la seule règle `choisirFiche` sur l'extracteur qu'elle épingle,
+ * et l'URL de son bloc source (D73 (9)) : lu avant le journal, qui est indexé par texte. L'épinglage
+ * en service n'est pas comparé ici : une entrée journalisée sous un épinglage abandonné reste
+ * sautée, comme avant, et n'est refusée par `materiauDe` que si elle doit être extraite.
+ */
+export function texteDesigne(staging: string, lue: EntreeLue): TexteDesigne {
+  const fiche = choisirFiche(fichesDe(staging, lue), lue.entree.extracteur_epingle, lue.entree.sha256_source);
+  return { sha256_source: lue.entree.sha256_source, texte_sha256: fiche.texte_sha256, url: blocDe(lue, fiche).url };
 }
 
 /**

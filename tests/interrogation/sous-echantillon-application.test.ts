@@ -1,6 +1,7 @@
 /**
  * Sous-échantillon de l'application (§6, QR8 ; D59 (12), protocole 0.24) : « un sous-échantillon
- * stratifié des questions du run, cinq par candidat interrogé […]. Les cinq questions d'un candidat
+ * stratifié des questions du run, cinq par candidat interrogé (60 pour 12 candidats), toutes ses
+ * questions tirées pour un candidat interrogé qui en a moins de cinq […]. Les cinq questions d'un candidat
  * sont réparties entre ses gabarits en tourniquet, gabarits et questions pris dans l'ordre trié de
  * leurs codes et identifiants ; chacune est saisie dans sa formulation neutre, en un seul
  * échantillon, numéroté 1. Chacun des deux testeurs saisit tout le sous-échantillon. »
@@ -13,7 +14,6 @@ import {
   QUESTIONS_PAR_CANDIDAT,
   questionsDuSousEchantillonDuRun,
   sousEchantillonApplication,
-  SousEchantillonInsuffisant,
   type EntreesSousEchantillon,
 } from "../../pipeline/interrogation/sous-echantillon-application.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
@@ -106,22 +106,44 @@ describe("tourniquet des gabarits", () => {
     expect(candidat?.questions.map((x) => x.gabarit)).toEqual(Array(5).fill("Q-FER"));
   });
 
-  it("moins de cinq questions tirées pour un candidat interrogé : refus nommé, aucune question inventée", () => {
-    const pleine = jeu("cand-a", { "Q-DIR": 5 });
-    const courte = jeu("cand-b", { "Q-DIR": 2, "Q-FER": 1 });
+  it.each([0, 1, 4])(
+    "%i question(s) tirée(s) pour un candidat interrogé : toutes ses questions, dans l'ordre du tourniquet, aucune inventée (§6, 0.27)",
+    (n) => {
+      const pleine = jeu("cand-a", { "Q-DIR": 5 });
+      // Réparties sur deux gabarits pour que l'ordre du tourniquet se voie dès deux questions.
+      const courte = jeu("cand-b", { "Q-DIR": Math.ceil(n / 2), "Q-FER": Math.floor(n / 2) });
+      const candidats = [{ candidat_id: "cand-a", interroge: true }, { candidat_id: "cand-b", interroge: true }];
 
-    expect(() =>
-      sousEchantillonApplication(
-        entrees([{ candidat_id: "cand-a", interroge: true }, { candidat_id: "cand-b", interroge: true }], [pleine, courte]),
-      ),
-    ).toThrow(SousEchantillonInsuffisant);
-    try {
-      sousEchantillonApplication(
-        entrees([{ candidat_id: "cand-a", interroge: true }, { candidat_id: "cand-b", interroge: true }], [pleine, courte]),
-      );
-    } catch (erreur) {
-      expect((erreur as SousEchantillonInsuffisant).candidats).toEqual([{ candidat_id: "cand-b", questions: 3 }]);
-    }
+      const resultat = sousEchantillonApplication(entrees(candidats, [pleine, courte]));
+
+      const b = resultat.candidats.find((c) => c.candidat_id === "cand-b");
+      const dir = trier(courte.entrees.filter((e) => e.gabarit === "Q-DIR").map((e) => e.question_id));
+      const fer = trier(courte.entrees.filter((e) => e.gabarit === "Q-FER").map((e) => e.question_id));
+      const attendu = Array.from({ length: n }, (_, i) => (i % 2 === 0 ? dir[i / 2] : fer[(i - 1) / 2]));
+      expect(b?.questions.map((x) => x.question_id)).toEqual(attendu);
+      expect(b?.questions.map((x) => x.rang)).toEqual(Array.from({ length: n }, (_, i) => i + 1));
+      expect(resultat.candidats.find((c) => c.candidat_id === "cand-a")?.questions).toHaveLength(5);
+    },
+  );
+
+  it("zéro question tirée : le candidat interrogé reste visible, avec un sous-échantillon vide", () => {
+    const pleine = jeu("cand-a", { "Q-DIR": 5 });
+    const candidats = [{ candidat_id: "cand-a", interroge: true }, { candidat_id: "cand-b", interroge: true }];
+
+    const resultat = sousEchantillonApplication(entrees(candidats, [pleine]));
+
+    expect(resultat.candidats.map((c) => c.candidat_id)).toEqual(["cand-a", "cand-b"]);
+    expect(resultat.candidats[1]?.questions).toEqual([]);
+  });
+
+  it.each([5, 6])("%i questions tirées : exactement cinq, le choix du tourniquet est inchangé", (n) => {
+    const j = jeu("cand-a", { "Q-DIR": Math.ceil(n / 2), "Q-FER": Math.floor(n / 2) });
+
+    const [candidat] = sousEchantillonApplication(entrees([{ candidat_id: "cand-a", interroge: true }], [j])).candidats;
+
+    const dir = trier(j.entrees.filter((e) => e.gabarit === "Q-DIR").map((e) => e.question_id));
+    const fer = trier(j.entrees.filter((e) => e.gabarit === "Q-FER").map((e) => e.question_id));
+    expect(candidat?.questions.map((x) => x.question_id)).toEqual([dir[0], fer[0], dir[1], fer[1], dir[2]]);
   });
 });
 

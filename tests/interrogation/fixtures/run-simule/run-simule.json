@@ -1,6 +1,7 @@
 {
   "$comment": "Run simulé de `pnpm run:dry`. Fenêtre : mardi 1er décembre 2026, 6 h à Paris. Les profils disent, pour chaque outil, les issues que l'éditeur simulé tire de façon déterministe (empreinte du corps et du rang d'envoi, aucune graine) parmi editeur-simule.ts:ISSUES_NOMMEES. outil-beta est en panne fréquente, pour que le bilan montre des manquantes. La clé d'API est fictive et ne doit jamais apparaître dans une réponse écrite.",
   "run_id": "01KBCS0G00SM0R0N0S1M01E000",
+  "type_run": "mensuel",
   "fenetre_debut": "2026-12-01T06:00:00+01:00",
   "cle_api": "cle-api-simulee-jamais-ecrite",
   "alias_aveugles": {

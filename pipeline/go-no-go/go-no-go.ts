@@ -55,7 +55,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { tirerEchantillonHumain } from "../notation/echantillons.ts";
 import type { GraineTirage, Symetrie } from "../questions/types.ts";
-import { STATUT_INVALIDE, STATUT_PLANIFIE, type StatutRun } from "../run/types.ts";
+import { STATUT_INVALIDE, STATUT_PLANIFIE, type StatutRun, type TypeRun } from "../run/types.ts";
 import {
   constatGraineDuTirage,
   constatInterrogationDansLaFenetre,
@@ -90,6 +90,9 @@ interface VueGoNoGo {
   readonly statut: StatutRun;
   readonly invalidation?: { readonly motif: string };
   readonly fenetre: { readonly debut: string; readonly fin: string };
+  /** §6 (0.27) : avec `date_gel`, la règle d'ouverture de la fenêtre (`fenetre.ts:ouvrirFenetre`). */
+  readonly type_run: TypeRun;
+  readonly date_gel: string;
   readonly symetrie: Symetrie;
   readonly graines: { readonly tirage: GraineTirage; readonly bootstrap: GraineTirage; readonly permutation: GraineTirage };
   readonly perimetre: { readonly outils: readonly OutilDeclare[] };
@@ -191,7 +194,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     constatItemsAbsenceReverifies(),
     constatGraineDuTirage(vue.graines.tirage, graineDuFichierTirage(repertoire_run, run)),
     constatNotationComplete(obtenues, new Set<Ulid>(verdicts.map((v) => v.objet_note.id))),
-    constatInterrogationDansLaFenetre(vue.fenetre, reponses),
+    constatInterrogationDansLaFenetre(vue, reponses),
     constatRobustesseCalculee(metriques === null ? null : metriques.robustesse),
   ];
   return {

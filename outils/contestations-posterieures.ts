@@ -1,15 +1,19 @@
 /**
  * `pnpm contestations-posterieures` — inscrit dans `run.json#/contestations_posterieures` de chaque
- * run publié les contestations reçues après son gel (§8, recalcul (b) ; protocole 0.30, D72 (1)).
+ * run gelé non invalide les contestations que ne porte pas le commit des données de son gel (§8,
+ * recalcul (b) ; D72 (1), D73 (2) et (4)).
  *
  *   pnpm contestations-posterieures [--data=data/items] [--runs=runs] [--ecrire]
  *
- * Lancée après le commit d'une contestation (`pnpm contester`), et après chaque publication d'un
- * run : elle relit toutes les contestations des items publiés et ajoute à chaque run `publie` ou
- * `publie_provisoire` celles reçues strictement après sa `date_gel` qu'il ne porte pas encore. Elle
- * est idempotente : relancée, elle n'ajoute rien de plus. Une commande à part plutôt qu'une étape
- * de `pnpm contester`, parce qu'un run gelé avant une contestation peut n'être publié qu'après elle :
- * la relance après sa publication l'y inscrit, ce qu'une étape de la contestation manquerait.
+ * Lancée après le commit d'une contestation (`pnpm contester`), après chaque gel, et toujours avant
+ * `pnpm analyze`, qui refuse un run où manque une contestation postérieure connue
+ * (`ContestationsPosterieuresNonInscrites`) : elle relit toutes les contestations des items publiés
+ * et ajoute à chaque run `planifie`, `en_cours`, `publie` ou `publie_provisoire` celles que
+ * `data/items` ne porte pas au commit `run.json#/versions/donnees_commit` (relu en Git, en local),
+ * quelle que soit leur date de réception, item hors tirage compris. Un run `invalide` ne reçoit
+ * rien. Elle est idempotente : relancée, elle n'ajoute rien de plus. Une commande à part plutôt
+ * qu'une étape de `pnpm contester`, parce qu'un run peut être gelé après une contestation sans que
+ * son commit des données la porte : la relance après le gel l'y inscrit.
  *
  * Règles (`pipeline/run/contestations-posterieures.ts`) : ajout seul, une entrée par contestation,
  * aucune entrée réécrite ; une entrée présente qui diffère de l'item arrête tout sans rien écrire.
@@ -54,7 +58,7 @@ function decrire(ajout: AjoutAuRun): string {
 function principal(): void {
   const options = lireOptions();
   if (options.ecrire && !ecriturePermise(options.racine)) return;
-  const ajouts = synchroniserContestationsPosterieures(options.runs, lireItemsData(options.data).values(), options.ecrire);
+  const ajouts = synchroniserContestationsPosterieures(options.runs, options.data, lireItemsData(options.data).values(), options.ecrire);
   if (ajouts.length === 0) {
     process.stdout.write("Aucune contestation postérieure à ajouter : rien n'est écrit.\n");
     return;

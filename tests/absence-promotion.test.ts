@@ -16,7 +16,9 @@ import { refusPromotionAbsence, type PromotionAbsence } from "../validation/doma
 import type { RattachementItem } from "../validation/domaine/rattachements-item.ts";
 import type { RelectureMesure } from "../validation/domaine/relectures-mesure.ts";
 import type { Item } from "../validation/domaine/types.ts";
+import { extraireSource } from "../pipeline/extraction/extraction.ts";
 import { itemA, itemF, itemO, itemP, source } from "./aides/fabriques.ts";
+import { CANDIDAT, entreeHtml, ports, propose, SHA_SOURCE, sortie, sourceHtml } from "./extraction/aides.ts";
 
 const MESURE = "01JBANCESSA90000000MESVRE1";
 const AUTRE_MESURE = "01JBANCESSA90000000MESVRE7";
@@ -121,11 +123,31 @@ describe("propositions de position rattachées à leur mesure (D62 #233 (3))", (
     expect(refusPromotionAbsence(promotion({ items: [fictif, autreAbsence] }))).toEqual([]);
   });
 
-  it("citation rejetée par le test verbatim : jamais déposée, elle n'est pas une proposition (comportement actuel, D62 #233 (4) ouvert)", () => {
-    // `pipeline/extraction/rejets.ts` : une citation introuvable dans sa source est écartée avant
-    // l'appariement (portée `item`) et inscrite au seul journal des rejets ; aucun item n'est déposé
-    // en staging. Elle n'atteint donc jamais la liste des items : rien à rattacher, rien ne bloque.
-    expect(refusPromotionAbsence(promotion({ items: [] }))).toEqual([]);
+  it("citation rejetée par le test verbatim : jamais déposée, elle n'est pas une proposition et reste au journal des rejets (D73 (10))", () => {
+    // De bout en bout depuis le cœur de l'extraction : les deux modèles proposent une citation que
+    // la source ne contient pas (coquille « corrigée »). `pipeline/extraction/rejets.ts` l'écarte
+    // avant l'appariement, portée `item`, motif `introuvable` : elle est au journal des rejets, et
+    // aucun item n'est déposé. Le témoin, même source et citation exacte, est déposé et compte.
+    const texte = "Notre constat.\nNous ouvrirons les centres de santé municipaux le dimanche.";
+    const exacte = "Nous ouvrirons les centres de santé municipaux le dimanche.";
+    const corrigee = "Nous ouvrirons tous les centres de santé municipaux le dimanche.";
+    const base = itemA({ candidat_id: CANDIDAT });
+    const absence = base.absence as NonNullable<Item["absence"]>;
+    const corpus = [{ url: sourceHtml(texte).url, sha256: SHA_SOURCE, tier: "T1" as const }];
+    const item: Item = { ...base, absence: { ...absence, corpus_examine: corpus } };
+
+    const rejetee = extraireSource(entreeHtml(texte, sortie(propose(corrigee)), sortie(propose(corrigee))), ports());
+    expect(rejetee.items).toEqual([]);
+    expect(rejetee.rejets.map((rejet) => [rejet.portee, rejet.motif])).toEqual([
+      ["item", "introuvable"],
+      ["item", "introuvable"],
+    ]);
+    expect(refusPromotionAbsence(promotion({ item, items: rejetee.items }))).toEqual([]);
+
+    const temoin = extraireSource(entreeHtml(texte, sortie(propose(exacte)), sortie(propose(exacte))), ports());
+    expect(refusPromotionAbsence(promotion({ item, items: temoin.items }))).toEqual([
+      { motif: "propositions_non_rattachees", items: temoin.items.map((depose) => depose.id) },
+    ]);
   });
 
   it("proposition déposée dont le test verbatim échoue : comptée, aucun filtre sur le test (D62 #233 (4) ouvert)", () => {

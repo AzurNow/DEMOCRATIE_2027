@@ -89,15 +89,17 @@ export interface GelPrepare {
 
 /**
  * Phase 1 : périmètre, fenêtre, questions. Lève sur toute entrée qui ne permet pas de geler, dont
- * une fenêtre ouverte à `date_gel` ou avant (D45 (4), D50, `instants.ts`).
+ * une fenêtre ouverte à `date_gel` ou avant (D45 (4), D50, `instants.ts`), ou hors de la règle
+ * d'ouverture du §6 pour `type_run` (mardi 6 h pour un run régulier, 6 h le lendemain du gel pour
+ * un run supplémentaire : `fenetre.ts:ouvrirFenetre`).
  */
-export function preparer(entrees: EntreesGel): GelPrepare {
+export function preparer(entrees: EntreesGel, type_run: string): GelPrepare {
   const perimetre = construirePerimetre(
     entrees.perimetre_brut,
     { items: entrees.items, mesures: entrees.mesures, alias_aveugles: entrees.configuration.alias_aveugles },
     entrees.provenance_perimetre,
   );
-  const fenetre = ouvrirFenetre(entrees.configuration.fenetre_debut);
+  const fenetre = ouvrirFenetre(entrees.configuration.fenetre_debut, { type_run, date_gel: perimetre.date_gel });
   const taches = tachesDe({ items: entrees.items, mesures: entrees.mesures, candidats: perimetre.perimetre.candidats });
   const questions = questionsAuGel(taches, entrees.formulations, perimetre.date_gel);
   const date_gel_ms = lireInstant(perimetre.date_gel, `${entrees.provenance_perimetre}, date_gel`);

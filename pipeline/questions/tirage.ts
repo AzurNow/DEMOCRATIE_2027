@@ -34,7 +34,7 @@ import { entreeDe, precedenteSiReprise } from "./entrees-tirage.ts";
 import type { TiragePrecedent } from "./entrees-tirage.ts";
 import { verifierGraine } from "./graine.ts";
 import { estCompare, indexer, separer, themeDeQuestion } from "./tirabilite.ts";
-import type { Index } from "./tirabilite.ts";
+import type { Index, PositionsIncompatibles } from "./tirabilite.ts";
 import type {
   BilanReprise,
   CandidatAuGel,
@@ -71,6 +71,11 @@ export interface RapportTirage {
   readonly candidats_a_part: readonly string[];
   /** §3 : candidat retiré, conservé dans le jeu de données mais plus interrogé. */
   readonly candidats_non_interroges: readonly string[];
+  /**
+   * §5 (protocole 0.27, D67) : par candidat interrogé et par mesure, les items aux positions en
+   * vigueur incompatibles, exclus du tirage, que l'auteur conteste dès le gel. Vide sans conflit.
+   */
+  readonly positions_incompatibles: readonly PositionsIncompatibles[];
 }
 
 export interface ResultatTirage {
@@ -438,6 +443,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
       strates_vides: resultats.flatMap((resultat) => resultat.strates_vides),
       candidats_a_part: interroges.filter((c) => c.sous_seuil).map((c) => c.candidat_id),
       candidats_non_interroges: candidatsNonInterroges(demande.run.perimetre.candidats).map((candidat) => candidat.candidat_id),
+      positions_incompatibles: separation.incompatibles,
     },
   };
 }

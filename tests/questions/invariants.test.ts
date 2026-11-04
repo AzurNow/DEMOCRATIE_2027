@@ -403,8 +403,11 @@ describe("exemples de schema/exemples/", () => {
   // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
   // 382 → 383 : §8, robustesse des différences (D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
   // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
-  it("charge les 385 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(385);
+  // 385 → 387 : §4 (protocole 0.27), motif de rejet de l'arbitre, un valide (valide-03, rejet sous texte_extrait_errone) et un invalide (invalide-04, motif sur une issue non_evaluable) de decision-arbitrage.
+  // 387 → 388 : §5 (0.27, D67), un valide de tirage (valide-03, exclusion positions_incompatibles).
+  // 388 → 389 : §6 (0.27), sous-échantillon de l'application à moins de cinq questions, un invalide (invalide-02, six questions) ; invalide-02-quatre-questions devient valide-02.
+  it("charge les 389 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(389);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

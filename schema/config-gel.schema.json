@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:config-gel",
   "title": "Paramètres du gel d'un run",
-  "description": "config/gel.json, rempli à la main par l'auteur avant chaque gel (décision D41) : ce que run.json exige et qu'aucune autre source du dépôt ne porte. La version du protocole (run.versions.protocole), le début de la fenêtre d'interrogation (run.fenetre.debut, §6 : un mardi à 6 h, heure de Paris ; la fin s'en déduit, pipeline/interrogation/fenetre.ts), les juges du run (run.juges, §7) et l'alias aveugle de chaque outil (run.perimetre.outils[].alias_aveugle, §7). Le type du run vient de la ligne de commande (--type-run), le reste du périmètre de config/perimetre.yaml, les graines et l'identifiant du run de la balise drand lue au gel (D44, D45 (1)), l'URL de l'engagement archivé de --engagement (D46 : elle désigne la capture du commit gelé, que ce fichier, commité dans ce même commit, ne peut pas porter). Un brouillon est conforme : chaque champ admet null, livré tel quel dans le dépôt ; pnpm geler refuse de partir tant qu'un champ vaut null, en le nommant (pipeline/gel/configuration.ts), et n'applique aucune valeur par défaut. Le protocole ne dit pas qui choisit les alias aveugles : ils sont saisis ici, jamais engendrés par le code.",
+  "description": "config/gel.json, rempli à la main par l'auteur avant chaque gel (décision D41) : ce que run.json exige et qu'aucune autre source du dépôt ne porte. La version du protocole (run.versions.protocole), le début de la fenêtre d'interrogation (run.fenetre.debut, §6 : un mardi à 6 h, heure de Paris, pour un run régulier, 6 h le lendemain du gel pour un run supplémentaire ; la fin s'en déduit, pipeline/interrogation/fenetre.ts), les juges du run (run.juges, §7) et l'alias aveugle de chaque outil (run.perimetre.outils[].alias_aveugle, §7). Le type du run vient de la ligne de commande (--type-run), le reste du périmètre de config/perimetre.yaml, les graines et l'identifiant du run de la balise drand lue au gel (D44, D45 (1)), l'URL de l'engagement archivé de --engagement (D46 : elle désigne la capture du commit gelé, que ce fichier, commité dans ce même commit, ne peut pas porter). Un brouillon est conforme : chaque champ admet null, livré tel quel dans le dépôt ; pnpm geler refuse de partir tant qu'un champ vaut null, en le nommant (pipeline/gel/configuration.ts), et n'applique aucune valeur par défaut. Le protocole ne dit pas qui choisit les alias aveugles : ils sont saisis ici, jamais engendrés par le code.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version_protocole", "fenetre_debut", "juges", "alias_aveugles"],
@@ -16,7 +16,7 @@
       "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
     },
     "fenetre_debut": {
-      "description": "Recopié dans run.fenetre.debut. pipeline/interrogation/fenetre.ts:ouvrirFenetre refuse un début qui n'est pas un mardi à 06:00:00 pile, heure de Paris, et calcule la fin (48 h).",
+      "description": "Recopié dans run.fenetre.debut. pipeline/interrogation/fenetre.ts:ouvrirFenetre refuse un début hors de la règle du §6 pour le type du run (protocole 0.27) : un mardi à 06:00:00 pile, heure de Paris, pour un run régulier ; 06:00:00 pile, heure de Paris, le jour civil de Paris qui suit date_gel pour un run supplémentaire. Elle calcule la fin (48 h absolues).",
       "anyOf": [{ "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }, { "type": "null" }]
     },
     "juges": {

@@ -14,6 +14,7 @@ import { ENDPOINT_ANTHROPIC } from "../../pipeline/extraction/editeur-anthropic.
 import type { IssueSimulee } from "../../pipeline/extraction/editeur-simule.ts";
 import type { ExtracteurEpingle } from "../../pipeline/extraction/choix-texte.ts";
 import type { NomEditeur } from "../../pipeline/extraction/editeur.ts";
+import type { TexteRenvoye } from "../../pipeline/extraction/renvoi.ts";
 import type { IssueAttente } from "../../pipeline/interrogation/horloge.ts";
 import { CANDIDAT, COMMIT, HTML, MODELE_A, MODELE_B, SHA_SOURCE, fiche, sha256Texte, sourceHtml } from "./aides.ts";
 
@@ -166,6 +167,10 @@ export interface OptionsLancement {
   readonly attendre?: Dependances["attendre"];
   /** Générateur d'ULID ; par défaut un compteur propre à cet appel (voir `compteurUlid`). */
   readonly nouvelUlid?: () => string;
+  /** Les sources renvoyées à la réextraction que la promotion calculerait (D73 (9)) ; par défaut aucune. */
+  readonly renvois?: readonly TexteRenvoye[];
+  /** Les racines dont la commande a demandé les renvois. */
+  readonly racines_des_renvois?: string[];
 }
 
 /**
@@ -207,6 +212,10 @@ export async function lancer(argv: readonly string[], options: OptionsLancement 
     commit: () => COMMIT,
     arbreDuCodePropre: () => options.propre ?? true,
     choixSimule: (enveloppe) => () => issues[enveloppe],
+    renvoisAReextraction: (racine) => {
+      options.racines_des_renvois?.push(racine);
+      return options.renvois ?? [];
+    },
   });
   return { code, sortie, envois, corps_envoyes };
 }
