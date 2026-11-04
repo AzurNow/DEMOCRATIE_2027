@@ -89,6 +89,37 @@ describe("controlerExtrait", () => {
   });
 });
 
+describe("annexe C (protocole 0.27, C.04) : une réponse au texte vide n'a rien à citer", () => {
+  const SUR_ITEM_A = { citations_reference: citationsDeReference([itemA()]) };
+
+  it("texte vide, non-réponse sans extrait, sur un item A (aucune citation de référence) : valide", () => {
+    expect(controlerExtrait(notationJuge("j1", { categorie: "non_reponse" }), { reponse: "", ...SUR_ITEM_A })).toEqual({ valide: true, trouve_dans: null });
+  });
+
+  it("texte vide, inexacte sans extrait : valide aussi (l'exemption vaut pour toute note autre qu'exacte)", () => {
+    const inexacte = notationJuge("j1", { categorie: "inexacte", motif_inexactitude: "omission" });
+    expect(controlerExtrait(inexacte, { reponse: "", citations_reference: TEXTES.citations_reference }).valide).toBe(true);
+  });
+
+  it("le texte se lit sur la réponse, pas sur le marqueur : sur_texte_vide posé sur une réponse non vide n'exempte de rien", () => {
+    const marquee = notationJuge("j1", { categorie: "non_reponse", sur_texte_vide: true });
+    expect(controlerExtrait(marquee, TEXTES)).toEqual({ valide: false, motif: "extrait_manquant" });
+  });
+
+  it("une réponse faite d'espaces a un texte : l'extrait reste exigé (lecture littérale de « texte vide »)", () => {
+    for (const reponse of [" ", "  \n\t ", INSECABLE]) {
+      expect(controlerExtrait(notationJuge("j1", { categorie: "non_reponse" }), { reponse, ...SUR_ITEM_A })).toEqual({ valide: false, motif: "extrait_manquant" });
+    }
+  });
+
+  it("texte vide avec un extrait de la référence : contrôlé comme les autres", () => {
+    expect(controlerExtrait(inexacteAvecExtrait("Nous ramènerons la TVA", "reference"), { reponse: "", citations_reference: TEXTES.citations_reference })).toEqual({
+      valide: true,
+      trouve_dans: "reference",
+    });
+  });
+});
+
 describe("citationsDeReference", () => {
   it("prend la citation d'un item P, les deux d'un item O, aucune d'un item A", () => {
     const o = itemO();

@@ -19,7 +19,7 @@ import { AUCUN_JUGE_RETENU } from "../../pipeline/go-no-go/types.ts";
 import { JugeIndetermine } from "../../pipeline/notation/decision.ts";
 import type { JugeDuRun } from "../../pipeline/notation/types.ts";
 import { comptesKappa, kappaCohen } from "../../validation/domaine/kappa.ts";
-import { notationJuge, notationRegle, renvoiJuge } from "../notation/fabriques.ts";
+import { notationJuge, notationRegle, renvoiDefaillant, renvoiJuge } from "../notation/fabriques.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { echantillonSynthetique, fois, type LigneEchantillon } from "./aides.ts";
 
@@ -269,6 +269,16 @@ describe("renvois d'attribution dans l'échantillon (D31 (2))", () => {
     expect(resultat.kappas[0]).toMatchObject({ juge_id: "j1", kappa: 0.75, n: 8, renvois_ecartes: 1 });
     expect(resultat.kappas[1]).toMatchObject({ juge_id: "j2", n: 9, renvois_ecartes: 0 });
     expect(resultat.indeterminees).toBe(0);
+  });
+
+  it("§7 (0.27) : le renvoi d'un juge défaillant sort aussi la réponse du kappa de CE juge seulement", () => {
+    const lignes: LigneEchantillon[] = [...matrice("j1", 3, 0, 1, 4).map((l) => ({ ...l, juges: { ...l.juges, j2: "exacte" as const } })), { juges: { j2: "exacte" }, humains: ["exacte", "exacte"] }];
+    const { echantillon, notations } = echantillonSynthetique(lignes);
+    const renvoyee = echantillon[echantillon.length - 1] as string;
+    const defaillant = renvoiDefaillant("j1", { id: ulid(`renvoi-defaillant-${renvoyee}`), objet_note: { type: "reponse", id: renvoyee } });
+    const resultat = kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations, renvois: [defaillant] });
+    expect(resultat.kappas[0]).toMatchObject({ juge_id: "j1", kappa: 0.75, n: 8, renvois_ecartes: 1 });
+    expect(resultat.kappas[1]).toMatchObject({ juge_id: "j2", n: 9, renvois_ecartes: 0 });
   });
 
   it("tout écarté : aucune_reponse_comparable, critère rouge (D24 (2))", () => {

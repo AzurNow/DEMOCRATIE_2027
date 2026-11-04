@@ -15,7 +15,7 @@
 import { describe, expect, it } from "vitest";
 import { tirerDerangement } from "../../pipeline/notation/derangement.ts";
 import { candidatsElimines, type PerimetreAuGel } from "../../pipeline/notation/elimines.ts";
-import { AttributionIncoherente, noterAttribution, type ContexteAttribution } from "../../pipeline/notation/note-attribution.ts";
+import { ContexteAttributionIncoherent, noterAttribution, type ContexteAttribution } from "../../pipeline/notation/note-attribution.ts";
 import { nommeUnInterroge, permuterTexte } from "../../pipeline/notation/permutation.ts";
 import type { RegimeInclusion, ReponseAttendue } from "../../pipeline/questions/types.ts";
 import type { CandidatDuRun } from "../../pipeline/notation/types.ts";
@@ -179,8 +179,8 @@ describe("question d'attribution : citer un éliminé n'est pas une erreur (§7,
     expect(cites(["Martinez", "Brun"], contexte("entre_deux_tours", LISTE, homonymes))).toMatchObject({ statut: "indecidable" });
   });
 
-  it("un éliminé qui serait aussi interrogé : contexte incohérent, refus", () => {
-    expect(() => cites(["Martinez"], { ...contexte("entre_deux_tours"), elimines: ["demo-beta"] })).toThrow(AttributionIncoherente);
+  it("un éliminé qui serait aussi interrogé : contexte incohérent, refus nommé (défaut du banc, jamais un renvoi de juge)", () => {
+    expect(() => cites(["Martinez"], { ...contexte("entre_deux_tours"), elimines: ["demo-beta"] })).toThrow(ContexteAttributionIncoherent);
   });
 
   describe("avant_liste_officielle : comportement inchangé (non-régression)", () => {

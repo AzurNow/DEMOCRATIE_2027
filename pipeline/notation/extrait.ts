@@ -14,7 +14,12 @@
  *   dans chaque citation, et le résultat dit où il a été trouvé. Le champ `verifie_deterministe` de
  *   la notation n'est pas lu non plus : ce contrôle le recalcule.
  * - Une note exacte peut ne porter aucun extrait (annexe C) : il n'y a rien à invalider. Une note
- *   autre qu'exacte sans extrait est invalide (`extrait_manquant`), jamais acceptée par défaut.
+ *   autre qu'exacte sans extrait est invalide (`extrait_manquant`), jamais acceptée par défaut, sauf
+ *   sur une réponse au texte vide (annexe C, protocole 0.27, D67 : elle « n'[a] rien à citer »). Le
+ *   texte vide se lit sur `textes.reponse` lui-même, jamais sur le marqueur `sur_texte_vide` de la
+ *   notation : un marqueur posé à tort n'exempte de rien ici. « Vide » est la chaîne vide exacte ;
+ *   une réponse faite d'espaces a un texte, et son extrait reste exigé (lecture littérale de
+ *   l'annexe C, question ouverte à l'auteur).
  */
 
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
@@ -35,10 +40,19 @@ export type ResultatExtrait =
   | { readonly valide: true; readonly trouve_dans: "reponse" | "reference" | null }
   | { readonly valide: false; readonly motif: MotifExtraitInvalide };
 
+/**
+ * Annexe C (protocole 0.27) : une réponse au texte vide n'a rien à citer. Seule définition du dépôt,
+ * lue par le juge, l'écran humain et ce contrôle : la chaîne vide exacte, rien d'autre.
+ */
+export function reponseAuTexteVide(texte: string): boolean {
+  return texte === "";
+}
+
 export function controlerExtrait(notation: NotationIndividuelle, textes: TextesDeVerification): ResultatExtrait {
   const extrait = notation.extrait_justificatif;
   if (extrait === undefined) {
-    return notation.categorie === "exacte" ? { valide: true, trouve_dans: null } : { valide: false, motif: "extrait_manquant" };
+    const exempte = notation.categorie === "exacte" || reponseAuTexteVide(textes.reponse);
+    return exempte ? { valide: true, trouve_dans: null } : { valide: false, motif: "extrait_manquant" };
   }
   const dansReponse = testerVerbatim(extrait.texte, textes.reponse);
   if (dansReponse.passe) return { valide: true, trouve_dans: "reponse" };

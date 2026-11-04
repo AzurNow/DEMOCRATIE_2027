@@ -51,6 +51,14 @@
  * l'opérateur, la chaîne refuse de commencer (`ReponsesEnAttenteOperateur`), avant toute écriture :
  * la stocker après coup changerait l'échantillon humain et le sous-ensemble contrefactuel.
  *
+ * **Réponses obtenues (§5 « Tailles », 0.27).** Juste après cette garde et le contrôle des juges, le
+ * nombre de réponses obtenues du canal API est inscrit dans `run.json#/reponses/obtenues`
+ * (`inscription-reponses.ts`), une fois ; une relance le retrouve et ne le réécrit pas.
+ *
+ * **Juge défaillant (§7, 0.27).** Une réponse qu'un juge ne peut pas noter n'arrête pas la chaîne :
+ * elle est renvoyée à un humain avec son motif (`juge.ts:noterOuRenvoyer`), comme une Q-ATT
+ * indécidable.
+ *
  * **Humains.** La chaîne n'en simule aucun. Elle lit les notations humaines déjà écrites (écran
  * `pnpm notation:humaine`) et les passe à `decider` : une relance après la saisie humaine résout les
  * attentes qui peuvent l'être.
@@ -72,8 +80,9 @@ import { tirerEchantillonHumain, tirerSousEnsembleContrefactuel } from "./echant
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";
+import { inscrireReponsesObtenuesDuRun } from "./inscription-reponses.ts";
 import { exigerFamillesDistinctes } from "./familles-juges.ts";
-import { issueDeJuge, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
+import { noterOuRenvoyer, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
 import { pagesCitees, type PageCitee } from "./pages-citees.ts";
 import { nommeUnInterroge } from "./permutation.ts";
 import { publierContrefactuel, publierFauteDInterroges } from "./publication-contrefactuel.ts";
@@ -232,6 +241,8 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
   exigerNotable(run);
   exigerAucuneAttenteDuRun(env.repertoire_run, "notation");
   verifierJuges(run, env.juges);
+  // §5 « Tailles » (0.27) : le nombre de réponses obtenues, canal API seul, est inscrit au début de la notation.
+  inscrireReponsesObtenuesDuRun(env.repertoire_run);
   const depot = DepotNotation.ouvrir(env.repertoire_run);
   const lues = lireNotationsDuRun(env.repertoire_run, run.id);
   const preparees = [...reponses].sort((a, b) => comparerChaines(a.reponse.id, b.reponse.id)).map((r) => preparer(r, env.existences));
@@ -358,8 +369,8 @@ async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible
   for (const juge of juges) {
     if (etat.cles.has(cle(cible.cote.contexte, cible.objet_id, juge.identite.juge_id))) continue;
     const charge = construireCharge({ ...cible.demande, prompt: juge.identite.prompt });
-    const sortie = await juge.noter(charge);
-    const issue = issueDeJuge(juge.identite, sortie, {
+    // §7 (0.27) : un juge défaillant ou une sortie illisible donnent un renvoi humain motivé, et la chaîne continue.
+    const issue = await noterOuRenvoyer(juge, charge, {
       id: identifiantDerive([etat.run.id, "notation", cible.cote.contexte, cible.objet_id, juge.identite.juge_id]),
       run_id: etat.run.id,
       contexte: cible.cote.contexte,
@@ -385,7 +396,10 @@ async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible
   }
 }
 
-/** D30 (2) : un renvoi s'écrit à la place de la notation, sous la même clé ; une relance ne redemande pas le juge. */
+/**
+ * D30 (2), §7 (0.27) : un renvoi — Q-ATT indécidable ou juge défaillant — s'écrit à la place de la
+ * notation, sous la même clé ; une relance ne redemande pas le juge.
+ */
 function consigner(etat: Etat, issue: IssueDeJuge): void {
   if (issue.type === "renvoi") {
     etat.depot.ecrireRenvoi(issue.renvoi);

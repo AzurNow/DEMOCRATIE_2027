@@ -33,6 +33,7 @@ const LIBELLES_MOTIFS: Readonly<Record<(typeof MOTIFS_DU_BILAN)[number], string>
   arbitrage_echantillon_manquant: "arbitrage de l'échantillon",
   accord_sans_note_commune: "accord partiel des juges",
   attribution_indecidable: "attribution indécidable (renvoi d'un juge)",
+  juge_defaillant: "juge défaillant (renvoi d'un juge)",
   test_liens: "en attente du test des liens",
   contrefactuel_en_attente: "test contrefactuel en attente",
   run_invalide: "run invalide (deux juges retirés)",

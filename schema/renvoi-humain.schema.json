@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:renvoi-humain",
   "title": "Renvoi d'un juge vers la notation humaine",
-  "description": "Décision D30 (2) de l'auteur (2026-10-10). Sur une question d'attribution, la note se calcule depuis les noms que le juge relève (D29 (1), pipeline/notation/note-attribution.ts). Trois cas ne sont déterminés par aucun texte : candidat du périmètre non interrogé cité sur une mesure réelle ; nom ambigu dont un candidat possible est attendu ; formulation orientée à prémisse fausse avec un nom cité. Le juge n'y rend alors aucune note : ce renvoi la remplace et la réponse part en notation humaine sous le motif attribution_indecidable. runs/<date>/volume/renvois/<id>.json, écrit une fois par la chaîne (pipeline/notation/chaine.ts), publié avec les notations ; une relance le retrouve et ne redemande pas le juge. Leur nombre est publié dans run.json (renvois_attribution_indecidable).",
+  "description": "Le juge ne rend aucune note : ce renvoi la remplace et la réponse part en notation humaine sous son motif. Deux familles de motifs. (1) Décision D30 (2) de l'auteur (2026-10-10), attribution_indecidable : sur une question d'attribution, la note se calcule depuis les noms que le juge relève (D29 (1), pipeline/notation/note-attribution.ts), et trois cas ne sont déterminés par aucun texte : candidat du périmètre non interrogé cité sur une mesure réelle ; nom ambigu dont un candidat possible est attendu ; formulation orientée à prémisse fausse avec un nom cité. (2) §7 (protocole 0.27, D67) : « Une réponse qu'un juge ne peut pas noter (erreur persistante de son API, charge qui dépasse sa fenêtre de contexte, sortie refusée ou illisible) est renvoyée à un humain, comme une question d'attribution que la règle ne tranche pas ; elle sort du kappa de ce juge » : erreur_api_persistante, contexte_depasse, sortie_refusee, sortie_illisible, sur tout gabarit (pipeline/notation/juge.ts:JugeDefaillant, issueDeJuge). runs/<date>/volume/renvois/<id>.json, écrit une fois par la chaîne (pipeline/notation/chaine.ts), publié avec les notations ; une relance le retrouve et ne redemande pas le juge. Le nombre des renvois attribution_indecidable est publié dans run.json (renvois_attribution_indecidable).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "run_id", "contexte", "objet_note", "notateur", "version_charge", "gabarit", "references_item", "motif", "raison", "noms_cites", "attribution", "date"],
+  "required": ["id", "run_id", "contexte", "objet_note", "notateur", "version_charge", "gabarit", "references_item", "motif", "raison", "date"],
   "properties": {
     "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -26,16 +26,30 @@
       ]
     },
     "version_charge": { "$ref": "urn:banc-essai-2027:schema:notation#/properties/version_charge" },
-    "gabarit": { "const": "Q-ATT" },
+    "gabarit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit" },
     "references_item": { "$ref": "urn:banc-essai-2027:schema:notation#/properties/references_item" },
-    "motif": { "const": "attribution_indecidable" },
-    "raison": { "type": "string", "minLength": 1, "description": "Lequel des trois cas, en clair (note-attribution.ts)." },
+    "motif": {
+      "enum": ["attribution_indecidable", "erreur_api_persistante", "contexte_depasse", "sortie_refusee", "sortie_illisible"],
+      "description": "attribution_indecidable : D30 (2), Q-ATT seulement. Les quatre autres, §7 (0.27) : erreur_api_persistante, l'appel au juge a échoué après ses tentatives ; contexte_depasse, la charge dépasse sa fenêtre de contexte ; sortie_refusee, le modèle a refusé de noter ; sortie_illisible, la sortie ne se lit pas dans le format de la charge, ou s'y lit de façon incohérente (pipeline/notation/juge.ts:SortieJugeIncoherente)."
+    },
+    "raison": { "type": "string", "minLength": 1, "description": "Le cas, en clair : lequel des trois cas d'attribution (note-attribution.ts), ou le détail de la défaillance du juge." },
     "noms_cites": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
-      "description": "Les noms relevés par le juge, tels qu'il les a rendus."
+      "description": "attribution_indecidable seulement : les noms relevés par le juge, tels qu'il les a rendus."
     },
-    "attribution": { "$ref": "urn:banc-essai-2027:schema:notation#/properties/attribution" },
+    "attribution": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/attribution",
+      "description": "attribution_indecidable seulement : le bloc d'attribution rattaché."
+    },
     "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
-  }
+  },
+  "allOf": [
+    {
+      "$comment": "D29 (1), D30 (2) : seule une question d'attribution est indécidable par la règle d'ensembles ; le renvoi garde alors les noms relevés et le bloc d'attribution. Un juge défaillant n'a rien relevé : ni noms ni bloc.",
+      "if": { "properties": { "motif": { "const": "attribution_indecidable" } }, "required": ["motif"] },
+      "then": { "properties": { "gabarit": { "const": "Q-ATT" } }, "required": ["noms_cites", "attribution"] },
+      "else": { "not": { "anyOf": [{ "required": ["noms_cites"] }, { "required": ["attribution"] }] } }
+    }
+  ]
 }

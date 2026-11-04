@@ -1,0 +1,31 @@
+{
+  "id": "8RQ7D2KXRF1V0GMS3ZB5N4CW7F",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "objet_note": {
+    "type": "reponse",
+    "id": "7T0C1V3QX8M2NHD6RZ4KJ9PWEA"
+  },
+  "notateur": {
+    "type": "regle",
+    "id": "d12-refus-api"
+  },
+  "sur_refus_api": true,
+  "sur_texte_vide": true,
+  "gabarit": "Q-DIR",
+  "references_item": [
+    {
+      "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "item_version": 1,
+      "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+    }
+  ],
+  "categorie": "non_reponse",
+  "drapeaux": [],
+  "sourcage": {
+    "cite": false,
+    "liens": []
+  },
+  "date": "2026-12-03T11:00:00+01:00",
+  "motif_notation": "regle_refus_api"
+}

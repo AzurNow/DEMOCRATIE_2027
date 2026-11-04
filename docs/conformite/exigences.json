@@ -7270,18 +7270,26 @@
       "section": "C",
       "citation": "extrait justificatif obligatoire pour toute note autre qu'exacte, sauf sur un refus de l'API ou sur une réponse au texte vide, qui n'ont rien à citer.",
       "nature": "donnee",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "schema/notation.schema.json:allOf[13]",
+        "schema/notation.schema.json:allOf[13] (exemption sur_refus_api ou sur_texte_vide)",
+        "pipeline/notation/extrait.ts:reponseAuTexteVide",
         "pipeline/notation/extrait.ts:controlerExtrait",
-        "pipeline/notation/notation-humaine.ts:construireNotationHumaine"
+        "pipeline/notation/notation-humaine.ts:construireNotationHumaine",
+        "pipeline/notation/juge.ts:notationDe"
       ],
       "tests": [
-        "schema/exemples/notation/invalide-03-inexacte-sans-extrait.json"
+        "schema/exemples/notation/invalide-03-inexacte-sans-extrait.json",
+        "schema/exemples/notation/valide-12-juge-texte-vide-sans-extrait.json",
+        "schema/exemples/notation/invalide-23-refus-api-et-texte-vide.json",
+        "tests/notation/extrait.test.ts « annexe C (protocole 0.27, C.04) : une réponse au texte vide n'a rien à citer »",
+        "tests/notation/notation-humaine.test.ts « texte fait d'espaces : un texte, le marqueur n'est pas posé et l'extrait reste exigé »",
+        "tests/notation/notation-humaine.test.ts « texte non vide sans extrait : toujours refusée, aucun marqueur »",
+        "tests/notation/juge-defaillant.test.ts « annexe C (0.27) : réponse au texte vide, côté juge »"
       ],
       "lot": null,
       "constat": 11,
-      "note": "Citation réextraite (0.27, D67). L'exemption du refus de l'API est gardée (sur_refus_api) ; celle d'une réponse au texte vide n'existe pas : le schéma exige l'extrait de toute note non exacte non marquée sur_refus_api, et un extrait vide est refusé (constat)."
+      "note": "Citation réextraite (0.27, D67). Réglé (constat 11) : une réponse au texte vide (chaîne vide, lue sur le texte et non sur le marqueur) est notée sans extrait, et la notation porte sur_texte_vide. Un texte fait d'espaces reste un texte (lecture littérale, question ouverte à l'auteur)."
     },
     {
       "id": "D.01",
@@ -9315,35 +9323,43 @@
       "section": "5",
       "citation": "celui des réponses obtenues l'est au début de la notation, qui exige qu'aucune réponse n'attende l'opérateur (section 6)",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "pipeline/run/reponses.ts:reponsesObtenues",
-        "pipeline/run/reponses.ts:inscrireReponsesObtenues"
+        "pipeline/run/reponses.ts:inscrireReponsesObtenues",
+        "pipeline/notation/inscription-reponses.ts:inscrireReponsesObtenuesDuRun",
+        "pipeline/notation/chaine.ts:ouvrir (après exigerAucuneAttenteDuRun)"
       ],
       "tests": [
+        "tests/notation/chaine.test.ts « run.json porte le nombre de réponses obtenues du canal API, refus de l'API compris, à côté des prévues »",
+        "tests/notation/chaine.test.ts « une relance retrouve le nombre déjà inscrit : run.json n'est pas réécrit »",
         "tests/run/reponses.test.ts « inscrit le nombre à côté des prévues, sans toucher au reste du run »",
         "tests/run/reponses.test.ts « une requête du plan sans réponse écrite (jamais tentée, ou en attente de l'opérateur) : l'interrogation n'est pas terminée »",
-        "tests/run/reponses.test.ts « déjà inscrit, nombre différent : refus, jamais réécrit »"
+        "tests/run/reponses.test.ts « déjà inscrit, nombre différent : refus, jamais réécrit »",
+        "tests/run/reponses.test.ts « zéro réponse écrite et un plan vide (aucune question tirée) : zéro, inscrit tel quel »"
       ],
       "lot": null,
       "constat": 4,
-      "note": "Compte et inscription codés en fonctions pures ; inscrireReponsesObtenues n'a aucun appelant : la chaîne de notation (pipeline/notation/chaine.ts) n'écrit pas run.json#/reponses/obtenues."
+      "note": "Réglé (constat 4) : la chaîne de notation inscrit run.json#/reponses/obtenues en tête, après la garde d'attente de l'opérateur ; une relance retrouve le nombre (deja_inscrite) sans réécrire run.json."
     },
     {
       "id": "§5.65",
       "section": "5",
       "citation": "Ces nombres ne portent que sur le canal API : les saisies du sous-échantillon de l'application (section 6) n'y entrent pas.",
       "nature": "code",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "pipeline/run/reponses.ts:reponsesObtenues",
         "analysis/seuils.ts:reponsesApiDuRun",
         "pipeline/run/reponses.ts:reponsesPrevues"
       ],
-      "tests": [],
+      "tests": [
+        "tests/run/reponses.test.ts « §5 « Tailles » (0.27) : une saisie du canal application n'est pas comptée, même obtenue, et n'est rapprochée d'aucune requête du plan »",
+        "tests/run/reponses.test.ts « un outil exclu ou un comparateur n'est pas interrogé : aucune réponse prévue pour lui »"
+      ],
       "lot": null,
       "constat": 4,
-      "note": "reponsesObtenues filtre canal api ; aucun test ne passe une saisie du canal application au compte (« les réponses d'un autre contexte que run ne comptent pas » ne fait varier que le contexte)."
+      "note": "Réglé (constat 4) : une saisie du canal application, même obtenue, n'entre pas dans le compte et ne lève pas ReponseHorsPlan."
     },
     {
       "id": "§5.66",
@@ -9565,14 +9581,18 @@
       "section": "6",
       "citation": "Une notation de lecture qui ne déclare pas que son auteur n'a pas vu l'identité de l'outil est refusée : une déclaration absente n'est pas une preuve d'aveuglement.",
       "nature": "code",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "pipeline/notation/lectures-comparateur.ts (a_vu_identite_outil !== false ⇒ NotationLectureRefusee non_aveugle)"
       ],
-      "tests": [],
+      "tests": [
+        "tests/notation/lectures-comparateur.test.ts « §6.42 : une notation sans déclaration d'aveuglement (champ absent) : refusée, non_aveugle — une déclaration absente n'est pas une preuve »",
+        "tests/notation/lectures-comparateur.test.ts « §6.42 : une déclaration explicite false est admise, la notation compte »",
+        "tests/notation/lectures-comparateur.test.ts « une notation qui a vu l'identité de l'outil : refusée (à l'aveugle) »"
+      ],
       "lot": null,
       "constat": 7,
-      "note": "0.27 (D62 #235 (4)). Le seul test (« une notation qui a vu l'identité de l'outil : refusée (à l'aveugle) ») passe a_vu_identite_outil: true ; une déclaration absente n'est testée nulle part, et le schéma ne l'exige pas d'un humain."
+      "note": "0.27 (D62 #235 (4)). Réglé (constat 7) : déclaration absente, true et false testées. Le schéma n'exige toujours pas la déclaration d'un humain ; le refus vit dans le code."
     },
     {
       "id": "§7.50",
@@ -9736,16 +9756,25 @@
       "nature": "code",
       "statut": "partielle",
       "code": [
-        "pipeline/notation/juge.ts:issueDeJuge (renvoi seulement sur Q-ATT indécidable)",
-        "pipeline/notation/juge.ts:SortieJugeIncoherente",
-        "schema/renvoi-humain.schema.json (gabarit const Q-ATT, motif const attribution_indecidable)"
+        "pipeline/notation/juge.ts:issueDeJuge (SortieJugeIncoherente ⇒ renvoi sortie_illisible)",
+        "pipeline/notation/juge.ts:noterOuRenvoyer (JugeDefaillant ⇒ renvoi sous son motif)",
+        "pipeline/notation/decision.ts:decider (motif humain juge_defaillant)",
+        "pipeline/notation/file-humaine.ts (tâche juge_defaillant)",
+        "schema/renvoi-humain.schema.json (motifs attribution_indecidable, erreur_api_persistante, contexte_depasse, sortie_refusee, sortie_illisible)",
+        "pipeline/go-no-go/kappa-echantillon.ts:renvoyesPar"
       ],
       "tests": [
-        "tests/go-no-go/kappa-echantillon.test.ts « un renvoi parmi d'autres : écarté de ce juge seulement, compté, kappa sur le reste »"
+        "tests/notation/juge-defaillant.test.ts « §7 (0.27) : une sortie incohérente devient un renvoi sortie_illisible, jamais un arrêt »",
+        "tests/notation/juge-defaillant.test.ts « §7 (0.27) : un juge défaillant (JugeDefaillant) devient un renvoi sous son motif »",
+        "tests/notation/chaine.test.ts « un juge qui lève JugeDefaillant sur une réponse : renvoi écrit sous son motif, la réponse attend un humain (juge_defaillant), les autres sont notées »",
+        "tests/notation/decision.test.ts « les deux juges incohérents sur la même réponse : en attente d'un humain, jamais d'un juge manquant »",
+        "tests/notation/file-humaine.test.ts « la réponse hors échantillon devient une tâche humaine sous juge_defaillant, puis sort de la file une fois notée »",
+        "tests/go-no-go/kappa-echantillon.test.ts « un renvoi parmi d'autres : écarté de ce juge seulement, compté, kappa sur le reste »",
+        "tests/go-no-go/kappa-echantillon.test.ts « §7 (0.27) : le renvoi d'un juge défaillant sort aussi la réponse du kappa de CE juge seulement »"
       ],
       "lot": "notation",
       "constat": 8,
-      "note": "0.27 (D67). Le renvoi et son retrait du kappa existent pour la seule Q-ATT indécidable ; une sortie illisible ou incohérente lève SortieJugeIncoherente et arrête la notation, une erreur de l'API du juge remonte telle quelle ; le schéma du renvoi n'admet ni autre gabarit ni autre motif, et renvois_attribution_indecidable n'est pas compté par juge."
+      "note": "0.27 (D67). Réglé en partie (constat 8) : une sortie incohérente ou un juge défaillant devient un renvoi au motif nommé, la notation continue, la réponse passe à un humain (juge_defaillant) et sort du kappa de ce juge. Reste ouvert : « leur nombre est publié par juge, avec leur motif » — run.json ne porte aucun compte de renvois par juge et par motif (format de publication à décider par l'auteur)."
     },
     {
       "id": "§7.60",

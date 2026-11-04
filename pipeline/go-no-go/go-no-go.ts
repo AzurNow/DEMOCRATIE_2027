@@ -135,7 +135,7 @@ interface Calcul {
   readonly indeterminees: number;
   /** D64, D70 : réponses de l'échantillon à note non classée (référence ou juge retenu), écartées du kappa. */
   readonly non_classees: number;
-  /** D30 (2) : renvois de juge vers l'humain pour une Q-ATT indécidable, contexte run. */
+  /** D30 (2) : renvois de juge vers l'humain pour une Q-ATT indécidable, contexte run (motif `attribution_indecidable` seul). */
   readonly renvois: number;
   /** D32 : refus de l'API de l'échantillon, notés par règle, écartés du kappa de chaque juge. */
   readonly refus_api: number;
@@ -199,7 +199,8 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     kappas,
     indeterminees,
     non_classees,
-    renvois: renvois.filter((r) => r.contexte === "run").length,
+    // Le champ publié ne compte que les Q-ATT indécidables ; un renvoi de juge défaillant (§7, 0.27) a son propre motif.
+    renvois: renvois.filter((r) => r.contexte === "run" && r.motif === "attribution_indecidable").length,
     refus_api,
     accord_humains: accordHumainsEchantillon(echantillon, notations),
     checklist: construireChecklist(run.id, go_no_go.criteres, constats),

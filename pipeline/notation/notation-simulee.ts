@@ -140,13 +140,23 @@ function poserFichier(source: string, cible: string, identiques: (lu: string, so
   if (!identiques(readFileSync(cible, "utf8"), readFileSync(source, "utf8"))) throw new GelDivergent(cible);
 }
 
-/** `run.json` sans ce que l'inscription du test contrefactuel y fixe. */
+/**
+ * `run.json` sans ce que la notation y inscrit : le test contrefactuel, et le nombre de réponses
+ * obtenues (§5 « Tailles », inscrit en tête de la notation, `inscription-reponses.ts`).
+ */
 function formeAuGel(texte: string): unknown {
-  const { contrefactuel_candidats: _test, taux_echantillon_humain: _taux, juges, ...reste } = JSON.parse(texte) as Record<string, unknown>;
+  const { contrefactuel_candidats: _test, taux_echantillon_humain: _taux, juges, reponses, ...reste } = JSON.parse(texte) as Record<string, unknown>;
   const sansTest = Array.isArray(juges)
     ? juges.map((juge: Record<string, unknown>) => Object.fromEntries(Object.entries(juge).filter(([cle]) => !(CHAMPS_DU_TEST as readonly string[]).includes(cle))))
     : juges;
-  return { ...reste, juges: sansTest };
+  return { ...reste, juges: sansTest, reponses: reponsesAuGel(reponses) };
+}
+
+/** Le bloc `reponses` tel que le gel l'écrit : les prévues seules. */
+function reponsesAuGel(reponses: unknown): unknown {
+  if (typeof reponses !== "object" || reponses === null) return reponses;
+  const { obtenues: _obtenues, ...auGel } = reponses as Record<string, unknown>;
+  return auGel;
 }
 
 /* ------------------------------------------------------------------ lecture */

@@ -403,8 +403,10 @@ describe("exemples de schema/exemples/", () => {
   // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
   // 382 → 383 : §8, robustesse des différences (D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
   // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
-  it("charge les 385 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(385);
+  // 385 → 389 : §7 (0.27, constat 8) et annexe C (C.04, constat 11), un valide et un invalide de
+  // renvoi-humain (juge défaillant), un valide et un invalide de notation (réponse au texte vide).
+  it("charge les 389 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(389);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -457,7 +459,10 @@ describe("exemples de schema/exemples/", () => {
     // réponse), de contexte run ; leur contexte suit toujours l'objet noté.
     // 43 → 47 : D64, trois notations (une valide, deux invalides) et un verdict valide « non classée »,
     // copies de notation/valide-07 et de verdict/valide-01 ; leur contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(47);
+    // 47 → 49 : annexe C (C.04, constat 11), deux notations (une valide, une invalide) sur une réponse
+    // au texte vide (valide-12, de juge ; invalide-23, copie de valide-09 aux deux marqueurs), de
+    // contexte run ; leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(49);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

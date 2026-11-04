@@ -495,3 +495,65 @@ describe("D33 : refus de l'API dans l'échantillon, noté sans extrait", () => {
     expect(acceptee(construireNotationHumaine(EXACTE, contexte())).sur_refus_api).toBeUndefined();
   });
 });
+
+/**
+ * Annexe C (protocole 0.27, C.04) : « sauf sur un refus de l'API ou sur une réponse au texte vide, qui
+ * n'ont rien à citer ». Une réponse obtenue au texte vide, hors refus, sur un item A : l'humain la
+ * note non-réponse sans extrait ; la notation porte sur_texte_vide, posé d'après la vue.
+ */
+describe("annexe C (0.27) : réponse au texte vide, notée sans extrait", () => {
+  const NON_REPONSE: SaisieHumaine = { categorie: "non_reponse", drapeaux: [], cite: false, soutiens: [] };
+
+  function contexteTexte(texte: string, item: Item): ContexteNotationHumaine {
+    const base = reponse([]);
+    const vue = construireVue({
+      reponse: valider<ReponseObtenue>("reponse", { ...base, normalise: { ...base.normalise, texte } }, "réponse de test au texte choisi"),
+      question: { gabarit: "Q-DIR", registre: "neutre", texte: "Quelle est la position de Alix Martinez ?" },
+      references: [{ item, role: "principal" }],
+      date_run: "2026-12-01T06:00:00+01:00",
+      resolu_au_gel: RESOLU_POSITION_POUR,
+      pages_citees: [],
+      existences: [],
+      alias_candidats: aliasDeTest({}),
+    });
+    return { ...contexte({ items: [item] }), vue };
+  }
+
+  it("texte vide (chaîne vide) : non-réponse sans extrait acceptée, marqueur sur_texte_vide posé, sur_refus_api absent", () => {
+    const notation = acceptee(construireNotationHumaine(NON_REPONSE, contexteTexte("", itemA())));
+    expect(notation.sur_texte_vide).toBe(true);
+    expect(notation.sur_refus_api).toBeUndefined();
+    expect(notation.extrait_justificatif).toBeUndefined();
+  });
+
+  it("texte vide, inexacte sans extrait : acceptée aussi", () => {
+    const sansExtrait: SaisieHumaine = { categorie: "inexacte", drapeaux: [], motif_inexactitude: "position_inventee", cite: false, soutiens: [] };
+    expect(acceptee(construireNotationHumaine(sansExtrait, contexteTexte("", itemA()))).sur_texte_vide).toBe(true);
+  });
+
+  it("texte fait d'espaces : un texte, le marqueur n'est pas posé et l'extrait reste exigé", () => {
+    const resultat = construireNotationHumaine(NON_REPONSE, contexteTexte("   ", itemA()));
+    expect(codes(resultat)).toContain("non_conforme_au_schema");
+  });
+
+  it("texte non vide sans extrait : toujours refusée, aucun marqueur", () => {
+    expect(codes(construireNotationHumaine(NON_REPONSE, contexteTexte("Je ne sais pas.", itemA())))).toContain("non_conforme_au_schema");
+    expect(acceptee(construireNotationHumaine(EXACTE, contexte())).sur_texte_vide).toBeUndefined();
+  });
+
+  it("refus de l'API (texte vide lui aussi) : sur_refus_api seul, jamais les deux marqueurs", () => {
+    const vue = construireVue({
+      reponse: valider<ReponseObtenue>("reponse", refusApi(REPONSE_ID), "refus de test"),
+      question: { gabarit: "Q-DIR", registre: "neutre", texte: "Quelle est la position de Alix Martinez ?" },
+      references: [{ item: itemA(), role: "principal" }],
+      date_run: "2026-12-01T06:00:00+01:00",
+      resolu_au_gel: RESOLU_POSITION_POUR,
+      pages_citees: [],
+      existences: [],
+      alias_candidats: aliasDeTest({}),
+    });
+    const notation = acceptee(construireNotationHumaine(NON_REPONSE, { ...contexte({ items: [itemA()] }), vue }));
+    expect(notation.sur_refus_api).toBe(true);
+    expect(notation.sur_texte_vide).toBeUndefined();
+  });
+});

@@ -107,9 +107,15 @@ export interface NotationIndividuelle {
   /**
    * D33 : la notation porte sur un refus de l'API, posé d'après `reponse.normalise.refus_api`, jamais
    * d'après une saisie. Exigé de la notation par règle, admis pour un humain, interdit pour un juge ;
-   * lui seul exempte de l'extrait justificatif (annexe C). Absent hors refus.
+   * il exempte de l'extrait justificatif (annexe C), comme `sur_texte_vide`. Absent hors refus.
    */
   readonly sur_refus_api?: true;
+  /**
+   * Annexe C (protocole 0.27, D67) : la notation porte sur une réponse au texte vide, hors refus de
+   * l'API ; posé d'après `reponse.normalise.texte`, jamais d'après une saisie (`extrait.ts:reponseAuTexteVide`).
+   * Exempte de l'extrait justificatif, comme `sur_refus_api`. Absent sinon.
+   */
+  readonly sur_texte_vide?: true;
   readonly gabarit: Gabarit;
   readonly references_item: readonly ReferenceItem[];
   readonly categorie: CategorieRetenue;
@@ -132,25 +138,44 @@ export interface NotationIndividuelle {
 }
 
 /**
- * Le renvoi d'un juge vers la notation humaine, à la place de sa note, sur une question
- * d'attribution qu'aucun texte ne permet de noter (D30 (2)) : champ pour champ
- * `schema/renvoi-humain.schema.json`.
+ * §7 (protocole 0.27, D67) : « Une réponse qu'un juge ne peut pas noter (erreur persistante de son
+ * API, charge qui dépasse sa fenêtre de contexte, sortie refusée ou illisible) est renvoyée à un
+ * humain ». Les quatre motifs, dans l'ordre de cette phrase ; `schema/renvoi-humain.schema.json`.
  */
-export interface RenvoiHumain {
+export const MOTIFS_RENVOI_DEFAILLANCE = ["erreur_api_persistante", "contexte_depasse", "sortie_refusee", "sortie_illisible"] as const;
+export type MotifRenvoiDefaillance = (typeof MOTIFS_RENVOI_DEFAILLANCE)[number];
+
+interface RenvoiCommun {
   readonly id: Ulid;
   readonly run_id: Ulid;
   readonly contexte: "run" | "contrefactuel_candidat" | "contrefactuel_outil";
   readonly objet_note: { readonly type: "reponse"; readonly id: Ulid };
   readonly notateur: Notateur;
   readonly version_charge: string;
-  readonly gabarit: "Q-ATT";
   readonly references_item: readonly ReferenceItem[];
-  readonly motif: "attribution_indecidable";
   readonly raison: string;
-  readonly noms_cites: readonly string[];
-  readonly attribution: NonNullable<NotationIndividuelle["attribution"]>;
   readonly date: Instant;
 }
+
+/** D30 (2) : une question d'attribution qu'aucun texte ne permet de noter. */
+export interface RenvoiAttribution extends RenvoiCommun {
+  readonly gabarit: "Q-ATT";
+  readonly motif: "attribution_indecidable";
+  readonly noms_cites: readonly string[];
+  readonly attribution: NonNullable<NotationIndividuelle["attribution"]>;
+}
+
+/** §7 (0.27) : une réponse que le juge ne peut pas noter, sur tout gabarit, avec son motif. */
+export interface RenvoiDefaillance extends RenvoiCommun {
+  readonly gabarit: Gabarit;
+  readonly motif: MotifRenvoiDefaillance;
+}
+
+/**
+ * Le renvoi d'un juge vers la notation humaine, à la place de sa note : champ pour champ
+ * `schema/renvoi-humain.schema.json`.
+ */
+export type RenvoiHumain = RenvoiAttribution | RenvoiDefaillance;
 
 export interface RevueHumaine {
   readonly effectuee: boolean;

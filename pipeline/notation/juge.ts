@@ -35,6 +35,17 @@
  * prompt d'une autre version de la charge : sa valeur, qui pourrait diverger du calcul, n'entre
  * jamais, ni en silence ni à côté.
  *
+ * **Juge défaillant (§7, protocole 0.27, D67).** « Une réponse qu'un juge ne peut pas noter (erreur
+ * persistante de son API, charge qui dépasse sa fenêtre de contexte, sortie refusée ou illisible) est
+ * renvoyée à un humain ». Une sortie incohérente devient, dans `issueDeJuge`, un renvoi
+ * `sortie_illisible` ; un rejet `JugeDefaillant` de `noter`, dans `noterOuRenvoyer`, un renvoi sous
+ * son motif. Le renvoi s'écrit à la place de la notation, comme celui d'une Q-ATT indécidable, et la
+ * notation du run continue. Aucun juge n'est appelé sur un refus de l'API (D32) : un renvoi sur un
+ * refus reste incohérent en aval (`decision.ts`, `go-no-go/kappa-echantillon.ts`).
+ *
+ * **Réponse au texte vide (annexe C, 0.27).** Le code pose `sur_texte_vide` d'après le texte noté,
+ * et n'exige pas d'extrait d'une note non exacte sur un tel texte (`extrait.ts:reponseAuTexteVide`).
+ *
  * **Le soutien d'un lien mort (D19) ou sans copie archivée (D21).** Le juge ne connaît pas
  * l'existence des liens : il peut déclarer « soutient » un lien que le test HTTP dit mort. §7 : « Un
  * lien mort ne soutient jamais rien. » La notation porte alors `non_applicable` pour ce lien, quoi
@@ -53,12 +64,21 @@
 import type { CategorieRetenue, Drapeau, Gabarit, Instant, ReferenceItem, Ulid, VerdictExistence, VerdictSoutien } from "../../analysis/types.ts";
 import type { Registre, ReponseAttendue } from "../questions/types.ts";
 import type { ChargeJuge, PromptDeJuge } from "./charge-juge.ts";
-import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
+import { controlerExtrait, reponseAuTexteVide, type TextesDeVerification } from "./extrait.ts";
 import { fraicheurDesItems } from "./fraicheur.ts";
 import { AttributionIncoherente, noterAttribution, type NoteAttribution } from "./note-attribution.ts";
 import { NomCiteSansMot } from "./rattachement.ts";
 import { LienSansVerdictExistence, type ExistenceEtablie } from "./vue-annotateur.ts";
-import type { CandidatDuRun, LienNotation, MotifInexactitude, MotifNonClassement, NotationIndividuelle, RenvoiHumain } from "./types.ts";
+import type {
+  CandidatDuRun,
+  LienNotation,
+  MotifInexactitude,
+  MotifNonClassement,
+  MotifRenvoiDefaillance,
+  NotationIndividuelle,
+  RenvoiDefaillance,
+  RenvoiHumain,
+} from "./types.ts";
 
 export interface IdentiteJuge {
   readonly juge_id: string;
@@ -114,11 +134,38 @@ export class AttributionIndecidable extends Error {
   }
 }
 
+/**
+ * Le port d'un juge. `noter` rend la sortie structurée, ou rejette par `JugeDefaillant` quand le juge
+ * ne peut pas noter la réponse (§7, 0.27) : la chaîne en fait un renvoi humain motivé
+ * (`noterOuRenvoyer`). Toute autre erreur est un défaut du banc, pas du juge : elle remonte et
+ * arrête la notation, jamais convertie en renvoi.
+ */
 export interface Juge {
   readonly identite: IdentiteJuge;
   noter(charge: ChargeJuge): Promise<SortieJuge>;
 }
 
+/**
+ * §7 (protocole 0.27, D67) : « Une réponse qu'un juge ne peut pas noter (erreur persistante de son
+ * API, charge qui dépasse sa fenêtre de contexte, sortie refusée ou illisible) est renvoyée à un
+ * humain ». Levée par l'implémentation d'un juge, après ses propres tentatives, avec l'un des motifs
+ * de `MOTIFS_RENVOI_DEFAILLANCE`.
+ */
+export class JugeDefaillant extends Error {
+  readonly motif: MotifRenvoiDefaillance;
+
+  constructor(juge_id: string, motif: MotifRenvoiDefaillance, detail: string) {
+    super(`Juge ${juge_id} défaillant (${motif}) : ${detail}`);
+    this.name = "JugeDefaillant";
+    this.motif = motif;
+  }
+}
+
+/**
+ * Une sortie qui ne se lit pas dans le format de la charge, ou s'y lit de façon incohérente.
+ * `issueDeJuge` la convertit en renvoi `sortie_illisible` (§7, 0.27) ; `notationDeJuge` la laisse
+ * remonter.
+ */
 export class SortieJugeIncoherente extends Error {
   constructor(juge_id: string, objet_id: string, detail: string) {
     super(`Juge ${juge_id}, objet ${objet_id} : ${detail}`);
@@ -184,22 +231,55 @@ interface NoteDeJuge {
 }
 
 /**
- * Ce qu'un juge rend, une fois sa sortie contrôlée : une notation, ou, sur une Q-ATT qu'aucun texte ne
- * permet de noter, un renvoi vers la notation humaine (D30 (2)), écrit à la place de la notation.
+ * Ce qu'un juge rend, une fois sa sortie contrôlée : une notation, ou un renvoi vers la notation
+ * humaine, écrit à la place de la notation — sur une Q-ATT qu'aucun texte ne permet de noter
+ * (D30 (2)), ou sur une réponse que le juge ne peut pas noter (§7, 0.27).
  */
 export type IssueDeJuge = { readonly type: "notation"; readonly notation: NotationIndividuelle } | { readonly type: "renvoi"; readonly renvoi: RenvoiHumain };
 
+/**
+ * L'issue d'une sortie de juge. Une sortie incohérente (`SortieJugeIncoherente`) n'arrête pas la
+ * notation : la réponse est renvoyée à un humain sous `sortie_illisible`, le détail en raison (§7,
+ * 0.27). Toute autre erreur (lien sans verdict d'existence…) est un défaut du banc et remonte.
+ */
 export function issueDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): IssueDeJuge {
+  try {
+    return issueStricte(identite, sortie, cadre);
+  } catch (erreur) {
+    if (erreur instanceof SortieJugeIncoherente) return { type: "renvoi", renvoi: renvoiDefaillance(identite, cadre, "sortie_illisible", erreur.message) };
+    throw erreur;
+  }
+}
+
+/**
+ * La chaîne appelle le juge par ici : un rejet `JugeDefaillant` devient le renvoi de son motif, une
+ * sortie rendue passe par `issueDeJuge`. Un autre rejet remonte tel quel.
+ */
+export async function noterOuRenvoyer(juge: Juge, charge: ChargeJuge, cadre: CadreNotationJuge): Promise<IssueDeJuge> {
+  let sortie: SortieJuge;
+  try {
+    sortie = await juge.noter(charge);
+  } catch (erreur) {
+    if (erreur instanceof JugeDefaillant) return { type: "renvoi", renvoi: renvoiDefaillance(juge.identite, cadre, erreur.motif, erreur.message) };
+    throw erreur;
+  }
+  return issueDeJuge(juge.identite, sortie, cadre);
+}
+
+/**
+ * La notation d'un juge, sans conversion : un renvoi d'attribution lève `AttributionIndecidable`, une
+ * sortie incohérente `SortieJugeIncoherente` (la chaîne lit `issueDeJuge`).
+ */
+export function notationDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): NotationIndividuelle {
+  const issue = issueStricte(identite, sortie, cadre);
+  if (issue.type === "renvoi") throw new AttributionIndecidable(identite.juge_id, cadre.objet_id, issue.renvoi.raison);
+  return issue.notation;
+}
+
+function issueStricte(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): IssueDeJuge {
   const note = cadre.gabarit === "Q-ATT" ? noteAttributionDe(identite.juge_id, sortie, cadre) : noteOrdinaireDe(identite.juge_id, sortie, cadre);
   if ("raison" in note) return { type: "renvoi", renvoi: renvoiDe(identite, note, cadre) };
   return { type: "notation", notation: notationDe(identite, sortie, cadre, note) };
-}
-
-/** La notation d'un juge ; un renvoi y lève `AttributionIndecidable` (la chaîne lit `issueDeJuge`). */
-export function notationDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): NotationIndividuelle {
-  const issue = issueDeJuge(identite, sortie, cadre);
-  if (issue.type === "renvoi") throw new AttributionIndecidable(identite.juge_id, cadre.objet_id, issue.renvoi.raison);
-  return issue.notation;
 }
 
 function notateurDe(identite: IdentiteJuge): NotationIndividuelle["notateur"] {
@@ -236,6 +316,23 @@ function renvoiDe(identite: IdentiteJuge, renvoye: Renvoye, cadre: CadreNotation
   };
 }
 
+/** §7 (0.27) : le renvoi d'un juge qui ne peut pas noter, sous le même identifiant ; il n'a relevé aucun nom. */
+function renvoiDefaillance(identite: IdentiteJuge, cadre: CadreNotationJuge, motif: MotifRenvoiDefaillance, raison: string): RenvoiDefaillance {
+  return {
+    id: cadre.id,
+    run_id: cadre.run_id,
+    contexte: cadre.contexte,
+    objet_note: { type: "reponse", id: cadre.objet_id },
+    notateur: notateurDe(identite),
+    version_charge: cadre.version_charge,
+    gabarit: cadre.gabarit,
+    references_item: referencesDe(cadre),
+    motif,
+    raison,
+    date: cadre.date,
+  };
+}
+
 function notationDe(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge, note: NoteDeJuge): NotationIndividuelle {
   const fraiche = fraicheurCalculee(identite.juge_id, note.drapeaux, cadre);
   const brouillon: NotationIndividuelle = {
@@ -245,6 +342,8 @@ function notationDe(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNota
     objet_note: { type: "reponse", id: cadre.objet_id },
     notateur: notateurDe(identite),
     version_charge: cadre.version_charge,
+    // Annexe C (0.27) : le marqueur vient du texte noté, jamais de la sortie du juge.
+    ...(reponseAuTexteVide(cadre.textes.reponse) ? { sur_texte_vide: true as const } : {}),
     gabarit: cadre.gabarit,
     references_item: referencesDe(cadre),
     categorie: note.categorie,
@@ -292,8 +391,8 @@ function noteAttributionDe(juge_id: string, sortie: SortieJuge, cadre: CadreNota
   }
   const note = noterOuRefuser(juge_id, cadre, sortie);
   if (note.statut === "indecidable") return { raison: note.raison, noms_cites: sortie.noms_cites, attribution: note.attribution };
-  if (note.categorie !== "exacte" && sortie.extrait_justificatif === undefined) {
-    throw new SortieJugeIncoherente(juge_id, cadre.objet_id, `note calculée « ${note.categorie} » sans extrait justificatif : sur une question d'attribution, l'extrait est exigé dès qu'un nom est cité ou que la liste attendue n'est pas vide.`);
+  if (note.categorie !== "exacte" && sortie.extrait_justificatif === undefined && !reponseAuTexteVide(cadre.textes.reponse)) {
+    throw new SortieJugeIncoherente(juge_id, cadre.objet_id, `note calculée « ${note.categorie} » sans extrait justificatif : sur une question d'attribution, l'extrait est exigé dès qu'un nom est cité ou que la liste attendue n'est pas vide (annexe C : sauf sur une réponse au texte vide).`);
   }
   return { ...noteCalculee(note), attribution: note.attribution };
 }
