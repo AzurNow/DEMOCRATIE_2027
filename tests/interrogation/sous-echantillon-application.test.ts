@@ -10,6 +10,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
+  ApplicationNonDesignee,
   FormulationNeutreIntrouvable,
   QUESTIONS_PAR_CANDIDAT,
   questionsDuSousEchantillonDuRun,
@@ -19,6 +20,8 @@ import {
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
 
 const RUN_ID = "01JDQ7XK2M8N3P4R5S6T7V8W9X";
+/** §6, D73 (11) : le run de l'application du mois, désigné au gel (`run.json#/application_testee`). */
+const DESIGNE = { designe: true, mois_utc: "2027-02" } as const;
 
 function q(cle: string): string {
   return `q_${createHash("sha256").update(cle, "utf8").digest("hex").slice(0, 32)}`;
@@ -55,6 +58,7 @@ function entrees(
 ): EntreesSousEchantillon {
   return {
     run_id: RUN_ID,
+    application_testee: DESIGNE,
     candidats,
     entrees: jeux.flatMap((j) => j.entrees),
     questions: jeux.flatMap((j) => j.questions),
@@ -209,6 +213,7 @@ describe("déterminisme et symétrie (§5)", () => {
     const direct = entrees(candidats, [a, b]);
     const inverse: EntreesSousEchantillon = {
       run_id: RUN_ID,
+      application_testee: DESIGNE,
       candidats: [...candidats].reverse(),
       entrees: [...direct.entrees].reverse(),
       questions: [...direct.questions].reverse(),
@@ -246,12 +251,57 @@ describe("questionsDuSousEchantillonDuRun : l'entrée injectée dans pnpm analyz
     const attendu = sousEchantillonApplication(entrees(candidats, [a, b])).candidats.flatMap((c) => c.questions.map((x) => x.question_id));
 
     const lues = questionsDuSousEchantillonDuRun({
-      run: { id: RUN_ID, perimetre: { candidats } },
+      run: { id: RUN_ID, application_testee: DESIGNE, perimetre: { candidats } },
       entrees_tirage: [...a.entrees, ...b.entrees],
       questions: [...a.questions, ...b.questions],
     });
 
     expect(lues).toEqual(attendu);
     expect(lues).toHaveLength(2 * QUESTIONS_PAR_CANDIDAT);
+  });
+});
+
+describe("D73 (11), §6 : le sous-échantillon n'est prévu que pour le run désigné au gel", () => {
+  const j = () => jeu("cand-a", { "Q-DIR": 5 });
+  const candidats = [{ candidat_id: "cand-a", interroge: true }];
+
+  function refus(appel: () => unknown): ApplicationNonDesignee {
+    try {
+      appel();
+    } catch (erreur) {
+      if (erreur instanceof ApplicationNonDesignee) return erreur;
+      throw erreur;
+    }
+    throw new Error("Accepté alors qu'un refus était attendu.");
+  }
+
+  it("run.json sans application_testee ⇒ refus champ_absent, rien n'est supposé", () => {
+    const erreur = refus(() => sousEchantillonApplication({ ...entrees(candidats, [j()]), application_testee: undefined }));
+    expect(erreur.motif).toBe("champ_absent");
+    expect(erreur.message).toContain(RUN_ID);
+  });
+
+  it("run non désigné, mois déjà servi ⇒ refus non_designe, le premier run du mois nommé", () => {
+    const premier = "01JDQ7XK2M8N3P4R5S6T7V8W9Y";
+    const application_testee = { designe: false, mois_utc: "2027-02", motif: "mois_deja_servi", premier_run_id: premier } as const;
+    const erreur = refus(() => sousEchantillonApplication({ ...entrees(candidats, [j()]), application_testee }));
+    expect(erreur.motif).toBe("non_designe");
+    expect(erreur.message).toContain(premier);
+  });
+
+  it("run supplémentaire ou pilote (type_run_exclu) ⇒ refus non_designe", () => {
+    const application_testee = { designe: false, mois_utc: "2027-03", motif: "type_run_exclu" } as const;
+    expect(refus(() => sousEchantillonApplication({ ...entrees(candidats, [j()]), application_testee })).motif).toBe("non_designe");
+  });
+
+  it("une valeur hors du schéma (booléen nu) ⇒ ErreurSchema, jamais lue comme une désignation", () => {
+    const application_testee = true as unknown as typeof DESIGNE;
+    expect(() => sousEchantillonApplication({ ...entrees(candidats, [j()]), application_testee })).toThrow(ErreurSchema);
+  });
+
+  it("questionsDuSousEchantillonDuRun (pnpm analyze) refuse un run.json sans le champ", () => {
+    const { entrees: entrees_tirage, questions } = j();
+    const erreur = refus(() => questionsDuSousEchantillonDuRun({ run: { id: RUN_ID, perimetre: { candidats } }, entrees_tirage, questions }));
+    expect(erreur.motif).toBe("champ_absent");
   });
 });

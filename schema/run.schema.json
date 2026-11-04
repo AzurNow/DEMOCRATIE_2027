@@ -294,6 +294,41 @@
         }
       ]
     },
+    "application_testee": {
+      "description": "§6 (protocole 0.31), D73 (11) : ce run est-il celui dont le sous-échantillon de l'application grand public est saisi ? Désigné au gel par pnpm geler (pipeline/gel/application.ts) : le premier run mensuel ou hebdomadaire du mois civil compté en UTC, d'après la date_gel de chaque run (D74 (11)), ni pilote ni supplémentaire. mois_utc : AAAA-MM de date_gel en UTC. Non désigné, le motif le dit : type_run_exclu (pilote, supplémentaire, réexécution) ou mois_deja_servi, avec premier_run_id, le run du même mois gelé avant celui-ci. L'interrogation ne prévoit le sous-échantillon de l'application que d'un run désigné, et refuse un run.json qui ne porte pas ce champ plutôt que de supposer. Écrit par tout gel depuis ce lot ; non exigé par le schéma, pour qu'un run gelé avant reste lisible.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["designe", "mois_utc"],
+          "properties": {
+            "designe": { "const": true },
+            "mois_utc": { "type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["designe", "mois_utc", "motif"],
+          "properties": {
+            "designe": { "const": false },
+            "mois_utc": { "type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$" },
+            "motif": { "const": "type_run_exclu" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["designe", "mois_utc", "motif", "premier_run_id"],
+          "properties": {
+            "designe": { "const": false },
+            "mois_utc": { "type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$" },
+            "motif": { "const": "mois_deja_servi" },
+            "premier_run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }
+          }
+        }
+      ]
+    },
     "perimetre": {
       "type": "object",
       "additionalProperties": false,
@@ -1831,6 +1866,25 @@
           "required": [
             "run_remplace_id"
           ]
+        }
+      }
+    },
+    {
+      "$comment": "§6 (protocole 0.31), D73 (11) : seul un run mensuel ou hebdomadaire peut être désigné pour l'application ; tout autre type porte le motif type_run_exclu, et un run mensuel ou hebdomadaire ne le porte jamais.",
+      "if": {
+        "properties": {
+          "type_run": { "enum": ["mensuel", "hebdomadaire"] }
+        },
+        "required": ["type_run"]
+      },
+      "then": {
+        "properties": {
+          "application_testee": { "not": { "properties": { "motif": { "const": "type_run_exclu" } }, "required": ["motif"] } }
+        }
+      },
+      "else": {
+        "properties": {
+          "application_testee": { "properties": { "motif": { "const": "type_run_exclu" } }, "required": ["motif"] }
         }
       }
     },

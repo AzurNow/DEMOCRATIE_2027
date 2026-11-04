@@ -16,7 +16,8 @@
  *    sur les empreintes que son `run.json` déclare, ou son absence déclarée ; tout défaut est refusé.
  *    Puis, pour une réexécution, le run qu'elle remplace (D51 (3), `remplacement.ts`) : `--remplace` et
  *    `--type-run=reexecution` vont ensemble, et le run désigné est sous `runs/`, invalidé ; il n'est
- *    jamais réécrit. Puis le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus. Rien de tout
+ *    jamais réécrit. Puis le run de l'application du mois (§6, D73 (11), `application.ts`) : désigné
+ *    d'après les runs déjà gelés sous `runs/`, ou refusé si leur ordre ne permet pas de le dire. Puis le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus. Rien de tout
  *    cela n'appelle le réseau. Puis l'engagement archivé (D46, `engagement.ts`) : capture du commit HEAD, antérieure à
  *    `date_gel`, servie par la Wayback Machine. Puis la balise, lue sur les deux relais (D44,
  *    `balise.ts:lireBalise`). Chaque refus est nommé ; aucun repli.
@@ -43,6 +44,7 @@ import type { Violation } from "../questions/invariants.ts";
 import type { PositionsIncompatibles } from "../questions/tirabilite.ts";
 import type { Item, Mesure, Question, Symetrie, Tirage } from "../questions/types.ts";
 import type { FormulationsValidees } from "../reformulation/relecture.ts";
+import { lireApplicationTestee } from "./application.ts";
 import { fichiersDuGel, preparer, runAuGel, tirerAuGel } from "./assemblage.ts";
 import type { EntreesGel } from "./assemblage.ts";
 import { exigerTourEmis, identifiantDuRun, lireBalise, tourAuGel, valeursDesGraines } from "./balise.ts";
@@ -203,6 +205,7 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   exigerGelAvantFenetre(maintenant_ms, prepare.fenetre.debut_ms);
   const precedent = lirePrecedent(options.racine, date_gel_ms);
   const run_remplace_id = lireRemplacement(options.racine, options.type_run, options.remplace);
+  const application_testee = lireApplicationTestee(options.racine, options.type_run, date_gel_ms);
   const { engagement, balise } = await lireAlea(options, commit, date_gel_ms);
   const run_id = identifiantDuRun(date_gel_ms, balise.alea);
   const tire = tirerAuGel(prepare, entrees, run_id, valeursDesGraines(balise.alea), precedent);
@@ -218,7 +221,7 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   if (verdict.bloque || estUnRefus(verdict.symetrie)) throw new GelBloque(verdict);
 
   const symetrie = verdict.symetrie;
-  const meta = { type_run: options.type_run, commit, symetrie, protocole_sha256, balise, engagement, run_remplace_id };
+  const meta = { type_run: options.type_run, commit, symetrie, protocole_sha256, balise, engagement, run_remplace_id, application_testee };
   const repertoire = ecrireToutOuRien(destination, fichiersDuGel(prepare, entrees, tire, meta), options.ecrire);
   return {
     repertoire,
