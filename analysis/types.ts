@@ -178,7 +178,11 @@ export interface Notation {
 export interface ProjectionNormalisee {
   readonly texte: string;
   readonly liens: readonly string[];
-  readonly troncature: boolean;
+  /**
+   * Canal api : obligatoire, dérivé du stop_reason (§6). Canal application : absent, la saisie
+   * « ne porte ni mode ni caractère tronqué » (§6, protocole 0.31, D73 (12)).
+   */
+  readonly troncature?: boolean;
 }
 
 export interface Reponse {
