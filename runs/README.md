@@ -27,7 +27,8 @@ runs/<date>/
                                     écrites par pnpm analyze, jamais réécrites
   checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
                                     par pnpm go-no-go, contresignée par pnpm go-no-go:contresigner
-  volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo
+  volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo,
+                              À L'EXCEPTION de liens/pages/ (voir ci-dessous)
     reponses/<id>.json              une réponse par requête (schema/reponse.schema.json)
     tentatives/<empreinte>.jsonl    le journal des tentatives d'une requête
     tentatives/<empreinte>.<n>.octets
@@ -40,7 +41,19 @@ runs/<date>/
                                     les réponses permutées du test contrefactuel (§7), contexte ≠ run
     liens/<sha256 de l'URL>.json    le test HTTP d'un lien cité (schema/existence-lien.schema.json)
     liens/pages/<sha256><ext>       la page d'un lien qui existe, octets reçus tels quels
+                                    (JAMAIS dans l'archive Zenodo : voir ci-dessous)
 ```
+
+**Ce qui ne part pas dans l'archive Zenodo (§9, §10 ; conformité 2026-11-03 n° 10).** Le volume part
+en entier, sauf `volume/liens/pages/` : les pages citées par les réponses ne sont republiables que si
+leur licence le permet, ce que le banc ne sait pas établir page par page. Elles restent sur la
+machine de l'auteur, parce que la notation les lit ; seuls partent, dans `volume/liens/<sha256 de
+l'URL>.json`, l'empreinte (`sha256_contenu`), le lien d'archive (`archive_url`) et le verdict, et
+l'extrait cité dans les notations. De même, une archive `sources_archivees` (`run.json#/depot/archives`)
+n'est admise que si chaque source qu'elle contient déclare `publication: "publique"` ; `interne` ou un
+champ absent la refuse. La garde est `pipeline/run/depot.ts` (`verifierEntreesArchive`,
+`verifierArchives`), à appeler par la commande de dépôt quand elle existera, et tenue par
+`tests/run/depot.test.ts`. Un dépôt à la main exclut `volume/liens/pages/` de l'archive.
 
 Les mesures ne sont pas copiées dans `runs/<date>/` : comme les items, elles sont lues dans
 `data/mesures/` (un fichier par mesure, décision D38) au commit `run.json#/versions/donnees_commit`,
