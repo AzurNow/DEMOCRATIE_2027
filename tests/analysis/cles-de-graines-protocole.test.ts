@@ -24,7 +24,7 @@ import { analyserRun } from "../../analysis/analyse-du-run.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
-import { entreesDuRunAnalysable, SPEC_APPLICATION, SPEC_REFERENCE } from "./run-analysable.ts";
+import { avecNotesDeJuges, entreesDuRunAnalysable, SPEC_APPLICATION, SPEC_REFERENCE } from "./run-analysable.ts";
 
 const PROTOCOLE = readFileSync(join(RACINE_PROJET, "docs", "PROTOCOLE.md"), "utf8");
 
@@ -56,12 +56,10 @@ const CONSTANTES_DU_CODE: readonly { readonly composant: string; readonly module
 /**
  * Sous-lot B de `pnpm analyze` : composants écrits au protocole qu'aucune graine publiée ni aucune
  * constante ne produit encore.
- * - `application` : le taux du canal application (exploratoire, QR8) ;
- * - `<juge>:propre-editeur` : l'écart d'un juge sur l'outil de son éditeur (§7) —
- *   `analysis/ecart-juge-editeur.ts` l'écrit, mais `analyserRun` ne l'appelle pas encore.
+ * - `application` : le taux du canal application (exploratoire, QR8).
  * Un composant implémenté se retire d'ici : le test échoue tant qu'il y reste.
  */
-const ATTENDUES_SOUS_LOT_B: readonly string[] = ["application", "<juge>:propre-editeur"];
+const ATTENDUES_SOUS_LOT_B: readonly string[] = ["application"];
 
 function trier(liste: readonly string[]): string[] {
   return [...liste].sort(comparerChaines);
@@ -93,12 +91,24 @@ function motifDe(composant: string): RegExp {
   return new RegExp(`^${parties.join("[^:]+")}$`);
 }
 
-/** Le run de référence, et un run qui a des réponses de l'application (écart API / application, §6). */
+/**
+ * Le run de référence, un run qui a des réponses de l'application (écart API / application, §6), et le
+ * run de référence noté par deux juges dont l'un déclare un outil de son éditeur (écart juge-éditeur,
+ * §7, D73 (7)), indulgent sur cet outil.
+ */
 function composantsPublies(): ReadonlySet<string> {
-  const cles = [SPEC_REFERENCE, SPEC_APPLICATION].flatMap((spec) => {
+  const avecJuges = avecNotesDeJuges(
+    entreesDuRunAnalysable(SPEC_REFERENCE),
+    [
+      { juge_id: "juge-1", retire: false, outils_de_son_editeur: ["outil-alpha"] },
+      { juge_id: "juge-2", retire: false, outils_de_son_editeur: [] },
+    ],
+    (retenue, outil_id, juge_id) => (juge_id === "juge-1" && outil_id === "outil-alpha" ? "exacte" : retenue),
+  );
+  const cles = [entreesDuRunAnalysable(SPEC_REFERENCE), entreesDuRunAnalysable(SPEC_APPLICATION), avecJuges].flatMap((entrees) => {
     const document = valider<{ readonly graines: readonly { readonly cle: readonly string[] }[] }>(
       "metriques",
-      analyserRun(entreesDuRunAnalysable(spec), { reechantillonnages: 5, permutations: 5 }, null),
+      analyserRun(entrees, { reechantillonnages: 5, permutations: 5 }, null),
       "metriques.json du run analysable",
     );
     return document.graines.flatMap((g) => g.cle);

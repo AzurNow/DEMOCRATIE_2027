@@ -33,6 +33,8 @@
  *    qualificatif de fragilité (§8, robustesse). Chaque section est
  *    `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` : jamais une section vide qui
  *    passerait pour un résultat. La population publie aussi le régime d'inclusion du run (§3, D68).
+ *    Après les comparateurs, l'écart de chaque juge sur l'outil de son propre éditeur (§7, D73 (7),
+ *    `sectionEcartJugeEditeur`), sur la liste déclarée au gel et lue dans `run.json#/juges[]`.
  * 9. `collecterGraines` relève chaque couple `{cle, graine}` publié dans le document.
  * 10. `validerEtEcrire` valide le document contre `schema/metriques.schema.json` avant toute écriture,
  *    puis écrit `runs/<date>/metriques/metriques.json` s'il est absent, ne fait rien s'il est
@@ -48,7 +50,7 @@ import { join } from "node:path";
 import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
-import { variabiliteEntreEchantillons, type VariabiliteDuCouple } from "./accord-echantillons.ts";
+import { variabiliteDuRun, type VariabiliteDesEchantillons } from "./accord-echantillons.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "./bootstrap.ts";
 import { correlationsParCouple, type CorrelationCouverture } from "./correlation-couverture.ts";
 import {
@@ -64,6 +66,7 @@ import {
 } from "./conditions.ts";
 import { unitesParCoupleCompare } from "./couples-compares.ts";
 import { ecartsApiApplication, type EcartsApiApplication } from "./ecart-api-application.ts";
+import { ecartsJugesEditeurs, type EcartsJugesEditeurs, type JugeEtSonEditeur } from "./ecart-juge-editeur.ts";
 import { assembler, estDuRun, type EntreesAnalyse, type UniteAnalyse } from "./filtre.ts";
 import { decisionH1, decisionH2, decisionH3, decisionH4, decisionH5, STRATE_H3, type FabricationDuCouple } from "./hypotheses.ts";
 import {
@@ -85,6 +88,7 @@ import {
   type RunLu,
 } from "./lecture-run.ts";
 import { exactitude, lecturesNoteesParComparateur, type LectureNotee } from "./metriques.ts";
+import { modelesDuRun, type ModeleDUnOutil } from "./modeles-du-run.ts";
 import { corrigerFamilleAsymetrie, PERMUTATIONS_PRODUCTION, testHomogeneiteCandidats, type FamilleAsymetrie, type ResultatCouple } from "./permutation.ts";
 import { tauxRecalcules } from "./robustesse-taux.ts";
 import { fragiliteDesDifferences, restrictionDe, type FamilleDeDifferences, type FamilleDeResultats, type Recalcul, type SourcesRobustesse } from "./robustesse.ts";
@@ -94,6 +98,7 @@ import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate
 import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
 import type { CandidatAuGel, CategorieRetenue, CoupleOutilMode, EntreeTirage, IdentifiantCourt, Item, LectureComparateur, Mode, Notation, Question, Reponse, Run, Ulid } from "./types.ts";
 import type { NotationIndividuelle } from "../pipeline/notation/types.ts";
+import { CHAMPS_HORS_EMPREINTE_DU_RUN, retirerChamps } from "../pipeline/run/champs-posterieurs-au-gel.ts";
 
 /* ------------------------------------------------------------------ entrées */
 
@@ -105,9 +110,20 @@ export interface RunAnalyse extends Run {
   readonly perimetre: Run["perimetre"] & { readonly regime_inclusion: RegimeInclusion };
   readonly versions: { readonly donnees_commit: string };
   readonly tirage: { readonly sha256: string };
-  /** Lus seulement pour retirer de l'empreinte les champs que le go/no-go y écrit. */
-  readonly juges: readonly object[];
+  /**
+   * Lus pour l'écart juge-éditeur (§7, D73 (7)) et pour retirer de l'empreinte les champs que le
+   * go/no-go y écrit.
+   */
+  readonly juges: readonly JugeLuParAnalyse[];
   readonly graines: { readonly bootstrap: { readonly valeur: number }; readonly permutation: { readonly valeur: number } };
+}
+
+/** Un juge de `run.json#/juges[]`, tel que l'analyse le lit. */
+export interface JugeLuParAnalyse {
+  readonly juge_id: IdentifiantCourt;
+  readonly retire: boolean;
+  /** §7 (0.31, D73 (7)) : la liste déclarée au gel, vide comprise ; absente d'un run gelé avant. */
+  readonly outils_de_son_editeur?: readonly IdentifiantCourt[];
 }
 
 /** Tout ce que l'analyse d'un run lit, déjà validé : la sortie de `lireEntreesDuRun`. */
@@ -243,6 +259,8 @@ export interface ContexteDuRun {
   readonly modes_de_tete: readonly ModeDeTete[];
   /** Les assistants inclus, dans l'ordre du périmètre : les outils des hypothèses. */
   readonly outils: readonly IdentifiantCourt[];
+  /** §8 (0.31, D73 (17)) : le modèle demandé au gel et les identifiants renvoyés, publiés avec la tendance. */
+  readonly modeles: readonly ModeleDUnOutil[];
   readonly sources_robustesse: SourcesRobustesse;
   readonly graines: { readonly bootstrap: number; readonly permutation: number };
   readonly parametres: ParametresAnalyse;
@@ -291,6 +309,7 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
     strates: figer(stratesDuCalculPrincipal(api, candidats)),
     modes_de_tete: figer(assistants.map(modeDeTete)),
     outils: figer(assistants.map((outil) => outil.outil_id)),
+    modeles: figer(modelesDuRun(entrees.run.perimetre.outils, entrees.reponses)),
     sources_robustesse: Object.freeze({ run: entrees.run, notations: entrees.notations }),
     graines: figer({ bootstrap: entrees.run.graines.bootstrap.valeur, permutation: entrees.run.graines.permutation.valeur }),
     parametres: figer({ ...parametres }),
@@ -305,7 +324,9 @@ export type MotifSansObjet =
   | "moins_de_deux_candidats"
   | "premier_run_absent"
   | "moins_de_trois_candidats"
-  | "aucune_reponse_application";
+  | "aucune_reponse_application"
+  | "outils_de_son_editeur_non_declares"
+  | "juge_retire";
 
 export interface SansObjet {
   readonly statut: "sans_objet";
@@ -520,12 +541,12 @@ export function sectionRobustesse(contexte: ContexteDuRun, principal: Difference
 
 /**
  * La variabilité entre échantillons (§8, D70 (12)) : un diagnostic par couple comparé, sur le partage
- * du calcul principal. Le plan vient des entrées : il dit quelles paires étaient prévues.
+ * du calcul principal. Le plan vient des entrées : il dit quelles paires étaient prévues, et combien
+ * d'échantillons par question ; à un seul (§12, « 2 → 1 »), la section est absente avec son motif (D73 (6)).
  */
-export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRun): Section<{ readonly couples: readonly VariabiliteDuCouple[] }> {
-  return surCouplesCompares(contexte, () => ({
-    couples: variabiliteEntreEchantillons({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites }),
-  }));
+export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRun): SansObjet | VariabiliteDesEchantillons {
+  if (contexte.couples.compares.length === 0) return sansObjet("aucun_couple_compare");
+  return variabiliteDuRun({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites });
 }
 
 /** Une lecture affichée sans note retenue, ou une note sans lecture affichée du run : rien n'est publié. */
@@ -660,7 +681,11 @@ export function tendanceCalculee(contexte: ContexteDuRun, premier: PremierRun | 
 
 function sectionH5(contexte: ContexteDuRun, calculee: TendanceCalculee | null): object {
   if (calculee === null) return sansObjet("premier_run_absent");
-  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(contexte.outils, calculee.tendance) };
+  // §2 (0.31, D73 (16)) : chaque assistant inclus au premier ou au dernier run est rendu.
+  const outils = { premier: calculee.premier.contexte.outils, dernier: contexte.outils };
+  // §8 (0.31, D73 (17)) : modèle demandé et identifiants renvoyés de chaque outil, aux deux runs.
+  const modeles = { premier: calculee.premier.contexte.modeles, dernier: contexte.modeles };
+  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(outils, calculee.tendance), modeles };
 }
 
 /** 8. Les hypothèses lisent les sections déjà calculées, la différence de H3 et la tendance. */
@@ -680,6 +705,36 @@ export function sectionHypotheses(
     H4: { statut: "calcule", ...decisionH4(asymetrie.famille) },
     H5: sectionH5(contexte, tendance),
   };
+}
+
+/* ------------------------------------------------------------------ écart juge-éditeur */
+
+/**
+ * Les juges avec la liste déclarée au gel ; `null` dès qu'un juge n'en porte pas (run gelé avant le
+ * protocole 0.31) : une liste absente n'est jamais lue comme vide.
+ */
+function jugesDeclares(juges: readonly JugeLuParAnalyse[]): JugeEtSonEditeur[] | null {
+  const declares = juges.flatMap(({ juge_id, outils_de_son_editeur }) => (outils_de_son_editeur === undefined ? [] : [{ juge_id, outils_de_son_editeur }]));
+  return declares.length === juges.length ? declares : null;
+}
+
+/**
+ * §7, « Conflit d'intérêts » (0.31, D73 (7)) : l'écart de chaque juge sur l'outil de son propre
+ * éditeur (`ecart-juge-editeur.ts`), sur les réponses du canal API du run, avec la liste des outils de
+ * son éditeur lue dans `run.json#/juges[]`, déclarée au gel. Clé `exactitude / global`, à laquelle le
+ * module ajoute `<juge>:propre-editeur` (§7, §8). Sans objet, avec son motif :
+ * - `juge_retire` : §7, « Les notations déjà rendues par le juge retiré sont écartées de tout le run » ;
+ *   l'écart compare les deux juges et n'a plus d'objet ;
+ * - `outils_de_son_editeur_non_declares` : un juge sans liste déclarée (run gelé avant la 0.31).
+ * Un juge dont la liste déclarée est vide est nommé dans `juges_sans_outil_de_leur_editeur`, sans
+ * chiffre.
+ */
+export function sectionEcartJugeEditeur(contexte: ContexteDuRun, entrees: EntreesDuRun): Section<EcartsJugesEditeurs> {
+  if (entrees.run.juges.some((juge) => juge.retire)) return sansObjet("juge_retire");
+  const juges = jugesDeclares(entrees.run.juges);
+  if (juges === null) return sansObjet("outils_de_son_editeur_non_declares");
+  const options = { ...optionsBootstrap(contexte), cle: [METRIQUE_DES_CONDITIONS, STRATE_GLOBALE] };
+  return { statut: "calcule", ...ecartsJugesEditeurs(contexte.unites, entrees.notations, juges, options) };
 }
 
 /* ------------------------------------------------------------------ exploratoire */
@@ -785,48 +840,13 @@ export function collecterGraines(document: object): GrainePubliee[] {
 /* ------------------------------------------------------------------ document */
 
 /**
- * Les champs que `run.json` reçoit après l'analyse, hors de l'empreinte pour qu'une analyse relancée
- * ensuite reste identique : ceux que `pnpm go-no-go` y écrit (`pipeline/go-no-go/go-no-go.ts:
- * fusionner`), et le statut, la publication et le dépôt (§9, protocole 0.28, D70 (13) : « celle du
- * fichier du run étant calculée hors des champs de statut, de publication et de dépôt, que ce
- * fichier reçoit après l'analyse »).
+ * SHA-256 de la forme canonique de `run.json`, sans les champs qu'il reçoit après l'analyse, pour
+ * qu'une analyse relancée ensuite reste identique : le statut, la publication et le dépôt (§9), et
+ * ce que `pnpm go-no-go` y écrit. La liste vit avec les autres champs écrits après le gel
+ * (`pipeline/run/champs-posterieurs-au-gel.ts:CHAMPS_HORS_EMPREINTE_DU_RUN`), une seule fois.
  */
-const CHAMPS_APRES_ANALYSE_DU_RUN = [
-  "statut",
-  "publication",
-  "depot",
-  "go_no_go",
-  "motif_provisoire",
-  "indeterminees_echantillon_humain",
-  "non_classees_echantillon_humain",
-  "renvois_attribution_indecidable",
-  "refus_api_echantillon_humain",
-  "accord_humains_echantillon",
-] as const;
-const CHAMPS_GO_NO_GO_DU_JUGE = ["kappa_echantillon_humain", "motif_indefini_kappa_echantillon_humain", "renvois_ecartes_kappa_echantillon"] as const;
-const CHAMPS_GO_NO_GO_DE_L_OUTIL = ["par_mode"] as const;
-
-type Objet = Readonly<Record<string, unknown>>;
-
-function sans(objet: Objet, champs: readonly string[]): Objet {
-  return Object.fromEntries(Object.entries(objet).filter(([cle]) => !champs.includes(cle)));
-}
-
-function chaqueSans(liste: unknown, champs: readonly string[]): unknown {
-  if (!Array.isArray(liste)) throw new Error("run.json : liste attendue (juges, perimetre.outils).");
-  return liste.map((element: Objet) => sans(element, champs));
-}
-
-/** SHA-256 de la forme canonique de `run.json`, sans les champs qu'il reçoit après l'analyse. */
 export function empreinteDuRun(run: object): string {
-  const brut = run as Objet;
-  const perimetre = brut["perimetre"] as Objet;
-  const reduit = {
-    ...sans(brut, CHAMPS_APRES_ANALYSE_DU_RUN),
-    juges: chaqueSans(brut["juges"], CHAMPS_GO_NO_GO_DU_JUGE),
-    perimetre: { ...perimetre, outils: chaqueSans(perimetre["outils"], CHAMPS_GO_NO_GO_DE_L_OUTIL) },
-  };
-  return createHash("sha256").update(canoniser(reduit), "utf8").digest("hex");
+  return createHash("sha256").update(canoniser(retirerChamps(run, CHAMPS_HORS_EMPREINTE_DU_RUN)), "utf8").digest("hex");
 }
 
 export function entreesPubliees(entrees: EntreesDuRun): object {
@@ -885,6 +905,7 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
     robustesse: sectionRobustesse(contexte, { conditions, h3, tendance }),
     variabilite_echantillons: sectionVariabilite(contexte, entrees),
     comparateurs: sectionComparateurs(contexte, entrees),
+    ecart_juge_editeur: sectionEcartJugeEditeur(contexte, entrees),
     hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, tendance),
     exploratoire: sectionExploratoire(contexte, entrees),
   };

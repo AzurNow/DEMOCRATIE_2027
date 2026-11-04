@@ -4,7 +4,18 @@
 
 ## Décisions en attente
 
-Aucune décision en attente.
+### D75 — Questions laissées ouvertes par la vague du 2026-11-04 après-midi : code de D73 (6), (7), (8), (11) à (17), dettes du 2026-11-04 n° 1, 2, 4 et constat de conformité n° 10 (#283 à #286, #288 à #295), et trois points que le projet de 0.32 (#287) n'a pas écrits.
+
+Relevées le 2026-11-04. Recommandation entre crochets ; « [code] » signale la lecture déjà appliquée par la PR fusionnée. #287 (projet 0.32, à fusionner par l'auteur) : (1) réexécution d'une réexécution [règle du run remplacé lue de proche en proche ; l'écrire]. (2) Renvoi d'un juge au contrefactuel d'outil [même règle que pour les candidats : écarté du numérateur et du dénominateur de ce juge]. (3) Arrêt de la notation sur défaut du banc (D74 (25)) [n'enregistre pas d'invalidation : on corrige, puis on reprend]. #283 (constat 10) : (4) liens/pages/ exclue nommément de l'archive Zenodo, sans sortir de volume/ [lot dédié qui la sort de volume/]. (5) source.publication = « publique » vaut licence de republication d'une copie intégrale (§9) [la garder comme lecture prudente ; un champ de licence distinct si l'auteur le veut]. #284 (D73 (15)) : (6) comparateur du même éditeur qu'un assistant permuté, refusé (FormesOutilsAmbigues, bloquant) [étendre « absent avec motif »]. (7) Publication de l'absence du contrefactuel d'outil : ni bloc dans run.schema.json ni branchement dans la chaîne [lot dédié]. (8) Éditeur comparé à casse exacte [refuser deux graphies d'un même éditeur à la validation du périmètre]. #286 (D73 (16)) : (9) outil inclus aux deux runs sans réponse notée à l'un : motif null, sans objet faute de couple [garder ; code]. (10) Couples d'un outil absent d'un run gardent leur verdict [laisser ; code]. #288 (DETTE n° 1) : (11) data/items absent ou vide refusé plutôt que « zéro contestation » [garder ; code]. (12) pnpm contestations-posterieures accepte encore --data, --racine, --runs [l'aligner]. (13) Run analysé hors de son clone Git (archive Zenodo) refusé [chemin explicite pour la vérification par des tiers]. #289 (D73 (6)) : (14) le nombre d'échantillons n'est inscrit nulle part au gel (planifier reconstruit toujours 2) : le levier 2 → 1 donnerait un refus [l'inscrire dans run.json au gel]. #290 (D73 (13), (14)) : (15) humains d'accord sur note et motif mais divergents sur cite ou au_moins_un_lien_existant : pas d'arbitre, sans_motif_admis [amender le §7 pour les arbitrer comme chez les juges]. (16) analyse-du-run.ts refuse encore un verdict de lecture (VerdictDeLectureNonDefini) [adapter sectionComparateurs]. #291 (DETTE n° 2) : (17) constat 16, empreinte publiée hors champs du go/no-go, que le §9 n'écrit pas [réviser le §9 en citant CHAMPS_HORS_EMPREINTE_DU_RUN]. #292 (D73 (17)) : (18) population : toutes les réponses API obtenues du run, modes confondus [garder ; l'écrire au §8]. #293 (D73 (11)) : (19) premier run du mois invalidé : le mois n'a pas de test de l'application [l'écrire au protocole]. (20) Une réexécution hérite de la désignation du run qu'elle remplace [oui ; une ligne de code]. (21) application_testee facultatif dans le schéma [l'exiger à une passe groupée sur les exemples]. #294 (D73 (12)) : (22) règle d'extraction des liens 1.0.0 (liens-du-texte.ts) [la valider]. (23) refus_api: false imposé sur une saisie de testeur [le préciser]. (24) Annexe D et prompts/judge-1.0.0.md rendent {reponse.troncature}, absent sur le canal application : ces réponses ne peuvent pas aller au juge (zone d'arrêt) [rendre ABSENT sur ce canal, amendement de l'annexe D]. #295 (D73 (7), (8)) : (25) ecart-juge-editeur.ts lève sur une réponse renvoyée par un seul juge : pnpm analyze échouera au premier renvoi réel [sortir ces réponses du calcul et les nommer]. (26) Population de l'écart juge-éditeur : canal API, tous modes, couples incomplets compris ; sans objet si un juge est retiré [confirmer ou l'écrire au §7]. (27) comptes_jeu_or facultatif [l'exiger avec la commande qui écrit le kappa]. Action de l'auteur avant le prochain gel : renseigner juges[].outils_de_son_editeur dans config/gel.json.
+
+Options :
+
+1. Retenir toutes les recommandations entre crochets ; écrire la 0.33 (après la 0.32) et le code restant.
+2. Trancher point par point, en commençant par (24) et (25), qui bloqueraient un premier run réel.
+
+**Recommandation :** Option 1 ; (24) touche une zone d'arrêt (annexe D, prompt de juge) et (25) bloque pnpm analyze au premier renvoi.
+
+Lots portant cette décision : aucun
 
 ## Décisions tranchées
 
@@ -347,6 +358,7 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
+  dec_D75{{"D75<br/>Questions laissées ouvertes par la vague du 2026-11-04 après…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction

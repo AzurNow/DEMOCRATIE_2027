@@ -85,82 +85,16 @@ function nouveauRepertoire(): RepertoireJetable {
 }
 
 describe("schémas réels : manifeste et méta-schéma", () => {
-  // 127 → 132 : cinq exemples invalides de run ajoutés (conformité n° 10, 19, 21 et par_mode).
-  // 132 → 137 : un exemple valide et quatre invalides d'item ajoutés (conformité n° 11, 12, 13).
-  // 137 → 140 : deux exemples invalides de question et un de tirage (conformité n° 37, prémisse résolue au gel).
-  // 140 → 146 : six exemples invalides (conformité n° 59, 61, 62, 64 ×2, 66).
-  // 146 → 152 : un exemple valide et cinq invalides de run (protocole 0.13, §7 et §12).
-  // 152 → 158 : protocole 0.13, quatre invalides et un valide d'item (format, attestation), un invalide de fiche-source (tiers).
-  // 158 → 159 : conformité 2026-09-29, n° 1, un invalide d'item (décision du panel sans statut_validation_anterieur).
-  // 159 → 160 : décision de l'auteur du 2026-09-29, n° 8, un invalide de tirage (sans contestes_au_gel).
-  // 160 → 164 : conformité 2026-09-29, n° 31 et 33, quatre invalides d'item (thème porté, sans mesure_version, quantification hors dimensions, adresse du contestataire).
-  // 164 → 166 : conformité 2026-09-29, n° 24, deux invalides de tirage (entrée sans thème, entrée sans grappe).
-  // 166 → 168 : décisions de l'auteur du 2026-10-01, deux invalides de run (planifié sans donnees_commit, symétrie sans condition de quota).
-  // 168 → 176 : conformité 2026-09-29, n° 15 (trois invalides de run), n° 27 (trois invalides de réponse), n° 29 (un valide et un invalide de notation).
-  // 176 → 178 : conformité 2026-09-29, n° 5, deux invalides de diagnostic de lot (sans kappa_par_question, kappa de question avec motif).
-  // 178 → 179 : conformité 2026-09-29, n° 6, un valide d'item (non évaluable par le panel, attestation conservée).
-  // 179 → 188 : décisions de l'auteur du 2026-10-02 (lot interrogation), trois valides et six invalides de réponse (refus_api, motif_manquante).
-  // 188 → 192 : décisions de l'auteur du 2026-10-02 (suite du lot interrogation), un valide et trois invalides de réponse (brut_texte, brut_octets_sha256, requete.entetes).
-  // 192 → 194 : décision D15 de l'auteur (lot notation), une notation valide et une invalide sous le motif extrait_invalide.
-  // 194 → 196 : décision D17 de l'auteur, une notation et un verdict invalides portant la fraîcheur sans le drapeau obsolescence.
-  // 196 → 202 : lot notation (entrées-sorties, §7), deux valides et quatre invalides de run (test contrefactuel publié : bloc, taux et effectifs des juges).
-  // 202 → 204 : décision D15 de l'auteur (« accord partiel → humain »), une notation valide et une invalide sous le motif accord_partiel_juges.
-  // 204 → 212 : décision D20 de l'auteur (lot test-liens), quatre valides et quatre invalides du nouveau schéma existence-lien.
-  // 212 → 219 : décision D21 de l'auteur (lot test-liens), deux valides et cinq invalides d'existence-lien (instantané écarté, téléchargement de la copie archivée, url_non_ascii retirée).
-  // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
-  // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
-  // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
-  // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide (Q-ATT, nom ambigu), trois valides et trois invalides du nouveau schéma extraction-page-lien.
-  // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
-  // 241 → 246 : décision D30 de l'auteur, une notation valide et une invalide (lecture de comparateur et version_charge), un invalide de run (go/no-go sans renvois_attribution_indecidable), un valide et un invalide du nouveau schéma renvoi-humain.
-  // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run (paires écartées, taux de juge indéfini, renvois écartés du kappa).
-  // 250 → 259 : décision D32 de l'auteur, une notation valide et quatre invalides (notation par règle d'un refus de l'API), un verdict valide et deux invalides (regle_refus_api), un invalide de run (go/no-go sans refus_api_echantillon_humain).
-  // 259 → 262 : décision D33 de l'auteur, une notation valide (humain sur un refus, sans extrait) et deux invalides (juge marqué sur_refus_api, règle sans le marqueur).
-  // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
-  // 266 → 273 : décisions D39 et D42 (relecture des formulations), deux valides et deux invalides du nouveau schéma formulations-validees (neutre produite par un modèle ; sens non préservé), un valide et deux invalides du nouveau schéma refus-formulation (commentaire blanc ; aucun registre).
-  // 273 → 278 : décision D41 (lot gel), deux valides (complet, brouillon) et trois invalides (clé inconnue ; juge sans version_prompt ; fenêtre sans décalage) du nouveau schéma config-gel.
-  // 278 → 284 : lot gel, PR 2a (D44, D46), un valide (pilote sans balise ni engagement) et cinq invalides (mensuel sans balise ; sans engagement ; signature de 47 octets ; horodatage de 12 chiffres ; un seul relais) du schéma run.
   // 284, inchangé : D47 (2), le valide pilote sans balise est remplacé par un invalide équivalent (invalide-46-pilote-sans-balise).
-  // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
-  // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
-  // 288 → 294 : lot gel, PR 3 (D51), deux valides et quatre invalides du schéma run (invalidation en cours, réexécution).
-  // 294 → 300 : décision D52 (lot extraction, PR 1), deux valides (exemple du prompt ; aucun item) et quatre invalides (type A ; position sans_objet ; thème hors des dix ; page donnée par le modèle) du nouveau schéma sortie-extraction.
-  // 300 → 309 : décisions D52 et D53 (lot extraction, PR 3), un valide et un invalide d'entree-extraction, deux valides et un invalide de reponse-extraction, deux valides et deux invalides de journal-extraction.
-  // 309 → 312 : décision D53 (1) (verrou de relecture des mesures), un valide et deux invalides de relecture-mesure.
-  // 312 → 316 : décision D53 (1) (rattachement d'un item à une autre mesure), un valide et trois invalides de rattachement-item.
-  // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
-  // 324 → 325 : relecture de D55 (3), réannotation exigée dans les deux sens, un invalide de lot (ordinaire portant reannote).
-  // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
-  // 328 → 329 : conformité 2026-11-01, n° 10, invalide-18 (réponse du canal api sans parametres_effectifs).
-  // 329 → 333 : §7.30 (conformité du 2026-11-01, constat 8), accord des deux humains de l'échantillon, un valide et trois invalides de run.
-  // 333 → 337 : §7, protocole 0.23 (D58), exactement deux juges : un et trois juges, invalides de run et de config-gel.
-  // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
-  // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
-  // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application (un valide, deux invalides) et dépôt d'une saisie (un valide, trois invalides).
-  // 352 → 354 : §6, protocole 0.24 (D59 (15)), lecture de comparateur notée par un juge, motif de lecture sur une réponse : deux invalides de notation.
-  // 354 → 355 : §6, protocole 0.25 (D60 (g)), dépôt d'une capture masquée avec ses deux empreintes : un valide (l'égalité des deux empreintes ne s'exprime pas en JSON Schema : garde du code).
-  // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides du nouveau schéma metriques.
-  // 361 → 363 : §4, protocole 0.27 (D65), diagnostic de lot : accord suffisant par l'accord observé (valide), accord non décidable sur un kappa défini (invalide).
-  // 363 → 368 : §7, protocole 0.27 (D64), « non classée, référence incomplète » : un valide et deux invalides de notation, un valide de verdict, un invalide de tirage (liste sans références).
-  // 368 → 369 : §7, D64 et D70, un invalide de run (go/no-go sans non_classees_echantillon_humain).
-  // 369 → 370 : §2, protocole 0.27 (D67), H1 « infirmée » refusée (invalide) ; H3 décidée sans règle devient H3 avec un verdict global.
-  // 370 → 372 : §3, protocole 0.28 (D70 (6)), notice de l'institut : deux invalides de run (preuve de sondage sans notice ; notice sans lien d'archive).
-  // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides du nouveau schéma recalcul-b (autre recalcul ; sans empreinte des métriques ; sans contestations lues).
-  // 376 → 377 : §8, protocole 0.28 (D70 (12)), un invalide de metriques (variabilité : accord sans paire comparable).
-  // 377 → 379 : §10 et annexe E, protocole 0.29 (D71 (8)), égalité des voix : valide-07 et invalide-26 d'item.
-  // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
-  // 382 → 383 : §8, robustesse des différences (sous-lot B de pnpm analyze, D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
-  // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
-  // 385 → 387 : §4 (protocole 0.27), motif de rejet de l'arbitre, un valide (valide-03, rejet sous texte_extrait_errone) et un invalide (invalide-04, motif sur une issue non_evaluable) de decision-arbitrage.
-  // 387 → 388 : §5 (0.27, D67), un valide de tirage (valide-03, exclusion positions_incompatibles).
-  // 388 → 389 : §6 (0.27), sous-échantillon de l'application à moins de cinq questions, un invalide (invalide-02, six questions) ; invalide-02-quatre-questions devient valide-02.
-  // 389 → 393 : conformité 2026-11-03, constats 8 et 11 (protocole 0.27) : un valide et un invalide de renvoi-humain (juge défaillant), un valide et un invalide de notation (réponse au texte vide).
-  it("1. les 393 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  it("1. les exemples du manifeste réel donnent tous le résultat attendu, chacun validé une fois", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(393);
+    expect(manifeste.exemples.length).toBeGreaterThan(0);
+    expect(rapport.resultats.map((resultat) => resultat.chemin)).toEqual(
+      manifeste.exemples.map((entree) => entree.fichier),
+    );
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -363,77 +297,14 @@ describe("couplage du registre commun", () => {
 });
 
 describe("aucun fichier du disque n'est ignoré", () => {
-  // 127 → 132 : cinq exemples invalides de run ajoutés (conformité n° 10, 19, 21 et par_mode).
-  // 132 → 137 : un exemple valide et quatre invalides d'item ajoutés (conformité n° 11, 12, 13).
-  // 137 → 140 : deux exemples invalides de question et un de tirage (conformité n° 37, prémisse résolue au gel).
-  // 140 → 146 : six exemples invalides (conformité n° 59, 61, 62, 64 ×2, 66).
-  // 146 → 152 : un exemple valide et cinq invalides de run (protocole 0.13, §7 et §12).
-  // 152 → 158 : protocole 0.13, quatre invalides et un valide d'item (format, attestation), un invalide de fiche-source (tiers).
-  // 158 → 159 : conformité 2026-09-29, n° 1, un invalide d'item (décision du panel sans statut_validation_anterieur).
-  // 159 → 160 : décision de l'auteur du 2026-09-29, n° 8, un invalide de tirage (sans contestes_au_gel).
-  // 160 → 164 : conformité 2026-09-29, n° 31 et 33, quatre invalides d'item (thème porté, sans mesure_version, quantification hors dimensions, adresse du contestataire).
-  // 164 → 166 : conformité 2026-09-29, n° 24, deux invalides de tirage (entrée sans thème, entrée sans grappe).
-  // 166 → 168 : décisions de l'auteur du 2026-10-01, deux invalides de run (planifié sans donnees_commit, symétrie sans condition de quota).
-  // 168 → 176 : conformité 2026-09-29, n° 15 (trois invalides de run), n° 27 (trois invalides de réponse), n° 29 (un valide et un invalide de notation).
-  // 176 → 178 : conformité 2026-09-29, n° 5, deux invalides de diagnostic de lot (sans kappa_par_question, kappa de question avec motif).
-  // 178 → 179 : conformité 2026-09-29, n° 6, un valide d'item (non évaluable par le panel, attestation conservée).
-  // 179 → 188 : décisions de l'auteur du 2026-10-02 (lot interrogation), trois valides et six invalides de réponse (refus_api, motif_manquante).
-  // 188 → 192 : décisions de l'auteur du 2026-10-02 (suite du lot interrogation), un valide et trois invalides de réponse (brut_texte, brut_octets_sha256, requete.entetes).
-  // 192 → 194 : décision D15 de l'auteur (lot notation), une notation valide et une invalide sous le motif extrait_invalide.
-  // 194 → 196 : décision D17 de l'auteur, une notation et un verdict invalides portant la fraîcheur sans le drapeau obsolescence.
-  // 196 → 202 : lot notation (entrées-sorties, §7), deux valides et quatre invalides de run (test contrefactuel publié : bloc, taux et effectifs des juges).
-  // 202 → 204 : décision D15 de l'auteur (« accord partiel → humain »), une notation valide et une invalide sous le motif accord_partiel_juges.
-  // 204 → 212 : décision D20 de l'auteur (lot test-liens), quatre valides et quatre invalides du nouveau schéma existence-lien.
-  // 212 → 219 : décision D21 de l'auteur (lot test-liens), deux valides et cinq invalides d'existence-lien (instantané écarté, téléchargement de la copie archivée, url_non_ascii retirée).
-  // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
-  // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
-  // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
-  // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide, trois valides et trois invalides d'extraction-page-lien.
-  // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
-  // 241 → 246 : décision D30 de l'auteur, une notation valide et une invalide (lecture de comparateur et version_charge), un invalide de run (go/no-go sans renvois_attribution_indecidable), un valide et un invalide du nouveau schéma renvoi-humain.
-  // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run (paires écartées, taux de juge indéfini, renvois écartés du kappa).
-  // 250 → 259 : décision D32 de l'auteur, une notation valide et quatre invalides (notation par règle d'un refus de l'API), un verdict valide et deux invalides (regle_refus_api), un invalide de run (go/no-go sans refus_api_echantillon_humain).
-  // 259 → 262 : décision D33 de l'auteur, une notation valide (humain sur un refus, sans extrait) et deux invalides (juge marqué sur_refus_api, règle sans le marqueur).
-  // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
-  // 266 → 273 : décisions D39 et D42 (relecture des formulations), deux valides et deux invalides du nouveau schéma formulations-validees (neutre produite par un modèle ; sens non préservé), un valide et deux invalides du nouveau schéma refus-formulation (commentaire blanc ; aucun registre).
-  // 273 → 278 : décision D41 (lot gel), deux valides (complet, brouillon) et trois invalides (clé inconnue ; juge sans version_prompt ; fenêtre sans décalage) du nouveau schéma config-gel.
-  // 278 → 284 : lot gel, PR 2a (D44, D46), un valide (pilote sans balise ni engagement) et cinq invalides (mensuel sans balise ; sans engagement ; signature de 47 octets ; horodatage de 12 chiffres ; un seul relais) du schéma run.
   // 284, inchangé : D47 (2), le valide pilote sans balise est remplacé par un invalide équivalent (invalide-46-pilote-sans-balise).
-  // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
-  // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
-  // 288 → 294 : lot gel, PR 3 (D51), deux valides et quatre invalides du schéma run (invalidation en cours, réexécution).
-  // 294 → 300 : décision D52 (lot extraction, PR 1), deux valides (exemple du prompt ; aucun item) et quatre invalides (type A ; position sans_objet ; thème hors des dix ; page donnée par le modèle) du nouveau schéma sortie-extraction.
-  // 300 → 309 : décisions D52 et D53 (lot extraction, PR 3), un valide et un invalide d'entree-extraction, deux valides et un invalide de reponse-extraction, deux valides et deux invalides de journal-extraction.
-  // 309 → 312 : décision D53 (1) (verrou de relecture des mesures), un valide et deux invalides de relecture-mesure.
-  // 312 → 316 : décision D53 (1) (rattachement d'un item à une autre mesure), un valide et trois invalides de rattachement-item.
-  // 316 → 324 : revue du 2026-10-12, constat 4 (D55 (3)), deux valides et six invalides du nouveau schéma lot.
-  // 324 → 325 : relecture de D55 (3), réannotation exigée dans les deux sens, un invalide de lot (ordinaire portant reannote).
-  // 325 → 328 : §7 (protocole 0.21), test contrefactuel indéfini sous deux candidats interrogés, un valide et deux invalides de run.
-  // 328 → 329 : conformité 2026-11-01, n° 10, invalide-18 (réponse du canal api sans parametres_effectifs).
-  // 329 → 333 : §7.30 (conformité du 2026-11-01, constat 8), accord des deux humains de l'échantillon, un valide et trois invalides de run.
-  // 333 → 337 : §7, protocole 0.23 (D58), exactement deux juges : un et trois juges, invalides de run et de config-gel.
-  // 337 → 342 : §7, protocole 0.23 (D58), kappa des deux humains de l'échantillon : un valide et quatre invalides de run.
-  // 342 → 345 : §5 (protocole 0.24, D59 (17)), réponses prévues et obtenues : un valide et deux invalides de run.
-  // 345 → 352 : §6, protocole 0.24 (D59 (12)), sous-échantillon de l'application et dépôt d'une saisie.
-  // 352 → 354 : §6, protocole 0.24 (D59 (15)), deux invalides de notation (juge sur une lecture, motif de lecture sur une réponse).
-  // 354 → 355 : §6, protocole 0.25 (D60 (g)), un valide de dépôt d'application (capture masquée).
-  // 355 → 361 : §8, sous-lot A de pnpm analyze, deux valides et quatre invalides de metriques.
-  // 361 → 363 : §4, protocole 0.27 (D65), un valide et un invalide de diagnostic de lot (accord suffisant).
-  // 363 → 368 : §7, protocole 0.27 (D64), non classée : trois de notation, un de verdict, un de tirage.
-  // 368 → 369 : §7, D64 et D70, un invalide de run.
-  // 369 → 370 : §2, protocole 0.27 (D67), un invalide de H1 « infirmée ».
-  // 370 → 372 : §3, protocole 0.28 (D70 (6)), deux invalides de run (notice de l'institut absente ; sans archive).
-  // 372 → 376 : §8 et §9, protocole 0.28 (D70 (13)), un valide et trois invalides de recalcul-b.
-  // 376 → 377 : §8, protocole 0.28 (D70 (12)), un invalide de metriques (variabilité : accord sans paire comparable).
-  // 377 → 379 : §10 et annexe E, protocole 0.29 (D71 (8)), égalité des voix : valide-07 et invalide-26 d'item.
-  // 379 → 382 : §2 et §6, analyses exploratoires de pnpm analyze, un valide (valide-03) et deux invalides (07, 08) de metriques.
-  // 382 → 383 : §8, robustesse des différences (D69), un invalide de metriques (invalide-09) (résultat fragile sans motif).
-  // 383 → 385 : §8, métriques secondaires (comparateurs), un valide (valide-04, comparateur calculé) et un invalide (invalide-10, section calculée sans comparateur) de metriques.
-  // 385 → 387 : §4 (protocole 0.27), motif de rejet de l'arbitre, un valide (valide-03, rejet sous texte_extrait_errone) et un invalide (invalide-04, motif sur une issue non_evaluable) de decision-arbitrage.
-  // 387 → 388 : §5 (0.27, D67), un valide de tirage (valide-03, exclusion positions_incompatibles).
-  // 388 → 389 : §6 (0.27), sous-échantillon de l'application à moins de cinq questions, un invalide (invalide-02, six questions) ; invalide-02-quatre-questions devient valide-02.
-  // 389 → 393 : conformité 2026-11-03, constats 8 et 11 (renvoi d'un juge défaillant, réponse au texte vide).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 393 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(393);
+  // Seule garde de l'égalité entre le disque et le manifeste : aucun nombre en dur, donc plus de
+  // conflit à chaque exemple ajouté. Un fichier non déclaré, une entrée sans fichier ou une entrée
+  // en double fait échouer ce test.
+  it("les fichiers d'exemples du disque sont exactement ceux que déclare le manifeste réel", () => {
+    const manifeste = chargerManifeste(manifesteReel);
+    const declares = manifeste.exemples.map((entree) => entree.fichier);
+    expect(new Set(declares).size).toBe(declares.length);
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toEqual([...declares].sort());
   });
 });

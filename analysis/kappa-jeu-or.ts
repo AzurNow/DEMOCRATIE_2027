@@ -14,7 +14,8 @@
  * le troisième humain du jeu d'or, et aucun fichier qui assemble les réponses du jeu d'or. L'appelant
  * fournit donc, par réponse, les deux notations de calibration, le troisième humain s'il existe, et
  * les notations de juge de la réponse ; aucune commande n'écrit encore `kappa_juge_humain` ni
- * `kappa_paire_juges`.
+ * `kappa_paire_juges`. `inscriptionsJeuOr` rend ce que `run.json#/juges[]` recevra : le kappa ou son
+ * motif, et les comptes du jeu d'or qui le fondent (D73 (8)), d'un seul calcul.
  *
  * **Juge retiré** (§7 : « Les notations déjà rendues par le juge retiré sont écartées de tout le run,
  * y compris de l'accord juges-humains et du kappa des juges publiés avec lui, qui ne portent plus que
@@ -132,6 +133,60 @@ export function kappasJeuOr(juges: readonly JugeDeclare[], reponses: readonly Re
   const references = gardes.filter((r): r is Reference => categoriePourKappa(r.categorie, `Réponse ${r.reponse.reponse_id} du jeu d'or`) !== "indeterminee");
   const kappas = retenus.map((juge) => kappaDuJuge(juge.juge_id, references));
   return { kappas, paire: kappaDeLaPaire(kappas), indeterminees: gardes.length - references.length, non_classees, refus_api: refus.length };
+}
+
+/**
+ * D73 (8), décision de forme hors protocole : les effectifs du jeu d'or qui fondent le kappa d'un juge,
+ * publiés à côté de lui dans `run.json#/juges[]/comptes_jeu_or` (§7 : « leur nombre est publié »).
+ */
+export interface ComptesJeuOr {
+  /** Réponses du jeu d'or lues : la somme des cinq comptes qui suivent. */
+  readonly reponses: number;
+  /** Réponses sur lesquelles porte le kappa de ce juge (`n`). */
+  readonly comparees: number;
+  readonly renvois_ecartes: number;
+  readonly indeterminees: number;
+  readonly non_classees: number;
+  readonly refus_api: number;
+}
+
+/** Ce que `run.json#/juges[]` reçoit d'un juge retenu : le kappa ou son motif, et ses comptes. */
+export type InscriptionJeuOr = { readonly juge_id: string; readonly comptes_jeu_or: ComptesJeuOr } & (
+  | { readonly kappa_juge_humain: number }
+  | { readonly motif_indefini_kappa_juge_humain: NonNullable<KappaJugeJeuOr["motif_indefini"]> }
+);
+
+/**
+ * Le kappa de chaque juge retenu et ses comptes, d'un seul appel à `kappasJeuOr` sur `reponses` : les
+ * comptes ne sont jamais recalculés sur une autre population. Un juge retiré n'en reçoit aucune : hors
+ * de l'accord (§7, D13), il garde ce qu'une calibration antérieure lui a donné, que ce calcul n'invente
+ * pas. Lève `JeuOrIncoherent` si les comptes ne rendent pas toutes les réponses lues (invariant).
+ */
+export function inscriptionsJeuOr(juges: readonly JugeDeclare[], reponses: readonly ReponseDuJeuOr[]): readonly InscriptionJeuOr[] {
+  const resultat = kappasJeuOr(juges, reponses);
+  return resultat.kappas.map((kappa) => {
+    const comptes: ComptesJeuOr = {
+      reponses: reponses.length,
+      comparees: kappa.n,
+      renvois_ecartes: kappa.renvois_ecartes,
+      indeterminees: resultat.indeterminees,
+      non_classees: resultat.non_classees,
+      refus_api: resultat.refus_api,
+    };
+    exigerComptesComplets(kappa.juge_id, comptes);
+    return { juge_id: kappa.juge_id, ...valeurOuMotif(kappa), comptes_jeu_or: comptes };
+  });
+}
+
+function valeurOuMotif(kappa: KappaJugeJeuOr): { readonly kappa_juge_humain: number } | { readonly motif_indefini_kappa_juge_humain: NonNullable<KappaJugeJeuOr["motif_indefini"]> } {
+  if (kappa.kappa !== null) return { kappa_juge_humain: kappa.kappa };
+  if (kappa.motif_indefini === null) throw new JeuOrIncoherent(`juge ${kappa.juge_id} : kappa absent sans motif.`);
+  return { motif_indefini_kappa_juge_humain: kappa.motif_indefini };
+}
+
+function exigerComptesComplets(juge_id: string, c: ComptesJeuOr): void {
+  const somme = c.comparees + c.renvois_ecartes + c.indeterminees + c.non_classees + c.refus_api;
+  if (somme !== c.reponses) throw new JeuOrIncoherent(`juge ${juge_id} : les comptes rendent ${somme} réponse(s) sur ${c.reponses} lues.`);
 }
 
 /** D32 : un refus porte la notation par règle et rien d'un juge, ni notation ni renvoi, même d'un juge retiré. */

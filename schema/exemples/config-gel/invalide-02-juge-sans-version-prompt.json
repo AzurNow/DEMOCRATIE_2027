@@ -5,13 +5,17 @@
     {
       "juge_id": "juge-1",
       "famille_modele": "famille-x",
-      "modele": "famille-x/modele-juge-1"
+      "modele": "famille-x/modele-juge-1",
+      "outils_de_son_editeur": [
+        "outil-alpha"
+      ]
     },
     {
       "juge_id": "juge-2",
       "famille_modele": "famille-y",
       "modele": "famille-y/modele-juge-2",
-      "version_prompt": "prompts/judge-primaire-1.0.0"
+      "version_prompt": "prompts/judge-primaire-1.0.0",
+      "outils_de_son_editeur": []
     }
   ],
   "alias_aveugles": {

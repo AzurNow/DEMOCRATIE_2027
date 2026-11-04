@@ -34,6 +34,20 @@
  * (`comparerChaines`), mélangés par Fisher-Yates du dernier au premier, un mélange à point fixe
  * rejeté et le rangement remélangé avec le même générateur (`derangement.ts:melangeSansPointFixe`).
  * L'outil de rang i a pour image l'outil de rang i du mélange retenu.
+ *
+ * **Test absent, jamais bloquant** (§7, protocole 0.31, D73 (15)) : « Quand deux outils du
+ * dérangement ont le même éditeur, le test contrefactuel d'outil est publié absent, avec ce motif,
+ * sans bloquer le run. » `derangementOutilsOuAbsence` est l'entrée de l'appelant : elle rend le
+ * dérangement, ou l'absence et son motif — `moins_de_deux_outils` sous deux outils,
+ * `outils_du_meme_editeur` dès que deux outils du dérangement partagent un éditeur (casse exacte,
+ * comme les formes), avec les éditeurs partagés et leurs outils. Aucun dérangement partiel : le §7
+ * rend le test absent dès que « deux outils du dérangement » ont le même éditeur, quel que soit le
+ * nombre des autres. L'absence ne dépend ni de la graine ni de l'ordre des outils reçus. Restent des
+ * refus nommés, parce qu'ils sont des incohérences et non le cas que le §7 prévoit : graine non
+ * conforme, outil permuté hors du périmètre ou déclaré autrement, identifiant en double, forme
+ * blanche, et toute autre forme partagée (un outil hors dérangement qui porte l'éditeur d'un outil
+ * permuté compris : le §7 ne le règle pas). `tirerDerangementOutils` garde ses préconditions et
+ * n'est appelée que sur un dérangement défini.
  */
 
 import { graineDerivee } from "../../analysis/graines.ts";
@@ -87,6 +101,38 @@ export interface DerangementOutils {
   readonly hors_derangement: readonly OutilNomme[];
 }
 
+/** Un éditeur que portent plusieurs outils du dérangement, et ces outils, triés par `outil_id`. */
+export interface EditeurPartage {
+  readonly editeur: string;
+  readonly outil_ids: readonly string[];
+}
+
+/**
+ * Le contrefactuel d'outil publié absent, avec son motif (§7 0.24 et 0.31). `outils` : le nombre
+ * d'outils du dérangement ; `editeurs_partages` : vide sous `moins_de_deux_outils`, triés par éditeur
+ * sous `outils_du_meme_editeur`. Jamais 0 %, jamais de sous-ensemble ni de paire.
+ */
+export interface AbsenceContrefactuelOutils {
+  readonly statut: "indefini";
+  readonly motif: "moins_de_deux_outils" | "outils_du_meme_editeur";
+  readonly outils: number;
+  readonly editeurs_partages: readonly EditeurPartage[];
+}
+
+export type IssueDerangementOutils = { readonly statut: "tire"; readonly derangement: DerangementOutils } | AbsenceContrefactuelOutils;
+
+/** L'entrée de l'appelant : le dérangement, ou le test absent avec son motif, sans exception (D73 (15)). */
+export function derangementOutilsOuAbsence(permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[], graine: GraineTirage): IssueDerangementOutils {
+  verifierIdentifiants(perimetre);
+  perimetre.forEach(exigerFormesNonBlanches);
+  exigerDansLePerimetre(permutes, perimetre);
+  verifierGraine(graine, "du dérangement des outils");
+  if (permutes.length < MINIMUM_OUTILS_DERANGEMENT) return absence("moins_de_deux_outils", permutes.length, []);
+  const partages = editeursPartages(permutes);
+  if (partages.length > 0) return absence("outils_du_meme_editeur", permutes.length, partages);
+  return { statut: "tire", derangement: tirerDerangementOutils(permutes, perimetre, graine) };
+}
+
 export function tirerDerangementOutils(permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[], graine: GraineTirage): DerangementOutils {
   verifierOutils(perimetre);
   exigerDansLePerimetre(permutes, perimetre);
@@ -108,11 +154,9 @@ export function correspondancesOutils(derangement: DerangementOutils): Readonly<
 
 /** Libellés et éditeurs non blancs, deux à deux distincts sur tout le périmètre ; identifiants uniques. */
 export function verifierOutils(perimetre: readonly OutilNomme[]): void {
-  const identifiants = new Set<string>();
+  verifierIdentifiants(perimetre);
   const formes = new Map<string, string>();
   for (const outil of perimetre) {
-    if (identifiants.has(outil.outil_id)) throw new FormesOutilsAmbigues(`outil en double au périmètre : identifiant ${outil.outil_id}.`);
-    identifiants.add(outil.outil_id);
     enregistrerForme(formes, outil.libelle, `libellé de ${outil.outil_id}`);
     enregistrerForme(formes, outil.editeur, `éditeur de ${outil.outil_id}`);
   }
@@ -154,8 +198,43 @@ function formesDeLOutil(outil: OutilNomme, image: OutilNomme | null): readonly F
   ];
 }
 
-function enregistrerForme(formes: Map<string, string>, forme: string, porteur: string): void {
+function verifierIdentifiants(perimetre: readonly OutilNomme[]): void {
+  const identifiants = new Set<string>();
+  for (const outil of perimetre) {
+    if (identifiants.has(outil.outil_id)) throw new FormesOutilsAmbigues(`outil en double au périmètre : identifiant ${outil.outil_id}.`);
+    identifiants.add(outil.outil_id);
+  }
+}
+
+function exigerFormesNonBlanches(outil: OutilNomme): void {
+  exigerNonBlanche(outil.libelle, `libellé de ${outil.outil_id}`);
+  exigerNonBlanche(outil.editeur, `éditeur de ${outil.outil_id}`);
+}
+
+function exigerNonBlanche(forme: string, porteur: string): void {
   if (forme.trim().length === 0) throw new FormesOutilsAmbigues(`${porteur} vide ou blanc : il nommerait n'importe quel texte.`);
+}
+
+/** Les éditeurs portés par au moins deux outils, triés par éditeur, leurs outils par `outil_id`. */
+function editeursPartages(permutes: readonly OutilNomme[]): readonly EditeurPartage[] {
+  const parEditeur = new Map<string, string[]>();
+  for (const outil of permutes) {
+    const ids = parEditeur.get(outil.editeur);
+    if (ids === undefined) parEditeur.set(outil.editeur, [outil.outil_id]);
+    else ids.push(outil.outil_id);
+  }
+  return [...parEditeur]
+    .filter(([, ids]) => ids.length > 1)
+    .map(([editeur, ids]) => ({ editeur, outil_ids: [...ids].sort(comparerChaines) }))
+    .sort((a, b) => comparerChaines(a.editeur, b.editeur));
+}
+
+function absence(motif: AbsenceContrefactuelOutils["motif"], outils: number, editeurs_partages: readonly EditeurPartage[]): AbsenceContrefactuelOutils {
+  return { statut: "indefini", motif, outils, editeurs_partages };
+}
+
+function enregistrerForme(formes: Map<string, string>, forme: string, porteur: string): void {
+  exigerNonBlanche(forme, porteur);
   const deja = formes.get(forme);
   if (deja !== undefined) throw new FormesOutilsAmbigues(`la forme « ${forme} » est le ${deja} et le ${porteur} : son remplacement serait ambigu.`);
   formes.set(forme, porteur);

@@ -17,7 +17,8 @@
  *    `questions.json` (D48 (4)) par leur chemin et le SHA-256 de leurs octets exacts, et porte la balise (`balise.ts:baliseDuRun`),
  *    la table alias aveugle de candidat (§7, protocole 0.20, D55 (9), `notation/alias-candidats.ts:tableAliasCandidats`,
  *    graine `alias_candidats` et candidats interrogés au gel), l'engagement archivé (D46), le run
- *    précédent (D45 (3), `precedent.ts`) et l'empreinte du
+ *    précédent (D45 (3), `precedent.ts`), la désignation du run de l'application du mois (§6,
+ *    D73 (11), `application.ts`) et l'empreinte du
  *    protocole ; enfin les réponses brutes des relais
  *    (sous `balise/`) et de la Wayback Machine (`engagement/wayback.json`, D47 (3)), octet pour
  *    octet. Chaque objet est validé contre son schéma avant d'être rendu.
@@ -44,8 +45,10 @@ import { tachesDe } from "../reformulation/entrees.ts";
 import { questionsAuGel } from "../reformulation/lecture-au-gel.ts";
 import type { FormulationsValidees } from "../reformulation/relecture.ts";
 import { archivesDeLaBalise, baliseDuRun } from "./balise.ts";
+import type { ApplicationTestee } from "./application.ts";
 import type { BaliseLue } from "./balise.ts";
 import type { ConfigurationGel, JugeAuGel } from "./configuration.ts";
+import { exigerOutilsDesEditeursDuRun } from "./editeurs.ts";
 import { ARCHIVE_WAYBACK, engagementDuRun } from "./engagement.ts";
 import type { EngagementVerifie } from "./engagement.ts";
 import { grainesDuRun } from "./graines.ts";
@@ -99,6 +102,8 @@ export function preparer(entrees: EntreesGel, type_run: string): GelPrepare {
     { items: entrees.items, mesures: entrees.mesures, alias_aveugles: entrees.configuration.alias_aveugles },
     entrees.provenance_perimetre,
   );
+  // §7 (0.31, D73 (7)) : la liste déclarée des outils de l'éditeur de chaque juge ne nomme que des outils du run.
+  exigerOutilsDesEditeursDuRun(entrees.configuration.juges, perimetre.perimetre.outils);
   const fenetre = ouvrirFenetre(entrees.configuration.fenetre_debut, { type_run, date_gel: perimetre.date_gel });
   const taches = tachesDe({ items: entrees.items, mesures: entrees.mesures, candidats: perimetre.perimetre.candidats });
   const questions = questionsAuGel(taches, entrees.formulations, perimetre.date_gel);
@@ -158,6 +163,8 @@ export interface MetaDuRun {
   readonly engagement: EngagementVerifie;
   /** D51 (3) : le run invalidé que remplace une réexécution, vérifié sous `runs/` ; `undefined` pour tout autre type. */
   readonly run_remplace_id: string | undefined;
+  /** §6, D73 (11) : le run de l'application du mois, désigné au gel (`application.ts`). */
+  readonly application_testee: ApplicationTestee;
 }
 
 /** Un fichier JSON du run : deux espaces d'indentation, une fin de ligne. */
@@ -219,6 +226,7 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
     balise: baliseDuRun(meta.balise, prepare.date_repertoire),
     engagement: engagementDuRun(meta.engagement, prepare.date_repertoire),
     run_precedent: tire.precedent.run_precedent,
+    application_testee: meta.application_testee,
     perimetre: prepare.perimetre.perimetre,
     juges: entrees.configuration.juges.map(jugeAuGel),
     taux_echantillon_humain: TAUX_ECHANTILLON_SANS_RETRAIT,

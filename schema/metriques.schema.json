@@ -5,7 +5,7 @@
   "description": "§8 : runs/<date>/metriques/metriques.json, écrit par pnpm analyze (analysis/analyse-du-run.ts, sous-lot A), jamais réécrit : absent, il est écrit ; identique à l'octet près, rien n'est fait ; différent, la commande refuse. Toutes les sections reposent sur un seul partage de la population (population), calculé une fois au calcul principal et repris tel quel par chaque recalcul de robustesse (§8 : « les seuils de non-publication ne sont pas réappliqués à la population restreinte »). Chaque section est calculée ou sans objet, avec son motif. Les kappas et le test contrefactuel n'y sont pas recopiés : ils vivent dans run.json, que entrees.run_json_sha256 désigne.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "comparateurs", "hypotheses", "exploratoire", "graines"],
+  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "comparateurs", "ecart_juge_editeur", "hypotheses", "exploratoire", "graines"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -215,9 +215,18 @@
       }
     },
     "variabilite_echantillons": {
-      "description": "§8, « Variabilité entre échantillons » (0.28, D70 (12)) : l'accord entre les deux échantillons d'une même question, dans une même formulation et un même mode, lu sur la catégorie primaire de leur note retenue, par couple comparé (analysis/accord-echantillons.ts). Un diagnostic, pas une métrique : ni intervalle, ni qualificatif, ni graine. Un couple « run incomplet » n'y figure pas (seuils de non-publication).",
+      "description": "§8, « Variabilité entre échantillons » (0.28, D70 (12)) : l'accord entre les deux échantillons d'une même question, dans une même formulation et un même mode, lu sur la catégorie primaire de leur note retenue, par couple comparé (analysis/accord-echantillons.ts). Un diagnostic, pas une métrique : ni intervalle, ni qualificatif, ni graine. Un couple « run incomplet » n'y figure pas (seuils de non-publication). Quand le plan d'interrogation ne prévoit qu'un échantillon par question (levier « 2 → 1 » du §12), la section est sans objet, motif un_seul_echantillon_au_plan, propre à cette section (0.31, D73 (6)).",
       "oneOf": [
         { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "motif"],
+          "properties": {
+            "statut": { "const": "sans_objet" },
+            "motif": { "const": "un_seul_echantillon_au_plan" }
+          }
+        },
         {
           "type": "object",
           "additionalProperties": false,
@@ -241,6 +250,23 @@
             "statut": { "const": "calcule" },
             "items_p_de_reference": { "$ref": "#/$defs/effectif" },
             "comparateurs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/taux_du_comparateur" } }
+          }
+        }
+      ]
+    },
+    "ecart_juge_editeur": {
+      "description": "§7, « Conflit d'intérêts » (protocole 0.31, D73 (7)) : pour chaque juge dont la liste déclarée au gel (run.json#/juges[]/outils_de_son_editeur) n'est pas vide, l'écart signé entre son exactitude et celle de l'autre juge sur les réponses de chaque outil du canal API, et la différence entre l'écart sur l'outil de son éditeur et la moyenne des écarts sur les autres outils, avec son intervalle, clé bootstrap / exactitude / global / <juge>:propre-editeur (analysis/ecart-juge-editeur.ts). Un juge dont la liste déclarée est vide est nommé dans juges_sans_outil_de_leur_editeur, sans chiffre. Sans objet : juge_retire (§7, les notations du juge retiré sont écartées de tout le run) ; outils_de_son_editeur_non_declares (un juge sans liste déclarée, run gelé avant la 0.31 : jamais lue comme vide).",
+      "oneOf": [
+        { "$ref": "#/$defs/sans_objet" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "par_juge", "juges_sans_outil_de_leur_editeur", "reponses_sans_note_de_juge"],
+          "properties": {
+            "statut": { "const": "calcule" },
+            "par_juge": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/ecart_juge_editeur" } },
+            "juges_sans_outil_de_leur_editeur": { "type": "array", "maxItems": 2, "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+            "reponses_sans_note_de_juge": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }, "description": "Réponses du run qu'aucun juge n'a notées (refus de l'API, notés par règle) : hors du calcul, nommées." }
           }
         }
       ]
@@ -325,6 +351,29 @@
 
   "$defs": {
     "effectif": { "type": "integer", "minimum": 0 },
+    "modele_d_un_outil": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "modele_demande", "identifiants_renvoyes", "reponses_sans_identifiant"],
+      "description": "§8 (0.31, D73 (17)) : réponses obtenues du canal api et du contexte run, tous modes ensemble ; une réponse manquante ne compte nulle part. Chaque identifiant est publié tel que l'API l'a renvoyé (règle 7), dans l'ordre des unités de code UTF-16.",
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "modele_demande": { "type": "string", "minLength": 1 },
+        "identifiants_renvoyes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["identifiant", "reponses"],
+            "properties": {
+              "identifiant": { "type": "string" },
+              "reponses": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "reponses_sans_identifiant": { "$ref": "#/$defs/effectif" }
+      }
+    },
     "taux_du_comparateur": {
       "type": "object",
       "additionalProperties": false,
@@ -417,6 +466,39 @@
         "difference": { "$ref": "#/$defs/difference_taux" }
       }
     },
+    "ecart_sur_outil": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "exactitude_juge", "exactitude_autre_juge", "ecart"],
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "exactitude_juge": { "$ref": "#/$defs/taux" },
+        "exactitude_autre_juge": { "$ref": "#/$defs/taux" },
+        "ecart": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] }
+      }
+    },
+    "ecart_juge_editeur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["juge_id", "autre_juge_id", "outils_de_son_editeur", "ecarts", "autres_outils_sans_ecart", "moyenne_autres_outils", "difference", "intervalle", "signale", "motif_sans_qualificatif", "motif_absence"],
+      "description": "§7 : un juge dont l'éditeur édite au moins un outil du run, selon la liste déclarée au gel. difference : écart sur l'outil de son éditeur moins la moyenne des écarts sur les autres outils ; null avec motif_absence (plusieurs_outils_de_son_editeur, aucune_reponse_de_son_outil, ecart_indefini_sur_son_outil, aucun_autre_outil_avec_ecart). signale : l'intervalle exclut 0 ; null quand rien n'est qualifié, motif_sans_qualificatif dit pourquoi (§7, 0.29).",
+      "properties": {
+        "juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "autre_juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "outils_de_son_editeur": { "type": "array", "minItems": 1, "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+        "ecarts": { "type": "array", "items": { "$ref": "#/$defs/ecart_sur_outil" } },
+        "autres_outils_sans_ecart": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
+        "moyenne_autres_outils": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] },
+        "difference": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -2, "maximum": 2 }] },
+        "intervalle": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/intervalle_nomme" }] },
+        "signale": { "enum": [null, true, false] },
+        "motif_sans_qualificatif": { "$ref": "#/$defs/motif_sans_qualificatif" },
+        "motif_absence": { "enum": [null, "plusieurs_outils_de_son_editeur", "aucune_reponse_de_son_outil", "ecart_indefini_sur_son_outil", "aucun_autre_outil_avec_ecart"] }
+      },
+      "if": { "properties": { "motif_absence": { "const": null } } },
+      "then": { "properties": { "difference": { "type": "number" }, "intervalle": { "$ref": "#/$defs/intervalle_nomme" } } },
+      "else": { "properties": { "difference": { "const": null }, "intervalle": { "const": null }, "signale": { "const": null } } }
+    },
     "mode": { "enum": ["web_activee", "web_desactivee"] },
     "couple": {
       "type": "object",
@@ -434,7 +516,7 @@
       "required": ["statut", "motif"],
       "properties": {
         "statut": { "const": "sans_objet" },
-        "motif": { "enum": ["aucun_comparateur_inclus", "aucun_couple_compare", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application"] }
+        "motif": { "enum": ["aucun_comparateur_inclus", "aucun_couple_compare", "moins_de_deux_candidats", "premier_run_absent", "moins_de_trois_candidats", "aucune_reponse_application", "outils_de_son_editeur_non_declares", "juge_retire"] }
       }
     },
     "recalcul": { "enum": ["echantillon_humain", "items_contestes", "formulations_orientees", "reponses_tronquees"] },
@@ -809,21 +891,35 @@
     "h5": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["statut", "premier_run_id", "questions_texte_change", "outils"],
+      "required": ["statut", "premier_run_id", "questions_texte_change", "outils", "modeles"],
       "description": "§2 (0.27, D63) et D70 : par outil, tendance de l'exactitude (dernier run moins premier, §8), confirmée seulement si chaque couple comparé de l'outil l'est ; chaque couple est publié.",
       "properties": {
         "statut": { "const": "calcule" },
         "premier_run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
         "questions_texte_change": { "$ref": "#/$defs/effectif" },
+        "modeles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["premier", "dernier"],
+          "description": "§8 (0.31, D73 (17)) : le modèle de chaque outil à chaque run, publié avec la tendance — le modèle demandé inscrit au gel, les identifiants renvoyés par l'API avec leurs effectifs, les réponses sans identifiant renvoyé comptées à part (analysis/modeles-du-run.ts). Une ligne par assistant inclus au gel du run.",
+          "properties": {
+            "premier": { "type": "array", "items": { "$ref": "#/$defs/modele_d_un_outil" } },
+            "dernier": { "type": "array", "items": { "$ref": "#/$defs/modele_d_un_outil" } }
+          }
+        },
         "outils": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["outil_id", "verdict", "couples"],
+            "required": ["outil_id", "verdict", "motif", "couples"],
+            "description": "§2 (0.31, D73 (16)) : un outil par assistant inclus au premier ou au dernier run ; celui qui manque à l'un des deux est sans objet, avec pour motif le run où il manque.",
+            "if": { "properties": { "motif": { "type": "string" } }, "required": ["motif"] },
+            "then": { "properties": { "verdict": { "const": "sans_objet" } } },
             "properties": {
               "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
               "verdict": { "$ref": "#/$defs/verdict_hypothese" },
+              "motif": { "enum": [null, "absent_du_premier_run", "absent_du_dernier_run"] },
               "couples": {
                 "type": "array",
                 "items": {

@@ -146,7 +146,7 @@ function exigerDansSousEchantillon(
 }
 
 /** Garde de cohérence que le schéma ne peut pas exprimer : l'empreinte masquée diffère de l'origine. */
-function exigerMasquagesReels(depot: DepotApplication): void {
+export function exigerMasquagesReels(depot: DepotApplication): void {
   for (const capture of depot.captures) {
     if (capture.sha256_masquee === capture.sha256) throw new CaptureMasqueeIdentique(depot, capture);
   }

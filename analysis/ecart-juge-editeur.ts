@@ -10,8 +10,9 @@
  *
  * **Ce qui est reçu, et non décidé ici.**
  * - Quels outils du run édite l'éditeur de chaque juge (`JugeEtSonEditeur.outils_de_son_editeur`) :
- *   une donnée, jamais un `if` sur un outil. Ni `run.json` ni la notation ne la portent aujourd'hui ;
- *   son origine reste à décider (rapport du lot D59 (14)).
+ *   une donnée, jamais un `if` sur un outil. §7 (0.31, D73 (7)) : la liste est déclarée par l'auteur
+ *   au gel (`config/gel.json`), vide comprise, et publiée dans `run.json#/juges[]` ;
+ *   `analyse-du-run.ts:sectionEcartJugeEditeur` l'y lit et la passe ici.
  * - La population des réponses (`unites`) : celles que l'appelant passe, des unités d'analyse du run.
  * - La métrique et la strate de la clé de la graine : `options.cle` (`exactitude`, `global`, dans
  *   l'ordre du §8). Ce module y ajoute le composant qui nomme la comparaison, `<juge>:propre-editeur`

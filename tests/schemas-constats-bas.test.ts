@@ -103,6 +103,8 @@ describe("conformité n° 61 : modèle renvoyé et latence d'une réponse d'API"
       horodatage_saisie: "2026-12-05T10:00:00+01:00",
       captures: [{ sha256: "a".repeat(64), chemin_local: "captures/t1-0001.png" }],
     };
+    // §6 (0.31, D73 (12)) : une saisie de l'application ne porte pas de troncature.
+    delete (objet["normalise"] as Record<string, unknown>)["troncature"];
     delete metadonnees(objet)["modele_renvoye"];
     delete metadonnees(objet)["latence_ms"];
     expect(chemins("reponse", objet)).toEqual([]);

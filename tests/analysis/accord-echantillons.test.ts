@@ -11,7 +11,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  EchantillonsDuRunIncoherents,
+  MOTIF_UN_SEUL_ECHANTILLON_AU_PLAN,
   PaireDEchantillonsIncoherente,
+  variabiliteDuRun,
   variabiliteEntreEchantillons,
   type EntreesVariabilite,
   type VariabiliteDuCouple,
@@ -318,5 +321,116 @@ describe("§8, variabilité entre échantillons : l'exemple publié (D72 (7))", 
         accord: 1,
       },
     ]);
+  });
+});
+
+/* ------------------------------------------------ D73 (6) : levier « 2 → 1 » et numéros contrôlés */
+
+/** Le seul échantillon d'une question au plan à un échantillon (levier du §12 appliqué). */
+function unique(question: string, issue: Echantillon["issue"], extra: Partial<Echantillon> = {}): Echantillon[] {
+  return [{ question, echantillon: 1, issue, ...extra }];
+}
+
+/** Une requête du plan au numéro d'échantillon libre, hors des seuls 1 et 2 que le type de test admet. */
+function renumeroter(requete: RequeteDuPlan, echantillon: number): RequeteDuPlan {
+  return { ...requete, echantillon };
+}
+
+describe("§8, variabilité entre échantillons : plan à un seul échantillon (§12, levier « 2 → 1 », D73 (6))", () => {
+  it("plan à un échantillon par question : la section est publiée absente avec le motif nommé, aucun couple lu", () => {
+    const e = entrees([...unique("q1", "exacte"), ...unique("q2", "inexacte")], UN_COUPLE);
+    expect(MOTIF_UN_SEUL_ECHANTILLON_AU_PLAN).toBe("un_seul_echantillon_au_plan");
+    expect(variabiliteDuRun(e)).toEqual({ statut: "sans_objet", motif: "un_seul_echantillon_au_plan" });
+  });
+
+  it("plan à un échantillon, réponses toutes manquantes : même motif, l'absence vient du plan et non des réponses", () => {
+    const e = entrees([...unique("q1", "manquante"), ...unique("q2", "manquante")], UN_COUPLE);
+    expect(variabiliteDuRun(e)).toEqual({ statut: "sans_objet", motif: "un_seul_echantillon_au_plan" });
+  });
+
+  it("plan à un échantillon numéroté 2 : refus, le seul échantillon d'un plan à un échantillon est le numéro 1", () => {
+    const e = entrees(unique("q1", "manquante"), UN_COUPLE);
+    const plan = e.plan.map((r) => renumeroter(r, 2));
+    expect(() => variabiliteDuRun({ ...e, plan, reponses: [] })).toThrow(EchantillonsDuRunIncoherents);
+    expect(() => variabiliteDuRun({ ...e, plan, reponses: [] })).toThrow(/numéroté 1/);
+  });
+
+  it("plan à un échantillon, mais une réponse du run numérotée 2 : refus, le plan ne dit pas ce qui a été interrogé", () => {
+    const e = entrees(unique("q1", "exacte"), UN_COUPLE);
+    const seconde = reponseDe(renumeroter(e.plan[0] as RequeteDuPlan, 2), "manquante");
+    expect(() => variabiliteDuRun({ ...e, reponses: [...e.reponses, seconde] })).toThrow(EchantillonsDuRunIncoherents);
+  });
+
+  it("plan à un échantillon où une même requête figure deux fois : refus", () => {
+    const e = entrees(unique("q1", "exacte"), UN_COUPLE);
+    expect(() => variabiliteDuRun({ ...e, plan: [...e.plan, e.plan[0] as RequeteDuPlan] })).toThrow(EchantillonsDuRunIncoherents);
+  });
+
+  it("plan vide : refus, aucun nombre d'échantillons ne se lit sur un plan vide", () => {
+    const e = entrees(paire("q1", "exacte", "exacte"), UN_COUPLE);
+    expect(() => variabiliteDuRun({ ...e, plan: [] })).toThrow(EchantillonsDuRunIncoherents);
+  });
+});
+
+describe("§8, variabilité entre échantillons : plan à deux échantillons (D73 (6))", () => {
+  it("plan à deux, tout présent : section calculée, couples identiques au calcul par paire", () => {
+    const e = entrees([...paire("q1", "exacte", "exacte"), ...paire("q2", "exacte", "inexacte")], UN_COUPLE);
+    expect(variabiliteDuRun(e)).toEqual({ statut: "calcule", couples: variabiliteEntreEchantillons(e) });
+    expect(variabiliteDuRun(e)).toMatchObject({ couples: [{ paires_prevues: 2, paires_comparables: 2, paires_concordantes: 1, accord: 0.5 }] });
+  });
+
+  it("plan à deux mais aucune réponse du couple numérotée 2 : refus bruyant, jamais des paires toutes écartées", () => {
+    const e = entrees([...paire("q1", "exacte", "exacte"), ...paire("q2", "inexacte", "inexacte")], UN_COUPLE);
+    const reponses = e.reponses.filter((r) => r.echantillon === 1);
+    expect(() => variabiliteDuRun({ ...e, reponses })).toThrow(EchantillonsDuRunIncoherents);
+    expect(() => variabiliteEntreEchantillons({ ...e, reponses })).toThrow(/aucune réponse du run numérotée 2/);
+  });
+
+  it("plan à deux mais aucune réponse du couple numérotée 1 : même refus", () => {
+    const e = entrees([...paire("q1", "exacte", "exacte"), ...paire("q2", "inexacte", "inexacte")], UN_COUPLE);
+    const reponses = e.reponses.filter((r) => r.echantillon === 2);
+    expect(() => variabiliteEntreEchantillons({ ...e, reponses })).toThrow(/aucune réponse du run numérotée 1/);
+  });
+
+  it("plan mêlant des questions à un et à deux échantillons : refus, le levier s'applique au plan entier", () => {
+    const e = entrees([...unique("q1", "exacte"), ...paire("q2", "exacte", "exacte")], UN_COUPLE);
+    expect(() => variabiliteDuRun(e)).toThrow(PaireDEchantillonsIncoherente);
+  });
+});
+
+describe("§8, variabilité entre échantillons : numéros d'échantillon contrôlés (D73 (6))", () => {
+  it("échantillon 3 au plan, à la place du 2 : refus, seuls 1 et 2 sont des numéros d'échantillon", () => {
+    const e = entrees(paire("q1", "exacte", "exacte"), UN_COUPLE);
+    const plan = [e.plan[0] as RequeteDuPlan, renumeroter(e.plan[1] as RequeteDuPlan, 3)];
+    expect(() => variabiliteDuRun({ ...e, plan })).toThrow(EchantillonsDuRunIncoherents);
+    expect(() => variabiliteEntreEchantillons({ ...e, plan })).toThrow(PaireDEchantillonsIncoherente);
+    expect(() => variabiliteEntreEchantillons({ ...e, plan })).toThrow(/échantillon numéroté 3/);
+  });
+
+  it("échantillon 0 au plan, à la place du 1 : refus", () => {
+    const e = entrees(paire("q1", "exacte", "exacte"), UN_COUPLE);
+    const plan = [renumeroter(e.plan[0] as RequeteDuPlan, 0), e.plan[1] as RequeteDuPlan];
+    expect(() => variabiliteDuRun({ ...e, plan })).toThrow(/échantillon numéroté 0/);
+    expect(() => variabiliteEntreEchantillons({ ...e, plan })).toThrow(PaireDEchantillonsIncoherente);
+  });
+
+  it("une réponse du run numérotée 3, le plan étant à deux échantillons : refus", () => {
+    const e = entrees(paire("q1", "exacte", "exacte"), UN_COUPLE);
+    const troisieme = reponseDe(renumeroter(e.plan[0] as RequeteDuPlan, 3), "manquante");
+    expect(() => variabiliteDuRun({ ...e, reponses: [...e.reponses, troisieme] })).toThrow(EchantillonsDuRunIncoherents);
+    expect(() => variabiliteEntreEchantillons({ ...e, reponses: [...e.reponses, troisieme] })).toThrow(/réponse .* numérotée 3/);
+  });
+
+  it("deux réponses du run pour un même outil, mode, question, formulation et échantillon : refus, jamais la dernière lue", () => {
+    const e = entrees(paire("q1", "exacte", "exacte"), UN_COUPLE);
+    const doublon = { ...(e.reponses[1] as Reponse), id: ulid("reponse-doublon") };
+    expect(() => variabiliteDuRun({ ...e, reponses: [...e.reponses, doublon] })).toThrow(EchantillonsDuRunIncoherents);
+    expect(() => variabiliteEntreEchantillons({ ...e, reponses: [...e.reponses, doublon] })).toThrow(/deux réponses du run/);
+  });
+
+  it("une obtenue et une manquante pour la même requête : refus aussi, le doublon ne dépend pas du statut", () => {
+    const e = entrees(paire("q1", "exacte", "exacte"), UN_COUPLE);
+    const manquante = reponseDe(e.plan[0] as RequeteDuPlan, "manquante");
+    expect(() => variabiliteEntreEchantillons({ ...e, reponses: [...e.reponses, { ...manquante, id: ulid("autre") }] })).toThrow(/deux réponses du run/);
   });
 });

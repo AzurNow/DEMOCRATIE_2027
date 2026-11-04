@@ -212,9 +212,25 @@ export function exclureFormulationsOrientees(unites: readonly UniteAnalyse[]): U
   return unites.filter((u) => u.registre !== "oriente");
 }
 
-/** §8(d) : les réponses tronquées, lues sur `UniteAnalyse.tronquee` (`normalise.troncature`, §6). */
+/** §6 (protocole 0.31, D73 (12)) : « le recalcul (d) […] ne porte que sur le canal API ». */
+export class RecalculDHorsCanalApi extends Error {
+  constructor(unite: UniteAnalyse) {
+    super(
+      `Réponse ${unite.reponse_id} du canal ${unite.canal} reçue par le recalcul (d) : il ne porte que sur le canal API ` +
+        `(§6, protocole 0.31). Une saisie de l'application n'a pas de troncature et n'entre pas dans la robustesse.`,
+    );
+    this.name = "RecalculDHorsCanalApi";
+  }
+}
+
+/**
+ * §8(d) : les réponses tronquées, lues sur `UniteAnalyse.tronquee` (`normalise.troncature`, §6).
+ * Une unité qui n'est pas du canal API lève `RecalculDHorsCanalApi` : ni gardée, ni retirée en silence.
+ */
 export function exclureReponsesTronquees(unites: readonly UniteAnalyse[]): UniteAnalyse[] {
-  return unites.filter((u) => !u.tronquee);
+  const horsApi = unites.find((u) => u.canal !== "api");
+  if (horsApi !== undefined) throw new RecalculDHorsCanalApi(horsApi);
+  return unites.filter((u) => u.tronquee !== true);
 }
 
 export function evaluerRobustesse(

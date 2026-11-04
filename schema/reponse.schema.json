@@ -113,8 +113,8 @@
     "normalise": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["texte", "liens", "troncature", "refus_api"],
-      "description": "Projection AVEC PERTE de brut, seule entrée de la notation.",
+      "required": ["texte", "liens", "refus_api"],
+      "description": "Projection AVEC PERTE de brut, seule entrée de la notation. troncature est requise pour le canal api et interdite pour le canal application (voir allOf ; §6, protocole 0.31, D73 (12)).",
       "properties": {
         "texte": { "type": "string" },
         "liens": {
@@ -133,7 +133,7 @@
         },
         "troncature": {
           "type": "boolean",
-          "description": "Dérivé du stop_reason, jamais deviné. §6 fixe 2 048 tokens \"pour éviter toute troncature\" : la troncature arrivera quand même. Décision retenue : une réponse tronquée est OBTENUE et notée telle quelle (règle 7) ; le drapeau reste disponible pour une analyse de robustesse."
+          "description": "Canal api seul : requise pour lui, interdite pour le canal application, dont la saisie « ne porte ni mode ni caractère tronqué » (§6, protocole 0.31, D73 (12)) ; le recalcul (d) du §8 ne porte donc que sur le canal api. Dérivé du stop_reason, jamais deviné. §6 fixe 2 048 tokens \"pour éviter toute troncature\" : la troncature arrivera quand même. Décision retenue : une réponse tronquée est OBTENUE et notée telle quelle (règle 7) ; le drapeau reste disponible pour une analyse de robustesse."
         },
         "refus_api": {
           "type": "boolean",
@@ -217,7 +217,14 @@
             "additionalProperties": false,
             "required": ["sha256", "chemin_local"],
             "properties": {
-              "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+              "sha256": {
+                "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+                "description": "L'empreinte de la capture d'origine."
+              },
+              "sha256_masquee": {
+                "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+                "description": "L'empreinte de la capture masquée, présente seulement quand la capture a été masquée : §6 (0.25) publie les deux empreintes, recopiées du dépôt (schema/depot-application.schema.json)."
+              },
               "chemin_local": { "type": "string", "minLength": 1 },
               "archive_url": { "type": "string", "pattern": "^https?://" }
             }
@@ -295,10 +302,10 @@
 
   "allOf": [
     {
-      "$comment": "Une réponse obtenue porte son brut, son empreinte, sa projection et ses métadonnées ; elle n'a pas de tentatives en échec. Conformité 2026-09-29, n° 27 : si elle en garde, deux au plus, puisque la tentative réussie est l'une des trois du §6.",
+      "$comment": "Une réponse obtenue porte son brut, son empreinte et sa projection ; ses métadonnées sont requises pour le canal api (bloc suivant), pas pour une saisie de l'application, qui n'a ni requête ni réponse HTTP et dont l'instant est saisie_manuelle.horodatage_saisie (§6, protocole 0.31, D73 (12)). Elle n'a pas de tentatives en échec. Conformité 2026-09-29, n° 27 : si elle en garde, deux au plus, puisque la tentative réussie est l'une des trois du §6.",
       "if": { "properties": { "statut_reponse": { "const": "obtenue" } }, "required": ["statut_reponse"] },
       "then": {
-        "required": ["normalise", "normalisation", "metadonnees"],
+        "required": ["normalise", "normalisation"],
         "properties": { "tentatives": { "maxItems": 2 } },
         "not": { "required": ["motif_manquante"] },
         "oneOf": [
@@ -363,14 +370,21 @@
         "required": ["canal", "statut_reponse"]
       },
       "then": {
-        "required": ["brut_octets_sha256"],
+        "required": ["brut_octets_sha256", "metadonnees"],
         "properties": { "metadonnees": { "required": ["modele_renvoye", "latence_ms", "parametres_effectifs"] } }
       }
     },
     {
+      "$comment": "§6 (protocole 0.31, D73 (12)) : la troncature appartient au canal api, où elle est requise ; une saisie de l'application « ne porte ni mode ni caractère tronqué », et le recalcul (d) ne porte que sur le canal api.",
       "if": { "properties": { "canal": { "const": "api" } }, "required": ["canal"] },
-      "then": { "required": ["mode", "requete"] },
-      "else": { "not": { "required": ["mode"] } }
+      "then": {
+        "required": ["mode", "requete"],
+        "properties": { "normalise": { "required": ["troncature"] } }
+      },
+      "else": {
+        "not": { "required": ["mode"] },
+        "properties": { "normalise": { "not": { "required": ["troncature"] } } }
+      }
     },
     {
       "if": { "properties": { "canal": { "const": "application" } }, "required": ["canal"] },

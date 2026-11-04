@@ -27,7 +27,8 @@ runs/<date>/
                                     écrites par pnpm analyze, jamais réécrites
   checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
                                     par pnpm go-no-go, contresignée par pnpm go-no-go:contresigner
-  volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo
+  volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo,
+                              À L'EXCEPTION de liens/pages/ (voir ci-dessous)
     reponses/<id>.json              une réponse par requête (schema/reponse.schema.json)
     tentatives/<empreinte>.jsonl    le journal des tentatives d'une requête
     tentatives/<empreinte>.<n>.octets
@@ -40,7 +41,19 @@ runs/<date>/
                                     les réponses permutées du test contrefactuel (§7), contexte ≠ run
     liens/<sha256 de l'URL>.json    le test HTTP d'un lien cité (schema/existence-lien.schema.json)
     liens/pages/<sha256><ext>       la page d'un lien qui existe, octets reçus tels quels
+                                    (JAMAIS dans l'archive Zenodo : voir ci-dessous)
 ```
+
+**Ce qui ne part pas dans l'archive Zenodo (§9, §10 ; conformité 2026-11-03 n° 10).** Le volume part
+en entier, sauf `volume/liens/pages/` : les pages citées par les réponses ne sont republiables que si
+leur licence le permet, ce que le banc ne sait pas établir page par page. Elles restent sur la
+machine de l'auteur, parce que la notation les lit ; seuls partent, dans `volume/liens/<sha256 de
+l'URL>.json`, l'empreinte (`sha256_contenu`), le lien d'archive (`archive_url`) et le verdict, et
+l'extrait cité dans les notations. De même, une archive `sources_archivees` (`run.json#/depot/archives`)
+n'est admise que si chaque source qu'elle contient déclare `publication: "publique"` ; `interne` ou un
+champ absent la refuse. La garde est `pipeline/run/depot.ts` (`verifierEntreesArchive`,
+`verifierArchives`), à appeler par la commande de dépôt quand elle existera, et tenue par
+`tests/run/depot.test.ts`. Un dépôt à la main exclut `volume/liens/pages/` de l'archive.
 
 Les mesures ne sont pas copiées dans `runs/<date>/` : comme les items, elles sont lues dans
 `data/mesures/` (un fichier par mesure, décision D38) au commit `run.json#/versions/donnees_commit`,
@@ -82,7 +95,7 @@ statut `planifie` et tout ou rien (un temporaire voisin renommé d'un geste) :
 - `run.json` : fenêtre, `versions.code_commit` et `versions.donnees_commit` (HEAD : `data/` est dans le
   même dépôt), `versions.protocole_sha256` (SHA-256 des octets de `docs/PROTOCOLE.md` au commit gelé),
   graines, table `alias_candidats` (alias aveugle de chaque candidat interrogé, §7, protocole 0.20),
-  `balise`, `engagement`, `run_precedent`, périmètre au gel, juges, symétrie, `tirage`
+  `balise`, `engagement`, `run_precedent`, `application_testee`, périmètre au gel, juges, symétrie, `tirage`
   (`runs/<date>/tirage.json`, SHA-256 de ses octets, nombre de questions tirées) et `questions`
   (`runs/<date>/questions.json`, SHA-256 de ses octets exacts, D48 (4)) — même quand `--sortie` est
   donnée ;
@@ -140,6 +153,19 @@ conforme (`tirage_illisible`), d'empreinte différente (`empreinte_differente`) 
 non conforme (`questions_illisibles`), ou qui ne contient pas une question tirée
 (`question_introuvable`). `questions`, exigé par le schéma, n'est lu que du précédent retenu : son
 absence dans le `run.json` d'un run sauté ne bloque aucun gel.
+
+### Run de l'application du mois (§6, D73 (11))
+
+Le gel inscrit `run.json#/application_testee` (`pipeline/gel/application.ts`) : `{ designe: true,
+mois_utc }` pour le premier run `mensuel` ou `hebdomadaire` du mois civil compté en UTC, d'après la
+`date_gel` de chaque run (D74 (11)) ; sinon `designe: false` et son motif, `type_run_exclu` (pilote,
+supplémentaire, réexécution) ou `mois_deja_servi` avec `premier_run_id`, le run du mois gelé avant
+lui. Tous les runs de `runs/` comptent, quel que soit leur `statut` : la désignation est faite au gel
+et ne bouge plus. Refus nommés (`ApplicationRefusee`), rien n'étant écrit : un run désignable du même
+mois déjà gelé à une `date_gel` strictement postérieure (`gel_hors_ordre` ; à la même `date_gel`, il a
+été gelé avant et reste le premier), deux premiers du mois à la
+même `date_gel` (`premier_ambigu`). Le sous-échantillon de l'application n'est calculé que d'un run
+désigné ; un `run.json` sans ce champ est refusé (`ApplicationNonDesignee`).
 
 ### Réexécution (D51 (3))
 
@@ -365,12 +391,19 @@ pas par `assembler()` : les premiers servent l'audit du §6 ; les notations et l
 contrefactuelles sont relues par `lireNotationsDuRun`, pour le contrôle croisé et le recalcul de
 robustesse §8(a).
 
-## `pnpm analyze <repertoire_run> --items=<data/items> [--premier=<repertoire_run>]`
+## `pnpm analyze <repertoire_run> [--premier=<repertoire_run>]`
 
 Les analyses préenregistrées du §8 sur un run noté (`analysis/analyse-du-run.ts`, sous-lot A). Lit le
 run par `lireRun` (table ci-dessus), les notations individuelles du volume et le plan d'interrogation
 du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.schema.json` avant toute
 écriture. N'écrit rien d'autre et ne touche jamais `run.json`.
+
+- **Les items ne se désignent pas.** Ils se lisent dans le `data/items` de la racine du dépôt Git qui
+  porte le run, celui où se relit `versions.donnees_commit` ; l'ancienne option `--items` est refusée.
+  Un run hors d'un dépôt Git, ou un dépôt sans item validé, est refusé (code 2). Les contestations
+  connues de ce `data/items`, lues contre le commit des données du gel, doivent toutes être inscrites
+  dans `run.json#/contestations_posterieures` (D73 (2) et (4)) : sinon refus,
+  `ContestationsPosterieuresNonInscrites`.
 
 - **Un seul partage de la population.** Les couples comparés et incomplets (seuil de 20 % compté sur
   le plan, §8), les candidats comparés et rapportés à part (seuil de couverture lu au gel, §4), les

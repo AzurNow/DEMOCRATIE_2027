@@ -3,7 +3,7 @@
  * protocole 0.25, D60 : outils « sans objet » de H1 et de H2, sens de lecture de H2 ; protocole
  * 0.27, D63 : règles de H3 et de H5 ; D67 : une hypothèse non confirmée n'est jamais dite
  * « infirmée », son verdict est `non_confirmee` ; décision D70 de la session principale : H5 d'un
- * outil à deux modes).
+ * outil à deux modes ; protocole 0.31, D73 (16) : H5 d'un assistant inclus à un seul des deux runs).
  *
  * Ce module ne calcule aucune métrique : il lit des résultats déjà produits ailleurs dans
  * `analysis/` (intervalles du taux de fabrication, comparaisons de modes et de formulations de
@@ -463,10 +463,27 @@ export interface CoupleH5 {
   readonly exclusion: { readonly incomplet_au_premier: boolean; readonly incomplet_au_dernier: boolean } | null;
 }
 
+/**
+ * Pourquoi un assistant est « sans objet » pour H5 quel que soit le résultat de ses couples (§2,
+ * 0.31, D73 (16)) : il n'est pas inclus à l'un des deux runs comparés.
+ */
+export type MotifSansObjetH5Outil = "absent_du_premier_run" | "absent_du_dernier_run";
+
 export interface DecisionH5Outil {
   readonly outil_id: IdentifiantCourt;
   readonly verdict: VerdictHypothese;
+  /**
+   * `null` pour un assistant inclus aux deux runs, même « sans objet » faute de couple comparé :
+   * la raison se lit alors sur ses couples.
+   */
+  readonly motif: MotifSansObjetH5Outil | null;
   readonly couples: readonly CoupleH5[];
+}
+
+/** Les assistants inclus de chacun des deux runs comparés, dans l'ordre de leur périmètre. */
+export interface OutilsDeLaTendance {
+  readonly premier: readonly IdentifiantCourt[];
+  readonly dernier: readonly IdentifiantCourt[];
 }
 
 export interface DecisionH5 {
@@ -493,31 +510,57 @@ export class TendanceIncoherente extends Error {
  * soient confirmés, l'outil est « non confirmée » ; aucun couple comparé, il est « sans objet ».
  * Le résultat de chaque couple est publié.
  *
- * `outils` : les assistants inclus du dernier run. Une ligne de tendance d'un autre outil lève :
- * le §2 ne dit pas ce que devient un outil sorti du périmètre entre les deux runs.
+ * §2 (0.31, D73 (16)) : « H5 est rendue pour chaque assistant inclus au premier ou au dernier run ;
+ * un assistant qui manque à l'un des deux runs est publié « sans objet ». » Il l'est avec le run
+ * où il manque pour motif, et ses couples sont publiés tels que la tendance les rend ; ils ne
+ * décident pas de son verdict.
+ *
+ * `outils` : les assistants inclus de chacun des deux runs. Ordre de publication : ceux du dernier
+ * run dans l'ordre de son périmètre, puis ceux du seul premier run dans l'ordre du sien. Une ligne
+ * de tendance d'un outil qu'aucun des deux runs n'inclut lève `TendanceIncoherente`.
  */
-export function decisionH5(outils: readonly IdentifiantCourt[], tendance: TendanceDuRun): DecisionH5 {
-  verifierOutils(outils, "H5");
-  verifierOutilsDeLaTendance(tendance, outils);
+export function decisionH5(outils: OutilsDeLaTendance, tendance: TendanceDuRun): DecisionH5 {
+  const rendus = outilsRendusH5(outils);
+  verifierOutilsDeLaTendance(tendance, rendus);
   return {
     questions_texte_change: tendance.questions_texte_change,
-    outils: outils.map((outil_id) => decisionH5Outil(outil_id, tendance)),
+    outils: rendus.map((outil_id) => decisionH5Outil(outil_id, motifH5Outil(outil_id, outils), tendance)),
   };
+}
+
+/** Le dernier run, puis le seul premier : chaque assistant inclus à l'un des deux, une fois. */
+function outilsRendusH5(outils: OutilsDeLaTendance): IdentifiantCourt[] {
+  verifierSansDoublon(outils.premier, "H5 (premier run)");
+  verifierSansDoublon(outils.dernier, "H5 (dernier run)");
+  const auDernier = new Set(outils.dernier);
+  const rendus = [...outils.dernier, ...outils.premier.filter((o) => !auDernier.has(o))];
+  verifierOutils(rendus, "H5");
+  return rendus;
+}
+
+function verifierSansDoublon(outils: readonly IdentifiantCourt[], contexte: string): void {
+  if (new Set(outils).size !== outils.length) throw new Error(`${contexte} : outil déclaré deux fois.`);
+}
+
+function motifH5Outil(outil_id: IdentifiantCourt, outils: OutilsDeLaTendance): MotifSansObjetH5Outil | null {
+  if (!outils.premier.includes(outil_id)) return "absent_du_premier_run";
+  if (!outils.dernier.includes(outil_id)) return "absent_du_dernier_run";
+  return null;
 }
 
 function verifierOutilsDeLaTendance(tendance: TendanceDuRun, outils: readonly IdentifiantCourt[]): void {
   const declares = new Set(outils);
   for (const couple of [...tendance.par_outil_et_mode, ...tendance.couples_exclus]) {
-    if (!declares.has(couple.outil_id)) throw new TendanceIncoherente(`couple ${cleCouple(couple)} d'un outil que le dernier run ne déclare pas.`);
+    if (!declares.has(couple.outil_id)) throw new TendanceIncoherente(`couple ${cleCouple(couple)} d'un outil qu'aucun des deux runs n'inclut.`);
   }
 }
 
-function decisionH5Outil(outil_id: IdentifiantCourt, tendance: TendanceDuRun): DecisionH5Outil {
+function decisionH5Outil(outil_id: IdentifiantCourt, motif: MotifSansObjetH5Outil | null, tendance: TendanceDuRun): DecisionH5Outil {
   const couples = [
     ...tendance.par_outil_et_mode.filter((l) => l.outil_id === outil_id).map(coupleCompareH5),
     ...tendance.couples_exclus.filter((c) => c.outil_id === outil_id).map(coupleExcluH5),
   ];
-  return { outil_id, verdict: verdictH5Outil(couples), couples };
+  return { outil_id, verdict: motif === null ? verdictH5Outil(couples) : "sans_objet", motif, couples };
 }
 
 function coupleCompareH5(ligne: TendanceOutilEtMode): CoupleH5 {

@@ -178,7 +178,11 @@ export interface Notation {
 export interface ProjectionNormalisee {
   readonly texte: string;
   readonly liens: readonly string[];
-  readonly troncature: boolean;
+  /**
+   * Canal api : obligatoire, dérivé du stop_reason (§6). Canal application : absent, la saisie
+   * « ne porte ni mode ni caractère tronqué » (§6, protocole 0.31, D73 (12)).
+   */
+  readonly troncature?: boolean;
 }
 
 export interface Reponse {
@@ -195,6 +199,17 @@ export interface Reponse {
   readonly statut_reponse: StatutReponse;
   /** Absent sur une réponse manquante : elle n'a rien à montrer. */
   readonly normalise?: ProjectionNormalisee;
+  /** §6 : ce que l'analyse lit des métadonnées enregistrées (reponse.schema.json). */
+  readonly metadonnees?: MetadonneesReponse;
+}
+
+/**
+ * §6, §8 (0.31, D73 (17)) : l'identifiant de version renvoyé par l'API. La clé est obligatoire
+ * pour une réponse obtenue du canal api ; `null` dit que l'API n'en a pas renvoyé, et seulement
+ * cela. Une clé absente n'est pas un `null`.
+ */
+export interface MetadonneesReponse {
+  readonly modele_renvoye?: string | null;
 }
 
 export interface ReferenceItem {
@@ -278,6 +293,8 @@ export interface OutilAuGel {
   readonly mode_de_tete?: Mode;
   /** §6 : déclaré pour un assistant inclus, un par mode qu'il interroge sur le canal API. */
   readonly modes?: readonly Mode[];
+  /** §6 : le modèle demandé, inscrit au gel ; exigé pour un assistant inclus (run.schema.json). */
+  readonly modele_demande?: string;
   /**
    * §8, §12, D55 (7) : part de réponses manquantes et verdict « run incomplet » par mode,
    * calculés par `analysis/seuils.ts:parModeDuRun`, jamais un second calcul. Écrit par

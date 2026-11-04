@@ -8,6 +8,14 @@
  * est saisie dans sa formulation neutre, en un seul échantillon, numéroté 1. Chacun des deux testeurs
  * saisit tout le sous-échantillon. »
  *
+ * **Le run désigné** (§6, protocole 0.31, D73 (11)) : « le premier run mensuel ou hebdomadaire du
+ * mois civil, compté en UTC, ni le run pilote ni un run supplémentaire, et il est désigné à son gel ».
+ * Le gel l'inscrit dans `run.json#/application_testee` (`pipeline/gel/application.ts`) ; le
+ * sous-échantillon n'est calculé que d'un run désigné, et un `run.json` sans le champ est refusé
+ * (`ApplicationNonDesignee`), jamais supposé désigné. Les dépôts des testeurs
+ * (`depot-application.ts:bilanDesDepots`) ne se contrôlent que contre ce sous-échantillon : ils
+ * héritent de la garde.
+ *
  * **Aucune graine.** Le §6 fixe l'ordre — codes de gabarit, puis identifiants de question, triés
  * (`outils/ordre-chaines.ts`) — et rien n'y est tiré : le sous-échantillon se calcule des seuls
  * fichiers gelés du run (`tirage.json`, `questions.json`, `run.json#/perimetre/candidats`), et
@@ -34,7 +42,8 @@
 
 import { candidatsInterroges, type PorteInterroge } from "../../analysis/candidats-interroges.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import { valider } from "../../outils/schemas/valider.ts";
+import { valider, validerFragment } from "../../outils/schemas/valider.ts";
+import type { ApplicationTestee } from "../gel/application.ts";
 import type { CodeGabarit, Registre } from "../questions/types.ts";
 
 /** §6 : « cinq par candidat interrogé ». */
@@ -49,6 +58,11 @@ export const REGISTRE_APPLICATION = "neutre" satisfies Registre;
 /** Ce que le calcul lit des fichiers gelés du run, et rien de plus. */
 export interface EntreesSousEchantillon {
   readonly run_id: string;
+  /**
+   * `run.json#/application_testee` (§6, D73 (11)) : seul le run désigné au gel a un sous-échantillon.
+   * `undefined` : son `run.json` ne porte pas le champ, et le calcul refuse plutôt que de supposer.
+   */
+  readonly application_testee: ApplicationTestee | undefined;
   /** `run.json#/perimetre/candidats`. */
   readonly candidats: readonly PorteInterroge[];
   /** `tirage.json#/entrees` : les questions tirées. */
@@ -93,7 +107,43 @@ export class FormulationNeutreIntrouvable extends Error {
   }
 }
 
+export type MotifNonDesignee = "champ_absent" | "non_designe";
+
+/** §6, D73 (11) : un sous-échantillon demandé pour un run que le gel n'a pas désigné, ou sans le dire. */
+export class ApplicationNonDesignee extends Error {
+  readonly motif: MotifNonDesignee;
+
+  constructor(motif: MotifNonDesignee, run_id: string, detail: string) {
+    super(
+      `Run ${run_id} : aucun sous-échantillon de l'application (${motif}, §6, D73 (11)) : ${detail} ` +
+        `Seul le premier run mensuel ou hebdomadaire du mois civil UTC, désigné à son gel, est saisi dans l'application.`,
+    );
+    this.name = "ApplicationNonDesignee";
+    this.motif = motif;
+  }
+}
+
+function raisonNonDesigne(application: Exclude<ApplicationTestee, { readonly designe: true }>): string {
+  if (application.motif === "mois_deja_servi") return `le run ${application.premier_run_id} est celui de l'application du mois ${application.mois_utc}.`;
+  return `son type de run n'est ni mensuel ni hebdomadaire (mois ${application.mois_utc}).`;
+}
+
+/**
+ * Lève si le run n'est pas désigné pour l'application : champ absent de `run.json` (rien n'est
+ * supposé), ou désignation négative. La valeur est validée contre son fragment de `run.schema.json`
+ * (frontière d'entrée) avant d'être lue.
+ */
+export function exigerApplicationTestee(run_id: string, application_testee: ApplicationTestee | undefined): void {
+  if (application_testee === undefined) {
+    throw new ApplicationNonDesignee("champ_absent", run_id, "son run.json ne porte pas application_testee.");
+  }
+  const lue = validerFragment<ApplicationTestee>("run", "#/properties/application_testee", application_testee, `run ${run_id}, application_testee`);
+  if (lue.designe) return;
+  throw new ApplicationNonDesignee("non_designe", run_id, raisonNonDesigne(lue));
+}
+
 export function sousEchantillonApplication(entrees: EntreesSousEchantillon): SousEchantillonApplication {
+  exigerApplicationTestee(entrees.run_id, entrees.application_testee);
   const formulations = formulationsNeutres(entrees.questions);
   const ids = candidatsInterroges(entrees.candidats).map((c) => c.candidat_id).sort(comparerChaines);
   const choix = ids.map((candidat_id) => ({ candidat_id, retenues: tourniquet(filesParGabarit(entrees.entrees, candidat_id)) }));
@@ -169,12 +219,18 @@ function formulationNeutre(formulations: ReadonlyMap<string, readonly string[]>,
  * testeurs, sur les mêmes fichiers gelés : rien n'est recopié ailleurs.
  */
 export function questionsDuSousEchantillonDuRun(fichiers: {
-  readonly run: { readonly id: string; readonly perimetre: { readonly candidats: readonly PorteInterroge[] } };
+  readonly run: {
+    readonly id: string;
+    /** Absent d'un `run.json` gelé avant D73 (11) : refusé par `sousEchantillonApplication`. */
+    readonly application_testee?: ApplicationTestee;
+    readonly perimetre: { readonly candidats: readonly PorteInterroge[] };
+  };
   readonly entrees_tirage: EntreesSousEchantillon["entrees"];
   readonly questions: EntreesSousEchantillon["questions"];
 }): readonly string[] {
   const sous = sousEchantillonApplication({
     run_id: fichiers.run.id,
+    application_testee: fichiers.run.application_testee,
     candidats: fichiers.run.perimetre.candidats,
     entrees: fichiers.entrees_tirage,
     questions: fichiers.questions,

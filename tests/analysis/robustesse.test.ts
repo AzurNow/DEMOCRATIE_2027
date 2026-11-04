@@ -16,6 +16,7 @@ import {
   exclureFormulationsOrientees,
   exclureItemsContestes,
   exclureReponsesTronquees,
+  RecalculDHorsCanalApi,
   recalculEchantillonHumain,
   sourcageDeNotation,
 } from "../../analysis/robustesse.ts";
@@ -110,6 +111,23 @@ describe("les quatre restrictions", () => {
     const restant = exclureReponsesTronquees(jeu);
 
     expect(restant.map((u) => u.verdict_id)).toEqual([ulid("v-i1-entiere"), ulid("v-i3-entiere")]);
+  });
+});
+
+describe("(d) ne porte que sur le canal API (§6, protocole 0.31, D73 (12))", () => {
+  it("une unité du canal application qui atteint le recalcul (d) lève, au lieu d'y être gardée ou retirée en silence", () => {
+    const jeu = [
+      surItem("i1", { verdict_id: ulid("v-api"), tronquee: false }),
+      surItem("i1", { verdict_id: ulid("v-app"), canal: "application", mode: null, tronquee: null }),
+    ];
+
+    expect(() => exclureReponsesTronquees(jeu)).toThrow(RecalculDHorsCanalApi);
+  });
+
+  it("une unité de l'application même marquée false (donnée fausse) lève aussi : c'est le canal qui décide", () => {
+    const jeu = [surItem("i1", { verdict_id: ulid("v-app"), canal: "application", mode: null, tronquee: false })];
+
+    expect(() => exclureReponsesTronquees(jeu)).toThrow(RecalculDHorsCanalApi);
   });
 });
 

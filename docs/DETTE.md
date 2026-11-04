@@ -13,9 +13,69 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-04 (après-midi) — Code de D73 (6), (7), (8), (11) à (17), dettes n° 1, 2, 4 et conformité n° 10 (PR #283 à #295 : `analysis/`, `pipeline/gel/`, `pipeline/interrogation/`, `pipeline/notation/`, `pipeline/run/`, `schema/`)
+
+### 1. L'écart juge-éditeur, désormais branché, lève sur une réponse qu'un seul juge a notée — *moyenne*
+
+#295 fait appeler `analysis/ecart-juge-editeur.ts` par `analyserRun`. Ce module lève
+`NotationDeJugeIncoherente` sur une réponse renvoyée à un humain par l'un des juges (D30 (2)), cas
+que la notation produit normalement depuis #281.
+
+**Pourquoi ça casse.** Au premier run réel, le premier renvoi d'un juge fait échouer `pnpm analyze`
+en entier ; aucun chiffre faux, mais aucun chiffre du tout.
+
+**Ce qu'il faut faire.** Sortir ces réponses du calcul de l'écart et les nommer (D75 (25)), sous test,
+avant le premier run réel.
+
+### 2. La garde de licence du dépôt Zenodo n'a aucun appelant — *moyenne*
+
+`pipeline/run/depot.ts` (#283) refuse les pages citées et les sources non republiables dans une
+archive, mais aucune commande de dépôt n'existe : le dépôt se fait à la main d'après `runs/README.md`,
+et `liens/pages/` reste sous `volume/`.
+
+**Pourquoi ça casse.** Un dépôt manuel qui verse `volume/` en entier republie des pages que le §9
+retient ; rien ne l'arrête.
+
+**Ce qu'il faut faire.** Faire appeler la garde par la future commande de dépôt, ou sortir
+`liens/pages/` de `volume/` (D75 (4)).
+
+### 3. Le nombre d'échantillons du plan n'est inscrit nulle part au gel — *moyenne*
+
+#289 lit le nombre d'échantillons sur les numéros du plan reconstruit par `planifier`, qui applique
+la constante `ECHANTILLONS = 2` de `pipeline/interrogation/conditions.ts`.
+
+**Pourquoi ça casse.** Si le levier « 2 → 1 » du §12 est appliqué, le plan reconstruit dira toujours
+deux échantillons et l'analyse refusera le run (`EchantillonsDuRunIncoherents`) au lieu de publier la
+variabilité absente avec motif.
+
+**Ce qu'il faut faire.** Inscrire le nombre d'échantillons dans `run.json` au gel et le passer à
+`planifier` (D75 (14)).
+
+### 4. Un champ écrit après le gel rangé dans le mauvais groupe change l'empreinte publiée sans bruit — *moyenne*
+
+`pipeline/run/champs-posterieurs-au-gel.ts` (#291) range chaque champ post-gel par auteur ; seuls les
+groupes du go/no-go, du statut et de la publication sortent de l'empreinte. Les tests figent les
+empreintes actuelles, pas le classement d'un champ nouveau.
+
+**Pourquoi ça casse.** La commande qui écrira `kappa_paire_juges` ou `kappa_juge_humain` (D75 (17))
+peut les ranger hors empreinte par erreur : l'empreinte publiée ne couvrira plus ce que le §9 lui
+fait couvrir.
+
+**Ce qu'il faut faire.** À l'ajout d'un champ post-gel, un test qui énumère les propriétés de
+`run.schema.json` et exige que chacune soit soit figée au gel, soit rangée dans un groupe.
+
+### 5. Le compte des objets notants reste écrit en dur — *basse*
+
+#285 a dérivé le compte des exemples, mais `tests/questions/invariants.test.ts` garde
+`expect(notants).toHaveLength(51)`. Le 2026-11-04, #290 a dû le corriger à la main après fusion.
+
+**Ce qu'il faut faire.** Le dériver du manifeste comme les exemples.
+
+---
+
 ## 2026-11-04 — Protocole 0.31 (D73), constats de conformité n° 1 à 9 et code de D73 (2), (4), (9), (10) (PR #274 à #281 : `validation/domaine/`, `pipeline/questions/`, `pipeline/interrogation/`, `pipeline/notation/`, `pipeline/extraction/`, `pipeline/run/`, `analysis/`)
 
-### 1. Le contrôle des contestations postérieures avant `pnpm analyze` ne voit que l'arbre désigné par `--items` — *haute*
+### ~~1. Le contrôle des contestations postérieures avant `pnpm analyze` ne voit que l'arbre désigné par `--items`~~ — réglé le 2026-11-04 par #288 (items déduits du dépôt du run, `--items` refusé)
 
 `exigerContestationsInscrites` (#278, `pipeline/run/contestations-posterieures.ts`, appelé par
 `outils/analyze.ts`) lit les contestations connues dans le répertoire passé en `--items`. Un `--items`
@@ -28,7 +88,7 @@ sort en succès.
 **Ce qu'il faut faire.** Refuser un `--items` qui n'est pas le `data/items` du dépôt dont le run lit
 le commit des données, ou le déduire de la racine du dépôt au lieu de le demander.
 
-### 2. `run.json` est réécrit au début de la notation — *moyenne*
+### ~~2. `run.json` est réécrit au début de la notation~~ — réglé le 2026-11-04 par #291 (`pipeline/run/champs-posterieurs-au-gel.ts`, une seule source lue par toutes les comparaisons)
 
 #281 inscrit `reponses.obtenues` dans `run.json` en tête de la chaîne de notation ; `formeAuGel`
 (`pipeline/notation/notation-simulee.ts`) a dû apprendre à ignorer ce champ pour qu'une relance ne
@@ -51,7 +111,7 @@ arrête toute la notation au lieu de produire un renvoi motivé.
 **Ce qu'il faut faire.** Au branchement du premier adaptateur réel, traduire ses erreurs de transport
 en `JugeDefaillant` avec un motif, sous test.
 
-### 4. Le compte d'exemples de schéma est écrit en dur dans deux tests — *basse*
+### ~~4. Le compte d'exemples de schéma est écrit en dur dans deux tests~~ — réglé le 2026-11-04 par #285 (compte dérivé du manifeste ; reste le compte des notants, voir l'entrée de l'après-midi, point 5)
 
 `tests/schemas.test.ts` et `tests/questions/invariants.test.ts` portent le nombre d'exemples (393 au
 2026-11-04). Le 2026-11-04, quatre PR parallèles l'ont changé chacune : trois conflits de fusion à
