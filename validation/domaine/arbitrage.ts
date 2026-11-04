@@ -17,12 +17,13 @@
  *   (proposé par un « accepter »), `correction:<annotateur>` ou `paraphrase:<annotateur>` (la
  *   seconde pour un arbitrage « paraphrase seule », seulement). Un contenu proposé sur une autre
  *   version de l'item n'est pas proposé pour celle-ci. Si aucun ne convient, il rejette.
- * - **Un item A n'est vérifié que si les deux annotateurs ont confirmé l'absence**, arbitrage ou non.
+ * - **Un item A n'est vérifié que si les deux annotateurs ont confirmé l'absence**, arbitrage ou non ;
+ *   un item F, que s'ils ont tous deux confirmé la fictivité (§4, conformité 2026-11-03 n° 2).
  *   De même, un item dont une source de contenu est T2 n'est vérifié que si les deux ont écouté
  *   l'extrait et jugé la transcription fidèle (conformité n° 12) : l'arbitre ne l'écoute pas à leur place.
  */
 
-import { porteUneSourceT2, transcriptionEcouteeParLesDeux } from "./ecoute-t2.ts";
+import { porteUneSourceT2, sourcesDuContenu, transcriptionEcouteeParLesDeux } from "./ecoute-t2.ts";
 import { canoniser } from "./empreinte.ts";
 import {
   appliquerCorrections,
@@ -35,7 +36,7 @@ import {
   type MotifArbitrage,
   type OptionsPromotion,
 } from "./promotion.ts";
-import type { Arbitre, BlocArbitrage, EntreeDecision, IssueDecisionArbitrage, Item } from "./types.ts";
+import type { Arbitre, BlocArbitrage, EntreeDecision, IssueDecisionArbitrage, Item, MotifRejet } from "./types.ts";
 
 export interface DecisionArbitrage {
   readonly id: string;
@@ -47,6 +48,12 @@ export interface DecisionArbitrage {
   readonly issue: IssueDecisionArbitrage;
   /** Présent si et seulement si l'issue est `verifie`. */
   readonly contenu_retenu?: string;
+  /**
+   * §4 (protocole 0.27) : « quand le rejet est tranché par l'arbitre, sa décision porte le motif
+   * comme celle d'un annotateur ». Sur l'issue `rejete` seulement ; renvoie les sources de contenu
+   * de l'item à la réextraction (`renvoi-reextraction.ts`).
+   */
+  readonly motif_rejet?: MotifRejet;
   readonly arbitre: Arbitre;
   readonly arbitre_seul: boolean;
   readonly motivation: string;
@@ -157,16 +164,44 @@ function absenceConfirmeeParLesDeux(dossier: Dossier): boolean {
   return dossier.decisions.every((decision) => decision.questions_specifiques?.confirmation_absence === true);
 }
 
-function motifsIssue(dossier: Dossier, motif: MotifArbitrage, decision: DecisionArbitrage): readonly string[] {
-  if (decision.issue !== "verifie") {
-    return decision.contenu_retenu === undefined ? [] : ["un contenu ne se retient que pour l'issue « verifie »"];
+function fictiviteConfirmeeParLesDeux(dossier: Dossier): boolean {
+  return dossier.decisions.every((decision) => decision.questions_specifiques?.fictivite_verifiee === true);
+}
+
+/**
+ * §4 (protocole 0.27) : le motif de rejet de l'arbitre est celui d'un annotateur, avec les mêmes
+ * bornes (`decision.ts:controlerMotifRejet`) : un rejet seulement, sur un item qui a une source de
+ * contenu.
+ */
+function motifsRejet(dossier: Dossier, decision: DecisionArbitrage): readonly string[] {
+  if (decision.motif_rejet === undefined) return [];
+  if (decision.issue !== "rejete") return ["un motif de rejet ne se porte que sur l'issue « rejete »"];
+  if (sourcesDuContenu(dossier.item).length === 0) {
+    return ["motif « texte extrait erroné » sans objet : l'item n'a aucune source de contenu (§4)"];
   }
+  return [];
+}
+
+/** Ce que les deux annotateurs doivent avoir confirmé pour que l'arbitre puisse vérifier l'item. */
+function confirmationsManquantes(dossier: Dossier): readonly string[] {
   if (dossier.item.type === "A" && !absenceConfirmeeParLesDeux(dossier)) {
     return ["item A : vérifié seulement si les deux annotateurs ont confirmé l'absence (§4)"];
+  }
+  if (dossier.item.type === "F" && !fictiviteConfirmeeParLesDeux(dossier)) {
+    return ["item F : vérifié seulement si les deux annotateurs ont confirmé la fictivité (§4)"];
   }
   if (porteUneSourceT2(dossier.item) && !transcriptionEcouteeParLesDeux(dossier.decisions)) {
     return ["source T2 : vérifié seulement si les deux annotateurs ont écouté l'extrait et jugé la transcription fidèle (§4, §9)"];
   }
+  return [];
+}
+
+function motifsIssue(dossier: Dossier, motif: MotifArbitrage, decision: DecisionArbitrage): readonly string[] {
+  if (decision.issue !== "verifie") {
+    return decision.contenu_retenu === undefined ? [] : ["un contenu ne se retient que pour l'issue « verifie »"];
+  }
+  const manquantes = confirmationsManquantes(dossier);
+  if (manquantes.length > 0) return manquantes;
   if (decision.contenu_retenu === undefined) return ["l'issue « verifie » exige un contenu retenu"];
   const resolu = contenuRetenu(dossier, motif, decision.contenu_retenu);
   return "refus" in resolu ? [resolu.refus] : [];
@@ -181,6 +216,7 @@ export function motifsInapplicable(dossier: Dossier, motif: MotifArbitrage, deci
     ...motifsEpinglage(dossier, motif, decision),
     ...motifArbitre(instanceArbitrage(dossier.decisions), decision),
     ...motifsIssue(dossier, motif, decision),
+    ...motifsRejet(dossier, decision),
   ];
 }
 
@@ -201,6 +237,7 @@ function blocArbitrage(decision: DecisionArbitrage): BlocArbitrage {
     arbitre_seul: decision.arbitre_seul,
     motif: decision.motif,
     issue: decision.issue,
+    ...(decision.motif_rejet === undefined ? {} : { motif_rejet: decision.motif_rejet }),
     motivation: decision.motivation,
   };
 }

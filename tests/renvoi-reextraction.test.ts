@@ -3,10 +3,11 @@
  * extrait faux se solde par un rejet de l'item sous le motif énuméré « texte extrait erroné », et
  * c'est ce motif qui renvoie la source à la réextraction ».
  *
- * Seul le cas que le texte tranche renvoie une source : un item rejeté par deux « rejeter »
- * concordants qui portent tous deux le motif, sur un item dont le contenu n'a qu'une source. Tout
- * autre rejet qui porte le motif (motifs discordants, rejet tranché par l'arbitre, item à deux
- * sources distinctes) est rapporté « à trancher », jamais résolu en silence ni écarté.
+ * Protocole 0.27 (D62 #233 (1), conformité 2026-11-03 n° 1) : « Le renvoi a lieu dès que l'item est
+ * rejeté et qu'une décision de rejet qui le fonde porte ce motif : quand un seul des deux « rejeter »
+ * concordants le porte, comme quand les deux le portent ; quand le rejet est tranché par l'arbitre,
+ * sa décision porte le motif comme celle d'un annotateur ; sur un item O à deux sources, le motif ne
+ * disant pas laquelle est fausse, les deux sources sont renvoyées. »
  *
  * Ce module ne nomme que les items rejetés. Ce que le renvoi fait aux autres items validés sur le
  * même texte (protocole 0.25, D60 (9b)) est testé dans `renvoi-texte-errone.test.ts`.
@@ -15,8 +16,8 @@
 import { describe, expect, it } from "vitest";
 import type { Issue } from "../validation/domaine/promotion.ts";
 import { renvoisAReextraction, type VerdictRejet } from "../validation/domaine/renvoi-reextraction.ts";
-import type { Decision, EntreeDecision, Item, MotifRejet } from "../validation/domaine/types.ts";
-import { decision, itemA, itemO, itemP, source } from "./aides/fabriques.ts";
+import type { BlocArbitrage, Decision, EntreeDecision, Item, MotifRejet } from "../validation/domaine/types.ts";
+import { decision, itemA, itemF, itemO, itemP, source } from "./aides/fabriques.ts";
 
 function avecMotif(entree: EntreeDecision, motif: MotifRejet | undefined): EntreeDecision {
   return motif === undefined ? entree : { ...entree, motif_rejet: motif };
@@ -28,6 +29,21 @@ function decisionDe(annotateur_id: string, item: Item, choix: Decision, motif?: 
 
 function rejete(item: Item): Issue {
   return { sort: "promouvoir", statut: "rejete", item, corrections_appliquees: false };
+}
+
+/** Rejet tranché par l'arbitre : `pnpm promote` recopie sa décision dans le bloc `arbitrage` de l'item. */
+function rejeteParArbitre(item: Item, motif?: MotifRejet): Issue {
+  const arbitrage: BlocArbitrage = {
+    decision_id: "01JBANCESSA1ARB1TRAGE00001",
+    date: "2026-10-02T10:00:00+02:00",
+    arbitre: "auteur",
+    arbitre_seul: false,
+    motif: "desaccord",
+    issue: "rejete",
+    motivation: "Motivation publiée de la décision.",
+    ...(motif === undefined ? {} : { motif_rejet: motif }),
+  };
+  return rejete({ ...item, arbitrage });
 }
 
 function verdict(item: Item, decisions: readonly EntreeDecision[], issue: Issue = rejete(item)): VerdictRejet {
@@ -42,7 +58,6 @@ describe("renvoi à la réextraction : le cas que le texte tranche", () => {
     const resultat = renvoisAReextraction([
       verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "rejeter", MOTIF)]),
     ]);
-    expect(resultat.a_trancher).toEqual([]);
     expect(resultat.sources).toEqual([
       {
         sha256: "1".repeat(64),
@@ -58,7 +73,7 @@ describe("renvoi à la réextraction : le cas que le texte tranche", () => {
     const resultat = renvoisAReextraction([
       verdict(item, [decisionDe("a1", item, "rejeter"), decisionDe("a2", item, "rejeter")]),
     ]);
-    expect(resultat).toEqual({ sources: [], a_trancher: [] });
+    expect(resultat).toEqual({ sources: [] });
   });
 
   it("source déjà renvoyée par un autre item : une seule entrée, qui nomme les deux items", () => {
@@ -103,7 +118,6 @@ describe("renvoi à la réextraction : le cas que le texte tranche", () => {
     const resultat = renvoisAReextraction([
       verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "rejeter", MOTIF)]),
     ]);
-    expect(resultat.a_trancher).toEqual([]);
     expect(resultat.sources).toHaveLength(1);
   });
 
@@ -118,26 +132,43 @@ describe("renvoi à la réextraction : le cas que le texte tranche", () => {
   });
 });
 
-describe("renvoi à la réextraction : ce que le texte ne tranche pas est rapporté, jamais résolu", () => {
-  it("deux « rejeter », un seul sous le motif : à trancher, motifs discordants, aucune source renvoyée", () => {
+describe("renvoi à la réextraction : une décision de rejet qui fonde le rejet suffit (protocole 0.27, §4.113 à §4.115)", () => {
+  it("deux « rejeter », un seul sous le motif : la source est renvoyée", () => {
     const item = itemP();
     const resultat = renvoisAReextraction([
       verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "rejeter")]),
     ]);
-    expect(resultat.sources).toEqual([]);
-    expect(resultat.a_trancher).toEqual([{ item_id: item.id, raison: "motifs_discordants" }]);
+    expect(resultat.sources.map((renvoi) => [renvoi.sha256, renvoi.items])).toEqual([["1".repeat(64), [item.id]]]);
   });
 
-  it("rejet tranché par l'arbitre, dont un annotateur avait donné le motif : à trancher, rejet arbitré", () => {
+  it("deux « rejeter », le second seul sous le motif : l'ordre des décisions ne compte pas", () => {
+    // L'énumération n'a qu'un motif : « deux motifs différents dont un est le motif » est ce cas-ci.
     const item = itemP();
     const resultat = renvoisAReextraction([
-      verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "accepter")]),
+      verdict(item, [decisionDe("a1", item, "rejeter"), decisionDe("a2", item, "rejeter", MOTIF)]),
     ]);
-    expect(resultat.sources).toEqual([]);
-    expect(resultat.a_trancher).toEqual([{ item_id: item.id, raison: "rejet_arbitre" }]);
+    expect(resultat.sources.map((renvoi) => renvoi.items)).toEqual([[item.id]]);
   });
 
-  it("item O à deux sources distinctes : à trancher, le motif ne dit pas laquelle est fausse", () => {
+  it("rejet tranché par l'arbitre, dont la décision porte le motif : la source est renvoyée, même si aucun annotateur ne l'a donné", () => {
+    const item = itemP();
+    const resultat = renvoisAReextraction([
+      verdict(item, [decisionDe("a1", item, "rejeter"), decisionDe("a2", item, "accepter")], rejeteParArbitre(item, MOTIF)),
+    ]);
+    expect(resultat.sources.map((renvoi) => [renvoi.sha256, renvoi.texte_sha256, renvoi.items])).toEqual([
+      ["1".repeat(64), "2".repeat(64), [item.id]],
+    ]);
+  });
+
+  it("rejet tranché par l'arbitre sans le motif : rien n'est renvoyé, même si un annotateur l'avait donné (sa décision ne fonde pas le rejet)", () => {
+    const item = itemP();
+    const resultat = renvoisAReextraction([
+      verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "accepter")], rejeteParArbitre(item)),
+    ]);
+    expect(resultat).toEqual({ sources: [] });
+  });
+
+  it("item O à deux sources distinctes : les deux sources sont renvoyées, chacune nommant l'item", () => {
     const bloc = itemO().obsolescence as NonNullable<Item["obsolescence"]>;
     const item = itemO({
       obsolescence: {
@@ -146,19 +177,37 @@ describe("renvoi à la réextraction : ce que le texte ne tranche pas est rappor
       },
     });
     const resultat = renvoisAReextraction([
-      verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "rejeter", MOTIF)]),
+      verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "rejeter")]),
     ]);
-    expect(resultat.sources).toEqual([]);
-    expect(resultat.a_trancher).toEqual([{ item_id: item.id, raison: "plusieurs_sources" }]);
+    expect(resultat.sources.map((renvoi) => [renvoi.sha256, renvoi.items])).toEqual([
+      ["1".repeat(64), [item.id]],
+      ["8".repeat(64), [item.id]],
+    ]);
   });
 
+  it("verdict rejeté sans arbitrage ni deux « rejeter » : incohérent, refusé avec l'item nommé, jamais lu en silence", () => {
+    const item = itemP();
+    expect(() =>
+      renvoisAReextraction([verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "accepter")])]),
+    ).toThrow(new RegExp(item.id));
+  });
+
+  it("rejet sous le motif d'un item sans source de contenu (item F) : refusé, la ligne a été écrite hors de l'interface", () => {
+    const item = itemF();
+    expect(() =>
+      renvoisAReextraction([verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "rejeter")])]),
+    ).toThrow(/sans aucune source de contenu/);
+  });
+});
+
+describe("renvoi à la réextraction : ce qui ne renvoie rien", () => {
   it("un item qui n'est pas rejeté ne renvoie rien, même si une décision porte le motif (arbitrage en cours)", () => {
     const item = itemP();
     const enArbitrage: Issue = { sort: "arbitrage", motif: "desaccord" };
     const resultat = renvoisAReextraction([
       verdict(item, [decisionDe("a1", item, "rejeter", MOTIF), decisionDe("a2", item, "accepter")], enArbitrage),
     ]);
-    expect(resultat).toEqual({ sources: [], a_trancher: [] });
+    expect(resultat).toEqual({ sources: [] });
   });
 
   it("la sortie ne nomme que les items rejetés, jamais un item vérifié sur le même texte (traité par renvoi-texte-errone.ts)", () => {

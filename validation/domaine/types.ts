@@ -231,6 +231,8 @@ export interface BlocArbitrage {
   readonly arbitre_seul: boolean;
   readonly motif: string;
   readonly issue: IssueDecisionArbitrage;
+  /** §4 (protocole 0.27) : motif du rejet arbitré, recopié de la décision ; absent sinon. */
+  readonly motif_rejet?: MotifRejet;
   readonly motivation: string;
 }
 

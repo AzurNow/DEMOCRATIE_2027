@@ -1,0 +1,14 @@
+{
+  "id": "01JBQ0ARB1TRAGE0000000000F",
+  "item_id": "YARYX9NM753C0AF6CDVVE6SVGN",
+  "lot_id": "lot-003",
+  "item_version": 1,
+  "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2",
+  "motif": "desaccord",
+  "issue": "rejete",
+  "motif_rejet": "texte_extrait_errone",
+  "arbitre": "auteur",
+  "arbitre_seul": false,
+  "motivation": "Le texte canonique omet la page 14 de la source archivée : la citation ne peut pas y figurer.",
+  "date": "2026-09-22T09:00:00+02:00"
+}

@@ -21,11 +21,17 @@
 
     "motif": {
       "type": "string",
-      "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee", "transcription_non_verifiee"],
+      "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee", "transcription_non_verifiee", "confirmation_fictivite_manquante"],
       "description": "Le désaccord tranché, tel que la règle de concordance le produit (`validation/domaine/promotion.ts`). Une décision prise sur un autre motif que celui de l'item au moment de la promotion ne s'applique pas."
     },
 
     "issue": { "type": "string", "enum": ["verifie", "rejete", "non_evaluable"] },
+
+    "motif_rejet": {
+      "type": "string",
+      "enum": ["texte_extrait_errone"],
+      "description": "§4 (protocole 0.27, D62 #233 (1)) : « quand le rejet est tranché par l'arbitre, sa décision porte le motif comme celle d'un annotateur ». Même énumération que decision.schema.json#/properties/motif_rejet ; texte_extrait_errone renvoie les sources de contenu de l'item à la réextraction (validation/domaine/renvoi-reextraction.ts). Facultatif : un rejet arbitré sans motif énuméré ne renvoie rien. Permis sur l'issue « rejete » seulement ; refusé par pnpm arbitrer sur un item sans source de contenu (item F)."
+    },
 
     "contenu_retenu": {
       "type": "string",
@@ -51,6 +57,11 @@
       "if": { "properties": { "issue": { "const": "verifie" } }, "required": ["issue"] },
       "then": { "required": ["contenu_retenu"] },
       "else": { "not": { "required": ["contenu_retenu"] } }
+    },
+    {
+      "$comment": "§4 (protocole 0.27) : le motif de rejet n'existe que sur une décision qui rejette l'item.",
+      "if": { "required": ["motif_rejet"] },
+      "then": { "required": ["issue"], "properties": { "issue": { "const": "rejete" } } }
     },
     {
       "$comment": "§10 : arbitre_seul ne qualifie que l'auteur qui tient la place du panel.",
