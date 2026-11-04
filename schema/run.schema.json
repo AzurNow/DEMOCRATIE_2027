@@ -1406,7 +1406,7 @@
     },
     "contestations_posterieures": {
       "type": "array",
-      "description": "Contestations reçues APRÈS date_gel. Le run se poursuit et est publié intact (§4 : l'exclusion vaut pour le run suivant) ; cette liste est l'entrée exacte de l'analyse de robustesse §8(b), \"en excluant les questions dont un item, quel que soit son rôle, est contesté à un run ultérieur\" (protocole 0.9).",
+      "description": "Contestations postérieures au run : toute contestation que ne porte pas data/items au commit versions.donnees_commit, quelle que soit sa date de réception (reçue après le gel, à l'instant du gel, ou avant lui sans figurer au commit gelé ; D73 (2)). Inscrites en ajout seul par pnpm contestations-posterieures dans tout run gelé non invalide, quel que soit son statut (planifie, en_cours, publie, publie_provisoire), item hors tirage compris, et avant pnpm analyze, qui refuse un run où en manque une connue (D73 (4)). Le run se poursuit et est publié intact (§4 : l'exclusion vaut pour le run suivant) ; cette liste est l'entrée exacte de l'analyse de robustesse §8(b), \"en excluant les questions dont un item, quel que soit son rôle, est contesté à un run ultérieur\" (protocole 0.9).",
       "items": {
         "type": "object",
         "additionalProperties": false,
