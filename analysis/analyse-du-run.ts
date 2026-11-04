@@ -85,6 +85,7 @@ import {
   type RunLu,
 } from "./lecture-run.ts";
 import { exactitude, lecturesNoteesParComparateur, type LectureNotee } from "./metriques.ts";
+import { modelesDuRun, type ModeleDUnOutil } from "./modeles-du-run.ts";
 import { corrigerFamilleAsymetrie, PERMUTATIONS_PRODUCTION, testHomogeneiteCandidats, type FamilleAsymetrie, type ResultatCouple } from "./permutation.ts";
 import { tauxRecalcules } from "./robustesse-taux.ts";
 import { fragiliteDesDifferences, restrictionDe, type FamilleDeDifferences, type FamilleDeResultats, type Recalcul, type SourcesRobustesse } from "./robustesse.ts";
@@ -243,6 +244,8 @@ export interface ContexteDuRun {
   readonly modes_de_tete: readonly ModeDeTete[];
   /** Les assistants inclus, dans l'ordre du périmètre : les outils des hypothèses. */
   readonly outils: readonly IdentifiantCourt[];
+  /** §8 (0.31, D73 (17)) : le modèle demandé au gel et les identifiants renvoyés, publiés avec la tendance. */
+  readonly modeles: readonly ModeleDUnOutil[];
   readonly sources_robustesse: SourcesRobustesse;
   readonly graines: { readonly bootstrap: number; readonly permutation: number };
   readonly parametres: ParametresAnalyse;
@@ -291,6 +294,7 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
     strates: figer(stratesDuCalculPrincipal(api, candidats)),
     modes_de_tete: figer(assistants.map(modeDeTete)),
     outils: figer(assistants.map((outil) => outil.outil_id)),
+    modeles: figer(modelesDuRun(entrees.run.perimetre.outils, entrees.reponses)),
     sources_robustesse: Object.freeze({ run: entrees.run, notations: entrees.notations }),
     graines: figer({ bootstrap: entrees.run.graines.bootstrap.valeur, permutation: entrees.run.graines.permutation.valeur }),
     parametres: figer({ ...parametres }),
@@ -660,7 +664,8 @@ export function tendanceCalculee(contexte: ContexteDuRun, premier: PremierRun | 
 
 function sectionH5(contexte: ContexteDuRun, calculee: TendanceCalculee | null): object {
   if (calculee === null) return sansObjet("premier_run_absent");
-  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(contexte.outils, calculee.tendance) };
+  const modeles = { premier: calculee.premier.contexte.modeles, dernier: contexte.modeles };
+  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(contexte.outils, calculee.tendance), modeles };
 }
 
 /** 8. Les hypothèses lisent les sections déjà calculées, la différence de H3 et la tendance. */
