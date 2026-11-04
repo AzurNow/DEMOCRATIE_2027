@@ -158,6 +158,13 @@ gel différents. L'erreur était `ENOTEMPTY` à la suppression de `/tmp/banc-gel
 `afterEach` supprime le dépôt. Corrigé dans `tests/aides/depot.ts`
 (`-c gc.auto=0 -c maintenance.auto=false`, #138). Tout dépôt Git de test passe par cet outil.
 
+**Après avoir fusionné `main` dans une branche, relancer `pnpm check`, pas seulement les tests du lot.**
+Le 2026-11-04, #295 a rendu obligatoire la section `ecart_juge_editeur` de `metriques.json`
+pendant que #289, écrite en parallèle, ajoutait l'exemple `metriques/valide-05`, qui ne l'avait pas.
+Chaque branche était verte seule ; seul `pnpm check` lancé après la fusion de `main` a fait
+apparaître l'exemple devenu invalide. Une propriété requise ajoutée par un lot casse les exemples
+neufs des lots voisins, jamais les siens.
+
 ## Outillage
 
 **Ne jamais faire comparer des agents parallèles par `git stash`.** La pile de stash est commune au
@@ -502,3 +509,9 @@ porte une invalidation. Le trou est apparu en écrivant la phrase du §6 « un r
 invalidation n'est plus interrogé », et l'agent travaillait déjà. Il a fallu lui envoyer une
 précision en cours de route (cas 12). S'il avait rendu son travail avant, la reprise d'un run
 invalidé serait passée.
+
+**Écrire le cas limite d'un brief à partir du texte de la décision, pas de mémoire.** Le 2026-11-04,
+le brief de la dette n° 1 demandait de refuser « une contestation présente au commit gelé mais
+absente de `run.json` », soit l'inverse de D73 (2), pour qui une contestation portée par le commit
+gelé n'est jamais postérieure. L'agent a relu la décision, gardé le bon comportement et testé les
+deux sens ; un agent moins prudent aurait codé le refus et rendu le contrôle faux en vert.

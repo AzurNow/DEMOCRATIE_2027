@@ -61,9 +61,22 @@ Décision de l'auteur du 2026-11-01 :
   conformité encore ouverts : n° 10, 12 à 37 hors réglés, et n° 25 (question D74 (5)).
 - Pousser vers `https://github.com/AzurNow/DEMOCRATIE_2027.git` tant qu'`origin` n'est pas mis à jour.
 
+## Mise à jour du 2026-11-04 (après-midi)
+
+- Fusionnées par la session (CI verte sur `main`, `gh pr merge` accepté cette fois) : #283
+  (conformité n° 10, garde de licence du dépôt), #284 (D73 (15)), #285 (dette n° 4), #286 (D73 (16)),
+  #288 (dette n° 1), #289 (D73 (6)), #290 (D73 (13), (14)), #291 (dette n° 2), #292 (D73 (17)),
+  #293 (D73 (11)), #294 (D73 (12)), #295 (D73 (7), (8)).
+- **#287, projet de protocole 0.32 (D74 option 1), attend l'auteur** : sa fusion tranche D74. Le
+  code de D74 qu'elle laisse ((5), (7), (16) à (19), (22), (24) à (26)) part dans des PR tirées de
+  `main` après elle.
+- **D75 en attente** : 27 questions des PR ci-dessus. (24) et (25) bloqueraient un premier run réel.
+- Code de D73 restant : (5) seulement (table des libellés de courriel, à rédiger par l'auteur).
+- Avant le prochain gel, l'auteur renseigne `juges[].outils_de_son_editeur` dans `config/gel.json`.
+
 ## Ce qui était en cours
 
-Rien, hormis les PR du 2026-11-04 ci-dessus.
+Rien, hormis #287 (protocole 0.32), à fusionner par l'auteur.
 
 ## Prochaines tâches, par priorité
 
