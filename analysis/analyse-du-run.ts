@@ -33,6 +33,8 @@
  *    qualificatif de fragilité (§8, robustesse). Chaque section est
  *    `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` : jamais une section vide qui
  *    passerait pour un résultat. La population publie aussi le régime d'inclusion du run (§3, D68).
+ *    Après les comparateurs, l'écart de chaque juge sur l'outil de son propre éditeur (§7, D73 (7),
+ *    `sectionEcartJugeEditeur`), sur la liste déclarée au gel et lue dans `run.json#/juges[]`.
  * 9. `collecterGraines` relève chaque couple `{cle, graine}` publié dans le document.
  * 10. `validerEtEcrire` valide le document contre `schema/metriques.schema.json` avant toute écriture,
  *    puis écrit `runs/<date>/metriques/metriques.json` s'il est absent, ne fait rien s'il est
@@ -64,6 +66,7 @@ import {
 } from "./conditions.ts";
 import { unitesParCoupleCompare } from "./couples-compares.ts";
 import { ecartsApiApplication, type EcartsApiApplication } from "./ecart-api-application.ts";
+import { ecartsJugesEditeurs, type EcartsJugesEditeurs, type JugeEtSonEditeur } from "./ecart-juge-editeur.ts";
 import { assembler, estDuRun, type EntreesAnalyse, type UniteAnalyse } from "./filtre.ts";
 import { decisionH1, decisionH2, decisionH3, decisionH4, decisionH5, STRATE_H3, type FabricationDuCouple } from "./hypotheses.ts";
 import {
@@ -105,9 +108,20 @@ export interface RunAnalyse extends Run {
   readonly perimetre: Run["perimetre"] & { readonly regime_inclusion: RegimeInclusion };
   readonly versions: { readonly donnees_commit: string };
   readonly tirage: { readonly sha256: string };
-  /** Lus seulement pour retirer de l'empreinte les champs que le go/no-go y écrit. */
-  readonly juges: readonly object[];
+  /**
+   * Lus pour l'écart juge-éditeur (§7, D73 (7)) et pour retirer de l'empreinte les champs que le
+   * go/no-go y écrit.
+   */
+  readonly juges: readonly JugeLuParAnalyse[];
   readonly graines: { readonly bootstrap: { readonly valeur: number }; readonly permutation: { readonly valeur: number } };
+}
+
+/** Un juge de `run.json#/juges[]`, tel que l'analyse le lit. */
+export interface JugeLuParAnalyse {
+  readonly juge_id: IdentifiantCourt;
+  readonly retire: boolean;
+  /** §7 (0.31, D73 (7)) : la liste déclarée au gel, vide comprise ; absente d'un run gelé avant. */
+  readonly outils_de_son_editeur?: readonly IdentifiantCourt[];
 }
 
 /** Tout ce que l'analyse d'un run lit, déjà validé : la sortie de `lireEntreesDuRun`. */
@@ -305,7 +319,9 @@ export type MotifSansObjet =
   | "moins_de_deux_candidats"
   | "premier_run_absent"
   | "moins_de_trois_candidats"
-  | "aucune_reponse_application";
+  | "aucune_reponse_application"
+  | "outils_de_son_editeur_non_declares"
+  | "juge_retire";
 
 export interface SansObjet {
   readonly statut: "sans_objet";
@@ -682,6 +698,36 @@ export function sectionHypotheses(
   };
 }
 
+/* ------------------------------------------------------------------ écart juge-éditeur */
+
+/**
+ * Les juges avec la liste déclarée au gel ; `null` dès qu'un juge n'en porte pas (run gelé avant le
+ * protocole 0.31) : une liste absente n'est jamais lue comme vide.
+ */
+function jugesDeclares(juges: readonly JugeLuParAnalyse[]): JugeEtSonEditeur[] | null {
+  const declares = juges.flatMap(({ juge_id, outils_de_son_editeur }) => (outils_de_son_editeur === undefined ? [] : [{ juge_id, outils_de_son_editeur }]));
+  return declares.length === juges.length ? declares : null;
+}
+
+/**
+ * §7, « Conflit d'intérêts » (0.31, D73 (7)) : l'écart de chaque juge sur l'outil de son propre
+ * éditeur (`ecart-juge-editeur.ts`), sur les réponses du canal API du run, avec la liste des outils de
+ * son éditeur lue dans `run.json#/juges[]`, déclarée au gel. Clé `exactitude / global`, à laquelle le
+ * module ajoute `<juge>:propre-editeur` (§7, §8). Sans objet, avec son motif :
+ * - `juge_retire` : §7, « Les notations déjà rendues par le juge retiré sont écartées de tout le run » ;
+ *   l'écart compare les deux juges et n'a plus d'objet ;
+ * - `outils_de_son_editeur_non_declares` : un juge sans liste déclarée (run gelé avant la 0.31).
+ * Un juge dont la liste déclarée est vide est nommé dans `juges_sans_outil_de_leur_editeur`, sans
+ * chiffre.
+ */
+export function sectionEcartJugeEditeur(contexte: ContexteDuRun, entrees: EntreesDuRun): Section<EcartsJugesEditeurs> {
+  if (entrees.run.juges.some((juge) => juge.retire)) return sansObjet("juge_retire");
+  const juges = jugesDeclares(entrees.run.juges);
+  if (juges === null) return sansObjet("outils_de_son_editeur_non_declares");
+  const options = { ...optionsBootstrap(contexte), cle: [METRIQUE_DES_CONDITIONS, STRATE_GLOBALE] };
+  return { statut: "calcule", ...ecartsJugesEditeurs(contexte.unites, entrees.notations, juges, options) };
+}
+
 /* ------------------------------------------------------------------ exploratoire */
 
 /** §3 (D68) : le régime où la corrélation, « non calculée sous trois candidats », est sans objet. */
@@ -885,6 +931,7 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
     robustesse: sectionRobustesse(contexte, { conditions, h3, tendance }),
     variabilite_echantillons: sectionVariabilite(contexte, entrees),
     comparateurs: sectionComparateurs(contexte, entrees),
+    ecart_juge_editeur: sectionEcartJugeEditeur(contexte, entrees),
     hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, tendance),
     exploratoire: sectionExploratoire(contexte, entrees),
   };

@@ -39,13 +39,19 @@
     "juge": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["juge_id", "famille_modele", "modele", "version_prompt"],
+      "required": ["juge_id", "famille_modele", "modele", "version_prompt", "outils_de_son_editeur"],
       "description": "Les champs de run.juges[] connus au gel ; les kappas, le taux contrefactuel et le retrait sont écrits plus tard par la notation et le go/no-go.",
       "properties": {
         "juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
         "famille_modele": { "type": "string", "minLength": 1 },
         "modele": { "type": "string", "minLength": 1 },
-        "version_prompt": { "type": "string", "minLength": 1 }
+        "version_prompt": { "type": "string", "minLength": 1 },
+        "outils_de_son_editeur": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "description": "§7 (protocole 0.31, D73 (7)) : « Les outils du run qu'édite l'éditeur de chaque juge forment une liste déclarée par l'auteur au gel, vide comprise, et publiée avec le run. » Exigée de chaque juge, jamais déduite du périmètre (aucun code ne rapproche l'éditeur d'un outil de la famille d'un juge) : [] déclare qu'aucun outil du run n'est de l'éditeur du juge. Recopiée dans run.juges[].outils_de_son_editeur ; pnpm geler refuse un outil absent du périmètre du run ou exclu (pipeline/gel/editeurs.ts)."
+        }
       }
     }
   }

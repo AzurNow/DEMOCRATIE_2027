@@ -131,3 +131,37 @@ describe("§7.12 : familles de juges, refusées au gel", () => {
     expect(validerConfigurationGel(avec([premier, second]), "essai").juges).toEqual([premier, second]);
   });
 });
+
+// §7 (protocole 0.31, D73 (7)) : « Les outils du run qu'édite l'éditeur de chaque juge forment une
+// liste déclarée par l'auteur au gel, vide comprise, et publiée avec le run. » Déclarée, jamais déduite :
+// le champ est exigé de chaque juge, une liste vide est une déclaration, son absence un refus.
+describe("D73 (7) : outils de l'éditeur de chaque juge, déclarés au gel", () => {
+  const [premier, second] = CONFIGURATION_GEL.juges;
+  if (premier === undefined || second === undefined) throw new Error("fixture sans deux juges");
+  const avec = (juges: readonly unknown[]) => texte({ ...CONFIGURATION_GEL, juges });
+
+  it("la liste déclarée est rendue telle quelle, une liste vide comprise", () => {
+    const lue = validerConfigurationGel(avec([{ ...premier, outils_de_son_editeur: ["outil-alpha"] }, { ...second, outils_de_son_editeur: [] }]), "essai");
+    expect(lue.juges.map((juge) => juge.outils_de_son_editeur)).toEqual([["outil-alpha"], []]);
+  });
+
+  it("champ absent ⇒ refus du schéma qui nomme le juge, jamais une liste vide implicite", () => {
+    const { outils_de_son_editeur: _retire, ...sans } = second;
+    const erreur = erreurDe(() => validerConfigurationGel(avec([premier, sans]), "essai"));
+    expect(erreur).toBeInstanceOf(ErreurSchema);
+    expect(erreur.message).toContain("/juges/1");
+    expect(erreur.message).toContain("outils_de_son_editeur");
+  });
+
+  it("null ⇒ refus du schéma : seul le champ juges entier peut rester à null dans un brouillon", () => {
+    const erreur = erreurDe(() => validerConfigurationGel(avec([premier, { ...second, outils_de_son_editeur: null }]), "essai"));
+    expect(erreur).toBeInstanceOf(ErreurSchema);
+    expect(erreur.message).toContain("/juges/1/outils_de_son_editeur");
+  });
+
+  it("un outil répété dans la liste ⇒ refus du schéma", () => {
+    const erreur = erreurDe(() => validerConfigurationGel(avec([premier, { ...second, outils_de_son_editeur: ["outil-alpha", "outil-alpha"] }]), "essai"));
+    expect(erreur).toBeInstanceOf(ErreurSchema);
+    expect(erreur.message).toContain("/juges/1/outils_de_son_editeur");
+  });
+});

@@ -317,6 +317,15 @@
       },
       "paires_ecartees_contrefactuel": 0,
       "kappa_juge_humain": 0.83,
+      "comptes_jeu_or": {
+        "reponses": 300,
+        "comparees": 286,
+        "renvois_ecartes": 3,
+        "indeterminees": 6,
+        "non_classees": 2,
+        "refus_api": 3
+      },
+      "outils_de_son_editeur": ["outil-alpha"],
       "kappa_echantillon_humain": 0.8,
       "renvois_ecartes_kappa_echantillon": 0,
       "retire": false
@@ -333,6 +342,15 @@
       },
       "paires_ecartees_contrefactuel": 0,
       "kappa_juge_humain": 0.78,
+      "comptes_jeu_or": {
+        "reponses": 300,
+        "comparees": 289,
+        "renvois_ecartes": 0,
+        "indeterminees": 6,
+        "non_classees": 2,
+        "refus_api": 3
+      },
+      "outils_de_son_editeur": [],
       "retire": true,
       "motif_retrait": "Taux de changement contrefactuel de 4,7 %, au-delà du seuil de 3 % (§7)."
     }

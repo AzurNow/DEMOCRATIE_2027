@@ -928,6 +928,59 @@
           "motif_indefini_kappa_juge_humain": {
             "$ref": "#/$defs/motif_kappa_indefini"
           },
+          "comptes_jeu_or": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reponses",
+              "comparees",
+              "renvois_ecartes",
+              "indeterminees",
+              "non_classees",
+              "refus_api"
+            ],
+            "description": "D73 (8), décision de forme hors protocole : les effectifs du jeu d'or qui fondent kappa_juge_humain (ou son motif d'indéfinition) de CE juge, publiés à côté de lui (§7 : « leur nombre est publié »). Produits avec le kappa par analysis/kappa-jeu-or.ts:inscriptionJeuOr, d'un seul calcul sur une seule population, jamais recalculés à part : reponses = comparees + renvois_ecartes + indeterminees + non_classees + refus_api, vérifié par le code (une somme ne s'écrit pas en JSON Schema). Un juge retiré au test contrefactuel (D13) garde les comptes de sa calibration, mesurée avant le run ; il est hors du kappa de la paire. Optionnel tant qu'aucune commande n'écrit kappa_juge_humain (kappa-jeu-or.ts) ; présent, il exige le kappa ou son motif.",
+            "properties": {
+              "reponses": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Réponses du jeu d'or lues pour ce kappa : les 300 du §7, sauf contrôle contraire du code."
+              },
+              "comparees": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Réponses sur lesquelles porte le kappa de ce juge (n de kappa-categorie-primaire.ts) ; 0 exactement quand le motif est aucune_reponse_comparable."
+              },
+              "renvois_ecartes": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "§7 (D59 (20)) : questions d'attribution que CE juge a renvoyées à un humain, écartées de son kappa."
+              },
+              "indeterminees": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "§7 : réponses dont la note humaine retenue est indéterminée, écartées de chaque kappa."
+              },
+              "non_classees": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "§7 (D64, D70) : réponses dont la note humaine retenue ou la note d'un juge retenu est non classée, écartées de chaque kappa."
+              },
+              "refus_api": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "§7 (D59 (20)) : refus de l'API, notés par règle, écartés de chaque kappa."
+              }
+            }
+          },
+          "outils_de_son_editeur": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+            },
+            "description": "§7 (protocole 0.31, D73 (7)) : « Les outils du run qu'édite l'éditeur de chaque juge forment une liste déclarée par l'auteur au gel, vide comprise, et publiée avec le run. » Recopiée de config/gel.json par pnpm geler, qui refuse un outil absent du périmètre ou exclu (pipeline/gel/editeurs.ts). [] est une déclaration : aucun outil du run n'est de l'éditeur du juge. Absente seulement d'un run gelé avant le protocole 0.31 : pnpm analyze publie alors l'écart juge-éditeur absent avec le motif outils_de_son_editeur_non_declares, jamais comme une liste vide (analysis/analyse-du-run.ts:sectionEcartJugeEditeur)."
+          },
           "kappa_echantillon_humain": {
             "type": "number",
             "minimum": -1,
@@ -957,6 +1010,28 @@
               "required": [
                 "kappa_juge_humain",
                 "motif_indefini_kappa_juge_humain"
+              ]
+            }
+          },
+          {
+            "$comment": "D73 (8) : les comptes du jeu d'or fondent le kappa juge-humain ; publiés sans le kappa ni son motif, ils ne fonderaient rien.",
+            "if": {
+              "required": [
+                "comptes_jeu_or"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "kappa_juge_humain"
+                  ]
+                },
+                {
+                  "required": [
+                    "motif_indefini_kappa_juge_humain"
+                  ]
+                }
               ]
             }
           },
@@ -2308,9 +2383,10 @@
     "motif_kappa_indefini": {
       "type": "string",
       "enum": [
-        "accord_attendu_maximal"
+        "accord_attendu_maximal",
+        "aucune_reponse_comparable"
       ],
-      "description": "§7 (protocole 0.11) : « Un kappa indéfini (accord attendu maximal) est publié absent avec son motif, jamais comme une valeur, comme au §4. » Même représentation que diagnostic-lot.motif_indefini ; seul le motif que le §7 nomme est admis."
+      "description": "§7 (protocole 0.11) : « Un kappa indéfini (accord attendu maximal) est publié absent avec son motif, jamais comme une valeur, comme au §4. » §7 (protocole 0.24, D59 (20)) : « Un kappa du jeu d'or qui ne porte sur aucune réponse comparable est publié absent, avec ce motif » (aucune_reponse_comparable, comptes_jeu_or.comparees = 0 ; analysis/kappa-jeu-or.ts). Même représentation que diagnostic-lot.motif_indefini ; seuls les motifs que le §7 nomme sont admis."
     },
     "motif_kappa_echantillon_indefini": {
       "type": "string",

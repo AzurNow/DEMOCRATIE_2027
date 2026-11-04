@@ -3711,6 +3711,45 @@
     "statut": "sans_objet",
     "motif": "aucun_comparateur_inclus"
   },
+  "ecart_juge_editeur": {
+    "statut": "calcule",
+    "par_juge": [
+      {
+        "juge_id": "juge-1",
+        "autre_juge_id": "juge-2",
+        "outils_de_son_editeur": [
+          "outil-alpha"
+        ],
+        "ecarts": [
+          {
+            "outil_id": "outil-alpha",
+            "exactitude_juge": {
+              "numerateur": 9,
+              "denominateur": 12,
+              "valeur": 0.75
+            },
+            "exactitude_autre_juge": {
+              "numerateur": 8,
+              "denominateur": 12,
+              "valeur": 0.6666666666666666
+            },
+            "ecart": 0.08333333333333337
+          }
+        ],
+        "autres_outils_sans_ecart": [],
+        "moyenne_autres_outils": null,
+        "difference": null,
+        "intervalle": null,
+        "signale": null,
+        "motif_sans_qualificatif": "difference_indefinie",
+        "motif_absence": "aucun_autre_outil_avec_ecart"
+      }
+    ],
+    "juges_sans_outil_de_leur_editeur": [
+      "juge-2"
+    ],
+    "reponses_sans_note_de_juge": []
+  },
   "hypotheses": {
     "H1": {
       "statut": "calcule",
