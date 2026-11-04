@@ -100,6 +100,49 @@ describe("pnpm arbitrer, du désaccord à la promotion", () => {
   });
 });
 
+/**
+ * Protocole 0.27, §4 (conformité 2026-11-03 n° 1) : « quand le rejet est tranché par l'arbitre, sa
+ * décision porte le motif comme celle d'un annotateur ». Le motif est recopié dans le bloc arbitrage
+ * de l'item promu, et `pnpm promote` renvoie la source à la réextraction.
+ */
+describe("rejet arbitré sous le motif « texte extrait erroné »", () => {
+  const { bac, item, motivation } = preparer();
+  const rejet = [`--item=${item.id}`, "--issue=rejete", "--arbitre=auteur", `--motivation-fichier=${motivation}`];
+  const horsRejet = executerOutil("arbitrer.ts", [...chemins(bac), `--item=${item.id}`, "--issue=non_evaluable", "--arbitre=auteur", "--motif-rejet=texte_extrait_errone", `--motivation-fichier=${motivation}`, "--ecrire"]);
+  const inconnu = executerOutil("arbitrer.ts", [...chemins(bac), ...rejet, "--motif-rejet=coquille", "--ecrire"]);
+  const registreApresRefus = existsSync(registre(bac));
+  const ecriture = executerOutil("arbitrer.ts", [...chemins(bac), ...rejet, "--motif-rejet=texte_extrait_errone", "--ecrire"]);
+  commiterTout(bac.racine, "arbitrage");
+  const promotion = executerOutil("promote.ts", [...chemins(bac), `--data=${join(bac.racine, "data/items")}`, "--ecrire"]);
+  const promu = existsSync(dansData(bac, item)) ? readFileSync(dansData(bac, item), "utf8") : "";
+  afterAll(() => bac.detruire());
+
+  it("refuse le motif sur une autre issue que « rejete », et un motif hors énumération, sans rien écrire", () => {
+    expect(horsRejet.status).toBe(1);
+    expect(horsRejet.erreur).toMatch(/motif de rejet ne se porte que sur l'issue « rejete »/);
+    expect(inconnu.status).toBe(1);
+    expect(inconnu.erreur).toMatch(/--motif-rejet vaut « texte_extrait_errone »/);
+    expect(registreApresRefus).toBe(false);
+  });
+
+  it("--ecrire inscrit le motif dans la décision, conforme au schéma", () => {
+    expect(ecriture.status, ecriture.erreur).toBe(0);
+    const entrees = JSON.parse(readFileSync(registre(bac), "utf8")) as unknown[];
+    expect(entrees).toHaveLength(1);
+    expect(() => valider("decision-arbitrage", entrees[0], "registre")).not.toThrow();
+    expect(entrees[0]).toMatchObject({ issue: "rejete", motif_rejet: "texte_extrait_errone" });
+  });
+
+  it("pnpm promote écrit l'item rejeté avec le motif dans son bloc arbitrage, et renvoie sa source", () => {
+    expect(promotion.status, promotion.erreur).toBe(0);
+    const ecrit = JSON.parse(promu) as Item;
+    expect(ecrit.statut_validation).toBe("rejete");
+    expect(ecrit.arbitrage?.motif_rejet).toBe("texte_extrait_errone");
+    expect(promotion.sortie).toContain("Sources renvoyées à la réextraction (motif « texte extrait erroné ») : 1");
+    expect(promotion.sortie).toMatch(new RegExp(`items : ${item.id}`));
+  });
+});
+
 describe("décision prise sur une version dépassée", () => {
   const { bac, item, motivation } = preparer();
   executerOutil("arbitrer.ts", [...chemins(bac), `--item=${item.id}`, "--issue=verifie", "--retenu=original", "--arbitre=auteur", `--motivation-fichier=${motivation}`, "--ecrire"]);

@@ -1,5 +1,6 @@
 /**
- * Renvoi d'une source à la réextraction (§4, protocole 0.24, D59 (9), première moitié).
+ * Renvoi d'une source à la réextraction (§4, protocole 0.24, D59 (9), première moitié ; règle du
+ * renvoi précisée en protocole 0.27, D62 #233 (1)).
  *
  * « Un texte extrait faux se solde par un rejet de l'item sous le motif énuméré « texte extrait
  * erroné », et c'est ce motif qui renvoie la source à la réextraction. » Le texte canonique n'est
@@ -11,17 +12,18 @@
  * faux. Ce module ne nomme que les items rejetés ; ce que le renvoi fait aux autres items validés
  * sur ce même texte (seconde moitié de D59 (9), écrite au §4 en protocole 0.25, D60 (9b) : retour en
  * attente d'un item non publié, contestation par l'auteur d'un item publié) est calculé, depuis les
- * seules sources renvoyées tranchées, par `renvoi-texte-errone.ts`.
+ * sources renvoyées, par `renvoi-texte-errone.ts`.
  *
- * Seul le cas que le texte tranche renvoie une source : l'item est rejeté par deux « rejeter »
- * concordants, qui portent tous deux le motif, et son contenu n'a qu'une source. Les autres rejets
- * qui portent le motif sont rapportés « à trancher » avec leur raison, jamais résolus en silence :
+ * « Le renvoi a lieu dès que l'item est rejeté et qu'une décision de rejet qui le fonde porte ce
+ * motif : quand un seul des deux « rejeter » concordants le porte, comme quand les deux le portent ;
+ * quand le rejet est tranché par l'arbitre, sa décision porte le motif comme celle d'un annotateur ;
+ * sur un item O à deux sources, le motif ne disant pas laquelle est fausse, les deux sources sont
+ * renvoyées. » Les décisions qui fondent le rejet sont donc :
  *
- * | Raison | Cas |
- * | --- | --- |
- * | `motifs_discordants` | deux « rejeter », un seul sous le motif |
- * | `rejet_arbitre` | rejet tranché par l'arbitre ; l'arbitrage ne porte pas de motif de rejet |
- * | `plusieurs_sources` | item O à deux sources distinctes : le motif ne dit pas laquelle est fausse |
+ * - pour un rejet arbitré (l'item promu porte le bloc `arbitrage`, recopié du registre) : la seule
+ *   décision de l'arbitre ; un « rejeter » d'annotateur, que l'arbitre a départagé, ne le fonde pas ;
+ * - sinon : les deux « rejeter » concordants. Un item rejeté sans arbitrage ni deux « rejeter » est
+ *   incohérent : refusé, jamais lu en silence.
  */
 
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
@@ -47,35 +49,39 @@ export interface SourceRenvoyee {
   readonly items: readonly string[];
 }
 
-export type RaisonATrancher = "motifs_discordants" | "rejet_arbitre" | "plusieurs_sources";
-
-export interface RejetATrancher {
-  readonly item_id: string;
-  readonly raison: RaisonATrancher;
-}
-
 export interface RenvoisReextraction {
   readonly sources: readonly SourceRenvoyee[];
-  readonly a_trancher: readonly RejetATrancher[];
 }
 
-type Examen =
-  | { readonly sorte: "rien" }
-  | { readonly sorte: "renvoi"; readonly source: Source }
-  | { readonly sorte: "a_trancher"; readonly raison: RaisonATrancher };
+/** Un verdict rejeté que rien ne fonde : ni arbitrage, ni deux « rejeter » concordants. */
+export class RejetSansFondement extends Error {
+  readonly item_id: string;
 
-const RIEN: Examen = { sorte: "rien" };
-
-function estRejete(issue: Issue): boolean {
-  return issue.sort === "promouvoir" && issue.statut === "rejete";
+  constructor(item_id: string) {
+    super(
+      `Item ${item_id} rejeté sans décision d'arbitrage ni deux « rejeter » concordants : ` +
+        `aucune décision ne fonde le rejet, le renvoi à la réextraction ne peut pas se lire.`,
+    );
+    this.name = "RejetSansFondement";
+    this.item_id = item_id;
+  }
 }
 
-function porteLeMotif(decision: EntreeDecision): boolean {
-  return decision.motif_rejet === MOTIF_RENVOI;
+/** L'item promu « rejeté », tel que la promotion l'écrit (bloc `arbitrage` compris), ou null. */
+function itemRejete(issue: Issue): Item | null {
+  return issue.sort === "promouvoir" && issue.statut === "rejete" ? issue.item : null;
 }
 
 function rejetConcordant(decisions: readonly EntreeDecision[]): boolean {
   return decisions.length === 2 && decisions.every((decision) => decision.decision === "rejeter");
+}
+
+/** Les motifs de rejet des décisions qui fondent le rejet ; un motif absent reste absent. */
+function motifsQuiFondent(verdict: VerdictRejet, promu: Item): readonly (MotifRejet | undefined)[] {
+  if (promu.arbitrage !== undefined) return [promu.arbitrage.motif_rejet];
+  const decisions = verdict.dossier.decisions;
+  if (!rejetConcordant(decisions)) throw new RejetSansFondement(verdict.item.id);
+  return decisions.map((decision) => decision.motif_rejet);
 }
 
 /** Document et texte ; une source sans `texte_sha256` a sa propre clé (JSON y écrit null). */
@@ -90,26 +96,22 @@ function sourcesDistinctes(item: Item): readonly Source[] {
   return [...parCle.values()];
 }
 
-function examinerSources(item: Item): Examen {
+/** Toutes les sources de contenu distinctes : le motif ne dit pas laquelle est fausse (item O). */
+function sourcesRenvoyees(item: Item): readonly Source[] {
   const sources = sourcesDistinctes(item);
-  const [seule] = sources;
-  if (seule === undefined) {
-    // Refusé à la décision (`decision.ts:controlerMotifRejet`) : une ligne de journal qui le porte
-    // a été écrite hors de l'interface.
+  if (sources.length === 0) {
+    // Refusé à la décision (`decision.ts:controlerMotifRejet`) comme à l'arbitrage
+    // (`arbitrage.ts:motifsIssue`) : une ligne qui le porte a été écrite hors des commandes.
     throw new Error(`Item ${item.id} rejeté sous le motif « texte extrait erroné » sans aucune source de contenu.`);
   }
-  if (sources.length > 1) return { sorte: "a_trancher", raison: "plusieurs_sources" };
-  return { sorte: "renvoi", source: seule };
+  return sources;
 }
 
-function examiner(verdict: VerdictRejet): Examen {
-  if (!estRejete(verdict.issue)) return RIEN;
-  const decisions = verdict.dossier.decisions;
-  const avecMotif = decisions.filter(porteLeMotif).length;
-  if (avecMotif === 0) return RIEN;
-  if (!rejetConcordant(decisions)) return { sorte: "a_trancher", raison: "rejet_arbitre" };
-  if (avecMotif !== decisions.length) return { sorte: "a_trancher", raison: "motifs_discordants" };
-  return examinerSources(verdict.item);
+function examiner(verdict: VerdictRejet): readonly Source[] {
+  const promu = itemRejete(verdict.issue);
+  if (promu === null) return [];
+  if (!motifsQuiFondent(verdict, promu).includes(MOTIF_RENVOI)) return [];
+  return sourcesRenvoyees(verdict.item);
 }
 
 function renvoiDe(source: Source, items: readonly string[]): SourceRenvoyee {
@@ -123,20 +125,18 @@ function renvoiDe(source: Source, items: readonly string[]): SourceRenvoyee {
 
 export function renvoisAReextraction(verdicts: readonly VerdictRejet[]): RenvoisReextraction {
   const parSource = new Map<string, { source: Source; items: string[] }>();
-  const a_trancher: RejetATrancher[] = [];
 
   for (const verdict of verdicts) {
-    const examen = examiner(verdict);
-    if (examen.sorte === "a_trancher") a_trancher.push({ item_id: verdict.item.id, raison: examen.raison });
-    if (examen.sorte !== "renvoi") continue;
-    const cle = cleSource(examen.source);
-    const groupe = parSource.get(cle);
-    if (groupe === undefined) parSource.set(cle, { source: examen.source, items: [verdict.item.id] });
-    else groupe.items.push(verdict.item.id);
+    for (const source of examiner(verdict)) {
+      const cle = cleSource(source);
+      const groupe = parSource.get(cle);
+      if (groupe === undefined) parSource.set(cle, { source, items: [verdict.item.id] });
+      else groupe.items.push(verdict.item.id);
+    }
   }
 
   const sources = [...parSource.entries()]
     .sort(([a], [b]) => comparerChaines(a, b))
     .map(([, groupe]) => renvoiDe(groupe.source, groupe.items));
-  return { sources, a_trancher: a_trancher.sort((a, b) => comparerChaines(a.item_id, b.item_id)) };
+  return { sources };
 }

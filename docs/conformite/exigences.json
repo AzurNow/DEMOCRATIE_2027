@@ -5012,7 +5012,7 @@
       ],
       "lot": "analyse",
       "constat": 25,
-      "note": "Texte 0.24. Fait pour chaque taux primaire, chaque part de drapeau et l'exactitude par candidat:, theme:, gabarit:, registre:, de chaque couple comparé. Partielle : couverture et exactitude des comparateurs (composant lecture) et taux du canal application : sous-lot B en cours ; exactitude_outil du test d'asymétrie publiée sans intervalle (constat)."
+      "note": "Texte 0.24. Fait pour chaque taux primaire, chaque part de drapeau et l'exactitude par candidat:, theme:, gabarit:, registre:, de chaque couple comparé. Partielle : couverture et exactitude des comparateurs (composant lecture) et taux du canal application : sous-lot B en cours ; exactitude_outil du test d'asymétrie publiée sans intervalle (constat 25, ouvert : le §8 n'écrit pas la clé de graine d'un intervalle de cette exactitude ; question posée à l'auteur le 2026-11-04)."
     },
     {
       "id": "§8.19",
@@ -8999,43 +8999,63 @@
       "section": "4",
       "citation": "Le renvoi a lieu dès que l'item est rejeté et qu'une décision de rejet qui le fonde porte ce motif : quand un seul des deux « rejeter » concordants le porte, comme quand les deux le portent",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "validation/domaine/renvoi-reextraction.ts:examiner"
+        "validation/domaine/renvoi-reextraction.ts:examiner",
+        "validation/domaine/renvoi-reextraction.ts:motifsQuiFondent"
       ],
-      "tests": [],
+      "tests": [
+        "tests/renvoi-reextraction.test.ts « deux « rejeter », un seul sous le motif : la source est renvoyée »",
+        "tests/renvoi-reextraction.test.ts « deux « rejeter », le second seul sous le motif : l'ordre des décisions ne compte pas »",
+        "tests/renvoi-texte-errone.test.ts « un seul « rejeter » sous le motif : l'item non publié sur ce texte retourne en attente, le publié est à contester »",
+        "tests/promote-renvoi-reextraction.test.ts « renvoie aussi la source du rejet dont un seul « rejeter » porte le motif (§4, protocole 0.27) »"
+      ],
       "lot": null,
       "constat": 1,
-      "note": "Le code rapporte ce cas « à trancher » (motifs_discordants) et ne renvoie pas la source ; tests/renvoi-reextraction.test.ts « deux « rejeter », un seul sous le motif : à trancher, motifs discordants, aucune source renvoyée » verrouille la lecture antérieure à la 0.27."
+      "note": "Corrigé (constat n° 1 du 2026-11-03) : le renvoi a lieu dès qu'une décision de rejet qui fonde le rejet porte le motif ; le cas « à trancher » motifs_discordants a disparu. L'énumération MOTIFS_REJET n'a qu'une valeur : « deux motifs différents dont un est le motif » se réduit à un seul « rejeter » sous le motif."
     },
     {
       "id": "§4.114",
       "section": "4",
       "citation": "quand le rejet est tranché par l'arbitre, sa décision porte le motif comme celle d'un annotateur",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "validation/domaine/renvoi-reextraction.ts:examiner",
-        "schema/decision-arbitrage.schema.json"
+        "validation/domaine/renvoi-reextraction.ts:motifsQuiFondent",
+        "validation/domaine/arbitrage.ts:motifsRejet",
+        "validation/domaine/arbitrage.ts:blocArbitrage",
+        "outils/arbitrer.ts:motifRejetEventuel",
+        "schema/decision-arbitrage.schema.json",
+        "schema/item.schema.json"
       ],
-      "tests": [],
+      "tests": [
+        "tests/renvoi-reextraction.test.ts « rejet tranché par l'arbitre, dont la décision porte le motif : la source est renvoyée, même si aucun annotateur ne l'a donné »",
+        "tests/renvoi-reextraction.test.ts « rejet tranché par l'arbitre sans le motif : rien n'est renvoyé, même si un annotateur l'avait donné (sa décision ne fonde pas le rejet) »",
+        "tests/arbitrage.test.ts « un rejet sous le motif le recopie dans le bloc arbitrage de l'item promu »",
+        "tests/arbitrer.test.ts « pnpm promote écrit l'item rejeté avec le motif dans son bloc arbitrage, et renvoie sa source »",
+        "tests/renvoi-texte-errone.test.ts « rejet arbitré dont l'arbitre porte le motif : l'item sur ce texte retourne en attente »"
+      ],
       "lot": null,
       "constat": 1,
-      "note": "decision-arbitrage.schema.json n'a pas de motif de rejet (son « motif » est le désaccord tranché) ; un rejet arbitré est rapporté « à trancher » (rejet_arbitre), verrouillé par tests/renvoi-reextraction.test.ts « rejet tranché par l'arbitre, dont un annotateur avait donné le motif : à trancher, rejet arbitré »."
+      "note": "Corrigé (constat n° 1 du 2026-11-03) : motif_rejet facultatif (même énumération que decision.schema.json) sur decision-arbitrage.schema.json et pnpm arbitrer (--motif-rejet), issue « rejete » seulement, refusé sur un item sans source de contenu ; recopié dans item.arbitrage.motif_rejet. Un rejet arbitré n'est fondé que par la décision de l'arbitre : le motif d'un annotateur départagé ne renvoie rien."
     },
     {
       "id": "§4.115",
       "section": "4",
       "citation": "sur un item O à deux sources, le motif ne disant pas laquelle est fausse, les deux sources sont renvoyées",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "validation/domaine/renvoi-reextraction.ts:examinerSources"
+        "validation/domaine/renvoi-reextraction.ts:sourcesRenvoyees"
       ],
-      "tests": [],
+      "tests": [
+        "tests/renvoi-reextraction.test.ts « item O à deux sources distinctes : les deux sources sont renvoyées, chacune nommant l'item »",
+        "tests/renvoi-reextraction.test.ts « item O dont les deux états citent la même source : une source, renvoyée »",
+        "tests/renvoi-texte-errone.test.ts « item O à deux sources distinctes : les items sur l'un comme sur l'autre texte retournent en attente »"
+      ],
       "lot": null,
       "constat": 1,
-      "note": "Le code rapporte « à trancher » (plusieurs_sources) et ne renvoie aucune des deux, verrouillé par tests/renvoi-reextraction.test.ts « item O à deux sources distinctes : à trancher, le motif ne dit pas laquelle est fausse »."
+      "note": "Corrigé (constat n° 1 du 2026-11-03) : chaque source de contenu distincte (document et texte) est renvoyée ; le cas « à trancher » plusieurs_sources a disparu."
     },
     {
       "id": "§4.116",
@@ -9223,18 +9243,25 @@
       "section": "4",
       "citation": "Il n'est vérifié que si deux annotateurs confirment, par la grille de son type, que la mesure est absente des corpus balayés (section 5).",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "validation/domaine/grille.ts:controlerSpecifiques",
-        "validation/domaine/promotion.ts:verifier"
+        "validation/domaine/promotion.ts:verifier",
+        "validation/domaine/promotion.ts:confirmationManquante",
+        "validation/domaine/arbitrage.ts:confirmationsManquantes"
       ],
       "tests": [
         "tests/friction.test.ts « un item F ne pose que le thème, plus la fictivité et la plausibilité »",
-        "tests/promotion.test.ts « deux « accepter » sur la même version : item vérifié »"
+        "tests/promotion.test.ts « deux « accepter » qui confirment tous deux la fictivité : item vérifié »",
+        "tests/promotion.test.ts « deux « accepter », un oui un non à la fictivité : arbitrage « confirmation_fictivite_manquante » »",
+        "tests/promotion.test.ts « deux « accepter », deux non à la fictivité : arbitrage « confirmation_fictivite_manquante » »",
+        "tests/promotion.test.ts « réponse absente à la fictivité : refusée dès la décision par le contrôle de la grille »",
+        "tests/promotion.test.ts « deux « accepter » sans réponse à la fictivité (ligne écrite hors de l'interface) : jamais vérifié »",
+        "tests/arbitrage.test.ts « l'arbitre ne peut pas le vérifier : deux annotateurs doivent confirmer (§4) »"
       ],
       "lot": null,
       "constat": 2,
-      "note": "La grille F pose fictivite_verifiee et deux décisions concordantes vérifient l'item ; mais promotion.ts:verifier n'exige une réponse oui que pour la confirmation d'absence d'un item A (absenceConfirmee) : deux « accepter » avec fictivite_verifiee à non vérifient un item F."
+      "note": "Corrigé (constat n° 2 du 2026-11-03) : un item F n'est vérifié que si les deux décisions répondent oui à fictivite_verifiee ; sinon arbitrage sous le motif confirmation_fictivite_manquante (ajouté à decision-arbitrage.schema.json et item.schema.json), où l'arbitre peut rejeter ou dire non évaluable mais pas vérifier, comme pour la confirmation d'absence d'un item A."
     },
     {
       "id": "§4.127",
@@ -10455,12 +10482,22 @@
       "section": "8",
       "citation": "et, pour chaque candidat, le nombre de ses items P, A, O et F entrés dans le test, dont la composition pèse sur son exactitude (section 11)",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "testee",
+      "code": [
+        "analysis/permutation.ts:itemsParTypeDuTest",
+        "analysis/permutation.ts:testHomogeneiteCandidats (items_par_type)",
+        "schema/metriques.schema.json#/$defs/test_asymetrie (candidats[].items_par_type)"
+      ],
+      "tests": [
+        "tests/analysis/permutation.test.ts « compte les items, pas les réponses, et publie 0 pour un type sans item — jamais une clé absente »",
+        "tests/analysis/permutation.test.ts « ne compte pas un item sans réponse classée (§8, 0.15), ni une question d'attribution »",
+        "tests/analysis/permutation.test.ts « publie quatre zéros pour un candidat comparé dont aucun item n'entre au test »",
+        "tests/analysis/permutation.test.ts « somme des effectifs de tous les candidats = population du test ; un candidat sous le seuil n'y entre pas »",
+        "tests/analysis/permutation.test.ts « refuse un item dont les réponses portent deux types différents, ou un item de candidat sans type »"
+      ],
       "lot": "analyse",
       "constat": 9,
-      "note": "Protocole 0.27. Ni permutation.ts:ExactitudeCandidat ni schema/metriques.schema.json#/$defs/test_asymetrie ne portent ces effectifs ; hors du périmètre annoncé du sous-lot B (constat)."
+      "note": "Protocole 0.27. Chaque candidat comparé du test porte items_par_type {P, A, O, F}, compté sur les items entrés dans la permutation (grappesEtiquetees, après repartirParCandidat) ; un type sans item vaut 0. Constat 9 corrigé."
     },
     {
       "id": "§8.82",
