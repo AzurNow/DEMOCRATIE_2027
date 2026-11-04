@@ -95,7 +95,7 @@ statut `planifie` et tout ou rien (un temporaire voisin renommé d'un geste) :
 - `run.json` : fenêtre, `versions.code_commit` et `versions.donnees_commit` (HEAD : `data/` est dans le
   même dépôt), `versions.protocole_sha256` (SHA-256 des octets de `docs/PROTOCOLE.md` au commit gelé),
   graines, table `alias_candidats` (alias aveugle de chaque candidat interrogé, §7, protocole 0.20),
-  `balise`, `engagement`, `run_precedent`, périmètre au gel, juges, symétrie, `tirage`
+  `balise`, `engagement`, `run_precedent`, `application_testee`, périmètre au gel, juges, symétrie, `tirage`
   (`runs/<date>/tirage.json`, SHA-256 de ses octets, nombre de questions tirées) et `questions`
   (`runs/<date>/questions.json`, SHA-256 de ses octets exacts, D48 (4)) — même quand `--sortie` est
   donnée ;
@@ -153,6 +153,19 @@ conforme (`tirage_illisible`), d'empreinte différente (`empreinte_differente`) 
 non conforme (`questions_illisibles`), ou qui ne contient pas une question tirée
 (`question_introuvable`). `questions`, exigé par le schéma, n'est lu que du précédent retenu : son
 absence dans le `run.json` d'un run sauté ne bloque aucun gel.
+
+### Run de l'application du mois (§6, D73 (11))
+
+Le gel inscrit `run.json#/application_testee` (`pipeline/gel/application.ts`) : `{ designe: true,
+mois_utc }` pour le premier run `mensuel` ou `hebdomadaire` du mois civil compté en UTC, d'après la
+`date_gel` de chaque run (D74 (11)) ; sinon `designe: false` et son motif, `type_run_exclu` (pilote,
+supplémentaire, réexécution) ou `mois_deja_servi` avec `premier_run_id`, le run du mois gelé avant
+lui. Tous les runs de `runs/` comptent, quel que soit leur `statut` : la désignation est faite au gel
+et ne bouge plus. Refus nommés (`ApplicationRefusee`), rien n'étant écrit : un run désignable du même
+mois déjà gelé à une `date_gel` strictement postérieure (`gel_hors_ordre` ; à la même `date_gel`, il a
+été gelé avant et reste le premier), deux premiers du mois à la
+même `date_gel` (`premier_ambigu`). Le sous-échantillon de l'application n'est calculé que d'un run
+désigné ; un `run.json` sans ce champ est refusé (`ApplicationNonDesignee`).
 
 ### Réexécution (D51 (3))
 
