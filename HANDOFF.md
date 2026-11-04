@@ -48,9 +48,22 @@ Décision de l'auteur du 2026-11-01 :
 - Le 2026-11-02, le mode auto de Claude Code a refusé `gh pr merge` sur la machine Windows de
   l'auteur, malgré la consigne de fusion : l'auteur a fusionné à la main.
 
+## Mise à jour du 2026-11-04
+
+- `main` en est au protocole 0.30 et à D73 (tranchée). Huit PR ouvertes le 2026-11-04, toutes à
+  fusionner par l'auteur (le mode auto refuse `gh pr merge`), ordre dans `docs/TACHES-AUTEUR.md` §0 :
+  #274 protocole 0.31 (D73) ; #275, #276, #279, #280, #281 constats de conformité n° 1 à 9 et 11 du
+  2026-11-03 ; #277, #278 code de D73 (9), (10), (2), (4), après #274.
+- **D74 en attente** : questions ouvertes de ces PR.
+- Code de D73 restant (pas lancé, à la demande de l'auteur) : (5) libellés de courriel (table à
+  rédiger par l'auteur), (6) accord-echantillons, (7) et (8) `juges[]`, (11) application testée,
+  (12) dépôt → réponse, (13) à (15) notation, (16) H5, (17) modèles dans la tendance. Constats de
+  conformité encore ouverts : n° 10, 12 à 37 hors réglés, et n° 25 (question D74 (5)).
+- Pousser vers `https://github.com/AzurNow/DEMOCRATIE_2027.git` tant qu'`origin` n'est pas mis à jour.
+
 ## Ce qui était en cours
 
-Rien, hormis la PR de clôture du 2026-11-02, que l'auteur fusionne.
+Rien, hormis les PR du 2026-11-04 ci-dessus.
 
 ## Prochaines tâches, par priorité
 

@@ -1,10 +1,21 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-03.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-04.
 
 ## Décisions en attente
 
-Aucune décision en attente.
+### D74 — Questions laissées ouvertes par la révision 0.31 (#274) et par les lots de conformité et de D73 du 2026-11-04 (#275 à #281).
+
+Relevées le 2026-11-04. Recommandation entre crochets ; « [code] » signale la lecture déjà appliquée par la PR. #274 (0.31) : (1) annexe E, « l'accusé de réception de l'étape 1 excepté » ajouté au-delà du texte de D73 (3) [garder]. (2) §3, §7 et annexe B disent encore « exacte ou inexacte » à côté de D73 (18) [harmoniser à la prochaine révision]. (3) Run portant une invalidation enregistrée sans en avoir le statut : reçoit-il les contestations postérieures ? [oui, lecture par statut ; code, #278]. (4) Date qui situe un run dans le mois civil de D73 (11) [instant de gel]. #275 : (5) Intervalle de l'exactitude de référence du test d'asymétrie (constat 25), sans clé de graine au §8 [publier la valeur comme statistique de référence, renommée, sans intervalle]. #276 : (6) Rejet arbitré sans motif de l'arbitre alors qu'un annotateur l'avait porté [aucun renvoi : l'arbitre fonde le rejet ; code]. (7) pnpm promote ne signale plus ce cas [le signaler en information]. (8) Nouveau motif d'arbitrage publié confirmation_fictivite_manquante [garder ; code]. #277 : (9) Renvoi sans texte_sha256 [rien refusé, cas déjà listé par promote ; code]. (10) « Même source » d'une réextraction [même document ou même URL ; code]. (11) Item déposé avec test_verbatim.passe faux, jamais produit par le pipeline [compté comme proposition, prudent ; code]. #278 : (12) Runs planifie inclus [oui ; code]. (13) Message de pnpm analyze après inscription sur un run déjà analysé (MetriquesDivergentes) [renvoyer à pnpm recalcul-b ; code]. #279 : (14) Positions incompatibles : seuls les candidats interrogés [oui, l'écrire au §5 ; code]. (15) « Incompatibles » = toute paire de positions distinctes, conditionnel et sans_objet compris [confirmer ; code]. (16) Ces items comptent-ils au seuil de couverture du §4 ? [non, amendement d'une ligne]. (17) Liste par item publiée dans tirage.json [ajouter un champ sur le modèle de contestes_au_gel]. (18) Item épinglé sur une version dépassée de sa mesure qui fait exclure son partenaire [ne pas l'entrer dans la détection]. #280 : (19) Fenêtre d'une réexécution [règle du run remplacé, lue par run_remplace_id ; code actuel : mardi]. (20) « Son gel » = date_gel [oui ; code]. (21) Candidat interrogé à zéro question au sous-échantillon : bloc vide [oui ; code]. #281 : (22) Nombre de renvois humains publié par juge et par motif (§7.59) [calculé dans analysis/ par pnpm analyze]. (23) « Vide » de l'annexe C = chaîne vide seulement [oui ; code]. (24) Renvoi défaillant écarté du taux contrefactuel de ce juge, comme D31 (1) [l'écrire au §7]. (25) Fraîcheur « ambiguë » d'une sortie de juge : renvoi sortie_illisible ou défaut du banc [défaut du banc, qui arrête la notation]. (26) Contrôle croisé du marqueur sur_texte_vide [l'ajouter].
+
+Options :
+
+1. Retenir toutes les recommandations entre crochets ; écrire la 0.32 et le code restant.
+2. Trancher point par point, en commençant par (16), (19) et (25), qui changeraient le code fusionné.
+
+**Recommandation :** Option 1.
+
+Lots portant cette décision : aucun
 
 ## Décisions tranchées
 
@@ -343,6 +354,7 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
+  dec_D74{{"D74<br/>Questions laissées ouvertes par la révision 0.31 (#274) et p…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
