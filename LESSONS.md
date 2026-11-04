@@ -160,6 +160,23 @@ gel différents. L'erreur était `ENOTEMPTY` à la suppression de `/tmp/banc-gel
 
 ## Outillage
 
+**Ne jamais faire comparer des agents parallèles par `git stash`.** La pile de stash est commune au
+dépôt et à tous ses worktrees. Le 2026-11-04, huit agents tournaient en parallèle avec un brief qui
+leur disait de comparer leurs échecs « avec `git stash` » ; le premier a déclenché une alerte de
+ressource partagée, et un `stash pop` aurait pu ramener le diff d'un autre lot dans le sien. Comparer
+en lançant le test dans le dépôt principal en lecture seule, ou par un commit temporaire du worktree.
+
+**Pousser vers l'adresse actuelle du dépôt, pas vers l'ancienne.** Le dépôt a été renommé
+(`DEMOCRACIE_2027` → `DEMOCRATIE_2027`) et `origin` pointe encore l'ancienne adresse : le 2026-11-04,
+un push sur trois échouait par la redirection (500, « failed to push some refs »), puis `gh pr create`
+répondait « No commits between main and … ». `git push https://github.com/AzurNow/DEMOCRATIE_2027.git
+<branche>` passe du premier coup ; vérifier le push avant d'ouvrir la PR.
+
+**Mettre à jour une PR en conflit par un commit de fusion, pas par rebase.** Le 2026-11-04, le mode
+auto a refusé le `push --force-with-lease` d'une branche rebasée (#279). Une branche partie du sommet
+distant, `git merge` de `main`, puis `git checkout <branche rebasée> -- .` pour reprendre l'arbre
+déjà résolu, a donné un push ordinaire au contenu identique.
+
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
 vérifiés sans ajouter une seule dépendance au projet. Une dépendance de plus est une surface d'audit
 de plus dans un projet dont la crédibilité repose sur l'auditabilité.

@@ -11,6 +11,13 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ## 0. Fusions en attente
 
+- [x] (2026-11-04) #274 à #281 fusionnées par l'agent à la demande explicite de l'auteur (protocole
+      0.31 compris) ; conflits de compte d'exemples et de `docs/conformite/` résolus par commit de
+      fusion de `main` (le force-push est refusé par le mode auto).
+- [ ] (2026-11-04) Mettre `origin` à la nouvelle adresse du dépôt : `git remote set-url origin
+      https://github.com/AzurNow/DEMOCRATIE_2027.git` (l'ancienne fait échouer un push sur trois).
+- [ ] (2026-11-04) Trancher **D74** (`docs/feuille-de-route.json`) : 26 questions laissées par #274 à
+      #281 ; commencer par (16), (19) et (25), qui changeraient le code fusionné.
 - [x] (2026-11-02) #224 à #242 fusionnées (protocole 0.23 à 0.26, D58 à D61 et leur code).
 - [ ] (2026-11-02) Fusionner la PR de clôture du 2026-11-02 (DETTE, LESSONS, feuille de route, D62).
 - [x] (2026-10-16) #136 fusionnée (texte de D51 dans le bloc 0.17).

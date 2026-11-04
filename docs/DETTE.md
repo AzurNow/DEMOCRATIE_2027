@@ -13,6 +13,55 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-04 — Protocole 0.31 (D73), constats de conformité n° 1 à 9 et code de D73 (2), (4), (9), (10) (PR #274 à #281 : `validation/domaine/`, `pipeline/questions/`, `pipeline/interrogation/`, `pipeline/notation/`, `pipeline/extraction/`, `pipeline/run/`, `analysis/`)
+
+### 1. Le contrôle des contestations postérieures avant `pnpm analyze` ne voit que l'arbre désigné par `--items` — *haute*
+
+`exigerContestationsInscrites` (#278, `pipeline/run/contestations-posterieures.ts`, appelé par
+`outils/analyze.ts`) lit les contestations connues dans le répertoire passé en `--items`. Un `--items`
+qui pointe ailleurs que vers `data/items`, ou vers un répertoire vide, rend le contrôle muet.
+
+**Pourquoi ça casse.** Une contestation postérieure jamais inscrite dans `run.json` n'entre pas au
+recalcul (b) de `metriques.json` : le chiffre publié ignore une contestation connue, et `pnpm analyze`
+sort en succès.
+
+**Ce qu'il faut faire.** Refuser un `--items` qui n'est pas le `data/items` du dépôt dont le run lit
+le commit des données, ou le déduire de la racine du dépôt au lieu de le demander.
+
+### 2. `run.json` est réécrit au début de la notation — *moyenne*
+
+#281 inscrit `reponses.obtenues` dans `run.json` en tête de la chaîne de notation ; `formeAuGel`
+(`pipeline/notation/notation-simulee.ts`) a dû apprendre à ignorer ce champ pour qu'une relance ne
+lève pas `GelDivergent`.
+
+**Pourquoi ça casse.** Tout autre contrôle qui compare `run.json` à sa forme au gel (empreinte,
+reprise, go/no-go) et n'ignore pas ce champ refusera un run noté, bruyamment.
+
+**Ce qu'il faut faire.** Tenir la liste des champs écrits après le gel en un seul endroit, lue par
+toutes les comparaisons, à la prochaine retouche de l'une d'elles.
+
+### 3. Un adaptateur de juge réel doit lever `JugeDefaillant`, et rien d'autre — *moyenne*
+
+#281 renvoie à un humain la réponse d'un juge qui lève `JugeDefaillant` ou rend une sortie
+incohérente ; toute autre erreur reste un défaut du banc et arrête la notation.
+
+**Pourquoi ça casse.** Au premier run réel, une erreur réseau ou de quota levée brute par le SDK
+arrête toute la notation au lieu de produire un renvoi motivé.
+
+**Ce qu'il faut faire.** Au branchement du premier adaptateur réel, traduire ses erreurs de transport
+en `JugeDefaillant` avec un motif, sous test.
+
+### 4. Le compte d'exemples de schéma est écrit en dur dans deux tests — *basse*
+
+`tests/schemas.test.ts` et `tests/questions/invariants.test.ts` portent le nombre d'exemples (393 au
+2026-11-04). Le 2026-11-04, quatre PR parallèles l'ont changé chacune : trois conflits de fusion à
+résoudre à la main, en recomptant.
+
+**Ce qu'il faut faire.** Dériver le compte du manifeste dans l'un des deux tests, ou accepter la
+friction tant que les lots parallèles qui ajoutent des exemples restent rares.
+
+---
+
 ## 2026-11-02 — D58 à D61, protocole 0.23 à 0.26 et lots d'analyse, d'extraction, d'interrogation, de notation et de validation (PR #224 à #242 : `analysis/`, `validation/domaine/`, `pipeline/interrogation/`, `pipeline/notation/`, `outils/promote.ts`)
 
 ### 1. Les modules d'analyse de D59 et D60 ne sont assemblés par aucun appelant — *haute*
