@@ -660,7 +660,9 @@ export function tendanceCalculee(contexte: ContexteDuRun, premier: PremierRun | 
 
 function sectionH5(contexte: ContexteDuRun, calculee: TendanceCalculee | null): object {
   if (calculee === null) return sansObjet("premier_run_absent");
-  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(contexte.outils, calculee.tendance) };
+  // §2 (0.31, D73 (16)) : chaque assistant inclus au premier ou au dernier run est rendu.
+  const outils = { premier: calculee.premier.contexte.outils, dernier: contexte.outils };
+  return { statut: "calcule", premier_run_id: calculee.premier.run_id, ...decisionH5(outils, calculee.tendance) };
 }
 
 /** 8. Les hypothèses lisent les sections déjà calculées, la différence de H3 et la tendance. */

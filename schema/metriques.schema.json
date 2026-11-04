@@ -820,10 +820,14 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["outil_id", "verdict", "couples"],
+            "required": ["outil_id", "verdict", "motif", "couples"],
+            "description": "§2 (0.31, D73 (16)) : un outil par assistant inclus au premier ou au dernier run ; celui qui manque à l'un des deux est sans objet, avec pour motif le run où il manque.",
+            "if": { "properties": { "motif": { "type": "string" } }, "required": ["motif"] },
+            "then": { "properties": { "verdict": { "const": "sans_objet" } } },
             "properties": {
               "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
               "verdict": { "$ref": "#/$defs/verdict_hypothese" },
+              "motif": { "enum": [null, "absent_du_premier_run", "absent_du_dernier_run"] },
               "couples": {
                 "type": "array",
                 "items": {
