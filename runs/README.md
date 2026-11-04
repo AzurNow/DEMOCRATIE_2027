@@ -365,12 +365,19 @@ pas par `assembler()` : les premiers servent l'audit du §6 ; les notations et l
 contrefactuelles sont relues par `lireNotationsDuRun`, pour le contrôle croisé et le recalcul de
 robustesse §8(a).
 
-## `pnpm analyze <repertoire_run> --items=<data/items> [--premier=<repertoire_run>]`
+## `pnpm analyze <repertoire_run> [--premier=<repertoire_run>]`
 
 Les analyses préenregistrées du §8 sur un run noté (`analysis/analyse-du-run.ts`, sous-lot A). Lit le
 run par `lireRun` (table ci-dessus), les notations individuelles du volume et le plan d'interrogation
 du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.schema.json` avant toute
 écriture. N'écrit rien d'autre et ne touche jamais `run.json`.
+
+- **Les items ne se désignent pas.** Ils se lisent dans le `data/items` de la racine du dépôt Git qui
+  porte le run, celui où se relit `versions.donnees_commit` ; l'ancienne option `--items` est refusée.
+  Un run hors d'un dépôt Git, ou un dépôt sans item validé, est refusé (code 2). Les contestations
+  connues de ce `data/items`, lues contre le commit des données du gel, doivent toutes être inscrites
+  dans `run.json#/contestations_posterieures` (D73 (2) et (4)) : sinon refus,
+  `ContestationsPosterieuresNonInscrites`.
 
 - **Un seul partage de la population.** Les couples comparés et incomplets (seuil de 20 % compté sur
   le plan, §8), les candidats comparés et rapportés à part (seuil de couverture lu au gel, §4), les

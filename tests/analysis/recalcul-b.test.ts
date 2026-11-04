@@ -136,14 +136,14 @@ describe("recalculerEtEcrireB et pnpm recalcul-b, sur un run écrit sur disque",
   });
 
   it("metriques.json déjà présent et contestation postérieure : pnpm analyze refuse (MetriquesDivergentes), le fichier reste intact", () => {
-    const premier = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`]);
+    const premier = executerOutil("analyze.ts", [fictif.repertoire_run]);
     expect(premier.status).toBe(0);
     const chemin = cheminMetriques(fictif.repertoire_run);
     const octets = readFileSync(chemin, "utf8");
     const cheminRun = `${fictif.repertoire_run}/run.json`;
     const contestation = { item_id: ITEM_P.id, contestation_id: ulid("contestation-disque"), date_reception: "2026-12-20T10:00:00+01:00" };
     writeFileSync(cheminRun, `${JSON.stringify({ ...fictif.run, contestations_posterieures: [contestation] }, null, 2)}\n`, "utf8");
-    const second = executerOutil("analyze.ts", [fictif.repertoire_run, `--items=${fictif.items}`]);
+    const second = executerOutil("analyze.ts", [fictif.repertoire_run]);
     expect(second.status).toBe(2);
     expect(second.erreur).toContain("MetriquesDivergentes");
     expect(readFileSync(chemin, "utf8")).toBe(octets);
