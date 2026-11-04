@@ -8,8 +8,9 @@
  * change que par la contestation et le panel, et l'auteur le conteste dès que le rejet est
  * enregistré, comme après une correction de thème. »
  *
- * **Ce qui déclenche.** Seules les sources renvoyées **tranchées** de `renvoi-reextraction.ts` ; un
- * rejet « à trancher » ne touche aucun autre item.
+ * **Ce qui déclenche.** Les sources renvoyées par `renvoi-reextraction.ts` : depuis le protocole
+ * 0.27, toute source de contenu d'un item rejeté dont une décision de rejet qui le fonde porte le
+ * motif (un seul des deux « rejeter », l'arbitre, les deux sources d'un item O).
  *
  * **« Même texte ».** Un item reste attaché au texte sur lequel il a été validé (§4, Extraction
  * double) : il est concerné quand l'une de ses sources de contenu (`ecoute-t2.ts:sourcesDuContenu`)
@@ -45,7 +46,7 @@ export { CHANGEMENT_TEXTE_ERRONE } from "./renvoi-mesure.ts";
 export type RenvoiIdentifie = SourceRenvoyee & { readonly texte_sha256: string };
 
 export interface ContexteTexteErrone {
-  /** Sources renvoyées tranchées (`renvoisAReextraction(...).sources`). */
+  /** Sources renvoyées (`renvoisAReextraction(...).sources`). */
   readonly renvois: readonly SourceRenvoyee[];
   /** Items de `staging/`. */
   readonly items: readonly Item[];

@@ -215,6 +215,9 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(DOMAINE, "ISSUES_ARBITRAGE"), valeurs: domaine.ISSUES_ARBITRAGE, fichier: ITEM, pointeur: "#/properties/arbitrage/properties/issue" },
   { liste: en(DOMAINE, "ARBITRES"), valeurs: domaine.ARBITRES, fichier: "decision-arbitrage.schema.json", pointeur: "#/properties/arbitre" },
   { liste: en(DOMAINE, "ARBITRES"), valeurs: domaine.ARBITRES, fichier: ITEM, pointeur: "#/properties/arbitrage/properties/arbitre" },
+  // Protocole 0.27, §4 (conformité 2026-11-03 n° 1) : l'arbitre porte le motif de rejet comme un annotateur.
+  { liste: en(DOMAINE, "MOTIFS_REJET"), valeurs: domaine.MOTIFS_REJET, fichier: "decision-arbitrage.schema.json", pointeur: "#/properties/motif_rejet" },
+  { liste: en(DOMAINE, "MOTIFS_REJET"), valeurs: domaine.MOTIFS_REJET, fichier: ITEM, pointeur: "#/properties/arbitrage/properties/motif_rejet" },
   { liste: en("validation/domaine/promotion.ts", "MOTIFS_ARBITRAGE"), valeurs: promotion.MOTIFS_ARBITRAGE, fichier: "decision-arbitrage.schema.json", pointeur: "#/properties/motif" },
   { liste: en("validation/domaine/promotion.ts", "MOTIFS_ARBITRAGE"), valeurs: promotion.MOTIFS_ARBITRAGE, fichier: ITEM, pointeur: "#/properties/arbitrage/properties/motif" },
   // Lot contestation-notification (protocole 0.10, §4 et annexe E) : contestation et panel.
