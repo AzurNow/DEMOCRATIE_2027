@@ -600,12 +600,24 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["candidat_id", "exactitude", "intervalle", "taux_degenere"],
+            "required": ["candidat_id", "exactitude", "intervalle", "taux_degenere", "items_par_type"],
             "properties": {
               "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
               "exactitude": { "$ref": "#/$defs/taux" },
               "intervalle": { "$ref": "#/$defs/intervalle_nomme" },
-              "taux_degenere": { "$ref": "#/$defs/taux_degenere" }
+              "taux_degenere": { "$ref": "#/$defs/taux_degenere" },
+              "items_par_type": {
+                "description": "§8 (0.27) : nombre des items P, A, O et F du candidat entrés dans le test (au moins une réponse classée) ; 0 pour un type sans item, jamais absent.",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["P", "A", "O", "F"],
+                "properties": {
+                  "P": { "type": "integer", "minimum": 0 },
+                  "A": { "type": "integer", "minimum": 0 },
+                  "O": { "type": "integer", "minimum": 0 },
+                  "F": { "type": "integer", "minimum": 0 }
+                }
+              }
             }
           }
         },

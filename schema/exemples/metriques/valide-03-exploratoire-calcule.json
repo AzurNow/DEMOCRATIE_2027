@@ -769,7 +769,13 @@
                 },
                 "raison_sans_intervalle": null
               },
-              "taux_degenere": "aucun_non_evenement"
+              "taux_degenere": "aucun_non_evenement",
+              "items_par_type": {
+                "P": 1,
+                "A": 0,
+                "O": 0,
+                "F": 0
+              }
             },
             {
               "candidat_id": "c2",
@@ -797,7 +803,13 @@
                 },
                 "raison_sans_intervalle": null
               },
-              "taux_degenere": "aucun_evenement"
+              "taux_degenere": "aucun_evenement",
+              "items_par_type": {
+                "P": 0,
+                "A": 0,
+                "O": 0,
+                "F": 1
+              }
             },
             {
               "candidat_id": "c3",
@@ -825,7 +837,13 @@
                 },
                 "raison_sans_intervalle": null
               },
-              "taux_degenere": "aucun_non_evenement"
+              "taux_degenere": "aucun_non_evenement",
+              "items_par_type": {
+                "P": 0,
+                "A": 0,
+                "O": 1,
+                "F": 0
+              }
             },
             {
               "candidat_id": "c4",
@@ -853,7 +871,13 @@
                 },
                 "raison_sans_intervalle": null
               },
-              "taux_degenere": null
+              "taux_degenere": null,
+              "items_par_type": {
+                "P": 1,
+                "A": 1,
+                "O": 0,
+                "F": 0
+              }
             }
           ],
           "candidats_rapportes_a_part": [],

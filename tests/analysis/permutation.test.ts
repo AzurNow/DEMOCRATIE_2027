@@ -302,6 +302,107 @@ describe("intervalles publiés avec le test d'asymétrie (conformité n° 29, §
   });
 });
 
+describe("effectifs par type des items entrés au test (conformité 2026-11-03 n° 9, §8, 0.27)", () => {
+  // §8 : « Sont publiés […] et, pour chaque candidat, le nombre de ses items P, A, O et F entrés
+  // dans le test, dont la composition pèse sur son exactitude (section 11). » Un item entre au
+  // test s'il porte au moins une réponse classée de l'outil dans ce mode (§8, 0.15) ; il compte
+  // une fois, quel que soit le nombre de ses réponses.
+
+  /** Un item d'un type donné, `n` réponses de la même catégorie. */
+  function itemType(cle: string, candidat_id: string, type: "P" | "A" | "O" | "F", n: number, categorie: "exacte" | "inexacte" | "non_reponse") {
+    return grappe(cle, n, { candidat_id, type_item_principal: type, categorie });
+  }
+
+  function effectifs(resultat: ReturnType<typeof testHomogeneiteCandidats>, candidat_id: string) {
+    const trouve = resultat?.candidats.find((c) => c.candidat_id === candidat_id);
+    if (trouve === undefined) throw new Error(`Candidat ${candidat_id} absent du résultat.`);
+    return trouve.items_par_type;
+  }
+
+  it("compte les items, pas les réponses, et publie 0 pour un type sans item — jamais une clé absente", () => {
+    const jeu = [
+      ...itemType("a-p1", "candidat-a", "P", 3, "exacte"),
+      ...itemType("a-p2", "candidat-a", "P", 2, "inexacte"),
+      ...itemType("a-f1", "candidat-a", "F", 4, "exacte"),
+      ...itemType("b-a1", "candidat-b", "A", 1, "exacte"),
+      ...itemType("b-o1", "candidat-b", "O", 6, "inexacte"),
+    ];
+
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+
+    expect(effectifs(resultat, "candidat-a")).toEqual({ P: 2, A: 0, O: 0, F: 1 });
+    expect(effectifs(resultat, "candidat-b")).toEqual({ P: 0, A: 1, O: 1, F: 0 });
+    expect(Object.keys(effectifs(resultat, "candidat-b"))).toEqual(["P", "A", "O", "F"]);
+  });
+
+  it("ne compte pas un item sans réponse classée (§8, 0.15), ni une question d'attribution", () => {
+    const jeu = [
+      ...itemType("a-p1", "candidat-a", "P", 2, "exacte"),
+      ...itemType("a-o-muet", "candidat-a", "O", 3, "non_reponse"),
+      ...itemType("b-f1", "candidat-b", "F", 1, "inexacte"),
+      ...grappe("att", 2, { candidat_id: null, item_principal_id: null, type_item_principal: null, gabarit: "Q-ATT" }),
+    ];
+
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+
+    expect(effectifs(resultat, "candidat-a")).toEqual({ P: 1, A: 0, O: 0, F: 0 });
+    expect(effectifs(resultat, "candidat-b")).toEqual({ P: 0, A: 0, O: 0, F: 1 });
+  });
+
+  it("publie quatre zéros pour un candidat comparé dont aucun item n'entre au test", () => {
+    const jeu = [
+      ...itemType("a-p1", "candidat-a", "P", 1, "exacte"),
+      ...itemType("b-p1", "candidat-b", "P", 1, "inexacte"),
+      ...itemType("c-muet", "candidat-c", "A", 2, "non_reponse"),
+    ];
+
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+
+    expect(resultat?.candidats.map((c) => c.candidat_id)).toEqual(["candidat-a", "candidat-b", "candidat-c"]);
+    expect(effectifs(resultat, "candidat-c")).toEqual({ P: 0, A: 0, O: 0, F: 0 });
+  });
+
+  it("somme des effectifs de tous les candidats = population du test ; un candidat sous le seuil n'y entre pas", () => {
+    const jeu = [
+      ...itemType("a-p1", "candidat-a", "P", 2, "exacte"),
+      ...itemType("a-a1", "candidat-a", "A", 1, "inexacte"),
+      ...itemType("a-o-muet", "candidat-a", "O", 1, "non_reponse"),
+      ...itemType("b-o1", "candidat-b", "O", 3, "exacte"),
+      ...itemType("b-f1", "candidat-b", "F", 1, "exacte"),
+      ...itemType("b-f2", "candidat-b", "F", 2, "inexacte"),
+      ...itemType("c-p1", "candidat-c", "P", 5, "inexacte"),
+    ];
+    const partage = { compares: ["candidat-a", "candidat-b"], rapportes_a_part: ["candidat-c"] };
+    const population = grappesEtiquetees(jeu.filter((u) => u.candidat_id !== "candidat-c")).length;
+
+    const resultat = testHomogeneiteCandidats(jeu, partage, OPTIONS, BOOTSTRAP);
+    const somme = (resultat?.candidats ?? []).reduce(
+      (total, c) => total + c.items_par_type.P + c.items_par_type.A + c.items_par_type.O + c.items_par_type.F,
+      0,
+    );
+
+    expect(population).toBe(5);
+    expect(somme).toBe(population);
+    expect(JSON.stringify(resultat?.candidats)).not.toContain("candidat-c");
+  });
+
+  it("refuse un item dont les réponses portent deux types différents, ou un item de candidat sans type", () => {
+    const melange = [
+      ...itemType("a-p1", "candidat-a", "P", 1, "exacte"),
+      ...itemType("item-melange", "candidat-a", "P", 1, "exacte"),
+      ...itemType("item-melange", "candidat-a", "F", 1, "exacte"),
+      ...itemType("b-p1", "candidat-b", "P", 1, "inexacte"),
+    ];
+    const sansType = [
+      ...itemType("a-p1", "candidat-a", "P", 1, "exacte"),
+      ...grappe("item-sans-type", 1, { candidat_id: "candidat-b", type_item_principal: null, categorie: "exacte" }),
+    ];
+
+    expect(() => testHomogeneiteCandidats(melange, TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toThrow(/type/);
+    expect(() => testHomogeneiteCandidats(sansType, TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toThrow(/type/);
+  });
+});
+
 describe("famille de Holm du test d'asymétrie (conformité n° 82, protocole 0.11)", () => {
   /**
    * Un résultat de test dont seule la valeur p compte ici. Conformité n° 29 : le résultat porte
