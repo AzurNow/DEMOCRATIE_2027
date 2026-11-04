@@ -4,18 +4,7 @@
 
 ## Décisions en attente
 
-### D74 — Questions laissées ouvertes par la révision 0.31 (#274) et par les lots de conformité et de D73 du 2026-11-04 (#275 à #281).
-
-Relevées le 2026-11-04. Recommandation entre crochets ; « [code] » signale la lecture déjà appliquée par la PR. #274 (0.31) : (1) annexe E, « l'accusé de réception de l'étape 1 excepté » ajouté au-delà du texte de D73 (3) [garder]. (2) §3, §7 et annexe B disent encore « exacte ou inexacte » à côté de D73 (18) [harmoniser à la prochaine révision]. (3) Run portant une invalidation enregistrée sans en avoir le statut : reçoit-il les contestations postérieures ? [oui, lecture par statut ; code, #278]. (4) Date qui situe un run dans le mois civil de D73 (11) [instant de gel]. #275 : (5) Intervalle de l'exactitude de référence du test d'asymétrie (constat 25), sans clé de graine au §8 [publier la valeur comme statistique de référence, renommée, sans intervalle]. #276 : (6) Rejet arbitré sans motif de l'arbitre alors qu'un annotateur l'avait porté [aucun renvoi : l'arbitre fonde le rejet ; code]. (7) pnpm promote ne signale plus ce cas [le signaler en information]. (8) Nouveau motif d'arbitrage publié confirmation_fictivite_manquante [garder ; code]. #277 : (9) Renvoi sans texte_sha256 [rien refusé, cas déjà listé par promote ; code]. (10) « Même source » d'une réextraction [même document ou même URL ; code]. (11) Item déposé avec test_verbatim.passe faux, jamais produit par le pipeline [compté comme proposition, prudent ; code]. #278 : (12) Runs planifie inclus [oui ; code]. (13) Message de pnpm analyze après inscription sur un run déjà analysé (MetriquesDivergentes) [renvoyer à pnpm recalcul-b ; code]. #279 : (14) Positions incompatibles : seuls les candidats interrogés [oui, l'écrire au §5 ; code]. (15) « Incompatibles » = toute paire de positions distinctes, conditionnel et sans_objet compris [confirmer ; code]. (16) Ces items comptent-ils au seuil de couverture du §4 ? [non, amendement d'une ligne]. (17) Liste par item publiée dans tirage.json [ajouter un champ sur le modèle de contestes_au_gel]. (18) Item épinglé sur une version dépassée de sa mesure qui fait exclure son partenaire [ne pas l'entrer dans la détection]. #280 : (19) Fenêtre d'une réexécution [règle du run remplacé, lue par run_remplace_id ; code actuel : mardi]. (20) « Son gel » = date_gel [oui ; code]. (21) Candidat interrogé à zéro question au sous-échantillon : bloc vide [oui ; code]. #281 : (22) Nombre de renvois humains publié par juge et par motif (§7.59) [calculé dans analysis/ par pnpm analyze]. (23) « Vide » de l'annexe C = chaîne vide seulement [oui ; code]. (24) Renvoi défaillant écarté du taux contrefactuel de ce juge, comme D31 (1) [l'écrire au §7]. (25) Fraîcheur « ambiguë » d'une sortie de juge : renvoi sortie_illisible ou défaut du banc [défaut du banc, qui arrête la notation]. (26) Contrôle croisé du marqueur sur_texte_vide [l'ajouter].
-
-Options :
-
-1. Retenir toutes les recommandations entre crochets ; écrire la 0.32 et le code restant.
-2. Trancher point par point, en commençant par (16), (19) et (25), qui changeraient le code fusionné.
-
-**Recommandation :** Option 1.
-
-Lots portant cette décision : aucun
+Aucune décision en attente.
 
 ## Décisions tranchées
 
@@ -303,6 +292,10 @@ Lots portant cette décision : aucun
 
 **Décision du 2026-11-03 :** Option 1 (consigne durable de l'auteur : option recommandée). Protocole 0.31 (PR à part) : §2 (16) ; §4 (9), (10) ; §5 et §8 (2) ; §6 (11), (12), (13), (14) ; §7 (7), (14), (15), (18) ; §8 (4), (6), (17) ; §12 (1) ; annexe E (3) ; sans texte : (5), (8). Code restant : (2) contestations-posterieures.ts lu contre le commit des données du gel ; (4) runs non invalides et contrôle avant pnpm analyze ; (5) table des libellés dans courriel.py ; (6) accord-echantillons.ts ; (7) juges[].outils_de_son_editeur et branchement de ecart-juge-editeur.ts ; (8) comptes du jeu d'or dans juges[] ; (9) journal d'extraction indexé par texte ; (11) run.json#/application_testee ; (12) conversion dépôt → réponse ; (13) valeur de mode_resolution ; (14) decision.ts, file-humaine.ts, lectures-comparateur.ts ; (15) derangement-outils.ts sans erreur bloquante ; (16) hypotheses.ts et analyse-du-run.ts ; (17) modèles dans la tendance.
 
+### D74 — Questions laissées ouvertes par la révision 0.31 (#274) et par les lots de conformité et de D73 du 2026-11-04 (#275 à #281).
+
+**Décision du 2026-11-04 :** Option 1 (proposée par la session ; fusion de cette PR par l'auteur = décision). Protocole 0.32 (PR à part) : §3, §7 et annexe B (2) ; §4 (16) ; §5 (14), (17), (18) ; §6 (4), (19), (20) ; §7 (24), (25) ; §8 (5) ; annexe C (23) ; déjà conformes, sans texte : (1), (3), (6), (12), (15), (21) ; code seul : (7), (8), (9), (10), (11), (13), (22), (26). Code restant : (5) test.exactitude_outil renommé en statistique de référence, hors du type taux publié ; (7) pnpm promote signale en information le rejet arbitré sans motif de l'arbitre ; (16) seuil de couverture sans les items aux positions incompatibles ; (17) liste par item dans tirage.json, sur le modèle de contestes_au_gel ; (18) détection des positions incompatibles sans les items épinglés sur une version dépassée de leur mesure ; (19) fenetre.ts : règle du run remplacé, lue par run_remplace_id ; (22) renvois humains par juge et par motif calculés dans analysis/ par pnpm analyze ; (24) test nommé du renvoi défaillant écarté par contrefactuel.ts ; (25) fraîcheur ambiguë en défaut du banc dans juge.ts, au lieu du renvoi sortie_illisible ; (26) contrôle croisé du marqueur sur_texte_vide.
+
 ### D8 — Trois points que le §4 ne tranche pas, rencontrés en implémentant la réannotation et le registre des mesures.
 
 **Décision du 2026-09-20 :** Option 1 sur les trois points : héritage des annotateurs gardé, une autre paire supposerait un amendement au §4 disant quel kappa compte ; clé du registre élargie seulement si le §4 ouvre un jour la correction d'autre chose que le thème ; conventions d'identifiant de réannotation et de date par défaut entérinées dans schema/README.md.
@@ -354,7 +347,6 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
-  dec_D74{{"D74<br/>Questions laissées ouvertes par la révision 0.31 (#274) et p…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
