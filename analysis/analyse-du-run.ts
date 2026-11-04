@@ -94,6 +94,7 @@ import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate
 import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
 import type { CandidatAuGel, CategorieRetenue, CoupleOutilMode, EntreeTirage, IdentifiantCourt, Item, LectureComparateur, Mode, Notation, Question, Reponse, Run, Ulid } from "./types.ts";
 import type { NotationIndividuelle } from "../pipeline/notation/types.ts";
+import { CHAMPS_HORS_EMPREINTE_DU_RUN, retirerChamps } from "../pipeline/run/champs-posterieurs-au-gel.ts";
 
 /* ------------------------------------------------------------------ entrées */
 
@@ -787,48 +788,13 @@ export function collecterGraines(document: object): GrainePubliee[] {
 /* ------------------------------------------------------------------ document */
 
 /**
- * Les champs que `run.json` reçoit après l'analyse, hors de l'empreinte pour qu'une analyse relancée
- * ensuite reste identique : ceux que `pnpm go-no-go` y écrit (`pipeline/go-no-go/go-no-go.ts:
- * fusionner`), et le statut, la publication et le dépôt (§9, protocole 0.28, D70 (13) : « celle du
- * fichier du run étant calculée hors des champs de statut, de publication et de dépôt, que ce
- * fichier reçoit après l'analyse »).
+ * SHA-256 de la forme canonique de `run.json`, sans les champs qu'il reçoit après l'analyse, pour
+ * qu'une analyse relancée ensuite reste identique : le statut, la publication et le dépôt (§9), et
+ * ce que `pnpm go-no-go` y écrit. La liste vit avec les autres champs écrits après le gel
+ * (`pipeline/run/champs-posterieurs-au-gel.ts:CHAMPS_HORS_EMPREINTE_DU_RUN`), une seule fois.
  */
-const CHAMPS_APRES_ANALYSE_DU_RUN = [
-  "statut",
-  "publication",
-  "depot",
-  "go_no_go",
-  "motif_provisoire",
-  "indeterminees_echantillon_humain",
-  "non_classees_echantillon_humain",
-  "renvois_attribution_indecidable",
-  "refus_api_echantillon_humain",
-  "accord_humains_echantillon",
-] as const;
-const CHAMPS_GO_NO_GO_DU_JUGE = ["kappa_echantillon_humain", "motif_indefini_kappa_echantillon_humain", "renvois_ecartes_kappa_echantillon"] as const;
-const CHAMPS_GO_NO_GO_DE_L_OUTIL = ["par_mode"] as const;
-
-type Objet = Readonly<Record<string, unknown>>;
-
-function sans(objet: Objet, champs: readonly string[]): Objet {
-  return Object.fromEntries(Object.entries(objet).filter(([cle]) => !champs.includes(cle)));
-}
-
-function chaqueSans(liste: unknown, champs: readonly string[]): unknown {
-  if (!Array.isArray(liste)) throw new Error("run.json : liste attendue (juges, perimetre.outils).");
-  return liste.map((element: Objet) => sans(element, champs));
-}
-
-/** SHA-256 de la forme canonique de `run.json`, sans les champs qu'il reçoit après l'analyse. */
 export function empreinteDuRun(run: object): string {
-  const brut = run as Objet;
-  const perimetre = brut["perimetre"] as Objet;
-  const reduit = {
-    ...sans(brut, CHAMPS_APRES_ANALYSE_DU_RUN),
-    juges: chaqueSans(brut["juges"], CHAMPS_GO_NO_GO_DU_JUGE),
-    perimetre: { ...perimetre, outils: chaqueSans(perimetre["outils"], CHAMPS_GO_NO_GO_DE_L_OUTIL) },
-  };
-  return createHash("sha256").update(canoniser(reduit), "utf8").digest("hex");
+  return createHash("sha256").update(canoniser(retirerChamps(run, CHAMPS_HORS_EMPREINTE_DU_RUN)), "utf8").digest("hex");
 }
 
 export function entreesPubliees(entrees: EntreesDuRun): object {
