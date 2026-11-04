@@ -51,14 +51,14 @@ arrête toute la notation au lieu de produire un renvoi motivé.
 **Ce qu'il faut faire.** Au branchement du premier adaptateur réel, traduire ses erreurs de transport
 en `JugeDefaillant` avec un motif, sous test.
 
-### 4. Cinq PR ouvertes changent le même compte d'exemples écrit en dur — *basse*
+### 4. Le compte d'exemples de schéma est écrit en dur dans deux tests — *basse*
 
-#276, #279, #280 et #281 changent le nombre d'exemples de schéma attendu dans `tests/schemas.test.ts`
-et `tests/questions/invariants.test.ts` (387, 386, 386, 389), et toutes touchent
-`docs/conformite/exigences.json`.
+`tests/schemas.test.ts` et `tests/questions/invariants.test.ts` portent le nombre d'exemples (393 au
+2026-11-04). Le 2026-11-04, quatre PR parallèles l'ont changé chacune : trois conflits de fusion à
+résoudre à la main, en recomptant.
 
-**Ce qu'il faut faire.** Fusionner dans l'ordre et rebaser chacune sur `main` en recomptant ; les
-conflits de `docs/conformite/` se résolvent à la main en gardant les deux statuts.
+**Ce qu'il faut faire.** Dériver le compte du manifeste dans l'un des deux tests, ou accepter la
+friction tant que les lots parallèles qui ajoutent des exemples restent rares.
 
 ---
 

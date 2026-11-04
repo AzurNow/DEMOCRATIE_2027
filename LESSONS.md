@@ -172,6 +172,11 @@ un push sur trois échouait par la redirection (500, « failed to push some refs
 répondait « No commits between main and … ». `git push https://github.com/AzurNow/DEMOCRATIE_2027.git
 <branche>` passe du premier coup ; vérifier le push avant d'ouvrir la PR.
 
+**Mettre à jour une PR en conflit par un commit de fusion, pas par rebase.** Le 2026-11-04, le mode
+auto a refusé le `push --force-with-lease` d'une branche rebasée (#279). Une branche partie du sommet
+distant, `git merge` de `main`, puis `git checkout <branche rebasée> -- .` pour reprendre l'arbre
+déjà résolu, a donné un push ordinaire au contenu identique.
+
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
 vérifiés sans ajouter une seule dépendance au projet. Une dépendance de plus est une surface d'audit
 de plus dans un projet dont la crédibilité repose sur l'auditabilité.

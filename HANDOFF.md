@@ -50,10 +50,10 @@ Décision de l'auteur du 2026-11-01 :
 
 ## Mise à jour du 2026-11-04
 
-- `main` en est au protocole 0.30 et à D73 (tranchée). Huit PR ouvertes le 2026-11-04, toutes à
-  fusionner par l'auteur (le mode auto refuse `gh pr merge`), ordre dans `docs/TACHES-AUTEUR.md` §0 :
-  #274 protocole 0.31 (D73) ; #275, #276, #279, #280, #281 constats de conformité n° 1 à 9 et 11 du
-  2026-11-03 ; #277, #278 code de D73 (9), (10), (2), (4), après #274.
+- `main` en est au protocole 0.31 (D73). Fusionnées le 2026-11-04 : #274 protocole 0.31 ; #275,
+  #276, #279, #280, #281 constats de conformité n° 1 à 9 et 11 du 2026-11-03 ; #277, #278 code de
+  D73 (9), (10), (2), (4). Une PR en conflit se met à jour par un commit de fusion de `main`, jamais
+  par rebase : le mode auto refuse le force-push.
 - **D74 en attente** : questions ouvertes de ces PR.
 - Code de D73 restant (pas lancé, à la demande de l'auteur) : (5) libellés de courriel (table à
   rédiger par l'auteur), (6) accord-echantillons, (7) et (8) `juges[]`, (11) application testée,
