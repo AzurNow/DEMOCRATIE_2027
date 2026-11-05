@@ -25,6 +25,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
+import { lireRunsDuDepot } from "../gel/precedent.ts";
 import { chargerPerimetre } from "../questions/charger-perimetre.ts";
 import type { Question } from "../questions/types.ts";
 import { bilanParCouple, type LigneBilan } from "./bilan.ts";
@@ -183,7 +184,8 @@ export async function lancerRunSimule(options: OptionsRunSimule): Promise<Result
   return executerSimulation({
     plan: planifier(perimetre.perimetre.outils, lireQuestions(join(fixtures, "questions.json"))),
     run_id: parametres.run_id,
-    fenetre: ouvrirFenetre(parametres.fenetre_debut, { type_run: parametres.type_run, date_gel: perimetre.date_gel }),
+    // Un run simulé sur fixtures n'a pas de dépôt de runs : une réexécution y est refusée (run remplacé introuvable).
+    fenetre: ouvrirFenetre(parametres.fenetre_debut, { type_run: parametres.type_run, date_gel: perimetre.date_gel }, () => []),
     disposition: dispositionRun(options.sortie, perimetre.date_gel),
     simulation: parametres,
     avant_premiere_tentative: () => undefined,
@@ -195,6 +197,8 @@ export interface OptionsRunGeleSimule {
   readonly repertoire: string;
   /** Le fichier de la clé d'API fictive et des profils simulés, indexés par `outil_id`. */
   readonly profils: string;
+  /** `runs/` du dépôt : le run que remplace une réexécution y est lu pour régler sa fenêtre (D74 (19)). */
+  readonly runs: string;
 }
 
 export interface ResultatRunGeleSimule extends ResultatRunSimule {
@@ -203,7 +207,7 @@ export interface ResultatRunGeleSimule extends ResultatRunSimule {
 }
 
 export async function lancerRunGeleSimule(options: OptionsRunGeleSimule): Promise<ResultatRunGeleSimule> {
-  const gele = lireRunGele(options.repertoire);
+  const gele = lireRunGele(options.repertoire, () => lireRunsDuDepot(options.runs));
   const simulation = simulationDe(lireObjet(options.profils), options.profils);
   const resultat = await executerSimulation({
     plan: planifier(gele.outils, gele.questions_tirees),
@@ -235,7 +239,7 @@ export interface ResultatStockageGeleSimule {
  * à l'heure du système ; ses horodatages sont ceux de la réception d'origine.
  */
 export function stockerRunGeleSimule(options: OptionsStockageGeleSimule): ResultatStockageGeleSimule {
-  const gele = lireRunGele(options.repertoire);
+  const gele = lireRunGele(options.repertoire, () => lireRunsDuDepot(options.runs));
   const simulation = simulationDe(lireObjet(options.profils), options.profils);
   const plan = planifier(gele.outils, gele.questions_tirees);
   const adaptateurs = new Map(

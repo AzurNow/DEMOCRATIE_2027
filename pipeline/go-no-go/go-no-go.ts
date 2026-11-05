@@ -37,6 +37,7 @@
  */
 
 import { existsSync } from "node:fs";
+import { dirname } from "node:path";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsEchantillon } from "../../analysis/accord-humains.ts";
 import { estDuRun } from "../../analysis/filtre.ts";
 import {
@@ -69,6 +70,7 @@ import {
   type DemarragesDeReponse,
 } from "./checklist.ts";
 import { exigerAucuneAttenteSurPlan } from "../interrogation/attente-operateur.ts";
+import { lireRunsDuDepot } from "../gel/precedent.ts";
 import { critereKappaJugesHumains, critereTestContrefactuel } from "./criteres-juges.ts";
 import {
   critereAnalysesExecutees,
@@ -91,9 +93,10 @@ interface VueGoNoGo {
   readonly statut: StatutRun;
   readonly invalidation?: { readonly motif: string };
   readonly fenetre: { readonly debut: string; readonly fin: string };
-  /** §6 (0.27) : avec `date_gel`, la règle d'ouverture de la fenêtre (`fenetre.ts:ouvrirFenetre`). */
+  /** §6 (0.32) : avec `date_gel` et `run_remplace_id`, la règle d'ouverture de la fenêtre (`fenetre.ts:ouvrirFenetre`). */
   readonly type_run: TypeRun;
   readonly date_gel: string;
+  readonly run_remplace_id?: string;
   readonly symetrie: Symetrie;
   readonly graines: { readonly tirage: GraineTirage; readonly bootstrap: GraineTirage; readonly permutation: GraineTirage };
   readonly perimetre: { readonly outils: readonly OutilDeclare[] };
@@ -195,7 +198,8 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     constatItemsAbsenceReverifies(),
     constatGraineDuTirage(vue.graines.tirage, graineDuFichierTirage(repertoire_run, run)),
     constatNotationComplete(obtenues, new Set<Ulid>(verdicts.map((v) => v.objet_note.id))),
-    constatInterrogationDansLaFenetre(vue, reponses),
+    // D74 (19) : le run que remplace une réexécution est lu parmi ses voisins de `runs/`.
+    constatInterrogationDansLaFenetre(vue, reponses, () => lireRunsDuDepot(dirname(repertoire_run))),
     constatRobustesseCalculee(metriques === null ? null : metriques.robustesse),
   ];
   return {

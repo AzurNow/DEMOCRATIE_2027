@@ -6,17 +6,18 @@
  * 2. Lectures : `config/gel.json`, `data/items/` et `data/mesures/` (les lecteurs de la barrière,
  *    chaque fichier validé contre son schéma), `data/formulations/` (son seul lecteur,
  *    `validation/io/data-formulations.ts`), `config/perimetre.yaml`.
- * 3. Périmètre, fenêtre, questions (`assemblage.ts:preparer`), dont une fenêtre ouverte avant
- *    `date_gel`, refusée (D45 (4)) ; destination libre, ou refus (`destination.ts`) ; l'empreinte des
+ * 3. Pour une réexécution, le run qu'elle remplace (D51 (3), `remplacement.ts`) : `--remplace` et
+ *    `--type-run=reexecution` vont ensemble, et le run désigné est sous `runs/`, invalidé ; il n'est
+ *    jamais réécrit. Puis périmètre, fenêtre, questions (`assemblage.ts:preparer`), dont une fenêtre
+ *    ouverte avant `date_gel`, refusée (D45 (4)), et celle d'une réexécution ouverte selon la règle
+ *    du run qu'elle remplace (D74 (19)) ; destination libre, ou refus (`destination.ts`) ; l'empreinte des
  *    octets de `docs/PROTOCOLE.md` (`versions.protocole_sha256` ; le dépôt est propre, le fichier sur
  *    disque est celui du commit).
  * 4. L'ordre des instants (D45 (4), D48 (1), `instants.ts`) : un gel exécuté avant `date_gel`, ou à
  *    l'ouverture de sa fenêtre ou après, est refusé. Puis le run précédent (D45 (3), D48 (4) et (5),
  *    `precedent.ts`) : lu sous `runs/` du dépôt, publié, son tirage et son `questions.json` vérifiés
  *    sur les empreintes que son `run.json` déclare, ou son absence déclarée ; tout défaut est refusé.
- *    Puis, pour une réexécution, le run qu'elle remplace (D51 (3), `remplacement.ts`) : `--remplace` et
- *    `--type-run=reexecution` vont ensemble, et le run désigné est sous `runs/`, invalidé ; il n'est
- *    jamais réécrit. Puis le run de l'application du mois (§6, D73 (11), `application.ts`) : désigné
+ *    Puis le run de l'application du mois (§6, D73 (11), `application.ts`) : désigné
  *    d'après les runs déjà gelés sous `runs/`, ou refusé si leur ordre ne permet pas de le dire. Puis le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus. Rien de tout
  *    cela n'appelle le réseau. Puis l'engagement archivé (D46, `engagement.ts`) : capture du commit HEAD, antérieure à
  *    `date_gel`, servie par la Wayback Machine. Puis la balise, lue sur les deux relais (D44,
@@ -59,7 +60,7 @@ import type { EcrireFichier } from "./ecriture.ts";
 import { verifierEngagement } from "./engagement.ts";
 import type { EngagementVerifie } from "./engagement.ts";
 import { exigerGelApresDateGel, exigerGelAvantFenetre } from "./instants.ts";
-import { lirePrecedent } from "./precedent.ts";
+import { lirePrecedent, lireRunsDuDepot } from "./precedent.ts";
 import { lireRemplacement } from "./remplacement.ts";
 import type { LireHttp } from "./reseau.ts";
 
@@ -195,7 +196,9 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   const commit = exigerDepotPropre(options.racine);
   const chemins = disposition(options.racine);
   const entrees = lireEntrees(chemins);
-  const prepare = preparer(entrees, options.type_run);
+  const run_remplace_id = lireRemplacement(options.racine, options.type_run, options.remplace);
+  const runs_du_depot = () => lireRunsDuDepot(join(options.racine, "runs"));
+  const prepare = preparer(entrees, { type_run: options.type_run, run_remplace_id, runs_du_depot });
   const destination = destinationDuRun(options.racine, options.sortie, prepare.date_repertoire);
   const protocole_sha256 = sha256DuFichier(chemins.protocole);
 
@@ -204,7 +207,6 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   exigerGelApresDateGel(maintenant_ms, date_gel_ms);
   exigerGelAvantFenetre(maintenant_ms, prepare.fenetre.debut_ms);
   const precedent = lirePrecedent(options.racine, date_gel_ms);
-  const run_remplace_id = lireRemplacement(options.racine, options.type_run, options.remplace);
   const application_testee = lireApplicationTestee(options.racine, options.type_run, date_gel_ms);
   const { engagement, balise } = await lireAlea(options, commit, date_gel_ms);
   const run_id = identifiantDuRun(date_gel_ms, balise.alea);

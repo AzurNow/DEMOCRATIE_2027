@@ -11,7 +11,8 @@
  *      du dépôt ; chacun de ses refus est repris sous son motif dans `RunGeleRefuse` ;
  *   4. le statut : `planifie` démarre, `en_cours` sans invalidation reprend, tout autre cas est
  *      refusé (`statut.ts:demarrerOuReprendre`) — calculé ici, écrit plus tard ;
- *   5. la fenêtre (`run.json#/fenetre`, rouverte par `fenetre.ts:ouvrirFenetre`, sa fin recoupée),
+ *   5. la fenêtre (`run.json#/fenetre`, rouverte par `fenetre.ts:ouvrirFenetre`, sa fin recoupée ;
+ *      pour une réexécution, selon la règle du run qu'elle remplace, lu sous `runs/` du dépôt),
  *      les outils (`run.json#/perimetre/outils`), l'identifiant (`run.json#/id`) et les questions
  *      des entrées du tirage, prises dans `questions.json` avec leurs formulations.
  *
@@ -32,7 +33,7 @@ import { ecrireParRenommage } from "../run/ecriture.ts";
 import { demarrerOuReprendre } from "../run/statut.ts";
 import type { IssueDemarrage, RunAvecStatut } from "../run/statut.ts";
 import { ouvrirFenetre } from "./fenetre.ts";
-import type { Fenetre } from "./fenetre.ts";
+import type { Fenetre, RunsDuDepot } from "./fenetre.ts";
 import { lireInstant } from "./heure-paris.ts";
 
 export type MotifRunGele = "run_json_illisible" | "fenetre_incoherente" | MotifPrecedent;
@@ -52,8 +53,9 @@ export class RunGeleRefuse extends Error {
 /** Ce que l'interrogation lit d'un `run.json` validé ; tout autre champ est recopié tel quel. */
 export interface RunJsonGele extends RunAvecStatut {
   readonly id: string;
-  /** §6 (0.27) : règle l'ouverture de la fenêtre, avec `date_gel` (`fenetre.ts:ouvrirFenetre`). */
+  /** §6 (0.32) : règle l'ouverture de la fenêtre, avec `date_gel` et `run_remplace_id` (`fenetre.ts:ouvrirFenetre`). */
   readonly type_run: string;
+  readonly run_remplace_id?: string;
   readonly fenetre: { readonly debut: string; readonly fin: string };
   readonly perimetre: { readonly outils: readonly OutilDeRun[] };
 }
@@ -91,8 +93,8 @@ function fichiersVerifies(repertoire: string, chemin: string, texte: string): Fi
   }
 }
 
-function fenetreDuGel(repertoire: string, run: RunJsonGele): Fenetre {
-  const fenetre = ouvrirFenetre(run.fenetre.debut, run);
+function fenetreDuGel(repertoire: string, run: RunJsonGele, runs_du_depot: RunsDuDepot): Fenetre {
+  const fenetre = ouvrirFenetre(run.fenetre.debut, run, runs_du_depot);
   if (lireInstant(run.fenetre.fin, "run.json#/fenetre/fin") === fenetre.fin_ms) return fenetre;
   throw new RunGeleRefuse(
     "fenetre_incoherente",
@@ -123,7 +125,8 @@ export function questionsTirees(repertoire: string, fichiers: FichiersDuRun): re
   });
 }
 
-export function lireRunGele(repertoire: string): RunGele {
+/** `runs_du_depot` : les runs de `runs/` du dépôt, lus seulement pour la fenêtre d'une réexécution (D74 (19)). */
+export function lireRunGele(repertoire: string, runs_du_depot: RunsDuDepot): RunGele {
   exigerHorsDeRuns(repertoire);
   const chemin_run_json = join(repertoire, "run.json");
   const { texte, run } = lireRunJson(repertoire, chemin_run_json);
@@ -133,7 +136,7 @@ export function lireRunGele(repertoire: string): RunGele {
     repertoire,
     chemin_run_json,
     run_id: run.id,
-    fenetre: fenetreDuGel(repertoire, run),
+    fenetre: fenetreDuGel(repertoire, run, runs_du_depot),
     outils: run.perimetre.outils,
     questions_tirees: questionsTirees(repertoire, fichiers),
     demarrage,
