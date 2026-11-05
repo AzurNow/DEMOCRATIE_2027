@@ -1175,6 +1175,19 @@
         "Garder le refus."
       ],
       "recommandation": "Option 1 : retire un blocage que le protocole n'écrit pas, sans effet sur aucune mesure."
+    },
+    {
+      "id": "D87",
+      "statut": "tranchee",
+      "question": "Depuis D75 (16), le taux d'un comparateur lit la note de chaque lecture dans son verdict, mais aucun code n'appelle verdictDeLecture (pipeline/notation/lectures-comparateur.ts) : sur un vrai run, tout comparateur qui affiche une lecture sortirait absent (lectures_sans_verdict). Qui écrit les verdicts de lecture ?",
+      "contexte": "Question 1 du lot D75 (16), (25), (26), PR #318. Aucun point de D75 n'attribuait ce travail. Revenir à la note tirée des notations faute de verdict ferait deux sources pour une même note.",
+      "options": [
+        "Un lot de notation (pipeline/notation/) qui écrit le verdict d'une lecture dès que sa note est retenue (accord ou arbitrage, §6), avec la mise à jour de l'en-tête de lectures-comparateur.ts (lignes 38-40).",
+        "Reprendre la note des notations quand aucun verdict n'existe (deux sources pour une même note)."
+      ],
+      "recommandation": "Option 1 : une seule source de la note, celle que publie la notation.",
+      "retenu": "Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation à venir, avant D80.",
+      "date_decision": "2026-11-05"
     }
   ],
   "lots": [

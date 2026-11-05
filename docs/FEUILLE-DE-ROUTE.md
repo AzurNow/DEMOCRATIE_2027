@@ -394,6 +394,10 @@ Lots portant cette décision : aucun
 
 **Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt, le §7 la prescrivant déjà). Lot de gel à venir, avec la vague (14), (20), (21), (27).
 
+### D87 — Depuis D75 (16), le taux d'un comparateur lit la note de chaque lecture dans son verdict, mais aucun code n'appelle verdictDeLecture (pipeline/notation/lectures-comparateur.ts) : sur un vrai run, tout comparateur qui affiche une lecture sortirait absent (lectures_sans_verdict). Qui écrit les verdicts de lecture ?
+
+**Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation à venir, avant D80.
+
 ### D9 — Durcir le lint au-delà des deux règles de complexité fixées le 2026-09-18 ?
 
 **Décision du 2026-09-23 :** Option 1 : typescript-eslint typé (no-unused-vars, no-floating-promises, no-misused-promises, await-thenable, only-throw-error, switch-exhaustiveness-check, no-unnecessary-type-assertion, no-unnecessary-condition, no-explicit-any, no-non-null-assertion, eqeqeq, no-fallthrough) et ruff C901, F, B. Toujours aucune règle de style.
