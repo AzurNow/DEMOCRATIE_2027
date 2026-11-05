@@ -167,6 +167,12 @@ neufs des lots voisins, jamais les siens.
 
 ## Outillage
 
+**Ne pas importer dans le site un module qui lit un fichier au chargement.** Le 2026-11-05 (#333), le
+site devait importer neuf paramètres du protocole de `pipeline/` : Astro empaquette le code dans
+`site/dist/.prerender/`, où les chemins relatifs à `import.meta.url` des modules de
+`pipeline/questions/` n'existent plus, et `pnpm build:site` cassait sur `ENOENT`. Une constante que le
+site affiche vit dans un module sans effet de bord (`analysis/parametres-protocole.ts`, #335).
+
 **Ne jamais faire comparer des agents parallèles par `git stash`.** La pile de stash est commune au
 dépôt et à tous ses worktrees. Le 2026-11-04, huit agents tournaient en parallèle avec un brief qui
 leur disait de comparer leurs échecs « avec `git stash` » ; le premier a déclenché une alerte de
@@ -258,6 +264,12 @@ demandée, pas celle du disque. #189 compare après NFC et sans casse ; la règl
 refuser, jamais pour admettre.
 
 ## Méthode
+
+**Quand un filet textuel se tait après une retouche, demander pourquoi.** Le 2026-11-05 (#336), le
+filet de la règle 3 signalait le gel simulé, qui écrit un `data/` fictif dans un dépôt jetable ;
+l'agent a remplacé la table qui nommait `data/items` par un `cpSync` de tout l'arbre, et le filet s'est
+tu sans que la garde réelle (`exigerSortieSimulee`) soit rattachée au filet. Un filet contourné doit
+recevoir une exception nommée qui exige la garde, pas un silence (DETTE 2026-11-05 soir, n° 2).
 
 **Lire `state = MERGED` avant toute suppression de branche, et ne rien chaîner derrière une fusion
 avec `;`.** Le 2026-11-05, `gh pr checks --watch` est sorti en code 0 sur une erreur réseau

@@ -11,8 +11,12 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ## 0. Fusions en attente
 
-- [ ] (2026-11-05) Fusionner **#309** (protocole 0.34, D79, §7 : ordre de la file humaine tiré par
-      graine). Le code qui l'applique attend cette fusion.
+- [ ] (2026-11-05) Trancher dans `docs/feuille-de-route.json` les décisions en attente : **D81**
+      (§6, arbitrage des lectures de comparateur), **D82** (ABSENT dans le prompt de juge et l'écran
+      humain, zone d'arrêt), **D83** (textes intégraux des pages citées hors du volume), **D85** et
+      **D88** (contrefactuel d'outil : quels outils du périmètre, à trancher ensemble), **D86**
+      (relâcher FormesOutilsAmbigues), **D91** (commande de production pour les humains simulés).
+- [x] (2026-11-05) #309 fusionnée (protocole 0.34, D79) ; #313 fusionnée.
 - [x] (2026-11-04) #274 à #281 fusionnées par l'agent à la demande explicite de l'auteur (protocole
       0.31 compris) ; conflits de compte d'exemples et de `docs/conformite/` résolus par commit de
       fusion de `main` (le force-push est refusé par le mode auto).
