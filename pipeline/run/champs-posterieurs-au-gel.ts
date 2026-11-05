@@ -48,11 +48,12 @@ export const CHAMPS_DU_TEST = ["retire", "motif_retrait", "taux_changement_contr
  * Ce que la chaîne de notation écrit (`pipeline/notation/chaine.ts`) : le test contrefactuel et le
  * taux de l'échantillon humain qui en découle (§7 : 10 %, 25 % après retrait d'un juge ; écrit au
  * gel, réécrit ici), et le nombre de réponses obtenues, inscrit en tête de la notation (§5
- * « Tailles », `inscription-reponses.ts`). Avant l'analyse : dans l'empreinte.
+ * « Tailles », `inscription-reponses.ts`), et l'absence du contrefactuel d'outil
+ * (`inscription-contrefactuel-outils.ts`, D75 (7)). Avant l'analyse : dans l'empreinte.
  */
 export const CHAMPS_DE_LA_NOTATION: ChampsDeRunJson = {
   ...AUCUN,
-  racine: ["contrefactuel_candidats", "taux_echantillon_humain"],
+  racine: ["contrefactuel_candidats", "taux_echantillon_humain", "contrefactuel_outils"],
   juges: CHAMPS_DU_TEST,
   reponses: ["obtenues"],
 };

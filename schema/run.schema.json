@@ -1347,6 +1347,214 @@
         }
       }
     },
+    "contrefactuel_outils": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "etat",
+        "motif_indefini",
+        "outils",
+        "taille_visee",
+        "taille"
+      ],
+      "allOf": [
+        {
+          "$comment": "Dérangement non tiré (moins de deux outils, éditeur partagé) : ni éligibilité, ni sous-ensemble, ni dérangement. Test joué sans réponse éligible : le bloc porte en plus ce qui rejoue le tirage, et au moins deux outils au dérangement.",
+          "if": {
+            "required": [
+              "motif_indefini"
+            ],
+            "properties": {
+              "motif_indefini": {
+                "enum": [
+                  "moins_de_deux_outils",
+                  "outils_du_meme_editeur",
+                  "comparateur_du_meme_editeur"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "eligibles": false,
+              "sous_effectif": false,
+              "correspondances": false,
+              "cle_graine": false,
+              "cle_graine_derangement": false,
+              "mentions_residuelles": false
+            }
+          },
+          "else": {
+            "required": [
+              "eligibles",
+              "sous_effectif",
+              "correspondances",
+              "cle_graine",
+              "cle_graine_derangement",
+              "mentions_residuelles"
+            ],
+            "properties": {
+              "outils": {
+                "minimum": 2
+              }
+            }
+          }
+        },
+        {
+          "$comment": "§7 (protocole 0.31 et 0.33) : sous un motif d'éditeur, les éditeurs en cause sont publiés avec leurs outils, et le dérangement compte au moins deux outils ; sous tout autre motif, aucun éditeur n'est publié.",
+          "if": {
+            "required": [
+              "motif_indefini"
+            ],
+            "properties": {
+              "motif_indefini": {
+                "enum": [
+                  "outils_du_meme_editeur",
+                  "comparateur_du_meme_editeur"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "editeurs_partages"
+            ],
+            "properties": {
+              "outils": {
+                "minimum": 2
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "editeurs_partages": false
+            }
+          }
+        },
+        {
+          "$comment": "§7 (protocole 0.24) : le dérangement « n'est pas défini sous deux outils ».",
+          "if": {
+            "required": [
+              "motif_indefini"
+            ],
+            "properties": {
+              "motif_indefini": {
+                "const": "moins_de_deux_outils"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "outils": {
+                "maximum": 1
+              }
+            }
+          }
+        }
+      ],
+      "description": "§7, « Conflit d'intérêts » : le test contrefactuel d'outil publié absent, avec son motif (décision D75 (7) de l'auteur). Rempli par pipeline/notation/publication-contrefactuel-outils.ts et inscrit une fois par pipeline/notation/inscription-contrefactuel-outils.ts. Seule l'absence a aujourd'hui sa forme publiée : le test terminé (taux de changement de chaque juge) attend son branchement dans la chaîne. Le test d'outil ne retire aucun juge et n'invalide jamais le run : aucun champ de juges ni d'invalidation n'en dépend. Absent tant que la notation ne l'a pas inscrit.",
+      "properties": {
+        "etat": {
+          "const": "indefini",
+          "description": "Le test est absent : aucun taux n'existe, jamais 0 %."
+        },
+        "motif_indefini": {
+          "type": "string",
+          "enum": [
+            "moins_de_deux_outils",
+            "outils_du_meme_editeur",
+            "comparateur_du_meme_editeur",
+            "aucune_reponse_eligible"
+          ],
+          "description": "moins_de_deux_outils : moins de deux assistants inclus au run, le dérangement « n'est pas défini sous deux outils » (§7, protocole 0.24 ; recoupé avec perimetre.outils, allOf du run). outils_du_meme_editeur : deux outils du dérangement ont le même éditeur (§7, protocole 0.31, D73 (15)). comparateur_du_meme_editeur : un comparateur du périmètre a le même éditeur qu'un outil du dérangement, sans que deux outils du dérangement le partagent (§7, protocole 0.33, D75 (6)). aucune_reponse_eligible : le dérangement est tiré, mais aucune réponse du run ne nomme un outil du dérangement ; le sous-ensemble est vide (pipeline/notation/contrefactuel-outils.ts)."
+        },
+        "outils": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "§7 : le nombre d'outils du dérangement, les assistants inclus au run (pipeline/notation/derangement-outils.ts:outilsDuDerangement)."
+        },
+        "editeurs_partages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "editeur",
+              "outil_ids"
+            ],
+            "properties": {
+              "editeur": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "L'éditeur, tel que déclaré au périmètre, comparé à casse exacte."
+              },
+              "outil_ids": {
+                "type": "array",
+                "minItems": 2,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+                },
+                "description": "Les outils qui le portent, outils du dérangement et comparateurs confondus, triés par identifiant."
+              }
+            }
+          },
+          "description": "Les éditeurs d'un outil du dérangement que porte un autre outil du dérangement ou un comparateur du périmètre, triés par éditeur (pipeline/notation/derangement-outils.ts:derangementOutilsOuAbsence)."
+        },
+        "eligibles": {
+          "const": 0,
+          "description": "Réponses obtenues du run dont le texte nomme un outil du dérangement : aucune."
+        },
+        "taille_visee": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "§7 : 200 réponses (pipeline/notation/echantillons.ts, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS)."
+        },
+        "taille": {
+          "const": 0,
+          "description": "Le test absent n'a pas de sous-ensemble."
+        },
+        "sous_effectif": {
+          "const": true,
+          "description": "Aucune réponse éligible, moins que la taille visée : c'est dit, jamais en silence."
+        },
+        "correspondances": {
+          "type": "object",
+          "minProperties": 2,
+          "propertyNames": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+          },
+          "additionalProperties": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+          },
+          "description": "§7 : le dérangement des outils du run, outil_id source → outil_id image (pipeline/notation/derangement-outils.ts, correspondancesOutils). Un comparateur n'y figure pas."
+        },
+        "cle_graine": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "§7 : la clé lisible de la graine du sous-ensemble, contrefactuel_outil, dérivée de graines.contrefactuel (pipeline/notation/echantillons.ts, CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS)."
+        },
+        "cle_graine_derangement": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "La clé lisible de la graine du dérangement des outils, dérivée de graines.contrefactuel (pipeline/notation/derangement-outils.ts, CLE_DERANGEMENT_OUTILS)."
+        },
+        "mentions_residuelles": {
+          "const": 0,
+          "description": "Aucune paire, aucune mention résiduelle."
+        }
+      }
+    },
     "kappa_paire_juges": {
       "type": "number",
       "minimum": -1,
@@ -2317,6 +2525,52 @@
                   },
                   "required": [
                     "interroge"
+                  ]
+                },
+                "minContains": 0,
+                "maxContains": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "§7 (protocole 0.24), D75 (7) : le motif moins_de_deux_outils du contrefactuel d'outil se recoupe avec le périmètre. Avec lui, au plus un assistant inclus (les outils du dérangement).",
+      "if": {
+        "properties": {
+          "contrefactuel_outils": {
+            "properties": {
+              "motif_indefini": {
+                "const": "moins_de_deux_outils"
+              }
+            },
+            "required": [
+              "motif_indefini"
+            ]
+          }
+        },
+        "required": [
+          "contrefactuel_outils"
+        ]
+      },
+      "then": {
+        "properties": {
+          "perimetre": {
+            "properties": {
+              "outils": {
+                "contains": {
+                  "properties": {
+                    "famille": {
+                      "const": "assistant"
+                    },
+                    "inclus": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "famille",
+                    "inclus"
                   ]
                 },
                 "minContains": 0,

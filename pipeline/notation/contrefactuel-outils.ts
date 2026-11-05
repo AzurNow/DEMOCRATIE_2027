@@ -17,11 +17,17 @@
  * incohérence nommée, jamais ignorée. Les deux juges retirés invalident le run (§7) : ce test ne
  * se joue pas, refus nommé.
  *
+ * **Renvois** (§7 0.33, D75 (2)) : « Comme au test des candidats, une paire dont un côté au moins est
+ * renvoyé à un humain par un juge, quel que soit le motif du renvoi, est écartée du numérateur et du
+ * dénominateur du taux de ce juge, et leur nombre est publié » — la règle 3 de `compterChangements`,
+ * juge par juge : l'autre juge garde la paire.
+ *
  * **Test absent.** Sous deux outils au run, le dérangement n'est pas défini (§7 0.24) ; deux outils
- * du dérangement du même éditeur rendent le test « absent, avec ce motif, sans bloquer le run »
- * (§7 0.31, D73 (15)). Dans les deux cas, `derangement-outils.ts:derangementOutilsOuAbsence` rend
- * `ContrefactuelOutilsAbsent`, sans sous-ensemble ni paire : l'appelant le publie et n'appelle pas
- * ce module.
+ * du dérangement du même éditeur, ou un comparateur du même éditeur qu'un outil du dérangement,
+ * rendent le test « absent, avec ce motif, sans bloquer le run » (§7 0.31, D73 (15) ; 0.33,
+ * D75 (6)). Dans ces cas, `derangement-outils.ts:derangementOutilsOuAbsence` rend
+ * `ContrefactuelOutilsAbsent`, sans sous-ensemble ni paire : l'appelant le publie
+ * (`publication-contrefactuel-outils.ts`) et n'appelle pas ce module.
  */
 
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
@@ -43,7 +49,7 @@ export type ResultatContrefactuelOutils =
   | (CommunOutils & { readonly statut: "indefini"; readonly motif: "aucune_reponse_eligible" })
   | (CommunOutils & { readonly statut: "termine"; readonly juges: readonly ResultatJugeOutils[] });
 
-/** §7 0.24 et 0.31 : le test absent, avec son motif (`moins_de_deux_outils`, `outils_du_meme_editeur`). Jamais 0 %. */
+/** §7 0.24, 0.31 et 0.33 : le test absent, avec son motif (`MOTIFS_ABSENCE_CONTREFACTUEL_OUTILS`). Jamais 0 %. */
 export type ContrefactuelOutilsAbsent = AbsenceContrefactuelOutils;
 
 export function testerContrefactuelOutils(entree: EntreeContrefactuel): ResultatContrefactuelOutils {

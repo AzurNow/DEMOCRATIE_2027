@@ -3786,6 +3786,60 @@
       }
     },
     {
+      "objet": "run",
+      "fichier": "run/valide-15-contrefactuel-outils-moins-de-deux-outils.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01, dont outil-alpha est le seul assistant inclus, qui publie le contrefactuel d'outil absent : etat indefini, motif moins_de_deux_outils, un outil au dérangement, la taille visée et une taille nulle, sans éditeur partagé, éligibles, sous-ensemble ni dérangement.",
+      "regle_protocole": "§7 (protocole 0.24), « Conflit d'intérêts » : le dérangement des outils du run « n'est pas défini sous deux outils » ; décision D75 (7) de l'auteur (absence publiée)"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-16-contrefactuel-outils-aucune-reponse-eligible.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01 avec un second assistant inclus, outil-beta (alias O08, preuve d'inclusion d'exemple fictive), dont le contrefactuel d'outil est joué sans réponse éligible : le dérangement est tiré (correspondances, clés de graine), aucune réponse ne nomme un outil du dérangement, le sous-ensemble est vide, en sous-effectif, sans aucun taux.",
+      "regle_protocole": "§7, « Conflit d'intérêts » : 200 réponses « dont le texte nomme au moins un outil » ; décision D75 (7) de l'auteur (absence publiée)"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-17-contrefactuel-outils-comparateur-du-meme-editeur.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-16 dont le contrefactuel d'outil est absent parce que le comparateur comparateur-gamma a le même éditeur (« Éditeur Alpha », valeur d'exemple) qu'outil-alpha, outil du dérangement : motif comparateur_du_meme_editeur, l'éditeur et ses deux outils publiés.",
+      "regle_protocole": "§7 (protocole 0.33), « Conflit d'intérêts » : « il en va de même quand un comparateur du périmètre a le même éditeur qu'un outil du dérangement » ; décisions D75 (6) et (7) de l'auteur"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-72-contrefactuel-outils-sans-motif.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-16 dont le bloc contrefactuel_outils n'a pas de motif : un test absent publie toujours pourquoi.",
+      "regle_protocole": "§7, « Conflit d'intérêts » : le test contrefactuel d'outil « est publié absent, avec ce motif » ; décision D75 (7) de l'auteur",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/contrefactuel_outils"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-73-moins-de-deux-outils-avec-deux-assistants.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-16 qui publie le motif moins_de_deux_outils alors que deux assistants sont inclus au périmètre. Le schéma recoupe le motif avec perimetre.outils.",
+      "regle_protocole": "§7 (protocole 0.24), « Conflit d'intérêts » : le dérangement des outils du run « n'est pas défini sous deux outils » ; décision D75 (7) de l'auteur",
+      "erreur_visee": {
+        "keyword": "contains",
+        "instance_path": "/perimetre/outils"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-74-editeur-partage-sans-editeurs.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-17 sans editeurs_partages : un motif d'éditeur publie l'éditeur en cause et ses outils.",
+      "regle_protocole": "§7 (protocole 0.31 et 0.33), « Conflit d'intérêts » ; décisions D73 (15) et D75 (6), (7) de l'auteur",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/contrefactuel_outils"
+      }
+    },
+    {
       "objet": "recalcul-b",
       "fichier": "recalcul-b/valide-01-contestation-posterieure.json",
       "attendu": "valide",

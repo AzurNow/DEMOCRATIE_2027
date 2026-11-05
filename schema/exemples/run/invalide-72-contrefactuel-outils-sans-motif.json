@@ -1,0 +1,585 @@
+{
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "date_gel": "2026-12-01T06:00:00+01:00",
+  "fenetre": {
+    "debut": "2026-12-01T06:00:00+01:00",
+    "fin": "2026-12-03T06:00:00+01:00"
+  },
+  "type_run": "mensuel",
+  "statut": "publie",
+  "versions": {
+    "protocole": "1.0",
+    "protocole_sha256": "05029e4833305aa8f8ebd91bb37d4a4fd9401eb88a560adb9f37294349dc1f45",
+    "code_commit": "e6fb06210fafc02fd7479ddbed2d042cc3a5155e",
+    "donnees_commit": "d95c5e3bc72813f7a365e976a3cd47de69b85476",
+    "amendements_appliques": []
+  },
+  "graines": {
+    "tirage": {
+      "valeur": 20261201,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "echantillon_humain": {
+      "valeur": 20261202,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "bootstrap": {
+      "valeur": 20261203,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "permutation": {
+      "valeur": 20261204,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "contrefactuel": {
+      "valeur": 20261205,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "alias_candidats": {
+      "valeur": 20261206,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    }
+  },
+  "alias_candidats": {
+    "C1": "cand-b",
+    "C2": "cand-a"
+  },
+  "balise": {
+    "chaine": {
+      "empreinte": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+      "genese": 1692803367,
+      "periode": 3,
+      "schema_id": "bls-unchained-g1-rfc9380"
+    },
+    "tour": 34432612,
+    "signature": "36bf2d978a0c35308b64a59e919ea58b9c38fa9fc6eb2324902b8c33b8f572a4c5c7637e044c11d1b67c9f03f2122ed8",
+    "alea": "47ca82400bd62e4b1d517bde589fdbe264dd37d04ccf69d456472bafdbd2bc33",
+    "relais": [
+      {
+        "base": "https://api.drand.sh",
+        "url": "https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/public/34432612",
+        "chemin": "runs/2026-12-01/balise/api.drand.sh.json",
+        "sha256": "03023a2ee663e76cae17c05b3a383e6a515e62e4fe073ff04a0c9d3868d0c599"
+      },
+      {
+        "base": "https://drand.cloudflare.com",
+        "url": "https://drand.cloudflare.com/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/public/34432612",
+        "chemin": "runs/2026-12-01/balise/drand.cloudflare.com.json",
+        "sha256": "03023a2ee663e76cae17c05b3a383e6a515e62e4fe073ff04a0c9d3868d0c599"
+      }
+    ],
+    "cles": {
+      "tirage": "tirage",
+      "echantillon_humain": "echantillon_humain",
+      "bootstrap": "bootstrap",
+      "permutation": "permutation",
+      "contrefactuel": "contrefactuel",
+      "alias_candidats": "alias_candidats"
+    },
+    "cle_identifiant": "run_id"
+  },
+  "engagement": {
+    "url": "https://web.archive.org/web/20261130050000/https://github.com/AzurNow/DEMOCRATIE_2027/commit/e6fb06210fafc02fd7479ddbed2d042cc3a5155e",
+    "horodatage": "20261130050000",
+    "disponibilite": {
+      "url": "https://archive.org/wayback/available?url=https%3A%2F%2Fgithub.com%2FAzurNow%2FDEMOCRATIE_2027%2Fcommit%2Fe6fb06210fafc02fd7479ddbed2d042cc3a5155e&timestamp=20261130050000",
+      "chemin": "runs/2026-12-01/engagement/wayback.json",
+      "sha256": "d9398a96ceeb11b887f7dc0a5d2aa8c80659d0831eaf13c08d40f550b163a006"
+    }
+  },
+  "run_precedent": {
+    "id": "01K95Q7RG0PRECEDENT0EXEMP0",
+    "tirage": {
+      "chemin": "runs/2026-11-03/tirage.json",
+      "sha256": "5b2e6f0c9a1d4e7b8c3f2a1d0e9b8c7a6f5e4d3c2b1a09f8e7d6c5b4a3928170"
+    },
+    "questions": {
+      "chemin": "runs/2026-11-03/questions.json",
+      "sha256": "8e1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d10"
+    }
+  },
+  "perimetre": {
+    "regime_inclusion": "avant_liste_officielle",
+    "candidats": [
+      {
+        "candidat_id": "cand-a",
+        "libelle": "Alix Fictif-A",
+        "nom": "Fictif-A",
+        "statut_au_gel": "actif",
+        "preuves_inclusion": [
+          {
+            "institut": "Institut A",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-a-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-a-2026-06"
+            },
+            "date_publication": "2026-11-05",
+            "url": "https://institut-a.fr/sondage-novembre",
+            "archive_url": "https://web.archive.org/web/20261106/https://institut-a.fr/sondage-novembre",
+            "sha256": "f6c4c221c3b080d2f61cf00d3f55764e9ebfd5aacc896e81c8ba4cfaf3c52aba"
+          },
+          {
+            "institut": "Institut B",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-b-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-b-2026-06"
+            },
+            "date_publication": "2026-11-20",
+            "url": "https://institut-b.fr/vague-12",
+            "archive_url": "https://web.archive.org/web/20261121/https://institut-b.fr/vague-12",
+            "sha256": "4e85dcc8b719c7d50497e06793d54494a6c5c98b8c04725f22dc6f36240eea1b"
+          }
+        ],
+        "declaration_candidature": {
+          "url": "https://exemple-candidat.fr/declaration",
+          "date": "2026-06-02",
+          "par": "interesse",
+          "sha256": "85538fc375ae9c69ceb4f77f587368539da727cc9561d78bf4c0d52bfbc9fc06",
+          "archive_url": "https://web.archive.org/web/20260602/https://exemple-candidat.fr/declaration"
+        },
+        "items_p_verifies": 31,
+        "items_p_au_gel": [
+          "04NCE5N1TT18KE24KEM19Q8DZ4",
+          "341RJZ7V47HX7BVZ61Y8CVNKC6",
+          "45YA5VQZFGFDE86FJ1E38EPDPJ",
+          "5EWS4CDFG7891S6SF78HR5SMC2",
+          "601HB7DSE9VAJ7VT0109JWVC7H",
+          "73MGGS5VDMTHW1J0KV89E5T9NY",
+          "83FAKMAZFZZ5WK3MTMZTHQ60MH",
+          "99QNXX43HCRVCA8WEQ24VP1QTB",
+          "BE5RSAV7KXX3NTRVCHMK43566K",
+          "BK5W87QVBA43JRQ152K8NRJR01",
+          "C5V4Q6K9FYEFZZ6CA0DX4JS228",
+          "DRFS5GXCH8SV7MMF4D1C3JYKVQ",
+          "DZV3H45RN7V1027RZ04EVJB47R",
+          "GZ7SFPZCDZVP59PT6E74MAA4EP",
+          "H9ZXQ0D5Q1VNKQCPKNQ1C20TX5",
+          "HSFYW8Q52SBWYEDNT7F8JDE6D7",
+          "K8DQ79BK0HRZRYWJY28NAFP088",
+          "MJRAV1V7ZT456KDWW0E1JA6WSV",
+          "NBCAGPFW0005PY3G8F7NWQSTMX",
+          "NVCCHR5NSPQ04X9245N6NTNV2M",
+          "Q9E6AMVN1EDDMRKH10JFEQ1CG0",
+          "R0NTQYGGFGSCKWC4Q5RXJW7W21",
+          "S1J12QC7CC6GTQNM9YJNGEP5N8",
+          "TAX0SREH6G0TZDF1YCJHCQMDPF",
+          "TMJFH0DPZ1P0XHFCC712FH8F0H",
+          "WEK63ZXXT684B1E7G6V4C5VWHN",
+          "Y0SNZA0JR6HWNRCSQA7KYWQ41V",
+          "YQSMZ6DVQCP51Q4WCJ780EW4EH",
+          "YV1EJJWECNN6Q9NGG923WAFPGW",
+          "YZT9Y8S6CG04VY57DEJ0S6G5G7",
+          "ZY5VMXEAZ30BXE7H0Y4AWEE95Z"
+        ],
+        "sous_seuil": false,
+        "interroge": true
+      },
+      {
+        "candidat_id": "cand-b",
+        "libelle": "Bastien Fictif-B",
+        "nom": "Fictif-B",
+        "statut_au_gel": "nouveau",
+        "preuves_inclusion": [
+          {
+            "institut": "Institut A",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-a-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-a-2026-06"
+            },
+            "date_publication": "2026-11-05",
+            "url": "https://institut-a.fr/sondage-novembre",
+            "archive_url": "https://web.archive.org/web/20261106/https://institut-a.fr/sondage-novembre"
+          },
+          {
+            "institut": "Institut C",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-c-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-c-2026-06"
+            },
+            "date_publication": "2026-11-22",
+            "url": "https://institut-c.fr/barometre",
+            "archive_url": "https://web.archive.org/web/20261123/https://institut-c.fr/barometre"
+          }
+        ],
+        "declaration_candidature": {
+          "url": "https://exemple-parti-b.fr/communique-candidature",
+          "date": "2026-10-14",
+          "par": "parti",
+          "sha256": "47963be5e7c58eea3a7f6764bc7218cd37565162da3158bf5faca442bbc05e33",
+          "archive_url": "https://web.archive.org/web/20261014/https://exemple-parti-b.fr/communique-candidature"
+        },
+        "items_p_verifies": 8,
+        "items_p_au_gel": [
+          "32RAZT3VHFYZ5QP2KAVXS1R22T",
+          "7Z02SJPEFX4WE7QQ8NDX0M96XP",
+          "ARAWPYB8SP0MA9D4Y3JTR062V8",
+          "AZ6QA1R03HDMDSPN4JBBDK6APB",
+          "FBH08W5GRHE08S4E0X3SHQS86S",
+          "JCEA9QZ87WPRPHCXCEV66GP75N",
+          "PATNHZ71XA1B8BPNKNTTE466ES",
+          "WD2XW4Z9QXN6T6512GGFZNNMBM"
+        ],
+        "sous_seuil": true,
+        "interroge": true
+      },
+      {
+        "candidat_id": "cand-d",
+        "libelle": "Dominique Fictif-D",
+        "nom": "Fictif-D",
+        "statut_au_gel": "retire",
+        "items_p_verifies": 22,
+        "items_p_au_gel": [
+          "1Q2JAT0AWFMMP2RZ4BKP60NQFF",
+          "3BVTX15FP8MWZ53KJJTAFV80FW",
+          "3HV9HVVVX4BHB70N1NSNFXT58J",
+          "3PEKD7M7RESS36N380THVFES3R",
+          "43C15GRA8171YDKKYH5KFXY0N3",
+          "4QA60PEP3N601CEB12T34R4KG9",
+          "626MJ8R326Q6SKW179RPRJP8X6",
+          "65A6BRS6S6AA6RNQ73A5MGCTZW",
+          "7TKJ6MK0SHQC6Z81QP1EVD1M1A",
+          "97Q23PSDZXJ37XTHCZ779F9JCR",
+          "D9VN3CVET1A3PAKBAG0NMEKEXY",
+          "GF7D5ZC8CW5WEMK9CDK93NBG3D",
+          "JYT1Y7XX0B0HFYR6X1TJ7N5H5P",
+          "K6D3CBWK55SEQ36E91ZJZ3XP7B",
+          "KE1MMNWD07PB5EK029BM3Z77Q9",
+          "M47MK3H0N2YHEJJTZ4M88TJ0NQ",
+          "NWY5X1ZMC983MK4EB2A98QWQ19",
+          "Q0WH2PZT853285V9T6XW0R3MT5",
+          "T4Q707XCBRJ12EF0MSWX4F3B6G",
+          "W29EG8P0QNQAD1D9HV5XTCPJR1",
+          "Z94P1EGR9XWA3HSTS66DKP8HG1",
+          "ZWJJCBJRBQZGM64JV97MQNQZYY"
+        ],
+        "sous_seuil": false,
+        "interroge": false
+      }
+    ],
+    "outils": [
+      {
+        "outil_id": "outil-alpha",
+        "famille": "assistant",
+        "inclus": true,
+        "modele_demande": "modele-grand-public",
+        "modes": [
+          "web_activee",
+          "web_desactivee"
+        ],
+        "mode_de_tete": "web_activee",
+        "alias_aveugle": "O07",
+        "cgu_relues_le": "2026-11-10",
+        "clause_restrictive_signalee": false,
+        "preuve_inclusion": {
+          "url": "https://classement-stores.invalid/fr/outil-alpha",
+          "date_publication": "2026-12-01",
+          "sha256": "89ac741c1a3e0afa324ae7282442edd7600b84625eef88f86982991b7f047f97",
+          "archive_url": "https://web.archive.org/web/20261201/https://classement-stores.invalid/fr/outil-alpha"
+        },
+        "par_mode": {
+          "web_activee": {
+            "reponses_manquantes_part": 0.04,
+            "run_incomplet": false
+          },
+          "web_desactivee": {
+            "reponses_manquantes_part": 0.02,
+            "run_incomplet": false
+          }
+        }
+      },
+      {
+        "outil_id": "outil-beta",
+        "famille": "assistant",
+        "inclus": true,
+        "modele_demande": "modele-grand-public",
+        "modes": [
+          "web_activee",
+          "web_desactivee"
+        ],
+        "mode_de_tete": "web_activee",
+        "alias_aveugle": "O08",
+        "cgu_relues_le": "2026-11-10",
+        "clause_restrictive_signalee": false,
+        "preuve_inclusion": {
+          "url": "https://classement-stores.invalid/fr/outil-beta",
+          "date_publication": "2026-12-01",
+          "sha256": "5f0c1b6f0f3e4f4bd1f1d6d1a0f9e2c3b4a5968778695a4b3c2d1e0f9a8b7c6d",
+          "archive_url": "https://web.archive.org/web/20261201/https://classement-stores.invalid/fr/outil-beta"
+        },
+        "par_mode": {
+          "web_activee": {
+            "reponses_manquantes_part": 0.04,
+            "run_incomplet": false
+          },
+          "web_desactivee": {
+            "reponses_manquantes_part": 0.02,
+            "run_incomplet": false
+          }
+        }
+      },
+      {
+        "outil_id": "comparateur-gamma",
+        "famille": "comparateur",
+        "inclus": true
+      }
+    ]
+  },
+  "juges": [
+    {
+      "juge_id": "juge-1",
+      "famille_modele": "famille-x",
+      "modele": "famille-x/modele-juge-1",
+      "version_prompt": "prompts/judge-primaire-1.0.0",
+      "taux_changement_contrefactuel": 0.01,
+      "changements_contrefactuel": {
+        "numerateur": 2,
+        "denominateur": 200
+      },
+      "paires_ecartees_contrefactuel": 0,
+      "kappa_juge_humain": 0.83,
+      "kappa_echantillon_humain": 0.8,
+      "renvois_ecartes_kappa_echantillon": 0,
+      "retire": false
+    },
+    {
+      "juge_id": "juge-2",
+      "famille_modele": "famille-y",
+      "modele": "famille-y/modele-juge-2",
+      "version_prompt": "prompts/judge-primaire-1.0.0",
+      "taux_changement_contrefactuel": 0.02,
+      "changements_contrefactuel": {
+        "numerateur": 4,
+        "denominateur": 200
+      },
+      "paires_ecartees_contrefactuel": 0,
+      "kappa_juge_humain": 0.78,
+      "kappa_echantillon_humain": 0.8,
+      "renvois_ecartes_kappa_echantillon": 0,
+      "retire": false
+    }
+  ],
+  "taux_echantillon_humain": 0.1,
+  "contrefactuel_candidats": {
+    "etat": "termine",
+    "eligibles": 480,
+    "taille_visee": 200,
+    "taille": 200,
+    "sous_effectif": false,
+    "correspondances": {
+      "cand-a": "cand-b",
+      "cand-b": "cand-a"
+    },
+    "cle_graine": [
+      "contrefactuel",
+      "noms_candidats",
+      "sous_ensemble"
+    ],
+    "cle_graine_derangement": [
+      "contrefactuel",
+      "noms_candidats",
+      "derangement"
+    ],
+    "mentions_residuelles": 0
+  },
+  "contrefactuel_outils": {
+    "etat": "indefini",
+    "outils": 2,
+    "eligibles": 0,
+    "taille_visee": 200,
+    "taille": 0,
+    "sous_effectif": true,
+    "correspondances": {
+      "outil-alpha": "outil-beta",
+      "outil-beta": "outil-alpha"
+    },
+    "cle_graine": [
+      "contrefactuel_outil"
+    ],
+    "cle_graine_derangement": [
+      "contrefactuel",
+      "noms_outils",
+      "derangement"
+    ],
+    "mentions_residuelles": 0
+  },
+  "kappa_paire_juges": 0.81,
+  "symetrie": {
+    "statut_global": "vert",
+    "conditions": [
+      {
+        "code": "nombre_questions_par_candidat",
+        "statut": "vert",
+        "mesure": 0,
+        "seuil": 0
+      },
+      {
+        "code": "repartition_gabarits_formulations",
+        "statut": "vert",
+        "mesure": 1,
+        "seuil": 1
+      },
+      {
+        "code": "repartition_themes",
+        "statut": "ecart_tolere",
+        "mesure": 2,
+        "seuil": 0,
+        "detail_par_candidat": [
+          {
+            "candidat_id": "cand-a",
+            "valeur": 0
+          },
+          {
+            "candidat_id": "cand-b",
+            "valeur": 2
+          }
+        ],
+        "commentaire": "Écart imprimé dans le rapport du run : les items disponibles ne permettent pas une répartition identique (§5)."
+      },
+      {
+        "code": "aucun_item_conteste_ou_en_attente",
+        "statut": "vert"
+      },
+      {
+        "code": "aucun_nom_candidat_dans_q_att",
+        "statut": "vert"
+      },
+      {
+        "code": "part_items_a_f_minimale",
+        "statut": "vert",
+        "mesure": 0.23,
+        "seuil": 0.2
+      },
+      {
+        "code": "quota_par_strate_respecte",
+        "statut": "vert",
+        "mesure": 1,
+        "seuil": 1
+      }
+    ]
+  },
+  "reponses": {
+    "prevues": 4824
+  },
+  "tirage": {
+    "chemin": "runs/2026-12-01/tirage.json",
+    "sha256": "b2eb21e020f78c4b491c48455d87fcbaffcb6ef195a93c119d2d91ea3c08abba",
+    "nombre_questions": 402,
+    "part_reprise": 0.8,
+    "part_items_a_f": 0.23
+  },
+  "questions": {
+    "chemin": "runs/2026-12-01/questions.json",
+    "sha256": "3f9a1c7e5b2d4f6a8c0e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a"
+  },
+  "depot": {
+    "doi": "10.5281/zenodo.0000001",
+    "url": "https://zenodo.org/records/0000001",
+    "date": "2026-12-06T09:00:00+01:00",
+    "licence": "ODbL-1.0",
+    "archives": [
+      {
+        "nom": "reponses-brutes-2026-12-01.tar.zst",
+        "contenu": "reponses_brutes",
+        "sha256": "c246566657891dc7282178a368ac5ed6f069d3a35ba2233764291676684dad57",
+        "taille_octets": 412508160,
+        "nombre_entrees": 24120
+      },
+      {
+        "nom": "notations-individuelles-2026-12-01.tar.zst",
+        "contenu": "notations_individuelles",
+        "sha256": "1830348703de0481347d9f47b9b63f9285a1ff331ad963def613be2be05c1b66",
+        "taille_octets": 39845888,
+        "nombre_entrees": 48240
+      }
+    ]
+  },
+  "contestations_posterieures": [
+    {
+      "item_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+      "contestation_id": "PFHW0PWQ9VE2N6738D4VKSE3TM",
+      "date_reception": "2026-12-02T15:20:00+01:00"
+    }
+  ],
+  "indeterminees_echantillon_humain": 0,
+  "non_classees_echantillon_humain": 0,
+  "renvois_attribution_indecidable": 0,
+  "refus_api_echantillon_humain": 0,
+  "accord_humains_echantillon": {
+    "reponses_doublement_notees": 10,
+    "accords": 9,
+    "part": 0.9,
+    "kappa": 0.8
+  },
+  "go_no_go": {
+    "criteres": [
+      {
+        "code": "kappa_juges_humains",
+        "statut": "vert",
+        "valeur": 0.81,
+        "seuil": 0.75
+      },
+      {
+        "code": "test_contrefactuel",
+        "statut": "vert",
+        "valeur": 0.012,
+        "seuil": 0.03
+      },
+      {
+        "code": "aucun_item_conteste_dans_le_tirage",
+        "statut": "vert",
+        "valeur": 0,
+        "seuil": 0
+      },
+      {
+        "code": "tests_symetrie",
+        "statut": "vert",
+        "valeur": "vert",
+        "seuil": "vert"
+      },
+      {
+        "code": "reponses_manquantes",
+        "statut": "vert",
+        "valeur": 0.03,
+        "seuil": 0.2
+      },
+      {
+        "code": "erreurs_graves_revues",
+        "statut": "vert",
+        "valeur": 1,
+        "seuil": 1
+      },
+      {
+        "code": "analyses_preenregistrees_executees",
+        "statut": "vert",
+        "valeur": "oui",
+        "seuil": "oui"
+      }
+    ],
+    "decision": "publie"
+  },
+  "publication": {
+    "date": "2026-12-06T09:00:00+01:00",
+    "doi": "10.5281/zenodo.0000000",
+    "suspension_veille_electorale": false
+  }
+}
