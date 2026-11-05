@@ -14,10 +14,12 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { stringify } from "yaml";
 import { geler } from "../../pipeline/gel/geler.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
-import { choisirPrecedent } from "../../pipeline/gel/precedent.ts";
+import { choisirPrecedent, lireRunsDuDepot } from "../../pipeline/gel/precedent.ts";
 import type { RunDeRuns } from "../../pipeline/gel/precedent.ts";
 import { RemplacementRefuse } from "../../pipeline/gel/remplacement.ts";
 import type { MotifRemplacement } from "../../pipeline/gel/remplacement.ts";
+import { FenetreRefusee, RemplacementIntrouvable } from "../../pipeline/interrogation/fenetre.ts";
+import { lireRunGele } from "../../pipeline/interrogation/run-gele.ts";
 import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { ALPHA, CONFIGURATION_GEL, depotDuJeu, optionsGel, perimetreSaisi, recommiter } from "./fixtures.ts";
@@ -83,6 +85,20 @@ async function depotAvecUnRun(invalide: boolean, statut = "planifie"): Promise<{
   const racine = depotDuJeu(jeuNominal());
   temporaires.push(racine);
   await geler(optionsGel(racine, undefined, { type_run: "mensuel" }));
+  return inscrireLePremier(racine, invalide, statut);
+}
+
+/** D74 (19) : le premier run est un supplémentaire gelé le 1er décembre à 01:00, sa fenêtre le lendemain à 6 h. */
+async function depotAvecUnSupplementaireInvalide(): Promise<{ racine: string; id: string }> {
+  const racine = depotDuJeu(jeuNominal());
+  temporaires.push(racine);
+  writeFileSync(join(racine, "config/gel.json"), `${JSON.stringify({ ...CONFIGURATION_GEL, fenetre_debut: "2026-12-02T06:00:00+01:00" }, null, 2)}\n`, "utf8");
+  recommiter(racine, "fenêtre du supplémentaire");
+  await geler(optionsGel(racine, undefined, { type_run: "supplementaire_debat" }));
+  return inscrireLePremier(racine, true, "planifie");
+}
+
+function inscrireLePremier(racine: string, invalide: boolean, statut: string): { racine: string; id: string } {
   const chemin = join(premierRun(racine), "run.json");
   if (statut !== "planifie") writeFileSync(chemin, `${JSON.stringify({ ...lireJson<Record<string, unknown>>(chemin), statut }, null, 2)}\n`, "utf8");
   if (invalide) invaliderRun(premierRun(racine), MOTIF, GEL_1_MS + 3_600_000);
@@ -91,9 +107,9 @@ async function depotAvecUnRun(invalide: boolean, statut = "planifie"): Promise<{
 }
 
 /** Avance le périmètre et la fenêtre au second gel, et commite. */
-function avancer(racine: string): void {
+function avancer(racine: string, fenetre_debut = FENETRE_2): void {
   writeFileSync(join(racine, "config/perimetre.yaml"), stringify(perimetreSaisi(GEL_2, [ALPHA])), "utf8");
-  writeFileSync(join(racine, "config/gel.json"), `${JSON.stringify({ ...CONFIGURATION_GEL, fenetre_debut: FENETRE_2 }, null, 2)}\n`, "utf8");
+  writeFileSync(join(racine, "config/gel.json"), `${JSON.stringify({ ...CONFIGURATION_GEL, fenetre_debut }, null, 2)}\n`, "utf8");
   recommiter(racine, "second gel");
 }
 
@@ -162,6 +178,39 @@ describe("remplacement, cas 7 : pnpm geler --type-run=reexecution --remplace=<id
   it("remplacement, cas 7 : reexecution sans --remplace ⇒ refus reexecution_sans_remplace, rien écrit", async () => {
     const { racine } = await depotAvecUnRun(true);
     expect(await secondRefuse(racine, { type_run: "reexecution", remplace: undefined })).toBe("reexecution_sans_remplace");
+  });
+});
+
+describe("D74 (19) : la fenêtre d'une réexécution suit la règle du run qu'elle remplace, au gel et à l'interrogation", () => {
+  /** Lendemain à 6 h, heure de Paris, de GEL_2 (2026-12-02 01:00) : le jeudi 3 décembre. */
+  const LENDEMAIN_DU_GEL_2 = "2026-12-03T06:00:00+01:00";
+
+  it("réexécution d'un supplémentaire : gelée avec une fenêtre le lendemain de son gel, rouverte de même par run:dry", async () => {
+    const { racine, id } = await depotAvecUnSupplementaireInvalide();
+    avancer(racine, LENDEMAIN_DU_GEL_2);
+    const sortie = temporaire("banc-gel-remplacement-");
+    await geler(optionsDuSecond(racine, sortie, { type_run: "reexecution", remplace: id }));
+    const run = lireJson<{ fenetre: { debut: string }; run_remplace_id: string }>(join(sortie, DATE_2, "run.json"));
+    expect(run.fenetre.debut).toBe(LENDEMAIN_DU_GEL_2);
+    expect(run.run_remplace_id).toBe(id);
+    const gele = lireRunGele(join(sortie, DATE_2), () => lireRunsDuDepot(join(racine, "runs")));
+    expect(gele.fenetre.debut_ms).toBe(Date.parse(LENDEMAIN_DU_GEL_2));
+    expect(() => lireRunGele(join(sortie, DATE_2), () => [])).toThrow(RemplacementIntrouvable);
+  });
+
+  it("réexécution d'un supplémentaire : le mardi suivant est refusé au gel, rien écrit", async () => {
+    const { racine, id } = await depotAvecUnSupplementaireInvalide();
+    avancer(racine);
+    const sortie = temporaire("banc-gel-remplacement-");
+    await expect(geler(optionsDuSecond(racine, sortie, { type_run: "reexecution", remplace: id }))).rejects.toThrow(FenetreRefusee);
+    expect(arborescence(sortie)).toEqual([]);
+  });
+
+  it("réexécution d'un run régulier : le lendemain du gel, qui n'est pas un mardi, est refusé au gel", async () => {
+    const { racine, id } = await depotAvecUnRun(true);
+    avancer(racine, LENDEMAIN_DU_GEL_2);
+    const sortie = temporaire("banc-gel-remplacement-");
+    await expect(geler(optionsDuSecond(racine, sortie, { type_run: "reexecution", remplace: id }))).rejects.toThrow(/mardi/);
   });
 });
 

@@ -38,6 +38,8 @@ import { analyserArguments, type Arguments } from "./arguments.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
 const PROFILS_RUN_GELE = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-gele/profils-simules.json");
+/** `runs/` du dépôt : la fenêtre d'une réexécution suit la règle du run qu'elle remplace (D74 (19)). */
+const RUNS_DU_DEPOT = resolve(import.meta.dirname, "../runs");
 const OPTIONS: readonly string[] = ["run", "sortie"];
 
 class ArgumentsRunDryRefuses extends Error {
@@ -118,7 +120,7 @@ async function principal(): Promise<void> {
     finirRun(await lancerRunSimule({ sortie: sortieDemandee(sortie), fixtures: FIXTURES }), "");
     return;
   }
-  const resultat = await lancerRunGeleSimule({ repertoire: run, profils: PROFILS_RUN_GELE });
+  const resultat = await lancerRunGeleSimule({ repertoire: run, profils: PROFILS_RUN_GELE, runs: RUNS_DU_DEPOT });
   finirRun(resultat, STATUT_DU_DEMARRAGE[resultat.demarrage]);
 }
 
