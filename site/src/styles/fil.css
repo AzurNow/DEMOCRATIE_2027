@@ -257,4 +257,7 @@
   .fil-voie {
     display: none;
   }
+  .fil-voie * {
+    animation: none;
+  }
 }
