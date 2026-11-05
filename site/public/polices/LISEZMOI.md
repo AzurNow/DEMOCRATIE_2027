@@ -7,13 +7,13 @@ Aucune n'est chargée depuis un service tiers : la page les sert depuis ce dossi
 |---|---|---|---|---|
 | `silkscreen-400.woff2` | Silkscreen, graisse 400, sous-ensemble latin | titres seuls | @fontsource/silkscreen 5.1.1 | `11111c0d26af329a7cd21413d84956a8a0d93f543b14fba47a7d4181a66f5556` |
 | `silkscreen-700.woff2` | Silkscreen, graisse 700, sous-ensemble latin | titres seuls | @fontsource/silkscreen 5.1.1 | `023d7c8fa71ccc0d83dad107fad75b6c9aedd3c1b4717aabbb68fdc39df0e683` |
-| `atkinson-400.woff2` | Atkinson Hyperlegible, graisse 400, sous-ensemble latin | texte courant | @fontsource/atkinson-hyperlegible 5.1.1 | `b09653e3ba9d95e26da5c408979f40451990a4573ce5f96abe6982e2fcb09e6c` |
-| `atkinson-700.woff2` | Atkinson Hyperlegible, graisse 700, sous-ensemble latin | texte courant gras | @fontsource/atkinson-hyperlegible 5.1.1 | `d8e8b1e0e929651439e25e23ade4b9d6cac073f2444aadb8e8b85431726c2036` |
+| `chakra-petch-400.woff2` | Chakra Petch, graisse 400, sous-ensemble latin | texte courant | @fontsource/chakra-petch 5.1.1 | `9a83115d983bb1324c79a41db6d60d85583835c268939115a41025b4d388f3fa` |
+| `chakra-petch-700.woff2` | Chakra Petch, graisse 700, sous-ensemble latin | texte courant gras | @fontsource/chakra-petch 5.1.1 | `04324f621defc72007c4e635cfd12903161b5f8aa1067ad5f619314fc153be56` |
 
 ## Provenance
 
 - Les `.woff2` sont les fichiers `files/<famille>-latin-<graisse>-normal.woff2` du paquet npm
-  `@fontsource/silkscreen@5.1.1` et `@fontsource/atkinson-hyperlegible@5.1.1`, récupérés une fois
+  `@fontsource/silkscreen@5.1.1` et `@fontsource/chakra-petch@5.1.1`, récupérés une fois
   par téléchargement direct (par exemple
   `https://cdn.jsdelivr.net/npm/@fontsource/silkscreen@5.1.1/files/silkscreen-latin-400-normal.woff2`).
   Le paquet n'est pas une dépendance du projet : seuls les fichiers sont copiés ici, sans
@@ -22,9 +22,11 @@ Aucune n'est chargée depuis un service tiers : la page les sert depuis ce dossi
 - Silkscreen : Copyright 2001 The Silkscreen Project Authors
   (https://github.com/googlefonts/silkscreen). Licence : `Silkscreen-OFL.txt`, copiée de
   https://github.com/google/fonts/blob/main/ofl/silkscreen/OFL.txt.
-- Atkinson Hyperlegible : Copyright 2020 Braille Institute of America, Inc. Licence :
-  `AtkinsonHyperlegible-OFL.txt`, copiée de
-  https://github.com/google/fonts/blob/main/ofl/atkinsonhyperlegible/OFL.txt.
+- Chakra Petch : Copyright 2018 The Chakra Petch Project Authors
+  (https://github.com/m4rc1e/Chakra-Petch). Licence : `ChakraPetch-OFL.txt`, copiée de
+  https://github.com/google/fonts/blob/main/ofl/chakrapetch/OFL.txt. Choisie le 2026-11-05 à la
+  place d'Atkinson Hyperlegible, jugée trop ronde à côté du pixel art : ses coins biseautés
+  s'accordent aux titres sans nuire à la lecture.
 
 ## Vérifier
 
@@ -33,5 +35,5 @@ shasum -a 256 site/public/polices/*.woff2
 ```
 
 Silkscreen est réservée aux titres (`--police-titre`) : c'est une police d'affichage, illisible en
-texte courant. Le texte courant utilise Atkinson Hyperlegible (`--police-texte`), avec une pile de
+texte courant. Le texte courant utilise Chakra Petch (`--police-texte`), avec une pile de
 repli système si le fichier manque.

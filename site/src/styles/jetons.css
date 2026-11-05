@@ -16,7 +16,7 @@
 :root {
   /* Mesures et polices (identiques dans les deux thèmes). */
   --police-titre: "Silkscreen", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --police-texte: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --police-texte: "Chakra Petch", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --gouttiere: 1rem;
   --largeur-texte: 44rem;
   --largeur-page: 72rem;
