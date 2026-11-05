@@ -1,0 +1,17 @@
+{
+  "id": "2QS87RK3P6F871Q3STE9KYW7M1",
+  "version": 1,
+  "empreinte": "7229932e25f83f6eae83a9cc510c83612ad6a8ff17f79dd3f355def341eb315b",
+  "libelle": "mesure simule-sante",
+  "theme": "sante",
+  "formulation_canonique": "mesure simule-sante",
+  "fictive": false,
+  "historique": [
+    {
+      "date": "2026-09-03T10:00:00+02:00",
+      "changement": "création",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version_resultante": 1
+    }
+  ]
+}

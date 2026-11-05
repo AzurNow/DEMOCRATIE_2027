@@ -16,7 +16,7 @@ import { exigerFenetreApresDateGel, exigerGelApresDateGel, exigerGelAvantFenetre
 import { CONFIGURATION_GEL, depotDuJeu, GEL, optionsGel } from "./fixtures.ts";
 import type { Jeu } from "./fixtures.ts";
 import { jeuNominal } from "./jeux.ts";
-import { relaisDeFixture, waybackDeFixture } from "./reseau-fixture.ts";
+import { relaisSimules, waybackSimulee } from "../../pipeline/gel/reseau-simule.ts";
 
 const DATE = "2026-12-01";
 const GEL_MS = Date.parse(GEL);
@@ -70,8 +70,8 @@ async function refusDuGel(options: OptionsGel): Promise<Error> {
 function gelA(date_gel: string, maintenant: number) {
   const racine = depot(jeuNominal(date_gel));
   const sortie = temporaire("banc-gel-instants-");
-  const relais = relaisDeFixture();
-  const wayback = waybackDeFixture();
+  const relais = relaisSimules();
+  const wayback = waybackSimulee();
   const options = optionsGel(racine, sortie, { relais: relais.lire, wayback: wayback.lire, maintenant: () => maintenant });
   return { sortie, relais, wayback, options };
 }

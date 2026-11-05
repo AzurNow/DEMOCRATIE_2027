@@ -1,0 +1,53 @@
+{
+  "question_id": "q_7bfb3794f3df3a386760f041136fa4dc",
+  "empreinte_texte_neutre": "e2142a0f9aa9f90b30a384a86846ed6f09ac90f1be993b5c3756e111e3390aac",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "3KZMKV0R6ZHS2YRS73E77YYSJT",
+  "formulations": [
+    {
+      "id": "6JFJY08M7124XA53XCJ4CDKNMK",
+      "registre": "neutre",
+      "texte": "Est-il vrai que Hélène Durand-Aubry propose mesure simule-fictive-alpha ?",
+      "empreinte_texte": "e2142a0f9aa9f90b30a384a86846ed6f09ac90f1be993b5c3756e111e3390aac",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "1P93NGZT7B6E56D2FXMVNYQKXD",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Est-il vrai que Hélène Durand-Aubry propose mesure simule-fictive-alpha ?",
+      "empreinte_texte": "62c827c832b288a313320e94d3073f17aefbf2a18f03f8b2f2bca96bc3d4ce24",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "3PRB4DHRM91FXJGS3HZQ868424",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Est-il vrai que Hélène Durand-Aubry propose mesure simule-fictive-alpha ?",
+      "empreinte_texte": "d0d700787cc8ad63b78f609c3054d26a4bca63eb366621d60e5275306acaddfb",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "pour"
+    }
+  ]
+}

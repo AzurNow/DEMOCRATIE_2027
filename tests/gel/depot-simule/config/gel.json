@@ -1,0 +1,25 @@
+{
+  "$commentaire": "Paramètres du gel du DÉPÔT SIMULÉ de pnpm geler --simule (décision D80) : jamais config/gel.json. Juges simulés, ceux de tests/notation/fixtures/notation-dry/notation-simulee.json, que pnpm notation:dry --run reconnaît à l'identité près (chaine.ts:verifierJuges) ; alias aveugles fictifs.",
+  "version_protocole": "0.34",
+  "fenetre_debut": "2026-12-01T06:00:00+01:00",
+  "juges": [
+    {
+      "juge_id": "juge-simule-a",
+      "famille_modele": "famille-simulee-a",
+      "modele": "simule/juge-a",
+      "version_prompt": "simule://juge-simule@1.0.0",
+      "outils_de_son_editeur": []
+    },
+    {
+      "juge_id": "juge-simule-b",
+      "famille_modele": "famille-simulee-b",
+      "modele": "simule/juge-b",
+      "version_prompt": "simule://juge-simule@1.0.0",
+      "outils_de_son_editeur": []
+    }
+  ],
+  "alias_aveugles": {
+    "outil-alpha": "O07",
+    "outil-beta": "O12"
+  }
+}

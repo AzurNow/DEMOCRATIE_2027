@@ -1,0 +1,53 @@
+{
+  "question_id": "q_3e6631e9c81f3dab4d5dbcb2ebf56c27",
+  "empreinte_texte_neutre": "863db730766bc8204398f9e7f67ebbff860cf368562f89526d3f05e600f37176",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "6QH5GGTH17W4YN9AZCCKBNSAXD",
+  "formulations": [
+    {
+      "id": "5X3Y504ZPFBP4T3956H17SSVC7",
+      "registre": "neutre",
+      "texte": "Hélène Durand-Aubry s'oppose-t-il ou elle à mesure simule-fisc-1 ?",
+      "empreinte_texte": "863db730766bc8204398f9e7f67ebbff860cf368562f89526d3f05e600f37176",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "79A64XQ6226T2MQXBGC2PS9SKX",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Hélène Durand-Aubry s'oppose-t-il ou elle à mesure simule-fisc-1 ?",
+      "empreinte_texte": "56a16bf3dcdc14e5625cf38b97f3ad0c80d946252a1d15db3bbbc282eef50bc7",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "1QSTD69F4ERSTF6RHGKPKN2YFY",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Hélène Durand-Aubry s'oppose-t-il ou elle à mesure simule-fisc-1 ?",
+      "empreinte_texte": "7a2fb7a0c037453d068ecd6ec80ce78555fff7399b5d0026cb34a3a3d20199a1",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "contre"
+    }
+  ]
+}

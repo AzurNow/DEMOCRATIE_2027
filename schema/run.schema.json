@@ -74,6 +74,10 @@
       ],
       "description": "§6 : si un incident technique invalide un run, le run entier est réexécuté et LES DEUX sont publiés, le premier marqué invalide avec la raison. §12 : un run qui rate un critère est publié en intégralité avec la mention provisoire, jamais retenu en privé."
     },
+    "simule": {
+      "const": true,
+      "description": "D80 : présent, et alors vrai, seulement dans le run.json d'un gel de `pnpm geler --simule` : dépôt de fixture (tests/gel/depot-simule/), réseau simulé (pipeline/gel/reseau-simule.ts : relais drand et Wayback Machine rejoués en mémoire, signature de balise fausse), horloge figée. Absent dans tout gel réel. Un run simulé n'est jamais un run : jamais sous runs/, jamais publié (allOf ci-dessous) ; pnpm notation:dry --run n'accepte que lui, et pnpm analyze n'en lit les items que dans le dépôt simulé désigné (--depot-des-items)."
+    },
     "invalidation": {
       "type": "object",
       "additionalProperties": false,
@@ -2038,6 +2042,38 @@
     }
   },
   "allOf": [
+    {
+      "$comment": "D80 : un run simulé n'est jamais publié. Il reste planifie ou en_cours, et ne déclare ni publication ni dépôt Zenodo.",
+      "if": {
+        "required": [
+          "simule"
+        ]
+      },
+      "then": {
+        "properties": {
+          "statut": {
+            "enum": [
+              "planifie",
+              "en_cours"
+            ]
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "publication"
+              ]
+            },
+            {
+              "required": [
+                "depot"
+              ]
+            }
+          ]
+        }
+      }
+    },
     {
       "$comment": "D51 (2) : un run invalide porte son invalidation ; un run planifie ou en_cours peut la porter, enregistrée dès l'incident, le statut inchangé jusqu'au dépôt (§12).",
       "if": {

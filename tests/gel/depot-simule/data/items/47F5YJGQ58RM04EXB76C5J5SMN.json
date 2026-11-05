@@ -1,0 +1,77 @@
+{
+  "id": "47F5YJGQ58RM04EXB76C5J5SMN",
+  "version": 1,
+  "candidat_id": "demo-beta",
+  "libelle_lisible": "Candidat demo-beta",
+  "mesure_id": "4WJZY01GCBX91FSFQFZ0CWMZW1",
+  "mesure_version": 1,
+  "statut_validation": "verifie",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [
+    {
+      "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-001",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a2",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-001",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    }
+  ],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-03T10:00:00+02:00",
+      "changement": "création",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version_resultante": 1
+    },
+    {
+      "date": "2026-09-21T09:00:00+02:00",
+      "changement": "promotion vers data/ : verifie",
+      "motif": "lot lot-001, deux décisions concordantes",
+      "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "version_resultante": 1
+    }
+  ],
+  "type": "P",
+  "assertion": {
+    "position": "contre",
+    "paraphrase": "Paraphrase de mesure simule-retr-1.",
+    "citation_verbatim": "Citation fictive portant sur mesure simule-retr-1.",
+    "source": {
+      "tier": "T1",
+      "url": "https://demo.invalid/programme.pdf",
+      "type_document": "programme_pdf",
+      "format": "pdf",
+      "page": 14,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "texte_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "archive_url": "https://archive.invalid/programme.pdf",
+      "date_source": "2026-09-01",
+      "date_collecte": "2026-09-03T09:12:00+02:00",
+      "chemin_local": "validation/fixtures/archives/programme.pdf",
+      "publication": "publique"
+    }
+  },
+  "empreinte": "1cb1a1e72762fce3344c76b4e8ea7ee4193fd2a41e58ee0dbcc8ae1ec8110e06"
+}

@@ -1,0 +1,129 @@
+# Périmètre du DÉPÔT SIMULÉ de pnpm geler --simule (décision D80) : jamais config/perimetre.yaml.
+# Candidats, outils, sondages et URL ouvertement fictifs (demo-*, *.invalid). Engendré une fois par
+# les fabriques des tests du gel (tests/gel/fixtures.ts:poserJeu), puis outil-beta ajouté à la main
+# pour que le test contrefactuel d'outil (§7) ait deux assistants.
+version: 0.2.0-simule
+date_gel: 2026-12-01T01:00:00+01:00
+regime_inclusion: avant_liste_officielle
+liste_officielle: null
+themes:
+  - fiscalite_pouvoir_achat
+  - retraites
+  - travail_emploi
+  - sante
+  - education
+  - securite_justice
+  - immigration
+  - ecologie_energie
+  - institutions_democratie
+  - europe_defense_international
+tirage:
+  questions_par_strate: 1
+  questions_attribution_par_theme: 1
+candidats:
+  - candidat_id: demo-alpha
+    libelle: Hélène Durand-Aubry
+    nom: Durand-Aubry
+    statut_au_gel: actif
+    interroge: true
+    declaration_candidature:
+      url: https://demo-alpha.invalid/declaration
+      date: 2026-06-02
+      par: interesse
+      sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      archive_url: https://web.archive.invalid/demo-alpha
+    preuves_inclusion:
+      - institut: Institut x
+        date_publication: 2026-10-05
+        url: https://institut-x.invalid/vague
+        sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        archive_url: https://web.archive.invalid/x
+        notice_institut:
+          url: https://commission-sondages.invalid/notices/x
+          date_publication: 2026-06-15
+          sha256: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+          archive_url: https://web.archive.invalid/notice-x
+      - institut: Institut y
+        date_publication: 2026-11-01
+        url: https://institut-y.invalid/vague
+        sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        archive_url: https://web.archive.invalid/y
+        notice_institut:
+          url: https://commission-sondages.invalid/notices/y
+          date_publication: 2026-06-15
+          sha256: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+          archive_url: https://web.archive.invalid/notice-y
+    contact_notification: null
+  - candidat_id: demo-beta
+    libelle: Basile Fictif
+    nom: Fictif
+    statut_au_gel: actif
+    interroge: true
+    declaration_candidature:
+      url: https://demo-beta.invalid/declaration
+      date: 2026-06-02
+      par: interesse
+      sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      archive_url: https://web.archive.invalid/demo-beta
+    preuves_inclusion:
+      - institut: Institut x
+        date_publication: 2026-10-05
+        url: https://institut-x.invalid/vague
+        sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        archive_url: https://web.archive.invalid/x
+        notice_institut:
+          url: https://commission-sondages.invalid/notices/x
+          date_publication: 2026-06-15
+          sha256: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+          archive_url: https://web.archive.invalid/notice-x
+      - institut: Institut y
+        date_publication: 2026-11-01
+        url: https://institut-y.invalid/vague
+        sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        archive_url: https://web.archive.invalid/y
+        notice_institut:
+          url: https://commission-sondages.invalid/notices/y
+          date_publication: 2026-06-15
+          sha256: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+          archive_url: https://web.archive.invalid/notice-y
+    contact_notification: null
+outils:
+  - outil_id: outil-alpha
+    libelle: Outil Alpha
+    editeur: Éditeur Alpha
+    famille: assistant
+    inclus: true
+    modele_demande: modele-grand-public
+    modes:
+      - web_activee
+      - web_desactivee
+    mode_de_tete: web_activee
+    cgu_relues_le: 2026-11-10
+    clause_restrictive_signalee: false
+    preuve_inclusion:
+      url: https://classement-stores.invalid/fr
+      date_publication: 2026-11-19
+      sha256: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      archive_url: https://web.archive.invalid/stores
+    sdk:
+      paquet: sdk-alpha
+      version: 1.2.3
+  - outil_id: outil-beta
+    libelle: Outil Beta
+    editeur: Éditeur Beta
+    famille: assistant
+    inclus: true
+    modele_demande: modele-grand-public
+    modes:
+      - web_desactivee
+    mode_de_tete: web_desactivee
+    cgu_relues_le: 2026-11-10
+    clause_restrictive_signalee: false
+    preuve_inclusion:
+      url: https://classement-stores.invalid/fr
+      date_publication: 2026-11-19
+      sha256: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      archive_url: https://web.archive.invalid/stores
+    sdk:
+      paquet: sdk-beta
+      version: 1.0.0

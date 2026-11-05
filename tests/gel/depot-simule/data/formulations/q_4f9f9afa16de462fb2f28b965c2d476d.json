@@ -1,0 +1,53 @@
+{
+  "question_id": "q_4f9f9afa16de462fb2f28b965c2d476d",
+  "empreinte_texte_neutre": "bf92c889ec42127a5703d1d73d469cf60009be3f39373383bfd283f34d7fe7b2",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "3DNQW0K4BQCD1X3P6F07CMP19C",
+  "formulations": [
+    {
+      "id": "3F74GSVEANMCTJEM2Z5PSAJNSG",
+      "registre": "neutre",
+      "texte": "Hélène Durand-Aubry propose-t-il ou elle mesure simule-fisc-0 ?",
+      "empreinte_texte": "bf92c889ec42127a5703d1d73d469cf60009be3f39373383bfd283f34d7fe7b2",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "3460SEG0F1S9VZKE8Z02GR7S2A",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Hélène Durand-Aubry propose-t-il ou elle mesure simule-fisc-0 ?",
+      "empreinte_texte": "79aad383116cdb6fa5ccf4ada760cf94f6a8cd3f01eba62a0b1e57c23ce5c359",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "70A9DVWACSKH2JNMXT703N3T3Y",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Hélène Durand-Aubry propose-t-il ou elle mesure simule-fisc-0 ?",
+      "empreinte_texte": "dbfbba931a1b9c3975682efdfb8778cd9c3a3b5f34f79cbc277306037b8de7b8",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "pour"
+    }
+  ]
+}

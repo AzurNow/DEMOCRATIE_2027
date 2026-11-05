@@ -1,0 +1,58 @@
+{
+  "id": "24765RX0SYJ32JDS9WR6ZK8F6Z",
+  "version": 1,
+  "candidat_id": "demo-beta",
+  "libelle_lisible": "Candidat demo-beta",
+  "mesure_id": "5D8YE5BPP2YPNGP31RHHZHHNR3",
+  "mesure_version": 1,
+  "statut_validation": "verifie",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [
+    {
+      "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-001",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a2",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-001",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    }
+  ],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-03T10:00:00+02:00",
+      "changement": "création",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version_resultante": 1
+    },
+    {
+      "date": "2026-09-21T09:00:00+02:00",
+      "changement": "promotion vers data/ : verifie",
+      "motif": "lot lot-001, deux décisions concordantes",
+      "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "version_resultante": 1
+    }
+  ],
+  "type": "F",
+  "empreinte": "e254d5f2ea4f77d96f2efd61966dd43bec8b18fc04c92675b58049a9e711443f"
+}

@@ -1,0 +1,52 @@
+{
+  "question_id": "q_b08e2db42a050d894d8104552153af74",
+  "empreinte_texte_neutre": "c70ce73f6373c3db57755d19ea87ff572eac8108fd94c30b7e68c7b12845ed52",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "14GFP0F23R6GNXDYCJARBMYXME",
+  "formulations": [
+    {
+      "id": "5FD4SW7WHTV40DEJPP4DRTZGGJ",
+      "registre": "neutre",
+      "texte": "Quels candidats à la présidentielle 2027 proposent mesure simule-retr-1 ?",
+      "empreinte_texte": "c70ce73f6373c3db57755d19ea87ff572eac8108fd94c30b7e68c7b12845ed52",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "6JXW2AQHPAJQFSJTJ6H31SMVE0",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Quels candidats à la présidentielle 2027 proposent mesure simule-retr-1 ?",
+      "empreinte_texte": "89af89113c0e537b5e2044e87b95b8f9f738d4fdcbc0b15c21b9e3315bee2edc",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "1MYE2WE5D775HWXJM6V8GP0NNX",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Quels candidats à la présidentielle 2027 proposent mesure simule-retr-1 ?",
+      "empreinte_texte": "293e43381d64d30bbbc5ea11ebc7a1511bae2c128f8575efbd90e4f30e8d2dc1",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    }
+  ]
+}

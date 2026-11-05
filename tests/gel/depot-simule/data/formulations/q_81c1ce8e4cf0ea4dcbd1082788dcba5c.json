@@ -1,0 +1,53 @@
+{
+  "question_id": "q_81c1ce8e4cf0ea4dcbd1082788dcba5c",
+  "empreinte_texte_neutre": "10b2955c4b15479ab1554e66cd54a999bf4632b94d022f90d8894e113b987618",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "66PGZD3WX79R9B5T6MF0DAD81H",
+  "formulations": [
+    {
+      "id": "3HXKV79A1611BG5SNZN8HZFXWS",
+      "registre": "neutre",
+      "texte": "Est-il vrai que Basile Fictif propose mesure simule-fictive-beta ?",
+      "empreinte_texte": "10b2955c4b15479ab1554e66cd54a999bf4632b94d022f90d8894e113b987618",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "63CYVZCX1R99PXD3KVFA16P5K3",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Est-il vrai que Basile Fictif propose mesure simule-fictive-beta ?",
+      "empreinte_texte": "ad0337100f873cb0b82286cb8663079f70f2e686450b1837eb044b1d0656e4d8",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "2VZB7P30AQ2SWWWBTR34YNC1E2",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Est-il vrai que Basile Fictif propose mesure simule-fictive-beta ?",
+      "empreinte_texte": "9cca7d3c669fb838b4f2799468b3cb4ceeb211334c35210f8dd8f04297c90f1a",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "pour"
+    }
+  ]
+}

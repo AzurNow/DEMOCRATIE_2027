@@ -36,20 +36,35 @@
  * `--remplace` (D51 (3)) : l'`id` (ULID) du run invalidé que remplace une réexécution, inscrit dans
  * `run_remplace_id`. Exigé avec `--type-run=reexecution`, refusé avec tout autre type ; le run doit
  * être sous `runs/` et porter une invalidation (`pnpm run:invalider`). Il n'est jamais réécrit.
+ *
+ *   pnpm geler --simule --type-run=<type> --sortie=<répertoire hors de tout dépôt Git>
+ *
+ * `--simule` (décision D80, `pipeline/gel/gel-simule.ts`) : le gel de répétition, sans clé ni réseau.
+ * Pose sous `<sortie>/depot-simule/` un dépôt Git jetable, copié du jeu fictif de
+ * `tests/gel/depot-simule/`, et le gèle sous `<sortie>/<date>/` avec les relais drand et la Wayback
+ * Machine simulés (`pipeline/gel/reseau-simule.ts`) et l'horloge figée de `tests/gel/gel-simule.json`.
+ * Aucun appel réseau ; du projet, seul le code est lu. `run.json` porte `simule: true`. Refusés avec
+ * `--simule`, code 1 : `--engagement` (l'engagement est la capture simulée du commit du dépôt simulé),
+ * une `--sortie` absente, sous `runs/` ou dans un dépôt Git. La suite de la chaîne : `runs/README.md`,
+ * « De bout en bout en mode simulé ».
  */
 
 import { resolve } from "node:path";
-import { analyserArguments, obligatoire } from "./arguments.ts";
+import { analyserArguments, drapeau, obligatoire, type Arguments } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 import { validerFragment } from "./schemas/valider.ts";
 import { geler, texteItemsAContester } from "../pipeline/gel/geler.ts";
 import type { ResultatGel } from "../pipeline/gel/geler.ts";
 import { ecrireExclusif } from "../pipeline/gel/ecriture.ts";
+import { gelerSimule, lireParametresGelSimule } from "../pipeline/gel/gel-simule.ts";
 import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../pipeline/gel/reseau.ts";
 import { MOTIFS_EXCLUSION } from "../pipeline/questions/types.ts";
 
 const RACINE = resolve(import.meta.dirname, "..");
-const OPTIONS: readonly string[] = ["type-run", "remplace", "engagement", "sortie"];
+const OPTIONS: readonly string[] = ["type-run", "remplace", "engagement", "sortie", "simule"];
+/** D80 : le jeu fictif et les paramètres figés du gel simulé (`pipeline/gel/gel-simule.ts`). */
+const DEPOT_SIMULE = resolve(RACINE, "tests/gel/depot-simule");
+const PARAMETRES_SIMULES = resolve(RACINE, "tests/gel/gel-simule.json");
 
 function imprimer(resultat: ResultatGel): void {
   const exclusions = MOTIFS_EXCLUSION.map((motif) => [motif, resultat.tirage.exclusions.filter((e) => e.motif === motif).length] as const)
@@ -66,16 +81,52 @@ function imprimer(resultat: ResultatGel): void {
   );
 }
 
-async function principal(): Promise<void> {
-  const table = analyserArguments(process.argv.slice(2), OPTIONS);
-  const type_run = validerFragment<string>(
+function typeRun(table: Arguments): string {
+  return validerFragment<string>(
     "run",
     "#/properties/type_run",
     obligatoire(table, "type-run", "le type du run (run.schema.json#/properties/type_run), sans valeur par défaut"),
     "--type-run",
   );
-  const remplace_brut = table.get("remplace");
-  const remplace = remplace_brut === undefined ? undefined : validerFragment<string>("run", "#/properties/run_remplace_id", remplace_brut, "--remplace");
+}
+
+function remplaceDe(table: Arguments): string | undefined {
+  const brut = table.get("remplace");
+  return brut === undefined ? undefined : validerFragment<string>("run", "#/properties/run_remplace_id", brut, "--remplace");
+}
+
+/** D80 : le gel simulé ; engagement, réseau et horloge sont ceux de la simulation, jamais de la ligne de commande. */
+async function principalSimule(table: Arguments): Promise<void> {
+  if (table.has("engagement")) {
+    throw new Error("--engagement est refusé avec --simule : l'engagement d'un gel simulé est la capture simulée du commit de son dépôt simulé.");
+  }
+  const resultat = await gelerSimule({
+    sortie: table.get("sortie"),
+    type_run: typeRun(table),
+    remplace: remplaceDe(table),
+    source: DEPOT_SIMULE,
+    parametres: lireParametresGelSimule(PARAMETRES_SIMULES),
+    ecrire: ecrireExclusif,
+  });
+  process.stdout.write(`GEL SIMULÉ (run.json porte simule: true ; aucun appel réseau) — dépôt simulé ${resultat.depot}\n`);
+  imprimer(resultat);
+}
+
+/** `--simule` est un drapeau : une valeur (`--simule=1`) est refusée, jamais lue comme un gel réel. */
+function demandeSimulee(table: Arguments): boolean {
+  if (!table.has("simule")) return false;
+  if (!drapeau(table, "simule")) throw new Error("--simule ne prend pas de valeur (--simule seul).");
+  return true;
+}
+
+async function principal(): Promise<void> {
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
+  if (demandeSimulee(table)) {
+    await principalSimule(table);
+    return;
+  }
+  const type_run = typeRun(table);
+  const remplace = remplaceDe(table);
   const engagement = obligatoire(
     table,
     "engagement",
@@ -92,6 +143,7 @@ async function principal(): Promise<void> {
     wayback: lire,
     maintenant: () => Date.now(),
     ecrire: ecrireExclusif,
+    simule: false,
   });
   imprimer(resultat);
 }

@@ -85,6 +85,12 @@ export interface OptionsGel {
    */
   readonly maintenant: () => number;
   readonly ecrire: EcrireFichier;
+  /**
+   * D80 : vrai pour le seul gel de `pnpm geler --simule` (`gel-simule.ts:gelerSimule`), qui fournit
+   * le dépôt simulé, le réseau simulé et l'horloge figée ; `run.json` porte alors `simule: true`.
+   * Faux pour un gel réel. Jamais de valeur par défaut : chaque appelant le dit.
+   */
+  readonly simule: boolean;
 }
 
 export interface ResultatGel {
@@ -224,7 +230,7 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   if (verdict.bloque || estUnRefus(verdict.symetrie)) throw new GelBloque(verdict);
 
   const symetrie = verdict.symetrie;
-  const meta = { type_run: options.type_run, commit, symetrie, protocole_sha256, balise, engagement, run_remplace_id, application_testee };
+  const meta = { type_run: options.type_run, commit, symetrie, protocole_sha256, balise, engagement, run_remplace_id, application_testee, simule: options.simule };
   const repertoire = ecrireToutOuRien(destination, fichiersDuGel(prepare, entrees, tire, meta), options.ecrire);
   return {
     repertoire,

@@ -4,7 +4,7 @@
  * temporaire ; `runs/` du projet est photographié avant et après, et ne doit pas bouger (cas 3).
  *
  * Lot gel, PR 2a (D44, D45 (1), D46) : la balise et l'engagement au bout de la chaîne, nommés
- * « balise, cas n » ; le réseau est rejoué par `reseau-fixture.ts`, jamais appelé.
+ * « balise, cas n » ; le réseau est rejoué par `pipeline/gel/reseau-simule.ts`, jamais appelé.
  */
 
 import { spawnSync } from "node:child_process";
@@ -56,7 +56,7 @@ import {
 } from "./fixtures.ts";
 import type { Jeu } from "./fixtures.ts";
 import { ITEM_FIN_AU_GEL, ITEM_P1, jeuEcartTolere, jeuNominal, jeuRouge, MESURE_FISC_1 } from "./jeux.ts";
-import { capturePresente, octetsJson, relaisDeFixture, reponseJson, reponseTour, waybackDeFixture } from "./reseau-fixture.ts";
+import { capturePresente, octetsJson, relaisSimules, reponseJson, reponseTour, waybackSimulee } from "../../pipeline/gel/reseau-simule.ts";
 
 const DATE = "2026-12-01";
 const RUNS_DU_PROJET = join(RACINE_PROJET, "runs");
@@ -793,14 +793,14 @@ async function refusSansEcriture(surcharges: (racine: string) => Partial<Options
 describe("balise, cas 3, 4 et 7 : refus de la balise, rien écrit", () => {
   it("balise, cas 3 : les deux relais diffèrent par la signature ⇒ refus, rien écrit", async () => {
     const autre = reponseTour(TOUR_DU_GEL + 1);
-    const relais = relaisDeFixture((url) => (url === urlTour(RELAIS[1] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson({ ...autre, round: TOUR_DU_GEL }) : undefined));
+    const relais = relaisSimules((url) => (url === urlTour(RELAIS[1] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson({ ...autre, round: TOUR_DU_GEL }) : undefined));
     const erreur = await refusSansEcriture(() => ({ relais: relais.lire }));
     expect(erreur).toBeInstanceOf(BaliseRefusee);
     expect((erreur as BaliseRefusee).motif).toBe("relais_en_desaccord");
   });
 
   it("balise, cas 3 : les deux relais diffèrent par le tour ⇒ refus, rien écrit", async () => {
-    const relais = relaisDeFixture((url) =>
+    const relais = relaisSimules((url) =>
       url === urlTour(RELAIS[0] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson(reponseTour(TOUR_DU_GEL - 1)) : undefined,
     );
     const erreur = await refusSansEcriture(() => ({ relais: relais.lire }));
@@ -809,7 +809,7 @@ describe("balise, cas 3, 4 et 7 : refus de la balise, rien écrit", () => {
 
   it("balise, cas 4 : un relais injoignable ⇒ refus, rien écrit, l'autre n'est pas retenu seul", async () => {
     const second = RELAIS[1] as (typeof RELAIS)[number];
-    const relais = relaisDeFixture((url) => (url.startsWith(second.base) ? new Error("ENOTFOUND (simulé)") : undefined));
+    const relais = relaisSimules((url) => (url.startsWith(second.base) ? new Error("ENOTFOUND (simulé)") : undefined));
     const erreur = await refusSansEcriture(() => ({ relais: relais.lire }));
     expect(erreur).toBeInstanceOf(BaliseRefusee);
     expect((erreur as BaliseRefusee).motif).toBe("injoignable");
@@ -819,20 +819,20 @@ describe("balise, cas 3, 4 et 7 : refus de la balise, rien écrit", () => {
   });
 
   it("balise, cas 4 : un relais en erreur HTTP ⇒ refus, rien écrit", async () => {
-    const relais = relaisDeFixture((url) => (url === urlTour(RELAIS[1] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson({}, 500) : undefined));
+    const relais = relaisSimules((url) => (url === urlTour(RELAIS[1] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson({}, 500) : undefined));
     const erreur = await refusSansEcriture(() => ({ relais: relais.lire }));
     expect((erreur as BaliseRefusee).motif).toBe("statut_http");
   });
 
   it("balise, cas 5 : randomness d'un relais ≠ SHA-256(signature) ⇒ refus, rien écrit", async () => {
     const faux = { ...reponseTour(TOUR_DU_GEL), randomness: "f".repeat(64) };
-    const relais = relaisDeFixture((url) => (url === urlTour(RELAIS[0] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson(faux) : undefined));
+    const relais = relaisSimules((url) => (url === urlTour(RELAIS[0] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson(faux) : undefined));
     expect(((await refusSansEcriture(() => ({ relais: relais.lire }))) as BaliseRefusee).motif).toBe("alea_faux");
   });
 
   it("balise, cas 7 : date_gel dans le futur ⇒ refus avant tout appel réseau, aucun port appelé", async () => {
-    const relais = relaisDeFixture();
-    const wayback = waybackDeFixture();
+    const relais = relaisSimules();
+    const wayback = waybackSimulee();
     const erreur = await refusSansEcriture(() => ({
       relais: relais.lire,
       wayback: wayback.lire,
@@ -856,8 +856,8 @@ describe("balise, cas 3, 4 et 7 : refus de la balise, rien écrit", () => {
 
 describe("balise, cas 8 : engagement archivé, rien écrit", () => {
   it("balise, cas 8 : engagement absent ⇒ refus nommant --engagement, aucun appel réseau", async () => {
-    const relais = relaisDeFixture();
-    const wayback = waybackDeFixture();
+    const relais = relaisSimules();
+    const wayback = waybackSimulee();
     const erreur = await refusSansEcriture(() => ({ engagement: undefined, relais: relais.lire, wayback: wayback.lire }));
     expect(erreur).toBeInstanceOf(EngagementRefuse);
     expect((erreur as EngagementRefuse).motif).toBe("absent");
@@ -866,7 +866,7 @@ describe("balise, cas 8 : engagement archivé, rien écrit", () => {
   });
 
   it("balise, cas 8 : capture d'un autre commit que HEAD ⇒ refus, la balise n'est pas lue", async () => {
-    const relais = relaisDeFixture();
+    const relais = relaisSimules();
     const erreur = await refusSansEcriture(() => ({ engagement: engagementDe("a".repeat(40)), relais: relais.lire }));
     expect((erreur as EngagementRefuse).motif).toBe("autre_commit");
     expect(relais.appels).toEqual([]);
@@ -883,8 +883,8 @@ describe("balise, cas 8 : engagement archivé, rien écrit", () => {
   });
 
   it("balise, cas 8 : Wayback ne sert pas la capture ⇒ refus, la balise n'est pas lue", async () => {
-    const relais = relaisDeFixture();
-    const wayback = waybackDeFixture(() => reponseJson({ archived_snapshots: {} }));
+    const relais = relaisSimules();
+    const wayback = waybackSimulee(() => reponseJson({ archived_snapshots: {} }));
     const erreur = await refusSansEcriture(() => ({ relais: relais.lire, wayback: wayback.lire }));
     expect((erreur as EngagementRefuse).motif).toBe("non_servie");
     expect(wayback.appels).toHaveLength(1);
@@ -957,7 +957,7 @@ describe("D47 (4) : délai de 30 s par appel réseau", () => {
   });
 
   it("la Wayback Machine qui ne répond pas dans le délai ⇒ refus nommé (URL), rien écrit, la balise n'est pas lue", async () => {
-    const relais = relaisDeFixture();
+    const relais = relaisSimules();
     const erreur = await refusSansEcriture(() => ({ wayback: lectureParFetch(fetchMuet, 5), relais: relais.lire }));
     expect(erreur).toBeInstanceOf(EngagementRefuse);
     expect((erreur as EngagementRefuse).motif).toBe("delai_depasse");

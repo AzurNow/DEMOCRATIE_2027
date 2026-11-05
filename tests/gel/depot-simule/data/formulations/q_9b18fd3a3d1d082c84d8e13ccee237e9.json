@@ -1,0 +1,52 @@
+{
+  "question_id": "q_9b18fd3a3d1d082c84d8e13ccee237e9",
+  "empreinte_texte_neutre": "a3ced264a8ae2420ef406252b04448803ebbee5bab37505c3df480715a7366a2",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "6J0RWVKHWRSF84FF5M3SVF0W7V",
+  "formulations": [
+    {
+      "id": "30XT3XVV78V2RHN2JTFC6KQT6T",
+      "registre": "neutre",
+      "texte": "Basile Fictif propose-t-il ou elle mesure simule-sante ?",
+      "empreinte_texte": "a3ced264a8ae2420ef406252b04448803ebbee5bab37505c3df480715a7366a2",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "2DJAYDPWCFN0SWCHVJSX2RV0X4",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Basile Fictif propose-t-il ou elle mesure simule-sante ?",
+      "empreinte_texte": "39cfd853dee0a13786113668c71c51423257df8a82ba571e73d8c5e41e48926d",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "7P8WR4M2EJ8VC18P52WZ8N7SRK",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Basile Fictif propose-t-il ou elle mesure simule-sante ?",
+      "empreinte_texte": "3a1c145a7fedb5d55eb2c80cc92af3bed02cd112ada2b870542efd7bdd89f954",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    }
+  ]
+}

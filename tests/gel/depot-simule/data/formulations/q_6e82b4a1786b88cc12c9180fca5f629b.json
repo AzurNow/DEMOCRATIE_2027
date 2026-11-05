@@ -1,0 +1,53 @@
+{
+  "question_id": "q_6e82b4a1786b88cc12c9180fca5f629b",
+  "empreinte_texte_neutre": "d242cdae64918330c2ec43723331f07d85d4b6f2db599c540e57baf6bee2e45d",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "1NR4KY1TM1E9E9A5WXKG686WXF",
+  "formulations": [
+    {
+      "id": "0J29TX50BYW0PC2Z94GESJ11Y4",
+      "registre": "neutre",
+      "texte": "Hélène Durand-Aubry s'oppose-t-il ou elle à mesure simule-retr-0 ?",
+      "empreinte_texte": "d242cdae64918330c2ec43723331f07d85d4b6f2db599c540e57baf6bee2e45d",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "3K2A7ZC85T4ETA1RRNHNZA2R2Z",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Hélène Durand-Aubry s'oppose-t-il ou elle à mesure simule-retr-0 ?",
+      "empreinte_texte": "92c76ad85897ad57b9b69cfce4f9395f8703421894d84961afd62918ee8b7a3d",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "0YY587JYT1R3BPKERZJEB6DM21",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Hélène Durand-Aubry s'oppose-t-il ou elle à mesure simule-retr-0 ?",
+      "empreinte_texte": "f588631f878458f6856f7cce4bf18e7d6b7cb5f22a221e5da46b65b4e38d5165",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "pour"
+    }
+  ]
+}

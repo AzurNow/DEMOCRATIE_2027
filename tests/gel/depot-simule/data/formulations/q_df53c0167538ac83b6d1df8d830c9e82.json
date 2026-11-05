@@ -1,0 +1,53 @@
+{
+  "question_id": "q_df53c0167538ac83b6d1df8d830c9e82",
+  "empreinte_texte_neutre": "4ca3243867b9eff3f9a6785e395bad371856e2568e04dda5daa0e32f5842570f",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "23DT0T3STZSZ8WNVV6708QJET9",
+  "formulations": [
+    {
+      "id": "5E27FSPCN2FW4X4A98NQCYYMFJ",
+      "registre": "neutre",
+      "texte": "Basile Fictif propose-t-il ou elle mesure simule-fisc-1 ?",
+      "empreinte_texte": "4ca3243867b9eff3f9a6785e395bad371856e2568e04dda5daa0e32f5842570f",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "63134XSQEWCE4FHMRHFJXAVZFY",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Basile Fictif propose-t-il ou elle mesure simule-fisc-1 ?",
+      "empreinte_texte": "434f999117a327ae6ebb9f1be7bb1d24274f2d7b8cdb7204b3f67d2e98baa02d",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "7FN638B9D42R0QAX7AF9MZ0THV",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Basile Fictif propose-t-il ou elle mesure simule-fisc-1 ?",
+      "empreinte_texte": "c70d5852680ef910019489369d9f549f17201f71bc4b880b2b77ee2d7fb0e84f",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "contre"
+    }
+  ]
+}

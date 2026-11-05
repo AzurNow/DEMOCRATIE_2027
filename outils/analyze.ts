@@ -35,6 +35,11 @@
  * dépôt, lues contre son commit des données (D73 (2) et (4) : le recalcul (b) de `metriques.json`
  * porte les contestations connues à son calcul). Lancer d'abord `pnpm contestations-posterieures --ecrire`.
  *
+ * Un run simulé (`run.json` porte `simule: true`, gelé par `pnpm geler --simule`, D80) ne lit ses
+ * items que dans le dépôt simulé désigné : sans `--depot-des-items`, refus avant toute autre lecture
+ * (`pipeline/run/simulation.ts:ItemsDuRunSimuleNonDesignes`), jamais une recherche ailleurs. Le
+ * `metriques.json` écrit est lié à ce `run.json` par `entrees.run_json_sha256`, qui couvre `simule`.
+ *
  * Codes de sortie : 0, le fichier est écrit ou déjà là à l'identique ; 2, la commande est mal
  * appelée, le run n'est dans aucun dépôt Git ou son dépôt n'a aucun item, le dépôt désigné est
  * refusé (`DepotDesItemsRefuse`), un fichier du run est illisible ou non conforme, une contestation
@@ -48,6 +53,7 @@ import { questionsDuSousEchantillonDuRun } from "../pipeline/interrogation/sous-
 import { echantillonHumainDuRun } from "../pipeline/notation/echantillons.ts";
 import { etatsDesLectures } from "../pipeline/notation/lectures-comparateur.ts";
 import { exigerContestationsInscrites, repertoireDesItemsPourLeRun } from "../pipeline/run/contestations-posterieures.ts";
+import { exigerItemsDesignesSiSimule } from "../pipeline/run/simulation.ts";
 import { analyserArguments, type Arguments } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 
@@ -81,6 +87,7 @@ const LIBELLE_ISSUE = { ecrit: "écrit", inchange: "inchangé (déjà identique 
 function principal(): void {
   try {
     const { repertoire, premier, depot } = demande(process.argv.slice(2));
+    exigerItemsDesignesSiSimule(repertoire, depot);
     exigerContestationsInscrites(repertoire, depot);
     const options = {
       items: repertoireDesItemsPourLeRun(repertoire, depot),
