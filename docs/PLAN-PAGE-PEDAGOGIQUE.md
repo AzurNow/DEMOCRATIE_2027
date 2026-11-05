@@ -79,8 +79,9 @@ protocole.
   (un archiviste, deux annotateurs, un juge-robot, un « outil » représenté par une boîte qui parle)
   qui illustrent chaque étape. Le ton visuel est ludique, le texte reste sérieux : la crédibilité
   du projet ne doit pas pâtir de l'habillage.
-- **Palette** : fond sombre et deux ou trois couleurs saturées pour les accents (inspiration néon),
-  plus une palette claire équivalente ; contrastes AA au minimum sur tout le texte.
+- **Palette** : un thème sombre (fond sombre, deux ou trois couleurs saturées en accent,
+  inspiration néon) et un thème clair équivalent ; le thème suit le navigateur, un bouton permet
+  de basculer ; contrastes AA au minimum sur tout le texte, dans les deux thèmes.
 - **Typographie** : police pixel sous licence libre (SIL OFL), hébergée dans le dépôt, réservée aux
   titres ; texte courant dans une police lisible, elle aussi hébergée.
 - **Animations** : apparitions au défilement et petites boucles de sprites, en CSS ; toutes
@@ -96,7 +97,7 @@ protocole.
 
 - **Cadre** : Astro en export statique, comme le prévoit `CLAUDE.md` (Astro ou Next). Astro est
   recommandé : zéro JavaScript envoyé par défaut, pages en HTML pur, et ce socle servira tel quel
-  au site fonctionnel. **Nouvelle dépendance : accord de l'auteur requis** (zone d'arrêt).
+  au site fonctionnel. Nouvelle dépendance, accordée par l'auteur le 2026-11-05.
 - **Emplacement** : `site/`, avec `pnpm build:site` (sortie ignorée par Git) et une étape de
   construction dans la CI `verification.yml`.
 - **Tests** : la construction réussit ; aucune ressource externe dans le HTML produit (test qui
@@ -109,7 +110,7 @@ protocole.
 ## Découpage en PR (quand l'auteur dira de commencer)
 
 1. **Socle** : Astro, `pnpm build:site`, CI, page vide, tests de garde (ressources externes, noms
-   du périmètre, renvois au protocole). Après accord sur la dépendance.
+   du périmètre, renvois au protocole). Dépendance accordée le 2026-11-05.
 2. **Texte** : contenu complet en HTML sobre, sans habillage. Relu par l'auteur avant fusion.
 3. **Habillage** : palette, typographie, mise en page des sections, thème clair et sombre.
 4. **Pixel art** : illustrations SVG des sept étapes et de l'accroche, animations.
@@ -120,15 +121,20 @@ Les PR 3 et 4 peuvent avancer en parallèle de la 2.
 ## Coût estimé
 
 - **Code** : faible à moyen, quatre ou cinq PR, une demi-journée à une journée d'agents.
-- **Auteur** : accord sur Astro ; relecture complète du texte (le poste le plus lourd pour lui) ;
+- **Auteur** : relecture complète du texte (le poste le plus lourd pour lui) ;
   avis sur la direction visuelle au premier rendu.
 - **Entretien** : faible si la page reste aux principes ; une relecture à chaque révision du
   protocole qui touche un principe, et une obligatoire au gel de la 1.0.
 - **Hors code, facultatif** : commande d'illustrations à un pixel artiste.
 
-## Décisions à prendre par l'auteur avant de commencer
+## Décisions de l'auteur (2026-11-05)
 
-1. Astro comme cadre du site (recommandé), donc une dépendance nouvelle.
-2. Direction visuelle : fond sombre néon par défaut, ou clair par défaut.
-3. Illustrations : SVG faits par les agents seulement, ou emplacements prévus pour une commande.
-4. Langue : français seul au départ (recommandé, comme la mesure).
+1. **Astro** comme cadre du site : accordé, dépendance nouvelle admise.
+2. **Thème** : aligné sur le réglage du navigateur (`prefers-color-scheme`), avec un bouton pour
+   passer de l'un à l'autre ; le choix du visiteur est retenu localement (stockage du navigateur,
+   rien n'est envoyé), et la page reste juste sans lui.
+3. **Illustrations** : SVG faits par les agents, avec des **emplacements** au format fixe prévus
+   pour des illustrations commandées plus tard ; aucune commande pour le moment.
+4. **Langue** : français seul pour le moment.
+
+La page reste non lancée : l'auteur dira quand commencer.
