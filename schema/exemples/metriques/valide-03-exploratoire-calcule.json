@@ -718,11 +718,7 @@
           "statistique_observee": 0.6,
           "valeur_p": 1,
           "permutations": 10,
-          "exactitude_outil": {
-            "numerateur": 18,
-            "denominateur": 30,
-            "valeur": 0.6
-          },
+          "exactitude_de_reference": 0.6,
           "intervalle_ecart_maximal": {
             "cle": [
               "bootstrap",

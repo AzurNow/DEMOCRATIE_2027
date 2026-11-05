@@ -59,7 +59,7 @@ import { graineDerivee, graineHexadecimale } from "./graines.ts";
 import { corrigerHolm, type ValeurP, type ValeurPCorrigee } from "./holm.ts";
 import { exactitude, exactitudeParCandidat } from "./metriques.ts";
 import { cleCouple, repartirParCandidat, type PartageCandidats, type PartageCouples } from "./seuils.ts";
-import { taux, TYPES_ITEM, type CoupleOutilMode, type IdentifiantCourt, type Taux, type TypeItem, type Ulid } from "./types.ts";
+import { TYPES_ITEM, type CoupleOutilMode, type IdentifiantCourt, type Taux, type TypeItem, type Ulid } from "./types.ts";
 
 /** §8. Les tests en utilisent beaucoup moins, à graine fixe. */
 export const PERMUTATIONS_PRODUCTION = 10000;
@@ -119,14 +119,23 @@ export interface ResultatPermutation {
   readonly statistique_observee: number;
   readonly valeur_p: number;
   readonly permutations: number;
-  readonly exactitude_outil: Taux;
+  /**
+   * §8 (0.32, D74 (5)) : l'exactitude globale de l'outil contre laquelle se lit la statistique,
+   * exactes / classées sur les seules grappes du test (candidats comparés, questions qui nomment un
+   * candidat), « publiée comme la statistique de référence du test, sous un nom qui l'en distingue,
+   * et sans intervalle : ce n'est pas un taux publié ». Valeur seule, comme `statistique_observee` :
+   * ni effectifs, ni intervalle, ni graine, ni mention de taux dégénéré. Ce n'est pas l'exactitude
+   * de la strate `global` des taux du couple, qui garde les questions d'attribution. Toujours
+   * définie quand le test l'est : un test sans objet (`null`) n'en publie aucune.
+   */
+  readonly exactitude_de_reference: number;
   /** §8 : « l'écart maximal avec son intervalle » (conformité n° 29). */
   readonly intervalle_ecart_maximal: IntervalleNomme;
   readonly candidats: readonly ExactitudeCandidat[];
   /**
    * §4 : candidats sous le seuil de couverture présents dans les unités, rapportés à part avec la
    * mention « couverture insuffisante », sans taux (§8). Leurs items n'entrent ni dans la
-   * statistique, ni dans l'exactitude globale de référence, ni dans les permutations.
+   * statistique, ni dans `exactitude_de_reference`, ni dans les permutations.
    */
   readonly candidats_rapportes_a_part: readonly IdentifiantCourt[];
 }
@@ -237,7 +246,7 @@ export function testHomogeneiteCandidats(
     statistique_observee: observee,
     valeur_p: valeurPDe(grappes, observee, options),
     permutations: options.permutations,
-    exactitude_outil: exactitudeDesGrappes(grappes),
+    exactitude_de_reference: exactitudeDeReference(grappes),
     intervalle_ecart_maximal: intervalleNomme(comparees, ecartSurTousLesCandidats(candidats.size), {
       ...bootstrap,
       cle: [...bootstrap.cle, METRIQUE_ECART, STRATE_ECART],
@@ -417,14 +426,22 @@ function valeurPDe(
   return (1 + extremes) / (1 + options.permutations);
 }
 
-function exactitudeDesGrappes(grappes: readonly GrappeEtiquetee[]): Taux {
+/**
+ * Exactes / classées sur les grappes du test. Un dénominateur nul lève : `testHomogeneiteCandidats`
+ * ne l'appelle que sur deux candidats au moins, chacun avec une réponse classée, et une valeur
+ * plausible inventée ici serait publiée comme une mesure.
+ */
+function exactitudeDeReference(grappes: readonly GrappeEtiquetee[]): number {
   let exactes = 0;
   let classees = 0;
   for (const grappe of grappes) {
     exactes += grappe.exactes;
     classees += grappe.classees;
   }
-  return taux(exactes, classees);
+  if (classees === 0) {
+    throw new Error("Exactitude de référence sur un jeu sans réponse classée : statistique indéfinie.");
+  }
+  return exactes / classees;
 }
 
 function verifierOptions(options: OptionsPermutation): void {

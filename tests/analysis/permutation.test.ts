@@ -71,7 +71,7 @@ describe("statistique et valeur p", () => {
 
     expect(resultat?.statistique_observee).toBe(0);
     expect(resultat?.valeur_p).toBe(1);
-    expect(resultat?.exactitude_outil).toEqual({ numerateur: 4, denominateur: 8, valeur: 0.5 });
+    expect(resultat?.exactitude_de_reference).toBe(0.5);
   });
 
   it("rend une valeur p minimale quand un candidat est à 0 % face à trois candidats à 100 %", () => {
@@ -114,7 +114,7 @@ describe("statistique et valeur p", () => {
 
     const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
 
-    expect(resultat?.exactitude_outil).toEqual({ numerateur: 11, denominateur: 40, valeur: globale });
+    expect(resultat?.exactitude_de_reference).toBe(globale);
     expect(resultat?.statistique_observee).toBeCloseTo(1 - globale, 12);
     expect(resultat?.statistique_observee).not.toBeCloseTo(1 - moyenneDesCandidats, 6);
   });
@@ -122,6 +122,54 @@ describe("statistique et valeur p", () => {
   it("ne teste rien quand il n'y a pas deux candidats à comparer", () => {
     expect(testHomogeneiteCandidats([], TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toBeNull();
     expect(testHomogeneiteCandidats(items("candidat-a", 3, true), TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toBeNull();
+  });
+});
+
+describe("statistique de référence du test (§8, 0.32, D74 (5))", () => {
+  // « L'exactitude globale de l'outil contre laquelle se lit la statistique […] est publiée comme
+  // la statistique de référence du test, sous un nom qui l'en distingue, et sans intervalle : ce
+  // n'est pas un taux publié au sens du paragraphe « Incertitude ». »
+
+  it("est publiée sous son nom propre, valeur seule : ni effectifs, ni intervalle, ni graine, ni mention de taux dégénéré", () => {
+    const jeu = [...items("candidat-a", 3, true), ...items("candidat-b", 1, false)];
+
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+
+    expect(resultat).not.toBeNull();
+    expect(resultat).not.toHaveProperty("exactitude_outil");
+    expect(resultat?.exactitude_de_reference).toBe(0.75);
+    expect(typeof resultat?.exactitude_de_reference).toBe("number");
+  });
+
+  it("vaut 0 exactement quand aucune réponse classée n'est exacte, jamais absente", () => {
+    // A : 2 inexactes. B : 3 inexactes. Globale 0/5 = 0 ; chaque candidat à 0, écart 0, p = 1.
+    const jeu = [...items("candidat-a", 2, false), ...items("candidat-b", 3, false)];
+
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+
+    expect(resultat?.exactitude_de_reference).toBe(0);
+    expect(resultat?.statistique_observee).toBe(0);
+    expect(resultat?.valeur_p).toBe(1);
+  });
+
+  it("vaut 1 exactement quand toutes les réponses classées sont exactes", () => {
+    const jeu = [...items("candidat-a", 2, true), ...items("candidat-b", 3, true)];
+
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+
+    expect(resultat?.exactitude_de_reference).toBe(1);
+  });
+
+  it("indéfinie quand l'outil n'a aucune réponse classée : pas de test, donc rien de publié, jamais 0", () => {
+    // Deux candidats, des réponses obtenues mais aucune classée (non-réponse, indéterminée) : le
+    // dénominateur de la référence est nul. Le test n'a pas d'objet (« test sans objet », §8) ;
+    // `analyse-du-run.ts` le publie avec son motif, sans aucune exactitude de référence.
+    const jeu = [
+      ...grappe("a-non-reponse", 2, { candidat_id: "candidat-a", categorie: "non_reponse" }),
+      ...grappe("b-indeterminee", 2, { candidat_id: "candidat-b", categorie: "indeterminee" }),
+    ];
+
+    expect(testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toBeNull();
   });
 });
 
@@ -137,7 +185,7 @@ describe("candidats sous le seuil de couverture (conformité n° 30, §4 et §8)
 
     expect(resultat?.statistique_observee).toBe(0);
     expect(resultat?.valeur_p).toBe(1);
-    expect(resultat?.exactitude_outil).toEqual({ numerateur: 10, denominateur: 10, valeur: 1 });
+    expect(resultat?.exactitude_de_reference).toBe(1);
     expect(resultat?.candidats.map((c) => c.candidat_id)).toEqual(["candidat-a", "candidat-b"]);
     expect(resultat?.candidats_rapportes_a_part).toEqual(["candidat-c"]);
   });
@@ -415,7 +463,7 @@ describe("famille de Holm du test d'asymétrie (conformité n° 82, protocole 0.
       statistique_observee: 0.1,
       valeur_p,
       permutations: 200,
-      exactitude_outil: { numerateur: 1, denominateur: 2, valeur: 0.5 },
+      exactitude_de_reference: 0.5,
       intervalle_ecart_maximal: {
         cle: ["bootstrap", "outil-alpha", "web_activee", "ecart_maximal", "global"],
         graine: "0000000000000000",

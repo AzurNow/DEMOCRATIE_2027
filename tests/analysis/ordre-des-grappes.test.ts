@@ -230,7 +230,7 @@ function mesures(resultat: ResultatPermutation | null) {
   return {
     statistique_observee: resultat.statistique_observee,
     valeur_p: resultat.valeur_p,
-    exactitude_outil: resultat.exactitude_outil,
+    exactitude_de_reference: resultat.exactitude_de_reference,
     intervalle_ecart_maximal: resultat.intervalle_ecart_maximal,
     candidats: new Map(resultat.candidats.map((c) => [c.candidat_id, c])),
     cle: resultat.cle,
