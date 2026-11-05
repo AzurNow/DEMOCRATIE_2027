@@ -104,12 +104,10 @@ import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate
 import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
 import type { CandidatAuGel, CategorieRetenue, CoupleOutilMode, EntreeTirage, IdentifiantCourt, Item, LectureComparateur, Mode, Notation, Question, Reponse, Run, Ulid } from "./types.ts";
 import type { NotationIndividuelle, RenvoiHumain } from "./types-notation.ts";
+import type { RegimeInclusion } from "./types-run.ts";
 import { CHAMPS_HORS_EMPREINTE_DU_RUN, retirerChamps } from "./champs-posterieurs-au-gel.ts";
 
 /* ------------------------------------------------------------------ entrées */
-
-/** §3 (0.11 ; 0.27, D68) : « chaque run déclare son régime ». */
-export type RegimeInclusion = "avant_liste_officielle" | "liste_officielle" | "entre_deux_tours";
 
 /** La part de `run.json` que l'analyse lit en plus de `Run` (schema/run.schema.json l'exige). */
 export interface RunAnalyse extends Run {

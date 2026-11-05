@@ -7,7 +7,8 @@
  * deux juges retirés rendent le run invalide (D16 (3)), que `pnpm go-no-go` refuse avant d'en arriver là.
  */
 
-import { depasseSeuilRetrait, SEUIL_RETRAIT } from "../notation/contrefactuel.ts";
+import { SEUIL_RETRAIT } from "../../analysis/parametres-protocole.ts";
+import { depasseSeuilRetrait } from "../notation/contrefactuel.ts";
 import type { ChangementsContrefactuel, JugeDuRun } from "../../analysis/types-notation.ts";
 import { SEUIL_KAPPA_ECHANTILLON, type KappaDeJuge } from "./kappa-echantillon.ts";
 import { AUCUN_JUGE_RETENU, type Critere } from "./types.ts";

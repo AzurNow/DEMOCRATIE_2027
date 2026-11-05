@@ -16,6 +16,7 @@
  * d'attribuer une question d'attribution à un candidat (`schema/README.md`, point ouvert 2).
  */
 
+import { PART_MINIMALE_ITEMS_A_F } from "../../analysis/parametres-protocole.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { exigerJeuComplet, exigerTirageDuRun } from "./completude.ts";
 import { decisionAvantGel, decisionReintegre } from "./contestation.ts";
@@ -39,9 +40,6 @@ import type {
 import { REGISTRES } from "./types.ts";
 import type { CodeGabarit, Mesure, Theme } from "./types.ts";
 import { cleStrateCandidat, estCompare, tirablesParStrate } from "./tirabilite.ts";
-
-/** §5 : les items d'absence et fictifs constituent au moins 20 % des questions de chaque run. */
-export const PART_MINIMALE_ITEMS_A_F = 0.2;
 
 /** §5 : « même répartition des gabarits et des formulations par candidat, à une question près ». */
 export const ECART_MAXIMAL_GABARITS = 1;

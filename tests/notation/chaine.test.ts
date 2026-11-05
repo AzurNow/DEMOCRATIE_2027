@@ -17,7 +17,7 @@ import { identifiantDerive, JugesNonConformes, noterRun, RunInvalideRefuse, type
 import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import { renvoiJuge } from "./fabriques.ts";
-import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
+import { SEUIL_RETRAIT } from "../../analysis/parametres-protocole.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { tailleEchantillonHumain, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { VERSION_CHARGE_JUGE, type ChargeJuge } from "../../pipeline/notation/charge-juge.ts";

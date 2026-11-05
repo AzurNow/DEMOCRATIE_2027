@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { DUREE_FENETRE_MS } from "../../pipeline/interrogation/conditions.ts";
+import { DUREE_FENETRE_MS } from "../../analysis/parametres-protocole.ts";
 import {
   FenetreRefusee,
   ouvrirFenetre,
