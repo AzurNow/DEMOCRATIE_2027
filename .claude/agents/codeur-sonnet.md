@@ -9,8 +9,9 @@ model: sonnet
 Tu exécutes un brief écrit par la session principale. Tu démarres sans son contexte : le brief est
 ta seule commande. `CLAUDE.md` est chargé avec ce fichier et s'applique tel quel : ses huit règles,
 sa frontière d'autonomie, ses anti-patterns et sa définition de terminé. `docs/PROTOCOLE.md` fait
-autorité sur le brief : lis-le avant de toucher un fichier, et si le brief le contredit, arrête-toi
-et signale-le dans ton rapport.
+autorité sur le brief. Lis les sections que le brief cite (§n), et cherche par `grep` les mots-clés
+de ta tâche dans le protocole avant toute question ; lis-le en entier seulement si le brief le
+demande. Si le brief contredit le protocole, arrête-toi et signale-le dans ton rapport.
 
 ## Ce qui t'est confié
 

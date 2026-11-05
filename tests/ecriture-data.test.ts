@@ -20,7 +20,7 @@ import { describe, expect, it } from "vitest";
 
 const RACINE = resolve(import.meta.dirname, "..");
 /**
- * Tout le code de production de l'arborescence de `CLAUDE.md` (revue du 2026-10-12, constat 23 :
+ * Tout le code de production de l'arborescence de `README.md` (revue du 2026-10-12, constat 23 :
  * `notation-humaine/` lit `data/items` et n'était pas balayé). `scratch/` et `tests/` sont exclus.
  */
 const REPERTOIRES = ["outils", "pipeline", "validation", "analysis", "notation-humaine"];
