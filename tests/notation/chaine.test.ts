@@ -107,12 +107,14 @@ function issuesDe(execution: Execution): ReadonlySet<string> {
 function violations(repertoire_run: string): readonly unknown[] {
   const run = lireRunJson(repertoire_run);
   const obtenues = readdirSync(dispositionRunNote(repertoire_run).reponses)
-    .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string; normalise?: { refus_api: boolean } })
+    .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string; normalise?: { refus_api: boolean; texte: string } })
     .filter((r) => r.statut_reponse === "obtenue");
   return controleCroise({
     run: runDeNotationDe(run),
     reponses_obtenues: obtenues.map((r) => r.id),
     refus_api: obtenues.filter((r) => r.normalise?.refus_api === true).map((r) => r.id),
+    // Une réponse sans projection n'a pas de texte : le contrôle lève s'il en a besoin.
+    textes: new Map(obtenues.flatMap((r) => (r.normalise === undefined ? [] : [[r.id, r.normalise.texte] as const]))),
     notations: lireNotationsDuRun(repertoire_run, run.id).notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
   });

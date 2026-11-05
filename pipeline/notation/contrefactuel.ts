@@ -26,8 +26,9 @@
  *    deux notations ne concordent pas sur la catégorie, les drapeaux et la fraîcheur (pas le motif)
  *    (`analysis/note-lue.ts:notesContrefactuellesConcordent`, D14 (3) précisée par D30 (1)) :
  *    le soutien des liens n'y entre pas, le texte des pages citées n'étant pas permuté.
- * 3 bis. **Renvois (D31 (1)).** Une paire dont l'un des côtés au moins porte un renvoi de CE juge
- *    vers l'humain (D30 (2), `renvois`) est écartée de son numérateur et de son dénominateur, et
+ * 3 bis. **Renvois (D31 (1) ; D74 (24), protocole 0.32).** Une paire dont l'un des côtés au moins
+ *    porte un renvoi de CE juge vers l'humain (`renvois`), quel que soit son motif (attribution
+ *    indécidable comme défaillance du juge : le motif n'est pas lu), est écartée de son numérateur et de son dénominateur, et
  *    comptée à part (`paires_ecartees`). Un côté renvoyé n'est pas manquant. Toutes les paires
  *    écartées : le taux du juge est indéfini (`toutes_paires_ecartees`), jamais 0 %, et il n'est pas
  *    retiré (rien ne mesure son biais) ; le critère go/no-go est alors rouge (effectifs absents).

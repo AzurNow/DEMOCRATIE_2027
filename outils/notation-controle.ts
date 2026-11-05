@@ -32,12 +32,16 @@ function repertoireDemande(bruts: readonly string[]): string {
   return repertoire;
 }
 
-type ReponseLue = Reponse & { readonly normalise?: { readonly refus_api: boolean } };
+type ReponseLue = Reponse & { readonly normalise?: { readonly refus_api: boolean; readonly texte: string } };
 
 /** Une réponse obtenue porte toujours sa projection (`reponse.schema.json`) : son absence est une erreur, jamais un « non ». */
-function estUnRefus(reponse: ReponseLue): boolean {
+function projectionDe(reponse: ReponseLue): NonNullable<ReponseLue["normalise"]> {
   if (reponse.normalise === undefined) throw new Error(`réponse obtenue ${reponse.id} sans projection normalisée.`);
-  return reponse.normalise.refus_api;
+  return reponse.normalise;
+}
+
+function estUnRefus(reponse: ReponseLue): boolean {
+  return projectionDe(reponse).refus_api;
 }
 
 function lireEntree(repertoire_run: string): EntreeControleCroise {
@@ -50,6 +54,7 @@ function lireEntree(repertoire_run: string): EntreeControleCroise {
     run: runDeNotationDe(run),
     reponses_obtenues: obtenues.map((r) => r.id),
     refus_api: obtenues.filter(estUnRefus).map((r) => r.id),
+    textes: new Map(obtenues.map((r) => [r.id, projectionDe(r).texte])),
     notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
   };

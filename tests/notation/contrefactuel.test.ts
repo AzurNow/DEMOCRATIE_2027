@@ -4,6 +4,8 @@
  * contre `schema/notation.schema.json` : aucun test ne repose sur une entrée impossible.
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   ContrefactuelIncoherent,
@@ -14,13 +16,13 @@ import {
   type ResultatContrefactuel,
   type ResultatJuge,
 } from "../../pipeline/notation/contrefactuel.ts";
-import type { RenvoiHumain } from "../../pipeline/notation/types.ts";
+import { MOTIFS_RENVOI_DEFAILLANCE, type MotifRenvoiDefaillance, type RenvoiHumain } from "../../pipeline/notation/types.ts";
 import { JugeIndetermine } from "../../pipeline/notation/decision.ts";
 import type { TextesDeVerification } from "../../pipeline/notation/extrait.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { inexacte, lien, notationHumaine, notationJuge, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
+import { inexacte, lien, notationHumaine, notationJuge, renvoiDefaillant, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
 import { critereTestContrefactuel } from "../../pipeline/go-no-go/criteres-juges.ts";
 import { publierContrefactuel } from "../../pipeline/notation/publication-contrefactuel.ts";
 
@@ -371,5 +373,108 @@ describe("renvois d'attribution dans les paires (D31 (1))", () => {
     expect(() => testerContrefactuel({ ...base, renvois: [renvoiOrigine("j1", 0)] })).toThrow(ContrefactuelIncoherent);
     const mauvaisCote = renvoiJuge("j1", { objet_note: { type: "reponse", id: permuteeId(0) } });
     expect(() => testerContrefactuel(avecRenvois(1, [mauvaisCote]))).toThrow(ContrefactuelIncoherent);
+  });
+});
+
+/**
+ * D74 (24), protocole 0.32 §7 : « Une paire dont un côté au moins est renvoyé à un humain par un
+ * juge, qu'il s'agisse d'une question d'attribution que la règle ne tranche pas ou d'une réponse que
+ * ce juge ne peut pas noter, est écartée du numérateur et du dénominateur du taux de ce juge ». La
+ * liste des motifs est lue dans `schema/renvoi-humain.schema.json` : un motif ajouté au schéma est
+ * couvert d'office, ou fait échouer ce test tant qu'aucune fabrique ne sait le construire.
+ */
+describe("D74 (24) : tout motif de renvoi écarte la paire du taux de ce juge seulement", () => {
+  const MOTIFS_DU_SCHEMA = motifsDeRenvoiDuSchema();
+
+  function motifsDeRenvoiDuSchema(): readonly string[] {
+    const schema = JSON.parse(readFileSync(join(import.meta.dirname, "..", "..", "schema", "renvoi-humain.schema.json"), "utf8")) as {
+      properties: { motif: { enum?: readonly string[] } };
+    };
+    const valeurs = schema.properties.motif.enum;
+    if (valeurs === undefined) throw new Error("renvoi-humain.schema.json : motif sans enum");
+    return valeurs;
+  }
+
+  function estDefaillance(motif: string): motif is MotifRenvoiDefaillance {
+    return (MOTIFS_RENVOI_DEFAILLANCE as readonly string[]).includes(motif);
+  }
+
+  function construire(motif: string, juge_id: string, surcharges: Pick<RenvoiHumain, "objet_note" | "contexte">): RenvoiHumain {
+    if (motif === "attribution_indecidable") return renvoiJuge(juge_id, surcharges);
+    if (estDefaillance(motif)) return renvoiDefaillant(juge_id, { ...surcharges, motif });
+    throw new Error(`motif de renvoi ${motif} : aucune fabrique ne le construit, ce test doit l'apprendre.`);
+  }
+
+  /** Le renvoi de `juge_id` sous `motif`, sur l'origine ou la copie permutée de la paire `i`, validé contre son schéma. */
+  function renvoi(motif: string, juge_id: string, i: number, cote: "origine" | "permutee"): RenvoiHumain {
+    const surcharges =
+      cote === "origine"
+        ? { objet_note: { type: "reponse" as const, id: origineId(i) }, contexte: "run" as const }
+        : { objet_note: { type: "reponse" as const, id: permuteeId(i) }, contexte: "contrefactuel_candidat" as const };
+    return valider<RenvoiHumain>("renvoi-humain", construire(motif, juge_id, surcharges), `renvoi ${motif} de test`);
+  }
+
+  /** `n` paires ; j1 change sur `changeJ1`, j2 sur `changeJ2` ; les notations des côtés renvoyés sont retirées. */
+  function avec(n: number, renvois: readonly RenvoiHumain[], changeJ1: readonly number[] = [], changeJ2: readonly number[] = []): EntreeContrefactuel {
+    const renvoyes = new Set(renvois.map((r) => `${r.notateur.id}|${r.objet_note.id}`));
+    const changes = new Map<string, readonly number[]>([
+      ["j1", changeJ1],
+      ["j2", changeJ2],
+    ]);
+    const notations: NotationIndividuelle[] = [];
+    for (let i = 0; i < n; i += 1) {
+      for (const j of ["j1", "j2"]) notations.push(surOrigine(j, i), surPermutee(j, i, changes.get(j)?.includes(i) === true ? inexacte() : {}));
+    }
+    return entree(n, notations.filter((x) => !renvoyes.has(`${x.notateur.id}|${x.objet_note.id}`)), n, renvois);
+  }
+
+  it("la liste des motifs du schéma est celle que le code connaît : attribution_indecidable et les quatre défaillances", () => {
+    expect([...MOTIFS_DU_SCHEMA].sort()).toEqual(["attribution_indecidable", ...MOTIFS_RENVOI_DEFAILLANCE].sort());
+  });
+
+  describe.each(MOTIFS_DU_SCHEMA.map((motif) => [motif]))("motif %s", (motif) => {
+    it("côté d'origine renvoyé par j1 seul : écartée chez j1 (numérateur et dénominateur), gardée chez j2", () => {
+      // La paire 0 change chez les deux juges : écartée chez j1, elle compte chez j2.
+      const resultat = testerContrefactuel(avec(3, [renvoi(motif, "j1", 0, "origine")], [0, 1], [0]));
+      expect(juge(resultat, "j1")).toMatchObject({ paires_ecartees_contrefactuel: 1, taux: { numerateur: 1, denominateur: 2 } });
+      expect(juge(resultat, "j2")).toMatchObject({ paires_ecartees_contrefactuel: 0, taux: { numerateur: 1, denominateur: 3 } });
+    });
+
+    it("côté permuté renvoyé par j2 seul : écartée chez j2, gardée chez j1", () => {
+      const resultat = testerContrefactuel(avec(3, [renvoi(motif, "j2", 1, "permutee")], [1], [1, 2]));
+      expect(juge(resultat, "j1")).toMatchObject({ paires_ecartees_contrefactuel: 0, taux: { numerateur: 1, denominateur: 3 } });
+      expect(juge(resultat, "j2")).toMatchObject({ paires_ecartees_contrefactuel: 1, taux: { numerateur: 1, denominateur: 2 } });
+    });
+
+    it("les deux côtés renvoyés par le même juge : une seule paire écartée", () => {
+      const resultat = testerContrefactuel(avec(3, [renvoi(motif, "j1", 0, "origine"), renvoi(motif, "j1", 0, "permutee")], [0]));
+      expect(juge(resultat, "j1")).toMatchObject({ paires_ecartees_contrefactuel: 1, taux: { numerateur: 0, denominateur: 2 } });
+      expect(juge(resultat, "j2")).toMatchObject({ paires_ecartees_contrefactuel: 0, taux: { numerateur: 0, denominateur: 3 } });
+    });
+
+    it("toutes les paires de j1 écartées : taux absent avec son motif, jamais 0, aucun retrait ; j2 inchangé", () => {
+      const resultat = termine(testerContrefactuel(avec(2, [renvoi(motif, "j1", 0, "origine"), renvoi(motif, "j1", 1, "permutee")])));
+      expect(resultatDe(resultat, "j1")).toEqual({ juge_id: "j1", motif_indefini_contrefactuel: "toutes_paires_ecartees", paires_ecartees_contrefactuel: 2, retire: false });
+      expect(juge(resultat, "j2")).toMatchObject({ paires_ecartees_contrefactuel: 0, taux: { numerateur: 0, denominateur: 2 } });
+    });
+  });
+
+  it("deux juges renvoient la même paire sous des motifs de familles différentes : écartée chez chacun", () => {
+    const renvois = [renvoi("attribution_indecidable", "j1", 0, "origine"), renvoi("erreur_api_persistante", "j2", 0, "permutee")];
+    const resultat = testerContrefactuel(avec(3, renvois, [0, 1], [0]));
+    expect(juge(resultat, "j1")).toMatchObject({ paires_ecartees_contrefactuel: 1, taux: { numerateur: 1, denominateur: 2 } });
+    expect(juge(resultat, "j2")).toMatchObject({ paires_ecartees_contrefactuel: 1, taux: { numerateur: 0, denominateur: 2 } });
+  });
+
+  it("renvoi défaillant sur la seule paire qui changeait : le juge passe de retiré (1 sur 20) à gardé (0 sur 19)", () => {
+    expect(juge(testerContrefactuel(avec(20, [], [0])), "j1")).toMatchObject({ retire: true, taux: { numerateur: 1, denominateur: 20 } });
+    const resultat = testerContrefactuel(avec(20, [renvoi("sortie_illisible", "j1", 0, "permutee")], [0]));
+    expect(juge(resultat, "j1")).toMatchObject({ retire: false, paires_ecartees_contrefactuel: 1, taux: { numerateur: 0, denominateur: 19 } });
+  });
+
+  it("aucun renvoi : rien n'est écarté, le taux porte sur toutes les paires", () => {
+    const resultat = testerContrefactuel(avec(3, [], [2], [1, 2]));
+    expect(juge(resultat, "j1")).toMatchObject({ paires_ecartees_contrefactuel: 0, taux: { numerateur: 1, denominateur: 3 } });
+    expect(juge(resultat, "j2")).toMatchObject({ paires_ecartees_contrefactuel: 0, taux: { numerateur: 2, denominateur: 3 } });
   });
 });
