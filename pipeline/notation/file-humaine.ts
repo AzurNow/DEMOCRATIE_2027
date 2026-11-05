@@ -9,9 +9,12 @@
  * jeu d'or reçu est rejoué par `tirerJeuOr` et refusé s'il diffère.
  *
  * **Pas d'affectation préalable.** La file dit, pour un annotateur, quelles tâches il peut prendre
- * (`tachesPour`), et les ordonne de façon déterministe : d'abord l'échantillon humain, dans l'ordre
- * de son tirage ; puis le jeu d'or, dans l'ordre de son tirage ; puis les autres tâches, dans
- * l'ordre croissant des identifiants de réponse. À rang égal, l'ordre de `MOTIFS_HUMAINS` départage.
+ * (`tachesPour`), et les ordonne de façon déterministe sans que l'ordre dépende du motif (§7 ; D79
+ * du 2026-11-05, texte proposé pour la 0.34) : le rang d'une tâche est celui de sa réponse dans
+ * `echantillons.ts:ordreFileHumaine`, tiré parmi toutes les réponses obtenues du run avec la graine
+ * de l'échantillon humain et la clé `ordre_file_humaine`. À rang égal (une réponse sous deux motifs),
+ * l'ordre de `MOTIFS_HUMAINS` départage. Un ordre par blocs (l'échantillon d'abord) trahirait à
+ * l'annotateur qu'une réponse servie après le bloc vient d'un désaccord ou d'un drapeau des juges.
  *
  * **Dérivation, réponse par réponse.**
  *
@@ -56,7 +59,7 @@
 import type { Ulid } from "../../analysis/types.ts";
 import { decider, type Decision, type MotifAttente } from "./decision.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import { tirerEchantillonHumain, tirerJeuOr, type JeuOr } from "./echantillons.ts";
+import { ordreFileHumaine, tirerEchantillonHumain, tirerJeuOr, type JeuOr } from "./echantillons.ts";
 import type { TextesDeVerification } from "./extrait.ts";
 import { exigerPseudonyme, MOTIFS_HUMAINS, type MotifHumain } from "./notation-humaine.ts";
 import { humainsAArbitrer } from "./note-retenue.ts";
@@ -151,8 +154,6 @@ const MOTIF_HUMAIN_DE_L_ATTENTE: readonly (readonly [MotifAttente, MotifHumain])
   ["accord_sans_note_commune", "accord_partiel_juges"],
 ];
 
-const MOTIFS_ECHANTILLON: ReadonlySet<MotifHumain> = new Set<MotifHumain>(["echantillon_aleatoire_10", "arbitrage_echantillon_10"]);
-
 /** Contextes dont les notations, de juge seulement, ne sont pas l'affaire de la file. */
 const CONTEXTES_CONTREFACTUELS: ReadonlySet<string> = new Set(["contrefactuel_candidat", "contrefactuel_outil"]);
 
@@ -161,8 +162,10 @@ const VERDICT_JETABLE = { verdict_id: "00000000000000000000000000", date: "1970-
 
 interface Contexte {
   readonly run: RunDeNotation;
-  readonly echantillon: ReadonlyMap<Ulid, number>;
-  readonly jeu_or: ReadonlyMap<Ulid, number>;
+  readonly echantillon: ReadonlySet<Ulid>;
+  readonly jeu_or: ReadonlySet<Ulid>;
+  /** Le rang de chaque réponse obtenue dans l'ordre de la file (D79). */
+  readonly ordre: ReadonlyMap<Ulid, number>;
 }
 
 interface BilanReponse {
@@ -175,8 +178,9 @@ export function construireFile(entree: EntreeFile): FileHumaine {
   const ids = entree.reponses.map((r) => r.reponse_id);
   const ctx: Contexte = {
     run: entree.run,
-    echantillon: rangs(tirerEchantillonHumain(ids, entree.run.graines.echantillon_humain, entree.run.taux_echantillon_humain)),
-    jeu_or: rangs(jeuOrRejoue(entree, ids)),
+    echantillon: new Set(tirerEchantillonHumain(ids, entree.run.graines.echantillon_humain, entree.run.taux_echantillon_humain)),
+    jeu_or: new Set(jeuOrRejoue(entree, ids)),
+    ordre: rangs(ordreFileHumaine(ids, entree.run.graines.echantillon_humain)),
   };
   const parReponse = regrouper(entree, ids);
   const bilans = entree.reponses.map((reponse) => bilanDeReponse(ctx, reponse, notationsDe(parReponse, reponse.reponse_id), renvoisDe(entree, reponse.reponse_id)));
@@ -334,26 +338,17 @@ function tachesJeuOr(ctx: Contexte, id: Ulid, calibration: readonly NotationIndi
 
 /* ------------------------------------------------------------------ ordre, comptes, vue d'un annotateur */
 
-/** Groupe 0 : échantillon, au rang du tirage ; 1 : jeu d'or, au rang du tirage ; 2 : le reste. */
-function cleDeTri(ctx: Contexte, t: Tache): readonly [number, number] {
-  if (MOTIFS_ECHANTILLON.has(t.motif_notation)) return [0, rangDans(ctx.echantillon, t.reponse_id)];
-  if (t.motif_notation === "calibration_jeu_or") return [1, rangDans(ctx.jeu_or, t.reponse_id)];
-  return [2, 0];
-}
-
+/** Le rang de la réponse dans l'ordre tiré de la file, quel que soit le motif (D79). */
 function rangDans(ordre: ReadonlyMap<Ulid, number>, reponse_id: Ulid): number {
   const rang = ordre.get(reponse_id);
-  if (rang === undefined) throw new FileIncoherente(`réponse ${reponse_id} : tâche hors du tirage qui la désigne.`);
+  if (rang === undefined) throw new FileIncoherente(`réponse ${reponse_id} : tâche hors de l'ordre tiré des réponses obtenues.`);
   return rang;
 }
 
 function comparerTaches(ctx: Contexte, a: Tache, b: Tache): number {
-  const [groupeA, rangA] = cleDeTri(ctx, a);
-  const [groupeB, rangB] = cleDeTri(ctx, b);
-  if (groupeA !== groupeB) return groupeA - groupeB;
-  if (rangA !== rangB) return rangA - rangB;
-  const parId = comparerChaines(a.reponse_id, b.reponse_id);
-  return parId === 0 ? MOTIFS_HUMAINS.indexOf(a.motif_notation) - MOTIFS_HUMAINS.indexOf(b.motif_notation) : parId;
+  const rangA = rangDans(ctx.ordre, a.reponse_id);
+  const rangB = rangDans(ctx.ordre, b.reponse_id);
+  return rangA !== rangB ? rangA - rangB : MOTIFS_HUMAINS.indexOf(a.motif_notation) - MOTIFS_HUMAINS.indexOf(b.motif_notation);
 }
 
 function compter(taches: readonly Tache[]): Readonly<Record<MotifHumain, Compte>> {
