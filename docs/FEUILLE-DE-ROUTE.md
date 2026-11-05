@@ -72,6 +72,33 @@ Options :
 
 Lots portant cette décision : aucun
 
+### D88 — Le contrefactuel d'outil compte-t-il parmi les « comparateurs du périmètre » (§7) tous les outils de famille comparateur du périmètre inscrit au gel, ou les seuls comparateurs inclus au run ?
+
+Question A du lot du gel (#331, D84). Le code suit la lettre du §7 : tous les comparateurs du périmètre, inclus ou non (pipeline/notation/derangement-outils.ts:outilsDuContrefactuel). La différence ne joue qu'avec un comparateur exclu qui partage l'éditeur d'un assistant permuté : absent avec motif dans la lecture retenue, dérangement tiré dans l'autre. Proche de D85.
+
+Options :
+
+1. Tous les comparateurs du périmètre au gel (code actuel, lettre du §7).
+2. Les seuls comparateurs inclus au run (analysis/reference-comparateurs.ts:comparateursDuRun) ; amendement du §7.
+
+**Recommandation :** Option 1 : lettre du §7 et lecture prudente ; à trancher avec D85.
+
+Lots portant cette décision : gel
+
+### D91 — La chaîne simulée de D80 (#336) passe par une aide de test (tests/aides/humains-simules.ts) pour produire les ~160 notations humaines qu'exige pnpm analyze. Faut-il une commande de production qui joue les humains simulés ?
+
+Question (a) du lot D80. Une commande ferait entrer dans le code de production des notations « humaines » fabriquées, sous les mêmes gardes que le juge simulé (run simule: true exigé, sortie sous runs/ refusée). pnpm notation:humaine ne peut pas annoter le run simulé (volume/liens/ non écrit).
+
+Options :
+
+1. Statu quo : la suite documentée appelle l'aide de test ; coût nul, un peu bancal mais honnête.
+2. Option --humains-simules de pnpm notation:dry (environ une demi-journée).
+3. Commande séparée pnpm humains:simules, mêmes gardes.
+
+**Recommandation :** Option 3 si l'auteur veut une chaîne entièrement en commandes, sinon option 1 : c'est une décision métier, elle fait entrer des notations humaines simulées dans le code de production.
+
+Lots portant cette décision : gel
+
 ## Décisions tranchées
 
 ### D1 — Brancher une intégration continue GitHub Actions qui exécute `pnpm check` et `pnpm test` sur chaque PR ?
@@ -398,9 +425,21 @@ Lots portant cette décision : aucun
 
 **Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation à venir, avant D80.
 
+### D89 — D75 (27) : aucune commande n'écrit kappa_juge_humain dans run.json ; seule la garde du schéma (comptes_jeu_or exigé avec le kappa, dependentRequired) est posée par #331. Qui écrit le kappa ?
+
+**Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation à venir.
+
 ### D9 — Durcir le lint au-delà des deux règles de complexité fixées le 2026-09-18 ?
 
 **Décision du 2026-09-23 :** Option 1 : typescript-eslint typé (no-unused-vars, no-floating-promises, no-misused-promises, await-thenable, only-throw-error, switch-exhaustiveness-check, no-unnecessary-type-assertion, no-unnecessary-condition, no-explicit-any, no-non-null-assertion, eqeqeq, no-fallthrough) et ruff C901, F, B. Toujours aucune règle de style.
+
+### D90 — Quand le dérangement d'outils est effectivement tiré, le test contrefactuel d'outil joué (sous-ensemble, paires de juges, taux) n'est pas branché : la chaîne rend non_joue (derangement_tire_test_non_branche) et n'écrit rien. Le brancher ?
+
+**Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation à venir.
+
+### D92 — Quatre points de code laissés par D80 (#336) : (b) périmètre simulé sans comparateur ; (c) pnpm run:dry --run accepte encore un vrai gel hors de runs/ ; (d) le juge simulé rend un relevé vide sur une Q-ATT au lieu de lever JugeSimuleMalRegle ; (g) le go/no-go du run simulé sort publie_provisoire (contrefactuel et kappa juges-humains rouges).
+
+**Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). (c) au prochain lot d'outillage.
 
 ## Arbre
 
@@ -450,6 +489,8 @@ flowchart LR
   dec_D83{{"D83<br/>pnpm liens:textes écrit le texte intégral extrait de chaque …"}}:::decision
   dec_D85{{"D85<br/>Le §7 rend le contrefactuel d'outil absent quand un comparat…"}}:::decision
   dec_D86{{"D86<br/>Deux comparateurs du même éditeur, qu'aucun outil permuté ne…"}}:::decision
+  dec_D88{{"D88<br/>Le contrefactuel d'outil compte-t-il parmi les « comparateur…"}}:::decision
+  dec_D91{{"D91<br/>La chaîne simulée de D80 (#336) passe par une aide de test (…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
@@ -476,6 +517,8 @@ flowchart LR
   lot_analyse --> lot_site
   lot_go_no_go --> lot_site
   lot_interrogation -.-> lot_test_liens
+  dec_D88 --> lot_gel
+  dec_D91 --> lot_gel
   classDef T0 fill:#78716c,color:#ffffff,stroke:#44403c
   classDef T1 fill:#b45309,color:#ffffff,stroke:#78350f
   classDef T2 fill:#0369a1,color:#ffffff,stroke:#0c4a6e

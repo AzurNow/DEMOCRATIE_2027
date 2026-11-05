@@ -41,46 +41,38 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-05 (soir)
+## État au 2026-11-05 (nuit)
 
-- Protocole **0.34** (#309, D79). Décisions D1 à D80 tranchées ; D81 à D87 inscrites (D84 et D87
-  tranchées par la règle du 2026-11-01 ; **D81, D82, D83, D85, D86 attendent l'auteur**).
-- Fusionnées le 2026-11-05 : #302 à #312, #314, #315. Code de D79 (#311) ; code restant de D75 :
-  (15) #312, (12) (13) (17) #314, (4) #315.
-- PR ouvertes à la reprise :
-  - **#313** (D75 (24), troncature, `charge-juge-v6`), brouillon : l'en-tête de
-    `prompts/judge-1.0.0.md` (zone d'arrêt) attend l'auteur ; la description de la PR donne les
-    quatre changements mot pour mot. CI rouge sur trois tests du vrai prompt jusque-là.
-  - **#317** (D75 (2) (6) (7), contrefactuel d'outil), **#318** (D75 (16) (25) (26), analyse),
-    **#316** (feuille de route D81 à D87 et cette section) : à fusionner une fois la CI verte.
-    #317 et #318 touchent tous deux `schema/exemples/manifeste.json` : conflit possible, à régler
-    par un commit de fusion de `main`.
-- Les worktrees d'agents `.claude/worktrees/agent-*` des lots fusionnés restent verrouillés par la
-  session qui les a lancés : `git worktree remove` puis `git branch -d` à la session suivante.
-- Dette : `docs/DETTE.md`, entrée du 2026-11-04 (après-midi) ; la clôture du 2026-11-05 reste à
-  faire (clone périmé et `--depot-des-items` ; garde de dépôt retirée par #315 ; entrée n° 2 sur
-  `liens/pages/` périmée). Dernière passe de conformité : `docs/conformite/2026-11-03.md` (0.30).
-- Rien n'a jamais tourné sur un appel réel.
-- Avant le prochain gel, l'auteur renseigne `juges[].outils_de_son_editeur` dans `config/gel.json`.
+- Protocole **0.34** (#309, D79). Décisions D1 à D92 inscrites ; **D81, D82, D83, D85, D86, D88,
+  D91 attendent l'auteur** (D85 et D88 se tranchent ensemble). D89, D90, D92 tranchées par la règle
+  du 2026-11-01.
+- Fusionnées le 2026-11-05 au soir : #327 (revue de code, `docs/revues/2026-11-05.md`), #328 (D75 (8)
+  et commentaires), #329 (D87, verdicts de lecture), #330 (CLAUDE.md, accord de l'auteur), #331 (gel :
+  D75 (14), (20), (21), (27), D84), #332 (écriture atomique de `metriques.json`), #333 (site : gardes,
+  `pnpm test` construit le site), #334 (`analysis/` n'importe plus `pipeline/`, règle ESLint), #335
+  (`analysis/parametres-protocole.ts`), #336 (D80, chaîne simulée continue). Code de D75 terminé.
+- Revue du 2026-11-05 : constats 1 à 5, 7 à 9 corrigés ; constat 6 (journaux en retard) réglé par
+  cette clôture et #330.
+- Worktree `.claude/worktrees/agent-a0e98d279de57a40f` (`site/habillage`, fusionnée) gardé : il porte
+  un fichier non suivi `scratch/maquette-habillage.html` ; à supprimer seulement avec l'accord de
+  l'auteur.
+- Rien n'a jamais tourné sur un appel réel. Avant le prochain gel, l'auteur renseigne
+  `juges[].outils_de_son_editeur` dans `config/gel.json`.
+- Dette : `docs/DETTE.md`, entrée du 2026-11-05 (soir). Dernière passe de conformité :
+  `docs/conformite/2026-11-03.md` (0.30).
 
 ## Ce qui était en cours
 
-La fusion de #316, #317, #318 ; #313 attend l'auteur.
+Rien : toutes les PR de la session sont fusionnées. L'auteur a demandé de ne plus lancer d'agents en
+fin de session.
 
 ## Prochaines tâches, par priorité
 
-1. **Code restant de D75**, après #317 : vague du gel (14) nombre d'échantillons dans `run.json`
-   au gel lu par `planifier`, (20) une réexécution hérite de la désignation
-   (`pipeline/gel/application.ts`), (21) `application_testee` requis, (27) `comptes_jeu_or` requis
-   avec la commande du kappa, plus **D84** (libellé et éditeur des outils dans l'instantané du gel) ;
-   en parallèle **D87** (écriture des verdicts de lecture) et les petits points (8) deux graphies
-   d'un éditeur refusées (`pipeline/questions/charger-perimetre.ts`), (1) et (3) commentaires
-   « non encore tranchée ». Commentaire de `CHAMPS_DU_STATUT_ET_DE_LA_PUBLICATION` qui cite le §9
-   de la 0.28 : à aligner.
-2. **D80** : chaîne simulée continue du gel aux métriques (`retenu` de D80).
-3. **Passe `conformite-protocole`** sur la 0.34.
-4. **Site** : après le code de D75, la matrice de conformité close et une revue de code
-   (`docs/PLAN-PAGE-PEDAGOGIQUE.md`, « Place dans le projet »).
+1. **Passe `conformite-protocole`** sur la 0.34 (code de D75 terminé).
+2. **D89** (commande qui écrit le kappa juge-humain et `comptes_jeu_or`) et **D90** (test
+   contrefactuel d'outil tiré), lots de notation ; **D92 (c)** : `run:dry --run` exige `simule: true`.
+3. Dette du 2026-11-05 (soir) n° 2 : exception nommée du filet de la règle 3 pour `gel-simule.ts`.
+4. **Site** généré depuis `runs/` : après la passe de conformité (`docs/PLAN-PAGE-PEDAGOGIQUE.md`).
 
 Hors mission sans accord explicite de l'auteur : appels d'API réels, collecte réelle, écriture dans
 `data/` ou `config/perimetre.yaml`, déploiement, `pnpm run:live`, gel de la 1.0.

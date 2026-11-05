@@ -13,9 +13,54 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-05 (soir) — Vague du gel, D80, D87, D75 (8) et constats de la revue du 2026-11-05 (PR #327 à #336 : `pipeline/gel/`, `pipeline/notation/`, `pipeline/run/`, `analysis/`, `site/`, `outils/`, `schema/`)
+
+### 1. Du code de production lit un jeu fictif rangé sous `tests/` — *moyenne*
+
+`pnpm geler --simule` (#336, `pipeline/gel/gel-simule.ts`) copie `tests/gel/depot-simule/` (données,
+périmètre, `config/gel.json` fictifs) dans un dépôt jetable, et `pnpm run:dry` lit
+`tests/interrogation/fixtures/run-gele/profils-simules.json`.
+
+**Pourquoi ça casse.** Tout champ nouveau exigé du gel, du périmètre ou des items casse la chaîne
+simulée (et `tests/chaine-simulee.test.ts`, ~40 s) tant que ce jeu n'est pas mis à jour ; un ménage
+de `tests/` qui le déplace casse une commande documentée dans `runs/README.md`.
+
+**Ce qu'il faut faire.** Mettre le jeu simulé à jour dans la PR qui ajoute le champ ; s'il grossit, le
+sortir de `tests/` vers un répertoire nommé comme jeu de démonstration.
+
+### 2. Le filet textuel de la règle 3 ne voit plus le gel simulé, qui écrit un `data/` — *moyenne*
+
+Pour passer `tests/ecriture-data.test.ts`, `gel-simule.ts` copie l'arbre fictif d'un seul `cpSync` au
+lieu de nommer `data/items`. L'écriture va dans un dépôt jetable hors de tout dépôt Git ; la seule
+garde est `exigerSortieSimulee` (`pipeline/run/simulation.ts`), testée par ses refus.
+
+**Pourquoi ça casse.** Si cette garde régresse (sortie dans le clone acceptée), un gel simulé écrit des
+items fictifs dans le `data/` réel, et aucun filet textuel ne le signale.
+
+**Ce qu'il faut faire.** Ajouter au filet de la règle 3 une exception nommée pour `gel-simule.ts`, qui
+exige la présence de l'appel à `exigerSortieSimulee` avant la copie, plutôt qu'un silence.
+
+### 3. La règle ESLint du sens des imports ne voit que les imports directs — *basse*
+
+#334 interdit tout import de `pipeline/` depuis `analysis/**`. Un module de `outils/` ou `validation/`
+importé par `analysis/` et qui importe lui-même `pipeline/` la contourne ; la fermeture transitive n'a
+été vérifiée qu'une fois, par un script hors CI.
+
+**Ce qu'il faut faire.** Si `analysis/` importe un jour hors d'elle-même, étendre la règle ou mettre le
+script de fermeture dans `tests/`.
+
+### 4. Les projets Vitest vivent dans `vitest.workspace.ts`, déprécié à partir de Vitest 3 — *basse*
+
+#333 sépare les tests du site (avec `globalSetup` qui construit le site) dans un projet de
+`vitest.workspace.ts`.
+
+**Ce qu'il faut faire.** À la montée vers Vitest 3, passer à `test.projects` dans `vitest.config.ts`.
+
+---
+
 ## 2026-11-04 (après-midi) — Code de D73 (6), (7), (8), (11) à (17), dettes n° 1, 2, 4 et conformité n° 10 (PR #283 à #295 : `analysis/`, `pipeline/gel/`, `pipeline/interrogation/`, `pipeline/notation/`, `pipeline/run/`, `schema/`)
 
-### 1. L'écart juge-éditeur, désormais branché, lève sur une réponse qu'un seul juge a notée — *moyenne*
+### ~~1. L'écart juge-éditeur, désormais branché, lève sur une réponse qu'un seul juge a notée~~ — réglé le 2026-11-05 par #318 (D75 (25) : réponses renvoyées par un seul juge sorties du calcul et nommées)
 
 #295 fait appeler `analysis/ecart-juge-editeur.ts` par `analyserRun`. Ce module lève
 `NotationDeJugeIncoherente` sur une réponse renvoyée à un humain par l'un des juges (D30 (2)), cas
@@ -27,7 +72,7 @@ en entier ; aucun chiffre faux, mais aucun chiffre du tout.
 **Ce qu'il faut faire.** Sortir ces réponses du calcul de l'écart et les nommer (D75 (25)), sous test,
 avant le premier run réel.
 
-### 2. La garde de licence du dépôt Zenodo n'a aucun appelant — *moyenne*
+### ~~2. La garde de licence du dépôt Zenodo n'a aucun appelant~~ — réglé le 2026-11-05 par #315 (D75 (4) : pages citées sorties du volume, `runs/<date>/pages-citees/`)
 
 `pipeline/run/depot.ts` (#283) refuse les pages citées et les sources non republiables dans une
 archive, mais aucune commande de dépôt n'existe : le dépôt se fait à la main d'après `runs/README.md`,
@@ -39,7 +84,7 @@ retient ; rien ne l'arrête.
 **Ce qu'il faut faire.** Faire appeler la garde par la future commande de dépôt, ou sortir
 `liens/pages/` de `volume/` (D75 (4)).
 
-### 3. Le nombre d'échantillons du plan n'est inscrit nulle part au gel — *moyenne*
+### ~~3. Le nombre d'échantillons du plan n'est inscrit nulle part au gel~~ — réglé le 2026-11-05 par #331 (D75 (14) : `reponses.echantillons_par_question` inscrit au gel, lu par `planifier`)
 
 #289 lit le nombre d'échantillons sur les numéros du plan reconstruit par `planifier`, qui applique
 la constante `ECHANTILLONS = 2` de `pipeline/interrogation/conditions.ts`.
