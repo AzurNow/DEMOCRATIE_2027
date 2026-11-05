@@ -80,7 +80,7 @@ import type {
   NotationIndividuelle,
   RenvoiDefaillance,
   RenvoiHumain,
-} from "./types.ts";
+} from "../../analysis/types-notation.ts";
 
 export interface IdentiteJuge {
   readonly juge_id: string;

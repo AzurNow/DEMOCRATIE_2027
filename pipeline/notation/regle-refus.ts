@@ -29,7 +29,7 @@
 import type { Gabarit, Instant, ReferenceItem, Ulid } from "../../analysis/types.ts";
 import type { ReponseObtenue } from "../interrogation/types.ts";
 import { attributionRelevee, type ContexteAttribution } from "./note-attribution.ts";
-import type { NotationIndividuelle, Notateur } from "./types.ts";
+import type { NotationIndividuelle, Notateur } from "../../analysis/types-notation.ts";
 
 /** Le notateur d'une notation par règle : la règle, nommée par la décision qui la fixe. */
 export const REGLE_REFUS_API = { type: "regle", id: "d12-refus-api" } as const satisfies Notateur;

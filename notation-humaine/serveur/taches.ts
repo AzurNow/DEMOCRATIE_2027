@@ -14,7 +14,7 @@
 
 import { construireFile, type TacheAnnotateur } from "../../pipeline/notation/file-humaine.ts";
 import { pagesCitees } from "../../pipeline/notation/pages-citees.ts";
-import type { RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { RunDeNotation } from "../../analysis/types-notation.ts";
 import { construireVue, indexerExistences, LienSansVerdictExistence, type VueAnnotateur } from "../../pipeline/notation/vue-annotateur.ts";
 import type { ReponsePreparee } from "./chargement.ts";
 import type { Contexte } from "./contexte.ts";

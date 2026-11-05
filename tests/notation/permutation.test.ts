@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import type { Derangement } from "../../pipeline/notation/derangement.ts";
 import { nommeUnInterroge, permuterTexte } from "../../pipeline/notation/permutation.ts";
-import type { CandidatDuRun } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
 import { CANDIDATS_DU_RUN } from "./fabriques.ts";
 
 function candidat(id: string): CandidatDuRun {

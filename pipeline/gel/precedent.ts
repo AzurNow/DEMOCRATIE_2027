@@ -41,12 +41,12 @@ import { join } from "node:path";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { ErreurSchema, validerFragment, valider } from "../../outils/schemas/valider.ts";
 import type { PointeurDeSchema } from "../../outils/schemas/valider.ts";
-import { lireInstant } from "../interrogation/heure-paris.ts";
+import { lireInstant } from "../../analysis/heure-paris.ts";
 import { tiragePrecedentDepuis } from "../questions/entrees-tirage.ts";
 import type { TiragePrecedent } from "../questions/entrees-tirage.ts";
 import type { Question, Tirage } from "../questions/types.ts";
-import { STATUT_PUBLIE, STATUT_PUBLIE_PROVISOIRE, TYPE_PILOTE } from "../run/types.ts";
-import type { StatutRun, TypeRun } from "../run/types.ts";
+import { STATUT_PUBLIE, STATUT_PUBLIE_PROVISOIRE, TYPE_PILOTE } from "../../analysis/types-run.ts";
+import type { StatutRun, TypeRun } from "../../analysis/types-run.ts";
 import type { ApplicationTestee } from "./application.ts";
 
 export type MotifPrecedent =
@@ -321,7 +321,7 @@ export function fichiersDuRunVerifies(run: RunDeRuns, octets_tirage: Uint8Array,
 
 /**
  * Des octets du tirage précédent et de son `questions.json` au `TiragePrecedent`, après
- * `fichiersDuRunVerifies`. La signature de chaque question (`signature.ts`) est calculée sur la
+ * `fichiersDuRunVerifies`. La signature de chaque question (`analysis/signature-question.ts`) est calculée sur la
  * question telle que le run précédent l'a posée.
  */
 export function tiragePrecedentVerifie(run: RunDeRuns, octets_tirage: Uint8Array, octets_questions: Uint8Array): TiragePrecedent {

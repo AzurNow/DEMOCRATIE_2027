@@ -1,7 +1,7 @@
 /**
  * Où le gel écrit (décision D41, `runs/README.md`) : `runs/<date>/` du dépôt lu quand `--sortie`
  * est absent — c'est le gel d'un vrai run, que seul l'auteur lance —, `<sortie>/<date>/` sinon.
- * `<date>` est la date de `date_gel` à Paris (`heure-paris.ts:dateParis`).
+ * `<date>` est la date de `date_gel` à Paris (`analysis/heure-paris.ts:dateParis`).
  *
  * Deux refus, avant toute écriture :
  * - une `--sortie` sous `runs/` du dépôt : seul le gel sans `--sortie` y écrit, un agent ou un test

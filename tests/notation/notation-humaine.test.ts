@@ -16,9 +16,9 @@ import {
   type SaisieAttribution,
   type SaisieHumaine,
 } from "../../pipeline/notation/notation-humaine.ts";
-import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
+import { tableAliasCandidats } from "../../analysis/alias-candidats.ts";
 import { construireVue, type ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import type { Gabarit } from "../../analysis/types.ts";
 import type { Item } from "../../validation/domaine/types.ts";

@@ -14,7 +14,7 @@ import {
   type NotationIndividuelle,
   type RevueHumaine,
   type VerdictProduit,
-} from "./types.ts";
+} from "../../analysis/types-notation.ts";
 
 export interface NoteRetenue {
   readonly categorie: NotationIndividuelle["categorie"];

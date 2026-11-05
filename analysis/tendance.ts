@@ -27,7 +27,7 @@ import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type St
 import type { UniteAnalyse } from "./filtre.ts";
 import { cleCouple, etatDesCouples, type EtatCouple, type PartageCouples } from "./seuils.ts";
 import type { IdentifiantCourt, Mode, Question } from "./types.ts";
-import { questionsAuTexteChange, signatureQuestion } from "../pipeline/questions/signature.ts";
+import { questionsAuTexteChange, signatureQuestion } from "./signature-question.ts";
 
 export interface EtatRun {
   readonly unites: readonly UniteAnalyse[];

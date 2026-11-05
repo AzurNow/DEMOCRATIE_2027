@@ -10,7 +10,7 @@ import { construireCharge, VERSION_CHARGE_JUGE, type DemandeCharge } from "../..
 import type { Derangement } from "../../pipeline/notation/derangement.ts";
 import { controlerExtrait } from "../../pipeline/notation/extrait.ts";
 import { demandePermutee, reponseContrefactuelle } from "../../pipeline/notation/reponse-contrefactuelle.ts";
-import type { CandidatDuRun } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
 import type { ReponseManquante, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemA, itemO, itemP } from "../aides/fabriques.ts";

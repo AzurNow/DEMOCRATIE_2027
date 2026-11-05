@@ -32,7 +32,7 @@
  */
 
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import { instantDe } from "../../pipeline/questions/reponse-attendue.ts";
+import { instantDe } from "../../analysis/instants.ts";
 import { lesDeuxOntFini } from "./analyse-lot.ts";
 import { derniersCalculs, kappasRetenusSection12, type DiagnosticPublie } from "./diagnostic-publie.ts";
 import { rejouer, type EtatAnnotateur } from "./journal.ts";

@@ -15,7 +15,7 @@
  * 2. `tirerAuGel` puis `fichiersDuGel` : le tirage (`tirage.ts:tirer`, graine du tirage, quotas du
  *    périmètre, tirage du run précédent pour les reprises du §5), puis, une fois la barrière passée, `run.json` qui référence `tirage.json` et
  *    `questions.json` (D48 (4)) par leur chemin et le SHA-256 de leurs octets exacts, et porte la balise (`balise.ts:baliseDuRun`),
- *    la table alias aveugle de candidat (§7, protocole 0.20, D55 (9), `notation/alias-candidats.ts:tableAliasCandidats`,
+ *    la table alias aveugle de candidat (§7, protocole 0.20, D55 (9), `analysis/alias-candidats.ts:tableAliasCandidats`,
  *    graine `alias_candidats` et candidats interrogés au gel), l'engagement archivé (D46), le run
  *    précédent (D45 (3), `precedent.ts`), la désignation du run de l'application du mois (§6,
  *    D73 (11), `application.ts`) et l'empreinte du
@@ -33,13 +33,13 @@ import { createHash } from "node:crypto";
 import { validerFragment, valider } from "../../outils/schemas/valider.ts";
 import { ouvrirFenetre } from "../interrogation/fenetre.ts";
 import type { Fenetre, RunsDuDepot } from "../interrogation/fenetre.ts";
-import { dateParis, lireInstant } from "../interrogation/heure-paris.ts";
+import { dateParis, lireInstant } from "../../analysis/heure-paris.ts";
 import { construirePerimetre } from "../questions/charger-perimetre.ts";
 import type { PerimetreCharge } from "../questions/charger-perimetre.ts";
 import { tirer } from "../questions/tirage.ts";
 import type { ResultatTirage } from "../questions/tirage.ts";
 import type { Item, Mesure, Question, RunAuGel, Symetrie, Tirage } from "../questions/types.ts";
-import { tableAliasCandidats } from "../notation/alias-candidats.ts";
+import { tableAliasCandidats } from "../../analysis/alias-candidats.ts";
 import { TAUX_ECHANTILLON_SANS_RETRAIT } from "../notation/taux-echantillon.ts";
 import { tachesDe } from "../reformulation/entrees.ts";
 import { questionsAuGel } from "../reformulation/lecture-au-gel.ts";
@@ -57,7 +57,7 @@ import { exigerFenetreApresDateGel } from "./instants.ts";
 import type { PrecedentDuGel } from "./precedent.ts";
 import { ECHANTILLONS } from "../interrogation/conditions.ts";
 import { reponsesPrevues } from "../run/reponses.ts";
-import { STATUT_PLANIFIE } from "../run/types.ts";
+import { STATUT_PLANIFIE } from "../../analysis/types-run.ts";
 import { candidatsInterroges } from "../../analysis/candidats-interroges.ts";
 
 /** Le statut d'un run qui vient d'être gelé : il n'est ni lancé ni publié. */

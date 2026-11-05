@@ -18,7 +18,7 @@
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import type { Ulid } from "../../analysis/types.ts";
 import { FenetreRefusee, ouvrirFenetre, tentativePeutDemarrer, type Fenetre, type RunDeLaFenetre, type RunsDuDepot } from "../interrogation/fenetre.ts";
-import { lireInstant } from "../interrogation/heure-paris.ts";
+import { lireInstant } from "../../analysis/heure-paris.ts";
 import type { RobustesseLue } from "./metriques.ts";
 import type { CodeCritere, Critere } from "./types.ts";
 

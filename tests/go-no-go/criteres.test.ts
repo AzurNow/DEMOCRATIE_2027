@@ -17,7 +17,7 @@ import {
   type OutilDeclare,
 } from "../../pipeline/go-no-go/criteres-run.ts";
 import { AUCUN_JUGE_RETENU } from "../../pipeline/go-no-go/types.ts";
-import type { JugeDuRun, VerdictProduit } from "../../pipeline/notation/types.ts";
+import type { JugeDuRun, VerdictProduit } from "../../analysis/types-notation.ts";
 import type { ConditionSymetrie, Symetrie } from "../../pipeline/questions/types.ts";
 import { planCouvrant, reponseDe, requetesPlanifiees, ulid } from "../analysis/fabriques.ts";
 import { inexacte, notationHumaine, notationJuge } from "../notation/fabriques.ts";

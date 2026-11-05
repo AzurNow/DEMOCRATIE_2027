@@ -19,7 +19,7 @@ import { LecturesComparateurIncoherentes } from "../../analysis/reference-compar
 import type { CategorieRetenue, LectureComparateur, Notation, Verdict } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { etatsDesLectures, MOTIF_DOUBLE_NOTATION_COMPARATEUR, NotationLectureRefusee, verdictDeLecture } from "../../pipeline/notation/lectures-comparateur.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import { notationHumaine } from "../notation/fabriques.ts";
 import { empreinte, outil, ulid, verdict } from "./fabriques.ts";
 import { entreesDuRunAnalysable, SPEC_REFERENCE, type SpecRun } from "./run-analysable.ts";

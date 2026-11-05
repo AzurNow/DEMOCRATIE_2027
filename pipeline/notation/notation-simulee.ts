@@ -14,7 +14,7 @@
  *    `questions.json` et `tirage.json` (réponse attendue et prémisse résolues au gel, que la charge
  *    v3 transmet, D27). Ils sont posés depuis les fixtures, par ouverture exclusive : un fichier déjà
  *    là n'est jamais réécrit, et il doit être celui des fixtures (pour `run.json`, aux champs écrits
- *    après le gel près, `pipeline/run/champs-posterieurs-au-gel.ts`), sinon `GelDivergent`.
+ *    après le gel près, `analysis/champs-posterieurs-au-gel.ts`), sinon `GelDivergent`.
  * 4. **Lecture.** Le run, les questions, les réponses obtenues du contexte `run`, chaque fichier
  *    validé contre son schéma (`analysis/lecture-run.ts`), et les items épinglés. Les items d'un run
  *    simulé ne sont pas dans `data/` (aucun item fictif n'y entre, règle 3) : ils sont lus dans les
@@ -45,7 +45,7 @@ import { noterRun, type EnvironnementChaine, type ReponseANoter, type ResultatCh
 import { resolusAuGel } from "./charge-juge.ts";
 import { fournisseurSimule, type TexteSimule } from "./fournisseur-simule.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
-import { memeGel } from "../run/champs-posterieurs-au-gel.ts";
+import { memeGel } from "../../analysis/champs-posterieurs-au-gel.ts";
 import { interrogesDuRun, preparerANoter, type GelDeNotation } from "./preparation.ts";
 import { jugesSimules, type BiaisSimule, type JugeSimuleDeclare, type ParametresJugeSimule } from "./juge-simule.ts";
 import type { ExistenceEtablie } from "./vue-annotateur.ts";
@@ -142,7 +142,7 @@ function poserFichier(source: string, cible: string, identiques: (lu: string, so
 /**
  * `run.json` est celui des fixtures hors de tout ce qui s'écrit après le gel (notation, go/no-go,
  * statut, publication, dépôt, invalidation, contestations postérieures) : la liste vit dans
- * `pipeline/run/champs-posterieurs-au-gel.ts`, une seule fois.
+ * `analysis/champs-posterieurs-au-gel.ts`, une seule fois.
  */
 function memeRunAuGel(lu: string, source: string): boolean {
   return memeGel(JSON.parse(lu) as object, JSON.parse(source) as object);

@@ -26,8 +26,8 @@ import type {
   Ulid,
   VerdictExistence,
   VerdictSoutien,
-} from "../../analysis/types.ts";
-import type { GraineTirage } from "../questions/types.ts";
+} from "./types.ts";
+import type { GraineTirage } from "./graine-tirage.ts";
 
 /** `notation.schema.json#/properties/motif_inexactitude`. */
 export const MOTIFS_INEXACTITUDE = [
@@ -84,7 +84,7 @@ export interface ExtraitJustificatif {
 }
 
 export interface Notateur {
-  /** `regle` (D32) : la note inscrite par le code pour un refus de l'API (`regle-refus.ts`). */
+  /** `regle` (D32) : la note inscrite par le code pour un refus de l'API (`pipeline/notation/regle-refus.ts`). */
   readonly type: "juge" | "humain" | "regle";
   readonly id: IdentifiantCourt;
   readonly famille_modele?: string;
@@ -114,7 +114,7 @@ export interface NotationIndividuelle {
   readonly sur_refus_api?: true;
   /**
    * Annexe C (protocole 0.27, D67) : la notation porte sur une réponse au texte vide, hors refus de
-   * l'API ; posé d'après `reponse.normalise.texte`, jamais d'après une saisie (`extrait.ts:reponseAuTexteVide`).
+   * l'API ; posé d'après `reponse.normalise.texte`, jamais d'après une saisie (`pipeline/notation/extrait.ts:reponseAuTexteVide`).
    * Exempte de l'extrait justificatif, comme `sur_refus_api`. Absent sinon.
    */
   readonly sur_texte_vide?: true;
@@ -245,7 +245,7 @@ export interface RunDeNotation {
   readonly id: Ulid;
   /**
    * Tous les candidats déclarés au périmètre du run, interrogés ou non : le dérangement du test
-   * contrefactuel (§7, D14 (2)) se tire sur eux (`derangement.ts`).
+   * contrefactuel (§7, D14 (2)) se tire sur eux (`pipeline/notation/derangement.ts`).
    */
   readonly candidats: readonly CandidatDuRun[];
   readonly juges: readonly JugeDuRun[];

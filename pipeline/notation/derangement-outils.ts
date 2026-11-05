@@ -59,8 +59,8 @@
 import { graineDerivee } from "../../analysis/graines.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { generateur } from "../../validation/domaine/alea.ts";
-import { verifierGraine } from "../questions/graine.ts";
-import type { GraineTirage } from "../questions/types.ts";
+import { verifierGraine } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import type { ReponseEcrite } from "../interrogation/types.ts";
 import { melangeSansPointFixe } from "./derangement.ts";
 import { nommeUneForme, permuterParFormes, type Forme, type TextePermute } from "./permutation.ts";

@@ -6,7 +6,7 @@
  * questions tirées, arrondi à l'entier inférieur ; une strate où les questions neuves manquent est
  * complétée par des reprises, et le dépassement qui en résulte est rapporté avec le run. »
  *
- * La définition de « même question » vit une fois, dans `pipeline/questions/signature.ts` : le
+ * La définition de « même question » vit une fois, dans `analysis/signature-question.ts` : le
  * tirage (reprise, §5) et la tendance (questions communes, §8) doivent y répondre pareil.
  */
 

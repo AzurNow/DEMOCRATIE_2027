@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 import { NomCiteSansMot, rattacherNoms } from "../../pipeline/notation/rattachement.ts";
 import { memesMots } from "../../pipeline/questions/libelles.ts";
-import type { CandidatDuRun } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
 
 const PERIMETRE: readonly CandidatDuRun[] = [
   { candidat_id: "demo-alpha", libelle: "Alix Martinez", nom: "Martinez" },

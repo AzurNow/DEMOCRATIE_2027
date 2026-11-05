@@ -1,6 +1,6 @@
 /**
  * Les champs que `run.json` reçoit après le gel, tenus en un seul module
- * (`pipeline/run/champs-posterieurs-au-gel.ts`, DETTE 2026-11-04 n° 2) et lus par chaque comparaison
+ * (`analysis/champs-posterieurs-au-gel.ts`, DETTE 2026-11-04 n° 2) et lus par chaque comparaison
  * de `run.json` : la reconnaissance du gel de `pnpm notation:dry` (`GelDivergent`), l'empreinte du
  * run publiée dans `metriques.json` (§9) et la part que le go/no-go compare à son recalcul.
  *
@@ -24,7 +24,7 @@ import {
   retirerChamps,
   RunJsonIncomplet,
   type ChampsDeRunJson,
-} from "../../pipeline/run/champs-posterieurs-au-gel.ts";
+} from "../../analysis/champs-posterieurs-au-gel.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { ecrireObjet, lireObjet, nettoyerReference, nettoyerRepertoires, runSimuleNote } from "../go-no-go/aides.ts";
 import { FIXTURES_NOTATION, options } from "../notation/simulation.ts";

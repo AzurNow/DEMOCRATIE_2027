@@ -8,12 +8,10 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  DateCivileInvalide,
   estEnVigueur,
   etatEnVigueur,
-  instantDe,
-  instantDeDateCivile,
 } from "../../pipeline/questions/reponse-attendue.ts";
+import { DateCivileInvalide, instantDe, instantDeDateCivile } from "../../analysis/instants.ts";
 import { itemP, mesure } from "./fabriques.ts";
 
 const MESURE = mesure({ cle: "tva", libelle: "TVA réduite sur l'énergie" });

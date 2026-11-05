@@ -7,8 +7,13 @@
  * heure d'été comme d'hiver. Aucune bibliothèque : `Intl` porte la base des fuseaux du moteur.
  */
 
-import { dateCivileValide } from "../../validation/domaine/validateurs-champ.ts";
-import { FUSEAU_DU_RUN } from "./conditions.ts";
+import { dateCivileValide } from "../validation/domaine/validateurs-champ.ts";
+
+/**
+ * §6 : la fenêtre est « ouverte le mardi à 6 h, heure de Paris » ; le jour et l'heure d'ouverture
+ * sont dans `pipeline/interrogation/conditions.ts`.
+ */
+export const FUSEAU_DU_RUN = "Europe/Paris";
 
 export interface HeureCivile {
   readonly annee: number;
@@ -88,7 +93,7 @@ const MOTIF_INSTANT = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.
 /**
  * Instant dont la date civile écrite est impossible (`2027-02-29T10:00:00+01:00`) : `Date.parse`
  * la ferait glisser au 1er mars sans lever. Même règle que `DateCivileInvalide`
- * (`pipeline/questions/reponse-attendue.ts`), `dateCivileValide`, une seule dans le dépôt ; erreur
+ * (`analysis/instants.ts`), `dateCivileValide`, une seule dans le dépôt ; erreur
  * propre pour porter le contexte de lecture (`date_gel`, `run.json#/fenetre/fin`…).
  */
 export class InstantImpossible extends Error {

@@ -52,9 +52,9 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { contestationsDe } from "../../validation/domaine/contestation-item.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { lireItemsData } from "../../validation/io/data-items.ts";
-import { lireInstant } from "../interrogation/heure-paris.ts";
+import { lireInstant } from "../../analysis/heure-paris.ts";
 import { ecrireParRenommage } from "./ecriture.ts";
-import { STATUT_INVALIDE, type StatutRun } from "./types.ts";
+import { STATUT_INVALIDE, type StatutRun } from "../../analysis/types-run.ts";
 
 /** La part d'un run que ce module lit. */
 export interface RunEtSesContestations {

@@ -1,6 +1,6 @@
 /**
  * Lot 10 (b), constat 30 (PR #173 incomplète) : le statut et le type d'un run lus par l'analyse, le
- * go/no-go et la notation humaine sont les unions dérivées du schéma (`pipeline/run/types.ts`), pas
+ * go/no-go et la notation humaine sont les unions dérivées du schéma (`analysis/types-run.ts`), pas
  * des `string`. Une faute de frappe ou un statut renommé dans le schéma casse alors la compilation
  * (`pnpm check`) au lieu de laisser passer une comparaison toujours fausse.
  */
@@ -15,7 +15,7 @@ import {
   TYPES_RUN,
   type StatutRun,
   type TypeRun,
-} from "../../pipeline/run/types.ts";
+} from "../../analysis/types-run.ts";
 
 describe("statut et type de run typés à la lecture (Lot 10 (b))", () => {
   it("RunLu.statut et RunLu.type_run sont les unions du schéma, pas des chaînes libres", () => {

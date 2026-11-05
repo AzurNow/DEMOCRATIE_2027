@@ -16,7 +16,7 @@ import { CATEGORIES_PRIMAIRES } from "../../analysis/kappa-categorie-primaire.ts
 import { DRAPEAUX, VERDICTS_SOUTIEN } from "../../analysis/types.ts";
 import { construireNotationHumaine } from "../../pipeline/notation/notation-humaine.ts";
 import { FichierDejaEcrit } from "../../pipeline/notation/stockage.ts";
-import { MOTIFS_INEXACTITUDE } from "../../pipeline/notation/types.ts";
+import { MOTIFS_INEXACTITUDE } from "../../analysis/types-notation.ts";
 import { VERSION_GRILLE_HUMAINE } from "../../pipeline/notation/vue-annotateur.ts";
 import type { Reponse } from "../../validation/serveur/http.ts";
 import type { Contexte } from "./contexte.ts";

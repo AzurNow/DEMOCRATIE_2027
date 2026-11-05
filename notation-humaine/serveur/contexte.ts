@@ -13,7 +13,7 @@
 import { lireNotationsDuRun } from "../../analysis/lecture-run.ts";
 import { exigerPseudonyme } from "../../pipeline/notation/notation-humaine.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
-import type { NotationIndividuelle, RenvoiHumain } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle, RenvoiHumain } from "../../analysis/types-notation.ts";
 import { validerFragment } from "../../outils/schemas/valider.ts";
 import { ulid } from "../../validation/domaine/ulid.ts";
 import { instantLocal } from "../../validation/serveur/contexte.ts";

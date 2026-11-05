@@ -27,7 +27,7 @@ import { tirerEchantillonHumain } from "./echantillons.ts";
 import { reponseAuTexteVide } from "./extrait.ts";
 import { porteDrapeauGrave } from "./note-retenue.ts";
 import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
-import type { JugeDuRun, ModeResolution, NotationIndividuelle, RunDeNotation, VerdictProduit } from "./types.ts";
+import type { JugeDuRun, ModeResolution, NotationIndividuelle, RunDeNotation, VerdictProduit } from "../../analysis/types-notation.ts";
 
 export const CODES_VIOLATION = [
   "source_introuvable",

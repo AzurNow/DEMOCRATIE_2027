@@ -40,7 +40,7 @@ import { ulid } from "../../validation/domaine/ulid.ts";
 import { attenteAvantTentative, TENTATIVES_MAX } from "./conditions.ts";
 import { entetesEnregistrables, type Adaptateur, type Contenu, type Editeur, type ReponseHttp, type RequeteHttp } from "./editeur.ts";
 import { tentativePeutDemarrer, type Fenetre } from "./fenetre.ts";
-import { instantParis } from "./heure-paris.ts";
+import { instantParis } from "../../analysis/heure-paris.ts";
 import type { Horloge } from "./horloge.ts";
 import { JournalRequete, MESSAGE_OCTETS_SANS_SUITE, type Reprise } from "./journal.ts";
 import type { PlanInterrogation } from "./plan.ts";

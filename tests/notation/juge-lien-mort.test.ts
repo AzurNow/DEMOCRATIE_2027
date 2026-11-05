@@ -14,7 +14,7 @@ import { notationsConcordent } from "../../analysis/note-lue.ts";
 import { VERDICTS_EXISTENCE, VERDICTS_SOUTIEN, type VerdictExistence, type VerdictSoutien } from "../../analysis/types.ts";
 import { decider } from "../../pipeline/notation/decision.ts";
 import { notationDeJuge, soutienApresTestHttp, type IdentiteJuge, type SortieJuge } from "../../pipeline/notation/juge.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import type { ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";

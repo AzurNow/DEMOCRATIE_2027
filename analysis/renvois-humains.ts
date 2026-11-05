@@ -21,7 +21,7 @@
  *   juge non déclaré au gel, deux renvois d'un même juge sur une même réponse dans un même contexte.
  */
 
-import { MOTIFS_RENVOI_DEFAILLANCE } from "../pipeline/notation/types.ts";
+import { MOTIFS_RENVOI_DEFAILLANCE } from "./types-notation.ts";
 import type { IdentifiantCourt, Ulid } from "./types.ts";
 
 /** Les motifs de `schema/renvoi-humain.schema.json`, dans son ordre : D30 (2), puis les quatre du §7 (0.27). */

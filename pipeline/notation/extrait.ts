@@ -25,7 +25,7 @@
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { etatsPositionnels } from "./etats.ts";
-import type { NotationIndividuelle } from "./types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 
 export interface TextesDeVerification {
   /** `reponse.normalise.texte`. */

@@ -38,10 +38,10 @@
 
 import { graineDerivee } from "../../analysis/graines.ts";
 import { generateur, melanger, type GenerateurAleatoire } from "../../validation/domaine/alea.ts";
-import { verifierGraine } from "../questions/graine.ts";
-import type { GraineTirage } from "../questions/types.ts";
+import { verifierGraine } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import type { CandidatDuRun } from "./types.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
 
 /**
  * Clé lisible de la graine du dérangement, dérivée de `run.graines.contrefactuel`. Elle ne partage

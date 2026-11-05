@@ -24,7 +24,7 @@
 
 import { libelleSansMot, memesMots } from "../questions/libelles.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import type { CandidatDuRun } from "./types.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
 
 export interface Rattachement {
   /** Identifiants des candidats rattachés, triés. */

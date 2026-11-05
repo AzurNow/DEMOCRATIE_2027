@@ -10,7 +10,7 @@
  *
  * La comparaison se fait sur des instants, comme la fenêtre des sondages du §3
  * (`pipeline/questions/perimetre.ts:sondageDansLaFenetre`) : la lecture des dates vit une seule
- * fois, dans `pipeline/questions/reponse-attendue.ts`. Un gel qui n'est pas à minuit UTC décale
+ * fois, dans `analysis/instants.ts`. Un gel qui n'est pas à minuit UTC décale
  * donc la borne basse dans la journée : la date civile qui tombe 60 jours avant le jour du gel
  * n'entre que si le gel est à minuit UTC.
  *
@@ -21,7 +21,7 @@
  * `recents:60j`, à la place de `global` dans `options.cle` (`STRATE_RECENTE`).
  */
 
-import { instantDe, instantDeDateCivile } from "../pipeline/questions/reponse-attendue.ts";
+import { instantDe, instantDeDateCivile } from "./instants.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import type { TypeItem, Ulid } from "./types.ts";
 

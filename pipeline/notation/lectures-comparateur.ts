@@ -48,7 +48,7 @@ import { lireNote, type NoteLue } from "../../analysis/note-lue.ts";
 import type { Instant, LectureComparateur, Ulid } from "../../analysis/types.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { construireVerdict, humainsAArbitrer, noteCommune, noteDe, type NoteRetenue } from "./note-retenue.ts";
-import type { NotationIndividuelle, VerdictProduit } from "./types.ts";
+import type { NotationIndividuelle, VerdictProduit } from "../../analysis/types-notation.ts";
 
 export const MOTIF_DOUBLE_NOTATION_COMPARATEUR = "double_notation_comparateur";
 export const MOTIF_ARBITRAGE_COMPARATEUR = "arbitrage_comparateur";

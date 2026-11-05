@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { ulid } from "../analysis/fabriques.ts";
 import { decider, JugeIndetermine, NotationsIncoherentes, type Decision, type EntreeDecision } from "../../pipeline/notation/decision.ts";
 import { humainsAArbitrer, noteDe } from "../../pipeline/notation/note-retenue.ts";
-import type { NotationIndividuelle, VerdictProduit } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle, VerdictProduit } from "../../analysis/types-notation.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import {
   inexacte,

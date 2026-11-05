@@ -52,7 +52,7 @@ import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { type SousEnsembleContrefactuel } from "./echantillons.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
 import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
-import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain } from "../../analysis/types-notation.ts";
 
 /** §7 : « au-delà de 3 % », en fraction exacte. */
 export const SEUIL_RETRAIT = { numerateur: 3, denominateur: 100 } as const;

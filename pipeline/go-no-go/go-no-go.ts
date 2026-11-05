@@ -55,9 +55,10 @@ import type { IdentifiantCourt, ParMode, Reponse, Ulid } from "../../analysis/ty
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { tirerEchantillonHumain } from "../notation/echantillons.ts";
-import type { GraineTirage, Symetrie } from "../questions/types.ts";
-import { CHAMPS_DU_GO_NO_GO, partDesChamps, retirerChamps } from "../run/champs-posterieurs-au-gel.ts";
-import { STATUT_INVALIDE, STATUT_PLANIFIE, type StatutRun, type TypeRun } from "../run/types.ts";
+import type { Symetrie } from "../questions/types.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
+import { CHAMPS_DU_GO_NO_GO, partDesChamps, retirerChamps } from "../../analysis/champs-posterieurs-au-gel.ts";
+import { STATUT_INVALIDE, STATUT_PLANIFIE, type StatutRun, type TypeRun } from "../../analysis/types-run.ts";
 import {
   constatGraineDuTirage,
   constatInterrogationDansLaFenetre,
@@ -89,7 +90,7 @@ import type { GoNoGo } from "./types.ts";
 
 /** La part de `run.json` que lit le go/no-go, en plus de `RunLu`. */
 interface VueGoNoGo {
-  /** Typé par le schéma (`pipeline/run/types.ts`) : un statut mal écrit ou renommé ne compile plus. */
+  /** Typé par le schéma (`analysis/types-run.ts`) : un statut mal écrit ou renommé ne compile plus. */
   readonly statut: StatutRun;
   readonly invalidation?: { readonly motif: string };
   readonly fenetre: { readonly debut: string; readonly fin: string };
@@ -266,7 +267,7 @@ function fusionner(brut: Objet, calcul: Calcul): Objet {
 /**
  * Ce que la commande écrit dans `run.json`, et rien d'autre : la base de la comparaison au recalcul.
  * La liste de ces champs vit avec les autres champs écrits après le gel
- * (`pipeline/run/champs-posterieurs-au-gel.ts:CHAMPS_DU_GO_NO_GO`).
+ * (`analysis/champs-posterieurs-au-gel.ts:CHAMPS_DU_GO_NO_GO`).
  */
 function partEcrite(run: Objet): string {
   return canoniser(partDesChamps(run, CHAMPS_DU_GO_NO_GO));

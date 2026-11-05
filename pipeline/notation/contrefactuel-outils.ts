@@ -33,7 +33,7 @@
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { compterChangements, ContrefactuelIncoherent, mentionsResiduellesDes, type ComptesDuJuge, type EntreeContrefactuel, type PaireIncomplete, type TauxDeChangement } from "./contrefactuel.ts";
 import type { AbsenceContrefactuelOutils } from "./derangement-outils.ts";
-import type { RunDeNotation } from "./types.ts";
+import type { RunDeNotation } from "../../analysis/types-notation.ts";
 
 export type ResultatJugeOutils =
   | { readonly juge_id: string; readonly taux: TauxDeChangement; readonly paires_ecartees: number }

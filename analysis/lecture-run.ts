@@ -36,11 +36,11 @@ import { executerGit } from "../outils/executer-git.ts";
 import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import type { NomSchema } from "../outils/schemas/noms.ts";
-import { dateParis, lireInstant } from "../pipeline/interrogation/heure-paris.ts";
-import { tableAliasCandidats, type TableAliasCandidats } from "../pipeline/notation/alias-candidats.ts";
-import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain, VerdictProduit } from "../pipeline/notation/types.ts";
-import type { GraineTirage, RegimeInclusion } from "../pipeline/questions/types.ts";
-import type { StatutRun, TypeRun } from "../pipeline/run/types.ts";
+import { dateParis, lireInstant } from "./heure-paris.ts";
+import { tableAliasCandidats, type TableAliasCandidats } from "./alias-candidats.ts";
+import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain, VerdictProduit } from "./types-notation.ts";
+import type { GraineTirage } from "./graine-tirage.ts";
+import type { RegimeInclusion, StatutRun, TypeRun } from "./types-run.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsPublie } from "./accord-humains.ts";
 import { estDuRun, type EntreesAnalyse } from "./filtre.ts";
@@ -324,7 +324,7 @@ export function lireRunJson(repertoire_run: string): RunLu {
   return run;
 }
 
-/** La part du run que lit le noyau de notation (`pipeline/notation/types.ts`). */
+/** La part du run que lit le noyau de notation (`analysis/types-notation.ts`). */
 export function runDeNotationDe(run: RunLu): RunDeNotation {
   return {
     id: run.id,
@@ -583,8 +583,8 @@ export function verifierArchive(run: RunLu, chemin: string | undefined): Verific
 
 /**
  * Le plan d'interrogation d'un run lu, à plat (§8, protocole 0.21). Injecté par l'appelant —
- * `pipeline/interrogation/plan-du-run.ts:requetesDuPlanDuRun` — pour que `analysis/` n'importe pas
- * `pipeline/interrogation/plan.ts` (flux à sens unique, CLAUDE.md) ; appelé après les lectures du
+ * `pipeline/interrogation/plan-du-run.ts:requetesDuPlanDuRun` — pour que `analysis/` n'importe rien
+ * de `pipeline/` (CLAUDE.md, « Architecture » ; tenu par `eslint.config.js`) ; appelé après les lectures du
  * run, et seulement s'il y a un `par_mode` à recouper.
  */
 export type PlanDuRun = (repertoire_run: string, run: RunLu) => readonly RequeteDuPlan[];

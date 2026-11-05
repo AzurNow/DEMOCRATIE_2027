@@ -2,13 +2,13 @@
  * §8 (protocole 0.9), tendance : « une question dont un texte a changé sort de la comparaison, et
  * leur nombre est publié ». Le nombre est un chiffre du run (ni par outil, ni par mode) : les
  * questions présentes aux deux runs sous le même identifiant mais dont la signature
- * (`pipeline/questions/signature.ts`, seule définition) diffère.
+ * (`analysis/signature-question.ts`, seule définition) diffère.
  */
 
 import { describe, expect, it } from "vitest";
 import { tendanceDuRun } from "../../analysis/tendance.ts";
 import { exactitude } from "../../analysis/metriques.ts";
-import { questionsAuTexteChange } from "../../pipeline/questions/signature.ts";
+import { questionsAuTexteChange } from "../../analysis/signature-question.ts";
 import type { Question } from "../../analysis/types.ts";
 import { empreinte, idQuestion, question, tousCompares, ulid, unite } from "./fabriques.ts";
 

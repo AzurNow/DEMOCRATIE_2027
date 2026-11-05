@@ -596,7 +596,7 @@
         "schema/run.schema.json:perimetre.regime_inclusion",
         "schema/run.schema.json:perimetre.allOf:liste_officielle",
         "schema/run.schema.json:$defs.preuve_archivee",
-        "pipeline/questions/types.ts:REGIMES_INCLUSION",
+        "analysis/types-run.ts:REGIMES_INCLUSION",
         "pipeline/questions/charger-perimetre.ts:PREUVES_DU_REGIME"
       ],
       "tests": [
@@ -1762,7 +1762,7 @@
       "code": [
         "pipeline/questions/reponse-attendue.ts:reponseAttendue",
         "pipeline/questions/reponse-attendue.ts:etatEnVigueur",
-        "pipeline/questions/reponse-attendue.ts:instantDeDateCivile"
+        "analysis/instants.ts:instantDeDateCivile"
       ],
       "tests": [
         "tests/questions/reponse-attendue.test.ts « attend la position modifiée quand le changement précède strictement le gel »",
@@ -2363,7 +2363,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/questions/reponse-attendue.ts:instantDeDateCivile"
+        "analysis/instants.ts:instantDeDateCivile"
       ],
       "tests": [
         "tests/questions/reponse-attendue.test.ts « lit la date de changement à minuit UTC, borne incluse, pour une question fermée sur un item O »",
@@ -3393,7 +3393,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/questions/signature.ts:signatureQuestion",
+        "analysis/signature-question.ts:signatureQuestion",
         "pipeline/questions/tirage.ts:precedenteSiReprise"
       ],
       "tests": [
@@ -5736,7 +5736,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/questions/signature.ts:signatureQuestion",
+        "analysis/signature-question.ts:signatureQuestion",
         "analysis/tendance.ts:questionsCommunes"
       ],
       "tests": [
@@ -5753,7 +5753,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/questions/signature.ts:questionsAuTexteChange",
+        "analysis/signature-question.ts:questionsAuTexteChange",
         "analysis/tendance.ts:tendanceDuRun"
       ],
       "tests": [
@@ -7844,7 +7844,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/notation/alias-candidats.ts:tableAliasCandidats",
+        "analysis/alias-candidats.ts:tableAliasCandidats",
         "pipeline/notation/charge-juge.ts:itemSoumis",
         "pipeline/notation/charge-juge.ts:reponseAttendueSoumise",
         "pipeline/gel/assemblage.ts:runDuGel",
@@ -8101,7 +8101,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/notation/alias-candidats.ts:tableAliasCandidats"
+        "analysis/alias-candidats.ts:tableAliasCandidats"
       ],
       "tests": [
         "tests/notation/alias-candidats.test.ts « forme C1 à Cn, n = le nombre de candidats reçus (les interrogés, jamais plus) »",
@@ -8118,8 +8118,8 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/notation/alias-candidats.ts:tableAliasCandidats",
-        "pipeline/notation/alias-candidats.ts:CLE_ALIAS_CANDIDATS",
+        "analysis/alias-candidats.ts:tableAliasCandidats",
+        "analysis/alias-candidats.ts:CLE_ALIAS_CANDIDATS",
         "outils/ordre-chaines.ts:comparerChaines",
         "validation/domaine/alea.ts:melanger"
       ],
@@ -8797,7 +8797,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/notation/alias-candidats.ts"
+        "analysis/alias-candidats.ts"
       ],
       "tests": [
         "tests/notation/alias-candidats.test.ts « la table porte exactement C1 et C2, sur les deux finalistes, quelle que soit la graine »",

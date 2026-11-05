@@ -27,7 +27,7 @@ import { dispositionRunNote } from "../../analysis/lecture-run.ts";
 import type { Instant } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
-import { CHAMPS_DU_TEST } from "../run/champs-posterieurs-au-gel.ts";
+import { CHAMPS_DU_TEST } from "../../analysis/champs-posterieurs-au-gel.ts";
 import { ecrireParRenommage } from "../run/ecriture.ts";
 import { invalider } from "../run/statut.ts";
 import type { RunAvecStatut } from "../run/statut.ts";
@@ -52,7 +52,7 @@ export class InscriptionImpossible extends Error {
 type Objet = Readonly<Record<string, unknown>>;
 
 // Les champs d'un juge que le test fixe, retirés de l'ancien juge avant la fusion : leur liste vit
-// avec les autres champs écrits après le gel (`pipeline/run/champs-posterieurs-au-gel.ts`).
+// avec les autres champs écrits après le gel (`analysis/champs-posterieurs-au-gel.ts`).
 
 /**
  * `maintenant` date l'invalidation d'un run invalide (D16 (3)) ; l'horloge n'est pas lue sinon, ni à

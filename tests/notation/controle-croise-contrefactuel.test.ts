@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
-import type { JugeDuRun, RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { JugeDuRun, RunDeNotation } from "../../analysis/types-notation.ts";
 import { runDeNotation } from "./fabriques.ts";
 
 /** Modifié ouvertement (D31 (1)) : le juge publie aussi ses paires écartées, 0 par défaut d'écriture du test. */

@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import { lireNote, sourcageDeNotation } from "../../analysis/note-lue.ts";
 import { notationParRegle, PasUnRefusApi, REGLE_REFUS_API, type CadreNotationParRegle } from "../../pipeline/notation/regle-refus.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { ErreurSchema, valider } from "../../outils/schemas/valider.ts";
 import { itemA, itemF, itemO, itemP } from "../aides/fabriques.ts";

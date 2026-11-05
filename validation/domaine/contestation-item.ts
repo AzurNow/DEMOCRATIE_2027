@@ -23,7 +23,7 @@
  */
 
 import { DecisionsPanelSimultanees } from "../../pipeline/questions/contestation.ts";
-import { instantDe } from "../../pipeline/questions/reponse-attendue.ts";
+import { instantDe } from "../../analysis/instants.ts";
 import { ancienneteEnJours } from "./corrections-mesure.ts";
 import { validerCorrections, type AccesTexte, type RefusCorrection } from "./corrections.ts";
 import { canoniser, empreinteApresModification } from "./empreinte.ts";

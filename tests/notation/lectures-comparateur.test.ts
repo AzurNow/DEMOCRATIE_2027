@@ -16,7 +16,7 @@ import {
   verdictDeLecture,
   type EtatLecture,
 } from "../../pipeline/notation/lectures-comparateur.ts";
-import type { NotationIndividuelle, VerdictProduit } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle, VerdictProduit } from "../../analysis/types-notation.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { lectureComparateur, ulid } from "../analysis/fabriques.ts";

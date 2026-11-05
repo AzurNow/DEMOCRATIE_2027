@@ -9,7 +9,7 @@
  * Le tirage (reprise, §5) et la tendance (questions communes, §8) lisent cette signature, et
  * aucun des deux ne la recalcule : deux définitions de la même égalité divergeraient, et une
  * question comptée reprise par le tirage sortirait de la tendance sans que rien ne le dise. Elle vit
- * dans `pipeline/questions/` parce que le flux va du pipeline vers l'analyse, jamais l'inverse.
+ * dans `analysis/`, que `pipeline/` importe ; l'inverse est interdit (CLAUDE.md, « Architecture »).
  */
 
 /** La part d'une question que la signature lit : son identifiant et l'empreinte de chaque texte. */

@@ -20,7 +20,7 @@ import type { Ulid } from "../../analysis/types.ts";
 import type { Attente, MotifEnAttente, ResultatChaine } from "./chaine.ts";
 import { MOTIFS_ATTENTE } from "./decision.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import type { ChangementsContrefactuel } from "./types.ts";
+import type { ChangementsContrefactuel } from "../../analysis/types-notation.ts";
 
 /** L'ordre d'impression des motifs : ceux de `decider`, puis ceux qui empêchent d'y arriver. */
 export const MOTIFS_DU_BILAN: readonly MotifEnAttente[] = [...MOTIFS_ATTENTE, "test_liens", "contrefactuel_en_attente", "run_invalide"];

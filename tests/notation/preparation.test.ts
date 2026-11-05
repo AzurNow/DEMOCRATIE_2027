@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
-import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
+import { tableAliasCandidats } from "../../analysis/alias-candidats.ts";
 import { construireCharge, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 import {
   interrogesDuRun,

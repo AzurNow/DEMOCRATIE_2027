@@ -13,9 +13,9 @@ import { describe, expect, it } from "vitest";
 import { aplatir, CHAMPS_NON_AFFICHES, contenuVue, type Bloc } from "../../notation-humaine/client/contenu-vue.ts";
 import type { Vue } from "../../notation-humaine/client/types.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
-import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
+import { tableAliasCandidats } from "../../analysis/alias-candidats.ts";
 import { construireVue, type ExistenceEtablie, type VueAnnotateur } from "../../pipeline/notation/vue-annotateur.ts";
-import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/graine.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../analysis/graine-tirage.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemO, itemP } from "../aides/fabriques.ts";
 

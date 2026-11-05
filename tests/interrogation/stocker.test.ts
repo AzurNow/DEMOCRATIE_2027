@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { adaptateurSimule } from "../../pipeline/interrogation/editeur-simule.ts";
-import { instantParis } from "../../pipeline/interrogation/heure-paris.ts";
+import { instantParis } from "../../analysis/heure-paris.ts";
 import { JournalIllisible, JournalRequete, nomJournal, nomOctets, nomReception, type Reception } from "../../pipeline/interrogation/journal.ts";
 import { codeSortieStockage, RequeteInconnue } from "../../pipeline/interrogation/stocker.ts";
 import { empreinteOctets } from "../../pipeline/interrogation/tentatives.ts";

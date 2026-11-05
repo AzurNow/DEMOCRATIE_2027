@@ -21,11 +21,11 @@ import type { SousEnsembleContrefactuel } from "../../pipeline/notation/echantil
 import { permuterTexte } from "../../pipeline/notation/permutation.ts";
 import { reponseContrefactuelle } from "../../pipeline/notation/reponse-contrefactuelle.ts";
 import { issueDeJuge, type CadreNotationJuge, type IdentiteJuge, type SortieJuge } from "../../pipeline/notation/juge.ts";
-import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain } from "../../analysis/types-notation.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
-import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/graine.ts";
-import type { GraineTirage } from "../../pipeline/questions/types.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { runDeNotation } from "./fabriques.ts";

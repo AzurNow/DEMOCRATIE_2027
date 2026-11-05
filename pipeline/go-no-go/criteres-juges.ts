@@ -8,7 +8,7 @@
  */
 
 import { depasseSeuilRetrait, SEUIL_RETRAIT } from "../notation/contrefactuel.ts";
-import type { ChangementsContrefactuel, JugeDuRun } from "../notation/types.ts";
+import type { ChangementsContrefactuel, JugeDuRun } from "../../analysis/types-notation.ts";
 import { SEUIL_KAPPA_ECHANTILLON, type KappaDeJuge } from "./kappa-echantillon.ts";
 import { AUCUN_JUGE_RETENU, type Critere } from "./types.ts";
 

@@ -36,7 +36,7 @@ import { demarrerOuReprendre } from "../run/statut.ts";
 import type { IssueDemarrage, RunAvecStatut } from "../run/statut.ts";
 import { ouvrirFenetre } from "./fenetre.ts";
 import type { Fenetre, RunsDuDepot } from "./fenetre.ts";
-import { lireInstant } from "./heure-paris.ts";
+import { lireInstant } from "../../analysis/heure-paris.ts";
 
 export type MotifRunGele = "run_json_illisible" | "fenetre_incoherente" | MotifPrecedent;
 

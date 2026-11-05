@@ -17,7 +17,7 @@ import {
 } from "../../pipeline/go-no-go/kappa-echantillon.ts";
 import { AUCUN_JUGE_RETENU } from "../../pipeline/go-no-go/types.ts";
 import { JugeIndetermine } from "../../pipeline/notation/decision.ts";
-import type { JugeDuRun } from "../../pipeline/notation/types.ts";
+import type { JugeDuRun } from "../../analysis/types-notation.ts";
 import { comptesKappa, kappaCohen } from "../../validation/domaine/kappa.ts";
 import { notationJuge, notationRegle, renvoiDefaillant, renvoiJuge } from "../notation/fabriques.ts";
 import { ulid } from "../analysis/fabriques.ts";

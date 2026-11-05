@@ -40,7 +40,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
-import { lireInstant } from "../interrogation/heure-paris.ts";
+import { lireInstant } from "../../analysis/heure-paris.ts";
 import { lireFormulationsData } from "../../validation/io/data-formulations.ts";
 import type { Violation } from "../questions/invariants.ts";
 import type { PositionsIncompatibles } from "../questions/tirabilite.ts";

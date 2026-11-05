@@ -23,10 +23,10 @@ import { candidatsElimines } from "../../pipeline/notation/elimines.ts";
 import { tirerJeuOr, type JeuOr } from "../../pipeline/notation/echantillons.ts";
 import { resolusAuGel, type QuestionPosee, type ReferenceSoumise, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 import { interrogesDuRun, preparerANoter, type GelDeNotation } from "../../pipeline/notation/preparation.ts";
-import type { RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { RunDeNotation } from "../../analysis/types-notation.ts";
 import type { PerimetreDeNotation } from "../../pipeline/notation/notation-humaine.ts";
 import type { EntreeTirage, Question } from "../../pipeline/questions/types.ts";
-import { TYPE_PILOTE } from "../../pipeline/run/types.ts";
+import { TYPE_PILOTE } from "../../analysis/types-run.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 
 export class RepertoireDeRunIllisible extends Error {

@@ -23,8 +23,7 @@ export const DELAI_TENTATIVE_MS = 180_000;
 /** §6 : « Toutes les requêtes d'un run dans une fenêtre de 48 heures », heures absolues. */
 export const DUREE_FENETRE_MS = 48 * 60 * 60 * 1000;
 
-/** §6 : la fenêtre est « ouverte le mardi à 6 h, heure de Paris ». */
-export const FUSEAU_DU_RUN = "Europe/Paris";
+/** §6 : la fenêtre est « ouverte le mardi à 6 h, heure de Paris » (`FUSEAU_DU_RUN`, `analysis/heure-paris.ts`). */
 export const JOUR_OUVERTURE_FENETRE = "Tue";
 export const HEURE_OUVERTURE_FENETRE = 6;
 

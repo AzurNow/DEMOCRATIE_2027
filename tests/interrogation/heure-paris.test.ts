@@ -2,11 +2,11 @@
  * `lireInstant` lit `date_gel`, les bornes de fenêtre et les horodatages de tentative. `Date.parse`
  * fait glisser un jour hors du mois (`2027-02-29` devient le 1er mars) sans lever : la date civile
  * écrite suit la règle unique `dateCivileValide` (`validation/domaine/validateurs-champ.ts`), comme
- * `instantDe` (`pipeline/questions/reponse-attendue.ts`), par une erreur nommée qui porte le contexte.
+ * `instantDe` (`analysis/instants.ts`), par une erreur nommée qui porte le contexte.
  */
 
 import { describe, expect, it } from "vitest";
-import { InstantImpossible, lireInstant } from "../../pipeline/interrogation/heure-paris.ts";
+import { InstantImpossible, lireInstant } from "../../analysis/heure-paris.ts";
 
 describe("lireInstant : une date civile impossible est refusée, jamais glissée", () => {
   it.each(["2027-02-29T10:00:00+01:00", "2026-04-31T00:00:00Z", "2026-13-01T12:00:00+02:00"])(

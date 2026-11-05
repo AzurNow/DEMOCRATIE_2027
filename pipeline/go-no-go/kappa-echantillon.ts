@@ -50,7 +50,7 @@ import type { CategorieRetenue, MotifNotation, Ulid } from "../../analysis/types
 import { comptesKappa, type PaireCategories } from "../../validation/domaine/kappa.ts";
 import { JugeIndetermine } from "../notation/decision.ts";
 import { estNotationParRegle } from "../notation/regle-refus.ts";
-import type { JugeDuRun, NotationIndividuelle, RenvoiHumain } from "../notation/types.ts";
+import type { JugeDuRun, NotationIndividuelle, RenvoiHumain } from "../../analysis/types-notation.ts";
 
 /** Les trois catégories primaires qu'un juge peut rendre (§7), dans un ordre figé : celles de `analysis/`. */
 export const CATEGORIES_KAPPA_ECHANTILLON = CATEGORIES_DE_JUGE;

@@ -14,8 +14,8 @@
  * Protocole 0.21 (D56 (2)) : la part est « comptée sur les requêtes que prévoit le plan
  * d'interrogation du run pour ce couple […], et non sur les réponses enregistrées ». Le plan
  * (`pipeline/interrogation/plan.ts:planifier`) est **reçu** en paramètre (`RequeteDuPlan`), construit
- * par l'appelant du pipeline (`pipeline/interrogation/plan-du-run.ts`) : `analysis/` n'importe pas le code
- * d'interrogation (flux à sens unique, CLAUDE.md). Une requête du plan sans réponse API enregistrée
+ * par l'appelant du pipeline (`pipeline/interrogation/plan-du-run.ts`) : `analysis/` n'importe rien de
+ * `pipeline/` (CLAUDE.md, « Architecture » ; tenu par `eslint.config.js`). Une requête du plan sans réponse API enregistrée
  * de contexte run compte comme manquante ; une réponse enregistrée hors plan, ou deux pour une même
  * requête, lève (`ReponseHorsPlan`) ; un couple déclaré sans requête planifiée lève
  * (`CoupleSansRequetePlanifiee`). Le bilan d'interrogation (`pipeline/interrogation/bilan.ts`) lit la

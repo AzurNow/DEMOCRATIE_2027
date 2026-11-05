@@ -34,7 +34,7 @@
 
 import { occurrencesDeNom, type NomsDeCandidat, type Occurrence } from "./candidats.ts";
 import { verifierCandidats, type Derangement } from "./derangement.ts";
-import type { CandidatDuRun } from "./types.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
 
 export interface TextePermute {
   readonly texte: string;

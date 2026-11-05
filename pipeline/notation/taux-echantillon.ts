@@ -5,7 +5,7 @@
  * inscrit le taux du run noté ; le contrôle croisé (`controle-croise.ts`) le revérifie.
  */
 
-import type { TauxEchantillonHumain } from "./types.ts";
+import type { TauxEchantillonHumain } from "../../analysis/types-notation.ts";
 
 export const TAUX_ECHANTILLON_SANS_RETRAIT = 0.1 as const satisfies TauxEchantillonHumain;
 

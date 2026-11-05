@@ -20,7 +20,7 @@
  * `CHAMPS_DU_GO_NO_GO`, `pipeline/go-no-go/go-no-go.ts`).
  */
 
-import { canoniser } from "../../validation/domaine/empreinte.ts";
+import { canoniser } from "../validation/domaine/empreinte.ts";
 
 /** Les quatre emplacements de `run.json` où un champ est écrit après le gel. */
 export interface ChampsDeRunJson {
@@ -48,8 +48,8 @@ export const CHAMPS_DU_TEST = ["retire", "motif_retrait", "taux_changement_contr
  * Ce que la chaîne de notation écrit (`pipeline/notation/chaine.ts`) : le test contrefactuel et le
  * taux de l'échantillon humain qui en découle (§7 : 10 %, 25 % après retrait d'un juge ; écrit au
  * gel, réécrit ici), et le nombre de réponses obtenues, inscrit en tête de la notation (§5
- * « Tailles », `inscription-reponses.ts`), et l'absence du contrefactuel d'outil
- * (`inscription-contrefactuel-outils.ts`, D75 (7)). Avant l'analyse : dans l'empreinte.
+ * « Tailles », `pipeline/notation/inscription-reponses.ts`), et l'absence du contrefactuel d'outil
+ * (`pipeline/notation/inscription-contrefactuel-outils.ts`, D75 (7)). Avant l'analyse : dans l'empreinte.
  */
 export const CHAMPS_DE_LA_NOTATION: ChampsDeRunJson = {
   ...AUCUN,
