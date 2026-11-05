@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import { DELAI_FRAICHEUR_JOURS, fraicheurDesItems, obsolescenceFraiche } from "../../pipeline/notation/fraicheur.ts";
+import { DateCivileInvalide } from "../../pipeline/questions/reponse-attendue.ts";
 
 const CHANGEMENT = "2026-11-01";
 
@@ -79,5 +80,26 @@ describe("fraicheurDesItems", () => {
 
   it("deux items O de dates différentes : ambiguë, jamais une date choisie", () => {
     expect(fraicheurDesItems(["obsolescence"], [O(CHANGEMENT), O("2026-10-01")], GEL_J14)).toEqual({ statut: "ambigue", dates: [CHANGEMENT, "2026-10-01"] });
+  });
+
+  it("trois items O sur deux dates : ambiguë, chaque date une seule fois, dans l'ordre des items", () => {
+    expect(fraicheurDesItems(["obsolescence"], [O("2026-10-01"), O(CHANGEMENT), O("2026-10-01")], GEL_J14)).toEqual({ statut: "ambigue", dates: ["2026-10-01", CHANGEMENT] });
+  });
+
+  // D74 (25) : la date du changement est une date civile (commun#/$defs/date_civile), d'une seule
+  // graphie. Deux écritures du même jour ne se comparent pas : une graphie hors AAAA-MM-JJ est
+  // refusée avant toute comparaison, jamais lue comme une seconde date ni rapprochée de la première.
+  for (const graphie of ["2026-11-1", "2026-11-01T00:00:00Z", " 2026-11-01", "01/11/2026"]) {
+    it(`même jour écrit « ${graphie} » à côté de « ${CHANGEMENT} » : refusé (DateCivileInvalide), ni ambiguë ni calculée`, () => {
+      expect(() => fraicheurDesItems(["obsolescence"], [O(CHANGEMENT), O(graphie)], GEL_J14)).toThrow(DateCivileInvalide);
+    });
+  }
+
+  it("une seule date illisible est refusée de même", () => {
+    expect(() => fraicheurDesItems(["obsolescence"], [O("2026-02-30")], GEL_J14)).toThrow(DateCivileInvalide);
+  });
+
+  it("sans drapeau obsolescence, aucune date n'est lue, même illisible", () => {
+    expect(fraicheurDesItems(["deformation"], [O("2026-11-1")], GEL_J14)).toEqual({ statut: "sans_objet" });
   });
 });
