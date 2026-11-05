@@ -1,0 +1,237 @@
+/*
+ * Décors d'arrière-plan des sections hors parcours : cinq petites scènes pixel qui illustrent, en
+ * bougeant avec le défilement, ce que dit la section (aucune ne dit quelque chose de plus).
+ *
+ * Règles de la page :
+ *  - décoratifs : aria-hidden, aucun focus, aucun clic, derrière le contenu (z-index négatif dans une
+ *    section isolée) ;
+ *  - jamais sous un texte : en large (>= 70rem) ils vivent dans la colonne laissée libre à droite du
+ *    texte, plafonné à 44rem ; en dessous, ils sont masqués (mobile compris) ;
+ *  - mouvement en CSS seul, par animation-timeline, uniquement là où le navigateur le sait ; sans cela,
+ *    ou sous « mouvement réduit », chaque décor reste fixe dans l'état écrit ici, qui se lit seul ;
+ *  - toutes les couleurs viennent des variables --px-… du thème (dans les SVG).
+ * Les valeurs de translation sont en unités du viewBox de chaque SVG (1 unité = 1 pixel du dessin).
+ */
+
+.section--accroche,
+.section--questions,
+.section--limites,
+.section--preenregistrement,
+.section--contester {
+  position: relative;
+  isolation: isolate;
+}
+
+.decor {
+  display: none;
+}
+
+.decor svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ---- États fixes (repli sans animation-timeline, et mouvement réduit) ---- */
+
+.decor-limites-coin-hg { transform: translate(28px, 28px); }
+.decor-limites-coin-hd { transform: translate(-28px, 28px); }
+.decor-limites-coin-bg { transform: translate(28px, -28px); }
+.decor-limites-coin-bd { transform: translate(-28px, -28px); }
+.decor-limites-dehors { opacity: 0.35; }
+
+.decor-questions-loupe,
+.decor-questions-verre { transform: translate(48px, 27px); }
+.decor-questions-verre { opacity: 0.5; }
+
+.decor-preenregistrement-curseur { transform: translate(68px, 0); }
+.decor-preenregistrement-piste { transform: scaleX(0.55); transform-origin: 6px 36px; }
+.decor-preenregistrement-ouvert { opacity: 0; }
+
+.decor-contester-enveloppe { transform: translate(64px, 58px); }
+
+/* ---- Mise en place en large ---- */
+
+@media (min-width: 70rem) {
+  .decor {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding-block: 4rem;
+    padding-inline: max(2rem, calc((100% - 72rem) / 2));
+    overflow: clip;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* Colonne libre à droite des blocs de texte (44 rem au plus) : un rail qui reste en vue. */
+  .decor-limites__rail,
+  .decor-preenregistrement__rail,
+  .decor-contester__rail {
+    position: sticky;
+    top: 6rem;
+    width: 18rem;
+  }
+
+  .decor-questions__rail {
+    width: 18rem;
+  }
+
+  /* Accroche : la colonne de droite de la grille, au-dessus et au-dessous de l'illustration. */
+  .decor--accroche {
+    display: grid;
+    align-items: stretch;
+    grid-template-columns: 1.1fr 1fr;
+    column-gap: 3rem;
+  }
+
+  .decor-accroche__colonne {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 0;
+  }
+
+  .decor-accroche__haut,
+  .decor-accroche__bas {
+    width: min(100%, 26rem);
+  }
+
+  .decor-preenregistrement__etiquettes {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.25rem 0 0;
+    color: var(--texte-doux);
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    max-width: none;
+  }
+
+  .decor-preenregistrement__etiquettes > span {
+    max-width: 8rem;
+  }
+
+  .decor-preenregistrement__etiquettes > span:last-child {
+    text-align: right;
+  }
+}
+
+/* ---- Mouvement au défilement ---- */
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    @media (min-width: 70rem) {
+      .decor--accroche,
+      .decor--limites,
+      .decor--preenregistrement,
+      .decor--contester {
+        view-timeline: --decor block;
+      }
+
+      .decor-questions__rail {
+        view-timeline: --decor block;
+      }
+
+      /* Réglages communs, de spécificité nulle : seuls les groupes qui ont un animation-name bougent. */
+      :where(.decor svg g) {
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: --decor;
+        animation-range: cover 15% cover 85%;
+      }
+
+      /* Accroche : la même question monte en parallaxe, trois vitesses ; les réponses diffèrent. */
+      :where(.decor--accroche svg g) {
+        animation-range: exit 0% exit 100%;
+      }
+
+      .decor-accroche-q1 { animation-name: decor-accroche-monte-1; }
+      .decor-accroche-q2 { animation-name: decor-accroche-monte-2; }
+      .decor-accroche-q3 { animation-name: decor-accroche-monte-3; }
+      .decor-accroche-r1 { animation-name: decor-accroche-reponse; animation-range: exit 0% exit 30%; }
+      .decor-accroche-r2 { animation-name: decor-accroche-reponse; animation-range: exit 10% exit 40%; }
+      .decor-accroche-r3 { animation-name: decor-accroche-reponse; animation-range: exit 20% exit 50%; }
+
+      /* Questions : la loupe parcourt les neuf cartes, une à la fois. */
+      .decor-questions-loupe,
+      .decor-questions-verre {
+        animation-name: decor-questions-balaie;
+        animation-range: cover 10% cover 75%;
+      }
+
+      /* Limites : les coins du viseur se resserrent, ce qui sort du cadre s'estompe. */
+      .decor-limites-coin-hg { animation-name: decor-limites-coin-hg; }
+      .decor-limites-coin-hd { animation-name: decor-limites-coin-hd; }
+      .decor-limites-coin-bg { animation-name: decor-limites-coin-bg; }
+      .decor-limites-coin-bd { animation-name: decor-limites-coin-bd; }
+      .decor-limites-dehors { animation-name: decor-limites-estompe; }
+
+      /* Préenregistrement : le cadenas se ferme sur la méthode avant que le curseur atteigne les résultats. */
+      .decor-preenregistrement-curseur { animation-name: decor-preenregistrement-avance; }
+      .decor-preenregistrement-piste { animation-name: decor-preenregistrement-trace; }
+      .decor-preenregistrement-ouvert { animation-name: decor-preenregistrement-ouvert; }
+      .decor-preenregistrement-ferme { animation-name: decor-preenregistrement-ferme; }
+
+      /* Contester : l'enveloppe va au panel, puis la fiche nouvelle se pose à côté de l'ancienne. */
+      .decor-contester-enveloppe { animation-name: decor-contester-enveloppe; }
+      .decor-contester-nouvelle { animation-name: decor-contester-nouvelle; }
+    }
+
+    @keyframes decor-accroche-monte-1 { from { transform: translateY(12px); } to { transform: translateY(-8px); } }
+    @keyframes decor-accroche-monte-2 { from { transform: translateY(20px); } to { transform: translateY(-14px); } }
+    @keyframes decor-accroche-monte-3 { from { transform: translateY(8px); } to { transform: translateY(-4px); } }
+    @keyframes decor-accroche-reponse { from { opacity: 0.15; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    @keyframes decor-questions-balaie {
+      0% { transform: translate(0, 0); }
+      12.5% { transform: translate(48px, 0); }
+      25% { transform: translate(96px, 0); }
+      37.5% { transform: translate(96px, 27px); }
+      50% { transform: translate(48px, 27px); }
+      62.5% { transform: translate(0, 27px); }
+      75% { transform: translate(0, 54px); }
+      87.5% { transform: translate(48px, 54px); }
+      100% { transform: translate(96px, 54px); }
+    }
+
+    @keyframes decor-limites-coin-hg { from { transform: none; } to { transform: translate(28px, 28px); } }
+    @keyframes decor-limites-coin-hd { from { transform: none; } to { transform: translate(-28px, 28px); } }
+    @keyframes decor-limites-coin-bg { from { transform: none; } to { transform: translate(28px, -28px); } }
+    @keyframes decor-limites-coin-bd { from { transform: none; } to { transform: translate(-28px, -28px); } }
+    @keyframes decor-limites-estompe { from { opacity: 1; } to { opacity: 0.2; } }
+
+    @keyframes decor-preenregistrement-avance { from { transform: none; } to { transform: translate(113px, 0); } }
+    @keyframes decor-preenregistrement-trace { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes decor-preenregistrement-ouvert { 0%, 17% { opacity: 1; } 18%, 100% { opacity: 0; } }
+    @keyframes decor-preenregistrement-ferme { 0%, 17% { opacity: 0; } 18%, 100% { opacity: 1; } }
+
+    @keyframes decor-contester-enveloppe {
+      0% { transform: translate(26px, 14px); opacity: 1; }
+      45% { transform: translate(64px, 58px); opacity: 1; }
+      65% { transform: translate(64px, 58px); opacity: 1; }
+      75%, 100% { transform: translate(64px, 58px); opacity: 0; }
+    }
+    @keyframes decor-contester-nouvelle {
+      0%, 55% { opacity: 0; transform: translateY(-14px); }
+      85%, 100% { opacity: 1; transform: none; }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decor,
+  .decor *,
+  .decor *::before,
+  .decor *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

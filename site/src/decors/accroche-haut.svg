@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 48" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+<style>
+.decor-accroche-a1{fill:var(--px-accent-1,#e4572e)}
+.decor-accroche-clair{fill:var(--px-clair,#ffffff)}
+.decor-accroche-encre{fill:var(--px-encre,#1f2233)}
+</style>
+<g class="decor-accroche-q1">
+<g class="decor-accroche-encre"><rect x="8" y="14" width="22" height="19"/><rect x="10" y="33" width="1" height="1"/><rect x="11" y="34" width="1" height="1"/><rect x="14" y="33" width="1" height="1"/><rect x="12" y="35" width="2" height="1"/><rect x="14" y="34" width="1" height="1"/></g>
+<g class="decor-accroche-clair"><rect x="9" y="15" width="20" height="17"/><rect x="11" y="32" width="4" height="1"/><rect x="11" y="33" width="3" height="1"/></g>
+<g class="decor-accroche-a1"><rect x="17" y="18" width="1" height="1"/><rect x="18" y="18" width="1" height="1"/><rect x="19" y="18" width="1" height="1"/><rect x="16" y="19" width="1" height="1"/><rect x="20" y="19" width="1" height="1"/><rect x="20" y="20" width="1" height="1"/><rect x="19" y="21" width="1" height="1"/><rect x="18" y="22" width="1" height="1"/><rect x="18" y="24" width="1" height="1"/></g>
+</g>
+<g class="decor-accroche-q2">
+<g class="decor-accroche-encre"><rect x="68" y="14" width="22" height="19"/><rect x="70" y="33" width="1" height="1"/><rect x="71" y="34" width="1" height="1"/><rect x="74" y="33" width="1" height="1"/><rect x="72" y="35" width="2" height="1"/><rect x="74" y="34" width="1" height="1"/></g>
+<g class="decor-accroche-clair"><rect x="69" y="15" width="20" height="17"/><rect x="71" y="32" width="4" height="1"/><rect x="71" y="33" width="3" height="1"/></g>
+<g class="decor-accroche-a1"><rect x="77" y="18" width="1" height="1"/><rect x="78" y="18" width="1" height="1"/><rect x="79" y="18" width="1" height="1"/><rect x="76" y="19" width="1" height="1"/><rect x="80" y="19" width="1" height="1"/><rect x="80" y="20" width="1" height="1"/><rect x="79" y="21" width="1" height="1"/><rect x="78" y="22" width="1" height="1"/><rect x="78" y="24" width="1" height="1"/></g>
+</g>
+<g class="decor-accroche-q3">
+<g class="decor-accroche-encre"><rect x="128" y="14" width="22" height="19"/><rect x="130" y="33" width="1" height="1"/><rect x="131" y="34" width="1" height="1"/><rect x="134" y="33" width="1" height="1"/><rect x="132" y="35" width="2" height="1"/><rect x="134" y="34" width="1" height="1"/></g>
+<g class="decor-accroche-clair"><rect x="129" y="15" width="20" height="17"/><rect x="131" y="32" width="4" height="1"/><rect x="131" y="33" width="3" height="1"/></g>
+<g class="decor-accroche-a1"><rect x="137" y="18" width="1" height="1"/><rect x="138" y="18" width="1" height="1"/><rect x="139" y="18" width="1" height="1"/><rect x="136" y="19" width="1" height="1"/><rect x="140" y="19" width="1" height="1"/><rect x="140" y="20" width="1" height="1"/><rect x="139" y="21" width="1" height="1"/><rect x="138" y="22" width="1" height="1"/><rect x="138" y="24" width="1" height="1"/></g>
+</g>
+</svg>

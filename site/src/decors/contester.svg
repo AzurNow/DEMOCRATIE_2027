@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 196" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+<style>
+.decor-contester-a1{fill:var(--px-accent-1,#e4572e)}
+.decor-contester-a2{fill:var(--px-accent-2,#2e86c1)}
+.decor-contester-a3{fill:var(--px-accent-3,#b08a5a)}
+.decor-contester-clair{fill:var(--px-clair,#ffffff)}
+.decor-contester-corps{fill:var(--px-corps,#7f93a8)}
+.decor-contester-encre{fill:var(--px-encre,#1f2233)}
+.decor-contester-papier{fill:var(--px-papier,#fbf8ef)}
+.decor-contester-sol{fill:var(--px-sol,#9a8f7a)}
+</style>
+<g class="decor-contester-encre"><rect x="13" y="6" width="10" height="10"/><rect x="10" y="17" width="16" height="14"/></g>
+<g class="decor-contester-corps"><rect x="14" y="7" width="8" height="8"/></g>
+<g class="decor-contester-a2"><rect x="11" y="18" width="14" height="12"/></g>
+<g class="decor-contester-corps"><rect x="34" y="32" width="3" height="3"/><rect x="38" y="38" width="3" height="3"/><rect x="42" y="44" width="3" height="3"/><rect x="46" y="50" width="3" height="3"/><rect x="50" y="56" width="3" height="3"/><rect x="70" y="116" width="3" height="3"/><rect x="70" y="122" width="3" height="3"/><rect x="70" y="128" width="3" height="3"/></g>
+<g class="decor-contester-encre"><rect x="28" y="106" width="88" height="5"/><rect x="39" y="78" width="10" height="10"/><rect x="36" y="89" width="16" height="14"/><rect x="67" y="74" width="10" height="10"/><rect x="64" y="85" width="16" height="14"/><rect x="95" y="78" width="10" height="10"/><rect x="92" y="89" width="16" height="14"/></g>
+<g class="decor-contester-sol"><rect x="29" y="107" width="86" height="3"/></g>
+<g class="decor-contester-corps"><rect x="40" y="79" width="8" height="8"/><rect x="68" y="75" width="8" height="8"/><rect x="96" y="79" width="8" height="8"/></g>
+<g class="decor-contester-a1"><rect x="37" y="90" width="14" height="12"/></g>
+<g class="decor-contester-a3"><rect x="65" y="86" width="14" height="12"/></g>
+<g class="decor-contester-a2"><rect x="93" y="90" width="14" height="12"/></g>
+<g class="decor-contester-encre"><rect x="14" y="136" width="52" height="52"/></g>
+<g class="decor-contester-papier"><rect x="15" y="137" width="50" height="50"/></g>
+<g class="decor-contester-sol"><rect x="20" y="144" width="38" height="1"/><rect x="20" y="149" width="30" height="1"/><rect x="20" y="154" width="34" height="1"/><rect x="20" y="159" width="22" height="1"/><rect x="20" y="164" width="36" height="1"/><rect x="20" y="169" width="26" height="1"/></g>
+<g class="decor-contester-a3"><rect x="20" y="180" width="14" height="3"/></g>
+<g class="decor-contester-nouvelle">
+<g class="decor-contester-encre"><rect x="78" y="136" width="52" height="52"/></g>
+<g class="decor-contester-papier"><rect x="79" y="137" width="50" height="50"/></g>
+<g class="decor-contester-a2"><rect x="79" y="137" width="50" height="9"/><rect x="84" y="178" width="18" height="3"/><rect x="106" y="178" width="2" height="2"/></g>
+<g class="decor-contester-clair"><rect x="83" y="140" width="3" height="3"/><rect x="89" y="140" width="3" height="3"/><rect x="95" y="140" width="3" height="3"/></g>
+<g class="decor-contester-sol"><rect x="84" y="152" width="38" height="1"/><rect x="84" y="157" width="30" height="1"/><rect x="84" y="162" width="34" height="1"/><rect x="84" y="167" width="22" height="1"/><rect x="84" y="172" width="30" height="1"/></g>
+</g>
+<g class="decor-contester-enveloppe">
+<g class="decor-contester-encre"><rect x="0" y="0" width="16" height="11"/><rect x="2" y="2" width="2" height="1"/><rect x="4" y="3" width="2" height="1"/><rect x="6" y="4" width="4" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="12" y="2" width="2" height="1"/></g>
+<g class="decor-contester-papier"><rect x="1" y="1" width="14" height="9"/></g>
+<g class="decor-contester-a1"><rect x="7" y="5" width="2" height="2"/></g>
+</g>
+</svg>

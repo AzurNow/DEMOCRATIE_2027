@@ -1,0 +1,23 @@
+---
+/**
+ * Un SVG de décor (site/src/decors/<nom>.svg), inséré en ligne : il lit les variables --px-… du
+ * thème. Un nom sans fichier fait échouer la construction, jamais un décor vide silencieux.
+ */
+interface Props {
+  nom: string;
+}
+
+const { nom } = Astro.props;
+
+const fichiers = import.meta.glob<string>("../../decors/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+const svg = fichiers[`../../decors/${nom}.svg`];
+if (svg === undefined) {
+  throw new Error(`Décor inconnu : « ${nom} » (aucun fichier site/src/decors/${nom}.svg).`);
+}
+---
+<Fragment set:html={svg} />
