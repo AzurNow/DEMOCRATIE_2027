@@ -4,75 +4,7 @@
 
 ## Décisions en attente
 
-### D76 — Les zones d'arrêt de CLAUDE.md (data/, config/perimetre.yaml, docs/PROTOCOLE.md, prompts/judge-*) et la règle « les agents codeurs ne commitent pas » ne tiennent que par la prose. Faut-il un garde mécanique versionné, et lequel ?
-
-Revue du contexte agentique du 2026-11-05 (docs/contexte-agentique/2026-11-05.md). Doc de Claude Code (best-practices, permissions, hooks-guide, consultées le 2026-11-05) : « If something has to happen every time, make it a hook, a deny rule, or a managed setting. CLAUDE.md is for guidelines » ; une règle deny Edit(chemin) dans .claude/settings.json couvre les outils d'édition, sed, tee et les redirections (2.1.309), tient dans tous les modes, auto et bypass compris, et s'applique sans confiance préalable de l'espace de travail ; un script qui ouvre lui-même ses fichiers n'est pas couvert. Aujourd'hui : aucun .claude/settings.json versionné ; .claude/settings.local.json (non suivi) n'autorise que le ménage git (branch -d, push --delete, worktree remove et prune), ménage que HANDOFF.md demande à toute session. docs/PROTOCOLE.md et prompts/judge-* sont écrits par la session sur des branches (PR de proposition que l'auteur fusionne, HANDOFF.md « Fusion ») : un deny les bloquerait. Le registre de validation (pnpm promote, lancé par un humain) est le seul écrivain de data/ (règle 3) ; un deny Edit ne le gêne pas.
-
-Options :
-
-1. Versionner .claude/settings.json avec deny Edit(data/**) et Edit(config/perimetre.yaml), plus les quatre allow du ménage git sortis de settings.local.json. Pas de deny sur docs/PROTOCOLE.md ni prompts/judge-*, que la session écrit dans des PR de proposition.
-2. Option 1 et, dans .claude/agents/codeur-*.md, un crochet PreToolUse sur Bash qui refuse (exit 2) git commit, git push et gh pr : garde de secours de « aucun commit » (doc : « the hook is a backstop »).
-3. Ne rien ajouter : la prose a suffi jusqu'ici (les agents ont refusé de commiter quand un brief le demandait, LESSONS.md).
-
-**Recommandation :** Option 1 : quatre lignes, aucune maintenance, et la règle 3 devient vérifiable dans n'importe quel clone. L'option 2 vaut le jour où un agent commite malgré sa définition.
-
-Lots portant cette décision : aucun
-
-### D77 — Les définitions codeur-opus et codeur-sonnet exigent de lire docs/PROTOCOLE.md en entier avant de toucher un fichier (187 Ko, de l'ordre de 70 000 tokens, tronqué par l'outil de lecture) alors que le brief cite déjà les contraintes applicables (GABARIT.md, « Contraintes du protocole applicables »). Faut-il alléger cette lecture, et relever l'effort de codeur-opus ?
-
-Revue du contexte agentique du 2026-11-05 (docs/contexte-agentique/2026-11-05.md). Lecture à froid du 2026-11-05 : l'agent a dû naviguer le protocole par grep, l'outil de lecture tronquant le fichier ; le journal des révisions (§1) est illisible d'une traite. Doc model-config et best-practices (2026-11-05) : effort par défaut medium sur Opus 5.5 ; monter à high ou xhigh « when getting it right depends on cases that are quick to overlook » ; le champ effort d'un sous-agent s'applique pendant son exécution ; max « tends to overthink » sur les tâches ordinaires. « Les cas limites sont le sujet, pas le détail » (CLAUDE.md). Le brief, lui, est rédigé par la session principale à l'effort de la session.
-
-Options :
-
-1. Remplacer « lis docs/PROTOCOLE.md avant de toucher un fichier » par « lis les sections du protocole que le brief cite (§n) et cherche par grep les mots-clés de ta tâche avant toute question ; le protocole entier seulement si le brief le demande », et ajouter effort: high à codeur-opus (codeur-sonnet inchangé).
-2. Garder la lecture intégrale, ajouter seulement effort: high à codeur-opus.
-3. Ne rien changer.
-
-**Recommandation :** Option 1 : le brief porte déjà les contraintes citées (sinon il n'est pas prêt, GABARIT.md) ; la lecture intégrale coûte 70 000 tokens par lancement sans garantie d'être faite ; l'effort high répond à « les cas limites sont le sujet ».
-
-Lots portant cette décision : aucun
-
-### D78 — CLAUDE.md compte 287 lignes (doc : viser moins de 200 ; arborescence et installation classées « à ne plus mettre » parce que déductibles), il est le seul guide d'installation (README.md tient en une ligne) et aucun AGENTS.md n'existe pour un contributeur qui utilise un autre agent (Codex, Cursor, Copilot, Gemini CLI…). Comment répartir les fichiers d'entrée du dépôt ?
-
-Revue du contexte agentique du 2026-11-05 (docs/contexte-agentique/2026-11-05.md). Doc memory (2026-11-05) : Claude Code lit AGENTS.md nativement depuis v2.1.277 quand il n'y a pas de CLAUDE.md, et recommande un seul fichier : « @AGENTS.md » en tête de CLAUDE.md, consignes propres à Claude dessous ; déconseille le lien symbolique (Edit et Write refusent d'écrire à travers, clones Windows). Un import charge avec le fichier importateur : coût de contexte inchangé. agents.md : format ouvert (Linux Foundation, 60 000 dépôts), aucun champ requis. Best-practices : « target under 200 lines », couper « directory layouts, dependency lists, architecture overviews » que Claude peut déduire. Ici, l'arborescence porte des faits non déductibles (flux à sens unique, exception d'import, répertoires qui n'existent pas encore) et « Démarrer depuis un clone neuf » sert aux humains faute de README. Un renommage touche toutes les mentions « CLAUDE.md » du dépôt (compétences, agents, LESSONS.md, HANDOFF.md, tests qui citent la règle 3).
-
-Options :
-
-1. README.md reçoit l'installation (« Démarrer depuis un clone neuf », services externes, ce qui n'existe que chez l'auteur) ; CLAUDE.md garde règles, frontière d'autonomie, flux, exception d'import, commandes, pièges et façon de travailler, sous 200 lignes ; pas d'AGENTS.md tant qu'aucun contributeur n'utilise un autre outil (à faire alors par « @AGENTS.md »).
-2. Option 1 et, dès maintenant, le fichier d'instructions renommé AGENTS.md, CLAUDE.md réduit à « @AGENTS.md » plus les consignes propres à Claude Code (compétences, agents, HANDOFF.md), toutes les mentions réécrites.
-3. Ne rien changer : 287 lignes, un seul fichier, README vide.
-
-**Recommandation :** Option 1 : un seul déplacement, pas de renommage ; AGENTS.md le jour où un contributeur extérieur se présente ou avant une diffusion du dépôt.
-
-Lots portant cette décision : aucun
-
-### D79 — La file de notation humaine est ordonnée par famille de motif (pipeline/notation/file-humaine.ts : l'échantillon humain, puis le jeu d'or, puis les autres tâches : désaccord des juges, drapeau grave, extrait invalide, renvoi). Un annotateur qui connaît le code, public, déduit d'une réponse servie après le bloc échantillon qu'elle vient d'un désaccord ou d'un drapeau des juges. Est-ce une fuite de « la note des juges » au sens du §7 (« un humain reçoit exactement ce que reçoit un juge »), ou un canal accepté ?
-
-Trouvé par la lecture à froid de la revue du contexte agentique du 2026-11-05 (tâche B), hors de son périmètre. L'aveuglement est testé sur les champs servis (tests/notation-humaine/aveuglement.test.ts, D18 aveugle total) ; ni le §7 ni D18 ne parlent de l'ordre. La route file ne sert que des identifiants, mais leur ordre dit quelque chose du verdict des juges. L'ordre actuel sert l'échantillon en premier pour que le kappa juges-humains du §12 soit disponible tôt.
-
-Options :
-
-1. Une seule file par annotateur, mélangée par une graine publiée au gel, sans bloc par motif ; test nommé que l'ordre ne dépend pas du motif ; une phrase au §7. Coût : l'échantillon n'est plus noté en premier, le kappa arrive avec la fin de la file.
-2. Garder l'ordre et le déclarer comme limite au §11 : l'annotateur ne voit pas la note, seulement qu'une réponse a appelé un humain.
-3. Ne rien changer sans texte.
-
-**Recommandation :** Option 1 : un tri contre une information que le juge n'a pas ; si le kappa précoce compte plus, option 2 avec le texte.
-
-Lots portant cette décision : aucun
-
-### D80 — Aucune suite de commandes ne mène d'un gel simulé aux métriques sans clé ni réseau : pnpm geler appelle deux relais drand et la Wayback Machine, pnpm notation:dry n'accepte que --sortie et refuse tout run.json autre que celui des fixtures (GelDivergent), pnpm analyze refuse un run hors d'un dépôt Git avec data/items. La chaîne n'existe que dans les tests (poserRunNote, reseau-fixture). Documenter la chaîne telle qu'elle est, ou la rendre continue ?
-
-Lecture à froid de la revue du contexte agentique du 2026-11-05 (tâche C), hors de son périmètre. Un contributeur neuf ne peut pas rejouer gel → run:dry → notation:dry → analyze → go-no-go sur fixtures ; runs/README.md documente chaque commande, pas l'enchaînement ; .env.example:30 ne cite pas notation:dry parmi les modes sans clé. Le niveau T3 de cette feuille de route se définit comme « testé de bout en bout sur fixtures » : vrai dans les tests, pas en commandes. D75 (13) (chemin explicite pour analyser un run hors de son clone Git) va dans le sens de la continuité.
-
-Options :
-
-1. Lot de code : geler --simule hors de runs/ (réseau remplacé par les doubles de tests/gel/reseau-fixture.ts), notation:dry --run=<gel simulé>, analyze acceptant un run simulé désigné explicitement avec ses items (D75 (13)), puis une section « De bout en bout en mode simulé » dans runs/README.md et une ligne dans .env.example.
-2. Documenter seulement la chaîne telle qu'elle est (run:dry --sortie, notation:dry --sortie, notation:controle, go-no-go sans métriques) en disant où elle s'arrête.
-3. Ne rien faire avant le premier run réel.
-
-**Recommandation :** Option 1, après le code restant de D75 : c'est la répétition générale du premier run réel, et le premier moyen pour un tiers de vérifier le pipeline sans clé.
-
-Lots portant cette décision : aucun
+Aucune décision en attente.
 
 ## Décisions tranchées
 
@@ -368,9 +300,29 @@ Lots portant cette décision : aucun
 
 **Décision du 2026-11-05 :** Option 1 (décision de l'auteur du 2026-11-05). Protocole 0.33 (PR à part) : §6 (1), (19), (20), (23) ; §7 (2), (3), (6), (15), (26) ; §8 (18) ; §9 (17) ; annexe D (24) ; déjà conformes, sans texte : (5), (9), (10), (11), (22) ; code seul : (4), (7), (8), (12), (13), (14), (16), (21), (25), (27) ; zone d'arrêt hors protocole : (24), en-tête de prompts/judge-1.0.0.md (PR distincte). Déjà codés avant la décision : (1) (#301) et (3) (#302), commentaires « non encore tranchée » à mettre à jour. Code restant : (2) test nommé du renvoi écarté au contrefactuel d'outil (contrefactuel-outils.ts) ; (4) liens/pages/ sortie de volume/ (lot dédié) ; (6) derangement-outils.ts : comparateur du même éditeur qu'un outil permuté rendu absent avec son motif, au lieu de FormesOutilsAmbigues ; (7) absence du contrefactuel d'outil publiée (bloc dans run.schema.json, branchement dans la chaîne) ; (8) deux graphies d'un même éditeur refusées à la validation du périmètre ; (12) pnpm contestations-posterieures sans --data, --racine, --runs ; (13) chemin explicite pour analyser un run hors de son clone Git ; (14) nombre d'échantillons inscrit dans run.json au gel, lu par planifier ; (15) note-retenue.ts:humainsAArbitrer arbitre aussi cite et au_moins_un_lien_existant, sans_motif_admis retiré de file-humaine.ts ; (16) sectionComparateurs lit le verdict de lecture ; (17) commentaire de champs-posterieurs-au-gel.ts (« le §9 ne nomme pas ces champs ») ; (20) application.ts : la réexécution hérite de la désignation du run remplacé ; (21) application_testee requis dans run.schema.json ; (24) reponse.troncature facultative dans la charge (charge-juge.ts, vue-annotateur.ts), absente sur le canal application, version de charge et en-tête du prompt alignés ; (25) ecart-juge-editeur.ts sort et nomme les réponses renvoyées par un seul juge ; (26) test nommé de la population de l'écart juge-éditeur ; (27) comptes_jeu_or requis avec la commande qui écrit le kappa.
 
+### D76 — Les zones d'arrêt de CLAUDE.md (data/, config/perimetre.yaml, docs/PROTOCOLE.md, prompts/judge-*) et la règle « les agents codeurs ne commitent pas » ne tiennent que par la prose. Faut-il un garde mécanique versionné, et lequel ?
+
+**Décision du 2026-11-05 :** Option 1 (décision de l'auteur du 2026-11-05). .claude/settings.json versionné : deny Edit(/data/**) et Edit(/config/perimetre.yaml) ; les quatre allow du ménage git (branch -d, push origin --delete, worktree remove et prune) passent de settings.local.json au fichier versionné.
+
+### D77 — Les définitions codeur-opus et codeur-sonnet exigent de lire docs/PROTOCOLE.md en entier avant de toucher un fichier (187 Ko, de l'ordre de 70 000 tokens, tronqué par l'outil de lecture) alors que le brief cite déjà les contraintes applicables (GABARIT.md, « Contraintes du protocole applicables »). Faut-il alléger cette lecture, et relever l'effort de codeur-opus ?
+
+**Décision du 2026-11-05 :** Option 1 (décision de l'auteur du 2026-11-05). codeur-opus et codeur-sonnet lisent les sections du protocole que le brief cite et cherchent par grep avant toute question ; le protocole entier seulement si le brief le demande. codeur-opus passe en effort: high.
+
+### D78 — CLAUDE.md compte 287 lignes (doc : viser moins de 200 ; arborescence et installation classées « à ne plus mettre » parce que déductibles), il est le seul guide d'installation (README.md tient en une ligne) et aucun AGENTS.md n'existe pour un contributeur qui utilise un autre agent (Codex, Cursor, Copilot, Gemini CLI…). Comment répartir les fichiers d'entrée du dépôt ?
+
+**Décision du 2026-11-05 :** Option 1 (décision de l'auteur du 2026-11-05). README.md reçoit l'installation, l'arborescence commentée, les services externes et ce qui n'existe que chez l'auteur ; CLAUDE.md passe de 289 à 193 lignes. Pas d'AGENTS.md tant qu'aucun contributeur n'utilise un autre outil (alors par « @AGENTS.md »).
+
+### D79 — La file de notation humaine est ordonnée par famille de motif (pipeline/notation/file-humaine.ts : l'échantillon humain, puis le jeu d'or, puis les autres tâches : désaccord des juges, drapeau grave, extrait invalide, renvoi). Un annotateur qui connaît le code, public, déduit d'une réponse servie après le bloc échantillon qu'elle vient d'un désaccord ou d'un drapeau des juges. Est-ce une fuite de « la note des juges » au sens du §7 (« un humain reçoit exactement ce que reçoit un juge »), ou un canal accepté ?
+
+**Décision du 2026-11-05 :** Option 1 (décision de l'auteur du 2026-11-05). Protocole 0.34 (§7, PR à part) : ordre de présentation tiré parmi les réponses obtenues, graine dérivée de graines.echantillon_humain et de la clé « ordre_file_humaine ». Code : pipeline/notation/file-humaine.ts, dans une PR qui suit la fusion du protocole.
+
 ### D8 — Trois points que le §4 ne tranche pas, rencontrés en implémentant la réannotation et le registre des mesures.
 
 **Décision du 2026-09-20 :** Option 1 sur les trois points : héritage des annotateurs gardé, une autre paire supposerait un amendement au §4 disant quel kappa compte ; clé du registre élargie seulement si le §4 ouvre un jour la correction d'autre chose que le thème ; conventions d'identifiant de réannotation et de date par défaut entérinées dans schema/README.md.
+
+### D80 — Aucune suite de commandes ne mène d'un gel simulé aux métriques sans clé ni réseau : pnpm geler appelle deux relais drand et la Wayback Machine, pnpm notation:dry n'accepte que --sortie et refuse tout run.json autre que celui des fixtures (GelDivergent), pnpm analyze refuse un run hors d'un dépôt Git avec data/items. La chaîne n'existe que dans les tests (poserRunNote, reseau-fixture). Documenter la chaîne telle qu'elle est, ou la rendre continue ?
+
+**Décision du 2026-11-05 :** Option 1 (décision de l'auteur du 2026-11-05), après le code restant de D75 : geler --simule hors de runs/, notation:dry --run=<gel simulé>, analyze sur un run simulé désigné avec ses items (D75 (13)), puis la section « De bout en bout en mode simulé » de runs/README.md et .env.example.
 
 ### D9 — Durcir le lint au-delà des deux règles de complexité fixées le 2026-09-18 ?
 
@@ -419,11 +371,6 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
-  dec_D76{{"D76<br/>Les zones d'arrêt de CLAUDE.md (data/, config/perimetre.yaml…"}}:::decision
-  dec_D77{{"D77<br/>Les définitions codeur-opus et codeur-sonnet exigent de lire…"}}:::decision
-  dec_D78{{"D78<br/>CLAUDE.md compte 287 lignes (doc : viser moins de 200 ; arbo…"}}:::decision
-  dec_D79{{"D79<br/>La file de notation humaine est ordonnée par famille de moti…"}}:::decision
-  dec_D80{{"D80<br/>Aucune suite de commandes ne mène d'un gel simulé aux métriq…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git branch -d:*)",
+      "Bash(git push origin --delete:*)",
+      "Bash(git worktree remove:*)",
+      "Bash(git worktree prune:*)"
+    ],
+    "deny": [
+      "Edit(/data/**)",
+      "Edit(/config/perimetre.yaml)"
+    ]
+  }
+}

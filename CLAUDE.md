@@ -8,8 +8,6 @@ le protocole dit ce qu'on mesure et pourquoi. En cas de contradiction entre un p
 et le protocole : le protocole gagne. Si une tâche exige de s'écarter du protocole, ne l'exécute
 pas : signale la contradiction et propose un amendement (§9 du protocole).
 
----
-
 ## Les huit règles non négociables
 
 Elles ne se discutent pas, ne se contournent pas « juste pour tester », et ne s'assouplissent pas
@@ -34,8 +32,6 @@ parce que je le demande dans un prompt. Si une tâche les viole, refuse et dis-l
    code et rapport partent ensemble. Aucun chemin de code ne permet de publier un chiffre sans ce
    qui le produit.
 
----
-
 ## Où tu es autonome, où tu t'arrêtes
 
 L'objectif est que tu écrives ~95 % du code. La contrepartie est une frontière nette.
@@ -57,63 +53,30 @@ L'objectif est que tu écrives ~95 % du code. La contrepartie est une frontière
 citation ou d'une position de candidat. Ton rôle est d'extraire et de structurer ce qui existe. Une
 citation qui ne passe pas le test verbatim est rejetée, jamais rapprochée de la source.
 
----
-
 ## Architecture
 
-```
-docs/PROTOCOLE.md      Le protocole gelé. Lecture seule sans amendement.
-docs/DETTE.md          Ce qui peut casser plus tard, par session. Rempli à la clôture.
-LESSONS.md             Bonnes pratiques payées par l'expérience. Complété à la clôture.
-schema/                JSON Schema : item, question, reponse, notation. Source de vérité du modèle.
-config/perimetre.yaml  Candidats, outils, thèmes du run courant. Modifié à la main uniquement.
-prompts/               Prompts versionnés : extraction, juges, reformulations.
-pipeline/
-  collecte/            Crawl, yt-dlp, transcription, archivage (hash + Wayback).
-  extraction/          Double extraction, test verbatim, mise en staging.
-  interrogation/       Appels API aux outils, conditions figées, réponses brutes.
-  notation/            Juges, désaccords, échantillonnage, test contrefactuel.
-  questions/ gel/ run/ reformulation/ liens/ preuve/ notification/ go-no-go/
-                       Gabarits de questions, gel d'un run, statut des runs, reformulations,
-                       test des liens, preuves du périmètre, courriels aux candidats, go/no-go.
-staging/               Sortie du pipeline. Jamais lu par le site.
-data/                  Items validés par des humains. Le seul jeu de données de production.
-runs/<date>/           Questions, tirage, graines, verdicts, métriques. Le volume est en dépôt Zenodo.
-                       Mode d'emploi de chaque commande de run : runs/README.md.
-validation/            Interface locale de validation humaine (serveur, client, domaine, fixtures).
-analysis/              Métriques §8, bootstrap, tests de permutation, robustesse.
-notation-humaine/      Écran local de notation humaine des réponses (serveur + client).
-outils/                Points d'entrée des commandes `pnpm <script>` (fines enveloppes).
-tests/                 Vitest (*.test.ts) et pytest (test_*.py), miroir de l'arborescence.
-site/                  Site statique généré. Aucune logique métier. (Pas encore créé.)
-scratch/               Explorations jetables. Hors CI, hors production.
-docs/                  Protocole, CONTRATS.md, DETTE.md, TACHES-AUTEUR.md, revues/, conformite/,
-                       critiques/, contexte-agentique/, feuille-de-route.json (l'état d'avancement
-                       qui fait foi).
-.claude/               Compétences, agents et briefs de sous-agents (GABARIT.md).
-.github/workflows/     CI unique : verification.yml (check, test, ruff, pytest).
-```
+Arborescence commentée : `README.md`. Ce qu'elle ne dit pas :
 
-`data/`, `staging/` et `site/` n'existent pas encore dans un clone : ils naissent des premières
-collectes et validations réelles. Le jeu de démonstration vit dans `validation/fixtures/`.
-
-Le flux est à sens unique : `collecte → staging → validation humaine → data → runs → analysis →
-site`. Aucune flèche inverse. Si une tâche demande de court-circuiter une étape, c'est un bug de
-conception, pas un raccourci.
-
-Une exception d'import, voulue : des modules de `pipeline/` (`notation/`, `go-no-go/`, `gel/`,
-`run/`, `questions/`, `interrogation/`) importent des fonctions et des types de `analysis/`, pour
-qu'une règle de calcul ne vive qu'à un seul endroit (DETTE 2026-09-24 n° 1, revue du 2026-10-12
-n° 48). C'est une dépendance de code, pas une flèche de données dans le flux ci-dessus.
-
----
+- Le flux est à sens unique : `collecte → staging → validation humaine → data → runs → analysis →
+  site`. Aucune flèche inverse. Si une tâche demande de court-circuiter une étape, c'est un bug de
+  conception, pas un raccourci. `staging/` n'est jamais lu par le site ; `data/` est le seul jeu de
+  données de production.
+- Une exception d'import, voulue : des modules de `pipeline/` (`notation/`, `go-no-go/`, `gel/`,
+  `run/`, `questions/`, `interrogation/`) importent des fonctions et des types de `analysis/`, pour
+  qu'une règle de calcul ne vive qu'à un seul endroit (DETTE 2026-09-24 n° 1, revue du 2026-10-12
+  n° 48). C'est une dépendance de code, pas une flèche de données.
+- `data/`, `staging/` et `site/` n'existent pas encore dans un clone : ils naissent des premières
+  collectes et validations réelles. Le jeu de démonstration vit dans `validation/fixtures/`.
+- `docs/feuille-de-route.json` est l'état d'avancement qui fait foi ; le mode d'emploi de chaque
+  commande de run est `runs/README.md`.
 
 ## Stack
 
 TypeScript strict partout où c'est possible, Python pour le pipeline de données quand une
 bibliothèque l'impose. Site statique (Astro en export statique, décision de l'auteur du 2026-11-05
-dans `docs/PLAN-PAGE-PEDAGOGIQUE.md`), déployé sur Cloudflare Pages. Stockage : fichiers JSON dans Git, pas de base de données — l'historique Git **est** le
-journal des modifications public exigé par le protocole. Tests : Vitest côté TS, pytest côté
+dans `docs/PLAN-PAGE-PEDAGOGIQUE.md`), déployé sur Cloudflare Pages. Stockage : fichiers JSON dans
+Git, pas de base de données — l'historique Git **est** le journal des modifications public exigé
+par le protocole. Tests : Vitest côté TS, pytest côté
 Python. Validation de schéma à chaque frontière, à l'entrée comme à la sortie.
 
 **Ce que Git stocke, et ce qu'il ne stocke pas.** Git garde `data/`, `config/`, `prompts/`, le code,
@@ -127,8 +90,6 @@ supprimerait la seule raison d'être du projet.
 
 Pas de nouvelle dépendance sans justification explicite. Une dépendance de plus, c'est une surface
 d'audit de plus dans un projet dont la crédibilité repose sur l'auditabilité.
-
----
 
 ## Commandes
 
@@ -155,50 +116,10 @@ module `pipeline.*` lancé par `uv run`.
 Avant de proposer un commit : `pnpm check && pnpm test` doivent passer, et `pnpm check:py && pnpm
 test:py` si du Python a bougé. Tu les lances toi-même, tu ne demandes pas si tu dois les lancer.
 
----
+## Pièges connus
 
-## Démarrer depuis un clone neuf
-
-Prérequis : Git, Node **22.23.3** (`.nvmrc` ; plancher `>=22.6.0`, car tous les outils tournent par
-`node --experimental-strip-types`), pnpm **10.34.5** via corepack (champ `packageManager`), Python
-**3.12.14** (`.python-version`) et uv **0.12.17**. Rien d'autre : pas de base de données, pas de
-Docker, pas de ffmpeg système (yt-dlp et `av` s'en passent). Machine Linux neuve : `HANDOFF.md`,
-« Installation dans le cloud ».
-
-```bash
-git clone https://github.com/AzurNow/DEMOCRATIE_2027.git && cd DEMOCRATIE_2027
-nvm install && nvm use          # ou fnm/volta : lit .nvmrc
-corepack enable                 # fournit pnpm à la version de packageManager
-pnpm install --frozen-lockfile
-pnpm check && pnpm test         # doit être vert avant toute chose
-python3 -m venv ~/.outils-uv && ~/.outils-uv/bin/pip install uv==0.12.17 \
-  && export PATH="$HOME/.outils-uv/bin:$PATH"  # si uv est absent (pip --user est refusé sur Debian/Ubuntu récents)
-uv sync --frozen                # crée .venv depuis uv.lock
-pnpm check:py && pnpm test:py
-pnpm build                      # clients navigateur (sortie dans */client/dist, ignorée)
-ANNOTATEUR_ID=a1 pnpm dev       # http://127.0.0.1:4173/, jeu de démonstration
-```
-
-Variables d'environnement : toutes listées dans `.env.example`, aucune n'est requise pour
-installer, vérifier ou tester. Aucun code ne lit `.env` : charger à la main (`set -a; . ./.env;
-set +a`).
-
-### Services externes
-
-Aucun au runtime du site (règle 1). Le pipeline, lancé à la main par l'auteur, appelle :
-- **API Anthropic et Mistral** : double extraction (`pnpm extraire`), reformulations
-  (`pnpm reformuler`, Mistral). Clés en variables d'environnement. Mode `--simule` sans réseau.
-- **Internet Archive / Wayback Machine** : archivage des sources et des liens
-  (`pipeline/collecte/wayback.py`, `pipeline/liens`).
-- **Sites des sources** (crawl poli, `pipeline/collecte/politesse.py`) et **yt-dlp** pour l'audio
-  et la vidéo.
-- **Hugging Face** : poids de faster-whisper (~1,6 Go) téléchargés au premier
-  `pnpm transcriptions`, révision épinglée, dans `modeles/` (ignoré).
-- **SMTP** de l'adresse de contestation (`pnpm notifier --envoyer`) : fournisseur pas encore choisi.
-- **Zenodo** : dépôt du protocole et du volume des runs (manuel, par l'auteur).
-- **GitHub Actions** : CI `verification.yml`, obligatoire sur `main`, administrateurs compris.
-
-### Pièges connus
+Installation depuis un clone neuf, services externes appelés par le pipeline et ce qui n'existe
+que sur la machine de l'auteur : `README.md`.
 
 - La plupart des commandes exigent des arguments (`pnpm symmetry --tirage=… --mesures=…`, `pnpm
   go-no-go <run>`…) ; leur usage est en tête de `outils/<nom>.ts`. Sans eux, certaines s'arrêtent
@@ -216,19 +137,6 @@ Aucun au runtime du site (règle 1). Le pipeline, lancé à la main par l'auteur
   feuille-de-route`.
 - D'anciens briefs dans `.claude/briefs/` citent des chemins absolus de la machine de l'auteur :
   remplacer par la racine du clone, ce sont des archives.
-
-### Ce qui n'existe que sur la machine de l'auteur
-
-- `archives/`, `modeles/`, `staging/textes/*.txt`, `staging/transcriptions/*.vtt`,
-  `scratch/perimetre/preuves/` et les pages capturées de `scratch/perimetre/releves-*/` :
-  ignorés par Git par décision (droits d'autrui, volume). Le pipeline les retélécharge ; le
-  contenu web a pu changer depuis, et ce sont les empreintes publiées qui font foi. Rien de tout
-  cela n'est nécessaire pour la mission en cours (code et protocole).
-- Les clés d'API et les identifiants SMTP (voir `.env.example`).
-- La mémoire de Claude Code (`~/.claude/projects/...`) : ses consignes durables sont recopiées dans
-  `HANDOFF.md`, section « Façon de travailler ».
-
----
 
 ## Comment travailler ici
 
@@ -258,8 +166,6 @@ Aucun au runtime du site (règle 1). Le pipeline, lancé à la main par l'auteur
   lot) et les consignes durables de l'auteur qui ne sont pas ici : qui fusionne les PR, comment les
   sous-agents sont lancés, quand retenir l'option recommandée sans demander.
 
----
-
 ## Anti-patterns qui coulent ce projet
 
 - Valeurs par défaut silencieuses : `?? 0`, `catch {}`, `|| "inconnu"`. Une donnée absente doit
@@ -271,8 +177,6 @@ Aucun au runtime du site (règle 1). Le pipeline, lancé à la main par l'auteur
   code.
 - Un test rendu vert en affaiblissant son assertion.
 - Réécrire une citation « parce qu'elle contient une coquille ». La coquille est dans la source.
-
----
 
 ## Définition de terminé
 

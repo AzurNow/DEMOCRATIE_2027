@@ -11,14 +11,16 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ## 0. Fusions en attente
 
+- [ ] (2026-11-05) Fusionner **#309** (protocole 0.34, D79, §7 : ordre de la file humaine tiré par
+      graine). Le code qui l'applique attend cette fusion.
 - [x] (2026-11-04) #274 à #281 fusionnées par l'agent à la demande explicite de l'auteur (protocole
       0.31 compris) ; conflits de compte d'exemples et de `docs/conformite/` résolus par commit de
       fusion de `main` (le force-push est refusé par le mode auto).
-- [ ] (2026-11-04) Mettre `origin` à la nouvelle adresse du dépôt : `git remote set-url origin
+- [x] (2026-11-04) Mettre `origin` à la nouvelle adresse du dépôt : `git remote set-url origin
       https://github.com/AzurNow/DEMOCRATIE_2027.git` (l'ancienne fait échouer un push sur trois).
 - [x] (2026-11-04) Fusionner **#287** (projet de protocole 0.32) : sa fusion tranche **D74** par
       l'option recommandée. Trois points laissés sans texte sont en D75 (1) à (3).
-- [ ] (2026-11-04) Trancher **D75** (`docs/feuille-de-route.json`) : 27 questions laissées par #283 à
+- [x] (2026-11-04) Trancher **D75** (`docs/feuille-de-route.json`) : 27 questions laissées par #283 à
       #295 ; commencer par (24) (annexe D, prompt de juge, zone d'arrêt) et (25), qui bloqueraient un
       premier run réel.
 - [ ] (2026-11-04) Avant le prochain gel : renseigner `juges[].outils_de_son_editeur` dans
