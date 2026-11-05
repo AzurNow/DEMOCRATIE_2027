@@ -37,8 +37,11 @@
  * des réponses (`dans_echantillon_humain: false`), sans désaccord de juges (aucun juge), ses sources
  * et sa revue humaine étant les notations humaines qui l'ont résolu. Deux humains retenus sans
  * arbitre ont toujours une note commune (`humainsAArbitrer`) : c'est elle que porte le verdict.
- * Aucun appelant n'écrit encore ces verdicts : `analysis/analyse-du-run.ts` retient la note d'une
- * lecture depuis ses notations (`etatsDesLectures`) et refuse un verdict de lecture dans `verdicts/`.
+ * La chaîne de notation l'écrit dans `verdicts/` dès que la note est retenue (`chaine.ts`, étape 5 ;
+ * `verdicts-de-lecture.ts`, D87) ; une lecture à noter ou à arbitrer n'en a pas. `pnpm analyze` lit
+ * la note d'une lecture dans ce verdict, seule source (D75 (16) ; `analysis/analyse-du-run.ts:
+ * sectionComparateurs`), et la recoupe avec la règle de l'échantillon sur ses notations
+ * (`etatsDesLectures`) : un comparateur dont une lecture affichée n'a pas de verdict y est absent.
  */
 
 import { lireNote, type NoteLue } from "../../analysis/note-lue.ts";

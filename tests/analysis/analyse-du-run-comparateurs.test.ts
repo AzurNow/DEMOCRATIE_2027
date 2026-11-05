@@ -330,7 +330,7 @@ describe("D75 (16) : la section des comparateurs lit le verdict de lecture", () 
     expect(() => valider("metriques", document, "comparateur sans verdict")).not.toThrow();
   });
 
-  it("D75 (16) aucun verdict de lecture (aucun appelant ne les écrit encore) : chaque comparateur absent, ses lectures affichées toutes nommées, triées", () => {
+  it("D75 (16) aucun verdict de lecture (chaîne de notation pas encore relancée après la saisie humaine, D87) : chaque comparateur absent, ses lectures affichées toutes nommées, triées", () => {
     const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
     const sans = { ...entrees, verdicts: entrees.verdicts.filter((v) => v.objet_note.type !== "lecture_comparateur") };
     const liste = ((analyserRun(sans, PARAMETRES, null) as Json)["comparateurs"] as Json)["comparateurs"] as Json[];
