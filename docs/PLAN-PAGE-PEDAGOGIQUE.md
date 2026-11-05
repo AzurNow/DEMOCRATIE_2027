@@ -3,6 +3,8 @@
 Statut : **lancé le 2026-11-05 sur décision de l'auteur.** Rédigé le 2026-11-05 à la demande de l'auteur ; aucun code n'est
 écrit tant que l'auteur ne l'a pas validé et n'a pas dit de commencer.
 
+Avancement : **PR 1 à 5 faites le 2026-11-05** ; le texte attend la relecture de l'auteur avant toute publication.
+
 ## Place dans le projet
 
 Cette page est **la seule partie du site faite avant que le reste du code soit terminé et

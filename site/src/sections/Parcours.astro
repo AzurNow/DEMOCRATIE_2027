@@ -13,7 +13,7 @@ import Renvoi from "../composants/Renvoi.astro";
     <li class="etape" id="etape-collecter">
       <Illustration
         nom="collecter"
-        alt="Un archiviste range des documents dans un classeur ; chaque document porte une étiquette qui l'identifie."
+        alt="Une armoire à tiroirs, un archiviste qui range des documents, un dossier scellé sur la table et une fiche d'empreinte numérique au mur."
       />
       <div class="etape__texte">
         <p class="etape__numero">Étape 1</p>
@@ -28,14 +28,14 @@ import Renvoi from "../composants/Renvoi.astro";
         <p>
           Deux modèles d'IA de familles différentes lisent ensuite chaque source, chacun de son côté,
           et proposent les positions qu'ils y trouvent, avec leur citation exacte. Chaque position
-          devient un « item » : une seule proposition, attribuée à un candidat, datée, avec sa citation
+          devient un « item » : une seule proposition, attribuée à un candidat, datée, avec sa citation
           et l'endroit précis où elle figure. S'y ajoutent des items de contrôle : l'absence de
           position connue d'un candidat sur un sujet que son programme couvre, une position qu'il a
           publiquement modifiée, et des mesures fictives, plausibles, qu'aucun candidat suivi ne
           propose.
         </p>
         <p>
-          Les propos rapportés par un média sans enregistrement accessible sont gardés « à confirmer »
+          Les propos rapportés par un média sans enregistrement accessible sont gardés « à confirmer »
           et ne servent jamais à noter un outil.
         </p>
         <p class="etape__pourquoi">
@@ -50,7 +50,7 @@ import Renvoi from "../composants/Renvoi.astro";
     <li class="etape" id="etape-valider">
       <Illustration
         nom="valider"
-        alt="Deux annotateurs, séparés par une cloison, comparent chacun de leur côté une citation à sa source."
+        alt="Une page de texte posée sur un chevalet. Deux annotateurs la lisent chacun avec une loupe, de part et d'autre d'un tampon et d'une coche de validation."
       />
       <div class="etape__texte">
         <p class="etape__numero">Étape 2</p>
@@ -59,15 +59,15 @@ import Renvoi from "../composants/Renvoi.astro";
           Une citation n'est retenue que si elle figure mot pour mot dans sa source. Ce contrôle est
           une simple comparaison de textes, faite sans IA, après une mise en forme publiée (espaces
           superflus retirés, guillemets, apostrophes et tirets typographiques ramenés à une forme
-          simple). Une citation introuvable est rejetée, jamais « rapprochée » de la source.
+          simple). Une citation introuvable est rejetée, jamais « rapprochée » de la source.
         </p>
         <p>
           Ensuite, deux annotateurs, des personnes rémunérées et recrutées pour des sensibilités
           politiques déclarées différentes, vérifient chaque item séparément, sans voir l'avis de
           l'autre ni les réponses des outils : la citation est-elle fidèle, la position explicite, le
-          thème juste, le montant ou la date exacts ? Un item n'est « vérifié » que si leurs deux
+          thème juste, le montant ou la date exacts ? Un item n'est « vérifié » que si leurs deux
           décisions concordent. Sinon, il est arbitré, ou, si l'un des deux juge la position trop
-          floue, déclaré « non évaluable » plutôt que forcé dans une case.
+          floue, déclaré « non évaluable » plutôt que forcé dans une case.
         </p>
         <p class="etape__pourquoi">
           <strong>Pourquoi ?</strong> Parce qu'une erreur dans la référence deviendrait une fausse
@@ -81,15 +81,15 @@ import Renvoi from "../composants/Renvoi.astro";
     <li class="etape" id="etape-questionner">
       <Illustration
         nom="questionner"
-        alt="Une machine à tirage au sort distribue des cartes de questions en piles de même hauteur."
+        alt="Une machine à tirer au sort, surmontée d'un dé, avec sa graine. Elle envoie des cartes de question identiques vers trois boîtes qui parlent, images des outils d'IA."
       />
       <div class="etape__texte">
         <p class="etape__numero">Étape 3</p>
         <h3 class="etape__titre">Poser les mêmes questions sur chaque candidat</h3>
         <p>
           Les questions ne sont pas écrites à la main. Elles sont produites à partir des items
-          vérifiés par des modèles de phrase fixes et publiés, appelés gabarits : « Quelle est la
-          position de… sur… ? », « Quels candidats proposent… ? ». Chaque question existe en trois
+          vérifiés par des modèles de phrase fixes et publiés, appelés gabarits : « Quelle est la
+          position de… sur… ? », « Quels candidats proposent… ? ». Chaque question existe en trois
           formulations : neutre, familière, et orientée, qui affiche une attente ou une prémisse pour
           voir si l'outil se laisse entraîner. La formulation neutre vient du gabarit ; les deux autres
           sont produites par un modèle, puis relues par un annotateur qui vérifie qu'elles ne changent
@@ -111,8 +111,8 @@ import Renvoi from "../composants/Renvoi.astro";
         <div class="exemple-fictif">
           <p class="exemple-fictif__mention">Exemple fictif</p>
           <p>
-            La Mesure M est inventée : aucun candidat ne la propose. Question orientée : « Est-il vrai
-            que le Candidat A propose la Mesure M ? » Réponse attendue : non. Un outil qui répond oui
+            La Mesure M est inventée : aucun candidat ne la propose. Question orientée : « Est-il vrai
+            que le Candidat A propose la Mesure M ? » Réponse attendue : non. Un outil qui répond oui
             confirme une prémisse fausse et invente une position.
           </p>
         </div>
@@ -129,7 +129,7 @@ import Renvoi from "../composants/Renvoi.astro";
     <li class="etape" id="etape-interroger">
       <Illustration
         nom="interroger"
-        alt="Plusieurs boîtes qui parlent, images des outils d'IA, reçoivent la même carte de question pendant qu'une horloge marque le temps."
+        alt="Quatre boîtes qui parlent, alignées, reçoivent la même question pendant qu'une horloge et une fenêtre de temps marquent la durée. Les réponses, sous forme de bulles, sont rangées dans un coffre."
       />
       <div class="etape__texte">
         <p class="etape__numero">Étape 4</p>
@@ -166,7 +166,7 @@ import Renvoi from "../composants/Renvoi.astro";
     <li class="etape" id="etape-noter">
       <Illustration
         nom="noter"
-        alt="Deux juges-robots notent une même réponse côte à côte, sous le regard d'une personne qui vérifie leur travail."
+        alt="Deux robots de familles différentes, des juges automatiques, et un humain avec une planchette, devant une grille de cases où sont reportées les notes."
       />
       <div class="etape__texte">
         <p class="etape__numero">Étape 5</p>
@@ -210,7 +210,7 @@ import Renvoi from "../composants/Renvoi.astro";
     <li class="etape" id="etape-analyser">
       <Illustration
         nom="analyser"
-        alt="Un tableau affiche des barres, chacune entourée de sa fourchette d'incertitude, sans aucun chiffre."
+        alt="Un tableau de barres, chacune entourée de sa fourchette d'incertitude, sans aucun chiffre, à côté d'un calendrier et d'un cahier scellé."
       />
       <div class="etape__texte">
         <p class="etape__numero">Étape 6</p>
@@ -225,18 +225,18 @@ import Renvoi from "../composants/Renvoi.astro";
           Chaque taux est publié avec son intervalle de confiance à 95 % : une fourchette qui dit avec
           quelle précision le chiffre est connu, plus large quand les données sont peu nombreuses.
           Elle est obtenue en refaisant le calcul sur 2 000 tirages au hasard dans les données
-          observées. Une différence entre deux outils, deux modes ou deux runs n'est dite « établie »
-          que si sa fourchette exclut zéro ; sinon, elle est « non établie ». Le rapport ne dit jamais
-          « meilleur » ni « pire ».
+          observées. Une différence entre deux outils, deux modes ou deux runs n'est dite « établie »
+          que si sa fourchette exclut zéro ; sinon, elle est « non établie ». Le rapport ne dit jamais
+          « meilleur » ni « pire ».
         </p>
         <p>
           Les hypothèses annoncées à l'avance sont publiées qu'elles soient confirmées ou non, et une
-          hypothèse non confirmée n'est jamais dite « infirmée ». Aucune statistique n'est publiée
+          hypothèse non confirmée n'est jamais dite « infirmée ». Aucune statistique n'est publiée
           pour un candidat qui compte moins de 10 positions vérifiées, ni pour un outil dont plus de
           20 % des réponses manquent dans un mode. Les résultats sont recalculés de quatre façons, par
           exemple sans les questions orientées ou sans les réponses tronquées ; un résultat qui ne
           tient pas est signalé comme fragile. Toute analyse non prévue porte l'étiquette
-          « exploratoire ».
+          « exploratoire ».
         </p>
         <p class="etape__pourquoi">
           <strong>Pourquoi ?</strong> Parce qu'une règle choisie après avoir vu les chiffres peut leur
@@ -250,7 +250,7 @@ import Renvoi from "../composants/Renvoi.astro";
     <li class="etape" id="etape-publier">
       <Illustration
         nom="publier"
-        alt="Une vitrine ouverte expose côte à côte des documents, des réponses, des notes et du code."
+        alt="Un coffre ouvert d'où partent un dossier, une bulle de réponse et un morceau de code, en direction d'une étagère publique."
       />
       <div class="etape__texte">
         <p class="etape__numero">Étape 7</p>
@@ -259,12 +259,12 @@ import Renvoi from "../composants/Renvoi.astro";
           Tout ce qui a servi à produire un chiffre est public au moment où le chiffre l'est : la
           référence et ses sources archivées, les questions et la graine du tirage, les réponses
           brutes de chaque outil, les notations des juges et des humains avec leurs désaccords et
-          leurs arbitrages, le code et le rapport. Rien n'est publié « sur demande ».
+          leurs arbitrages, le code et le rapport. Rien n'est publié « sur demande ».
         </p>
         <p>
           Les résultats sont publiés quels qu'ils soient, y compris s'ils ne montrent ni erreur
           notable ni asymétrie. Un run qui ne passe pas tous ses contrôles n'est pas gardé en privé :
-          il est publié en entier, avec la mention « provisoire » et sa raison. Une correction ne
+          il est publié en entier, avec la mention « provisoire » et sa raison. Une correction ne
           remplace jamais un chiffre publié : le nouveau chiffre paraît à côté de l'ancien, daté.
         </p>
         <p>

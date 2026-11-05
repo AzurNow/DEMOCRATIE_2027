@@ -1,5 +1,8 @@
 ---
 // Gabarit commun : aucune police externe, aucun script externe.
+import ThemeInitial from "../composants/ThemeInitial.astro";
+import "../styles/index.css";
+
 interface Props {
   titre: string;
   description: string;
@@ -14,8 +17,9 @@ const { titre, description } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{titre}</title>
+    <ThemeInitial />
   </head>
-  <body>
+  <body class="page">
     <slot />
   </body>
 </html>

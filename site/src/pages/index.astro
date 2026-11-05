@@ -1,10 +1,29 @@
 ---
 import Base from "../layouts/Base.astro";
+import EnTete from "../composants/EnTete.astro";
+import Pied from "../composants/Pied.astro";
+import Accroche from "../sections/Accroche.astro";
+import Parcours from "../sections/Parcours.astro";
+import Questions from "../sections/Questions.astro";
+import Limites from "../sections/Limites.astro";
+import Preenregistrement from "../sections/Preenregistrement.astro";
+import Contester from "../sections/Contester.astro";
+import Faq from "../sections/Faq.astro";
 ---
 
-<Base titre="Comment fonctionne le banc d'essai" description="Page pédagogique du Banc d'essai 2027, en construction.">
-  <main>
-    <h1>Comment fonctionne le banc d'essai</h1>
-    <p>Cette page est en construction.</p>
+<Base
+  titre="Comment fonctionne le Banc d'essai 2027"
+  description="Comment le Banc d'essai 2027 mesure ce que des assistants d'IA et des comparateurs citoyens disent des candidats à la présidentielle : méthode, limites et possibilité de contester, d'après un protocole public."
+>
+  <EnTete />
+  <main id="contenu">
+    <Accroche />
+    <Parcours />
+    <Questions />
+    <Limites />
+    <Preenregistrement />
+    <Contester />
+    <Faq />
   </main>
+  <Pied />
 </Base>
