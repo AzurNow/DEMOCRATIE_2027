@@ -95,9 +95,11 @@ export const CHAMPS_DU_GO_NO_GO: ChampsDeRunJson = {
 };
 
 /**
- * §9 (protocole 0.28, D70 (13)) : « celle du fichier du run étant calculée hors des champs de
- * statut, de publication et de dépôt, que ce fichier reçoit après l'analyse ». Le statut est écrit
- * au gel (`planifie`) et change ensuite (`en_cours` à l'interrogation, D51 ; puis à la publication).
+ * §9 (protocole 0.34, révisé en 0.33 par D75 (17)) : l'empreinte du fichier du run est « calculée hors
+ * des champs de statut, de publication et de dépôt, et hors de ceux qu'y inscrit le go/no-go » ;
+ * ces derniers sont `CHAMPS_DU_GO_NO_GO`, et l'ensemble est `CHAMPS_HORS_EMPREINTE_DU_RUN`. Ce
+ * groupe-ci porte les trois premiers. Le statut est écrit au gel (`planifie`) et change ensuite
+ * (`en_cours` à l'interrogation, D51 ; puis à la publication).
  */
 export const CHAMPS_DU_STATUT_ET_DE_LA_PUBLICATION: ChampsDeRunJson = {
   ...AUCUN,
