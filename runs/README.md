@@ -28,7 +28,7 @@ runs/<date>/
   checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
                                     par pnpm go-no-go, contresignée par pnpm go-no-go:contresigner
   volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo,
-                              À L'EXCEPTION de liens/pages/ (voir ci-dessous)
+                              en entier, sans exception
     reponses/<id>.json              une réponse par requête (schema/reponse.schema.json)
     tentatives/<empreinte>.jsonl    le journal des tentatives d'une requête
     tentatives/<empreinte>.<n>.octets
@@ -40,20 +40,22 @@ runs/<date>/
     reponses-contrefactuelles/<id>.json
                                     les réponses permutées du test contrefactuel (§7), contexte ≠ run
     liens/<sha256 de l'URL>.json    le test HTTP d'un lien cité (schema/existence-lien.schema.json)
-    liens/pages/<sha256><ext>       la page d'un lien qui existe, octets reçus tels quels
-                                    (JAMAIS dans l'archive Zenodo : voir ci-dessous)
+  pages-citees/<sha256><ext>  hors Git (ligne /runs/*/pages-citees/ de .gitignore) et hors du volume :
+                              la page d'un lien qui existe ou la version brute d'un instantané,
+                              octets reçus tels quels (JAMAIS dans l'archive Zenodo : voir ci-dessous)
 ```
 
-**Ce qui ne part pas dans l'archive Zenodo (§9, §10 ; conformité 2026-11-03 n° 10).** Le volume part
-en entier, sauf `volume/liens/pages/` : les pages citées par les réponses ne sont republiables que si
-leur licence le permet, ce que le banc ne sait pas établir page par page. Elles restent sur la
+**Ce qui ne part pas dans l'archive Zenodo (§9, §10 ; conformité 2026-11-03 n° 10 ; D75 (4)).** Le
+volume part en entier, sans exception. Les pages citées par les réponses n'y sont pas : elles ne sont
+republiables que si leur licence le permet, ce que le banc ne sait pas établir page par page, et le
+test des liens les écrit donc hors du volume, sous `runs/<date>/pages-citees/`. Elles restent sur la
 machine de l'auteur, parce que la notation les lit ; seuls partent, dans `volume/liens/<sha256 de
-l'URL>.json`, l'empreinte (`sha256_contenu`), le lien d'archive (`archive_url`) et le verdict, et
-l'extrait cité dans les notations. De même, une archive `sources_archivees` (`run.json#/depot/archives`)
+l'URL>.json`, l'empreinte (`sha256_contenu`), le chemin, le lien d'archive (`archive_url`) et le
+verdict, et l'extrait cité dans les notations. De même, une archive `sources_archivees` (`run.json#/depot/archives`)
 n'est admise que si chaque source qu'elle contient déclare `publication: "publique"` ; `interne` ou un
-champ absent la refuse. La garde est `pipeline/run/depot.ts` (`verifierEntreesArchive`,
-`verifierArchives`), à appeler par la commande de dépôt quand elle existera, et tenue par
-`tests/run/depot.test.ts`. Un dépôt à la main exclut `volume/liens/pages/` de l'archive.
+champ absent la refuse. La garde est `pipeline/run/depot.ts` (`verifierArchives`), à appeler par la
+commande de dépôt quand elle existera, et tenue par `tests/run/depot.test.ts`. Un dépôt à la main
+verse `volume/` tel quel et ne verse jamais `pages-citees/`.
 
 Les mesures ne sont pas copiées dans `runs/<date>/` : comme les items, elles sont lues dans
 `data/mesures/` (un fichier par mesure, décision D38) au commit `run.json#/versions/donnees_commit`,
@@ -338,14 +340,15 @@ latin-1 réussit.
   fichier gardent la chaîne exacte, `url_finale` est l'URI qui a répondu ; une IRI inconvertible
   est `url_malformee` (non testable), et sa recherche d'instantané est consignée en échec sans
   requête.
-- **`pages/`** garde, octets intacts et nommés par leur SHA-256, la page d'un lien qui existe et la
-  version brute (`https://web.archive.org/web/<14 chiffres>id_/<uri>`) de l'instantané retenu d'un
+- **`runs/<date>/pages-citees/`**, hors de `volume/` (D75 (4)), garde, octets intacts et nommés par
+  leur SHA-256, la page d'un lien qui existe et la version brute (`https://web.archive.org/web/<14 chiffres>id_/<uri>`) de l'instantané retenu d'un
   lien inaccessible ou non testable. Un instantané n'est retenu que si l'API de disponibilité le dit
   de statut 200 ; sinon il est écarté (`wayback.issue = "ecarte"`, statut consigné). Seul un
   téléchargement réussi pose `archive_url` et `sha256_contenu`. D22 : le téléchargement suit les
   redirections, et Wayback sert souvent une capture voisine ; `archive_url` est l'instantané
   réellement servi, forme publique sans `id_` de l'URL finale, l'instantané demandé restant dans
-  `wayback.url_instantane`. Une URL finale hors de la forme `/web/<14 chiffres>id_/…` de
+  `wayback.url_instantane`. Le résultat déclare la copie par son `chemin`, relatif au répertoire du
+  run (`pages-citees/<sha256><ext>`). Une URL finale hors de la forme `/web/<14 chiffres>id_/…` de
   web.archive.org est un téléchargement en échec. Un échec est consigné dans
   `wayback.telechargement`, compté parmi les échecs Wayback du bilan, sans changer le verdict.
 - **Relance.** Un fichier déjà présent est repris tel quel : l'URL n'est ni retestée ni réécrite, son
@@ -355,7 +358,9 @@ latin-1 réussit.
   recherche et le téléchargement de l'instantané).
 - **Lecture.** `pnpm notation:humaine` lit ce répertoire s'il existe
   (`pipeline/notation/fournisseur-fichiers.ts`) ; un fichier invalide, mal nommé ou dont la copie
-  conservée (page ou version brute de l'instantané) manque empêche le démarrage. Le dossier `pages/` et les résultats sont les seules entrées admises.
+  conservée (page ou version brute de l'instantané) manque sous `pages-citees/` empêche le démarrage.
+  Les résultats et les dossiers `extractions/` et `textes/` sont les seules entrées admises de
+  `volume/liens/` : un ancien dossier `volume/liens/pages/` est refusé.
 
 ## Ce que l'analyse lira
 

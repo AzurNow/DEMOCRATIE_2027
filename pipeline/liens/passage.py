@@ -6,8 +6,8 @@ est transitoire (table), espacées de `tentatives.espacement_s` sur l'horloge in
 résultat est traduit en verdict par la table. Puis la copie : page et Save Page Now pour `existe`,
 recherche d'instantané existant pour `inaccessible` et `non_testable`, rien pour `mort` (D19 : un
 lien mort ne soutient jamais rien). D21 : un instantané de statut 200 est téléchargé en version
-brute (`id_`) par la même sonde, octets intacts sous `pages/` ; seul ce téléchargement réussi pose
-`archive_url` et `sha256_contenu`. Un instantané d'un autre statut est écarté, un téléchargement en
+brute (`id_`) par la même sonde, octets intacts sous `pages-citees/`, hors de `volume/` (D75 (4)) ;
+seul ce téléchargement réussi pose `archive_url` et `sha256_contenu`. Un instantané d'un autre statut est écarté, un téléchargement en
 échec est consigné : ni l'un ni l'autre ne change le verdict. D22 : la recherche et le
 téléchargement portent l'URI convertie par la règle `conversion_iri` de la table ; `archive_url` est
 l'instantané réellement servi, lu dans l'URL finale du téléchargement, l'instantané demandé reste
@@ -47,6 +47,7 @@ from pipeline.liens.sortie import (
     ecrire_resultat,
     lire_resultat,
     nom_resultat,
+    repertoire_liens,
 )
 from pipeline.liens.table import TableLiens
 
@@ -85,7 +86,7 @@ class Bilan:
 class _Contexte:
     url: str
     instant_reference: datetime
-    repertoire: Path
+    repertoire_run: Path
     deps: Dependances
     tentatives: list[Tentative] = field(default_factory=list)
 
@@ -114,7 +115,7 @@ def _copie_existe(ctx: _Contexte) -> Copie:
     """D22 : Save Page Now reçoit l'URI convertie par la règle de la table, comme la sonde qui a
     obtenu le verdict `existe` pour `ctx.url` (même règle, même chaîne) : jamais `IriInconvertible`
     ici, une IRI qui ne se convertit pas est `url_malformee`, donc jamais `existe`."""
-    sha256, page = conserver_page(ctx.repertoire, ctx.tentatives[-1].constat)
+    sha256, page = conserver_page(ctx.repertoire_run, ctx.tentatives[-1].constat)
     uri = CONVERSIONS_IRI[ctx.deps.table.conversion_iri](ctx.url)
     archivage = ctx.deps.archiveur.sauvegarder(uri)
     if isinstance(archivage, ArchivageReussi):
@@ -146,7 +147,7 @@ def _servi(constat: Constat) -> str | tuple[str, str]:
 
 def _trouve(ctx: _Contexte, recherche: InstantaneTrouve, wayback: dict[str, object]) -> Copie:
     """D21 : la version brute (`id_`) de l'instantané est téléchargée, même politesse, même agent
-    (la sonde du passage), une fois. Octets intacts sous `pages/` ; `archive_url` et `sha256_contenu`
+    (la sonde du passage), une fois. Octets intacts sous `pages-citees/` ; `archive_url` et `sha256_contenu`
     ne sont posés que si le téléchargement réussit. D22 : `archive_url` est l'instantané réellement
     servi (forme publique de l'URL finale, sans `id_`) ; l'instantané demandé reste `url_instantane`."""
     wayback |= {
@@ -161,7 +162,7 @@ def _trouve(ctx: _Contexte, recherche: InstantaneTrouve, wayback: dict[str, obje
         echec = {"issue": "echec", "url_brute": recherche.url_brute, "motif": servi}
         return Copie(wayback=wayback | {"telechargement": echec})
     url_finale, archive_url = servi
-    sha256, page = conserver_page(ctx.repertoire, constat)
+    sha256, page = conserver_page(ctx.repertoire_run, constat)
     reussi = {"issue": "reussi", "url_brute": recherche.url_brute, "url_finale": url_finale, **page}
     return Copie(wayback=wayback | {"telechargement": reussi}, sha256_contenu=sha256, archive_url=archive_url)
 
@@ -238,11 +239,12 @@ def _reprendre(chemin: Path, url: str, version_table: str) -> Bilan:
     return Bilan(url, "repris", verdict=str(resultat["verdict_existence"]))
 
 
-def traiter(url: str, instant_reference: datetime, repertoire: Path, deps: Dependances) -> Bilan:
+def traiter(url: str, instant_reference: datetime, repertoire_run: Path, deps: Dependances) -> Bilan:
+    repertoire = repertoire_liens(repertoire_run)
     chemin = repertoire / nom_resultat(url)
     if chemin.exists():
         return _reprendre(chemin, url, deps.table.version)
-    ctx = _Contexte(url, instant_reference, repertoire, deps, tester(url, deps))
+    ctx = _Contexte(url, instant_reference, repertoire_run, deps, tester(url, deps))
     finale = ctx.tentatives[-1].constat
     verdict = deps.table.verdict(finale)
     if verdict is None:
@@ -257,10 +259,11 @@ def traiter(url: str, instant_reference: datetime, repertoire: Path, deps: Depen
     return Bilan(url, "teste", verdict=verdict, echec_wayback=_echec_wayback(copie.wayback))
 
 
-def passer(liens: Mapping[str, datetime], repertoire_liens: Path, deps: Dependances) -> list[Bilan]:
-    """Toutes les URL, en ordre trié de la chaîne exacte : le passage est déterministe."""
-    repertoire_liens.mkdir(parents=True, exist_ok=True)
-    return [traiter(url, liens[url], repertoire_liens, deps) for url in sorted(liens)]
+def passer(liens: Mapping[str, datetime], repertoire_run: Path, deps: Dependances) -> list[Bilan]:
+    """Toutes les URL, en ordre trié de la chaîne exacte : le passage est déterministe. Les résultats
+    vont sous `volume/liens/`, les pages sous `pages-citees/` (D75 (4)), tous deux dans `repertoire_run`."""
+    repertoire_liens(repertoire_run).mkdir(parents=True, exist_ok=True)
+    return [traiter(url, liens[url], repertoire_run, deps) for url in sorted(liens)]
 
 
 # ------------------------------------------------------------------------------ bilan

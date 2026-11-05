@@ -55,9 +55,9 @@ SERVI_A = f"https://web.archive.org/web/20260920101010/{A}"
 
 
 def _passer(b: Banc, tmp_path: Path, *urls: str) -> tuple[list, Path]:
-    repertoire = tmp_path / "liens"
-    bilans = passer({url: REFERENCE for url in urls}, repertoire, b.deps)
-    return bilans, repertoire
+    """`tmp_path` tient lieu de répertoire du run : résultats sous `volume/liens/`, pages sous `pages-citees/`."""
+    bilans = passer({url: REFERENCE for url in urls}, tmp_path, b.deps)
+    return bilans, tmp_path / "volume" / "liens"
 
 
 def _resultat(repertoire: Path, url: str) -> dict:
@@ -80,8 +80,8 @@ def test_cas_1_200_direct_existe_corps_stocke_sha256_exact_save_page_now(tmp_pat
     assert resultat["sha256_contenu"] == sha256
     assert resultat["code_http"] == 200
     assert resultat["url_finale"] == A
-    assert resultat["page"] == {"chemin": f"pages/{sha256}.html", "type_contenu_recu": "text/html; charset=utf-8", "taille_octets": len(corps)}
-    assert (repertoire / "pages" / f"{sha256}.html").read_bytes() == corps
+    assert resultat["page"] == {"chemin": f"pages-citees/{sha256}.html", "type_contenu_recu": "text/html; charset=utf-8", "taille_octets": len(corps)}
+    assert (tmp_path / "pages-citees" / f"{sha256}.html").read_bytes() == corps
     assert b.archiveur.urls == [A]
     assert resultat["archive_url"] == reussite(A).archive_url
     assert resultat["wayback"] == {"operation": "wayback_save_page_now", "issue": "reussi", "archive_url": reussite(A).archive_url}
@@ -336,7 +336,7 @@ def test_cas_12_meme_url_citee_par_trois_reponses_testee_une_fois(tmp_path: Path
         ecrire_reponse(run, f"01JD000000000000000000000{n}", [A, A], "2026-09-21T12:00:00+02:00")
     b = banc({ROBOTS: ROBOTS_OUVERT, A: [reponse(200, b"ok")]})
 
-    passer(liens_cites(run, lire_run(run)), run / "volume" / "liens", b.deps)
+    passer(liens_cites(run, lire_run(run)), run, b.deps)
 
     assert b.transport.urls() == [ROBOTS, A]
 
@@ -348,7 +348,7 @@ def test_cas_12_casse_et_barre_finale_donnent_deux_tests(tmp_path: Path) -> None
     ecrire_reponse(run, "01JD0000000000000000000001", variantes, "2026-09-21T12:00:00+02:00")
     b = banc({ROBOTS: ROBOTS_OUVERT, **{v: reponse(200, v.encode()) for v in variantes}})
 
-    passer(liens_cites(run, lire_run(run)), run / "volume" / "liens", b.deps)
+    passer(liens_cites(run, lire_run(run)), run, b.deps)
 
     assert b.transport.urls() == [ROBOTS, *sorted(variantes)]
     assert len(list((run / "volume" / "liens").glob("*.json"))) == 3
@@ -362,7 +362,7 @@ def test_cas_16_refus_api_et_reponse_manquante_rien_a_tester(tmp_path: Path) -> 
     b = banc({})
 
     liens = liens_cites(run, lire_run(run))
-    bilans = passer(liens, run / "volume" / "liens", b.deps)
+    bilans = passer(liens, run, b.deps)
 
     assert liens == {}
     assert bilans == []
@@ -431,12 +431,12 @@ def test_relance_resultat_ecrit_avec_une_autre_version_de_table_refuse_sans_reec
 
 
 def test_cas_17_resultat_present_mais_incoherent_refuse(tmp_path: Path) -> None:
-    repertoire = tmp_path / "liens"
-    repertoire.mkdir()
+    repertoire = tmp_path / "volume" / "liens"
+    repertoire.mkdir(parents=True)
     (repertoire / nom_resultat(A)).write_text(json.dumps({"url_citee": "https://autre.example/"}), encoding="utf-8")
     b = banc({})
 
-    bilans = passer({A: REFERENCE}, repertoire, b.deps)
+    bilans = passer({A: REFERENCE}, tmp_path, b.deps)
 
     assert bilans[0].etat == "refuse"
     assert code_de_sortie(bilans) == 1
@@ -572,11 +572,11 @@ def test_d21_cas_7_instantane_200_telecharge_en_id_sha256_exact(tmp_path: Path) 
     assert resultat["archive_url"] == SERVI_A
     assert resultat["sha256_contenu"] == sha256
     assert "page" not in resultat
-    assert (repertoire / "pages" / f"{sha256}.html").read_bytes() == archive
+    assert (tmp_path / "pages-citees" / f"{sha256}.html").read_bytes() == archive
     assert resultat["wayback"] == {
         "operation": "recherche_instantane", "instant_reference": "2026-09-21T10:00:00+02:00", "issue": "trouve",
         "url_instantane": INSTANTANE_A, "horodatage_instantane": "20260920101010", "statut_instantane": "200",
-        "telechargement": {"issue": "reussi", "url_brute": BRUTE_A, "url_finale": BRUTE_A, "chemin": f"pages/{sha256}.html",
+        "telechargement": {"issue": "reussi", "url_brute": BRUTE_A, "url_finale": BRUTE_A, "chemin": f"pages-citees/{sha256}.html",
                            "type_contenu_recu": "text/html; charset=utf-8", "taille_octets": len(archive)}}
     assert b.transport.urls() == [ROBOTS, A, ROBOTS_WAYBACK, BRUTE_A]
     assert len({en_tetes["User-Agent"] for _u, _t, en_tetes in b.transport.requetes}) == 1
@@ -647,7 +647,7 @@ def test_d21_cas_9_telechargement_en_echec_ni_archive_url_ni_sha256_verdict_inch
     telechargement = resultat["wayback"]["telechargement"]
     assert (telechargement["issue"], telechargement["url_brute"]) == ("echec", BRUTE_A)
     assert motif in telechargement["motif"]
-    assert not (repertoire / "pages").exists()
+    assert not (tmp_path / "pages-citees").exists()
     assert bilans[0].echec_wayback is not None and motif in bilans[0].echec_wayback
     assert code_de_sortie(bilans) == 0
 
@@ -675,7 +675,7 @@ def test_d22_cas_1_servi_a_une_autre_date_copie_gardee_archive_url_instantane_se
     wayback = resultat["wayback"]
     assert (wayback["url_instantane"], wayback["horodatage_instantane"]) == (INSTANTANE_A, "20260920101010")
     assert (wayback["telechargement"]["url_brute"], wayback["telechargement"]["url_finale"]) == (BRUTE_A, BRUTE_T2)
-    assert (repertoire / "pages" / f"{sha256}.html").read_bytes() == archive
+    assert (tmp_path / "pages-citees" / f"{sha256}.html").read_bytes() == archive
     assert bilans[0].echec_wayback is None
 
 
@@ -712,7 +712,7 @@ def test_d22_cas_3_url_finale_hors_forme_id_telechargement_en_echec(tmp_path: Pa
     telechargement = resultat["wayback"]["telechargement"]
     assert (telechargement["issue"], telechargement["url_brute"]) == ("echec", BRUTE_A)
     assert finale in telechargement["motif"]
-    assert not (repertoire / "pages").exists()
+    assert not (tmp_path / "pages-citees").exists()
     assert bilans[0].echec_wayback is not None and finale in bilans[0].echec_wayback
     assert code_de_sortie(bilans) == 0
 
@@ -731,9 +731,9 @@ def test_d22_cas_5_iri_recherche_et_telechargement_sur_l_uri_convertie(tmp_path:
               ROBOTS_WAYBACK: ROBOTS_OUVERT, brute: reponse(200, b"copie")})
     deps = replace(b.deps, chercheur=ChercheurInstantanes(b.transport, Cadence(b.horloge, intervalle_s=1.0)))
 
-    passer({iri: REFERENCE}, tmp_path / "liens", deps)
+    passer({iri: REFERENCE}, tmp_path, deps)
 
-    resultat = json.loads((tmp_path / "liens" / f"{hashlib.sha256(iri.encode('utf-8')).hexdigest()}.json").read_text("utf-8"))
+    resultat = json.loads((tmp_path / "volume" / "liens" / f"{hashlib.sha256(iri.encode('utf-8')).hexdigest()}.json").read_text("utf-8"))
     assert resultat["url_citee"] == iri
     assert b.transport.urls()[-3:] == [demande, ROBOTS_WAYBACK, brute]
     assert resultat["wayback"]["telechargement"]["url_brute"] == brute
@@ -755,3 +755,56 @@ def test_d22_cas_5_iri_inconvertible_non_testable_aucune_requete_wayback(tmp_pat
     assert "IRI inconvertible" in resultat["wayback"]["motif"]
     assert "archive_url" not in resultat
     assert bilans[0].echec_wayback is not None
+
+
+# ------------------------------------------------------------------------------ D75 (4) : pages hors de volume/
+
+B = "https://example.org/b"
+BRUTE_B = f"https://web.archive.org/web/20260920101010id_/{B}"
+
+
+def _fichiers_sous(racine: Path) -> list[str]:
+    return sorted(p.relative_to(racine).as_posix() for p in racine.rglob("*") if p.is_file())
+
+
+def _passage_page_et_instantane(tmp_path: Path) -> tuple[str, str]:
+    """Un lien qui existe (page) et un lien inaccessible dont l'instantané est téléchargé (version brute)."""
+    page, archive = b"<html>page</html>", b"<html>copie</html>"
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(200, page, content_type="text/html; charset=utf-8"), B: reponse(403),
+              ROBOTS_WAYBACK: ROBOTS_OUVERT, BRUTE_B: reponse(200, archive, content_type="text/html; charset=utf-8")},
+             archiveur=ArchiveurFactice(reussite(A)),
+             chercheur=ChercheurFactice(InstantaneTrouve(f"http://web.archive.org/web/20260920101010/{B}", "20260920101010", BRUTE_B)))
+    bilans, _repertoire = _passer(b, tmp_path, A, B)
+    assert [(x.etat, x.verdict) for x in bilans] == [("teste", "existe"), ("teste", "inaccessible")]
+    return hashlib.sha256(page).hexdigest(), hashlib.sha256(archive).hexdigest()
+
+
+def test_d75_4_cas_1_pages_ecrites_sous_pages_citees_jamais_sous_volume(tmp_path: Path) -> None:
+    """D75 (4), cas limites 1 et 5 : la page d'un lien qui existe et la version brute d'un instantané
+    vont sous `<run>/pages-citees/`, au chemin relatif au run que déclare le résultat ; `volume/` ne
+    contient que les résultats `.json`, donc aucune page : il part en entier sur Zenodo."""
+    sha_page, sha_copie = _passage_page_et_instantane(tmp_path)
+
+    assert _fichiers_sous(tmp_path / "pages-citees") == sorted([f"{sha_page}.html", f"{sha_copie}.html"])
+    assert _fichiers_sous(tmp_path / "volume") == sorted(f"liens/{nom_resultat(url)}" for url in (A, B))
+    existe = _resultat(tmp_path / "volume" / "liens", A)
+    copie = _resultat(tmp_path / "volume" / "liens", B)["wayback"]["telechargement"]
+    assert existe["page"]["chemin"] == f"pages-citees/{sha_page}.html"
+    assert copie["chemin"] == f"pages-citees/{sha_copie}.html"
+    assert (tmp_path / existe["page"]["chemin"]).is_file() and (tmp_path / copie["chemin"]).is_file()
+
+
+def test_d75_4_cas_2_relance_reprend_sans_reecrire_au_nouvel_emplacement(tmp_path: Path) -> None:
+    """D75 (4), cas limite 2 : relance sur un run déjà testé, rien n'est retesté ni réécrit, ni les
+    résultats ni les pages de `pages-citees/`, et aucune page n'apparaît sous `volume/`."""
+    sha_page, _sha_copie = _passage_page_et_instantane(tmp_path)
+    avant = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.rglob("*") if p.is_file()}
+    assert tmp_path / "pages-citees" / f"{sha_page}.html" in avant
+
+    relance = banc({})
+    bilans, _repertoire = _passer(relance, tmp_path, A, B)
+
+    assert relance.transport.urls() == []
+    assert [x.etat for x in bilans] == ["repris", "repris"]
+    assert {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.rglob("*") if p.is_file()} == avant
+    assert not (tmp_path / "volume" / "liens" / "pages").exists()
