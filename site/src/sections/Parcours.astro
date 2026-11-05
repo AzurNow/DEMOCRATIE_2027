@@ -7,7 +7,7 @@ import FilStation from "../composants/FilStation.astro";
 <section class="section section--parcours" id="parcours" aria-labelledby="titre-parcours">
   <h2 id="titre-parcours">Le parcours d'une question</h2>
   <p class="section__chapo">
-    Le banc fonctionne par runs : un run est une campagne de mesure complète, du choix des questions
+    Le banc fonctionne par runs : un run est une campagne de mesure complète, du choix des questions
     à la publication des résultats. Dans chaque run, une question passe par sept étapes. Chacune suit
     une règle écrite à l'avance, et chacune a une raison d'être.
   </p>
@@ -24,17 +24,17 @@ import FilStation from "../composants/FilStation.astro";
         <p class="etape__numero">Étape 1</p>
         <h3 class="etape__titre">Collecter ce que les candidats ont dit</h3>
         <p>
-          Le projet rassemble ce que chaque candidat a dit publiquement : programme officiel, site de
+          Le projet rassemble ce que chaque candidat a dit publiquement : programme officiel, site de
           campagne, tribune signée, communiqué, ou déclaration orale enregistrée et accessible. Chaque
-          source est archivée dès sa collecte : une copie, son empreinte numérique (une suite de
+          source est archivée dès sa collecte : une copie, son empreinte numérique (une suite de
           caractères qui change dès que le document change, ne serait-ce que d'un caractère) et une
           sauvegarde publique sur la Wayback Machine.
         </p>
         <p>
           Deux modèles d'IA de familles différentes lisent ensuite chaque source, chacun de son côté,
           et proposent les positions qu'ils y trouvent, avec leur citation exacte. Chaque position
-          devient un « item » : une seule proposition, attribuée à un candidat, datée, avec sa citation
-          et l'endroit précis où elle figure. S'y ajoutent des items de contrôle : l'absence de
+          devient un « item » : une seule proposition, attribuée à un candidat, datée, avec sa citation
+          et l'endroit précis où elle figure. S'y ajoutent des items de contrôle : l'absence de
           position connue d'un candidat sur un sujet que son programme couvre, une position qu'il a
           publiquement modifiée, et des mesures fictives, plausibles, qu'aucun candidat suivi ne
           propose.
@@ -44,7 +44,7 @@ import FilStation from "../composants/FilStation.astro";
           et ne servent jamais à noter un outil.
         </p>
         <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce que la référence est la seule chose que le projet affirme.
+          <strong>Pourquoi ?</strong> Parce que la référence est la seule chose que le projet affirme.
           Une source archivée permet à chacun de vérifier qu'une citation existait, telle quelle, même
           si la page d'origine change ou disparaît.
         </p>
@@ -70,14 +70,14 @@ import FilStation from "../composants/FilStation.astro";
         <p>
           Ensuite, deux annotateurs, des personnes rémunérées et recrutées pour des sensibilités
           politiques déclarées différentes, vérifient chaque item séparément, sans voir l'avis de
-          l'autre ni les réponses des outils : la citation est-elle fidèle, la position explicite, le
-          thème juste, le montant ou la date exacts ? Un item n'est « vérifié » que si leurs deux
+          l'autre ni les réponses des outils : la citation est-elle fidèle, la position explicite, le
+          thème juste, le montant ou la date exacts ? Un item n'est « vérifié » que si leurs deux
           décisions concordent. Sinon, il est arbitré, ou, si l'un des deux juge la position trop
           floue, déclaré « non évaluable » plutôt que forcé dans une case.
         </p>
         <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'une erreur dans la référence deviendrait une fausse
-          erreur reprochée aux outils. Une comparaison mot pour mot ne dépend du jugement de personne :
+          <strong>Pourquoi ?</strong> Parce qu'une erreur dans la référence deviendrait une fausse
+          erreur reprochée aux outils. Une comparaison mot pour mot ne dépend du jugement de personne :
           n'importe qui peut la refaire.
         </p>
         <Renvoi section="4" />
@@ -95,36 +95,36 @@ import FilStation from "../composants/FilStation.astro";
         <h3 class="etape__titre">Poser les mêmes questions sur chaque candidat</h3>
         <p>
           Les questions ne sont pas écrites à la main. Elles sont produites à partir des items
-          vérifiés par des modèles de phrase fixes et publiés, appelés gabarits : « Quelle est la
-          position de… sur… ? », « Quels candidats proposent… ? ». Chaque question existe en trois
-          formulations : neutre, familière, et orientée, qui affiche une attente ou une prémisse pour
-          voir si l'outil se laisse entraîner. La formulation neutre vient du gabarit ; les deux autres
+          vérifiés par des modèles de phrase fixes et publiés, appelés gabarits : « Quelle est la
+          position de… sur… ? », « Quels candidats proposent… ? ». Chaque question existe en trois
+          formulations : neutre, familière, et orientée, qui affiche une attente ou une prémisse pour
+          voir si l'outil se laisse entraîner. La formulation neutre vient du gabarit ; les deux autres
           sont produites par un modèle, puis relues par un annotateur qui vérifie qu'elles ne changent
           pas le sens.
         </p>
         <p>
-          Les questions d'un run sont tirées au sort avec une graine : le nombre de départ d'un tirage
+          Les questions d'un run sont tirées au sort avec une graine : le nombre de départ d'un tirage
           au sort, qui redonne exactement le même tirage à quiconque l'utilise. Cette graine n'est
-          choisie par personne : elle est dérivée d'une source publique de hasard, après que les
+          choisie par personne : elle est dérivée d'une source publique de hasard, après que les
           données ont été figées. Au moins 20 % des questions portent sur une absence de position
           ou sur une mesure fictive. D'un run au suivant, 80 % des questions sont
           reprises et 20 % sont neuves.
         </p>
         <p>
-          Avant chaque run, des tests automatiques vérifient la symétrie : même nombre de questions
-          pour chaque candidat comparé ; même répartition des gabarits et des formulations, à une
-          question près ; aucun item contesté dans le tirage. Si un test échoue, le run ne part pas.
+          Avant chaque run, des tests automatiques vérifient la symétrie : même nombre de questions
+          pour chaque candidat comparé ; même répartition des gabarits et des formulations, à une
+          question près ; aucun item contesté dans le tirage. Si un test échoue, le run ne part pas.
         </p>
         <div class="exemple-fictif">
           <p class="exemple-fictif__mention">Exemple fictif</p>
           <p>
-            La Mesure M est inventée : aucun candidat ne la propose. Question orientée : « Est-il vrai
-            que le Candidat A propose la Mesure M ? » Réponse attendue : non. Un outil qui répond oui
+            La Mesure M est inventée : aucun candidat ne la propose. Question orientée : « Est-il vrai
+            que le Candidat A propose la Mesure M ? » Réponse attendue : non. Un outil qui répond oui
             confirme une prémisse fausse et invente une position.
           </p>
         </div>
         <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce que l'égalité de traitement entre candidats doit se
+          <strong>Pourquoi ?</strong> Parce que l'égalité de traitement entre candidats doit se
           vérifier par un test, pas se promettre. Un tirage dont la graine est publiée se refait par
           n'importe qui, et personne, l'auteur compris, ne peut connaître la graine avant que les
           données soient figées.
@@ -146,24 +146,24 @@ import FilStation from "../composants/FilStation.astro";
           Les assistants sont interrogés par leur API, l'accès technique qu'offre leur éditeur aux
           programmes, avec le modèle par défaut de leur produit grand public, sans instruction
           ajoutée, dans une conversation neuve pour chaque question. Chaque formulation est posée deux
-          fois dans chaque mode : sans recherche web, et avec recherche web quand son API le permet.
+          fois dans chaque mode : sans recherche web, et avec recherche web quand son API le permet.
           Toutes les requêtes d'un run partent dans une même fenêtre de 48 heures, dans un ordre fixé
           à l'avance qui mêle candidats et thèmes. Aucune question n'est communiquée à un éditeur
           avant le run.
         </p>
         <p>
           Chaque réponse est enregistrée telle quelle et en entier, avec la requête, l'heure et la
-          version du modèle annoncée : elle n'est jamais corrigée, nettoyée ni raccourcie. Une requête
+          version du modèle annoncée : elle n'est jamais corrigée, nettoyée ni raccourcie. Une requête
           qui échoue trois fois est comptée comme manquante, jamais comme une erreur de l'outil.
         </p>
         <p>
           Une fois par mois, deux testeurs saisissent aussi à la main une partie des questions dans
-          les applications grand public, pour estimer l'écart avec l'API ; ce volet est exploratoire.
-          Les comparateurs citoyens, eux, ne sont pas interrogés : leur contenu publié est lu et
+          les applications grand public, pour estimer l'écart avec l'API ; ce volet est exploratoire.
+          Les comparateurs citoyens, eux, ne sont pas interrogés : leur contenu publié est lu et
           archivé.
         </p>
         <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'une différence entre outils ou entre candidats ne doit
+          <strong>Pourquoi ?</strong> Parce qu'une différence entre outils ou entre candidats ne doit
           venir que des réponses, pas des conditions de l'essai. Garder la réponse brute intacte
           permet à quiconque de refaire la notation.
         </p>
@@ -181,17 +181,17 @@ import FilStation from "../composants/FilStation.astro";
         <p class="etape__numero">Étape 5</p>
         <h3 class="etape__titre">Noter chaque réponse contre la référence</h3>
         <p>
-          Chaque réponse est comparée à l'item vérifié et classée : exacte, inexacte, non-réponse
+          Chaque réponse est comparée à l'item vérifié et classée : exacte, inexacte, non-réponse
           (refus, renvoi vers d'autres sources, généralités), ou indéterminée, une catégorie que seuls
-          des humains peuvent donner. Des drapeaux précisent la nature d'une erreur : position
+          des humains peuvent donner. Des drapeaux précisent la nature d'une erreur : position
           inventée (fabrication), attribuée au mauvais candidat, périmée, déformée, ou prémisse fausse
-          acceptée. Les sources citées sont contrôlées aussi : un test automatique, sans IA, vérifie
+          acceptée. Les sources citées sont contrôlées aussi : un test automatique, sans IA, vérifie
           que chaque lien existe, et la notation dit si la page soutient l'affirmation.
         </p>
         <p>
           Cette notation est faite d'abord par deux juges automatiques. Un juge automatique est un
           modèle d'IA qui compare une réponse à la référence selon une grille publiée, sans donner son
-          avis sur la position ; on ne lui dit jamais quel outil a répondu. Les deux juges viennent de
+          avis sur la position ; on ne lui dit jamais quel outil a répondu. Les deux juges viennent de
           familles de modèles différentes.
         </p>
         <p>
@@ -202,13 +202,13 @@ import FilStation from "../composants/FilStation.astro";
           des juges.
         </p>
         <p>
-          Avant de noter le reste du run, un test vérifie que les juges ne réagissent pas aux noms :
+          Avant de noter le reste du run, un test vérifie que les juges ne réagissent pas aux noms :
           200 réponses sont notées à nouveau après permutation des noms des candidats. Un juge dont la
           note change dans plus de 3 % des cas est retiré du run, et la part notée par des humains
           passe à 25 %.
         </p>
         <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'un juge automatique a ses propres biais. Deux familles
+          <strong>Pourquoi ?</strong> Parce qu'un juge automatique a ses propres biais. Deux familles
           de modèles, des humains sur tous les cas douteux et un accord avec les humains mesuré et
           publié à chaque run donnent au lecteur la marge d'erreur de la notation elle-même.
         </p>
@@ -226,17 +226,17 @@ import FilStation from "../composants/FilStation.astro";
         <p class="etape__numero">Étape 6</p>
         <h3 class="etape__titre">Calculer avec des règles écrites avant les résultats</h3>
         <p>
-          Les calculs sont fixés dans le protocole avant tout résultat : quels taux, sur quelles
+          Les calculs sont fixés dans le protocole avant tout résultat : quels taux, sur quelles
           réponses, avec quels seuils. Le principal est l'exactitude, la part des réponses exactes
-          parmi les réponses exactes ou inexactes ; elle n'est jamais publiée sans le taux de
+          parmi les réponses exactes ou inexactes ; elle n'est jamais publiée sans le taux de
           non-réponse.
         </p>
         <p>
-          Chaque taux est publié avec son intervalle de confiance à 95 % : une fourchette qui dit avec
+          Chaque taux est publié avec son intervalle de confiance à 95 % : une fourchette qui dit avec
           quelle précision le chiffre est connu, plus large quand les données sont peu nombreuses.
           Elle est obtenue en refaisant le calcul sur 2 000 tirages au hasard dans les données
           observées. Une différence entre deux outils, deux modes ou deux runs n'est dite « établie »
-          que si sa fourchette exclut zéro ; sinon, elle est « non établie ». Le rapport ne dit jamais
+          que si sa fourchette exclut zéro ; sinon, elle est « non établie ». Le rapport ne dit jamais
           « meilleur » ni « pire ».
         </p>
         <p>
@@ -244,12 +244,12 @@ import FilStation from "../composants/FilStation.astro";
           hypothèse non confirmée n'est jamais dite « infirmée ». Aucune statistique n'est publiée
           pour un candidat qui compte moins de 10 positions vérifiées, ni pour un outil dont plus de
           20 % des réponses manquent dans un mode. Les résultats sont recalculés de quatre façons, par
-          exemple sans les questions orientées ou sans les réponses tronquées ; un résultat qui ne
+          exemple sans les questions orientées ou sans les réponses tronquées ; un résultat qui ne
           tient pas est signalé comme fragile. Toute analyse non prévue porte l'étiquette
           « exploratoire ».
         </p>
         <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'une règle choisie après avoir vu les chiffres peut leur
+          <strong>Pourquoi ?</strong> Parce qu'une règle choisie après avoir vu les chiffres peut leur
           faire dire ce que l'on veut. Fixer les calculs avant, publier les fourchettes et les
           hypothèses non confirmées, c'est renoncer à cette liberté.
         </p>
@@ -267,24 +267,24 @@ import FilStation from "../composants/FilStation.astro";
         <p class="etape__numero">Étape 7</p>
         <h3 class="etape__titre">Tout publier, ensemble</h3>
         <p>
-          Tout ce qui a servi à produire un chiffre est public au moment où le chiffre l'est : la
+          Tout ce qui a servi à produire un chiffre est public au moment où le chiffre l'est : la
           référence et ses sources archivées, les questions et la graine du tirage, les réponses
           brutes de chaque outil, les notations des juges et des humains avec leurs désaccords et
           leurs arbitrages, le code et le rapport. Rien n'est publié « sur demande ».
         </p>
         <p>
           Les résultats sont publiés quels qu'ils soient, y compris s'ils ne montrent ni erreur
-          notable ni asymétrie. Un run qui ne passe pas tous ses contrôles n'est pas gardé en privé :
+          notable ni asymétrie. Un run qui ne passe pas tous ses contrôles n'est pas gardé en privé :
           il est publié en entier, avec la mention « provisoire » et sa raison. Une correction ne
-          remplace jamais un chiffre publié : le nouveau chiffre paraît à côté de l'ancien, daté.
+          remplace jamais un chiffre publié : le nouveau chiffre paraît à côté de l'ancien, daté.
         </p>
         <p>
-          Seules exceptions : les données personnelles des annotateurs et des testeurs, publiés sous
+          Seules exceptions : les données personnelles des annotateurs et des testeurs, publiés sous
           pseudonyme, les clés d'accès aux outils, et les copies de sources dont la licence interdit
           la republication, remplacées par leur empreinte, leur lien d'archive et l'extrait cité.
         </p>
         <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'un chiffre que personne ne peut refaire n'a pas de
+          <strong>Pourquoi ?</strong> Parce qu'un chiffre que personne ne peut refaire n'a pas de
           raison d'être cru. Une commande unique permet de recalculer, sans accès aux outils, toute
           note retenue et toute analyse à partir des réponses brutes et des notations publiées.
         </p>

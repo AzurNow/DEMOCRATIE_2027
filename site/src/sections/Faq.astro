@@ -5,7 +5,7 @@ import Renvoi from "../composants/Renvoi.astro";
   <h2 id="titre-faq">Questions fréquentes</h2>
   <div class="faq">
     <details class="faq__item">
-      <summary class="faq__question">Qui finance ?</summary>
+      <summary class="faq__question">Qui finance ?</summary>
       <div class="faq__reponse">
         <p>
           Le projet est porté par un particulier, sans affiliation à un parti, un candidat, une
@@ -14,7 +14,7 @@ import Renvoi from "../composants/Renvoi.astro";
           d'un parti, d'un candidat, d'une campagne, d'un média ou d'un éditeur d'outil évalué.
         </p>
         <p>
-          Le protocole déclare aussi les conflits d'intérêts du projet : une partie de son outillage
+          Le protocole déclare aussi les conflits d'intérêts du projet : une partie de son outillage
           repose sur des modèles d'éditeurs dont des produits figurent parmi les outils évalués. Il
           les nomme et décrit les garde-fous qui y répondent.
         </p>
@@ -28,15 +28,15 @@ import Renvoi from "../composants/Renvoi.astro";
     </details>
 
     <details class="faq__item">
-      <summary class="faq__question">Pourquoi ces outils ?</summary>
+      <summary class="faq__question">Pourquoi ces outils ?</summary>
       <div class="faq__reponse">
         <p>
-          Les outils ne sont pas choisis : une règle publiée les désigne, et quiconque l'applique doit
+          Les outils ne sont pas choisis : une règle publiée les désigne, et quiconque l'applique doit
           obtenir la même liste. Sont inclus les assistants conversationnels accessibles gratuitement
           en français, par API, et figurant parmi les 50 premières applications gratuites de la
           catégorie Productivité de l'un des deux grands magasins d'applications mobiles en France, à
-          la date du gel, d'après un classement archivé ; s'y ajoute, systématiquement, l'assistant
-          édité en France. Sont inclus aussi les comparateurs citoyens : des sites publics qui comparent les positions d'au
+          la date du gel, d'après un classement archivé ; s'y ajoute, systématiquement, l'assistant
+          édité en France. Sont inclus aussi les comparateurs citoyens : des sites publics qui comparent les positions d'au
           moins cinq candidats suivis, accessibles sans compte, et dont le contenu se lit sans
           exécuter de scripts tiers.
         </p>
@@ -46,7 +46,7 @@ import Renvoi from "../composants/Renvoi.astro";
           demander à sortir de la liste. Cette page n'en nomme aucun.
         </p>
         <p>
-          La règle a une limite connue : elle peut manquer un outil très utilisé qui n'est pas dans
+          La règle a une limite connue : elle peut manquer un outil très utilisé qui n'est pas dans
           les magasins d'applications. Elle est publiée pour que cette omission puisse être contestée.
         </p>
         <Renvoi section="3" />
@@ -54,11 +54,11 @@ import Renvoi from "../composants/Renvoi.astro";
     </details>
 
     <details class="faq__item">
-      <summary class="faq__question">Un candidat peut-il demander une correction ?</summary>
+      <summary class="faq__question">Un candidat peut-il demander une correction ?</summary>
       <div class="faq__reponse">
         <p>
           Oui, comme toute personne, par la procédure de contestation décrite plus haut. Une demande
-          ne suffit pas à corriger un item : elle le suspend, puis le panel d'arbitrage décide, par
+          ne suffit pas à corriger un item : elle le suspend, puis le panel d'arbitrage décide, par
           une décision motivée et publiée. Les campagnes sont prévenues automatiquement de chaque
           publication, modification ou contestation d'un item qui les concerne.
         </p>
@@ -70,31 +70,31 @@ import Renvoi from "../composants/Renvoi.astro";
         <Renvoi section="10" />
         <p>
           Les éditeurs d'outils, eux, reçoivent après publication un rapport avec leurs réponses
-          notées, et peuvent y répondre publiquement ; leur réponse est publiée telle quelle.
+          notées, et peuvent y répondre publiquement ; leur réponse est publiée telle quelle.
         </p>
         <Renvoi section="6" />
       </div>
     </details>
 
     <details class="faq__item">
-      <summary class="faq__question">Pourquoi des IA notent-elles des IA ?</summary>
+      <summary class="faq__question">Pourquoi des IA notent-elles des IA ?</summary>
       <div class="faq__reponse">
         <p>
           Parce que chaque run produit un grand nombre de réponses, et que la charge de notation
-          humaine est plafonnée. Les juges automatiques font une première notation ; ils ne
-          travaillent jamais seuls, et ils ne donnent jamais leur avis sur une position : ils
+          humaine est plafonnée. Les juges automatiques font une première notation ; ils ne
+          travaillent jamais seuls, et ils ne donnent jamais leur avis sur une position : ils
           comparent une réponse à une référence vérifiée par des humains.
         </p>
         <Renvoi section="12" />
         <ul>
           <li>
-            Deux juges de familles de modèles différentes notent chaque réponse ; un désaccord suffit
+            Deux juges de familles de modèles différentes notent chaque réponse ; un désaccord suffit
             à la faire noter par un humain.
           </li>
           <li>
             Avant le premier run, leur accord avec des humains est mesuré sur un jeu de 300 réponses
             notées par deux humains. À chaque run, leur accord avec les humains sur l'échantillon de
-            10 % est publié à côté des résultats ; sous un seuil fixé à l'avance, les résultats sont
+            10 % est publié à côté des résultats ; sous un seuil fixé à l'avance, les résultats sont
             publiés avec la mention « provisoire ».
           </li>
           <li>
@@ -102,31 +102,31 @@ import Renvoi from "../composants/Renvoi.astro";
             quand on permute les noms des candidats.
           </li>
           <li>
-            Les instructions données aux juges et les réponses brutes sont publiques : chacun peut
+            Les instructions données aux juges et les réponses brutes sont publiques : chacun peut
             refaire la notation avec le juge de son choix.
           </li>
         </ul>
         <p>
           Certains juges sont des modèles d'éditeurs dont un produit est évalué. Ce conflit d'intérêts
           est déclaré dans le protocole, et ces garde-fous en sont la réponse. Le juge reste un
-          modèle, avec ses biais : c'est une limite reconnue.
+          modèle, avec ses biais : c'est une limite reconnue.
         </p>
         <Renvoi section="7" />
       </div>
     </details>
 
     <details class="faq__item">
-      <summary class="faq__question">Où sont les données ?</summary>
+      <summary class="faq__question">Où sont les données ?</summary>
       <div class="faq__reponse">
         <p>
           Cette page n'affiche aucun résultat. À chaque run, tout ce qui produit un chiffre est publié
-          en même temps que lui : la référence et ses sources archivées, les questions et la graine du
+          en même temps que lui : la référence et ses sources archivées, les questions et la graine du
           tirage, les réponses brutes, les notations, les journaux de validation, le code et le
           rapport.
         </p>
         <p>
           Le code, la méthode et l'historique des données vivent dans le dépôt Git public du projet,
-          qui sert de journal des modifications : il n'existe pas de version privée du jeu de données.
+          qui sert de journal des modifications : il n'existe pas de version privée du jeu de données.
           Chaque publication reçoit en plus un identifiant pérenne (DOI) sur Zenodo. Les données sont
           sous licence ouverte (ODbL), le code sous licence libre (AGPL), le rapport sous licence
           Creative Commons (CC BY).
