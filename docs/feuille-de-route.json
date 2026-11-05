@@ -1140,6 +1140,41 @@
         "Décider au cas par cas selon la licence de la page, ce que le banc ne sait pas établir."
       ],
       "recommandation": "Option 1 : même raison que pour les pages (droits d'autrui), et l'empreinte publiée suffit à vérifier le texte."
+    },
+    {
+      "id": "D84",
+      "statut": "tranchee",
+      "question": "Le §7 veut que le libellé et l'éditeur de chaque outil du contrefactuel d'outil soient « ceux de l'instantané du périmètre inscrit au gel », mais run.schema.json#/perimetre/outils[] ne les porte pas (charger-perimetre.ts les retire). Sans eux, la chaîne ne peut décider ni les motifs d'éditeur ni l'éligibilité, et répond non_joue (libelles_et_editeurs_hors_du_gel) au-delà d'un assistant. Où les lire ?",
+      "contexte": "Question A du lot D75 (2), (6), (7), PR #317. Relire config/perimetre.yaml à la notation contredirait le §7 : le périmètre a pu changer depuis le gel.",
+      "options": [
+        "Inscrire libelle et editeur de chaque outil dans l'instantané du périmètre au gel (pipeline/gel/, run.schema.json, exemples), puis faire appeler derangementOutilsOuAbsence par la chaîne avec les comparateurs du run, à la place de la branche libelles_et_editeurs_hors_du_gel.",
+        "Les relire dans config/perimetre.yaml à la notation (contraire au §7)."
+      ],
+      "recommandation": "Option 1 : c'est ce que le §7 écrit déjà ; un lot de gel, sans révision du protocole.",
+      "retenu": "Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt, le §7 la prescrivant déjà). Lot de gel à venir, avec la vague (14), (20), (21), (27).",
+      "date_decision": "2026-11-05"
+    },
+    {
+      "id": "D85",
+      "statut": "en_attente",
+      "question": "Le §7 rend le contrefactuel d'outil absent quand un comparateur du périmètre partage l'éditeur d'un outil permuté (D75 (6)). Un outil hors dérangement qui n'est pas un comparateur (un assistant exclu, par exemple) et partage cet éditeur lève encore FormesOutilsAmbigues et bloque le run, alors que l'ambiguïté de remplacement est la même. Étendre l'absence à tout outil du périmètre hors dérangement ?",
+      "contexte": "Question B du lot D75 (2), (6), (7), PR #317. Le texte ne nomme que les comparateurs ; l'étendre est un amendement.",
+      "options": [
+        "Amender le §7 : « un outil du périmètre hors dérangement » au lieu de « un comparateur », puis étendre le code.",
+        "Garder la lecture stricte : un tel cas bloque le run."
+      ],
+      "recommandation": "Option 1 : même ambiguïté, même traitement ; un blocage de run pour un cas que le test sait publier absent n'apporte rien."
+    },
+    {
+      "id": "D86",
+      "statut": "en_attente",
+      "question": "Deux comparateurs du même éditeur, qu'aucun outil permuté ne porte, lèvent FormesOutilsAmbigues au tirage du contrefactuel d'outil, alors que leurs formes sont seulement cherchées, jamais remplacées. Le §7 n'en dit rien. Relâcher ce refus ?",
+      "contexte": "Question C du lot D75 (2), (6), (7), PR #317. Le refus vient de verifierOutils (pipeline/notation/derangement-outils.ts) ; il bloque un run sans que le protocole l'écrive.",
+      "options": [
+        "Relâcher verifierOutils pour les formes qu'aucun outil permuté ne porte ; aucune mesure ne change.",
+        "Garder le refus."
+      ],
+      "recommandation": "Option 1 : retire un blocage que le protocole n'écrit pas, sans effet sur aucune mesure."
     }
   ],
   "lots": [
