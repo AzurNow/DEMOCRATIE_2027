@@ -98,7 +98,9 @@ function reponse(run_id: string, rang: number, question: { readonly id: string; 
 export function monter(options: Options = {}): Monde {
   const gele = poserRunGele();
   const run_id = gele.run["id"] as string;
-  if (options.type_run !== undefined) ecrireJson(dispositionRunNote(gele.repertoire_run).run_json, { ...gele.run, type_run: options.type_run });
+  // Un pilote n'est jamais désigné pour l'application (§6, run.schema.json) : sa désignation au gel le dit.
+  const pilote = { type_run: options.type_run, application_testee: { designe: false, mois_utc: "2026-11", motif: "type_run_exclu" } };
+  if (options.type_run !== undefined) ecrireJson(dispositionRunNote(gele.repertoire_run).run_json, { ...gele.run, ...pilote });
   const depot = DepotReponses.ouvrir(dispositionRunNote(gele.repertoire_run).reponses);
   const brutes = Array.from({ length: NOMBRE_DE_REPONSES }, (_, rang) =>
     reponse(run_id, rang, gele.tirees[rang % gele.tirees.length] as (typeof gele.tirees)[number], (options.avec_lien ?? []).includes(rang)),

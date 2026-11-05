@@ -9,9 +9,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
+import { URL_DEPOT } from "../site/src/lib/protocole.ts";
 
 /** Seul préfixe externe admis, et seulement pour un lien documentaire `<a href>`. */
-export const LIENS_DOCUMENTAIRES_ADMIS: readonly string[] = ["https://github.com/AzurNow/DEMOCRATIE_2027"];
+export const LIENS_DOCUMENTAIRES_ADMIS: readonly string[] = [URL_DEPOT];
 
 const EXTERNE = /^\s*(?:https?:)?\/\//i;
 const ATTRIBUTS_RESSOURCE = ["src", "poster", "data", "action", "formaction", "href"] as const;
@@ -109,7 +110,18 @@ export function scriptsExternes(html: string): string[] {
 
 // --- appels réseau -----------------------------------------------------------------------------
 
-const APPELS_RESEAU = /\bfetch\s*\(|XMLHttpRequest|navigator\s*\.\s*sendBeacon|\bsendBeacon\s*\(/g;
+const APPELS_RESEAU = new RegExp(
+  [
+    String.raw`\bfetch\s*\(`,
+    "XMLHttpRequest",
+    String.raw`navigator\s*\.\s*sendBeacon`,
+    String.raw`\bsendBeacon\s*\(`,
+    String.raw`\bnew\s+WebSocket\b`,
+    String.raw`\bnew\s+EventSource\b`,
+    String.raw`\bimport\s*\(\s*["'\x60]\s*(?:https?:)?\/\/`,
+  ].join("|"),
+  "g",
+);
 
 /** Les occurrences d'un appel réseau dans un contenu (HTML avec scripts inline, ou JS produit). */
 export function appelsReseau(contenu: string): string[] {
@@ -165,14 +177,24 @@ function nomsDeFiche(fiche: unknown, champs: readonly string[]): string[] {
   return [...noms, ...identifiants.map((id) => id.replace(/-/g, " "))];
 }
 
-function liste(valeur: unknown): unknown[] {
-  return Array.isArray(valeur) ? (valeur as unknown[]) : [];
+export class CleDuPerimetreAbsente extends Error {
+  constructor(cle: string) {
+    super(`périmètre illisible : la clé « ${cle} » est absente (ou mal orthographiée) ; une liste vide s'écrit « ${cle}: [] ».`);
+  }
+}
+
+/** La liste portée par une clé obligatoire du périmètre ; une clé absente ou qui n'est pas une liste est refusée. */
+function listeObligatoire(table: Record<string, unknown>, cle: string): unknown[] {
+  const valeur = table[cle];
+  if (!Array.isArray(valeur)) throw new CleDuPerimetreAbsente(cle);
+  return valeur as unknown[];
 }
 
 /**
  * Noms, libellés, alias, éditeurs et identifiants des candidats et des outils d'un périmètre (texte
- * YAML). Une liste vide est lue sans erreur et donne zéro nom ; un document qui n'est pas une
- * table échoue.
+ * YAML). Une liste vide est admise et donne zéro nom ; un document qui n'est pas une table, ou
+ * dont la clé `candidats` ou `outils` manque, échoue (`CleDuPerimetreAbsente`) : zéro nom par
+ * faute de frappe désarmerait la garde des noms.
  */
 export function nomsDuPerimetre(yamlTexte: string): string[] {
   const racine: unknown = parse(yamlTexte);
@@ -181,8 +203,8 @@ export function nomsDuPerimetre(yamlTexte: string): string[] {
   }
   const table = racine as Record<string, unknown>;
   const noms = [
-    ...liste(table["candidats"]).flatMap((c) => nomsDeFiche(c, ["libelle", "nom", "alias"])),
-    ...liste(table["outils"]).flatMap((o) => nomsDeFiche(o, ["libelle", "editeur", "alias"])),
+    ...listeObligatoire(table, "candidats").flatMap((c) => nomsDeFiche(c, ["libelle", "nom", "alias"])),
+    ...listeObligatoire(table, "outils").flatMap((o) => nomsDeFiche(o, ["libelle", "editeur", "alias"])),
   ];
   return [...new Set(noms.map(normaliser).filter((n) => n.length >= 2))];
 }

@@ -114,6 +114,7 @@
       "sha256": "8e1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d10"
     }
   },
+  "application_testee": { "designe": true, "mois_utc": "2026-12" },
   "perimetre": {
     "regime_inclusion": "avant_liste_officielle",
     "candidats": [
@@ -283,6 +284,8 @@
     "outils": [
       {
         "outil_id": "outil-alpha",
+        "libelle": "Outil Alpha",
+        "editeur": "Éditeur Alpha",
         "famille": "assistant",
         "inclus": true,
         "modele_demande": "modele-grand-public",
@@ -313,6 +316,8 @@
       },
       {
         "outil_id": "comparateur-gamma",
+        "libelle": "Comparateur Gamma",
+        "editeur": "Éditeur Gamma",
         "famille": "comparateur",
         "inclus": true
       }
@@ -330,6 +335,7 @@
         "denominateur": 200
       },
       "paires_ecartees_contrefactuel": 0,
+      "comptes_jeu_or": { "reponses": 300, "comparees": 294, "renvois_ecartes": 0, "indeterminees": 3, "non_classees": 1, "refus_api": 2 },
       "kappa_juge_humain": 0.83,
       "retire": true,
       "motif_retrait": "Test contrefactuel des noms de candidats : 8 changements sur 200, au-delà de 3 % (§7)."
@@ -345,6 +351,7 @@
         "denominateur": 200
       },
       "paires_ecartees_contrefactuel": 0,
+      "comptes_jeu_or": { "reponses": 300, "comparees": 294, "renvois_ecartes": 0, "indeterminees": 3, "non_classees": 1, "refus_api": 2 },
       "kappa_juge_humain": 0.78,
       "retire": true,
       "motif_retrait": "Test contrefactuel des noms de candidats : 11 changements sur 200, au-delà de 3 % (§7)."
@@ -429,6 +436,7 @@
     ]
   },
   "reponses": {
+    "echantillons_par_question": 2,
     "prevues": 4824
   },
   "tirage": {

@@ -40,15 +40,17 @@
  * 9. `collecterGraines` relève chaque couple `{cle, graine}` publié dans le document.
  * 10. `validerEtEcrire` valide le document contre `schema/metriques.schema.json` avant toute écriture,
  *    puis écrit `runs/<date>/metriques/metriques.json` s'il est absent, ne fait rien s'il est
- *    identique à l'octet près, et lève `MetriquesDivergentes` s'il diffère : jamais d'écrasement.
+ *    identique à l'octet près, et lève `MetriquesDivergentes` s'il diffère : jamais d'écrasement,
+ *    même par une analyse concurrente qui le publierait pendant celle-ci (publication par lien dur,
+ *    `ecriture-une-fois.ts`).
  *
  * Les kappas et le test contrefactuel ne sont pas recopiés : ils vivent dans `run.json`, que
  * l'empreinte de `entrees.run_json_sha256` désigne.
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
@@ -69,6 +71,7 @@ import {
 import { unitesParCoupleCompare } from "./couples-compares.ts";
 import { ecartsApiApplication, type EcartsApiApplication } from "./ecart-api-application.ts";
 import { ecartsJugesEditeurs, type EcartsJugesEditeurs, type JugeEtSonEditeur } from "./ecart-juge-editeur.ts";
+import { ecrireUneFoisOuComparer } from "./ecriture-une-fois.ts";
 import { assembler, estDuRun, type EntreesAnalyse, type UniteAnalyse } from "./filtre.ts";
 import { decisionH1, decisionH2, decisionH3, decisionH4, decisionH5, STRATE_H3, type FabricationDuCouple } from "./hypotheses.ts";
 import {
@@ -998,18 +1001,15 @@ export function cheminMetriques(repertoire_run: string): string {
   return join(dispositionRunNote(repertoire_run).run, "metriques", "metriques.json");
 }
 
-/** 10. Valide le document avant tout, puis l'écrit s'il est absent ; identique, rien ; différent, refus. */
+/**
+ * 10. Valide le document avant tout, puis l'écrit s'il est absent ; identique, rien ; différent,
+ * refus. La présence n'est constatée qu'au lien exclusif, jamais avant : un fichier publié par une
+ * analyse concurrente pendant celle-ci est comparé, jamais remplacé.
+ */
 export function validerEtEcrire(chemin: string, document: unknown): IssueMetriques {
   const texte = `${JSON.stringify(valider<object>("metriques", document, `${chemin} avant écriture`), null, 2)}\n`;
-  if (existsSync(chemin)) {
-    if (readFileSync(chemin, "utf8") === texte) return "inchange";
-    throw new MetriquesDivergentes(chemin);
-  }
-  mkdirSync(join(chemin, ".."), { recursive: true });
-  const provisoire = `${chemin}.${process.pid}.provisoire`;
-  writeFileSync(provisoire, texte, "utf8");
-  renameSync(provisoire, chemin);
-  return "ecrit";
+  mkdirSync(dirname(chemin), { recursive: true });
+  return ecrireUneFoisOuComparer(dirname(chemin), basename(chemin), texte, (deja) => new MetriquesDivergentes(deja));
 }
 
 export interface ResultatAnalyse {

@@ -100,6 +100,7 @@
     }
   },
   "run_precedent": null,
+  "application_testee": { "designe": true, "mois_utc": "2026-12" },
   "perimetre": {
     "regime_inclusion": "avant_liste_officielle",
     "candidats": [
@@ -269,6 +270,8 @@
     "outils": [
       {
         "outil_id": "outil-alpha",
+        "libelle": "Outil Alpha",
+        "editeur": "Éditeur Alpha",
         "famille": "assistant",
         "inclus": true,
         "modele_demande": "modele-grand-public",
@@ -299,6 +302,8 @@
       },
       {
         "outil_id": "comparateur-gamma",
+        "libelle": "Comparateur Gamma",
+        "editeur": "Éditeur Gamma",
         "famille": "comparateur",
         "inclus": true
       }
@@ -434,6 +439,7 @@
     ]
   },
   "reponses": {
+    "echantillons_par_question": 2,
     "prevues": 4824
   },
   "tirage": {

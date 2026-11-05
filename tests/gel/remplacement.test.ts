@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { stringify } from "yaml";
+import { valider } from "../../outils/schemas/valider.ts";
 import { geler } from "../../pipeline/gel/geler.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { choisirPrecedent, lireRunsDuDepot } from "../../pipeline/gel/precedent.ts";
@@ -178,6 +179,41 @@ describe("remplacement, cas 7 : pnpm geler --type-run=reexecution --remplace=<id
   it("remplacement, cas 7 : reexecution sans --remplace ⇒ refus reexecution_sans_remplace, rien écrit", async () => {
     const { racine } = await depotAvecUnRun(true);
     expect(await secondRefuse(racine, { type_run: "reexecution", remplace: undefined })).toBe("reexecution_sans_remplace");
+  });
+});
+
+describe("D75 (20) : pnpm geler --type-run=reexecution inscrit la désignation du run qu'elle remplace", () => {
+  const GEL_3 = "2026-12-03T01:00:00+01:00";
+  const DATE_3 = "2026-12-03";
+  const MAINTENANT_3 = Date.parse("2026-12-04T00:00:00Z");
+
+  it("réexécution du premier run mensuel du mois, invalidé : application_testee recopié tel quel, run.json conforme", async () => {
+    const { racine, id } = await depotAvecUnRun(true);
+    const designation = lireJson<Record<string, unknown>>(join(premierRun(racine), "run.json"))["application_testee"];
+    expect(designation).toEqual({ designe: true, mois_utc: "2026-12" });
+    avancer(racine);
+    const sortie = temporaire("banc-gel-remplacement-");
+    await geler(optionsDuSecond(racine, sortie, { type_run: "reexecution", remplace: id }));
+    const run = lireJson<Record<string, unknown>>(join(sortie, DATE_2, "run.json"));
+    expect(run["application_testee"]).toEqual(designation);
+    expect(() => valider<unknown>("run", run, "run.json de la réexécution")).not.toThrow();
+  });
+
+  it("réexécution d'une réexécution : la désignation est héritée de proche en proche, lue sous runs/", async () => {
+    const { racine, id } = await depotAvecUnRun(true);
+    avancer(racine);
+    await geler(optionsGel(racine, undefined, { maintenant: () => MAINTENANT_2, type_run: "reexecution", remplace: id }));
+    const seconde = join(racine, "runs", DATE_2);
+    invaliderRun(seconde, MOTIF, MAINTENANT_2);
+    recommiter(racine, "réexécution invalidée");
+    const id_seconde = lireJson<{ id: string }>(join(seconde, "run.json")).id;
+    writeFileSync(join(racine, "config/perimetre.yaml"), stringify(perimetreSaisi(GEL_3, [ALPHA])), "utf8");
+    recommiter(racine, "troisième gel");
+    const sortie = temporaire("banc-gel-remplacement-");
+    await geler(optionsGel(racine, sortie, { maintenant: () => MAINTENANT_3, type_run: "reexecution", remplace: id_seconde }));
+    const troisieme = lireJson<Record<string, unknown>>(join(sortie, DATE_3, "run.json"));
+    expect(troisieme["run_remplace_id"]).toBe(id_seconde);
+    expect(troisieme["application_testee"]).toEqual({ designe: true, mois_utc: "2026-12" });
   });
 });
 

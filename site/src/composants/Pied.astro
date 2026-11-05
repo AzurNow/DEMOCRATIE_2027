@@ -1,6 +1,5 @@
 ---
-const depot = "https://github.com/AzurNow/DEMOCRATIE_2027";
-const protocole = `${depot}/blob/main/docs/PROTOCOLE.md`;
+import { URL_DEPOT, URL_PROTOCOLE } from "../lib/protocole.ts";
 ---
 
 <footer class="pied">
@@ -10,7 +9,7 @@ const protocole = `${depot}/blob/main/docs/PROTOCOLE.md`;
     chargée depuis un autre site.
   </p>
   <ul class="pied__liens">
-    <li><a href={depot}>Code source sur GitHub</a></li>
-    <li><a href={protocole}>Protocole complet</a></li>
+    <li><a href={URL_DEPOT}>Code source sur GitHub</a></li>
+    <li><a href={URL_PROTOCOLE}>Protocole complet</a></li>
   </ul>
 </footer>

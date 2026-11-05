@@ -1,13 +1,15 @@
 /**
  * Gardes d'accessibilité et de structure de la page pédagogique, lues sur site/dist/index.html
- * (produit par `pnpm build:site`). Un dist absent fait échouer les tests, jamais les sauter.
+ * (produit par `pnpm build:site`, que le `globalSetup` de `construire-site.ts` lance avant les tests).
+ * Un dist absent fait échouer les tests (`SiteNonConstruit`), jamais les sauter.
  */
-import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { lireSiteConstruit } from "../../outils/site-gardes.ts";
 
 const DIST = join(resolve(import.meta.dirname, "../.."), "site/dist");
-const html = (): string => readFileSync(join(DIST, "index.html"), "utf8");
+// `lireSiteConstruit` refuse un dist absent par `SiteNonConstruit` : jamais de lecture qui saute.
+const html = (): string => lireSiteConstruit(DIST).html;
 
 /** Niveaux (1 à 6) des titres, dans l'ordre du document. */
 function niveauxDeTitres(page: string): number[] {

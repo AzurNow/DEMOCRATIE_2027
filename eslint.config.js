@@ -18,7 +18,7 @@ export default [
       parser: tseslint.parser,
       parserOptions: {
         // Chaque fichier est lu avec le tsconfig le plus proche (racine ou validation/client).
-        projectService: { allowDefaultProject: ["vitest.config.ts"] },
+        projectService: { allowDefaultProject: ["vitest.config.ts", "vitest.workspace.ts"] },
         tsconfigRootDir: import.meta.dirname,
       },
     },
