@@ -1,0 +1,17 @@
+---
+// Renvoi vers une section du protocole publié. Lu à la construction : une section absente fait
+// échouer la construction (voir site/src/lib/protocole.ts).
+import { existsSync, readFileSync } from "node:fs";
+import { cheminDuProtocole, lienDeSection, texteDuRenvoi } from "../lib/protocole.ts";
+
+interface Props {
+  section: string;
+  libelle?: string;
+}
+
+const { section, libelle } = Astro.props;
+const protocole = readFileSync(cheminDuProtocole(process.cwd(), existsSync), "utf8");
+const lien = lienDeSection(protocole, section);
+const texte = texteDuRenvoi(section, libelle);
+---
+<p class="renvoi">Protocole, <a class="renvoi__lien" href={lien}>{texte}</a></p>

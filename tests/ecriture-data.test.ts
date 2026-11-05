@@ -21,9 +21,10 @@ import { describe, expect, it } from "vitest";
 const RACINE = resolve(import.meta.dirname, "..");
 /**
  * Tout le code de production de l'arborescence de `README.md` (revue du 2026-10-12, constat 23 :
- * `notation-humaine/` lit `data/items` et n'était pas balayé). `scratch/` et `tests/` sont exclus.
+ * `notation-humaine/` lit `data/items` et n'était pas balayé ; `site/` depuis la page pédagogique du
+ * 2026-11-05). `scratch/` et `tests/` sont exclus.
  */
-const REPERTOIRES = ["outils", "pipeline", "validation", "analysis", "notation-humaine"];
+const REPERTOIRES = ["outils", "pipeline", "validation", "analysis", "notation-humaine", "site"];
 /** Répertoires de premier niveau qui ne sont pas du code de production, même s'ils contiennent du .ts ou du .py. */
 const HORS_PRODUCTION = new Set(["scratch", "tests", "node_modules", "docs", "schema", "config", "prompts", "runs"]);
 const IGNORES = new Set(["node_modules", "dist", "__pycache__"]);
