@@ -180,7 +180,7 @@ export class SortieJugeIncoherente extends Error {
  * lui sont soumis portent plusieurs dates de changement, la fraîcheur n'est pas définie : ce n'est pas
  * une sortie illisible, renvoyée à un humain, mais un défaut du banc, qui arrête la notation. »
  * `issueDeJuge` ne la convertit jamais : elle remonte de la chaîne, qui s'arrête avant d'écrire quoi
- * que ce soit pour ce juge et cette réponse. Aucune invalidation n'est enregistrée (D75 (3)) : on
+ * que ce soit pour ce juge et cette réponse. Aucune invalidation n'est enregistrée (D75 (3), option 1, décision de l'auteur du 2026-11-05 ; protocole 0.33, §7 : « Cet arrêt n'enregistre pas d'invalidation du run ») : on
  * corrige, puis la relance reprend sans rien réécrire.
  */
 export class FraicheurIndefinie extends Error {
