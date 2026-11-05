@@ -1,6 +1,6 @@
 # Gabarit de brief pour un sous-agent codeur
 
-Rédigé par la session principale (Fable) pour `codeur-opus` ou `codeur-sonnet`. Le sous-agent
+Rédigé par la session principale pour `codeur-opus` ou `codeur-sonnet`. Le sous-agent
 démarre à froid : il ne voit ni la conversation, ni les décisions prises, ni les fichiers déjà
 lus. Tout ce qu'il doit savoir est dans le brief. Un brief qu'on ne pourrait pas confier à un
 contributeur humain nouveau sur le dépôt n'est pas prêt.

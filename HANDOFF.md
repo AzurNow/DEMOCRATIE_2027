@@ -1,93 +1,74 @@
-# Passation — 2026-11-02
+# Passation entre sessions
 
-Pour une session Claude Code dans le cloud (claude.ai/code) qui reprend le dépôt pendant que la
-machine de l'auteur est éteinte. L'auteur la pilote depuis son téléphone. Lire dans l'ordre :
-`CLAUDE.md` (règles et installation), ce fichier, `docs/PROTOCOLE.md` (fait autorité sur tout),
-`docs/feuille-de-route.json` (état qui fait foi).
+Pour une session Claude Code qui reprend le dépôt sans la mémoire de la précédente : dans le cloud
+(claude.ai/code), où la mémoire locale de l'auteur n'existe pas, ou en local sur une autre machine.
+L'auteur la pilote parfois depuis son téléphone. Lire dans l'ordre : `CLAUDE.md` (règles et
+installation), ce fichier, `docs/PROTOCOLE.md` (fait autorité sur tout), `docs/feuille-de-route.json`
+(état qui fait foi).
 
-La passation précédente (absence d'octobre, 2026-10-17) est dans l'historique Git de ce fichier.
-Deux pièges de `CLAUDE.md` sont périmés depuis le retour de l'auteur : l'absence d'octobre est
-finie, et `gh pr merge` fonctionne (voir « Fusion » ci-dessous).
+Les consignes durables de l'auteur, qui ne vivent sinon que dans la mémoire locale de Claude Code,
+sont recopiées dans « Façon de travailler », en bas de ce fichier. Elles font foi. Les passations
+précédentes sont dans l'historique Git de ce fichier ; la section « État » est réécrite à chaque
+clôture, jamais empilée.
 
 ## Installation dans le cloud
 
 Suivre « Démarrer depuis un clone neuf » de `CLAUDE.md` : Node 22 (`.nvmrc`), pnpm par corepack,
-uv puis `uv sync --frozen`. Vérifier avant tout : `pnpm check && pnpm test` et
-`pnpm check:py && pnpm test:py` verts sur `main`. Sous Node 23, un seul échec est connu et sans
-effet (`tests/run/invalidation.test.ts`, cas 4 : `ExperimentalWarning` sur stderr) ; la CI tourne
-sous Node 22.
-
-La mémoire locale de Claude Code de l'auteur n'existe pas dans le cloud : ses consignes durables
-sont recopiées dans « Façon de travailler », en bas de ce fichier. Elles font foi.
+uv puis `uv sync --frozen`. Sur une machine Linux neuve (Debian/Ubuntu), avant : `sudo apt install
+git python3-venv curl`, nvm (script d'installation du README de https://github.com/nvm-sh/nvm),
+`git config --global user.name …` et `user.email …`, GitHub CLI (https://cli.github.com) puis
+`gh auth login` pour pousser des branches et ouvrir des PR ; uv télécharge lui-même Python 3.12
+s'il manque. Vérifier avant tout : `pnpm check && pnpm test` et `pnpm check:py && pnpm test:py`
+verts sur `main`. Sous Node 23, six tests de ligne de commande qui lisent stderr échouent sur
+l'avertissement `ExperimentalWarning: Type Stripping` (`tests/run/invalidation.test.ts` cas 4,
+`tests/promote-texte-errone.test.ts` ×2, `tests/promote-renvoi-reextraction.test.ts`,
+`tests/analysis/recalcul-b.test.ts`, `tests/go-no-go/metriques.test.ts`, constat du 2026-11-05),
+sans effet ; la CI tourne sous Node 22 et fait foi.
 
 ## Fusion
 
 Décision de l'auteur du 2026-11-01 :
 - **Code, tests, documentation technique** : la session fusionne elle-même ses PR, dans l'ordre,
   une fois la CI `check-et-test` verte (`gh pr merge <n> --merge`). Jamais de push direct sur
-  `main`.
+  `main`. Si le contrôle automatique de Claude Code refuse la fusion, le dire à l'auteur et ne pas
+  contourner.
 - **Zones d'arrêt de `CLAUDE.md`** (`docs/PROTOCOLE.md`, `prompts/judge-*`, `data/`,
   `config/perimetre.yaml`, et toute décision métier) : la session **propose** une PR à part, qui ne
   touche que ces fichiers, et l'auteur la fusionne lui-même. Le code qui l'applique part dans une PR
   suivante, tirée de `main` après la fusion.
 - Description de PR lisible sur téléphone, dans cet ordre : décision attendue (ou « aucune »), ce
   qui change, ce qui pourrait casser, comment c'est testé.
+- Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
+  auto refuse le force-push.
 
-## État au 2026-11-02 (soir)
+## État au 2026-11-05
 
-- Protocole **0.26** (#241). Décisions D1 à D61 tranchées ; **D62 en attente** (`docs/feuille-de-route.json`).
-- Le 2026-11-02, #224 à #242 ont été fusionnées : D58 (deux juges, kappa de la paire, kappa des deux
-  humains), D59 (vingt et un trous des plans analyse, extraction, interrogation et notation), D60
-  (onze points laissés par la 0.24) et D61 (H2 sans objet sur une différence indéfinie, portée du
-  retour en attente après un texte extrait erroné), avec leur code.
-- Dette : `docs/DETTE.md`, entrée du 2026-11-02. Deux points hauts : les modules d'analyse ne sont
-  assemblés par aucun appelant (`pnpm analyze` manque), et `rechercheAbsence` ne voit pas une
-  proposition non rattachée (fausse absence). Le point 3 du 2026-11-01 (`Location` latin-1) reste ouvert.
+- Protocole **0.33** (#305). Décisions **D1 à D75 tranchées** (D75 le 2026-11-05, option
+  recommandée).
+- Fusionnées le 2026-11-05 : #302 à #304 (code de D74), #305 (protocole 0.33), #306 (plan de la
+  page pédagogique, `docs/PLAN-PAGE-PEDAGOGIQUE.md`, non lancé : l'auteur dira quand commencer),
+  #307 (compétence `revue-contexte-agentique`).
+- **Code restant de D75** : la liste « Code restant » du champ `retenu` de D75 dans
+  `docs/feuille-de-route.json`, points (2), (4), (6), (7), (8), (12) à (17), (20), (21), (24) à (27).
+  Le point (24) touche l'en-tête de `prompts/judge-1.0.0.md` : zone d'arrêt, PR distincte.
+- Dette : `docs/DETTE.md`, entrée du 2026-11-04 (après-midi). Dernière passe de conformité :
+  `docs/conformite/2026-11-03.md`, sur la 0.30.
 - Rien n'a jamais tourné sur un appel réel : extraction, reformulation, interrogation, liens et
   notation ne sont exercés que sur doubles et fixtures.
-- Le 2026-11-02, le mode auto de Claude Code a refusé `gh pr merge` sur la machine Windows de
-  l'auteur, malgré la consigne de fusion : l'auteur a fusionné à la main.
-
-## Mise à jour du 2026-11-04
-
-- `main` en est au protocole 0.31 (D73). Fusionnées le 2026-11-04 : #274 protocole 0.31 ; #275,
-  #276, #279, #280, #281 constats de conformité n° 1 à 9 et 11 du 2026-11-03 ; #277, #278 code de
-  D73 (9), (10), (2), (4). Une PR en conflit se met à jour par un commit de fusion de `main`, jamais
-  par rebase : le mode auto refuse le force-push.
-- **D74 en attente** : questions ouvertes de ces PR.
-- Code de D73 restant (pas lancé, à la demande de l'auteur) : (5) libellés de courriel (table à
-  rédiger par l'auteur), (6) accord-echantillons, (7) et (8) `juges[]`, (11) application testée,
-  (12) dépôt → réponse, (13) à (15) notation, (16) H5, (17) modèles dans la tendance. Constats de
-  conformité encore ouverts : n° 10, 12 à 37 hors réglés, et n° 25 (question D74 (5)).
-- Pousser vers `https://github.com/AzurNow/DEMOCRATIE_2027.git` tant qu'`origin` n'est pas mis à jour.
-
-## Mise à jour du 2026-11-04 (après-midi)
-
-- Fusionnées par la session (CI verte sur `main`, `gh pr merge` accepté cette fois) : #283
-  (conformité n° 10, garde de licence du dépôt), #284 (D73 (15)), #285 (dette n° 4), #286 (D73 (16)),
-  #288 (dette n° 1), #289 (D73 (6)), #290 (D73 (13), (14)), #291 (dette n° 2), #292 (D73 (17)),
-  #293 (D73 (11)), #294 (D73 (12)), #295 (D73 (7), (8)).
-- **#287, protocole 0.32 (D74 option 1), fusionnée par l'auteur le 2026-11-04** : D74 tranchée. Le
-  code de D74 qu'elle laisse ((5), (7), (16) à (19), (22), (24) à (26)) part dans des PR tirées de
-  `main` après elle.
-- **D75 en attente** : 27 questions des PR ci-dessus. (24) et (25) bloqueraient un premier run réel.
-- Code de D73 restant : (5) seulement (table des libellés de courriel, à rédiger par l'auteur).
 - Avant le prochain gel, l'auteur renseigne `juges[].outils_de_son_editeur` dans `config/gel.json`.
 
 ## Ce qui était en cours
 
-Rien. Prochain lot : le code de D74 laissé par la 0.32.
+Rien.
 
 ## Prochaines tâches, par priorité
 
-1. **Faire trancher D62** par l'auteur, en commençant par #233 (3) (fausse absence) et #233 (2)
-   (aucun mécanisme ne consomme la liste des renvois à la réextraction). Poser les questions
-   complètement, puis écrire la 0.27 dans une PR à part, et le code dans des PR suivantes.
-2. **Lot `pnpm analyze`** : assembler les modules d'`analysis/` sur un partage unique (DETTE
-   2026-11-02, point 1). Soumettre un plan à l'auteur avant d'écrire du code.
-3. **Passe `conformite-protocole`** sur la 0.26 : la matrice date du 2026-11-01 (0.21), et les
-   lots D58 à D61 l'ont fait bouger. Y ajouter le test des clés de graine (DETTE 2026-11-02, point 3).
-4. **Site** (25 exigences) : pas avant que l'analyse existe.
+1. **Code restant de D75** (ci-dessus), par PR tirées de `main` ; (24) dans sa PR à part.
+2. **Passe `conformite-protocole`** sur la 0.33 : la matrice date du 2026-11-03 (0.30), et D74 et
+   D75 l'ont fait bouger.
+3. **Site** : le plan de la page pédagogique est accordé mais non lancé ; le site fonctionnel ne
+   commence qu'après le code de D75, la matrice de conformité close et une revue de code
+   (`docs/PLAN-PAGE-PEDAGOGIQUE.md`, « Place dans le projet »).
 
 Hors mission sans accord explicite de l'auteur : appels d'API réels, collecte réelle, écriture dans
 `data/` ou `config/perimetre.yaml`, déploiement, `pnpm run:live`, gel de la 1.0.
@@ -115,5 +96,6 @@ ou ouvrir une PR en brouillon si du texte de protocole est proposé.
 - Chaque PR dit ce qui pourrait casser ; une question laissée ouverte dans une PR entre le jour même
   dans la feuille de route (`LESSONS.md`, section Méthode).
 - Fin de session : compétence `cloture-de-session` (`docs/DETTE.md`, `LESSONS.md`,
-  `docs/feuille-de-route.json` puis `pnpm feuille-de-route`). Mettre à jour ce fichier avant de
-  s'arrêter, pour la session suivante.
+  `docs/feuille-de-route.json` puis `pnpm feuille-de-route`). Réécrire la section « État » de ce
+  fichier avant de s'arrêter : c'est le point de reprise de la session suivante, en local comme dans
+  le cloud.

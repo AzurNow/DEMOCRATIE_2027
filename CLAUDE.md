@@ -73,13 +73,14 @@ pipeline/
   extraction/          Double extraction, test verbatim, mise en staging.
   interrogation/       Appels API aux outils, conditions figées, réponses brutes.
   notation/            Juges, désaccords, échantillonnage, test contrefactuel.
-staging/               Sortie du pipeline. Jamais lu par le site.
-data/                  Items validés par des humains. Le seul jeu de données de production.
-runs/<date>/           Questions, tirage, graines, verdicts, métriques. Le volume est en dépôt Zenodo.
-validation/            Interface locale de validation humaine.
   questions/ gel/ run/ reformulation/ liens/ preuve/ notification/ go-no-go/
                        Gabarits de questions, gel d'un run, statut des runs, reformulations,
                        test des liens, preuves du périmètre, courriels aux candidats, go/no-go.
+staging/               Sortie du pipeline. Jamais lu par le site.
+data/                  Items validés par des humains. Le seul jeu de données de production.
+runs/<date>/           Questions, tirage, graines, verdicts, métriques. Le volume est en dépôt Zenodo.
+                       Mode d'emploi de chaque commande de run : runs/README.md.
+validation/            Interface locale de validation humaine (serveur, client, domaine, fixtures).
 analysis/              Métriques §8, bootstrap, tests de permutation, robustesse.
 notation-humaine/      Écran local de notation humaine des réponses (serveur + client).
 outils/                Points d'entrée des commandes `pnpm <script>` (fines enveloppes).
@@ -87,7 +88,8 @@ tests/                 Vitest (*.test.ts) et pytest (test_*.py), miroir de l'arb
 site/                  Site statique généré. Aucune logique métier. (Pas encore créé.)
 scratch/               Explorations jetables. Hors CI, hors production.
 docs/                  Protocole, CONTRATS.md, DETTE.md, TACHES-AUTEUR.md, revues/, conformite/,
-                       feuille-de-route.json (l'état d'avancement qui fait foi).
+                       critiques/, contexte-agentique/, feuille-de-route.json (l'état d'avancement
+                       qui fait foi).
 .claude/               Compétences, agents et briefs de sous-agents (GABARIT.md).
 .github/workflows/     CI unique : verification.yml (check, test, ruff, pytest).
 ```
@@ -109,8 +111,8 @@ n° 48). C'est une dépendance de code, pas une flèche de données dans le flux
 ## Stack
 
 TypeScript strict partout où c'est possible, Python pour le pipeline de données quand une
-bibliothèque l'impose. Site statique (Astro ou Next en export statique), déployé sur Cloudflare
-Pages. Stockage : fichiers JSON dans Git, pas de base de données — l'historique Git **est** le
+bibliothèque l'impose. Site statique (Astro en export statique, décision de l'auteur du 2026-11-05
+dans `docs/PLAN-PAGE-PEDAGOGIQUE.md`), déployé sur Cloudflare Pages. Stockage : fichiers JSON dans Git, pas de base de données — l'historique Git **est** le
 journal des modifications public exigé par le protocole. Tests : Vitest côté TS, pytest côté
 Python. Validation de schéma à chaque frontière, à l'entrée comme à la sortie.
 
@@ -160,12 +162,8 @@ test:py` si du Python a bougé. Tu les lances toi-même, tu ne demandes pas si t
 Prérequis : Git, Node **22.23.3** (`.nvmrc` ; plancher `>=22.6.0`, car tous les outils tournent par
 `node --experimental-strip-types`), pnpm **10.34.5** via corepack (champ `packageManager`), Python
 **3.12.14** (`.python-version`) et uv **0.12.17**. Rien d'autre : pas de base de données, pas de
-Docker, pas de ffmpeg système (yt-dlp et `av` s'en passent).
-
-Sur une machine Linux neuve (Debian/Ubuntu), avant le bloc ci-dessous : `sudo apt install git
-python3-venv curl` ; nvm depuis https://github.com/nvm-sh/nvm (script d'installation du README) ;
-`git config --global user.name …` et `user.email …` ; GitHub CLI (https://cli.github.com) puis
-`gh auth login` pour pousser des branches et ouvrir des PR. uv télécharge lui-même Python 3.12 s'il manque.
+Docker, pas de ffmpeg système (yt-dlp et `av` s'en passent). Machine Linux neuve : `HANDOFF.md`,
+« Installation dans le cloud ».
 
 ```bash
 git clone https://github.com/AzurNow/DEMOCRATIE_2027.git && cd DEMOCRATIE_2027
@@ -202,24 +200,22 @@ Aucun au runtime du site (règle 1). Le pipeline, lancé à la main par l'auteur
 
 ### Pièges connus
 
-- Pendant l'absence de l'auteur (octobre 2026) : lire `HANDOFF.md`. Une écriture dans une zone
-  d'arrêt (protocole, prompts de juge) s'y **propose** par une PR dédiée que l'auteur fusionne ;
-  elle n'est jamais poussée sur `main`.
 - La plupart des commandes exigent des arguments (`pnpm symmetry --tirage=… --mesures=…`, `pnpm
   go-no-go <run>`…) ; leur usage est en tête de `outils/<nom>.ts`. Sans eux, certaines s'arrêtent
   sur une pile d'erreur plutôt qu'un message.
 - Les tests Vitest créent des dépôts Git temporaires (`tests/aides/depot.ts`) : `git` doit être
   dans le PATH (l'identité de commit est passée par `-c`, rien à configurer).
 - Node 23+ marche en local mais la CI vérifie Node 22 ; ne pas utiliser d'API absente de la 22.
+  Sous Node 23, six tests qui lisent stderr échouent sur l'avertissement `ExperimentalWarning`
+  (liste dans `HANDOFF.md`) : la CI fait foi.
 - Plusieurs commandes refusent de tourner sur un arbre Git sale (gardes de `outils/garde-fous-git.ts`) :
   commiter ou ranger avant `pnpm extraire`, `pnpm mesures --rattacher`, le gel.
 - `pnpm validate` et `pnpm notation:humaine` exigent `ANNOTATEUR_ID` ; sans `BANC_DEMO=1`, la
   validation écrit dans `validation/` (journal publié) — en essai, toujours `pnpm dev`.
 - `docs/FEUILLE-DE-ROUTE.md` est généré : éditer `docs/feuille-de-route.json` puis `pnpm
   feuille-de-route`.
-- D'anciens briefs dans `.claude/briefs/` citent des chemins absolus de la machine de l'auteur
-  (`/Users/azur_now/...`) : remplacer par la racine du clone, ce sont des archives.
-- Le contrôle de Claude Code de l'auteur refuse `gh pr merge` : c'est l'auteur qui fusionne.
+- D'anciens briefs dans `.claude/briefs/` citent des chemins absolus de la machine de l'auteur :
+  remplacer par la racine du clone, ce sont des archives.
 
 ### Ce qui n'existe que sur la machine de l'auteur
 
@@ -258,6 +254,9 @@ Aucun au runtime du site (règle 1). Le pipeline, lancé à la main par l'auteur
   dans un pipeline de mesure coûte la crédibilité du projet.
 - **Signale les trous du protocole.** S'il est ambigu ou insuffisant sur un point que tu dois
   implémenter, arrête-toi et dis-le. C'est un retour précieux, pas une objection.
+- **Lis `HANDOFF.md` après ce fichier.** Il porte le point de reprise entre sessions (état, prochain
+  lot) et les consignes durables de l'auteur qui ne sont pas ici : qui fusionne les PR, comment les
+  sous-agents sont lancés, quand retenir l'option recommandée sans demander.
 
 ---
 
