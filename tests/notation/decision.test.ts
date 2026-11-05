@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 import { ulid } from "../analysis/fabriques.ts";
 import { decider, JugeIndetermine, NotationsIncoherentes, type Decision, type EntreeDecision } from "../../pipeline/notation/decision.ts";
+import { humainsAArbitrer, noteDe } from "../../pipeline/notation/note-retenue.ts";
 import type { NotationIndividuelle, VerdictProduit } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import {
@@ -540,12 +541,69 @@ describe("§7 (0.31, D73 (14)) : deux humains de l'échantillon d'accord sur la 
     expect(() => decide([J1, J2, H1, H2, arbitre], ECH)).toThrow(/troisième humain/);
   });
 
-  it("question ouverte : même motif, mais l'existence d'un lien diverge → en attente sans arbitrage admis (le §7 ne nomme que le motif)", () => {
-    const s1 = notationHumaine("a1", "echantillon_aleatoire_10", { sourcage: { cite: true, liens: [lien("mort", "non_applicable")] } });
-    const s2 = notationHumaine("a2", "echantillon_aleatoire_10", { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } });
-    expect(decide([J1, J2, s1, s2], ECH)).toEqual({ statut: "en_attente", attend: "humain", motifs: ["accord_sans_note_commune"] });
-    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10");
-    expect(() => decide([J1, J2, s1, s2, arbitre], ECH)).toThrow(NotationsIncoherentes);
+});
+
+describe("D75 (15) : deux humains de l'échantillon d'accord sur la note et le motif, sourçage partiel divergent → troisième humain (§7, 0.33)", () => {
+  const ECH = { dans_echantillon_humain: true } as const;
+  /** Aucun lien soutenant de part et d'autre : les deux notations s'accordent au sens de `notationsConcordent`. */
+  const SANS_CITATION = { cite: false, liens: [] };
+  const CITE_SANS_LIEN = { cite: true, liens: [] };
+  const CITE_LIEN_MORT = { cite: true, liens: [lien("mort", "non_applicable")] };
+  const CITE_LIEN_EXISTANT = { cite: true, liens: [lien("existe", "ne_soutient_pas")] };
+  const humains = (s1: NotationIndividuelle["sourcage"], s2: NotationIndividuelle["sourcage"]): readonly [NotationIndividuelle, NotationIndividuelle] => [
+    notationHumaine("a1", "echantillon_aleatoire_10", { ...inexacte(), sourcage: s1 }),
+    notationHumaine("a2", "echantillon_aleatoire_10", { ...inexacte(), sourcage: s2 }),
+  ];
+  const CAS = [
+    { nom: "cite seul", s1: SANS_CITATION, s2: CITE_SANS_LIEN },
+    { nom: "au_moins_un_lien_existant seul", s1: CITE_LIEN_MORT, s2: CITE_LIEN_EXISTANT },
+    { nom: "cite et au_moins_un_lien_existant", s1: SANS_CITATION, s2: CITE_LIEN_EXISTANT },
+  ] as const;
+
+  for (const { nom, s1, s2 } of CAS) {
+    it(`D75 (15) : divergence sur ${nom} → en attente de l'arbitrage, jamais accord_sans_note_commune`, () => {
+      const [h1, h2] = humains(s1, s2);
+      expect(humainsAArbitrer(h1, h2)).toBe(true);
+      expect(decide([J1, J2, h1, h2], ECH)).toEqual({ statut: "en_attente", attend: "humain", motifs: ["arbitrage_echantillon_manquant"] });
+    });
+
+    it(`D75 (15) : divergence sur ${nom}, après l'arbitrage → verdict, la note de l'arbitre retenue (sourçage compris)`, () => {
+      const [h1, h2] = humains(s1, s2);
+      const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...inexacte(), sourcage: s2, date: "2026-12-07T10:00:00+01:00" });
+      const v = verdictDe(decide([J1, J2, h1, h2, arbitre], ECH));
+      expect(v).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "inexacte", motif_inexactitude_retenu: "position_inventee", dans_echantillon_humain: true });
+      expect(v.sourcage_retenu).toEqual(noteDe(arbitre).sourcage);
+      expect(v.notations_sources).toEqual([J1.id, J2.id, h1.id, h2.id, arbitre.id]);
+      expect(v.revue_humaine).toEqual({ effectuee: true, date: arbitre.date, annotateurs: ["a1", "a2", "a3"] });
+    });
+  }
+
+  it("D75 (15) : l'arbitre donne un troisième sourçage partiel : sa note est retenue telle quelle, jamais une fusion des deux premières", () => {
+    const [h1, h2] = humains(SANS_CITATION, CITE_LIEN_EXISTANT);
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...inexacte(), sourcage: CITE_LIEN_MORT });
+    expect(verdictDe(decide([J1, J2, h1, h2, arbitre], ECH)).sourcage_retenu).toEqual({ cite: true, au_moins_un_lien_existant: false, au_moins_un_lien_soutenant: false });
+  });
+
+  it("D75 (15) : l'arbitre ne peut pas être l'un des deux premiers", () => {
+    const [h1, h2] = humains(SANS_CITATION, CITE_SANS_LIEN);
+    const arbitre = notationHumaine("a1", "arbitrage_echantillon_10", { ...inexacte(), sourcage: CITE_SANS_LIEN });
+    expect(() => decide([J1, J2, h1, h2, arbitre], ECH)).toThrow(/troisième humain/);
+  });
+
+  it("D75 (15) : accord complet (note, motif, cite, lien existant) → verdict des deux humains, aucun arbitre ; un arbitre en trop est incohérent", () => {
+    const [h1, h2] = humains(CITE_LIEN_EXISTANT, CITE_LIEN_EXISTANT);
+    expect(humainsAArbitrer(h1, h2)).toBe(false);
+    const v = verdictDe(decide([J1, J2, h1, h2], ECH));
+    expect(v).toMatchObject({ mode_resolution: "echantillon_humain_10", sourcage_retenu: { cite: true, au_moins_un_lien_existant: true, au_moins_un_lien_soutenant: false } });
+    expect(v.notations_sources).toEqual([J1.id, J2.id, h1.id, h2.id]);
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", inexacte());
+    expect(() => decide([J1, J2, h1, h2, arbitre], ECH)).toThrow(/s'accordent/);
+  });
+
+  it("D75 (15) : hors échantillon, deux juges dans le même cas restent un accord partiel (D15), inchangé", () => {
+    const j1 = notationJuge("j1", { sourcage: CITE_LIEN_MORT });
+    const j2 = notationJuge("j2", { sourcage: CITE_LIEN_EXISTANT });
+    expect(decide([j1, j2])).toEqual({ statut: "en_attente", attend: "humain", motifs: ["accord_sans_note_commune"] });
   });
 });
 

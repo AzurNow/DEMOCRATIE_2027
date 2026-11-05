@@ -4,7 +4,19 @@
 
 ## Décisions en attente
 
-Aucune décision en attente.
+### D81 — Le §6 (QR9) ne nomme que le motif comme divergence qui appelle un troisième humain sur une lecture de comparateur, alors que le §7 0.33 (D75 (15)) étend l'arbitrage de l'échantillon à la citation d'une source et à l'existence d'un lien. Le code de D75 (15) applique aux lectures la même règle que l'échantillon (humainsAArbitrer, seule définition). Faut-il écrire cette extension dans le §6 ?
+
+Question ouverte du lot D75 (15) (PR du 2026-11-05). Le §6 dit qu'une lecture suit le §7 « comme une réponse de l'échantillon », ce qui couvre déjà le code ; le texte du §6 reste pourtant plus étroit que le §7. Garder une règle « motif seul » pour les lectures ferait deux définitions de l'arbitrage et laisserait le refus sans_note_commune sans issue.
+
+Options :
+
+1. À la prochaine révision, ajouter au §6 « … ou sur la citation d'une source ou l'existence d'un lien », pour que le texte suive le §7 et le code.
+2. Ne rien écrire : le renvoi du §6 au §7 suffit.
+3. Restreindre les lectures au motif seul (deux définitions dans le code, refus sans_note_commune rétabli).
+
+**Recommandation :** Option 1 : une phrase, et un lecteur du §6 seul n'en tire plus une règle plus étroite que celle qui s'applique.
+
+Lots portant cette décision : aucun
 
 ## Décisions tranchées
 
@@ -371,6 +383,7 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
+  dec_D81{{"D81<br/>Le §6 (QR9) ne nomme que le motif comme divergence qui appel…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction

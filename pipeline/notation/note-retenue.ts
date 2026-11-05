@@ -62,8 +62,8 @@ export function noteDe(notation: NotationIndividuelle): NoteRetenue {
  * La note de deux notations qui s'accordent (`notationsConcordent`), si elles portent aussi le même
  * motif d'inexactitude et le même sourçage complet ; `null` sinon. Le §7 ne dit pas lequel retenir
  * quand ces champs, hors des métriques primaires, divergent : plutôt qu'une règle de fusion
- * inventée, la règle de décision appelle un humain (hors échantillon, D15), un troisième humain sur
- * un motif divergent entre deux humains (D73 (14), `humainsAArbitrer`), et attend sinon.
+ * inventée, la règle de décision appelle un humain (hors échantillon, D15), et un troisième humain
+ * entre deux humains de l'échantillon (§7, protocole 0.33 ; D75 (15), `humainsAArbitrer`).
  */
 export function noteCommune(a: NotationIndividuelle, b: NotationIndividuelle): NoteRetenue | null {
   const noteA = noteDe(a);
@@ -74,17 +74,18 @@ export function noteCommune(a: NotationIndividuelle, b: NotationIndividuelle): N
 }
 
 /**
- * Deux notations humaines appellent un troisième humain (§6 et §7, protocole 0.31 ; D73 (14)) :
- * quand elles divergent au sens de `notationsConcordent`, ou quand elles s'accordent ainsi mais
- * divergent sur le motif d'inexactitude, « comme une réponse dont les deux juges s'accordent sur la
- * note mais divergent sur ce motif ». Le §7 ne nomme que le motif : deux humains qui s'accordent avec
- * le même motif mais un sourçage partiel différent (`cite`, `au_moins_un_lien_existant`) n'appellent
- * pas d'arbitre (question ouverte ; `noteCommune` reste `null`, la règle de décision attend).
+ * Deux notations humaines appellent un troisième humain (§6 et §7, protocole 0.33 ; D73 (14),
+ * D75 (15)) : quand elles divergent au sens de `notationsConcordent`, ou quand elles s'accordent
+ * ainsi mais divergent « sur un autre champ que porte la note retenue (motif d'inexactitude,
+ * citation d'une source, existence d'un lien) », « comme une réponse dont les deux juges s'accordent
+ * sur la note mais divergent sur ce champ ». Ces trois champs sont exactement ceux que `noteCommune`
+ * compare au-delà de `notationsConcordent` : deux humains n'appellent pas d'arbitre si et seulement
+ * si ils ont une note commune, que la règle de décision retient alors.
  * Seule définition du dépôt : l'échantillon des réponses (`decision.ts`, `file-humaine.ts`) et les
  * lectures de comparateur (`lectures-comparateur.ts`) la lisent ici.
  */
 export function humainsAArbitrer(a: NotationIndividuelle, b: NotationIndividuelle): boolean {
-  return !notationsConcordent(a, b) || a.motif_inexactitude !== b.motif_inexactitude;
+  return !notationsConcordent(a, b) || noteCommune(a, b) === null;
 }
 
 /**

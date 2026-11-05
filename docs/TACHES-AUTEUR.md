@@ -344,6 +344,8 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 - [ ] **Trois questions de la notation humaine (#87, #88)** :
       (1) dans l'échantillon, deux humains d'accord au sens de `notationsConcordent` sans note
       commune restent en attente : le §7 n'admet pas d'arbitre ici ; faut-il un troisième humain ?
+      Tranché en D75 (15) (protocole 0.33) : oui, un troisième humain aussi sur `cite` et
+      l'existence d'un lien, codé le 2026-11-05 ; le §6 des lectures est en D81.
       (2) `reponse.normalisation.fonction` est montrée au juge et à l'humain : imposer aux
       adaptateurs un nom neutre, qui ne trahisse pas l'outil ? Tranché en D55 (1) le 2026-10-17 :
       `normalisation` sort de la charge du juge, codé dans #172. (3) double soumission : garder deux

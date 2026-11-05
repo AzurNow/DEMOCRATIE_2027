@@ -206,10 +206,18 @@ describe("§6 (0.31, D73 (13)) : le verdict d'une lecture", () => {
     expect(sansVerdict([double("a1"), double("a2", L1, inexacte())]).statut).toBe("a_arbitrer");
   });
 
-  it("question ouverte : accord, même motif, mais l'existence d'un lien diverge : pas de note commune, refus nommé", () => {
+  it("D75 (15) : accord, même motif, mais l'existence d'un lien diverge : à arbitrer, puis la note de l'arbitre est retenue", () => {
     const a = double("a1", L1, { sourcage: { cite: true, liens: [lien("mort", "non_applicable")] } });
     const b = double("a2", L1, { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } });
-    expect(sansVerdict([a, b]).statut).toBe("sans_note_commune");
+    expect(sansVerdict([a, b]).statut).toBe("a_arbitrer");
+    const c = arbitre("a3", L1, { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } });
+    const v = verdict([a, b, c]);
+    expect(v.sourcage_retenu).toEqual({ cite: true, au_moins_un_lien_existant: true, au_moins_un_lien_soutenant: false });
+    expect([...v.notations_sources].sort()).toEqual([a.id, b.id, c.id].sort());
+  });
+
+  it("D75 (15) : accord, même motif, mais la citation d'une source diverge : à arbitrer", () => {
+    expect(sansVerdict([double("a1", L1, { sourcage: { cite: false, liens: [] } }), double("a2", L1, { sourcage: { cite: true, liens: [] } })]).statut).toBe("a_arbitrer");
   });
 
   it("une lecture qui n'est pas à noter : refus nommé", () => {

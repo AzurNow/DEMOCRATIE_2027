@@ -191,7 +191,6 @@ describe("hors échantillon", () => {
     const j2 = notationJuge("j2", { ...sur(H1), ...inexacte(), motif_inexactitude: "position_opposee" });
     const file = construireFile(entree(IDS, [...autres, j1, j2]));
     expect(tachesDe(file, H1)).toEqual([{ reponse_id: H1, motif_notation: "accord_partiel_juges", places_restantes: 1, deja_notee_par: [] }]);
-    expect(file.sans_motif_admis).toEqual([]);
   });
 });
 
@@ -235,10 +234,9 @@ describe("§7 (0.31, D73 (14)) : échantillon, deux humains d'accord sur la note
     notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte(), motif_inexactitude: "position_opposee" }),
   ];
 
-  it("une tâche d'arbitrage, fermée aux deux premiers ; plus rien « sans motif admis »", () => {
+  it("une tâche d'arbitrage, fermée aux deux premiers", () => {
     const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains]));
     expect(tachesDe(file, DANS)).toEqual([{ reponse_id: DANS, motif_notation: "arbitrage_echantillon_10", places_restantes: 1, deja_notee_par: ["a1", "a2"] }]);
-    expect(file.sans_motif_admis).toEqual([]);
     expect(file.tachesPour("a3")).toContainEqual({ reponse_id: DANS, motif_notation: "arbitrage_echantillon_10" });
   });
 
@@ -246,7 +244,6 @@ describe("§7 (0.31, D73 (14)) : échantillon, deux humains d'accord sur la note
     const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...sur(DANS), ...inexacte(), motif_inexactitude: "omission" });
     const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains, arbitre]));
     expect(tachesDe(file, DANS)).toEqual([]);
-    expect(file.sans_motif_admis).toEqual([]);
   });
 
   it("un arbitrage alors que les deux humains ont le même motif : incohérent, levé par decider", () => {
@@ -268,15 +265,66 @@ describe("§7 (0.31, D73 (14)) : échantillon, deux humains d'accord sur la note
   });
 });
 
-describe("échantillon : deux humains d'accord, même motif, sourçage partiel divergent (question ouverte)", () => {
-  it("ni tâche, ni arbitrage (le §7 ne nomme que le motif) : la réponse est rapportée à part", () => {
-    const humains = [
-      notationHumaine("a1", "echantillon_aleatoire_10", { ...sur(DANS), sourcage: { cite: true, liens: [lien("mort", "non_applicable")] } }),
-      notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } }),
-    ];
-    const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains]));
-    expect(tachesDe(file, DANS)).toEqual([]);
-    expect(file.sans_motif_admis).toEqual([{ reponse_id: DANS, motifs: ["accord_sans_note_commune"] }]);
+describe("D75 (15) : échantillon, deux humains d'accord sur la note et le motif, sourçage partiel divergent (§7, 0.33)", () => {
+  const SANS_CITATION = { cite: false, liens: [] };
+  const CITE_SANS_LIEN = { cite: true, liens: [] };
+  const CITE_LIEN_MORT = { cite: true, liens: [lien("mort", "non_applicable")] };
+  const CITE_LIEN_EXISTANT = { cite: true, liens: [lien("existe", "ne_soutient_pas")] };
+  const humains = (s1: NotationIndividuelle["sourcage"], s2: NotationIndividuelle["sourcage"]): NotationIndividuelle[] => [
+    notationHumaine("a1", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte(), sourcage: s1 }),
+    notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte(), sourcage: s2 }),
+  ];
+  const CAS = [
+    { nom: "cite seul", s1: SANS_CITATION, s2: CITE_SANS_LIEN },
+    { nom: "au_moins_un_lien_existant seul", s1: CITE_LIEN_MORT, s2: CITE_LIEN_EXISTANT },
+    { nom: "cite et au_moins_un_lien_existant", s1: SANS_CITATION, s2: CITE_LIEN_EXISTANT },
+  ] as const;
+
+  for (const { nom, s1, s2 } of CAS) {
+    it(`D75 (15) : divergence sur ${nom} → tâche arbitrage_echantillon_10 ouverte, fermée aux deux premiers`, () => {
+      const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains(s1, s2)]));
+      expect(tachesDe(file, DANS)).toEqual([{ reponse_id: DANS, motif_notation: "arbitrage_echantillon_10", places_restantes: 1, deja_notee_par: ["a1", "a2"] }]);
+      expect(file.tachesPour("a1").some((t) => t.reponse_id === DANS)).toBe(false);
+      expect(file.tachesPour("a2").some((t) => t.reponse_id === DANS)).toBe(false);
+      expect(file.tachesPour("a3")).toContainEqual({ reponse_id: DANS, motif_notation: "arbitrage_echantillon_10" });
+    });
+
+    it(`D75 (15) : divergence sur ${nom}, arbitrage rendu → la tâche se ferme et decider rend un verdict`, () => {
+      const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...sur(DANS), ...inexacte(), sourcage: s1 });
+      const notations = [...jugesDAccord(IDS), ...humains(s1, s2), arbitre];
+      expect(tachesDe(construireFile(entree(IDS, notations)), DANS)).toEqual([]);
+      const decision = decider({
+        run: runDeNotation(),
+        objet_note: { type: "reponse", id: DANS },
+        notations: notations.filter((n) => n.objet_note.id === DANS),
+        renvois: [],
+        dans_echantillon_humain: true,
+        textes: TEXTES,
+        verdict_id: ulid("v"),
+        date: "2026-12-06T12:00:00+01:00",
+      });
+      expect(decision.statut).toBe("verdict");
+    });
+  }
+
+  it("D75 (15) : juges encore absents, la tâche d'arbitrage est ouverte quand même", () => {
+    const file = construireFile(entree(IDS, [...jugesDAccord(HORS), ...humains(SANS_CITATION, CITE_SANS_LIEN)]));
+    expect(tachesDe(file, DANS).map((t) => t.motif_notation)).toEqual(["arbitrage_echantillon_10"]);
+  });
+
+  it("D75 (15) : accord complet, sourçage partiel compris → aucune tâche, aucun arbitre ; un arbitre en trop est incohérent", () => {
+    const memes = humains(CITE_LIEN_EXISTANT, CITE_LIEN_EXISTANT);
+    expect(tachesDe(construireFile(entree(IDS, [...jugesDAccord(IDS), ...memes])), DANS)).toEqual([]);
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...sur(DANS), ...inexacte() });
+    expect(() => construireFile(entree(IDS, [...jugesDAccord(HORS), ...memes, arbitre]))).toThrow(FileIncoherente);
+  });
+
+  it("D75 (15) : la file n'expose plus de catégorie « sans motif admis », ni dans son type ni dans son objet", () => {
+    // Contrôle à la compilation : la clé ne fait plus partie du type.
+    const absente: "sans_motif_admis" extends keyof FileHumaine ? false : true = true;
+    expect(absente).toBe(true);
+    const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains(CITE_LIEN_MORT, CITE_LIEN_EXISTANT)]));
+    expect(Object.keys(file).sort()).toEqual(["attend_juge", "comptes", "taches", "tachesPour"]);
   });
 });
 

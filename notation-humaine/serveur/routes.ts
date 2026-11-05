@@ -64,7 +64,6 @@ function file(contexte: Contexte): Reponse {
       a_noter: etat.notables.map((n) => ({ reponse_id: n.tache.reponse_id })),
       en_attente_test_des_liens: etat.en_attente_test_des_liens,
       attend_juge: etat.attend_juge,
-      sans_motif_admis: etat.sans_motif_admis,
     },
   };
 }

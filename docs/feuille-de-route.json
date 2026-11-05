@@ -1104,6 +1104,18 @@
       "recommandation": "Option 1, après le code restant de D75 : c'est la répétition générale du premier run réel, et le premier moyen pour un tiers de vérifier le pipeline sans clé.",
       "retenu": "Option 1 (décision de l'auteur du 2026-11-05), après le code restant de D75 : geler --simule hors de runs/, notation:dry --run=<gel simulé>, analyze sur un run simulé désigné avec ses items (D75 (13)), puis la section « De bout en bout en mode simulé » de runs/README.md et .env.example.",
       "date_decision": "2026-11-05"
+    },
+    {
+      "id": "D81",
+      "statut": "en_attente",
+      "question": "Le §6 (QR9) ne nomme que le motif comme divergence qui appelle un troisième humain sur une lecture de comparateur, alors que le §7 0.33 (D75 (15)) étend l'arbitrage de l'échantillon à la citation d'une source et à l'existence d'un lien. Le code de D75 (15) applique aux lectures la même règle que l'échantillon (humainsAArbitrer, seule définition). Faut-il écrire cette extension dans le §6 ?",
+      "contexte": "Question ouverte du lot D75 (15) (PR du 2026-11-05). Le §6 dit qu'une lecture suit le §7 « comme une réponse de l'échantillon », ce qui couvre déjà le code ; le texte du §6 reste pourtant plus étroit que le §7. Garder une règle « motif seul » pour les lectures ferait deux définitions de l'arbitrage et laisserait le refus sans_note_commune sans issue.",
+      "options": [
+        "À la prochaine révision, ajouter au §6 « … ou sur la citation d'une source ou l'existence d'un lien », pour que le texte suive le §7 et le code.",
+        "Ne rien écrire : le renvoi du §6 au §7 suffit.",
+        "Restreindre les lectures au motif seul (deux définitions dans le code, refus sans_note_commune rétabli)."
+      ],
+      "recommandation": "Option 1 : une phrase, et un lecteur du §6 seul n'en tire plus une règle plus étroite que celle qui s'applique."
     }
   ],
   "lots": [
