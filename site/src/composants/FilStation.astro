@@ -1,0 +1,25 @@
+---
+/**
+ * Une station du « fil du parcours » : l'état de la matière à cette étape (pictogramme pixel) et
+ * une étiquette courte. Décor pur, masqué des technologies d'assistance : l'information est déjà
+ * dans le texte de l'étape. Le pictogramme est un <symbol> défini une fois par FilParcours.astro.
+ */
+import { ETATS_FIL } from "../lib/fil.ts";
+
+interface Props {
+  nom: (typeof ETATS_FIL)[number]["nom"];
+}
+
+const { nom } = Astro.props;
+const etat = ETATS_FIL.find((e) => e.nom === nom);
+if (etat === undefined) {
+  throw new Error(`Station du fil inconnue : « ${nom} ».`);
+}
+---
+
+<div class="fil-station" aria-hidden="true" data-fil-station={etat.numero}>
+  <span class="fil-tuile">
+    <svg class="fil-icone" viewBox="0 0 16 16" shape-rendering="crispEdges" focusable="false"><use href={`#fil-etat-${etat.numero}`} /></svg>
+  </span>
+  <span class="fil-etiquette">{etat.etiquette}</span>
+</div>

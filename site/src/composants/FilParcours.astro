@@ -1,0 +1,28 @@
+---
+/**
+ * Le « fil du parcours » : définitions des sept pictogrammes pixel (un <symbol> chacun, réutilisés
+ * par les stations) et l'objet mobile. L'objet n'apparaît que si le navigateur sait lier une
+ * animation au défilement, hors « mouvement réduit », en page large (voir styles/fil.css) ; sans
+ * cela, le fil reste fait de ses stations fixes. Décor pur, entièrement masqué (aria-hidden).
+ */
+import { ETATS_FIL } from "../lib/fil.ts";
+---
+
+<svg class="fil-symboles" aria-hidden="true" focusable="false" width="0" height="0">
+  <defs>
+    {ETATS_FIL.map((e) => <symbol id={`fil-etat-${e.numero}`} viewBox="0 0 16 16" set:html={e.svg} />)}
+  </defs>
+</svg>
+<div class="fil-voie" aria-hidden="true">
+  <div class="fil-objet">
+    {
+      ETATS_FIL.map((e) => (
+        <span class="fil-etat" data-fil-etat={e.numero}>
+          <span class="fil-etat__interieur">
+            <svg viewBox="0 0 16 16" shape-rendering="crispEdges" focusable="false"><use href={`#fil-etat-${e.numero}`} /></svg>
+          </span>
+        </span>
+      ))
+    }
+  </div>
+</div>
