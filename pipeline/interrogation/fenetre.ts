@@ -26,8 +26,8 @@
  */
 
 import { TYPE_REEXECUTION, TYPES_RUN, type TypeRun } from "../../analysis/types-run.ts";
+import { DUREE_FENETRE_MS } from "../../analysis/parametres-protocole.ts";
 import {
-  DUREE_FENETRE_MS,
   HEURE_OUVERTURE_FENETRE,
   JOUR_OUVERTURE_FENETRE,
 } from "./conditions.ts";

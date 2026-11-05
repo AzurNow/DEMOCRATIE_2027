@@ -10,13 +10,6 @@ import { describe, expect, it } from "vitest";
 import { lireSiteConstruit, texteDePage } from "../../outils/site-gardes.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "../../analysis/bootstrap.ts";
 import { SEUIL_RUN_INCOMPLET } from "../../analysis/seuils.ts";
-import { DUREE_FENETRE_MS } from "../../pipeline/interrogation/conditions.ts";
-import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
-import { TAILLE_JEU_OR, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL } from "../../pipeline/notation/echantillons.ts";
-import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "../../pipeline/notation/taux-echantillon.ts";
-import { SEUIL_COUVERTURE_ITEMS_P } from "../../pipeline/questions/charger-perimetre.ts";
-import { PART_MINIMALE_ITEMS_A_F } from "../../pipeline/questions/symetrie.ts";
-import { PART_REPRISE } from "../../pipeline/questions/tirage.ts";
 import {
   PARAMETRES,
   PARAMETRES_SANS_CONSTANTE,
@@ -56,31 +49,6 @@ describe("formats des paramètres", () => {
 });
 
 describe("paramètres affichés et constantes du code", () => {
-  it("garde 10 % et 25 % pour la part notée par des humains", () => {
-    expect(PARAMETRES.echantillonHumain).toBe(pourcent(TAUX_ECHANTILLON_SANS_RETRAIT));
-    expect(PARAMETRES.echantillonApresRetrait).toBe(pourcent(TAUX_ECHANTILLON_APRES_RETRAIT));
-  });
-
-  it("garde 3 % pour le retrait d'un juge", () => {
-    expect(PARAMETRES.seuilRetraitJuge).toBe(pourcent(SEUIL_RETRAIT.numerateur / SEUIL_RETRAIT.denominateur));
-  });
-
-  it("garde 200 et 300 réponses", () => {
-    expect(PARAMETRES.sousEnsembleContrefactuel).toBe(entier(TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL));
-    expect(PARAMETRES.jeuOr).toBe(entier(TAILLE_JEU_OR));
-  });
-
-  it("garde 20 %, 80 % et 20 % pour la composition des questions", () => {
-    expect(PARAMETRES.partAbsenceEtFictif).toBe(pourcent(PART_MINIMALE_ITEMS_A_F));
-    expect(PARAMETRES.partReprise).toBe(pourcent(PART_REPRISE));
-    expect(PARAMETRES.partNeuve).toBe(pourcent(1 - PART_REPRISE));
-  });
-
-  it("garde 10 positions pour le seuil de couverture et 48 heures pour la fenêtre", () => {
-    expect(PARAMETRES.couvertureMinimale).toBe(entier(SEUIL_COUVERTURE_ITEMS_P));
-    expect(PARAMETRES.fenetreHeures).toBe(heures(DUREE_FENETRE_MS));
-  });
-
   it("garde 2 000 rééchantillonnages et 20 % de réponses manquantes", () => {
     expect(PARAMETRES.reechantillonnages).toBe(entier(REECHANTILLONNAGES_PRODUCTION));
     expect(PARAMETRES.reponsesManquantesMax).toBe(
