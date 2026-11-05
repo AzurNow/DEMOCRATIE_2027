@@ -67,7 +67,7 @@ Décision de l'auteur du 2026-11-01 :
   (conformité n° 10, garde de licence du dépôt), #284 (D73 (15)), #285 (dette n° 4), #286 (D73 (16)),
   #288 (dette n° 1), #289 (D73 (6)), #290 (D73 (13), (14)), #291 (dette n° 2), #292 (D73 (17)),
   #293 (D73 (11)), #294 (D73 (12)), #295 (D73 (7), (8)).
-- **#287, projet de protocole 0.32 (D74 option 1), attend l'auteur** : sa fusion tranche D74. Le
+- **#287, protocole 0.32 (D74 option 1), fusionnée par l'auteur le 2026-11-04** : D74 tranchée. Le
   code de D74 qu'elle laisse ((5), (7), (16) à (19), (22), (24) à (26)) part dans des PR tirées de
   `main` après elle.
 - **D75 en attente** : 27 questions des PR ci-dessus. (24) et (25) bloqueraient un premier run réel.
@@ -76,7 +76,7 @@ Décision de l'auteur du 2026-11-01 :
 
 ## Ce qui était en cours
 
-Rien, hormis #287 (protocole 0.32), à fusionner par l'auteur.
+Rien. Prochain lot : le code de D74 laissé par la 0.32.
 
 ## Prochaines tâches, par priorité
 
