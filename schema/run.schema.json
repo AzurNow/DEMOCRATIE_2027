@@ -17,6 +17,7 @@
     "balise",
     "engagement",
     "run_precedent",
+    "application_testee",
     "perimetre",
     "juges",
     "taux_echantillon_humain",
@@ -295,7 +296,7 @@
       ]
     },
     "application_testee": {
-      "description": "§6 (protocole 0.31), D73 (11) : ce run est-il celui dont le sous-échantillon de l'application grand public est saisi ? Désigné au gel par pnpm geler (pipeline/gel/application.ts) : le premier run mensuel ou hebdomadaire du mois civil compté en UTC, d'après la date_gel de chaque run (D74 (11)), ni pilote ni supplémentaire. mois_utc : AAAA-MM de date_gel en UTC. Non désigné, le motif le dit : type_run_exclu (pilote, supplémentaire, réexécution) ou mois_deja_servi, avec premier_run_id, le run du même mois gelé avant celui-ci. L'interrogation ne prévoit le sous-échantillon de l'application que d'un run désigné, et refuse un run.json qui ne porte pas ce champ plutôt que de supposer. Écrit par tout gel depuis ce lot ; non exigé par le schéma, pour qu'un run gelé avant reste lisible.",
+      "description": "§6 (protocole 0.31), D73 (11) : ce run est-il celui dont le sous-échantillon de l'application grand public est saisi ? Désigné au gel par pnpm geler (pipeline/gel/application.ts) : le premier run mensuel ou hebdomadaire du mois civil compté en UTC, d'après la date_gel de chaque run (D74 (11)), ni pilote ni supplémentaire. mois_utc : AAAA-MM de date_gel en UTC. Non désigné, le motif le dit : type_run_exclu (pilote, supplémentaire) ou mois_deja_servi, avec premier_run_id, le run du même mois gelé avant celui-ci. Une réexécution hérite de la désignation du run qu'elle remplace, telle qu'il la porte (§6, protocole 0.33 ; D75 (20)) : de proche en proche pour la réexécution d'une réexécution, et quelle qu'en soit la forme. L'interrogation ne prévoit le sous-échantillon de l'application que d'un run désigné. Exigé de tout run.json depuis D75 (21) : son absence n'est jamais lue comme une non-désignation.",
       "oneOf": [
         {
           "type": "object",
@@ -550,12 +551,26 @@
             "additionalProperties": false,
             "required": [
               "outil_id",
+              "libelle",
+              "editeur",
               "famille",
               "inclus"
             ],
             "properties": {
               "outil_id": {
                 "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+              },
+              "libelle": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "§7 (« Conflit d'intérêts ») et D84 : le libellé de l'outil déclaré au périmètre, recopié tel quel de config/perimetre.yaml au gel par pipeline/questions/charger-perimetre.ts. « Le libellé et l'éditeur de chaque outil sont ceux de l'instantané du périmètre inscrit au gel » : le contrefactuel d'outil les lit ici (pipeline/notation/chaine.ts), jamais dans le périmètre courant. Aucune charge de juge ne le reçoit."
+              },
+              "editeur": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "§7 (« Conflit d'intérêts ») et D84 : l'éditeur de l'outil déclaré au périmètre, recopié tel quel au gel comme libelle (casse exacte : deux outils ne partagent un éditeur que sous la même graphie). Lu par le contrefactuel d'outil pour ses motifs d'éditeur partagé ; aucune charge de juge ne le reçoit. Le SDK de l'outil (sdk de config/perimetre.yaml) n'est pas inscrit."
               },
               "famille": {
                 "type": "string",
@@ -974,7 +989,7 @@
               "non_classees",
               "refus_api"
             ],
-            "description": "D73 (8), décision de forme hors protocole : les effectifs du jeu d'or qui fondent kappa_juge_humain (ou son motif d'indéfinition) de CE juge, publiés à côté de lui (§7 : « leur nombre est publié »). Produits avec le kappa par analysis/kappa-jeu-or.ts:inscriptionJeuOr, d'un seul calcul sur une seule population, jamais recalculés à part : reponses = comparees + renvois_ecartes + indeterminees + non_classees + refus_api, vérifié par le code (une somme ne s'écrit pas en JSON Schema). Un juge retiré au test contrefactuel (D13) garde les comptes de sa calibration, mesurée avant le run ; il est hors du kappa de la paire. Optionnel tant qu'aucune commande n'écrit kappa_juge_humain (kappa-jeu-or.ts) ; présent, il exige le kappa ou son motif.",
+            "description": "D73 (8), décision de forme hors protocole : les effectifs du jeu d'or qui fondent kappa_juge_humain (ou son motif d'indéfinition) de CE juge, publiés à côté de lui (§7 : « leur nombre est publié »). Produits avec le kappa par analysis/kappa-jeu-or.ts:inscriptionJeuOr, d'un seul calcul sur une seule population, jamais recalculés à part : reponses = comparees + renvois_ecartes + indeterminees + non_classees + refus_api, vérifié par le code (une somme ne s'écrit pas en JSON Schema). Un juge retiré au test contrefactuel (D13) garde les comptes de sa calibration, mesurée avant le run ; il est hors du kappa de la paire. D75 (27) : exigé dès que le juge porte kappa_juge_humain ou motif_indefini_kappa_juge_humain (dependentRequired), de sorte qu'un run publié, qui déclare l'un ou l'autre pour chaque juge, porte aussi ces comptes ; présent, il exige le kappa ou son motif. Aucune commande n'écrit encore kappa_juge_humain : celle qui l'écrira inscrit les trois ensemble, d'un seul appel à inscriptionsJeuOr.",
             "properties": {
               "reponses": {
                 "type": "integer",
@@ -1129,6 +1144,12 @@
           ],
           "changements_contrefactuel": [
             "taux_changement_contrefactuel"
+          ],
+          "kappa_juge_humain": [
+            "comptes_jeu_or"
+          ],
+          "motif_indefini_kappa_juge_humain": [
+            "comptes_jeu_or"
           ]
         }
       }
@@ -1706,14 +1727,20 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "echantillons_par_question",
         "prevues"
       ],
       "description": "§5 « Tailles » (protocole 0.24, D59 (17)) : « le nombre de réponses prévues par le plan d'interrogation est inscrit au gel, et celui des réponses obtenues l'est après l'interrogation ». Comptes de fonctionnement STOCKÉS, comme tirage.nombre_questions, et non une métrique du §8.",
       "properties": {
+        "echantillons_par_question": {
+          "type": "integer",
+          "enum": [1, 2],
+          "description": "§6 (« Échantillons : 2 par question et par mode ») et §12 (levier préenregistré « nombre d'échantillons par question (2 → 1) ») ; D75 (14) : le nombre d'échantillons de chaque question, formulation et mode que prévoit le plan d'interrogation du run, inscrit au gel par pnpm geler (pipeline/gel/assemblage.ts, valeur de pipeline/interrogation/conditions.ts:ECHANTILLONS au commit gelé) et jamais réécrit. pipeline/interrogation/plan.ts:planifier le lit ici pour tout run gelé (plan-du-run.ts, run-gele.ts), au lieu de le reconstruire : un run gelé sous le levier 2 → 1 garde un plan à un échantillon, et la variabilité entre échantillons y est publiée absente avec son motif (§8). Exigé : aucun nombre par défaut."
+        },
         "prevues": {
           "type": "integer",
           "minimum": 0,
-          "description": "Nombre de requêtes du plan d'interrogation du run (pipeline/interrogation/plan.ts:planifier sur run.json#/perimetre/outils et les questions du tirage) : chaque assistant inclus, chaque mode déclaré, chaque question tirée, chaque formulation, chaque échantillon. Écrit par pnpm geler (pipeline/gel/assemblage.ts), jamais réécrit."
+          "description": "Nombre de requêtes du plan d'interrogation du run (pipeline/interrogation/plan.ts:planifier sur run.json#/perimetre/outils, les questions du tirage et echantillons_par_question) : chaque assistant inclus, chaque mode déclaré, chaque question tirée, chaque formulation, chaque échantillon. Écrit par pnpm geler (pipeline/gel/assemblage.ts), jamais réécrit."
         },
         "obtenues": {
           "type": "integer",
@@ -2078,7 +2105,7 @@
       }
     },
     {
-      "$comment": "§6 (protocole 0.31), D73 (11) : seul un run mensuel ou hebdomadaire peut être désigné pour l'application ; tout autre type porte le motif type_run_exclu, et un run mensuel ou hebdomadaire ne le porte jamais.",
+      "$comment": "§6 (protocole 0.31, 0.33), D73 (11), D75 (20) : un run mensuel ou hebdomadaire ne porte jamais le motif type_run_exclu ; un pilote ou un supplémentaire le porte toujours ; une réexécution porte la désignation héritée du run qu'elle remplace, sous l'une quelconque des trois formes.",
       "if": {
         "properties": {
           "type_run": { "enum": ["mensuel", "hebdomadaire"] }
@@ -2091,8 +2118,16 @@
         }
       },
       "else": {
-        "properties": {
-          "application_testee": { "properties": { "motif": { "const": "type_run_exclu" } }, "required": ["motif"] }
+        "if": {
+          "properties": {
+            "type_run": { "const": "reexecution" }
+          },
+          "required": ["type_run"]
+        },
+        "else": {
+          "properties": {
+            "application_testee": { "properties": { "motif": { "const": "type_run_exclu" } }, "required": ["motif"] }
+          }
         }
       }
     },

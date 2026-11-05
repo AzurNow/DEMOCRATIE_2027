@@ -13,8 +13,9 @@
  *      refusé (`statut.ts:demarrerOuReprendre`) — calculé ici, écrit plus tard ;
  *   5. la fenêtre (`run.json#/fenetre`, rouverte par `fenetre.ts:ouvrirFenetre`, sa fin recoupée ;
  *      pour une réexécution, selon la règle du run qu'elle remplace, lu sous `runs/` du dépôt),
- *      les outils (`run.json#/perimetre/outils`), l'identifiant (`run.json#/id`) et les questions
- *      des entrées du tirage, prises dans `questions.json` avec leurs formulations.
+ *      les outils (`run.json#/perimetre/outils`), le nombre d'échantillons inscrit au gel
+ *      (`run.json#/reponses/echantillons_par_question`, D75 (14)), l'identifiant (`run.json#/id`)
+ *      et les questions des entrées du tirage, prises dans `questions.json` avec leurs formulations.
  *
  * `inscrireDemarrage` écrit ensuite `statut: en_cours`, une seule fois, par renommage
  * (`pipeline/run/ecriture.ts`) : l'appelant le fait avant la première tentative, après avoir
@@ -28,6 +29,7 @@ import { lireFichiersDuRun, messageAttendu, PrecedentRefuse, runDeRuns } from ".
 import type { FichiersDuRun, MotifPrecedent } from "../gel/precedent.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
+import type { EchantillonsParQuestion } from "./conditions.ts";
 import type { Question } from "../questions/types.ts";
 import { ecrireParRenommage } from "../run/ecriture.ts";
 import { demarrerOuReprendre } from "../run/statut.ts";
@@ -58,6 +60,7 @@ export interface RunJsonGele extends RunAvecStatut {
   readonly run_remplace_id?: string;
   readonly fenetre: { readonly debut: string; readonly fin: string };
   readonly perimetre: { readonly outils: readonly OutilDeRun[] };
+  readonly reponses: { readonly echantillons_par_question: EchantillonsParQuestion };
 }
 
 export interface RunGele {
@@ -66,6 +69,8 @@ export interface RunGele {
   readonly run_id: string;
   readonly fenetre: Fenetre;
   readonly outils: readonly OutilDeRun[];
+  /** D75 (14) : le nombre d'échantillons du plan, tel que le gel l'a inscrit ; jamais reconstruit. */
+  readonly echantillons: EchantillonsParQuestion;
   /** Les questions des entrées du tirage, et elles seules. */
   readonly questions_tirees: readonly Question[];
   readonly demarrage: IssueDemarrage<RunJsonGele>;
@@ -138,6 +143,7 @@ export function lireRunGele(repertoire: string, runs_du_depot: RunsDuDepot): Run
     run_id: run.id,
     fenetre: fenetreDuGel(repertoire, run, runs_du_depot),
     outils: run.perimetre.outils,
+    echantillons: run.reponses.echantillons_par_question,
     questions_tirees: questionsTirees(repertoire, fichiers),
     demarrage,
   };

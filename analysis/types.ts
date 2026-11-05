@@ -287,6 +287,13 @@ export type ParMode = Readonly<Partial<Record<Mode, SeuilMode>>>;
 
 export interface OutilAuGel {
   readonly outil_id: IdentifiantCourt;
+  /**
+   * §7 (« Conflit d'intérêts »), D84 : le libellé et l'éditeur déclarés au périmètre, recopiés au
+   * gel ; le contrefactuel d'outil les lit ici, jamais dans le périmètre courant. Aucune charge de
+   * juge ne les reçoit.
+   */
+  readonly libelle: string;
+  readonly editeur: string;
   readonly famille: "assistant" | "comparateur";
   readonly inclus: boolean;
   /** §8 : le mode dont vient le chiffre de tête. Lu, jamais décidé par l'analyse. */

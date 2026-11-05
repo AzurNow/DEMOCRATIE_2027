@@ -27,7 +27,18 @@ const PREUVE = {
 };
 
 function assistant(outil_id: string, modes: OutilDeRun["modes"], alias: string): OutilDeRun {
-  return { outil_id, famille: "assistant", inclus: true, modele_demande: "modele-simule", ...(modes === undefined ? {} : { modes }), mode_de_tete: "web_desactivee", alias_aveugle: alias, preuve_inclusion: PREUVE };
+  return {
+    outil_id,
+    libelle: `Libellé de ${outil_id}`,
+    editeur: `Éditeur de ${outil_id}`,
+    famille: "assistant",
+    inclus: true,
+    modele_demande: "modele-simule",
+    ...(modes === undefined ? {} : { modes }),
+    mode_de_tete: "web_desactivee",
+    alias_aveugle: alias,
+    preuve_inclusion: PREUVE,
+  };
 }
 
 function question(lettre: string): QuestionAInterroger {
@@ -45,17 +56,22 @@ describe("D59 (17) : réponses prévues au gel", () => {
   it("chaque assistant inclus × mode déclaré × question tirée × formulation × échantillon (2)", () => {
     const outils = [assistant("outil-alpha", ["web_activee", "web_desactivee"], "A01"), assistant("outil-beta", ["web_desactivee"], "A02")];
     // (2 modes + 1 mode) × 2 questions × 3 formulations × 2 échantillons = 36.
-    expect(reponsesPrevues(outils, [question("a"), question("b")])).toBe(36);
+    expect(reponsesPrevues(outils, [question("a"), question("b")], 2)).toBe(36);
+  });
+
+  it("D75 (14) : un échantillon inscrit au gel (levier 2 → 1 du §12) : la moitié des réponses prévues", () => {
+    const outils = [assistant("outil-alpha", ["web_activee", "web_desactivee"], "A01"), assistant("outil-beta", ["web_desactivee"], "A02")];
+    expect(reponsesPrevues(outils, [question("a"), question("b")], 1)).toBe(18);
   });
 
   it("un outil exclu ou un comparateur n'est pas interrogé : aucune réponse prévue pour lui", () => {
     const exclu = { ...assistant("outil-gamma", ["web_desactivee"], "A03"), inclus: false };
-    const comparateur: OutilDeRun = { outil_id: "comparateur-delta", famille: "comparateur", inclus: true, preuve_inclusion: PREUVE };
-    expect(reponsesPrevues([assistant("outil-alpha", ["web_desactivee"], "A01"), exclu, comparateur], [question("a")])).toBe(6);
+    const comparateur: OutilDeRun = { outil_id: "comparateur-delta", libelle: "Comparateur Delta", editeur: "Éditeur Delta", famille: "comparateur", inclus: true, preuve_inclusion: PREUVE };
+    expect(reponsesPrevues([assistant("outil-alpha", ["web_desactivee"], "A01"), exclu, comparateur], [question("a")], 2)).toBe(6);
   });
 
   it("aucune question tirée : zéro réponse prévue, inscrit tel quel", () => {
-    expect(reponsesPrevues([assistant("outil-alpha", ["web_desactivee"], "A01")], [])).toBe(0);
+    expect(reponsesPrevues([assistant("outil-alpha", ["web_desactivee"], "A01")], [], 2)).toBe(0);
   });
 });
 
@@ -107,14 +123,17 @@ describe("D59 (17) : réponses obtenues après l'interrogation", () => {
 });
 
 describe("D59 (17) : inscription des réponses obtenues dans run.json", () => {
-  const RUN = { id: "run", statut: "en_cours", reponses: { prevues: 4 } } as const;
+  const RUN = { id: "run", statut: "en_cours", reponses: { echantillons_par_question: 2, prevues: 4 } } as const;
 
-  it("inscrit le nombre à côté des prévues, sans toucher au reste du run", () => {
-    expect(inscrireReponsesObtenues(RUN, 3)).toEqual({ issue: "inscrite", run: { id: "run", statut: "en_cours", reponses: { prevues: 4, obtenues: 3 } } });
+  it("inscrit le nombre à côté des prévues, sans toucher au reste du run ni au nombre d'échantillons", () => {
+    expect(inscrireReponsesObtenues(RUN, 3)).toEqual({
+      issue: "inscrite",
+      run: { id: "run", statut: "en_cours", reponses: { echantillons_par_question: 2, prevues: 4, obtenues: 3 } },
+    });
   });
 
   it("zéro obtenue sur quatre prévues : inscrit 0", () => {
-    expect(inscrireReponsesObtenues(RUN, 0)).toEqual({ issue: "inscrite", run: { ...RUN, reponses: { prevues: 4, obtenues: 0 } } });
+    expect(inscrireReponsesObtenues(RUN, 0)).toEqual({ issue: "inscrite", run: { ...RUN, reponses: { echantillons_par_question: 2, prevues: 4, obtenues: 0 } } });
   });
 
   it("plus d'obtenues que de prévues : refus", () => {
@@ -122,10 +141,10 @@ describe("D59 (17) : inscription des réponses obtenues dans run.json", () => {
   });
 
   it("déjà inscrit, même nombre : rien n'est réécrit", () => {
-    expect(inscrireReponsesObtenues({ ...RUN, reponses: { prevues: 4, obtenues: 3 } }, 3)).toEqual({ issue: "deja_inscrite" });
+    expect(inscrireReponsesObtenues({ ...RUN, reponses: { echantillons_par_question: 2, prevues: 4, obtenues: 3 } }, 3)).toEqual({ issue: "deja_inscrite" });
   });
 
   it("déjà inscrit, nombre différent : refus, jamais réécrit", () => {
-    expect(() => inscrireReponsesObtenues({ ...RUN, reponses: { prevues: 4, obtenues: 3 } }, 2)).toThrow(ReponsesObtenuesRefusees);
+    expect(() => inscrireReponsesObtenues({ ...RUN, reponses: { echantillons_par_question: 2, prevues: 4, obtenues: 3 } }, 2)).toThrow(ReponsesObtenuesRefusees);
   });
 });

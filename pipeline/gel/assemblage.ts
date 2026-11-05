@@ -55,6 +55,7 @@ import { grainesDuRun } from "./graines.ts";
 import type { GrainesDuRun, ValeursDesGraines } from "./graines.ts";
 import { exigerFenetreApresDateGel } from "./instants.ts";
 import type { PrecedentDuGel } from "./precedent.ts";
+import { ECHANTILLONS } from "../interrogation/conditions.ts";
 import { reponsesPrevues } from "../run/reponses.ts";
 import { STATUT_PLANIFIE } from "../run/types.ts";
 import { candidatsInterroges } from "../../analysis/candidats-interroges.ts";
@@ -250,7 +251,11 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
       chemin: `runs/${prepare.date_repertoire}/questions.json`,
       sha256: sha256(textes.questions),
     },
-    reponses: { prevues: reponsesPrevues(prepare.perimetre.perimetre.outils, questionsTireesAuGel(prepare, tirage)) },
+    // D75 (14) : le nombre d'échantillons du plan est inscrit au gel ; le plan d'un run gelé le relit ici.
+    reponses: {
+      echantillons_par_question: ECHANTILLONS,
+      prevues: reponsesPrevues(prepare.perimetre.perimetre.outils, questionsTireesAuGel(prepare, tirage), ECHANTILLONS),
+    },
   };
 }
 

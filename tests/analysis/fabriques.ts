@@ -246,9 +246,13 @@ export function candidat(partiel: Partiel<CandidatAuGel> = {}): CandidatAuGel {
   }, partiel);
 }
 
+/** Libellé et éditeur (D84) propres à chaque `outil_id`, sauf s'ils sont donnés. */
 export function outil(partiel: Partiel<OutilAuGel> = {}): OutilAuGel {
+  const outil_id = partiel.outil_id ?? "outil-alpha";
   return fusionner<OutilAuGel>({
-    outil_id: "outil-alpha",
+    outil_id,
+    libelle: `Libellé de ${outil_id}`,
+    editeur: `Éditeur de ${outil_id}`,
     famille: "assistant",
     inclus: true,
     mode_de_tete: "web_desactivee",

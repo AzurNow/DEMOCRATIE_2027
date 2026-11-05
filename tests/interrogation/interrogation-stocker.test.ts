@@ -76,7 +76,7 @@ const RECU_PAR = adaptateurSimule("cle-de-test").normalisation;
 /** La première requête du plan du run gelé, et son journal sous `volume/tentatives/`. */
 function premiereRequete(repertoire: string): { readonly requete: RequetePlanifiee; readonly journal: JournalRequete; readonly debut_ms: number } {
   const gele = lireRunGele(repertoire, () => []);
-  const [requete] = [...planifier(gele.outils, gele.questions_tirees).values()].flat();
+  const [requete] = [...planifier(gele.outils, gele.questions_tirees, gele.echantillons).values()].flat();
   if (requete === undefined) throw new Error("plan vide");
   const tentatives = join(repertoire, "volume", "tentatives");
   mkdirSync(tentatives, { recursive: true });

@@ -256,6 +256,11 @@ export interface RunLu extends Run {
   };
   readonly versions: { readonly donnees_commit: string };
   readonly tirage: { readonly chemin: string; readonly sha256: string };
+  /**
+   * D75 (14) : le nombre d'échantillons du plan, inscrit au gel et exigé par le schéma ; le plan
+   * d'interrogation du run se reconstruit sur lui (`pipeline/interrogation/plan-du-run.ts`).
+   */
+  readonly reponses: { readonly echantillons_par_question: 1 | 2 };
   readonly depot?: { readonly archives: readonly { readonly nom: string; readonly sha256: string }[] };
   readonly juges: readonly JugeDuRun[];
   readonly taux_echantillon_humain: TauxEchantillonHumain;

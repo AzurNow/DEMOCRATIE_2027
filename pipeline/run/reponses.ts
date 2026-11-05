@@ -20,11 +20,14 @@
 
 import { reponsesApiDuRun, requetesSansReponse, type RequeteDuPlan } from "../../analysis/seuils.ts";
 import type { Reponse } from "../../analysis/types.ts";
+import type { EchantillonsParQuestion } from "../interrogation/conditions.ts";
 import { planifier, type QuestionAInterroger } from "../interrogation/plan.ts";
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
 
 /** `schema/run.schema.json#/properties/reponses`. */
 export interface ReponsesDuRun {
+  /** D75 (14) : inscrit au gel avec `prevues`, recopié tel quel à l'inscription des obtenues. */
+  readonly echantillons_par_question: EchantillonsParQuestion;
   readonly prevues: number;
   readonly obtenues?: number;
 }
@@ -46,9 +49,12 @@ export class ReponsesObtenuesRefusees extends Error {
   }
 }
 
-/** Nombre de requêtes du plan d'interrogation : ce que `pnpm geler` inscrit dans `run.json#/reponses/prevues`. */
-export function reponsesPrevues(outils: readonly OutilDeRun[], questions_tirees: readonly QuestionAInterroger[]): number {
-  return [...planifier(outils, questions_tirees).values()].reduce((total, file) => total + file.length, 0);
+/**
+ * Nombre de requêtes du plan d'interrogation : ce que `pnpm geler` inscrit dans `run.json#/reponses/prevues`,
+ * pour le nombre d'échantillons `echantillons` qu'il inscrit à côté (D75 (14)).
+ */
+export function reponsesPrevues(outils: readonly OutilDeRun[], questions_tirees: readonly QuestionAInterroger[], echantillons: EchantillonsParQuestion): number {
+  return [...planifier(outils, questions_tirees, echantillons).values()].reduce((total, file) => total + file.length, 0);
 }
 
 /** Nombre de réponses obtenues d'une interrogation terminée, rapprochées du plan. */
@@ -75,5 +81,5 @@ export function inscrireReponsesObtenues<T extends RunAvecReponses>(run: T, obte
   const deja = run.reponses.obtenues;
   if (deja === obtenues) return { issue: "deja_inscrite" };
   if (deja !== undefined) throw new ReponsesObtenuesRefusees(`run.json porte déjà ${deja} réponse(s) obtenue(s), et non ${obtenues} ; un nombre inscrit n'est jamais réécrit.`);
-  return { issue: "inscrite", run: { ...run, reponses: { prevues, obtenues } } };
+  return { issue: "inscrite", run: { ...run, reponses: { ...run.reponses, obtenues } } };
 }

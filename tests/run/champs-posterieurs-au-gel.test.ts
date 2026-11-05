@@ -147,8 +147,12 @@ describe("empreinte du run publiée : non-régression (aucune empreinte publiée
   // Relevées de nouveau au protocole 0.32 (D74 (17)) : le tirage de la fixture porte désormais
   // incompatibles_au_gel, son SHA-256 change, et run.json#/tirage/sha256 avec lui ; c'est le seul
   // champ de run.json modifié (avant : 6e0ef9a5…02234 au gel, aae9edbf…06373 noté).
-  const EMPREINTE_AU_GEL = "833c5f2d2d3635f18a72a71411a4eaeafde8f3c40f8f1f39dfe2a8f76adcc705";
-  const EMPREINTE_NOTE = "35bfc9698c438a9aece2381b65697bbc09edf791f78771f5fdad921bd8bc3cc6";
+  // Relevées de nouveau pour D75 (14), (21) et D84 : la fixture porte application_testee,
+  // reponses.echantillons_par_question et le libellé et l'éditeur de chaque outil, champs figés au
+  // gel ; retirés, la fixture redonne exactement les valeurs précédentes (833c5f2d…cc705 au gel,
+  // 35bfc969…c3cc6 noté), recalculées lors de ce relevé.
+  const EMPREINTE_AU_GEL = "ea240782cade626e3cddbe417a77bab4994531ffd63661a15d1793ed51c5a15e";
+  const EMPREINTE_NOTE = "f55087e7c667c206f432d2a43a9fd814f29db4d591d9f8028f79846ffc7d0284";
 
   function note(run: Objet): Objet {
     return { ...run, reponses: { ...(run["reponses"] as Objet), obtenues: 50 }, contrefactuel_candidats: { x: 1 } };
