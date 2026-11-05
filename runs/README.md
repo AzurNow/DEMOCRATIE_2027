@@ -470,10 +470,12 @@ du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.sch
   exactitude de chaque comparateur inclus sur les items P de référence, avec intervalles (clé
   `<outil> / lecture / <métrique> / global`), lues dans `volume/lectures-comparateur/*.json`
   (`lecture-comparateur.schema.json`, dossier exigé d'un run qui inclut un comparateur) ; la note de
-  chaque lecture affichée est retenue depuis ses notations humaines du volume par la règle de
-  l'échantillon (`pipeline/notation/lectures-comparateur.ts`), jamais lue dans `verdicts/` ; sans
-  comparateur inclus, `aucun_comparateur_inclus`. Ni les taux du canal application, ni la liste
-  des erreurs graves ne sont encore calculés.
+  chaque lecture affichée est lue dans son verdict de lecture (`verdicts/`, mode
+  `lecture_comparateur_humaine`, écrit par la chaîne de notation, D87) et recoupée avec la règle de
+  l'échantillon sur ses notations humaines (`pipeline/notation/lectures-comparateur.ts`, D75 (16)) ;
+  un comparateur dont une lecture affichée n'a pas de verdict est publié absent, motif
+  `lectures_sans_verdict` ; sans comparateur inclus, `aucun_comparateur_inclus`. Ni les taux du canal
+  application, ni la liste des erreurs graves ne sont encore calculés.
 - **Exploratoire.** `exploratoire.correlation_couverture` (Spearman par couple comparé, §2, sans
   intervalle ; sans objet en `entre_deux_tours`, motif `moins_de_trois_candidats`) et
   `exploratoire.ecart_api_application` (§6, QR8 ; sans objet, `aucune_reponse_application`, quand le
@@ -610,7 +612,10 @@ Ce que la commande ajoute sous `<sortie>/<date>/` :
   deux côtés dans `volume/notations/`, puis son inscription dans `run.json`
   (`contrefactuel_candidats`, juges, taux de l'échantillon humain), une seule fois ;
 - la notation de masse par les juges non retirés (`volume/notations/`) et un verdict par réponse
-  décidée (`verdicts/`).
+  décidée (`verdicts/`) ;
+- puis, si `volume/lectures-comparateur/` existe, un verdict par lecture affichée dont la note est
+  retenue par ses notations humaines (`verdicts/`, D87) ; sinon la ligne « Lectures de comparateur »
+  du bilan dit `lectures_non_collectees` (le run simulé n'en a pas).
 
 Les réponses qui attendent un humain ne reçoivent aucun verdict : le bilan imprimé, relu du disque,
 les compte par motif. Relancer sur la même sortie ne réécrit aucun fichier.
