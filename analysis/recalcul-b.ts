@@ -15,7 +15,9 @@
  *
  * - refuse sans `metriques.json` (`MetriquesDeReferenceAbsentes`) : un recalcul daté se publie à côté
  *   d'un fichier des métriques, jamais à sa place ;
- * - refuse si le fichier daté du jour existe déjà (`RecalculBDejaPublie`) : jamais réécrit non plus ;
+ * - refuse si le fichier daté du jour existe déjà (`RecalculBDejaPublie`) : jamais réécrit non plus,
+ *   même par un recalcul concurrent qui le publierait pendant celui-ci (publication par lien dur,
+ *   `ecriture-une-fois.ts`) ;
  * - refuse si les entrées autres que les contestations ont changé depuis `metriques.json` (réponses,
  *   verdicts, notations, tirage, données, paramètres, partage de la population :
  *   `EntreesDuRecalculDivergentes`). §8 : « Chaque recalcul garde le partage […] du calcul
@@ -31,7 +33,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { comparerChaines } from "../outils/ordre-chaines.ts";
 import { jsonDe, valider } from "../outils/schemas/valider.ts";
@@ -50,6 +52,7 @@ import {
   type OptionsLectureAnalyse,
   type ParametresAnalyse,
 } from "./analyse-du-run.ts";
+import { ecrireUneFois } from "./ecriture-une-fois.ts";
 import { assembler } from "./filtre.ts";
 import type { Recalcul } from "./robustesse.ts";
 import { tauxRecalcule } from "./robustesse-taux.ts";
@@ -191,8 +194,9 @@ export interface ResultatRecalculB {
 
 /**
  * `pnpm recalcul-b` : lire le run et `metriques.json`, recalculer (b), valider, écrire le fichier
- * daté. Rien n'est écrit sur un refus ; le fichier naît entier (écriture provisoire, puis
- * renommage).
+ * daté. Rien n'est écrit sur un refus ; le fichier naît entier (temporaire, puis lien dur exclusif).
+ * Le premier `existsSync` évite un calcul inutile ; c'est le lien qui tranche : un fichier daté
+ * publié entre-temps par un autre recalcul lève `RecalculBDejaPublie` et reste intact.
  */
 export function recalculerEtEcrireB(repertoire_run: string, options: OptionsLectureAnalyse, date: string): ResultatRecalculB {
   if (!DATE_CIVILE.test(date)) throw new Error(`Date du recalcul (b) mal formée : « ${date} » (AAAA-MM-JJ attendu).`);
@@ -204,8 +208,6 @@ export function recalculerEtEcrireB(repertoire_run: string, options: OptionsLect
   const document = recalculB(lireEntreesDuRun(repertoire_run, options), reference, date);
   const texte = `${JSON.stringify(document, null, 2)}\n`;
   mkdirSync(dirname(chemin), { recursive: true });
-  const provisoire = `${chemin}.${process.pid}.provisoire`;
-  writeFileSync(provisoire, texte, "utf8");
-  renameSync(provisoire, chemin);
+  ecrireUneFois(dirname(chemin), basename(chemin), texte, (deja) => new RecalculBDejaPublie(deja));
   return { chemin, document };
 }
