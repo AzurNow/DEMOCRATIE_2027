@@ -27,6 +27,8 @@ vi.setConfig({ testTimeout: 60_000 });
 
 const RACINE = resolve(import.meta.dirname, "../..");
 const PROFILS = join(import.meta.dirname, "fixtures/run-gele/profils-simules.json");
+/** `runs/` du projet : lu seulement pour la fenêtre d'une réexécution, jamais ici (run pilote). */
+const RUNS_DU_PROJET = join(RACINE, "runs");
 
 const temporaires: string[] = [];
 let gabarit: string;
@@ -73,7 +75,7 @@ const RECU_PAR = adaptateurSimule("cle-de-test").normalisation;
 
 /** La première requête du plan du run gelé, et son journal sous `volume/tentatives/`. */
 function premiereRequete(repertoire: string): { readonly requete: RequetePlanifiee; readonly journal: JournalRequete; readonly debut_ms: number } {
-  const gele = lireRunGele(repertoire);
+  const gele = lireRunGele(repertoire, () => []);
   const [requete] = [...planifier(gele.outils, gele.questions_tirees).values()].flat();
   if (requete === undefined) throw new Error("plan vide");
   const tentatives = join(repertoire, "volume", "tentatives");
@@ -88,7 +90,7 @@ describe("pnpm interrogation:stocker", () => {
     journal.inscrireDebut(1, instantParis(debut_ms), cleDe(requete));
     journal.garderReception({ numero: 1, statut_http: 200, debut_ms, reception_ms: debut_ms + 1_200, octets_sha256: empreinteOctets(CORPS), normalisation: RECU_PAR });
     journal.garderOctets(1, CORPS);
-    const run = await lancerRunGeleSimule({ repertoire, profils: PROFILS });
+    const run = await lancerRunGeleSimule({ repertoire, profils: PROFILS, runs: RUNS_DU_PROJET });
     expect(run.execution.en_attente_operateur.map((a) => a.requete)).toEqual([cleDe(requete)]);
     const ecritesAvant = readdirSync(join(repertoire, "volume", "reponses")).length;
 
@@ -100,7 +102,7 @@ describe("pnpm interrogation:stocker", () => {
     const reponses = DepotReponses.ouvrir(join(repertoire, "volume", "reponses")).toutes();
     expect(reponses).toHaveLength(ecritesAvant + 1);
     const stockee = reponses.find((r) => cleDeRequete(r) === cleDeRequete(requete));
-    expect(stockee).toMatchObject({ statut_reponse: "obtenue", run_id: lireRunGele(repertoire).run_id });
+    expect(stockee).toMatchObject({ statut_reponse: "obtenue", run_id: lireRunGele(repertoire, () => []).run_id });
     expect(stockee?.statut_reponse === "obtenue" ? stockee.metadonnees.horodatage_reponse : null).toBe(instantParis(debut_ms + 1_200));
     expect(Array.from(readFileSync(join(repertoire, "volume", "tentatives", nomOctets(cleDe(requete), 1))))).toEqual(Array.from(CORPS));
 

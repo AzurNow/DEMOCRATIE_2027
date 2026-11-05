@@ -43,7 +43,11 @@ export function obsolescenceFraiche(date_changement: string, date_gel: string): 
  * - sans drapeau `obsolescence`, la fraîcheur est sans objet (D17) ;
  * - la date du changement est celle de l'item O soumis ; sans item O, elle manque (`sans_item_o`) ;
  *   avec des items O de dates différentes, la fraîcheur est ambiguë (`ambigue`). Jamais une date
- *   choisie.
+ *   choisie. Côté juge, ce cas est un défaut du banc qui arrête la notation, et non un renvoi (§7,
+ *   protocole 0.32, D74 (25)) ; côté humain, un refus de saisie.
+ * - chaque date est lue comme date civile (`instantDeDateCivile`) avant toute comparaison : une
+ *   graphie hors AAAA-MM-JJ lève `DateCivileInvalide`, jamais comptée comme une seconde date ni
+ *   rapprochée d'une autre. Deux dates valides égales sont alors la même chaîne.
  */
 export type FraicheurDesItems =
   | { readonly statut: "sans_objet" }
@@ -57,9 +61,15 @@ export function fraicheurDesItems(
   date_gel: string,
 ): FraicheurDesItems {
   if (!drapeaux.includes("obsolescence")) return { statut: "sans_objet" };
-  const dates = [...new Set(items.flatMap((item) => (item.obsolescence === undefined ? [] : [item.obsolescence.date_changement])))];
+  const dates = [...new Set(items.flatMap((item) => (item.obsolescence === undefined ? [] : [dateCivileLue(item.obsolescence.date_changement)])))];
   const [date, ...autres] = dates;
   if (date === undefined) return { statut: "sans_item_o" };
   if (autres.length > 0) return { statut: "ambigue", dates };
   return { statut: "calculee", fraiche: obsolescenceFraiche(date, date_gel) };
+}
+
+/** La date, une fois vérifiée comme date civile réelle de forme AAAA-MM-JJ ; sinon `DateCivileInvalide`. */
+function dateCivileLue(date: string): string {
+  instantDeDateCivile(date);
+  return date;
 }

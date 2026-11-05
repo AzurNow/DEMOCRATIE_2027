@@ -17,7 +17,7 @@
 
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import type { Ulid } from "../../analysis/types.ts";
-import { FenetreRefusee, ouvrirFenetre, tentativePeutDemarrer, type Fenetre, type RunDeLaFenetre } from "../interrogation/fenetre.ts";
+import { FenetreRefusee, ouvrirFenetre, tentativePeutDemarrer, type Fenetre, type RunDeLaFenetre, type RunsDuDepot } from "../interrogation/fenetre.ts";
 import { lireInstant } from "../interrogation/heure-paris.ts";
 import type { RobustesseLue } from "./metriques.ts";
 import type { CodeCritere, Critere } from "./types.ts";
@@ -154,20 +154,22 @@ export interface DemarragesDeReponse {
   readonly metadonnees?: { readonly horodatage_requete: string };
 }
 
-/** Ce que la case lit de `run.json` : la fenêtre, et le type et l'instant de gel qui règlent son ouverture (§6). */
+/** Ce que la case lit de `run.json` : la fenêtre, et le type, l'instant de gel et le run remplacé qui règlent son ouverture (§6). */
 export interface RunDuConstatFenetre extends RunDeLaFenetre {
   readonly fenetre: { readonly debut: string; readonly fin: string };
 }
 
 /**
  * Le défaut de `run.json#/fenetre` au regard du §6, ou `null` : ouverte selon la règle de son type
- * (mardi 6 h pour un run régulier, 6 h le lendemain du gel pour un run supplémentaire), durée 48 h.
+ * (mardi 6 h pour un run régulier, 6 h le lendemain du gel pour un run supplémentaire, la règle du
+ * run remplacé pour une réexécution), durée 48 h. Une chaîne de remplacements illisible n'est pas un
+ * défaut de fenêtre : son erreur remonte.
  */
-function defautDeFenetre(run: RunDuConstatFenetre): string | null {
+function defautDeFenetre(run: RunDuConstatFenetre, runs_du_depot: RunsDuDepot): string | null {
   const { fenetre } = run;
   let ouverte: Fenetre;
   try {
-    ouverte = ouvrirFenetre(fenetre.debut, run);
+    ouverte = ouvrirFenetre(fenetre.debut, run, runs_du_depot);
   } catch (erreur) {
     if (erreur instanceof FenetreRefusee) return erreur.message;
     throw erreur;
@@ -188,11 +190,15 @@ function demarrages(reponse: DemarragesDeReponse): readonly string[] {
  * aucune tentative ne démarre à fin ou après). Une manquante hors fenêtre sans tentative n'a rien
  * démarré ; une réponse qui arrive après fin, démarrée avant, est dans la fenêtre.
  */
-export function constatInterrogationDansLaFenetre(run: RunDuConstatFenetre, reponses: readonly DemarragesDeReponse[]): Constat {
+export function constatInterrogationDansLaFenetre(
+  run: RunDuConstatFenetre,
+  reponses: readonly DemarragesDeReponse[],
+  runs_du_depot: RunsDuDepot,
+): Constat {
   const nom = "interrogation_dans_la_fenetre";
-  const defaut = defautDeFenetre(run);
+  const defaut = defautDeFenetre(run, runs_du_depot);
   if (defaut !== null) return { nom, fait: false, detail: defaut };
-  const ouverte = ouvrirFenetre(run.fenetre.debut, run);
+  const ouverte = ouvrirFenetre(run.fenetre.debut, run, runs_du_depot);
   const hors = reponses
     .filter((r) => r.contexte === "run" && r.canal === "api")
     .flatMap(demarrages)

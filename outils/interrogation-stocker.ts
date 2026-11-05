@@ -36,6 +36,8 @@ import { analyserArguments } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const PROFILS_RUN_GELE = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-gele/profils-simules.json");
+/** `runs/` du dépôt : la fenêtre d'une réexécution suit la règle du run qu'elle remplace (D74 (19)). */
+const RUNS_DU_DEPOT = resolve(import.meta.dirname, "../runs");
 const USAGE = "usage : pnpm interrogation:stocker --run=<répertoire> [--requete=<clé>]";
 
 class ArgumentsStockageRefuses extends Error {
@@ -82,7 +84,8 @@ function imprimer(resultat: ResultatStockageGeleSimule): void {
 function principal(): void {
   try {
     const { repertoire, requete } = demande(process.argv.slice(2));
-    const options = requete === undefined ? { repertoire, profils: PROFILS_RUN_GELE } : { repertoire, profils: PROFILS_RUN_GELE, requete };
+    const base = { repertoire, profils: PROFILS_RUN_GELE, runs: RUNS_DU_DEPOT };
+    const options = requete === undefined ? base : { ...base, requete };
     const resultat = stockerRunGeleSimule(options);
     imprimer(resultat);
     process.exitCode = codeSortieStockage(resultat.stockage);

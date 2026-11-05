@@ -94,6 +94,8 @@ export interface RunDeRuns {
   readonly questions: FichierDeclare | undefined;
   /** D51 (2) : présente si le run a été invalidé ; lue pour `pnpm geler --remplace` (`remplacement.ts`). */
   readonly invalidation?: { readonly motif: string; readonly date: string };
+  /** D51 (3) : présent sur une réexécution ; lu pour la règle d'ouverture de sa fenêtre (`fenetre.ts:typeDOrigine`, D74 (19)). */
+  readonly run_remplace_id?: string;
 }
 
 /** `run.json#/run_precedent` quand un précédent existe. */
@@ -190,6 +192,7 @@ export function runDeRuns(repertoire: string, texte: string, provenance: string)
     const objet = objetJson(texte);
     const date_gel = fragment<string>(objet, "date_gel", provenance);
     const invalidation = fragmentSiPresent<NonNullable<RunDeRuns["invalidation"]>>(objet, "invalidation", provenance);
+    const run_remplace_id = fragmentSiPresent<string>(objet, "run_remplace_id", provenance);
     return {
       repertoire,
       id: fragment<string>(objet, "id", provenance),
@@ -199,6 +202,7 @@ export function runDeRuns(repertoire: string, texte: string, provenance: string)
       tirage: fragment<FichierDeclare>(objet, "tirage", provenance),
       questions: fragmentSiPresent<FichierDeclare>(objet, "questions", provenance),
       ...(invalidation === undefined ? {} : { invalidation }),
+      ...(run_remplace_id === undefined ? {} : { run_remplace_id }),
     };
   });
 }

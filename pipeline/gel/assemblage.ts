@@ -32,7 +32,7 @@
 import { createHash } from "node:crypto";
 import { validerFragment, valider } from "../../outils/schemas/valider.ts";
 import { ouvrirFenetre } from "../interrogation/fenetre.ts";
-import type { Fenetre } from "../interrogation/fenetre.ts";
+import type { Fenetre, RunsDuDepot } from "../interrogation/fenetre.ts";
 import { dateParis, lireInstant } from "../interrogation/heure-paris.ts";
 import { construirePerimetre } from "../questions/charger-perimetre.ts";
 import type { PerimetreCharge } from "../questions/charger-perimetre.ts";
@@ -90,13 +90,22 @@ export interface GelPrepare {
   readonly date_repertoire: string;
 }
 
+/** Ce que la phase 1 lit du run à geler pour régler l'ouverture de sa fenêtre (§6). */
+export interface RunAPreparer {
+  readonly type_run: string;
+  /** D51 (3) : le run invalidé que remplace une réexécution, déjà vérifié sous `runs/` ; `undefined` pour tout autre type. */
+  readonly run_remplace_id: string | undefined;
+  /** Les runs de `runs/`, lus seulement pour une réexécution (D74 (19)). */
+  readonly runs_du_depot: RunsDuDepot;
+}
+
 /**
  * Phase 1 : périmètre, fenêtre, questions. Lève sur toute entrée qui ne permet pas de geler, dont
  * une fenêtre ouverte à `date_gel` ou avant (D45 (4), D50, `instants.ts`), ou hors de la règle
  * d'ouverture du §6 pour `type_run` (mardi 6 h pour un run régulier, 6 h le lendemain du gel pour
- * un run supplémentaire : `fenetre.ts:ouvrirFenetre`).
+ * un run supplémentaire, la règle du run remplacé pour une réexécution : `fenetre.ts:ouvrirFenetre`).
  */
-export function preparer(entrees: EntreesGel, type_run: string): GelPrepare {
+export function preparer(entrees: EntreesGel, run: RunAPreparer): GelPrepare {
   const perimetre = construirePerimetre(
     entrees.perimetre_brut,
     { items: entrees.items, mesures: entrees.mesures, alias_aveugles: entrees.configuration.alias_aveugles },
@@ -104,7 +113,8 @@ export function preparer(entrees: EntreesGel, type_run: string): GelPrepare {
   );
   // §7 (0.31, D73 (7)) : la liste déclarée des outils de l'éditeur de chaque juge ne nomme que des outils du run.
   exigerOutilsDesEditeursDuRun(entrees.configuration.juges, perimetre.perimetre.outils);
-  const fenetre = ouvrirFenetre(entrees.configuration.fenetre_debut, { type_run, date_gel: perimetre.date_gel });
+  const remplace = run.run_remplace_id === undefined ? {} : { run_remplace_id: run.run_remplace_id };
+  const fenetre = ouvrirFenetre(entrees.configuration.fenetre_debut, { type_run: run.type_run, date_gel: perimetre.date_gel, ...remplace }, run.runs_du_depot);
   const taches = tachesDe({ items: entrees.items, mesures: entrees.mesures, candidats: perimetre.perimetre.candidats });
   const questions = questionsAuGel(taches, entrees.formulations, perimetre.date_gel);
   const date_gel_ms = lireInstant(perimetre.date_gel, `${entrees.provenance_perimetre}, date_gel`);
