@@ -13,7 +13,7 @@ clôture, jamais empilée.
 
 ## Installation dans le cloud
 
-Suivre « Démarrer depuis un clone neuf » de `CLAUDE.md` : Node 22 (`.nvmrc`), pnpm par corepack,
+Suivre « Démarrer depuis un clone neuf » de `README.md` : Node 22 (`.nvmrc`), pnpm par corepack,
 uv puis `uv sync --frozen`. Sur une machine Linux neuve (Debian/Ubuntu), avant : `sudo apt install
 git python3-venv curl`, nvm (script d'installation du README de https://github.com/nvm-sh/nvm),
 `git config --global user.name …` et `user.email …`, GitHub CLI (https://cli.github.com) puis
@@ -47,7 +47,11 @@ Décision de l'auteur du 2026-11-01 :
   recommandée).
 - Fusionnées le 2026-11-05 : #302 à #304 (code de D74), #305 (protocole 0.33), #306 (plan de la
   page pédagogique, `docs/PLAN-PAGE-PEDAGOGIQUE.md`, non lancé : l'auteur dira quand commencer),
-  #307 (compétence `revue-contexte-agentique`).
+  #307 (compétence `revue-contexte-agentique`), #308 (revue du contexte agentique, D76 à D80).
+- D76 à D80 tranchées le 2026-11-05 (option recommandée). D76 à D78 appliquées au contexte
+  (`.claude/settings.json`, agents codeurs, `README.md`). **#309, protocole 0.34 (D79)**, attend la
+  fusion de l'auteur ; le code de D79 (`pipeline/notation/file-humaine.ts`) est préparé sur une
+  branche `lots/d79-ordre-file-humaine`, PR ouverte après cette fusion.
 - **Code restant de D75** : la liste « Code restant » du champ `retenu` de D75 dans
   `docs/feuille-de-route.json`, points (2), (4), (6), (7), (8), (12) à (17), (20), (21), (24) à (27).
   Le point (24) touche l'en-tête de `prompts/judge-1.0.0.md` : zone d'arrêt, PR distincte.
@@ -59,14 +63,15 @@ Décision de l'auteur du 2026-11-01 :
 
 ## Ce qui était en cours
 
-Rien.
+Le code de D79, en attente de la fusion de #309.
 
 ## Prochaines tâches, par priorité
 
 1. **Code restant de D75** (ci-dessus), par PR tirées de `main` ; (24) dans sa PR à part.
-2. **Passe `conformite-protocole`** sur la 0.33 : la matrice date du 2026-11-03 (0.30), et D74 et
+2. **D80** : chaîne simulée continue du gel aux métriques, après le code de D75 (`retenu` de D80).
+3. **Passe `conformite-protocole`** sur la 0.34 : la matrice date du 2026-11-03 (0.30), et D74 et
    D75 l'ont fait bouger.
-3. **Site** : le plan de la page pédagogique est accordé mais non lancé ; le site fonctionnel ne
+4. **Site** : le plan de la page pédagogique est accordé mais non lancé ; le site fonctionnel ne
    commence qu'après le code de D75, la matrice de conformité close et une revue de code
    (`docs/PLAN-PAGE-PEDAGOGIQUE.md`, « Place dans le projet »).
 
