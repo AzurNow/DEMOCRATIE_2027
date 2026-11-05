@@ -1,0 +1,6 @@
+/* Ordre voulu : jetons, polices, base, mise en page, mouvement (le mouvement a le dernier mot). */
+@import "./jetons.css";
+@import "./polices.css";
+@import "./base.css";
+@import "./mise-en-page.css";
+@import "./mouvement.css";

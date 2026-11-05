@@ -1,0 +1,335 @@
+/* Mise en page : mobile d'abord (320 px, gouttière 16 px), élargie à partir de 48 rem. */
+
+/* ---- En-tête ---- */
+
+.entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem max(var(--gouttiere), calc((100% - var(--largeur-page)) / 2));
+  background: var(--fond-section);
+  border-bottom: var(--trait) solid var(--bordure);
+}
+
+.entete__nom {
+  margin: 0;
+  font-family: var(--police-titre);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--texte);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.entete__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.25rem;
+  flex: 1 1 100%;
+  order: 3;
+}
+
+.entete__lien {
+  display: inline-block;
+  padding: 0.5rem 0.6rem;
+  color: var(--texte);
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: var(--trait) solid transparent;
+}
+
+.entete__lien:hover {
+  border-bottom-color: var(--accent-2);
+}
+
+.lien-evitement {
+  position: absolute;
+  left: var(--gouttiere);
+  top: 0;
+  padding: 0.6rem 1rem;
+  background: var(--fond);
+  color: var(--texte);
+  border: var(--trait) solid var(--focus);
+  transform: translateY(-120%);
+}
+
+.lien-evitement:focus {
+  transform: none;
+  z-index: 20;
+}
+
+.bascule-theme {
+  margin-left: auto;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--fond);
+  color: var(--texte);
+  border: var(--trait) solid var(--bordure);
+  box-shadow: 3px 3px 0 var(--bordure);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bascule-theme[hidden] {
+  display: none;
+}
+
+.bascule-theme:hover {
+  border-color: var(--accent-1);
+  box-shadow: 3px 3px 0 var(--accent-1);
+}
+
+.bascule-theme:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--bordure);
+}
+
+@media (min-width: 48rem) {
+  .entete {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .entete {
+    flex-wrap: nowrap;
+  }
+
+  .entete__nav {
+    flex: 1 1 auto;
+    order: 0;
+    justify-content: center;
+  }
+
+  .bascule-theme {
+    margin-left: 0;
+  }
+}
+
+/* ---- Sections ---- */
+
+.section {
+  padding: 2.5rem max(var(--gouttiere), calc((100% - var(--largeur-page)) / 2));
+}
+
+.section:nth-of-type(even) {
+  background: var(--fond-section);
+}
+
+@media (min-width: 48rem) {
+  .section {
+    padding-block: 4rem;
+    padding-inline: max(2rem, calc((100% - var(--largeur-page)) / 2));
+  }
+}
+
+/* Accroche : texte puis illustration, côte à côte en large. */
+.section--accroche {
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+@media (min-width: 48rem) {
+  .section--accroche {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 3rem;
+  }
+}
+
+/* ---- Illustrations (emplacement au format fixe) ---- */
+
+.illustration {
+  margin: 0;
+}
+
+.illustration__cadre {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--px-ciel);
+  border: var(--trait) solid var(--px-encre);
+  box-shadow: var(--ombre-dure) var(--ombre-dure) 0 var(--accent-1);
+  image-rendering: pixelated;
+}
+
+.illustration__cadre > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- Parcours : sept étapes, image/texte alternés ---- */
+
+.etapes {
+  display: grid;
+  gap: 2.5rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.etape {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.etape__numero {
+  margin: 0 0 0.25rem;
+  color: var(--accent-1);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}
+
+.etape__titre {
+  font-size: clamp(1.125rem, 4.5vw, 1.5rem);
+}
+
+.etape__pourquoi {
+  padding-left: 0.75rem;
+  border-left: 0.25rem solid var(--accent-2);
+}
+
+@media (min-width: 48rem) {
+  .etapes {
+    gap: 4rem;
+  }
+
+  .etape {
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .etape:nth-child(even) .illustration {
+    order: 2;
+  }
+}
+
+/* ---- Cartes des questions (QR) ---- */
+
+.cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.carte {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  background: var(--fond);
+  border: var(--trait) solid var(--bordure);
+  box-shadow: var(--ombre-dure) var(--ombre-dure) 0 var(--bordure);
+}
+
+.carte__code {
+  margin: 0 0 0.25rem;
+  color: var(--accent-2);
+  font-size: 0.875rem;
+}
+
+.carte__titre {
+  font-size: 1.0625rem;
+}
+
+.carte__metrique {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+/* ---- Limites ---- */
+
+.limites {
+  max-width: var(--largeur-texte);
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.limite {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--fond);
+  border-left: 0.5rem solid var(--accent-3);
+}
+
+.limite > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---- FAQ ---- */
+
+.faq {
+  max-width: var(--largeur-texte);
+  margin: 1.5rem 0 0;
+}
+
+.faq__item {
+  margin-bottom: 0.75rem;
+  background: var(--fond);
+  border: var(--trait) solid var(--bordure);
+}
+
+.faq__question {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  min-height: 2.75rem;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq__question::-webkit-details-marker {
+  display: none;
+}
+
+.faq__question::before {
+  content: "+";
+  flex: none;
+  width: 1.25rem;
+  color: var(--accent-1);
+  font-family: var(--police-titre);
+  text-align: center;
+}
+
+.faq__item[open] > .faq__question::before {
+  content: "\2212";
+}
+
+.faq__reponse {
+  padding: 0 1rem 0.5rem 3rem;
+}
+
+/* ---- Pied ---- */
+
+.pied {
+  padding: 2rem max(var(--gouttiere), calc((100% - var(--largeur-page)) / 2));
+  background: var(--fond-section);
+  border-top: var(--trait) solid var(--bordure);
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+
+.pied__liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.pied__liens li {
+  margin: 0;
+}

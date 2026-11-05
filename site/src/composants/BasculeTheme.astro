@@ -1,0 +1,41 @@
+---
+// Seul JavaScript de la page. Le bouton est masqué (`hidden`) tant que le script ne l'a pas montré :
+// sans JavaScript, la page suit prefers-color-scheme et aucun bouton mort n'apparaît.
+---
+
+<button class="bascule-theme" type="button" hidden>
+  <span class="bascule-theme__libelle">Passer au thème sombre</span>
+</button>
+
+<script is:inline>
+  (function () {
+    var bouton = document.querySelector(".bascule-theme");
+    if (!bouton) return;
+    var racine = document.documentElement;
+    var sombreSysteme = window.matchMedia("(prefers-color-scheme: dark)");
+
+    function themeActuel() {
+      return racine.getAttribute("data-theme") || (sombreSysteme.matches ? "sombre" : "clair");
+    }
+
+    function afficher() {
+      var cible = themeActuel() === "sombre" ? "clair" : "sombre";
+      bouton.querySelector(".bascule-theme__libelle").textContent = "Passer au thème " + cible;
+    }
+
+    bouton.addEventListener("click", function () {
+      var cible = themeActuel() === "sombre" ? "clair" : "sombre";
+      racine.setAttribute("data-theme", cible);
+      try {
+        localStorage.setItem("banc-theme", cible);
+      } catch (_erreur) {
+        // Stockage indisponible : le choix vaut pour cette page seulement.
+      }
+      afficher();
+    });
+
+    sombreSysteme.addEventListener("change", afficher);
+    afficher();
+    bouton.hidden = false;
+  })();
+</script>

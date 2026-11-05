@@ -1,0 +1,15 @@
+---
+// À placer dans <head>, avant les feuilles de style : pose le thème mémorisé avant le premier rendu,
+// pour éviter le flash. Sans choix mémorisé (ou stockage indisponible), la page suit le navigateur.
+---
+
+<script is:inline>
+  try {
+    var choix = localStorage.getItem("banc-theme");
+    if (choix === "clair" || choix === "sombre") {
+      document.documentElement.setAttribute("data-theme", choix);
+    }
+  } catch (_erreur) {
+    // Stockage indisponible : on suit prefers-color-scheme, sans erreur visible.
+  }
+</script>
