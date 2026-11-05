@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { MOTIFS_NOTATION } from "../../analysis/types.ts";
-import { construireCharge } from "../../pipeline/notation/charge-juge.ts";
+import { construireCharge, TroncatureContraireAuCanal } from "../../pipeline/notation/charge-juge.ts";
 import {
   construireVue,
   ExistencesIncoherentes,
@@ -22,7 +22,7 @@ import {
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemP } from "../aides/fabriques.ts";
-import { ALIAS_CANDIDATS_TEST, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
+import { ALIAS_CANDIDATS_TEST, pagesSansTexte, reponseApplication, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const LIEN_A = "https://exemple.invalid/a";
@@ -145,7 +145,7 @@ describe("aveuglement de la vue (D18)", () => {
     expect(vue.version_grille).toBe(VERSION_GRILLE_HUMAINE);
     expect(vue.version_vue).toBe(VERSION_VUE_ANNOTATEUR);
     expect(VERSION_GRILLE_HUMAINE).toMatch(/^grille-humaine-v\d+$/);
-    expect(VERSION_VUE_ANNOTATEUR).toBe("vue-annotateur-v3");
+    expect(VERSION_VUE_ANNOTATEUR).toBe("vue-annotateur-v4");
   });
 });
 
@@ -183,5 +183,41 @@ describe("verdicts d'existence des liens", () => {
 
   it("sans item de référence : erreur, rien contre quoi noter", () => {
     expect(() => construireVue({ ...demande(), references: [] })).toThrow(/aucun item de référence/);
+  });
+});
+
+/** D75 (24) : la vue suit la règle de la charge (D18 : un humain reçoit exactement ce que reçoit un juge). */
+describe("D75 (24) cas 4 : troncature dans la vue, même règle que la charge", () => {
+  function demandeApplication(app: DemandeVue["reponse"] = reponseApplication()): DemandeVue {
+    const liens = [...app.normalise.liens];
+    return { ...demande(), reponse: app, pages_citees: pagesSansTexte([...new Set(liens)]), existences: [...new Set(liens)].map((url) => existence(url)) };
+  }
+
+  it("D75 (24) : saisie de l'application, troncature absente de la vue comme de la charge", () => {
+    const d = demandeApplication();
+    const vue = construireVue(d);
+    const charge = construireCharge({ ...d, prompt: { chemin: "prompts/judge-primaire.md", version: "1.0.0" } });
+    expect("troncature" in vue.reponse).toBe(false);
+    expect(Object.keys(vue.reponse).sort()).toEqual(["liens", "refus_api", "texte"]);
+    const { version_vue: _v, version_grille: _g, reponse: reponseVue, ...resteVue } = vue;
+    const { prompt: _p, version_charge: _c, reponse: reponseCharge, ...resteCharge } = charge;
+    expect(resteVue).toEqual(resteCharge);
+    expect({ ...reponseVue, liens: reponseVue.liens.map((l) => l.url_citee) }).toEqual(reponseCharge);
+  });
+
+  it("D75 (24) : réponse de l'API, troncature présente dans la vue, recopiée telle quelle", () => {
+    for (const troncature of [true, false]) {
+      const r = reponse();
+      expect(construireVue(demande({ ...r, normalise: { ...r.normalise, troncature } })).reponse.troncature).toBe(troncature);
+    }
+  });
+
+  it("D75 (24) : réponse de l'API sans troncature, ou saisie qui en porte une : le même refus nommé que la charge", () => {
+    const r = reponse();
+    const { troncature: _t, ...sansTroncature } = r.normalise;
+    expect(() => construireVue(demande({ ...r, normalise: sansTroncature } as unknown as ReponseObtenue))).toThrow(TroncatureContraireAuCanal);
+    const app = reponseApplication();
+    const avec = { ...app, normalise: { ...app.normalise, troncature: false } } as unknown as DemandeVue["reponse"];
+    expect(() => construireVue(demandeApplication(avec))).toThrow(TroncatureContraireAuCanal);
   });
 });

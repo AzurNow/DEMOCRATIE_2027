@@ -3,7 +3,7 @@
 | Champ | Valeur |
 | --- | --- |
 | Version | `prompts/judge-1.0.0` : le chemin et la version que porte `PromptDeJuge` (`pipeline/notation/charge-juge.ts`) ; `notateur.version_prompt` vaut `prompts/judge-1.0.0@1.0.0` |
-| Charge | `charge-juge-v5` (`VERSION_CHARGE_JUGE`) : v4 (D55 (9), protocole 0.20) donne aux champs `candidat_id` et `candidats_attendus` l'alias aveugle du candidat, jamais son identifiant ; v5 (D55 (1)) retire de la charge `reponse.normalisation`, qui nommait l'éditeur noté. Ni l'une ni l'autre ne change le texte du prompt (en-tête mis à jour en protocole 0.24, D59) |
+| Charge | `charge-juge-v6` (`VERSION_CHARGE_JUGE`) : v4 (D55 (9), protocole 0.20) donne aux champs `candidat_id` et `candidats_attendus` l'alias aveugle du candidat, jamais son identifiant ; v5 (D55 (1)) retire de la charge `reponse.normalisation`, qui nommait l'éditeur noté ; v6 (D75 (24), protocole 0.33) rend `reponse.troncature` facultative, absente sur une saisie de l'application. Aucune ne change le texte du prompt (en-tête mis à jour en protocole 0.24, D59) |
 | Date | 2026-10-10, validé par l'auteur le 2026-10-12 (D34) |
 | Protocole appliqué | §4 (positions, dates de validité, item A, item O) ; §5 (formulations, prémisse fausse seulement sur F et O) ; §7 (catégorie primaire, drapeaux et leur domaine, sourçage, juges aveugles, extrait vérifié par comparaison de chaînes, jamais « indéterminée ») ; annexes B, C et D |
 | Décisions appliquées | D19 (lien mort jamais soutenant), D21 (soutien sur copie archivée seulement), D26 (3) (un seul prompt pour les deux juges) et D26 (4) révisée (ajout inventé non contradictoire ⇒ inexacte, `ajout_fabrique`), D27 (charge v3 : réponse attendue, prémisse, texte des pages ; fraîcheur et rattachement calculés), D29 (note d'une Q-ATT calculée par le code), D30 (renvoi humain des Q-ATT indécidables, sans action du juge), D32 (refus de l'API noté sans juge), D34 (sept choix de rédaction, ci-dessous) |
@@ -12,11 +12,12 @@
 
 ## Variables d'entrée
 
-Chaque variable porte le nom exact d'un champ de la `ChargeJuge` v5. Un scalaire est recopié tel
+Chaque variable porte le nom exact d'un champ de la `ChargeJuge` v6. Un scalaire est recopié tel
 quel ; un objet ou un tableau est rendu en JSON compact, champ pour champ, dans l'ordre de la charge.
 Un champ facultatif absent de la charge (`question.premisse_fausse` hors formulation orientée,
-`reponse.citations` quand l'outil n'en joint pas) est rendu par le mot `ABSENT` : jamais un tableau
-vide ni une valeur inventée ; l'absence de tout autre champ interdit le rendu (protocole 0.24,
+`reponse.citations` quand l'outil n'en joint pas, `reponse.troncature` sur une saisie de
+l'application, qui n'en porte pas) est rendu par le mot `ABSENT` : jamais un tableau
+vide ni une valeur inventée ; l'absence de tout autre champ interdit le rendu (protocole 0.24 et 0.33,
 annexe D). Seuls ces noms entre accolades sont des variables.
 
 | Variable | Champ de la charge | Rendu |
@@ -30,7 +31,7 @@ annexe D). Seuls ces noms entre accolades sont des variables.
 | `{reponse.texte}` | `reponse.texte` | texte projeté (peut être vide) |
 | `{reponse.liens}` | `reponse.liens` | tableau JSON, dans l'ordre, doublons compris |
 | `{reponse.citations}` | `reponse.citations` | tableau JSON de `{url, texte}`, ou `ABSENT` |
-| `{reponse.troncature}` | `reponse.troncature` | `true` ou `false` |
+| `{reponse.troncature}` | `reponse.troncature` | `true` ou `false` ; `ABSENT` sur une saisie de l'application |
 | `{reponse.refus_api}` | `reponse.refus_api` | `true` ou `false` |
 | `{pages_citees}` | `pages_citees` | tableau JSON, une entrée par URL distincte : `url_citee`, `texte_disponible`, puis `origine`, `texte`, `tronque`, `longueur_totale` (texte disponible) ou `raison` (`lien_mort`, `sans_copie`, `extraction_refusee`). `texte_sha256` est rendu ou non au choix de l'auteur (sans effet sur la note) |
 | `{longueur_max_texte_page}` | `longueur_max_texte_page` | entier (50 000) |
