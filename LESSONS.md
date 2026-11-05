@@ -259,6 +259,16 @@ refuser, jamais pour admettre.
 
 ## Méthode
 
+**Lire `state = MERGED` avant toute suppression de branche, et ne rien chaîner derrière une fusion
+avec `;`.** Le 2026-11-05, `gh pr checks --watch` est sorti en code 0 sur une erreur réseau
+(« connection reset by peer ») alors que le contrôle était encore `pending` ; `gh pr merge` a refusé,
+mais la chaîne de commandes a continué et a supprimé la branche locale puis distante de la PR #308,
+ce qui l'a fermée : le commit n'existait plus que dans le reflog. Récupéré en recréant la branche
+depuis son empreinte et en rouvrant la PR. La consigne de l'auteur le disait déjà (fusionner, lire
+`state = MERGED`, s'arrêter au premier échec) ; une suppression derrière un `;` ne regarde pas
+l'échec qui la précède, et un code de sortie 0 de `--watch` ne vaut pas CI verte : relire
+`gh pr checks` sans `--watch` juste avant de fusionner.
+
 **Un travail de fond lancé avant `/clear` survit au `/clear` et peut changer de branche sous les
 pieds de la session suivante.** Le 2026-11-05, une commande d'attente de CI puis de fusion, lancée
 en arrière-plan avant un `/clear`, a fusionné la PR et basculé l'arbre de travail sur `main`
