@@ -1,5 +1,6 @@
 ---
 import Renvoi from "../composants/Renvoi.astro";
+import { PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
 import DecorContester from "../composants/decors/DecorContester.astro";
 ---
 <section class="section section--contester" id="contester" aria-labelledby="titre-contester">
@@ -22,8 +23,7 @@ import DecorContester from "../composants/decors/DecorContester.astro";
   </div>
   <ol class="contestation">
     <li>
-      Vous écrivez à l'adresse dédiée. Un accusé de réception automatique vous parvient sous
-      24 heures ; il rappelle que le texte de votre contestation sera publié.
+      Vous écrivez à l'adresse dédiée. Un accusé de réception automatique vous parvient sous {S.accuseReceptionHeures.affiche} heures ; il rappelle que le texte de votre contestation sera publié.
     </li>
     <li>
       L'item passe au statut « contesté » : il est exclu du run suivant jusqu'à la décision. La
@@ -34,7 +34,7 @@ import DecorContester from "../composants/decors/DecorContester.astro";
       nouvelles que vous apportez.
     </li>
     <li>
-      Il rend sous 14 jours une décision motivée : maintien, correction, retrait, ou item déclaré non
+      Il rend sous {S.delaiPanelJours.affiche} jours une décision motivée : maintien, correction, retrait, ou item déclaré non
       évaluable. Une décision rendue plus tard reste valable, et son délai est publié.
     </li>
     <li>
@@ -45,8 +45,8 @@ import DecorContester from "../composants/decors/DecorContester.astro";
   </ol>
   <Renvoi section="13" libelle="annexe E" />
   <p>
-    Votre texte est publié tel quel, dans la limite de 1 000 caractères. Un texte plus long n'est ni
-    tronqué ni résumé : il vous est demandé d'en envoyer une version de 1 000 caractères au plus, et
+    Votre texte est publié tel quel, dans la limite de {S.longueurContestation.affiche} caractères. Un texte plus long n'est ni
+    tronqué ni résumé : il vous est demandé d'en envoyer une version de {S.longueurContestation.affiche} caractères au plus, et
     le texte intégral va au dossier du panel. Les coordonnées d'une personne physique qu'il
     contiendrait sont masquées, avec une marque visible. Une contestation qui répète une contestation
     déjà tranchée, sans élément nouveau, reçoit pour réponse la décision antérieure.

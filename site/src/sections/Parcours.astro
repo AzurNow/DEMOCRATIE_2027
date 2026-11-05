@@ -3,6 +3,7 @@ import Illustration from "../composants/Illustration.astro";
 import Renvoi from "../composants/Renvoi.astro";
 import FilParcours from "../composants/FilParcours.astro";
 import FilStation from "../composants/FilStation.astro";
+import { PARAMETRES as P, PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
 ---
 <section class="section section--parcours" id="parcours" aria-labelledby="titre-parcours">
   <h2 id="titre-parcours">Le parcours d'une question</h2>
@@ -106,9 +107,9 @@ import FilStation from "../composants/FilStation.astro";
           Les questions d'un run sont tirées au sort avec une graine : le nombre de départ d'un tirage
           au sort, qui redonne exactement le même tirage à quiconque l'utilise. Cette graine n'est
           choisie par personne : elle est dérivée d'une source publique de hasard, après que les
-          données ont été figées. Au moins 20 % des questions portent sur une absence de position
-          ou sur une mesure fictive. D'un run au suivant, 80 % des questions sont
-          reprises et 20 % sont neuves.
+          données ont été figées. Au moins {P.partAbsenceEtFictif} des questions portent sur une absence de position
+          ou sur une mesure fictive. D'un run au suivant, {P.partReprise} des questions sont
+          reprises et {P.partNeuve} sont neuves.
         </p>
         <p>
           Avant chaque run, des tests automatiques vérifient la symétrie : même nombre de questions
@@ -147,7 +148,7 @@ import FilStation from "../composants/FilStation.astro";
           programmes, avec le modèle par défaut de leur produit grand public, sans instruction
           ajoutée, dans une conversation neuve pour chaque question. Chaque formulation est posée deux
           fois dans chaque mode : sans recherche web, et avec recherche web quand son API le permet.
-          Toutes les requêtes d'un run partent dans une même fenêtre de 48 heures, dans un ordre fixé
+          Toutes les requêtes d'un run partent dans une même fenêtre de {P.fenetreHeures} heures, dans un ordre fixé
           à l'avance qui mêle candidats et thèmes. Aucune question n'est communiquée à un éditeur
           avant le run.
         </p>
@@ -197,15 +198,14 @@ import FilStation from "../composants/FilStation.astro";
         <p>
           Des humains notent ensuite toute réponse sur laquelle les deux juges ne s'accordent pas,
           toute réponse qu'un juge marque comme fabrication ou mauvaise attribution, et un échantillon
-          de 10 % des réponses tiré au sort. Dans cet échantillon, deux personnes notent chaque réponse
+          de {P.echantillonHumain} des réponses tiré au sort. Dans cet échantillon, deux personnes notent chaque réponse
           à l'aveugle, une troisième tranche si elles divergent, et la note humaine l'emporte sur celle
           des juges.
         </p>
         <p>
-          Avant de noter le reste du run, un test vérifie que les juges ne réagissent pas aux noms :
-          200 réponses sont notées à nouveau après permutation des noms des candidats. Un juge dont la
-          note change dans plus de 3 % des cas est retiré du run, et la part notée par des humains
-          passe à 25 %.
+          Avant de noter le reste du run, un test vérifie que les juges ne réagissent pas aux noms : {P.sousEnsembleContrefactuel} réponses sont notées à nouveau après permutation des noms des candidats. Un juge dont la
+          note change dans plus de {P.seuilRetraitJuge} des cas est retiré du run, et la part notée par des humains
+          passe à {P.echantillonApresRetrait}.
         </p>
         <p class="etape__pourquoi">
           <strong>Pourquoi ?</strong> Parce qu'un juge automatique a ses propres biais. Deux familles
@@ -232,9 +232,9 @@ import FilStation from "../composants/FilStation.astro";
           non-réponse.
         </p>
         <p>
-          Chaque taux est publié avec son intervalle de confiance à 95 % : une fourchette qui dit avec
+          Chaque taux est publié avec son intervalle de confiance à {S.niveauConfiance.affiche} % : une fourchette qui dit avec
           quelle précision le chiffre est connu, plus large quand les données sont peu nombreuses.
-          Elle est obtenue en refaisant le calcul sur 2 000 tirages au hasard dans les données
+          Elle est obtenue en refaisant le calcul sur {P.reechantillonnages} tirages au hasard dans les données
           observées. Une différence entre deux outils, deux modes ou deux runs n'est dite « établie »
           que si sa fourchette exclut zéro ; sinon, elle est « non établie ». Le rapport ne dit jamais
           « meilleur » ni « pire ».
@@ -242,8 +242,7 @@ import FilStation from "../composants/FilStation.astro";
         <p>
           Les hypothèses annoncées à l'avance sont publiées qu'elles soient confirmées ou non, et une
           hypothèse non confirmée n'est jamais dite « infirmée ». Aucune statistique n'est publiée
-          pour un candidat qui compte moins de 10 positions vérifiées, ni pour un outil dont plus de
-          20 % des réponses manquent dans un mode. Les résultats sont recalculés de quatre façons, par
+          pour un candidat qui compte moins de {P.couvertureMinimale} positions vérifiées, ni pour un outil dont plus de {P.reponsesManquantesMax} des réponses manquent dans un mode. Les résultats sont recalculés de quatre façons, par
           exemple sans les questions orientées ou sans les réponses tronquées ; un résultat qui ne
           tient pas est signalé comme fragile. Toute analyse non prévue porte l'étiquette
           « exploratoire ».

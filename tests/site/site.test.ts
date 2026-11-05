@@ -8,6 +8,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   appelsReseau,
+  CleDuPerimetreAbsente,
   lireSiteConstruit,
   nomsDuPerimetre,
   nomsPresents,
@@ -121,6 +122,26 @@ describe("scriptsExternes et appelsReseau", () => {
     expect(appelsReseau("fetch('/a'); new XMLHttpRequest(); navigator.sendBeacon('/b')")).toHaveLength(3);
   });
 
+  it("attrape new WebSocket, avec ou sans espaces", () => {
+    expect(appelsReseau("const s = new WebSocket('wss://x.org'); new   WebSocket(u)")).toHaveLength(2);
+  });
+
+  it("attrape new EventSource", () => {
+    expect(appelsReseau("const flux = new EventSource('/evenements')")).toHaveLength(1);
+  });
+
+  it("attrape un import() dynamique d'une adresse http, https ou sans protocole", () => {
+    expect(appelsReseau("import(\"https://x.org/a.js\"); import('http://x.org/b.js'); import( `//x.org/c.js`)")).toHaveLength(3);
+  });
+
+  it("laisse passer un import() dynamique local", () => {
+    expect(appelsReseau("import('./a.js'); import(`/_astro/b.js`); import(chemin)")).toEqual([]);
+  });
+
+  it("attrape navigator.sendBeacon et sendBeacon seul", () => {
+    expect(appelsReseau("navigator . sendBeacon('/a'); const { sendBeacon } = navigator; sendBeacon('/b')")).toHaveLength(2);
+  });
+
   it("ne confond pas un autre identifiant avec fetch", () => {
     expect(appelsReseau("prefetch(); const refetchez = 1; localStorage.getItem('x')")).toEqual([]);
   });
@@ -159,6 +180,24 @@ outils:
 
   it("lit sans erreur un périmètre aux listes vides", () => {
     expect(nomsDuPerimetre("candidats: []\noutils: []\n")).toEqual([]);
+  });
+
+  it("refuse un périmètre sans la clé candidats", () => {
+    expect(() => nomsDuPerimetre("outils: []\n")).toThrow(CleDuPerimetreAbsente);
+    expect(() => nomsDuPerimetre("outils: []\n")).toThrow(/« candidats » est absente/);
+  });
+
+  it("refuse un périmètre sans la clé outils", () => {
+    expect(() => nomsDuPerimetre("candidats: []\n")).toThrow(/« outils » est absente/);
+  });
+
+  it("refuse une clé mal orthographiée, qui rendrait zéro nom", () => {
+    const faute = EXEMPLE.replace("candidats:", "candidat:");
+    expect(() => nomsDuPerimetre(faute)).toThrow(/« candidats » est absente/);
+  });
+
+  it("refuse une clé qui n'est pas une liste", () => {
+    expect(() => nomsDuPerimetre("candidats: ~\noutils: []\n")).toThrow(CleDuPerimetreAbsente);
   });
 
   it("refuse un document qui n'est pas une table", () => {

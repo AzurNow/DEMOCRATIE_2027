@@ -6,8 +6,11 @@
  */
 import { dirname, join, resolve } from "node:path";
 
+/** Seul endroit où vit l'adresse du dépôt public (pied de page, gardes du site, protocole). */
+export const URL_DEPOT = "https://github.com/AzurNow/DEMOCRATIE_2027";
+
 /** Seul endroit où vit l'adresse publiée du protocole. */
-export const URL_PROTOCOLE = "https://github.com/AzurNow/DEMOCRATIE_2027/blob/main/docs/PROTOCOLE.md";
+export const URL_PROTOCOLE = `${URL_DEPOT}/blob/main/docs/PROTOCOLE.md`;
 
 /** Chemin du protocole relatif à la racine du dépôt. */
 export const CHEMIN_PROTOCOLE = "docs/PROTOCOLE.md";
