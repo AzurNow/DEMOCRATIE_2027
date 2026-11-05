@@ -306,6 +306,8 @@ export function entreesDuRunAnalysable(spec: SpecRun): EntreesDuRun {
     reponses,
     verdicts,
     notations,
+    // Aucun renvoi de juge (§7) : tests/analysis/analyse-du-run-renvois.test.ts les pose.
+    renvois: [],
     plan: planCouvrant(reponses),
     questions_sous_echantillon: sousEchantillonDe(spec, items, questions),
     // Aucun comparateur inclus : aucune lecture (tests/analysis/analyse-du-run-comparateurs.test.ts les pose).
