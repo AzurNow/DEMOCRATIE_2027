@@ -745,6 +745,35 @@ describe("cas 13 : identifiants en double", () => {
   });
 });
 
+describe("D75 (8) : une seule graphie par éditeur", () => {
+  function avecSecondOutilChez(editeur: string): Objet {
+    const perimetre = perimetreComplet();
+    outils(perimetre).push({ ...rang(outils(perimetre), 1), outil_id: "comparateur-delta", editeur });
+    return perimetre;
+  }
+
+  it("accepte deux outils au même éditeur écrit identiquement", () => {
+    expect(() => charger(avecSecondOutilChez("Association Gamma"))).not.toThrow();
+  });
+
+  it("refuse une casse différente, en citant les deux graphies et les outils", () => {
+    const { motifs } = refus(avecSecondOutilChez("ASSOCIATION GAMMA"));
+    expect(motifs).toEqual([expect.stringContaining("« Association Gamma » (comparateur-gamma) et « ASSOCIATION GAMMA » (comparateur-delta)")]);
+  });
+
+  it("refuse des espaces différents", () => {
+    expect(refus(avecSecondOutilChez("Association  Gamma")).motifs).toEqual([expect.stringContaining("(D75 (8))")]);
+  });
+
+  it("refuse des accents différents", () => {
+    expect(refus(avecSecondOutilChez("Associatión Gamma")).motifs).toEqual([expect.stringContaining("(D75 (8))")]);
+  });
+
+  it("accepte des éditeurs réellement distincts", () => {
+    expect(() => charger(avecSecondOutilChez("Association Delta"))).not.toThrow();
+  });
+});
+
 describe("cas 14 : l'instantané est conforme à run.schema.json et garde les preuves", () => {
   it("valide contre run#/properties/perimetre", () => {
     const { perimetre } = charger(perimetreComplet());

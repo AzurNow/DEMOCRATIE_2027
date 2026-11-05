@@ -77,9 +77,15 @@
  * run. Ce qui est déjà écrit le reste (notations des réponses et des juges précédents, test
  * contrefactuel inscrit) ; une relance après correction le retrouve et reprend (Reprise, ci-dessus).
  *
+ * 5. **Lectures de comparateur** (§6 ; D87). Après la masse, et sous la même condition (test des
+ *    candidats conclu, run valide), le verdict de chaque lecture affichée dont la note est retenue par
+ *    ses seules notations humaines est écrit (`verdicts-de-lecture.ts`), sous un identifiant dérivé
+ *    comme celui d'une réponse. Une lecture à noter ou à arbitrer est rendue sans verdict ; des
+ *    lectures pas encore collectées le sont aussi (`lectures_non_collectees`), sans rien écrire.
+ *
  * **Humains.** La chaîne n'en simule aucun. Elle lit les notations humaines déjà écrites (écran
  * `pnpm notation:humaine`) et les passe à `decider` : une relance après la saisie humaine résout les
- * attentes qui peuvent l'être.
+ * attentes qui peuvent l'être, celles des lectures de comparateur comprises.
  */
 
 import { createHash } from "node:crypto";
@@ -110,6 +116,7 @@ import { publierContrefactuel, publierFauteDInterroges } from "./publication-con
 import { notationParRegle, REGLE_REFUS_API } from "./regle-refus.ts";
 import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle.ts";
 import { DepotNotation } from "./stockage.ts";
+import { ecrireVerdictsDeLecture, type EtatLecturesDuRun } from "./verdicts-de-lecture.ts";
 import { TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
 import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
@@ -159,6 +166,8 @@ export interface ResultatChaine {
   readonly verdicts: readonly Ulid[];
   /** Les réponses sans verdict, chacune avec ses motifs. */
   readonly attentes: readonly Attente[];
+  /** Étape 5 : les lectures de comparateur dont le verdict est écrit, celles qui l'attendent, ou pourquoi rien n'a été joué. */
+  readonly lectures: EtatLecturesDuRun;
 }
 
 export class JugesNonConformes extends Error {
@@ -258,11 +267,21 @@ export async function noterRun(reponses: readonly ReponseANoter[], env: Environn
   const contrefactuel = await passerContrefactuel(etat);
   if (contrefactuel.statut === "en_attente_test_liens" || contrefactuel.statut === "run_invalide") {
     const contrefactuel_outils: EtatContrefactuelOutils = { statut: "non_joue", motif: "contrefactuel_candidats_non_conclu" };
-    return { run_id: etat.run.id, contrefactuel, contrefactuel_outils, verdicts: [], attentes: etat.reponses.map((r) => attenteSansMasse(r, contrefactuel.statut)) };
+    const lectures: EtatLecturesDuRun = { statut: "non_jouees", motif: "contrefactuel_candidats_non_conclu" };
+    return { run_id: etat.run.id, contrefactuel, contrefactuel_outils, verdicts: [], attentes: etat.reponses.map((r) => attenteSansMasse(r, contrefactuel.statut)), lectures };
   }
   const contrefactuel_outils = passerContrefactuelOutils(etat);
   const run = runDeNotationDe(lireRunJson(env.repertoire_run));
-  return { run_id: etat.run.id, contrefactuel, contrefactuel_outils, ...(await noterEnMasse(etat, run)) };
+  const masse = await noterEnMasse(etat, run);
+  return { run_id: etat.run.id, contrefactuel, contrefactuel_outils, ...masse, lectures: passerLectures(etat) };
+}
+
+/** Étape 5 (D87) : le verdict de chaque lecture retenue, identifiant dérivé comme celui d'une réponse. */
+function passerLectures(etat: Etat): EtatLecturesDuRun {
+  return ecrireVerdictsDeLecture(etat.env.repertoire_run, etat.depot, (lecture_id) => ({
+    verdict_id: identifiantDerive([etat.run.id, "verdict", lecture_id]),
+    date: etat.env.maintenant(),
+  }));
 }
 
 function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): Etat {

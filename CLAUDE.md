@@ -65,8 +65,10 @@ Arborescence commentée : `README.md`. Ce qu'elle ne dit pas :
   `run/`, `questions/`, `interrogation/`) importent des fonctions et des types de `analysis/`, pour
   qu'une règle de calcul ne vive qu'à un seul endroit (DETTE 2026-09-24 n° 1, revue du 2026-10-12
   n° 48). C'est une dépendance de code, pas une flèche de données.
-- `data/`, `staging/` et `site/` n'existent pas encore dans un clone : ils naissent des premières
-  collectes et validations réelles. Le jeu de démonstration vit dans `validation/fixtures/`.
+- `data/` et `staging/` n'existent pas encore dans un clone : ils naissent des premières collectes
+  et validations réelles. Le jeu de démonstration vit dans `validation/fixtures/`. `site/` porte
+  les sources Astro de la page pédagogique (#319 à #326) ; `site/dist/` est construit
+  (`pnpm build:site`), jamais suivi par Git.
 - `docs/feuille-de-route.json` est l'état d'avancement qui fait foi ; le mode d'emploi de chaque
   commande de run est `runs/README.md`.
 

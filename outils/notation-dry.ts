@@ -19,6 +19,7 @@ import { join, resolve } from "node:path";
 import { MOTIFS_DU_BILAN, texteContrefactuelInscrit, type BilanNotation } from "../pipeline/notation/bilan-notation.ts";
 import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
 import { lancerNotationSimulee, lireParametresNotationSimulee } from "../pipeline/notation/notation-simulee.ts";
+import type { EtatLecturesDuRun } from "../pipeline/notation/verdicts-de-lecture.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const FIXTURES_INTERROGATION = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
@@ -73,6 +74,14 @@ function imprimerBilan(repertoire_run: string, bilan: BilanNotation): void {
   ecrire(`Réponses contrefactuelles écrites : ${bilan.reponses_contrefactuelles} ; notations humaines lues : ${bilan.notations_humaines}`);
 }
 
+/** Étape 5 de la chaîne (D87) : les verdicts de lecture écrits, les lectures qui attendent un humain, ou pourquoi rien n'a été joué. */
+function texteLectures(lectures: EtatLecturesDuRun): string {
+  if (lectures.statut === "non_jouees") return `Lectures de comparateur : non jouées (${lectures.motif})`;
+  const aNoter = lectures.attentes.filter((a) => a.statut === "a_noter").length;
+  const aArbitrer = lectures.attentes.length - aNoter;
+  return `Lectures de comparateur : ${lectures.verdicts.length} verdict(s) ; ${aNoter} à noter, ${aArbitrer} à arbitrer`;
+}
+
 function contrefactuelInscrit(bilan: BilanNotation): string {
   const inscrit = bilan.contrefactuel_inscrit;
   if (inscrit === undefined) return "";
@@ -85,6 +94,7 @@ async function principal(): Promise<void> {
     const parametres = lireParametresNotationSimulee(join(FIXTURES_NOTATION, "notation-simulee.json"));
     const resultat = await lancerNotationSimulee({ sortie, fixtures_interrogation: FIXTURES_INTERROGATION, fixtures_notation: FIXTURES_NOTATION }, parametres);
     imprimerBilan(resultat.repertoire_run, resultat.bilan);
+    process.stdout.write(`${texteLectures(resultat.resultat.lectures)}\n`);
   } catch (erreur) {
     if (!estUnRefusAttendu(erreur)) throw erreur;
     process.stderr.write(`Notation simulée non exécutée — ${erreur.name} :\n  ${erreur.message}\n`);

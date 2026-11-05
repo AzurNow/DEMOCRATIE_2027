@@ -277,11 +277,33 @@ function motifsAmorceAttribution(candidats: readonly CandidatSaisi[]): readonly 
     );
 }
 
+/**
+ * D75 (8), décision de l'auteur du 2026-11-05 : l'éditeur est comparé à casse exacte (§7 : écart d'un
+ * juge sur l'outil de son éditeur, comparateur du même éditeur), donc deux graphies d'un même
+ * éditeur désigneraient deux éditeurs. « Même éditeur » = même texte après `normaliserAlias`. Deux
+ * outils au même éditeur écrit identiquement restent acceptés ; deux graphies différentes qui se
+ * normalisent pareil sont refusées, avec les deux graphies et les outils qui les portent.
+ */
+function motifsGraphiesEditeur(outils: readonly OutilSaisi[]): readonly string[] {
+  const normalises = [...new Set(outils.map((outil) => normaliserAlias(outil.editeur)))];
+  return normalises.flatMap((normalise) => {
+    const groupe = outils.filter((outil) => normaliserAlias(outil.editeur) === normalise);
+    const graphies = [...new Set(groupe.map((outil) => outil.editeur))];
+    if (graphies.length < 2) return [];
+    const dites = graphies.map((graphie) => {
+      const porteurs = groupe.filter((outil) => outil.editeur === graphie).map((outil) => outil.outil_id);
+      return `« ${graphie} » (${porteurs.join(", ")})`;
+    });
+    return [`outils : l'éditeur est écrit de deux façons pour un même texte normalisé : ${dites.join(" et ")} ; une seule graphie par éditeur (D75 (8))`];
+  });
+}
+
 function motifsIdentifiants(perimetre: PerimetrePourRun): readonly string[] {
   return [
     ...doublons(perimetre.candidats.map((candidat) => candidat.candidat_id)).map((id) => `candidats : candidat_id « ${id} » en double`),
     ...doublons(perimetre.outils.map((outil) => outil.outil_id)).map((id) => `outils : outil_id « ${id} » en double`),
     ...motifsAmorceAttribution(perimetre.candidats),
+    ...motifsGraphiesEditeur(perimetre.outils),
   ];
 }
 

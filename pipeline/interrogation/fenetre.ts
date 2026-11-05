@@ -14,8 +14,8 @@
  *
  * La réexécution n'a pas de règle propre : elle prend celle du run que désigne son
  * `run_remplace_id`, lu parmi les runs du dépôt, et, si ce run est lui-même une réexécution, de
- * proche en proche jusqu'au run d'origine (`typeDOrigine`, recommandation de D75 (1), non encore
- * tranchée). La règle s'applique à la réexécution elle-même : pour celle d'un run supplémentaire,
+ * proche en proche jusqu'au run d'origine (`typeDOrigine`, D75 (1), option 1, décision de l'auteur du
+ * 2026-11-05 ; protocole 0.33, §6, ligne « Fenêtre » du tableau : « lue sur le run qu'elle désigne à son gel »). La règle s'applique à la réexécution elle-même : pour celle d'un run supplémentaire,
  * le lendemain de l'instant de gel de la réexécution. Un run désigné introuvable, désigné deux
  * fois, ou une chaîne qui revient sur elle-même est une erreur nommée, jamais un repli sur le mardi.
  * Les runs du dépôt ne sont lus que si la règle en dépend (`RunsDuDepot`, appelée paresseusement).
@@ -120,7 +120,7 @@ function remplaceDe(run: { readonly type_run: string; readonly run_remplace_id?:
 }
 
 /**
- * D75 (1), recommandation non encore tranchée : le type du run d'origine d'une réexécution, lu de
+ * D75 (1), option 1, décision de l'auteur du 2026-11-05 (protocole 0.33, §6) : le type du run d'origine d'une réexécution, lu de
  * proche en proche sur `run_remplace_id` jusqu'au premier run qui n'est pas une réexécution. Un run
  * qui n'est pas une réexécution est son propre run d'origine, et les runs du dépôt ne sont pas lus.
  */
