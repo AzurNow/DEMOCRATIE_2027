@@ -88,8 +88,8 @@
       "properties": {
         "chemin": {
           "type": "string",
-          "pattern": "^pages/[0-9a-f]{64}\\.[a-z0-9]+$",
-          "description": "Relatif à volume/liens/ : pages/<sha256_contenu><extension>."
+          "pattern": "^pages-citees/[0-9a-f]{64}\\.[a-z0-9]+$",
+          "description": "Relatif au répertoire du run (runs/<date>/), hors de volume/ (D75 (4)) : pages-citees/<sha256_contenu><extension>."
         },
         "type_contenu_recu": { "type": ["string", "null"], "description": "En-tête Content-Type tel que reçu ; null s'il était absent, jamais deviné." },
         "taille_octets": { "type": "integer", "minimum": 0 }
@@ -203,7 +203,7 @@
             "issue": { "const": "reussi" },
             "url_brute": { "$ref": "#/$defs/instantane_brut" },
             "url_finale": { "$ref": "#/$defs/instantane_brut_servi", "description": "URL qui a rendu la réponse 200, après les redirections suivies (le service peut rediriger vers un instantané voisin). D22 : elle désigne l'instantané servi en version brute, d'où archive_url est dérivée ; une URL finale d'une autre forme est un téléchargement en échec." },
-            "chemin": { "type": "string", "pattern": "^pages/[0-9a-f]{64}\\.[a-z0-9]+$", "description": "Relatif à volume/liens/ : pages/<sha256_contenu><extension>." },
+            "chemin": { "type": "string", "pattern": "^pages-citees/[0-9a-f]{64}\\.[a-z0-9]+$", "description": "Relatif au répertoire du run (runs/<date>/), hors de volume/ (D75 (4)) : pages-citees/<sha256_contenu><extension>." },
             "type_contenu_recu": { "type": ["string", "null"], "description": "En-tête Content-Type tel que reçu ; null s'il était absent, jamais deviné." },
             "taille_octets": { "type": "integer", "minimum": 0 }
           }

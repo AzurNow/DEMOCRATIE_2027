@@ -25,17 +25,18 @@
  * retenue. Jamais de note en repli, jamais d'arbitre parmi les deux premiers, jamais d'arbitrage sans
  * divergence établie.
  *
- * **Motif divergent** (§6 et §7, protocole 0.31 ; D73 (14)) : deux humains qui s'accordent sur la
- * note mais divergent sur le motif d'inexactitude sont arbitrés de même par un troisième humain
- * (`note-retenue.ts:humainsAArbitrer`, la règle de l'échantillon des réponses), dont la note est
- * retenue, qu'il rejoigne l'un des deux motifs ou en donne un troisième.
+ * **Motif ou sourçage divergent** (§6 et §7, protocole 0.33 ; D73 (14), D75 (15)) : deux humains
+ * qui s'accordent sur la note mais divergent sur le motif d'inexactitude, la citation d'une source ou
+ * l'existence d'un lien sont arbitrés de même par un troisième humain
+ * (`note-retenue.ts:humainsAArbitrer`, la règle de l'échantillon des réponses, que le §6 suit « comme
+ * une réponse de l'échantillon »), dont la note est retenue, qu'il rejoigne l'un des deux ou donne
+ * une troisième valeur.
  *
  * **Verdict** (§6, 0.31 ; D73 (13)) : `verdictDeLecture` construit le verdict d'une lecture retenue
  * (`verdict.schema.json`), sous le mode `lecture_comparateur_humaine`, hors de l'échantillon humain
  * des réponses (`dans_echantillon_humain: false`), sans désaccord de juges (aucun juge), ses sources
- * et sa revue humaine étant les notations humaines qui l'ont résolu. Deux humains qui s'accordent,
- * même motif, mais divergent sur le sourçage partiel (`cite`, `au_moins_un_lien_existant`) n'ont pas
- * de note commune à porter au verdict : refus nommé (`sans_note_commune`, question ouverte).
+ * et sa revue humaine étant les notations humaines qui l'ont résolu. Deux humains retenus sans
+ * arbitre ont toujours une note commune (`humainsAArbitrer`) : c'est elle que porte le verdict.
  * Aucun appelant n'écrit encore ces verdicts : `analysis/analyse-du-run.ts` retient la note d'une
  * lecture depuis ses notations (`etatsDesLectures`) et refuse un verdict de lecture dans `verdicts/`.
  */
@@ -144,7 +145,7 @@ function etatLecture(lecture_id: Ulid, notations: readonly NotationIndividuelle[
     return { statut: "a_noter", lecture_id, notations_manquantes: 2 - doubles.length };
   }
   if (!humainsAArbitrer(premiere, seconde)) {
-    exigerSansArbitrage(lecture_id, arbitrages, "les deux humains s'accordent, sur la note et sur le motif");
+    exigerSansArbitrage(lecture_id, arbitrages, "les deux humains s'accordent, sur la note, le motif et le sourçage");
     return { statut: "retenue", lecture_id, mode: "accord_humains", note: lireNote(premiere), notations_sources: idsDe(doubles) };
   }
   return apresDivergence(lecture_id, doubles, arbitrages);
@@ -181,7 +182,7 @@ function idsDe(notations: readonly NotationIndividuelle[]): readonly Ulid[] {
 /** §6 (0.31) : le mode de résolution propre aux lectures de comparateur (`verdict.schema.json`). */
 export const MODE_RESOLUTION_LECTURE = "lecture_comparateur_humaine";
 
-export type RaisonSansVerdict = "a_noter" | "a_arbitrer" | "sans_note_commune";
+export type RaisonSansVerdict = "a_noter" | "a_arbitrer";
 
 /** Une lecture qui n'a pas (encore) de note à porter au verdict : jamais un verdict par défaut. */
 export class LectureSansVerdict extends Error {
@@ -204,8 +205,8 @@ export interface CadreVerdictLecture {
 
 /**
  * Le verdict d'une lecture à noter du run, une fois sa note retenue par la règle de l'échantillon
- * (`etatsDesLectures`, qui contrôle toutes les notations reçues). Lecture à noter ou à arbitrer, ou
- * sans note commune : `LectureSansVerdict`. Lecture hors sélection : `NotationLectureRefusee`.
+ * (`etatsDesLectures`, qui contrôle toutes les notations reçues). Lecture à noter ou à arbitrer :
+ * `LectureSansVerdict`. Lecture hors sélection : `NotationLectureRefusee`.
  */
 export function verdictDeLecture(
   run_id: Ulid,
@@ -230,7 +231,7 @@ function sourceDe(notations: readonly NotationIndividuelle[], id: Ulid, lecture_
   return notation;
 }
 
-/** Arbitrage : la note de l'arbitre. Accord : la note commune des deux, ou un refus nommé. */
+/** Arbitrage : la note de l'arbitre. Accord : la note commune des deux, qui existe par définition (`humainsAArbitrer`). */
 function noteDeLecture(lecture_id: Ulid, mode: "accord_humains" | "arbitrage", sources: readonly NotationIndividuelle[]): NoteRetenue {
   if (mode === "arbitrage") {
     const arbitre = sources.find((n) => n.motif_notation === MOTIF_ARBITRAGE_COMPARATEUR);
@@ -239,12 +240,6 @@ function noteDeLecture(lecture_id: Ulid, mode: "accord_humains" | "arbitrage", s
   }
   const [premiere, seconde] = sources;
   const note = premiere === undefined || seconde === undefined ? null : noteCommune(premiere, seconde);
-  if (note === null) {
-    throw new LectureSansVerdict(
-      "sans_note_commune",
-      lecture_id,
-      "les deux humains s'accordent, même motif, mais divergent sur la citation d'une source ou l'existence d'un lien ; le §7 n'y admet pas d'arbitre (question ouverte).",
-    );
-  }
+  if (note === null) throw new Error(`Lecture ${lecture_id} : accord des humains retenu sans note commune (incohérence interne).`);
   return note;
 }

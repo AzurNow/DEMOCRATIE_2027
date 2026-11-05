@@ -1,5 +1,5 @@
 {
-  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants. Décision de l'auteur du 2026-10-02 (conformité 2026-09-29, n° 23) : chaque declaration_candidature d'un exemple de run porte sa preuve archivée (sha256, archive_url), et chaque assistant inclus sa preuve_inclusion, ajoutées ouvertement à tous les exemples de run existants ; aucun verdict ni aucune erreur attendue ne change. Décision D42 (2) de l'auteur du 2026-10-15 : la formulation neutre de chaque exemple de question porte production {gabarits} au lieu de {modele, version_prompt}, changée ouvertement dans tous les exemples de question existants ; aucun verdict attendu ne change. Revue du 2026-10-12, constat 22 : chaque exemple invalide déclare sa règle visée (erreur_visee : mot-clé ajv et chemin d'instance de l'erreur attendue) et ne réussit que si cette erreur figure parmi celles du validateur ; un exemple valide n'en déclare pas. Un exemple peut porter d'autres erreurs que la règle visée quand elles sont inséparables (branches if, oneOf, anyOf et contains d'ajv). Constat n° 8 de la mise à jour de conformité du 2026-11-01 (§7.30) : accord_humains_echantillon ({reponses_doublement_notees: 10, accords: 9, part: 0.9}, valeurs d'exemple non recalculées des notations) ajouté ouvertement, juste avant go_no_go, à tous les exemples de run existants qui portent un go/no-go ; aucun verdict ni aucune erreur attendue ne change. Protocole 0.23 (D58), §7 « Annotateurs humains » : le kappa des deux humains (kappa: 0.8, valeur d'exemple non recalculée des notations, ou motif_indefini_kappa: aucune_reponse_comparable sur un dénominateur nul) ajouté ouvertement à l'accord_humains_echantillon de tous les exemples de run qui en portent un ; aucun verdict ni aucune erreur attendue ne change. Protocole 0.28 (D70 (6)), §3 : chaque preuve de sondage de tous les exemples de run existants porte la notice de son institut (notice_institut, une notice d'exemple fictive par institut, datée du 2026-06-15, dans les douze mois de chaque date_gel), ajoutée ouvertement ; aucun verdict ni aucune erreur attendue ne change. D73 (7) et (8) : run/valide-02 porte outils_de_son_editeur et comptes_jeu_or pour chaque juge, et chaque juge des exemples de config-gel porte outils_de_son_editeur (outil-alpha pour le premier, liste vide pour le second), ajoutés ouvertement ; aucun verdict ni aucune erreur attendue ne change. D73 (7) : chaque exemple de metriques porte la section ecart_juge_editeur, ajoutée ouvertement après comparateurs : sans objet (outils_de_son_editeur_non_declares) partout, sauf valide-03, où juge-1 déclare outil-alpha, seul outil du run, et dont l'écart est publié absent (aucun_autre_outil_avec_ecart), effectifs d'exemple non recalculés ; aucun verdict ni aucune erreur attendue ne change. Protocole 0.32 (D74 (5)), §8 : dans chaque exemple de metriques qui porte un test d'asymétrie calculé, test.exactitude_outil, publiée comme un taux {numerateur, denominateur, valeur}, est renommée exactitude_de_reference et réduite à sa valeur, statistique de référence du test sans intervalle, changée ouvertement ; aucune valeur, aucun verdict ni aucune erreur attendue ne change. D74 (22), §7 : chaque exemple de metriques porte la section renvois_humains, ajoutée ouvertement après ecart_juge_editeur : juge-1 et juge-2, non retirés, chaque motif à 0 dans chaque contexte (run, contrefactuel_candidat, contrefactuel_outil), ce que pnpm analyze rend sur les runs dont les exemples valides sont la sortie, qui n'ont aucun renvoi ; aucun verdict ni aucune erreur attendue ne change (metriques/invalide-12-ancien-nom-exactitude-outil compris).",
+  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants. Décision de l'auteur du 2026-10-02 (conformité 2026-09-29, n° 23) : chaque declaration_candidature d'un exemple de run porte sa preuve archivée (sha256, archive_url), et chaque assistant inclus sa preuve_inclusion, ajoutées ouvertement à tous les exemples de run existants ; aucun verdict ni aucune erreur attendue ne change. Décision D42 (2) de l'auteur du 2026-10-15 : la formulation neutre de chaque exemple de question porte production {gabarits} au lieu de {modele, version_prompt}, changée ouvertement dans tous les exemples de question existants ; aucun verdict attendu ne change. Revue du 2026-10-12, constat 22 : chaque exemple invalide déclare sa règle visée (erreur_visee : mot-clé ajv et chemin d'instance de l'erreur attendue) et ne réussit que si cette erreur figure parmi celles du validateur ; un exemple valide n'en déclare pas. Un exemple peut porter d'autres erreurs que la règle visée quand elles sont inséparables (branches if, oneOf, anyOf et contains d'ajv). Constat n° 8 de la mise à jour de conformité du 2026-11-01 (§7.30) : accord_humains_echantillon ({reponses_doublement_notees: 10, accords: 9, part: 0.9}, valeurs d'exemple non recalculées des notations) ajouté ouvertement, juste avant go_no_go, à tous les exemples de run existants qui portent un go/no-go ; aucun verdict ni aucune erreur attendue ne change. Protocole 0.23 (D58), §7 « Annotateurs humains » : le kappa des deux humains (kappa: 0.8, valeur d'exemple non recalculée des notations, ou motif_indefini_kappa: aucune_reponse_comparable sur un dénominateur nul) ajouté ouvertement à l'accord_humains_echantillon de tous les exemples de run qui en portent un ; aucun verdict ni aucune erreur attendue ne change. Protocole 0.28 (D70 (6)), §3 : chaque preuve de sondage de tous les exemples de run existants porte la notice de son institut (notice_institut, une notice d'exemple fictive par institut, datée du 2026-06-15, dans les douze mois de chaque date_gel), ajoutée ouvertement ; aucun verdict ni aucune erreur attendue ne change. D73 (7) et (8) : run/valide-02 porte outils_de_son_editeur et comptes_jeu_or pour chaque juge, et chaque juge des exemples de config-gel porte outils_de_son_editeur (outil-alpha pour le premier, liste vide pour le second), ajoutés ouvertement ; aucun verdict ni aucune erreur attendue ne change. D73 (7) : chaque exemple de metriques porte la section ecart_juge_editeur, ajoutée ouvertement après comparateurs : sans objet (outils_de_son_editeur_non_declares) partout, sauf valide-03, où juge-1 déclare outil-alpha, seul outil du run, et dont l'écart est publié absent (aucun_autre_outil_avec_ecart), effectifs d'exemple non recalculés ; aucun verdict ni aucune erreur attendue ne change. Protocole 0.32 (D74 (5)), §8 : dans chaque exemple de metriques qui porte un test d'asymétrie calculé, test.exactitude_outil, publiée comme un taux {numerateur, denominateur, valeur}, est renommée exactitude_de_reference et réduite à sa valeur, statistique de référence du test sans intervalle, changée ouvertement ; aucune valeur, aucun verdict ni aucune erreur attendue ne change. D74 (22), §7 : chaque exemple de metriques porte la section renvois_humains, ajoutée ouvertement après ecart_juge_editeur : juge-1 et juge-2, non retirés, chaque motif à 0 dans chaque contexte (run, contrefactuel_candidat, contrefactuel_outil), ce que pnpm analyze rend sur les runs dont les exemples valides sont la sortie, qui n'ont aucun renvoi ; aucun verdict ni aucune erreur attendue ne change (metriques/invalide-12-ancien-nom-exactitude-outil compris). D75 (25), §7 : la section ecart_juge_editeur calculée de metriques/valide-03 porte reponses_renvoyees, liste vide, ajoutée ouvertement après reponses_sans_note_de_juge, ce que pnpm analyze rend sur un run sans renvoi ; aucun verdict ni aucune erreur attendue ne change.",
   "exemples": [
     {
       "objet": "item",
@@ -3669,6 +3669,34 @@
       }
     },
     {
+      "objet": "metriques",
+      "fichier": "metriques/valide-06-comparateur-sans-verdict.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-04 dont deux lectures affichées de comparateur-un n'ont pas de verdict de lecture : le comparateur est publié absent, motif lectures_sans_verdict, ces deux lectures nommées, sans couverture, sans exactitude et sans leurs graines (D75 (16), analysis/analyse-du-run.ts:sectionComparateurs) ; identifiants d'exemple."
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-15-comparateur-sans-verdict-sans-lecture.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-06 dont la liste des lectures sans verdict est vide : un comparateur absent nomme au moins une lecture qui l'en empêche.",
+      "regle_protocole": "§8, métriques secondaires ; D75 (16) : un comparateur dont une lecture affichée n'a pas de verdict est absent avec son motif",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/comparateurs/comparateurs/0/lectures_sans_verdict"
+      }
+    },
+    {
+      "objet": "metriques",
+      "fichier": "metriques/invalide-16-ecart-juge-editeur-sans-reponses-renvoyees.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-03 dont la section ecart_juge_editeur calculée omet reponses_renvoyees : les réponses renvoyées à un humain par un juge sortent du calcul et sont nommées, liste vide comprise.",
+      "regle_protocole": "§7, « Conflit d'intérêts » : « Les deux juges sont lus sur les mêmes réponses, celles que tous deux ont notées » ; D75 (25)",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/ecart_juge_editeur"
+      }
+    },
+    {
       "objet": "tirage",
       "fichier": "tirage/invalide-12-attribution-sans-references.json",
       "attendu": "invalide",
@@ -3783,6 +3811,60 @@
       "erreur_visee": {
         "keyword": "anyOf",
         "instance_path": "/juges/1"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-15-contrefactuel-outils-moins-de-deux-outils.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01, dont outil-alpha est le seul assistant inclus, qui publie le contrefactuel d'outil absent : etat indefini, motif moins_de_deux_outils, un outil au dérangement, la taille visée et une taille nulle, sans éditeur partagé, éligibles, sous-ensemble ni dérangement.",
+      "regle_protocole": "§7 (protocole 0.24), « Conflit d'intérêts » : le dérangement des outils du run « n'est pas défini sous deux outils » ; décision D75 (7) de l'auteur (absence publiée)"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-16-contrefactuel-outils-aucune-reponse-eligible.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01 avec un second assistant inclus, outil-beta (alias O08, preuve d'inclusion d'exemple fictive), dont le contrefactuel d'outil est joué sans réponse éligible : le dérangement est tiré (correspondances, clés de graine), aucune réponse ne nomme un outil du dérangement, le sous-ensemble est vide, en sous-effectif, sans aucun taux.",
+      "regle_protocole": "§7, « Conflit d'intérêts » : 200 réponses « dont le texte nomme au moins un outil » ; décision D75 (7) de l'auteur (absence publiée)"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-17-contrefactuel-outils-comparateur-du-meme-editeur.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-16 dont le contrefactuel d'outil est absent parce que le comparateur comparateur-gamma a le même éditeur (« Éditeur Alpha », valeur d'exemple) qu'outil-alpha, outil du dérangement : motif comparateur_du_meme_editeur, l'éditeur et ses deux outils publiés.",
+      "regle_protocole": "§7 (protocole 0.33), « Conflit d'intérêts » : « il en va de même quand un comparateur du périmètre a le même éditeur qu'un outil du dérangement » ; décisions D75 (6) et (7) de l'auteur"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-72-contrefactuel-outils-sans-motif.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-16 dont le bloc contrefactuel_outils n'a pas de motif : un test absent publie toujours pourquoi.",
+      "regle_protocole": "§7, « Conflit d'intérêts » : le test contrefactuel d'outil « est publié absent, avec ce motif » ; décision D75 (7) de l'auteur",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/contrefactuel_outils"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-73-moins-de-deux-outils-avec-deux-assistants.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-16 qui publie le motif moins_de_deux_outils alors que deux assistants sont inclus au périmètre. Le schéma recoupe le motif avec perimetre.outils.",
+      "regle_protocole": "§7 (protocole 0.24), « Conflit d'intérêts » : le dérangement des outils du run « n'est pas défini sous deux outils » ; décision D75 (7) de l'auteur",
+      "erreur_visee": {
+        "keyword": "contains",
+        "instance_path": "/perimetre/outils"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-74-editeur-partage-sans-editeurs.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-17 sans editeurs_partages : un motif d'éditeur publie l'éditeur en cause et ses outils.",
+      "regle_protocole": "§7 (protocole 0.31 et 0.33), « Conflit d'intérêts » ; décisions D73 (15) et D75 (6), (7) de l'auteur",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/contrefactuel_outils"
       }
     },
     {

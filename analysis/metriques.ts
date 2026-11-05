@@ -449,29 +449,42 @@ export function metriquesComparateur(
   }));
 }
 
-function indexVerdictsDeLecture(verdicts: readonly Verdict[]): ReadonlyMap<string, CategorieRetenue> {
+/**
+ * La note retenue de chaque lecture qui porte un verdict du run (contexte `run`), par identifiant de
+ * lecture ; deux verdicts sur une même lecture lèvent (`VerdictEnDouble`). Le mode de résolution
+ * d'un verdict de lecture est `lecture_comparateur_humaine`, et lui seul : `verdict.schema.json`
+ * l'impose (§6, protocole 0.31, D73 (13)), et `lireRun` valide chaque verdict contre lui.
+ */
+export function indexVerdictsDeLecture(verdicts: readonly Verdict[]): ReadonlyMap<string, CategorieRetenue> {
   const index = indexerVerdictsDuRun(verdicts, "lecture_comparateur");
   return new Map([...index].map(([id, verdict]) => [id, verdict.categorie_retenue]));
 }
 
 /**
- * Les lectures du run (contexte `run`) de chaque comparateur inclus, dans l'ordre du périmètre, avec
- * leur note retenue (`notes`, par identifiant de lecture) : après le contrôle de
- * `lecturesParComparateur` (une lecture par item P de référence et par comparateur, ou levée). Une
- * lecture affichée sans note lève. La source des notes est celle de l'appelant : les verdicts
- * (`metriquesComparateur`), ou la règle de l'échantillon sur les notations humaines (`pnpm analyze`).
+ * Les lectures du run (contexte `run`) de chaque comparateur inclus, dans l'ordre du périmètre, sans
+ * leur note : après le contrôle de `lecturesParComparateur` (une lecture par item P de référence et
+ * par comparateur, ou levée).
+ */
+export function lecturesDesComparateurs(run: Run, lectures: readonly LectureComparateur[]): ReadonlyMap<IdentifiantCourt, readonly LectureComparateur[]> {
+  return lecturesParComparateur(filtrerContexteRun(lectures), itemsPDeReference(run), comparateursDuRun(run));
+}
+
+/**
+ * Les lectures de chaque comparateur inclus (`lecturesDesComparateurs`), avec leur note retenue
+ * (`notes`, par identifiant de lecture). Une lecture affichée sans note lève. La source des notes
+ * est celle de l'appelant : les verdicts de lecture (`indexVerdictsDeLecture`).
  */
 export function lecturesNoteesParComparateur(
   run: Run,
   lectures: readonly LectureComparateur[],
   notes: ReadonlyMap<string, CategorieRetenue>,
 ): ReadonlyMap<IdentifiantCourt, readonly LectureNotee[]> {
-  const reference = itemsPDeReference(run);
-  const groupes = lecturesParComparateur(filtrerContexteRun(lectures), reference, comparateursDuRun(run));
+  const groupes = lecturesDesComparateurs(run, lectures);
   return new Map([...groupes].map(([outil_id, membres]) => [outil_id, membres.map((lecture) => noterLecture(lecture, notes))]));
 }
 
-function noterLecture(lecture: LectureComparateur, notes: ReadonlyMap<string, CategorieRetenue>): LectureNotee {
+/** Une lecture avec sa note retenue ; non affichée, elle n'en a pas ; affichée sans note, elle lève. */
+export function noterLecture(lecture: LectureComparateur, notes: ReadonlyMap<string, CategorieRetenue>): LectureNotee {
   const base = { lecture_id: lecture.id, grappe_id: lecture.reference_item.item_id };
   if (!lecture.affiche) return { ...base, affiche: false, categorie: null };
   const categorie = notes.get(lecture.id);

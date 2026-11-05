@@ -1104,6 +1104,90 @@
       "recommandation": "Option 1, après le code restant de D75 : c'est la répétition générale du premier run réel, et le premier moyen pour un tiers de vérifier le pipeline sans clé.",
       "retenu": "Option 1 (décision de l'auteur du 2026-11-05), après le code restant de D75 : geler --simule hors de runs/, notation:dry --run=<gel simulé>, analyze sur un run simulé désigné avec ses items (D75 (13)), puis la section « De bout en bout en mode simulé » de runs/README.md et .env.example.",
       "date_decision": "2026-11-05"
+    },
+    {
+      "id": "D81",
+      "statut": "en_attente",
+      "question": "Le §6 (QR9) ne nomme que le motif comme divergence qui appelle un troisième humain sur une lecture de comparateur, alors que le §7 0.33 (D75 (15)) étend l'arbitrage de l'échantillon à la citation d'une source et à l'existence d'un lien. Le code de D75 (15) applique aux lectures la même règle que l'échantillon (humainsAArbitrer, seule définition). Faut-il écrire cette extension dans le §6 ?",
+      "contexte": "Question ouverte du lot D75 (15) (PR du 2026-11-05). Le §6 dit qu'une lecture suit le §7 « comme une réponse de l'échantillon », ce qui couvre déjà le code ; le texte du §6 reste pourtant plus étroit que le §7. Garder une règle « motif seul » pour les lectures ferait deux définitions de l'arbitrage et laisserait le refus sans_note_commune sans issue.",
+      "options": [
+        "À la prochaine révision, ajouter au §6 « … ou sur la citation d'une source ou l'existence d'un lien », pour que le texte suive le §7 et le code.",
+        "Ne rien écrire : le renvoi du §6 au §7 suffit.",
+        "Restreindre les lectures au motif seul (deux définitions dans le code, refus sans_note_commune rétabli)."
+      ],
+      "recommandation": "Option 1 : une phrase, et un lecteur du §6 seul n'en tire plus une règle plus étroite que celle qui s'applique."
+    },
+    {
+      "id": "D82",
+      "statut": "en_attente",
+      "question": "Une saisie de l'application est rendue au juge avec « Réponse tronquée : ABSENT » (charge-juge-v6, D75 (24)). Deux points restent : (1) le corps de prompts/judge-1.0.0.md n'explique pas ce que signifie ABSENT pour la troncature ; (2) l'écran de notation humaine affiche une troncature absente comme « pas d'alerte », c'est-à-dire comme false, alors que le juge lit ABSENT. Faut-il agir ?",
+      "contexte": "Questions ouvertes du lot D75 (24), PR #313. L'annexe D (0.33) ne demande que le rendu ABSENT. Le §7 veut qu'un humain reçoive exactement ce que reçoit un juge : sur (2), l'humain reçoit moins (pas de marqueur de canal), pas plus. Toucher au corps du prompt est un amendement au protocole.",
+      "options": [
+        "(1) ne rien changer au corps du prompt, le juge notant de toute façon sur ce que la réponse contient ; (2) afficher à l'écran humain « troncature : non renseignée (saisie de l'application) », pour que l'humain voie ce que voit le juge (contenu-vue.ts, vue-annotateur-v5).",
+        "(1) ajouter une phrase au corps du prompt (amendement) ; (2) comme l'option 1.",
+        "Ne rien changer ni au prompt ni à l'écran."
+      ],
+      "recommandation": "Option 1 : le prompt reste inchangé, et l'écran humain suit le juge, ce qui tient la symétrie du §7 sans amendement."
+    },
+    {
+      "id": "D83",
+      "statut": "en_attente",
+      "question": "pnpm liens:textes écrit le texte intégral extrait de chaque page citée sous volume/liens/textes/<texte_sha256>.txt, qui part sur Zenodo avec le volume. Le §9 retient les pages citées ; leur texte intégral en est une copie fidèle. Faut-il le sortir du volume comme les pages (D75 (4)) ?",
+      "contexte": "Question ouverte du lot D75 (4), PR #315, qui sort les pages de volume/ sans toucher aux textes (hors brief). Les fiches volume/liens/extractions/*.json ne portent qu'empreinte, longueur et extracteur, et peuvent rester publiées.",
+      "options": [
+        "Sortir aussi les textes du volume, sous runs/<date>/pages-citees/textes/, en gardant les fiches d'extraction dans le volume : un lot de la forme de D75 (4).",
+        "Publier les textes en jugeant qu'un texte extrait n'est pas « la page », et l'écrire au §9.",
+        "Décider au cas par cas selon la licence de la page, ce que le banc ne sait pas établir."
+      ],
+      "recommandation": "Option 1 : même raison que pour les pages (droits d'autrui), et l'empreinte publiée suffit à vérifier le texte."
+    },
+    {
+      "id": "D84",
+      "statut": "tranchee",
+      "question": "Le §7 veut que le libellé et l'éditeur de chaque outil du contrefactuel d'outil soient « ceux de l'instantané du périmètre inscrit au gel », mais run.schema.json#/perimetre/outils[] ne les porte pas (charger-perimetre.ts les retire). Sans eux, la chaîne ne peut décider ni les motifs d'éditeur ni l'éligibilité, et répond non_joue (libelles_et_editeurs_hors_du_gel) au-delà d'un assistant. Où les lire ?",
+      "contexte": "Question A du lot D75 (2), (6), (7), PR #317. Relire config/perimetre.yaml à la notation contredirait le §7 : le périmètre a pu changer depuis le gel.",
+      "options": [
+        "Inscrire libelle et editeur de chaque outil dans l'instantané du périmètre au gel (pipeline/gel/, run.schema.json, exemples), puis faire appeler derangementOutilsOuAbsence par la chaîne avec les comparateurs du run, à la place de la branche libelles_et_editeurs_hors_du_gel.",
+        "Les relire dans config/perimetre.yaml à la notation (contraire au §7)."
+      ],
+      "recommandation": "Option 1 : c'est ce que le §7 écrit déjà ; un lot de gel, sans révision du protocole.",
+      "retenu": "Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt, le §7 la prescrivant déjà). Lot de gel à venir, avec la vague (14), (20), (21), (27).",
+      "date_decision": "2026-11-05"
+    },
+    {
+      "id": "D85",
+      "statut": "en_attente",
+      "question": "Le §7 rend le contrefactuel d'outil absent quand un comparateur du périmètre partage l'éditeur d'un outil permuté (D75 (6)). Un outil hors dérangement qui n'est pas un comparateur (un assistant exclu, par exemple) et partage cet éditeur lève encore FormesOutilsAmbigues et bloque le run, alors que l'ambiguïté de remplacement est la même. Étendre l'absence à tout outil du périmètre hors dérangement ?",
+      "contexte": "Question B du lot D75 (2), (6), (7), PR #317. Le texte ne nomme que les comparateurs ; l'étendre est un amendement.",
+      "options": [
+        "Amender le §7 : « un outil du périmètre hors dérangement » au lieu de « un comparateur », puis étendre le code.",
+        "Garder la lecture stricte : un tel cas bloque le run."
+      ],
+      "recommandation": "Option 1 : même ambiguïté, même traitement ; un blocage de run pour un cas que le test sait publier absent n'apporte rien."
+    },
+    {
+      "id": "D86",
+      "statut": "en_attente",
+      "question": "Deux comparateurs du même éditeur, qu'aucun outil permuté ne porte, lèvent FormesOutilsAmbigues au tirage du contrefactuel d'outil, alors que leurs formes sont seulement cherchées, jamais remplacées. Le §7 n'en dit rien. Relâcher ce refus ?",
+      "contexte": "Question C du lot D75 (2), (6), (7), PR #317. Le refus vient de verifierOutils (pipeline/notation/derangement-outils.ts) ; il bloque un run sans que le protocole l'écrive.",
+      "options": [
+        "Relâcher verifierOutils pour les formes qu'aucun outil permuté ne porte ; aucune mesure ne change.",
+        "Garder le refus."
+      ],
+      "recommandation": "Option 1 : retire un blocage que le protocole n'écrit pas, sans effet sur aucune mesure."
+    },
+    {
+      "id": "D87",
+      "statut": "tranchee",
+      "question": "Depuis D75 (16), le taux d'un comparateur lit la note de chaque lecture dans son verdict, mais aucun code n'appelle verdictDeLecture (pipeline/notation/lectures-comparateur.ts) : sur un vrai run, tout comparateur qui affiche une lecture sortirait absent (lectures_sans_verdict). Qui écrit les verdicts de lecture ?",
+      "contexte": "Question 1 du lot D75 (16), (25), (26), PR #318. Aucun point de D75 n'attribuait ce travail. Revenir à la note tirée des notations faute de verdict ferait deux sources pour une même note.",
+      "options": [
+        "Un lot de notation (pipeline/notation/) qui écrit le verdict d'une lecture dès que sa note est retenue (accord ou arbitrage, §6), avec la mise à jour de l'en-tête de lectures-comparateur.ts (lignes 38-40).",
+        "Reprendre la note des notations quand aucun verdict n'existe (deux sources pour une même note)."
+      ],
+      "recommandation": "Option 1 : une seule source de la note, celle que publie la notation.",
+      "retenu": "Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation à venir, avant D80.",
+      "date_decision": "2026-11-05"
     }
   ],
   "lots": [

@@ -27,8 +27,8 @@
  *    à deux modes), variabilité entre échantillons (diagnostic par couple comparé, §8, D70 (12),
  *    `accord-echantillons.ts`, qui lit aussi le plan d'interrogation), puis les analyses exploratoires
  *    préannoncées, après les comparateurs (couverture et exactitude de chaque comparateur inclus sur
- *    les items P de référence, §8, métriques secondaires ; notes des lectures retenues par la règle de
- *    l'échantillon, injectée), (corrélation de Spearman du §2, `correlation-couverture.ts` ; écart API /
+ *    les items P de référence, §8, métriques secondaires ; notes lues dans les verdicts de lecture,
+ *    recoupées par la règle de l'échantillon, injectée, D75 (16)), (corrélation de Spearman du §2, `correlation-couverture.ts` ; écart API /
  *    application du §6, `ecart-api-application.ts`), chacune étiquetée « exploratoire », sans
  *    qualificatif de fragilité (§8, robustesse). Chaque section est
  *    `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` : jamais une section vide qui
@@ -89,7 +89,7 @@ import {
   type PlanDuRun,
   type RunLu,
 } from "./lecture-run.ts";
-import { exactitude, lecturesNoteesParComparateur, type LectureNotee } from "./metriques.ts";
+import { exactitude, indexVerdictsDeLecture, lecturesDesComparateurs, noterLecture } from "./metriques.ts";
 import { renvoisParJuge, type RenvoisDUnJuge } from "./renvois-humains.ts";
 import { modelesDuRun, type ModeleDUnOutil } from "./modeles-du-run.ts";
 import { corrigerFamilleAsymetrie, PERMUTATIONS_PRODUCTION, testHomogeneiteCandidats, type FamilleAsymetrie, type ResultatCouple } from "./permutation.ts";
@@ -555,65 +555,107 @@ export function sectionVariabilite(contexte: ContexteDuRun, entrees: EntreesDuRu
   return variabiliteDuRun({ couples: contexte.couples, plan: entrees.plan, reponses: entrees.reponses, unites: contexte.unites });
 }
 
-/** Une lecture affichée sans note retenue, ou une note sans lecture affichée du run : rien n'est publié. */
+/** Un verdict ou une note retenue sans lecture affichée d'un comparateur inclus du run : rien n'est publié. */
 export class LectureNonRetenue extends Error {
   readonly lectures: readonly Ulid[];
 
   constructor(lectures: readonly Ulid[], detail: string) {
-    super(`Lectures de comparateur ${lectures.join(", ")} : ${detail} La couverture et l'exactitude des comparateurs (§8) ne se publient pas sur une notation incomplète.`);
+    super(`Lectures de comparateur ${lectures.join(", ")} : ${detail} La couverture et l'exactitude des comparateurs (§8) ne se publient pas sur une notation incohérente.`);
     this.name = "LectureNonRetenue";
     this.lectures = lectures;
   }
 }
 
 /**
- * Un verdict de lecture dans `verdicts/` : la note d'une lecture est retenue ici depuis ses notations
- * humaines (§6), et le verdict d'une lecture n'est pas encore défini (mode de résolution, drapeau
- * d'échantillon : `pipeline/notation/lectures-comparateur.ts`). Le lire en plus donnerait deux notes.
+ * Un verdict de lecture (§6, 0.31, D73 (13)) qui ne concorde pas avec la note que la règle de
+ * l'échantillon retient des notations humaines de sa lecture (`etats_des_lectures`) : le verdict se
+ * construit depuis ces notations (`pipeline/notation/lectures-comparateur.ts:verdictDeLecture`), et
+ * publier l'une des deux notes serait choisir sans règle.
  */
-export class VerdictDeLectureNonDefini extends Error {
-  constructor(verdicts: readonly Ulid[]) {
-    super(`Verdicts de lecture de comparateur ${verdicts.join(", ")} : la note d'une lecture se retient depuis ses notations humaines (§6), le verdict d'une lecture n'est pas défini.`);
-    this.name = "VerdictDeLectureNonDefini";
+export class VerdictDeLectureIncoherent extends Error {
+  readonly lecture_id: Ulid;
+
+  constructor(lecture_id: Ulid, detail: string) {
+    super(`Verdict de la lecture de comparateur ${lecture_id} : ${detail}`);
+    this.name = "VerdictDeLectureIncoherent";
+    this.lecture_id = lecture_id;
   }
 }
 
-/** La note retenue de chaque lecture affichée ; une lecture à noter ou à arbitrer lève. */
-function notesRetenues(etats: readonly EtatDeLecture[]): ReadonlyMap<Ulid, CategorieRetenue> {
-  const enAttente = etats.filter((e) => e.statut !== "retenue").map((e) => `${e.lecture_id} (${e.statut})`);
-  if (enAttente.length > 0) throw new LectureNonRetenue(enAttente, "notation à compléter ou à arbitrer.");
-  return new Map(etats.flatMap((e) => (e.statut === "retenue" ? [[e.lecture_id, e.note.categorie] as const] : [])));
+/**
+ * D75 (16) : un comparateur inclus dont une lecture affichée au moins n'a pas encore de verdict. Sa
+ * couverture et son exactitude ne sont pas publiées ; les lectures sans verdict sont nommées, triées.
+ */
+export interface ComparateurSansVerdict {
+  readonly outil_id: IdentifiantCourt;
+  readonly motif_absence: "lectures_sans_verdict";
+  readonly lectures_sans_verdict: readonly Ulid[];
 }
 
-/** Chaque note retenue désigne une lecture affichée des comparateurs inclus : une note de trop n'est pas ignorée. */
-function exigerNotesConsommees(notes: ReadonlyMap<Ulid, CategorieRetenue>, groupes: ReadonlyMap<IdentifiantCourt, readonly LectureNotee[]>): void {
-  const affichees = new Set([...groupes.values()].flat().filter((l) => l.affiche).map((l) => l.lecture_id));
-  const orphelines = [...notes.keys()].filter((id) => !affichees.has(id));
-  if (orphelines.length > 0) throw new LectureNonRetenue(orphelines, "note retenue sans lecture affichée d'un comparateur inclus du run.");
+/** Chaque identifiant désigne une lecture affichée des comparateurs inclus : un verdict ou une note de trop n'est pas ignoré. */
+function exigerLecturesAffichees(ids: readonly Ulid[], groupes: ReadonlyMap<IdentifiantCourt, readonly LectureComparateur[]>, quoi: string): void {
+  const affichees = new Set([...groupes.values()].flat().filter((l) => l.affiche).map((l) => l.id));
+  const orphelines = ids.filter((id) => !affichees.has(id));
+  if (orphelines.length > 0) throw new LectureNonRetenue(orphelines, `${quoi} sans lecture affichée d'un comparateur inclus du run.`);
+}
+
+/** Chaque verdict de lecture porte la note que ses notations humaines retiennent : lecture retenue, même catégorie. */
+function exigerVerdictsConcordants(notes: ReadonlyMap<Ulid, CategorieRetenue>, etats: readonly EtatDeLecture[]): void {
+  const parLecture = new Map(etats.map((e) => [e.lecture_id, e]));
+  for (const [lecture_id, categorie] of notes) {
+    const etat = parLecture.get(lecture_id);
+    if (etat === undefined || etat.statut !== "retenue") {
+      throw new VerdictDeLectureIncoherent(lecture_id, `ses notations humaines ne retiennent aucune note (${etat === undefined ? "aucun état" : etat.statut}).`);
+    }
+    if (etat.note.categorie !== categorie) {
+      throw new VerdictDeLectureIncoherent(lecture_id, `il retient ${categorie}, ses notations humaines ${etat.note.categorie}.`);
+    }
+  }
+}
+
+/** Les taux d'un comparateur sur ses lectures notées ; absents, avec les lectures nommées, si l'une n'a pas de verdict. */
+function tauxDuComparateur(
+  outil_id: IdentifiantCourt,
+  lectures: readonly LectureComparateur[],
+  notes: ReadonlyMap<Ulid, CategorieRetenue>,
+  options: ReturnType<typeof optionsBootstrap>,
+): TauxDuComparateur | ComparateurSansVerdict {
+  const sansVerdict = lectures.filter((l) => l.affiche && !notes.has(l.id)).map((l) => l.id).sort(comparerChaines);
+  if (sansVerdict.length > 0) return { outil_id, motif_absence: "lectures_sans_verdict", lectures_sans_verdict: sansVerdict };
+  return tauxPubliesDuComparateur(outil_id, lectures.map((l) => noterLecture(l, notes)), options);
 }
 
 /**
  * Les comparateurs (§8, métriques secondaires ; QR9) : couverture et exactitude de chaque comparateur
- * inclus, sur les items P de référence du run (`metriques.ts:lecturesNoteesParComparateur`, qui lève
- * si les lectures ne les recouvrent pas exactement), avec leurs intervalles
+ * inclus, sur les items P de référence du run (`metriques.ts:lecturesDesComparateurs`, qui lève si
+ * les lectures ne les recouvrent pas exactement), avec leurs intervalles
  * (`incertitude.ts:tauxPubliesDuComparateur`). Indépendante des couples d'assistants comparés. Sans
  * comparateur inclus, elle est « sans objet » (`aucun_comparateur_inclus`) ; une lecture d'un outil
  * qui n'est pas un comparateur inclus lève avant.
+ *
+ * D75 (16) : la note d'une lecture affichée est celle de son verdict de lecture (`verdicts/`, mode
+ * `lecture_comparateur_humaine`, §6, 0.31, D73 (13)), lue comme celle d'une réponse
+ * (`metriques.ts:indexVerdictsDeLecture`). Le verdict doit concorder avec la note que la règle de
+ * l'échantillon retient des notations de sa lecture (`etats_des_lectures`), sinon
+ * `VerdictDeLectureIncoherent`. Un comparateur dont une lecture affichée n'a pas de verdict est publié
+ * absent, motif `lectures_sans_verdict`, les lectures nommées : jamais une note prise ailleurs, jamais
+ * une exception qui arrêterait l'analyse des autres sections. Un verdict, ou une note retenue, sans
+ * lecture affichée d'un comparateur inclus lève (`LectureNonRetenue`).
  */
 export function sectionComparateurs(
   contexte: ContexteDuRun,
   entrees: EntreesDuRun,
-): Section<{ readonly items_p_de_reference: number; readonly comparateurs: readonly TauxDuComparateur[] }> {
-  const verdictsDeLecture = entrees.verdicts.filter((v) => v.objet_note.type === "lecture_comparateur").map((v) => v.id);
-  if (verdictsDeLecture.length > 0) throw new VerdictDeLectureNonDefini(verdictsDeLecture);
-  const notes = notesRetenues(entrees.etats_des_lectures);
-  const groupes = lecturesNoteesParComparateur(entrees.run, entrees.lectures, notes);
-  exigerNotesConsommees(notes, groupes);
+): Section<{ readonly items_p_de_reference: number; readonly comparateurs: readonly (TauxDuComparateur | ComparateurSansVerdict)[] }> {
+  const notes = indexVerdictsDeLecture(entrees.verdicts);
+  const groupes = lecturesDesComparateurs(entrees.run, entrees.lectures);
+  exigerLecturesAffichees([...notes.keys()], groupes, "verdict de lecture");
+  exigerLecturesAffichees(entrees.etats_des_lectures.filter((e) => e.statut === "retenue").map((e) => e.lecture_id), groupes, "note retenue");
+  exigerVerdictsConcordants(notes, entrees.etats_des_lectures);
   if (groupes.size === 0) return sansObjet("aucun_comparateur_inclus");
   return {
     statut: "calcule",
     items_p_de_reference: itemsPDeReference(entrees.run).size,
-    comparateurs: [...groupes].map(([outil_id, lectures]) => tauxPubliesDuComparateur(outil_id, lectures, optionsBootstrap(contexte))),
+    comparateurs: [...groupes].map(([outil_id, lectures]) => tauxDuComparateur(outil_id, lectures, notes, optionsBootstrap(contexte))),
   };
 }
 
@@ -728,7 +770,11 @@ function jugesDeclares(juges: readonly JugeLuParAnalyse[]): JugeEtSonEditeur[] |
  * §7, « Conflit d'intérêts » (0.31, D73 (7)) : l'écart de chaque juge sur l'outil de son propre
  * éditeur (`ecart-juge-editeur.ts`), sur les réponses du canal API du run, avec la liste des outils de
  * son éditeur lue dans `run.json#/juges[]`, déclarée au gel. Clé `exactitude / global`, à laquelle le
- * module ajoute `<juge>:propre-editeur` (§7, §8). Sans objet, avec son motif :
+ * module ajoute `<juge>:propre-editeur` (§7, §8). Population (§7, 0.33, D75 (26)) : les unités du
+ * canal API du contexte (`contexte.unites`), « les deux modes confondus, couples marqués « run
+ * incomplet » compris », jamais celles du canal application ni les seuls couples comparés. Les
+ * renvois du run (D75 (25)) y sont passés : une réponse renvoyée sort du calcul, nommée. Sans objet,
+ * avec son motif :
  * - `juge_retire` : §7, « Les notations déjà rendues par le juge retiré sont écartées de tout le run » ;
  *   l'écart compare les deux juges et n'a plus d'objet ;
  * - `outils_de_son_editeur_non_declares` : un juge sans liste déclarée (run gelé avant la 0.31).
@@ -740,7 +786,7 @@ export function sectionEcartJugeEditeur(contexte: ContexteDuRun, entrees: Entree
   const juges = jugesDeclares(entrees.run.juges);
   if (juges === null) return sansObjet("outils_de_son_editeur_non_declares");
   const options = { ...optionsBootstrap(contexte), cle: [METRIQUE_DES_CONDITIONS, STRATE_GLOBALE] };
-  return { statut: "calcule", ...ecartsJugesEditeurs(contexte.unites, entrees.notations, juges, options) };
+  return { statut: "calcule", ...ecartsJugesEditeurs(contexte.unites, entrees.notations, entrees.renvois, juges, options) };
 }
 
 /* ------------------------------------------------------------------ renvois à un humain */

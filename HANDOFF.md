@@ -41,38 +41,45 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-05
+## État au 2026-11-05 (soir)
 
-- Protocole **0.33** (#305). Décisions **D1 à D75 tranchées** (D75 le 2026-11-05, option
-  recommandée).
-- Fusionnées le 2026-11-05 : #302 à #304 (code de D74), #305 (protocole 0.33), #306 (plan de la
-  page pédagogique, `docs/PLAN-PAGE-PEDAGOGIQUE.md`, non lancé : l'auteur dira quand commencer),
-  #307 (compétence `revue-contexte-agentique`), #308 (revue du contexte agentique, D76 à D80).
-- D76 à D80 tranchées le 2026-11-05 (option recommandée). D76 à D78 appliquées au contexte
-  (`.claude/settings.json`, agents codeurs, `README.md`). **#309, protocole 0.34 (D79)**, attend la
-  fusion de l'auteur ; le code de D79 (`pipeline/notation/file-humaine.ts`) est préparé sur une
-  branche `lots/d79-ordre-file-humaine`, PR ouverte après cette fusion.
-- **Code restant de D75** : la liste « Code restant » du champ `retenu` de D75 dans
-  `docs/feuille-de-route.json`, points (2), (4), (6), (7), (8), (12) à (17), (20), (21), (24) à (27).
-  Le point (24) touche l'en-tête de `prompts/judge-1.0.0.md` : zone d'arrêt, PR distincte.
-- Dette : `docs/DETTE.md`, entrée du 2026-11-04 (après-midi). Dernière passe de conformité :
-  `docs/conformite/2026-11-03.md`, sur la 0.30.
-- Rien n'a jamais tourné sur un appel réel : extraction, reformulation, interrogation, liens et
-  notation ne sont exercés que sur doubles et fixtures.
+- Protocole **0.34** (#309, D79). Décisions D1 à D80 tranchées ; D81 à D87 inscrites (D84 et D87
+  tranchées par la règle du 2026-11-01 ; **D81, D82, D83, D85, D86 attendent l'auteur**).
+- Fusionnées le 2026-11-05 : #302 à #312, #314, #315. Code de D79 (#311) ; code restant de D75 :
+  (15) #312, (12) (13) (17) #314, (4) #315.
+- PR ouvertes à la reprise :
+  - **#313** (D75 (24), troncature, `charge-juge-v6`), brouillon : l'en-tête de
+    `prompts/judge-1.0.0.md` (zone d'arrêt) attend l'auteur ; la description de la PR donne les
+    quatre changements mot pour mot. CI rouge sur trois tests du vrai prompt jusque-là.
+  - **#317** (D75 (2) (6) (7), contrefactuel d'outil), **#318** (D75 (16) (25) (26), analyse),
+    **#316** (feuille de route D81 à D87 et cette section) : à fusionner une fois la CI verte.
+    #317 et #318 touchent tous deux `schema/exemples/manifeste.json` : conflit possible, à régler
+    par un commit de fusion de `main`.
+- Les worktrees d'agents `.claude/worktrees/agent-*` des lots fusionnés restent verrouillés par la
+  session qui les a lancés : `git worktree remove` puis `git branch -d` à la session suivante.
+- Dette : `docs/DETTE.md`, entrée du 2026-11-04 (après-midi) ; la clôture du 2026-11-05 reste à
+  faire (clone périmé et `--depot-des-items` ; garde de dépôt retirée par #315 ; entrée n° 2 sur
+  `liens/pages/` périmée). Dernière passe de conformité : `docs/conformite/2026-11-03.md` (0.30).
+- Rien n'a jamais tourné sur un appel réel.
 - Avant le prochain gel, l'auteur renseigne `juges[].outils_de_son_editeur` dans `config/gel.json`.
 
 ## Ce qui était en cours
 
-Le code de D79, en attente de la fusion de #309.
+La fusion de #316, #317, #318 ; #313 attend l'auteur.
 
 ## Prochaines tâches, par priorité
 
-1. **Code restant de D75** (ci-dessus), par PR tirées de `main` ; (24) dans sa PR à part.
-2. **D80** : chaîne simulée continue du gel aux métriques, après le code de D75 (`retenu` de D80).
-3. **Passe `conformite-protocole`** sur la 0.34 : la matrice date du 2026-11-03 (0.30), et D74 et
-   D75 l'ont fait bouger.
-4. **Site** : le plan de la page pédagogique est accordé mais non lancé ; le site fonctionnel ne
-   commence qu'après le code de D75, la matrice de conformité close et une revue de code
+1. **Code restant de D75**, après #317 : vague du gel (14) nombre d'échantillons dans `run.json`
+   au gel lu par `planifier`, (20) une réexécution hérite de la désignation
+   (`pipeline/gel/application.ts`), (21) `application_testee` requis, (27) `comptes_jeu_or` requis
+   avec la commande du kappa, plus **D84** (libellé et éditeur des outils dans l'instantané du gel) ;
+   en parallèle **D87** (écriture des verdicts de lecture) et les petits points (8) deux graphies
+   d'un éditeur refusées (`pipeline/questions/charger-perimetre.ts`), (1) et (3) commentaires
+   « non encore tranchée ». Commentaire de `CHAMPS_DU_STATUT_ET_DE_LA_PUBLICATION` qui cite le §9
+   de la 0.28 : à aligner.
+2. **D80** : chaîne simulée continue du gel aux métriques (`retenu` de D80).
+3. **Passe `conformite-protocole`** sur la 0.34.
+4. **Site** : après le code de D75, la matrice de conformité close et une revue de code
    (`docs/PLAN-PAGE-PEDAGOGIQUE.md`, « Place dans le projet »).
 
 Hors mission sans accord explicite de l'auteur : appels d'API réels, collecte réelle, écriture dans

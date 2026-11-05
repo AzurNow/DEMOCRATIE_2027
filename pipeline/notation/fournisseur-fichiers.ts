@@ -14,11 +14,12 @@
  *   son absence est réglée par le schéma (D21 : un instantané écarté ou un téléchargement en échec
  *   n'en donnent pas) ;
  * - la copie conservée — page d'un lien qui existe, ou version brute de l'instantané téléchargée
- *   pour un lien inaccessible ou non testable (D21) — est présente sous `volume/liens/`, nommée par
- *   son empreinte (`sha256_contenu`), de la taille annoncée (l'empreinte elle-même n'est pas
- *   recalculée à chaque ouverture de l'écran).
- * Une entrée du répertoire qui n'est ni un résultat `.json` ni l'un des dossiers `pages/`,
- * `extractions/` et `textes/` est refusée.
+ *   pour un lien inaccessible ou non testable (D21) — est présente sous `runs/<date>/pages-citees/`,
+ *   hors de `volume/` (D75 (4) : le volume part en entier sur Zenodo, les pages citées non), au
+ *   chemin relatif au run que déclare le résultat, nommée par son empreinte (`sha256_contenu`), de
+ *   la taille annoncée (l'empreinte elle-même n'est pas recalculée à chaque ouverture de l'écran).
+ * Une entrée de `volume/liens/` qui n'est ni un résultat `.json` ni l'un des dossiers
+ * `extractions/` et `textes/` est refusée : un ancien dossier `pages/` sous `volume/liens/` aussi.
  *
  * Contrat de `FournisseurExistences` inchangé : `existencesDe` rend un verdict par lien distinct
  * demandé qui en a un, ni plus ni moins. Un lien sans fichier n'a pas de verdict : la réponse reste
@@ -42,10 +43,11 @@ import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import type { TexteDeCopie } from "./pages-citees.ts";
 import type { ExistenceEtablie } from "./vue-annotateur.ts";
 
-export const REPERTOIRE_PAGES = "pages";
+/** Relatif au répertoire du run, hors de `volume/` (D75 (4)) ; même valeur que `pipeline/liens/sortie.py`. */
+export const REPERTOIRE_PAGES = "pages-citees";
 export const REPERTOIRE_EXTRACTIONS = "extractions";
 export const REPERTOIRE_TEXTES = "textes";
-const DOSSIERS_ADMIS: ReadonlySet<string> = new Set([REPERTOIRE_PAGES, REPERTOIRE_EXTRACTIONS, REPERTOIRE_TEXTES]);
+const DOSSIERS_ADMIS: ReadonlySet<string> = new Set([REPERTOIRE_EXTRACTIONS, REPERTOIRE_TEXTES]);
 
 /** Une fiche de `extractions/`, telle que la décrit `schema/extraction-page-lien.schema.json`. */
 type FicheExtraction =
@@ -94,6 +96,11 @@ export function repertoireLiens(repertoire_run: string): string {
   return join(repertoire_run, "volume", "liens");
 }
 
+/** `<repertoire_run>/pages-citees`, où `pipeline/liens` conserve les pages citées, hors de `volume/` (D75 (4)). */
+export function repertoirePages(repertoire_run: string): string {
+  return join(repertoire_run, REPERTOIRE_PAGES);
+}
+
 export function nomResultat(url: string): string {
   return `${createHash("sha256").update(url, "utf8").digest("hex")}.json`;
 }
@@ -124,13 +131,14 @@ function copieConservee(r: ResultatTestLien): PageConservee | undefined {
   return telechargement?.issue === "reussi" ? telechargement : undefined;
 }
 
-function incoherencesDeLaCopie(repertoire: string, r: ResultatTestLien): readonly string[] {
+/** `repertoire_run` : le chemin déclaré de la copie lui est relatif (D75 (4)). */
+function incoherencesDeLaCopie(repertoire_run: string, r: ResultatTestLien): readonly string[] {
   const copie = copieConservee(r);
   if (copie === undefined) return [];
   if (r.sha256_contenu === undefined || !copie.chemin.startsWith(`${REPERTOIRE_PAGES}/${r.sha256_contenu}.`)) {
     return [`la copie ${copie.chemin} n'est pas nommée par l'empreinte ${String(r.sha256_contenu)}.`];
   }
-  const chemin = join(repertoire, copie.chemin);
+  const chemin = join(repertoire_run, copie.chemin);
   if (!existsSync(chemin)) return [`la copie conservée ${copie.chemin} est absente.`];
   const taille = statSync(chemin).size;
   return taille === copie.taille_octets ? [] : [`la copie ${copie.chemin} fait ${taille} octets, ${copie.taille_octets} annoncés.`];
@@ -156,11 +164,11 @@ function incoherenceDArchive(r: ResultatTestLien): readonly string[] {
   return r.archive_url === attendue ? [] : [`archive_url n'est pas l'instantané que Wayback a renvoyé ou servi (${String(attendue)} attendu).`];
 }
 
-function incoherences(repertoire: string, nom: string, r: ResultatTestLien): readonly string[] {
+function incoherences(repertoire_run: string, nom: string, r: ResultatTestLien): readonly string[] {
   const constats: string[] = [];
   if (nom !== nomResultat(r.url_citee)) constats.push(`le nom n'est pas le SHA-256 de l'URL citée (${nomResultat(r.url_citee)} attendu).`);
   constats.push(...incoherenceDArchive(r));
-  return [...constats, ...incoherencesDesTentatives(r), ...incoherencesDeLaCopie(repertoire, r)];
+  return [...constats, ...incoherencesDesTentatives(r), ...incoherencesDeLaCopie(repertoire_run, r)];
 }
 
 /** Recopie champ par champ : seuls les champs d'un lien de notation sortent du fichier. */
@@ -176,10 +184,10 @@ function existenceDe(r: ResultatTestLien): ExistenceEtablie {
   };
 }
 
-function lireResultat(repertoire: string, nom: string): ExistenceEtablie {
-  const chemin = join(repertoire, nom);
+function lireResultat(repertoire_run: string, nom: string): ExistenceEtablie {
+  const chemin = join(repertoireLiens(repertoire_run), nom);
   const resultat = valider<ResultatTestLien>("existence-lien", lireJson(chemin), chemin);
-  const constats = incoherences(repertoire, nom, resultat);
+  const constats = incoherences(repertoire_run, nom, resultat);
   if (constats.length > 0) throw new FichierExistenceRefuse(chemin, constats.join(" "));
   return existenceDe(resultat);
 }
@@ -189,14 +197,15 @@ function estEntreeAdmise(repertoire: string, nom: string): boolean {
   return DOSSIERS_ADMIS.has(nom) ? statut.isDirectory() : nom.endsWith(".json") && statut.isFile();
 }
 
-/** Tous les verdicts du répertoire, indexés par URL citée. Lève au premier fichier refusé. */
-export function lireExistences(repertoire: string): ReadonlyMap<string, ExistenceEtablie> {
+/** Tous les verdicts de `volume/liens/` du run, indexés par URL citée. Lève au premier fichier refusé. */
+export function lireExistences(repertoire_run: string): ReadonlyMap<string, ExistenceEtablie> {
+  const repertoire = repertoireLiens(repertoire_run);
   const noms = readdirSync(repertoire).sort();
   const etrangers = noms.filter((nom) => !estEntreeAdmise(repertoire, nom));
   if (etrangers.length > 0) throw new FichierExistenceRefuse(repertoire, `entrées qui ne sont pas des résultats, ni lues ni ignorées : ${etrangers.join(", ")}.`);
   const index = new Map<string, ExistenceEtablie>();
   for (const nom of noms.filter((n) => !DOSSIERS_ADMIS.has(n))) {
-    const existence = lireResultat(repertoire, nom);
+    const existence = lireResultat(repertoire_run, nom);
     index.set(existence.url_citee, existence);
   }
   return index;
@@ -249,7 +258,7 @@ function texteDeCopie(repertoire: string, fiches: ReadonlyMap<string, FicheExtra
 /** Le fournisseur de `volume/liens/` du run. Le répertoire doit exister : l'appelant choisit. */
 export function fournisseurFichiers(repertoire_run: string): FournisseurExistences {
   const repertoire = repertoireLiens(repertoire_run);
-  const index = lireExistences(repertoire);
+  const index = lireExistences(repertoire_run);
   const fiches = lireExtractions(repertoire);
   return {
     existencesDe: (_reponse_id, liens) =>

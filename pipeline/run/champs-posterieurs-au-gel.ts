@@ -48,11 +48,12 @@ export const CHAMPS_DU_TEST = ["retire", "motif_retrait", "taux_changement_contr
  * Ce que la chaîne de notation écrit (`pipeline/notation/chaine.ts`) : le test contrefactuel et le
  * taux de l'échantillon humain qui en découle (§7 : 10 %, 25 % après retrait d'un juge ; écrit au
  * gel, réécrit ici), et le nombre de réponses obtenues, inscrit en tête de la notation (§5
- * « Tailles », `inscription-reponses.ts`). Avant l'analyse : dans l'empreinte.
+ * « Tailles », `inscription-reponses.ts`), et l'absence du contrefactuel d'outil
+ * (`inscription-contrefactuel-outils.ts`, D75 (7)). Avant l'analyse : dans l'empreinte.
  */
 export const CHAMPS_DE_LA_NOTATION: ChampsDeRunJson = {
   ...AUCUN,
-  racine: ["contrefactuel_candidats", "taux_echantillon_humain"],
+  racine: ["contrefactuel_candidats", "taux_echantillon_humain", "contrefactuel_outils"],
   juges: CHAMPS_DU_TEST,
   reponses: ["obtenues"],
 };
@@ -71,8 +72,12 @@ export const CHAMPS_DES_INCIDENTS_ET_CONTESTATIONS: ChampsDeRunJson = {
 /**
  * Ce que `pnpm go-no-go` écrit (`pipeline/go-no-go/go-no-go.ts:fusionner`, §12, D24, D55 (7)). Il
  * se lance après l'analyse et lit `metriques.json` : hors de l'empreinte, pour qu'une analyse
- * relancée ensuite reste identique. Le §9 ne nomme pas ces champs (conformité 2026-11-03,
- * constat 16, révision du protocole proposée).
+ * relancée ensuite reste identique. Le §9 les nomme depuis la 0.33 (D75 (17) ; conformité
+ * 2026-11-03, constat 16) : l'empreinte du fichier du run est calculée « hors de ceux qu'y inscrit
+ * le go/no-go (section 12), sa décision, le motif d'une publication provisoire, les comptes et les
+ * kappas de l'échantillon humain et les réponses manquantes de chaque outil par mode, champs que ce
+ * fichier reçoit après l'analyse et dont la liste exacte est publiée avec le code ». Cette liste
+ * exacte est celle-ci.
  */
 export const CHAMPS_DU_GO_NO_GO: ChampsDeRunJson = {
   ...AUCUN,

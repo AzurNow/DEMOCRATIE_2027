@@ -239,7 +239,7 @@
       ]
     },
     "comparateurs": {
-      "description": "§8, métriques secondaires (QR9) : pour chaque comparateur inclus, dans l'ordre du périmètre, couverture (items P affichés / items P de référence) et exactitude (items affichés compatibles / items affichés classés, une lecture indéterminée hors du dénominateur), chacune avec son intervalle, strate global, clé <outil> / lecture / <métrique> / global (§8, « Graines de l'analyse »). Les items P de référence sont ceux qui comptent pour le seuil de couverture de leur candidat interrogé (analysis/reference-comparateurs.ts) ; chaque comparateur en porte une lecture. Sans comparateur inclus au run : sans_objet, motif aucun_comparateur_inclus.",
+      "description": "§8, métriques secondaires (QR9) : pour chaque comparateur inclus, dans l'ordre du périmètre, couverture (items P affichés / items P de référence) et exactitude (items affichés compatibles / items affichés classés, une lecture indéterminée hors du dénominateur), chacune avec son intervalle, strate global, clé <outil> / lecture / <métrique> / global (§8, « Graines de l'analyse »). Les items P de référence sont ceux qui comptent pour le seuil de couverture de leur candidat interrogé (analysis/reference-comparateurs.ts) ; chaque comparateur en porte une lecture. Sans comparateur inclus au run : sans_objet, motif aucun_comparateur_inclus. D75 (16) : la note d'une lecture affichée est celle de son verdict de lecture (verdict.schema.json, mode lecture_comparateur_humaine) ; un comparateur dont une lecture affichée n'a pas de verdict est publié absent (comparateur_sans_verdict), ses lectures sans verdict nommées.",
       "oneOf": [
         { "$ref": "#/$defs/sans_objet" },
         {
@@ -249,24 +249,25 @@
           "properties": {
             "statut": { "const": "calcule" },
             "items_p_de_reference": { "$ref": "#/$defs/effectif" },
-            "comparateurs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/taux_du_comparateur" } }
+            "comparateurs": { "type": "array", "minItems": 1, "items": { "oneOf": [{ "$ref": "#/$defs/taux_du_comparateur" }, { "$ref": "#/$defs/comparateur_sans_verdict" }] } }
           }
         }
       ]
     },
     "ecart_juge_editeur": {
-      "description": "§7, « Conflit d'intérêts » (protocole 0.31, D73 (7)) : pour chaque juge dont la liste déclarée au gel (run.json#/juges[]/outils_de_son_editeur) n'est pas vide, l'écart signé entre son exactitude et celle de l'autre juge sur les réponses de chaque outil du canal API, et la différence entre l'écart sur l'outil de son éditeur et la moyenne des écarts sur les autres outils, avec son intervalle, clé bootstrap / exactitude / global / <juge>:propre-editeur (analysis/ecart-juge-editeur.ts). Un juge dont la liste déclarée est vide est nommé dans juges_sans_outil_de_leur_editeur, sans chiffre. Sans objet : juge_retire (§7, les notations du juge retiré sont écartées de tout le run) ; outils_de_son_editeur_non_declares (un juge sans liste déclarée, run gelé avant la 0.31 : jamais lue comme vide).",
+      "description": "§7, « Conflit d'intérêts » (protocole 0.31, D73 (7)) : pour chaque juge dont la liste déclarée au gel (run.json#/juges[]/outils_de_son_editeur) n'est pas vide, l'écart signé entre son exactitude et celle de l'autre juge sur les réponses de chaque outil du canal API, et la différence entre l'écart sur l'outil de son éditeur et la moyenne des écarts sur les autres outils, avec son intervalle, clé bootstrap / exactitude / global / <juge>:propre-editeur (analysis/ecart-juge-editeur.ts). Un juge dont la liste déclarée est vide est nommé dans juges_sans_outil_de_leur_editeur, sans chiffre. Sans objet : juge_retire (§7, les notations du juge retiré sont écartées de tout le run) ; outils_de_son_editeur_non_declares (un juge sans liste déclarée, run gelé avant la 0.31 : jamais lue comme vide). Population (§7, 0.33, D75 (26)) : les réponses obtenues du canal API, les deux modes confondus, couples marqués run incomplet compris, notées par les deux juges ; une réponse renvoyée à un humain par un juge en sort et est nommée dans reponses_renvoyees (D75 (25)).",
       "oneOf": [
         { "$ref": "#/$defs/sans_objet" },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["statut", "par_juge", "juges_sans_outil_de_leur_editeur", "reponses_sans_note_de_juge"],
+          "required": ["statut", "par_juge", "juges_sans_outil_de_leur_editeur", "reponses_sans_note_de_juge", "reponses_renvoyees"],
           "properties": {
             "statut": { "const": "calcule" },
             "par_juge": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/ecart_juge_editeur" } },
             "juges_sans_outil_de_leur_editeur": { "type": "array", "maxItems": 2, "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" } },
-            "reponses_sans_note_de_juge": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }, "description": "Réponses du run qu'aucun juge n'a notées (refus de l'API, notés par règle) : hors du calcul, nommées." }
+            "reponses_sans_note_de_juge": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }, "description": "Réponses du run qu'aucun juge n'a notées ni renvoyées (refus de l'API, notés par règle) : hors du calcul, nommées." },
+            "reponses_renvoyees": { "type": "array", "items": { "$ref": "#/$defs/reponse_renvoyee" }, "description": "D75 (25) : réponses du run renvoyées à un humain par un juge au moins (volume/renvois/, contexte run), quel que soit le motif : hors du calcul, nommées avec chaque juge qui les a renvoyées et son motif." }
           }
         }
       ]
@@ -382,6 +383,40 @@
           }
         },
         "reponses_sans_identifiant": { "$ref": "#/$defs/effectif" }
+      }
+    },
+    "comparateur_sans_verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "motif_absence", "lectures_sans_verdict"],
+      "description": "D75 (16) : un comparateur inclus dont une lecture affichée au moins n'a pas de verdict de lecture. Ni couverture ni exactitude publiées, ni graine ; les lectures affichées sans verdict sont nommées, triées.",
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "motif_absence": { "const": "lectures_sans_verdict" },
+        "lectures_sans_verdict": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" } }
+      }
+    },
+    "reponse_renvoyee": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reponse_id", "renvois"],
+      "description": "D75 (25) : une réponse renvoyée à un humain par un juge au moins, hors du calcul de l'écart juge-éditeur ; un renvoi par juge, trié par juge.",
+      "properties": {
+        "reponse_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+        "renvois": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["juge_id", "motif"],
+            "properties": {
+              "juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "motif": { "enum": ["attribution_indecidable", "erreur_api_persistante", "contexte_depasse", "sortie_refusee", "sortie_illisible"], "description": "Les motifs de schema/renvoi-humain.schema.json." }
+            }
+          }
+        }
       }
     },
     "taux_du_comparateur": {

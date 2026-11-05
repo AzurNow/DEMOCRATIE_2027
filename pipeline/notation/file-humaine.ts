@@ -23,8 +23,9 @@
  * - **Échantillon** : les places restantes parmi les deux notations `echantillon_aleatoire_10`,
  *   ouvertes à tout annotateur qui n'en a pas déjà rendu une ; puis, si les deux sont faites et ne
  *   concordent pas (`analysis/note-lue.ts:notationsConcordent`), ou concordent mais divergent sur le
- *   motif d'inexactitude (§7, 0.31 ; D73 (14) ; `note-retenue.ts:humainsAArbitrer`), une place
- *   d'arbitrage (`arbitrage_echantillon_10`), fermée aux deux premiers. Ces tâches ne dépendent pas des juges :
+ *   motif d'inexactitude, la citation d'une source ou l'existence d'un lien (§7, 0.33 ; D73 (14),
+ *   D75 (15) ; `note-retenue.ts:humainsAArbitrer`), une place d'arbitrage
+ *   (`arbitrage_echantillon_10`), fermée aux deux premiers. Ces tâches ne dépendent pas des juges :
  *   elles sont ouvertes même si un juge manque, la réponse figurant alors aussi parmi celles qui
  *   attendent un juge.
  * - **Hors échantillon** : `decider` ; « en attente » d'un humain donne une tâche à une place, sous
@@ -33,12 +34,8 @@
  *   distincts. Une réponse tirée aussi dans l'échantillon est notée deux fois, sous deux motifs.
  * - **Attend un juge** : `decider` rend « en attente » d'un juge. Ce n'est pas une tâche humaine ;
  *   l'état est rendu à part (`attend_juge`).
- * - **Sans motif admis** : dans l'échantillon, deux humains qui s'accordent, avec le même motif
- *   d'inexactitude, mais diffèrent sur le sourçage partiel (`cite`, `au_moins_un_lien_existant`)
- *   laissent `decider` en attente d'un humain (`accord_sans_note_commune`) ; le §7 (0.31) n'admet un
- *   troisième humain que sur le motif. La file n'invente pas de tâche et rend ces réponses à part
- *   (`sans_motif_admis`). Question ouverte, posée à l'auteur.
- *   Hors échantillon, le même cas est un accord partiel des juges (D15), tâche `accord_partiel_juges`.
+ *   Hors échantillon, le même cas entre deux juges est un accord partiel (D15), tâche
+ *   `accord_partiel_juges`.
  *
  * **Contraintes tenues.** Deux notations d'échantillon par deux annotateurs distincts ; l'arbitre
  * distinct des deux premiers ; deux notations de calibration par deux annotateurs distincts ; un seul
@@ -111,8 +108,6 @@ export interface FileHumaine {
   readonly taches: readonly Tache[];
   /** Réponses dont une notation de juge manque : pas une tâche humaine. */
   readonly attend_juge: readonly ReponseEnAttente[];
-  /** Réponses qui attendent un humain sans qu'aucun motif humain ne soit admis (question ouverte). */
-  readonly sans_motif_admis: readonly ReponseEnAttente[];
   readonly comptes: Readonly<Record<MotifHumain, Compte>>;
   tachesPour(annotateur_id: string): readonly TacheAnnotateur[];
 }
@@ -171,7 +166,6 @@ interface Contexte {
 interface BilanReponse {
   readonly taches: readonly Tache[];
   readonly attend_juge: readonly ReponseEnAttente[];
-  readonly sans_motif_admis: readonly ReponseEnAttente[];
 }
 
 export function construireFile(entree: EntreeFile): FileHumaine {
@@ -189,7 +183,6 @@ export function construireFile(entree: EntreeFile): FileHumaine {
   return {
     taches,
     attend_juge: bilans.flatMap((b) => b.attend_juge).sort(parId),
-    sans_motif_admis: bilans.flatMap((b) => b.sans_motif_admis).sort(parId),
     comptes: compter(taches),
     tachesPour: (annotateur_id) => tachesPour(taches, annotateur_id),
   };
@@ -249,18 +242,10 @@ function bilanDeReponse(ctx: Contexte, reponse: ReponseDeLaFile, notations: read
   const { decision, calibration } = separerCalibration(notations);
   const dans = ctx.echantillon.has(id);
   const resultat = decider({ run: ctx.run, objet_note: { type: "reponse", id }, notations: decision, renvois, dans_echantillon_humain: dans, textes: reponse.textes, ...VERDICT_JETABLE });
-  const sansMotif = dans ? attenteSansMotifAdmis(id, resultat) : [];
   return {
     taches: [...(dans ? tachesEchantillon(id, decision) : tachesHorsEchantillon(id, resultat)), ...tachesJeuOr(ctx, id, calibration)],
     attend_juge: resultat.statut === "en_attente" && resultat.attend === "juge" ? [{ reponse_id: id, motifs: resultat.motifs }] : [],
-    sans_motif_admis: sansMotif,
   };
-}
-
-/** Dans l'échantillon, `decider` attend un humain sous `accord_sans_note_commune` (même motif, sourçage partiel différent), qu'aucun motif humain ne couvre. */
-function attenteSansMotifAdmis(reponse_id: Ulid, resultat: Decision): readonly ReponseEnAttente[] {
-  const bloquee = resultat.statut === "en_attente" && resultat.attend === "humain" && resultat.motifs.includes("accord_sans_note_commune");
-  return bloquee ? [{ reponse_id, motifs: resultat.motifs }] : [];
 }
 
 /** Jamais deux notations d'un même humain sur la même réponse sous le même motif. */
@@ -308,7 +293,7 @@ function verifierEchantillon(id: Ulid, premiers: readonly NotationIndividuelle[]
   if (arbitre === undefined) return;
   const [a, b] = premiers;
   if (a === undefined || b === undefined || !humainsAArbitrer(a, b)) {
-    throw new FileIncoherente(`réponse ${id} : arbitrage de ${arbitre.notateur.id} sans deux notations d'échantillon discordantes (note ou motif).`);
+    throw new FileIncoherente(`réponse ${id} : arbitrage de ${arbitre.notateur.id} sans deux notations d'échantillon discordantes (note, motif ou sourçage).`);
   }
   if (premiers.some((n) => n.notateur.id === arbitre.notateur.id)) {
     throw new FileIncoherente(`réponse ${id} : l'arbitre ${arbitre.notateur.id} n'est pas un troisième humain.`);

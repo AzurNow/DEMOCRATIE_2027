@@ -20,7 +20,6 @@ export interface FileDeTravail {
   readonly a_noter: readonly { readonly reponse_id: string }[];
   readonly en_attente_test_des_liens: number;
   readonly attend_juge: number;
-  readonly sans_motif_admis: number;
 }
 
 export interface Existence {

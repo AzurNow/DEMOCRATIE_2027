@@ -51,6 +51,11 @@ __pycache__/
 # depuis runs/<date>/run.json par son DOI et son empreinte SHA-256.
 /runs/*/volume/
 
+# Pages citées par les réponses d'un run (pnpm liens) : octets d'autrui, ni dans Git ni dans l'archive
+# Zenodo du volume (§9 : publiées seulement si leur licence le permet). Hors de volume/ pour que le
+# volume parte en entier, sans exception (D75 (4), runs/README.md).
+/runs/*/pages-citees/
+
 # Copies locales des preuves du périmètre (pnpm preuve) : octets téléchargés, jamais versionnés ;
 # la preuve publiée est le bloc url + sha256 + archive_url de config/perimetre.yaml.
 /scratch/perimetre/preuves/

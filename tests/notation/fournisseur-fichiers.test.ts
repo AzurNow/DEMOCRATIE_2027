@@ -1,5 +1,6 @@
 /**
  * Cas limite 18 du lot test-liens : le fournisseur d'existences adossé à `volume/liens/` d'un run.
+ * D75 (4) : les copies conservées se lisent sous `runs/<date>/pages-citees/`, hors de `volume/`.
  *
  * Verdicts lus et rendus pour les liens demandés seulement ; un fichier invalide au schéma ou
  * incohérent lève une erreur nommée à la construction ; un lien sans fichier est absent du résultat,
@@ -8,14 +9,14 @@
  */
 
 import { createHash } from "node:crypto";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { etatDesTaches } from "../../notation-humaine/serveur/taches.ts";
 import { FOURNISSEUR_SANS_EXISTENCE, fournisseurDuRun } from "../../notation-humaine/serveur/fournisseur.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
-import { FichierExistenceRefuse, fournisseurFichiers, nomResultat, repertoireLiens } from "../../pipeline/notation/fournisseur-fichiers.ts";
+import { FichierExistenceRefuse, fournisseurFichiers, nomResultat, repertoireLiens, repertoirePages } from "../../pipeline/notation/fournisseur-fichiers.ts";
 import { LIEN, monter, type Monde } from "../notation-humaine/fixture.ts";
 
 const DORE = resolve(import.meta.dirname, "../liens/dore");
@@ -38,7 +39,8 @@ afterEach(() => {
 function runVide(): string {
   const run = mkdtempSync(join(tmpdir(), "fournisseur-fichiers-"));
   nettoyages.push(() => rmSync(run, { recursive: true, force: true }));
-  mkdirSync(join(repertoireLiens(run), "pages"), { recursive: true });
+  mkdirSync(repertoireLiens(run), { recursive: true });
+  mkdirSync(repertoirePages(run), { recursive: true });
   return run;
 }
 
@@ -60,7 +62,7 @@ function empreinte(octets: Buffer): string {
  */
 function runTeste(): string {
   const run = runVide();
-  for (const octets of [PAGE, COPIE]) writeFileSync(join(repertoireLiens(run), "pages", `${empreinte(octets)}.html`), octets);
+  for (const octets of [PAGE, COPIE]) writeFileSync(join(repertoirePages(run), `${empreinte(octets)}.html`), octets);
   const dores = [
     [EXISTE, "existe.json"],
     [MORT, "mort.json"],
@@ -151,7 +153,7 @@ describe("18. fournisseur adossé aux fichiers du test des liens", () => {
 
   it("D21 : la copie archivée absente, d'une autre taille ou mal nommée est refusée", () => {
     const run = runTeste();
-    const chemin = join(repertoireLiens(run), "pages", `${empreinte(COPIE)}.html`);
+    const chemin = join(repertoirePages(run), `${empreinte(COPIE)}.html`);
     writeFileSync(chemin, COPIE.subarray(1));
     expect(() => fournisseurFichiers(run)).toThrow(/octets/);
     rmSync(chemin);
@@ -206,9 +208,9 @@ describe("18. fournisseur adossé aux fichiers du test des liens", () => {
   it("la page d'un lien existant absente, ou d'une autre taille, est refusée", () => {
     const run = runTeste();
     const sha = empreinte(PAGE);
-    writeFileSync(join(repertoireLiens(run), "pages", `${sha}.html`), PAGE.subarray(1));
+    writeFileSync(join(repertoirePages(run), `${sha}.html`), PAGE.subarray(1));
     expect(() => fournisseurFichiers(run)).toThrow(/octets/);
-    rmSync(join(repertoireLiens(run), "pages", `${sha}.html`));
+    rmSync(join(repertoirePages(run), `${sha}.html`));
     expect(() => fournisseurFichiers(run)).toThrow(/absente/);
   });
 
@@ -279,6 +281,53 @@ describe("texte des copies conservées (D27 (E))", () => {
   });
 });
 
+/** D75 (4) : les pages citées vivent sous `runs/<date>/pages-citees/`, hors de `volume/` (archive Zenodo). */
+describe("D75 (4) : pages citées hors de volume/", () => {
+  function fichiersSous(racine: string): string[] {
+    return readdirSync(racine, { recursive: true, withFileTypes: true })
+      .filter((entree) => entree.isFile())
+      .map((entree) => relative(racine, join(entree.parentPath, entree.name)).split(sep).join("/"))
+      .sort();
+  }
+
+  it("D75 (4) cas 3 : la copie et son texte se relisent, la copie sous pages-citees/, aucune page sous volume/", () => {
+    const run = runTeste();
+    const texte = "Programme — « éducation »";
+    const fiche = JSON.parse(readFileSync(resolve(import.meta.dirname, "../liens/dore-textes/extraction-html.json"), "utf8")) as Record<string, unknown>;
+    mkdirSync(join(repertoireLiens(run), "extractions"));
+    mkdirSync(join(repertoireLiens(run), "textes"));
+    writeFileSync(join(repertoireLiens(run), "extractions", `${empreinte(PAGE)}.json`), JSON.stringify({ ...fiche, sha256_contenu: empreinte(PAGE), texte_sha256: empreinte(Buffer.from(texte, "utf8")), longueur: Array.from(texte).length }), "utf8");
+    writeFileSync(join(repertoireLiens(run), "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
+
+    expect(fournisseurFichiers(run).texteDeCopie(empreinte(PAGE))).toMatchObject({ issue: "extrait", texte });
+    expect(lireDore("existe.json")["page"]).toMatchObject({ chemin: `pages-citees/${empreinte(PAGE)}.html` });
+    expect(fichiersSous(repertoirePages(run))).toEqual([empreinte(PAGE), empreinte(COPIE)].map((sha) => `${sha}.html`).sort());
+    expect(fichiersSous(join(run, "volume")).every((chemin) => /^liens\/(?:[0-9a-f]{64}\.json|extractions\/[0-9a-f]{64}\.json|textes\/[0-9a-f]{64}\.txt)$/u.test(chemin))).toBe(true);
+  });
+
+  it("D75 (4) cas 4 : page déclarée absente de pages-citees/ : erreur nommée, jamais un texte vide", () => {
+    const run = runTeste();
+    rmSync(join(repertoirePages(run), `${empreinte(PAGE)}.html`));
+    expect(() => fournisseurFichiers(run)).toThrow(FichierExistenceRefuse);
+    expect(() => fournisseurFichiers(run)).toThrow(`la copie conservée pages-citees/${empreinte(PAGE)}.html est absente.`);
+  });
+
+  it("D75 (4) cas 4 : la page à l'ancien emplacement volume/liens/pages/ ne la remplace pas, le dossier est refusé", () => {
+    const run = runTeste();
+    const ancien = join(repertoireLiens(run), "pages");
+    mkdirSync(ancien);
+    renameSync(join(repertoirePages(run), `${empreinte(PAGE)}.html`), join(ancien, `${empreinte(PAGE)}.html`));
+    expect(() => fournisseurFichiers(run)).toThrow(/entrées qui ne sont pas des résultats, ni lues ni ignorées : pages\./);
+  });
+
+  it("D75 (4) : un résultat qui déclare l'ancien chemin pages/<sha256> est invalide au schéma", () => {
+    const run = runTeste();
+    const dore = lireDore("existe.json");
+    poser(run, EXISTE, { ...dore, page: { ...(dore["page"] as Record<string, unknown>), chemin: `pages/${empreinte(PAGE)}.html` } });
+    expect(() => fournisseurFichiers(run)).toThrow(ErreurSchema);
+  });
+});
+
 /** Toutes les réponses citent `LIEN` ; sans notation, la seule tâche de l'annotateur est la réponse tirée. */
 describe("18. branchement dans l'écran de notation humaine", () => {
   let monde: Monde | null = null;
@@ -308,10 +357,10 @@ describe("18. branchement dans l'écran de notation humaine", () => {
   it("D27 (E), D18 : la vue de l'annotateur porte le texte de la page conservée, comme la charge du juge", () => {
     monde = monter({ avec_lien: [0, 1, 2, 3] });
     const liens = repertoireLiens(monde.repertoire_run);
-    mkdirSync(join(liens, "pages"), { recursive: true });
+    mkdirSync(repertoirePages(monde.repertoire_run), { recursive: true });
     mkdirSync(join(liens, "extractions"), { recursive: true });
     mkdirSync(join(liens, "textes"), { recursive: true });
-    writeFileSync(join(liens, "pages", `${empreinte(PAGE)}.html`), PAGE);
+    writeFileSync(join(repertoirePages(monde.repertoire_run), `${empreinte(PAGE)}.html`), PAGE);
     poser(monde.repertoire_run, LIEN, { ...lireDore("existe.json"), url_citee: LIEN, url_finale: LIEN });
     const texte = "Programme — « éducation »";
     const fiche = JSON.parse(readFileSync(resolve(import.meta.dirname, "../liens/dore-textes/extraction-html.json"), "utf8")) as Record<string, unknown>;
@@ -326,9 +375,9 @@ describe("18. branchement dans l'écran de notation humaine", () => {
 
   it("D27 (E) : page conservée sans texte extrait, la réponse reste en attente du test des liens", () => {
     monde = monter({ avec_lien: [0, 1, 2, 3] });
-    const liens = repertoireLiens(monde.repertoire_run);
-    mkdirSync(join(liens, "pages"), { recursive: true });
-    writeFileSync(join(liens, "pages", `${empreinte(PAGE)}.html`), PAGE);
+    mkdirSync(repertoireLiens(monde.repertoire_run), { recursive: true });
+    mkdirSync(repertoirePages(monde.repertoire_run), { recursive: true });
+    writeFileSync(join(repertoirePages(monde.repertoire_run), `${empreinte(PAGE)}.html`), PAGE);
     poser(monde.repertoire_run, LIEN, { ...lireDore("existe.json"), url_citee: LIEN, url_finale: LIEN });
     expect(etatDesTaches(monde.contexte("a1", fournisseurDuRun(monde.repertoire_run))).en_attente_test_des_liens).toBe(1);
   });

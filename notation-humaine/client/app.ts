@@ -20,8 +20,7 @@ function afficherComptes(file: FileDeTravail): void {
   cible("comptes").textContent =
     `À noter : ${file.a_noter.length} · ` +
     `en attente du test des liens : ${file.en_attente_test_des_liens} · ` +
-    `en attente d'un juge : ${file.attend_juge} · ` +
-    `sans motif admis : ${file.sans_motif_admis}`;
+    `en attente d'un juge : ${file.attend_juge}`;
 }
 
 /** D30 (2) : le serveur demande à l'humain de décider la note d'une Q-ATT indécidable. */
@@ -41,7 +40,6 @@ function afficherFile(file: FileDeTravail): void {
       liste([
         `Réponses en attente du test des liens : ${file.en_attente_test_des_liens}`,
         `Réponses en attente d'un juge : ${file.attend_juge}`,
-        `Réponses sans motif admis : ${file.sans_motif_admis}`,
       ]),
     ),
   );

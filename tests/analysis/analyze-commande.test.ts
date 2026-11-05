@@ -4,9 +4,9 @@
  * (absent : écrit ; identique : rien ; différent : refus, code 2). Lancements réels de la commande.
  */
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { analyserRun, cheminMetriques, empreinteDuRun, lireEntreesDuRun } from "../../analysis/analyse-du-run.ts";
 import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
@@ -14,9 +14,8 @@ import { questionsDuSousEchantillonDuRun } from "../../pipeline/interrogation/so
 import { echantillonHumainDuRun } from "../../pipeline/notation/echantillons.ts";
 import { etatsDesLectures } from "../../pipeline/notation/lectures-comparateur.ts";
 import { synchroniserContestationsPosterieures } from "../../pipeline/run/contestations-posterieures.ts";
-import { lireItemsData } from "../../validation/io/data-items.ts";
 import { contestationRecue, itemConteste } from "../aides/data.ts";
-import { executerOutil } from "../aides/depot.ts";
+import { executerOutil, initialiserDepot } from "../aides/depot.ts";
 import { ecrireJson, ITEM_P, poserLecturesNonAffichees, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
 
 const PARAMETRES = { reechantillonnages: 20, permutations: 20 };
@@ -152,10 +151,77 @@ describe("pnpm analyze et les contestations postérieures (D73 (4))", () => {
     expect(refus.erreur).toContain("pnpm contestations-posterieures");
     expect(existsSync(cheminMetriques(conteste.repertoire_run))).toBe(false);
 
-    const ajouts = synchroniserContestationsPosterieures(join(conteste.bac, "runs"), conteste.items, lireItemsData(conteste.items).values(), true);
+    const ajouts = synchroniserContestationsPosterieures(join(conteste.bac, "runs"), null, true);
     expect(ajouts).toHaveLength(1);
     const accepte = executerOutil("analyze.ts", [conteste.repertoire_run]);
     expect(accepte.status, accepte.erreur).toBe(0);
     expect(existsSync(cheminMetriques(conteste.repertoire_run))).toBe(true);
+  });
+});
+
+/**
+ * D75 (13) : un run rangé hors de tout dépôt Git (archive Zenodo dépliée par un tiers) lit ses items
+ * dans le clone désigné par `--depot-des-items`, à condition que le commit des données du gel soit
+ * dans l'historique de son HEAD et qu'il porte des items ; sans l'option, le refus est inchangé.
+ */
+describe("D75 (13) : pnpm analyze sur un run hors de son clone", () => {
+  let clone: RunFictif;
+  let hors: string;
+  let repertoire_hors: string;
+
+  beforeAll(() => {
+    clone = poserRunNote();
+    poserLecturesNonAffichees(clone);
+    hors = mkdtempSync(join(tmpdir(), "banc-analyze-hors-clone-"));
+    repertoire_hors = join(hors, "runs", basename(clone.repertoire_run));
+    cpSync(clone.repertoire_run, repertoire_hors, { recursive: true });
+  });
+  afterAll(() => {
+    clone.nettoyer();
+    rmSync(hors, { recursive: true, force: true });
+  });
+
+  it("sans option : refus DepotDuRunIntrouvable, code 2, rien n'est écrit", () => {
+    const resultat = executerOutil("analyze.ts", [repertoire_hors]);
+    expect(resultat.status).toBe(2);
+    expect(resultat.erreur).toContain("DepotDuRunIntrouvable");
+    expect(existsSync(cheminMetriques(repertoire_hors))).toBe(false);
+  });
+
+  it("option vers un répertoire vide, ou vers un dépôt sans le commit gelé : refus DepotDesItemsRefuse, code 2, rien n'est écrit", () => {
+    const vide = mkdtempSync(join(tmpdir(), "banc-analyze-depot-vide-"));
+    // Un autre dépôt, qui porte les mêmes items, mais dont l'historique ignore le commit du gel.
+    const autre = mkdtempSync(join(tmpdir(), "banc-analyze-autre-depot-"));
+    cpSync(clone.items, join(autre, "data", "items"), { recursive: true });
+    writeFileSync(join(autre, "autre-historique.txt"), "un autre historique\n", "utf8");
+    initialiserDepot(autre);
+    try {
+      for (const depot of [vide, autre]) {
+        const resultat = executerOutil("analyze.ts", [repertoire_hors, `--depot-des-items=${depot}`]);
+        expect(resultat.status).toBe(2);
+        expect(resultat.erreur).toContain("DepotDesItemsRefuse");
+        expect(existsSync(cheminMetriques(repertoire_hors))).toBe(false);
+      }
+    } finally {
+      rmSync(vide, { recursive: true, force: true });
+      rmSync(autre, { recursive: true, force: true });
+    }
+  });
+
+  it("option sur un run dans son clone : refus run_dans_un_depot, code 2", () => {
+    const resultat = executerOutil("analyze.ts", [clone.repertoire_run, `--depot-des-items=${clone.bac}`]);
+    expect(resultat.status).toBe(2);
+    expect(resultat.erreur).toContain("run_dans_un_depot");
+    const sansValeur = executerOutil("analyze.ts", [repertoire_hors, "--depot-des-items"]);
+    expect(sansValeur.status).toBe(2);
+    expect(sansValeur.erreur).toContain("--depot-des-items attend");
+  });
+
+  it("option vers le clone qui porte le commit gelé : accepté, metriques.json identique à l'octet à celui du clone", () => {
+    const dans = executerOutil("analyze.ts", [clone.repertoire_run]);
+    expect(dans.status, dans.erreur).toBe(0);
+    const resultat = executerOutil("analyze.ts", [repertoire_hors, `--depot-des-items=${clone.bac}`]);
+    expect(resultat.status, resultat.erreur).toBe(0);
+    expect(readFileSync(cheminMetriques(repertoire_hors), "utf8")).toBe(readFileSync(cheminMetriques(clone.repertoire_run), "utf8"));
   });
 });

@@ -30,7 +30,6 @@ export interface EtatDesTaches {
   readonly notables: readonly Notable[];
   readonly en_attente_test_des_liens: number;
   readonly attend_juge: number;
-  readonly sans_motif_admis: number;
 }
 
 /**
@@ -84,6 +83,5 @@ export function etatDesTaches(contexte: Contexte): EtatDesTaches {
     notables,
     en_attente_test_des_liens: en_attente,
     attend_juge: file.attend_juge.length,
-    sans_motif_admis: file.sans_motif_admis.length,
   };
 }
