@@ -1,0 +1,260 @@
+/*
+ * Fil du parcours : un conduit pixel relie les sept étapes (flux à sens unique, vers le bas) ;
+ * chaque étape a sa station (pictogramme de l'état de la matière + étiquette courte). Tout est
+ * décor (aria-hidden) : l'information est dans le texte des étapes.
+ *
+ * Sans animation, le fil reste lisible : conduit, flèches et stations sont statiques. En page large
+ * (64 rem), avec la prise en charge des animations liées au défilement et sans demande de mouvement
+ * réduit, un objet pixel descend le conduit et change de forme en passant chaque station.
+ * CSS seul, aucun JavaScript.
+ *
+ * Couleurs : uniquement les variables --px-… et --texte-doux des deux thèmes (jetons.css).
+ * Mesures : mobile d'abord. Gouttière 3 rem, tuile 2,5 rem ; en large, gouttière 9,5 rem, tuile 3,5 rem.
+ */
+
+.fil-symboles {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Les pictogrammes : une classe par couleur, liée au thème. */
+.fil-e { fill: var(--px-encre); }
+.fil-p { fill: var(--px-papier); }
+.fil-c { fill: var(--px-clair); }
+.fil-g { fill: var(--px-corps); }
+.fil-a1 { fill: var(--px-accent-1); }
+.fil-a2 { fill: var(--px-accent-2); }
+.fil-a3 { fill: var(--px-accent-3); }
+
+.parcours {
+  position: relative;
+  /* Écart entre deux étapes : même valeur que `.etapes { gap }` (mise-en-page.css). */
+  --fil-ecart: 2.5rem;
+  --fil-tuile: 2.5rem;
+}
+
+.parcours .etapes {
+  /* L'écart des étapes est une mesure de mise en page ; le conduit la reprend ici. */
+  gap: var(--fil-ecart);
+}
+
+.parcours .etape {
+  position: relative;
+  padding-left: 3rem;
+}
+
+/* Station : tuile + étiquette. En flux sur petit écran (dans la gouttière), absolue en large. */
+.fil-station {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--fil-tuile);
+  margin-left: -3rem;
+}
+
+.fil-tuile {
+  display: block;
+  flex: none;
+  box-sizing: border-box;
+  width: var(--fil-tuile);
+  height: var(--fil-tuile);
+  padding: 2px;
+  background: var(--px-ciel);
+  border: 2px solid var(--px-encre);
+}
+
+.fil-icone {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fil-etiquette {
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Conduit : un tuyau rayé qui part du bas d'une station et arrive sur la suivante, avec sa flèche. */
+.parcours .etape::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--fil-tuile) / 2 - 4px);
+  top: var(--fil-tuile);
+  width: 8px;
+  height: calc(100% - var(--fil-tuile) + var(--fil-ecart));
+  box-sizing: border-box;
+  border-inline: 2px solid var(--px-encre);
+  background: repeating-linear-gradient(to bottom, var(--px-accent-2) 0 8px, var(--px-ciel) 8px 12px);
+  background-clip: padding-box;
+}
+
+.parcours .etape:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--fil-tuile) / 2 - 8px);
+  top: calc(100% + var(--fil-ecart) - 0.75rem);
+  width: 16px;
+  height: 12px;
+  background: var(--px-accent-2);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+/* Dernière étape : le conduit s'arrête au bas de la liste, fermé par un bouchon carré. */
+.parcours .etape:last-child::before {
+  height: calc(100% - var(--fil-tuile));
+}
+
+.parcours .etape:last-child::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--fil-tuile) / 2 - 8px);
+  bottom: 0;
+  width: 16px;
+  height: 8px;
+  background: var(--px-encre);
+}
+
+/* L'objet mobile n'existe que sous les conditions de la section « mouvement » ci-dessous. */
+.fil-voie {
+  display: none;
+}
+
+@media (min-width: 48rem) {
+  .parcours {
+    --fil-ecart: 4rem;
+  }
+
+  /* À partir de 48 rem les étapes passent sur deux colonnes : la station garde sa ligne entière. */
+  .fil-station {
+    margin-bottom: -2rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .parcours {
+    --fil-tuile: 3.5rem;
+  }
+
+  .parcours .etape {
+    padding-left: 9.5rem;
+  }
+
+  .fil-station {
+    position: absolute;
+    /* « auto » : le bloc englobant est le li entier, gouttière comprise (pas la zone de grille). */
+    grid-column: auto;
+    top: 0;
+    left: 0;
+    margin: 0;
+    max-width: 9rem;
+  }
+
+  .fil-tuile {
+    padding: 4px;
+  }
+
+  .fil-etiquette {
+    max-width: 5rem;
+  }
+}
+
+/* ---- Mouvement : l'objet descend le conduit au défilement ---- */
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    @media (min-width: 64rem) {
+      .parcours {
+        timeline-scope: --fil-1, --fil-2, --fil-3, --fil-4, --fil-5, --fil-6, --fil-7;
+      }
+
+      .parcours .etape:nth-child(1) .fil-tuile { view-timeline: --fil-1 block; }
+      .parcours .etape:nth-child(2) .fil-tuile { view-timeline: --fil-2 block; }
+      .parcours .etape:nth-child(3) .fil-tuile { view-timeline: --fil-3 block; }
+      .parcours .etape:nth-child(4) .fil-tuile { view-timeline: --fil-4 block; }
+      .parcours .etape:nth-child(5) .fil-tuile { view-timeline: --fil-5 block; }
+      .parcours .etape:nth-child(6) .fil-tuile { view-timeline: --fil-6 block; }
+      .parcours .etape:nth-child(7) .fil-tuile { view-timeline: --fil-7 block; }
+
+      /* La voie couvre la hauteur de la liste ; l'objet y colle au milieu de l'écran. */
+      .fil-voie {
+        display: block;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
+        width: var(--fil-tuile);
+        pointer-events: none;
+      }
+
+      .fil-objet {
+        position: sticky;
+        top: calc(50vh - 1.5rem);
+        width: 3rem;
+        height: 3rem;
+        margin: 0.25rem;
+        filter: drop-shadow(3px 3px 0 var(--accent-1));
+      }
+
+      .fil-etat,
+      .fil-etat__interieur {
+        position: absolute;
+        inset: 0;
+        display: block;
+      }
+
+      .fil-etat svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      @keyframes fil-entrer {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes fil-sortir {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+
+      /* L'objet change de forme quand il passe derrière la tuile de la station : l'état d'avant s'efface, le suivant paraît. */
+      .fil-etat:not([data-fil-etat="1"]) {
+        animation: fil-entrer linear both;
+        animation-range: cover 44% cover 56%;
+      }
+
+      .fil-etat[data-fil-etat="2"] { animation-timeline: --fil-2; }
+      .fil-etat[data-fil-etat="3"] { animation-timeline: --fil-3; }
+      .fil-etat[data-fil-etat="4"] { animation-timeline: --fil-4; }
+      .fil-etat[data-fil-etat="5"] { animation-timeline: --fil-5; }
+      .fil-etat[data-fil-etat="6"] { animation-timeline: --fil-6; }
+      .fil-etat[data-fil-etat="7"] { animation-timeline: --fil-7; }
+
+      .fil-etat:not([data-fil-etat="7"]) .fil-etat__interieur {
+        animation: fil-sortir linear both;
+        animation-range: cover 44% cover 56%;
+      }
+
+      .fil-etat[data-fil-etat="1"] .fil-etat__interieur { animation-timeline: --fil-2; }
+      .fil-etat[data-fil-etat="2"] .fil-etat__interieur { animation-timeline: --fil-3; }
+      .fil-etat[data-fil-etat="3"] .fil-etat__interieur { animation-timeline: --fil-4; }
+      .fil-etat[data-fil-etat="4"] .fil-etat__interieur { animation-timeline: --fil-5; }
+      .fil-etat[data-fil-etat="5"] .fil-etat__interieur { animation-timeline: --fil-6; }
+      .fil-etat[data-fil-etat="6"] .fil-etat__interieur { animation-timeline: --fil-7; }
+    }
+  }
+}
+
+/* Mouvement réduit : pas d'objet mobile, le fil se lit par ses stations fixes. */
+@media (prefers-reduced-motion: reduce) {
+  .fil-voie {
+    display: none;
+  }
+}
