@@ -46,7 +46,7 @@ function runPropre(run: RunDeNotation): EntreeControleCroise {
     if (decision.statut !== "verdict") throw new Error(`réponse ${id} en attente`);
     verdicts.push(valider<VerdictProduit>("verdict", decision.verdict, `verdict ${id}`));
   }
-  return { run, reponses_obtenues: REPONSES, refus_api: [], notations, verdicts };
+  return { run, reponses_obtenues: REPONSES, refus_api: [], textes: new Map(REPONSES.map((id) => [id, REPONSE_PROJETEE])), notations, verdicts };
 }
 
 function codes(entree: EntreeControleCroise): readonly string[] {
@@ -214,6 +214,8 @@ function avecRefusParRegle(propre: EntreeControleCroise, i: number): EntreeContr
   return {
     ...propre,
     refus_api: [...propre.refus_api, id],
+    // Un refus de l'API est projeté au texte vide (`interrogation/executer.ts`), sans `sur_texte_vide` (annexe C).
+    textes: new Map([...propre.textes, [id, ""]]),
     notations,
     verdicts: propre.verdicts.map((v, j) => (j === i ? valider<VerdictProduit>("verdict", decision.verdict, "verdict par règle") : v)),
   };
@@ -224,7 +226,8 @@ describe("D33 : marqueur sur_refus_api ⇔ réponse refusée par l'API", () => {
     const propre = runPropre(runDeNotation());
     const i = indiceHorsEchantillon(propre);
     const avecRegle = avecRefusParRegle(propre, i);
-    const violations = controleCroise({ ...avecRegle, refus_api: [] });
+    // La réponse n'est pas un refus : elle garde son texte ordinaire (au texte vide, D74 (26) exigerait aussi sur_texte_vide).
+    const violations = controleCroise({ ...avecRegle, refus_api: [], textes: propre.textes });
     expect(violations.map((v) => v.code)).toEqual(["marqueur_refus_api_incoherent"]);
     expect(violations[0]?.verdict_id).toBeUndefined();
   });
@@ -233,6 +236,76 @@ describe("D33 : marqueur sur_refus_api ⇔ réponse refusée par l'API", () => {
     const propre = runPropre(runDeNotation());
     const id = verdictA(propre, indiceHorsEchantillon(propre)).objet_note.id;
     expect(codes({ ...propre, refus_api: [id] })).toEqual(["marqueur_refus_api_incoherent", "marqueur_refus_api_incoherent"]);
+  });
+});
+
+/**
+ * D74 (26), annexe C (protocole 0.32, D74 (23)) : une notation de contexte run sur une réponse porte
+ * `sur_texte_vide` si et seulement si la réponse, hors refus de l'API, a pour texte la chaîne vide.
+ */
+describe("D74 (26) : marqueur sur_texte_vide ⇔ texte de la réponse égal à la chaîne vide", () => {
+  /** La réponse hors échantillon d'indice `i` reçoit `texte`, et ses notations de juge `marqueur` (validées contre le schéma). */
+  function avecTexte(texte: string, marqueur: boolean): { readonly entree: EntreeControleCroise; readonly id: string } {
+    const propre = runPropre(runDeNotation());
+    const id = verdictA(propre, indiceHorsEchantillon(propre)).objet_note.id;
+    const notations = propre.notations.map((n) => {
+      if (n.objet_note.id !== id) return n;
+      const { sur_texte_vide: _retire, ...sans } = n;
+      return valider<NotationIndividuelle>("notation", marqueur ? { ...sans, sur_texte_vide: true } : sans, `notation ${n.id}`);
+    });
+    return { entree: { ...propre, textes: new Map([...propre.textes, [id, texte]]), notations }, id };
+  }
+
+  it("texte vide, marqueur posé par chaque juge : aucune violation", () => {
+    expect(codes(avecTexte("", true).entree)).toEqual([]);
+  });
+
+  it("texte vide, marqueur absent : une violation par notation, sans verdict", () => {
+    const { entree, id } = avecTexte("", false);
+    const violations = controleCroise(entree);
+    expect(violations.map((v) => v.code)).toEqual(["marqueur_texte_vide_incoherent", "marqueur_texte_vide_incoherent"]);
+    expect(violations.every((v) => v.verdict_id === undefined && v.detail.includes(id) && v.detail.includes("absent"))).toBe(true);
+  });
+
+  it("texte fait d'une espace seule, marqueur posé : violation, une espace n'est pas le texte vide (annexe C)", () => {
+    const violations = controleCroise(avecTexte(" ", true).entree);
+    expect(violations.map((v) => v.code)).toEqual(["marqueur_texte_vide_incoherent", "marqueur_texte_vide_incoherent"]);
+    expect(violations[0]?.detail).toContain("posé");
+  });
+
+  it("texte fait d'une espace seule, marqueur absent : aucune violation", () => {
+    expect(codes(avecTexte(" ", false).entree)).toEqual([]);
+  });
+
+  it("texte non vide, marqueur absent : aucune violation", () => {
+    expect(codes(avecTexte(REPONSE_PROJETEE, false).entree)).toEqual([]);
+  });
+
+  it("texte non vide, marqueur posé : violation", () => {
+    expect(codes(avecTexte(REPONSE_PROJETEE, true).entree)).toEqual(["marqueur_texte_vide_incoherent", "marqueur_texte_vide_incoherent"]);
+  });
+
+  it("une notation humaine est contrôlée comme celle d'un juge", () => {
+    const propre = runPropre(runDeNotation());
+    const id = verdictA(propre, indiceDansEchantillon(propre)).objet_note.id;
+    const notations = propre.notations.map((n) =>
+      n.objet_note.id === id && n.notateur.type === "humain" ? valider<NotationIndividuelle>("notation", { ...n, sur_texte_vide: true }, `notation ${n.id}`) : n,
+    );
+    expect(codes({ ...propre, notations })).toEqual(["marqueur_texte_vide_incoherent", "marqueur_texte_vide_incoherent"]);
+  });
+
+  it("refus de l'API au texte vide, noté par règle avec sur_refus_api seul : aucune violation (le refus n'a pas sur_texte_vide)", () => {
+    const propre = runPropre(runDeNotation());
+    const avecRegle = avecRefusParRegle(propre, indiceHorsEchantillon(propre));
+    expect(avecRegle.notations.some((n) => n.sur_refus_api === true && n.sur_texte_vide === undefined)).toBe(true);
+    expect(codes(avecRegle)).toEqual([]);
+  });
+
+  it("texte de la réponse notée non fourni : le contrôle lève, rien n'est supposé", () => {
+    const propre = runPropre(runDeNotation());
+    const id = verdictA(propre, 0).objet_note.id;
+    const textes = new Map([...propre.textes].filter(([cle]) => cle !== id));
+    expect(() => controleCroise({ ...propre, textes })).toThrow(/texte projeté n'est pas fourni/);
   });
 });
 

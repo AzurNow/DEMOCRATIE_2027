@@ -190,6 +190,41 @@ describe("zéro observé", () => {
   });
 });
 
+describe("statistique de référence du test d'asymétrie (§8, 0.32, D74 (5))", () => {
+  interface TestCalculeJson {
+    readonly statut: string;
+    readonly cle: string[];
+    readonly exactitude_de_reference: number;
+    readonly candidats: { exactitude: { numerateur: number; denominateur: number } }[];
+  }
+  type CoupleTesteJson = { couple: CoupleJson; test: TestCalculeJson };
+
+  it("chaque test calculé la publie sous son nom propre, valeur seule, égale aux exactitudes des candidats comparés réunies", () => {
+    const tests = section(["asymetrie"])["couples"] as CoupleTesteJson[];
+    for (const { test } of tests) {
+      expect(test).not.toHaveProperty("exactitude_outil");
+      const exactes = test.candidats.reduce((s, c) => s + c.exactitude.numerateur, 0);
+      const classees = test.candidats.reduce((s, c) => s + c.exactitude.denominateur, 0);
+      expect(test.exactitude_de_reference).toBe(exactes / classees);
+    }
+  });
+
+  it("n'est pas un taux publié : aucune graine ne lui est dérivée", () => {
+    const graines = DOCUMENT["graines"] as { cle: string[] }[];
+    for (const { cle: c } of graines) expect(c.join("/")).not.toMatch(/reference|exactitude_outil/);
+  });
+
+  it("indéfinie pour un outil sans aucune réponse classée : test sans objet avec son motif, aucune référence publiée, jamais 0", () => {
+    const spec = { ...SPEC_REFERENCE, categorie: (c: Parameters<typeof SPEC_REFERENCE.categorie>[0]) => (c.outil_id === "outil-beta" ? "indeterminee" as const : SPEC_REFERENCE.categorie(c)) };
+    const document = analyserRun(entreesDuRunAnalysable(spec), PARAMETRES, null) as Json;
+    expect(() => valider("metriques", document, "outil sans réponse classée")).not.toThrow();
+    const asymetrie = document["asymetrie"] as Json;
+    const beta = (asymetrie["couples"] as { couple: CoupleJson; test: Json }[]).find((c) => cle(c.couple) === "outil-beta/web_desactivee");
+    expect(beta?.test).toEqual({ statut: "sans_objet", motif: "moins_de_deux_candidats" });
+    expect(asymetrie["couples_sans_test"]).toEqual(["outil-beta/web_desactivee"]);
+  });
+});
+
 describe("graines", () => {
   it("chaque clé publiée figure une fois dans graines, triée ; les recalculs n'en ajoutent aucune", () => {
     const graines = DOCUMENT["graines"] as { cle: string[]; graine: string }[];

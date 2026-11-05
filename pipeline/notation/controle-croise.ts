@@ -14,12 +14,17 @@
  * Le résultat publié du test contrefactuel (lot notation, PR C) est relu juge par juge, quand il
  * est présent : le retrait se décide sur les effectifs, en entiers (`depasseSeuilRetrait` de
  * `contrefactuel.ts`, « au-delà de 3 % » strict), et le taux publié doit être leur quotient exact.
+ *
+ * Les marqueurs qu'une notation porte sur la réponse notée (`sur_refus_api`, D33 ; `sur_texte_vide`,
+ * annexe C, D74 (26)) sont relus contre les faits déterministes de la réponse : sa projection dit si
+ * elle est un refus de l'API, et quel est son texte.
  */
 
 import type { Ulid } from "../../analysis/types.ts";
 import { depasseSeuilRetrait } from "./contrefactuel.ts";
 import { jugesDuRun } from "./decision.ts";
 import { tirerEchantillonHumain } from "./echantillons.ts";
+import { reponseAuTexteVide } from "./extrait.ts";
 import { porteDrapeauGrave } from "./note-retenue.ts";
 import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { JugeDuRun, ModeResolution, NotationIndividuelle, RunDeNotation, VerdictProduit } from "./types.ts";
@@ -38,6 +43,7 @@ export const CODES_VIOLATION = [
   "denominateur_contrefactuel_incoherent",
   "notation_par_regle_incoherente",
   "marqueur_refus_api_incoherent",
+  "marqueur_texte_vide_incoherent",
 ] as const;
 export type CodeViolation = (typeof CODES_VIOLATION)[number];
 
@@ -54,6 +60,12 @@ export interface EntreeControleCroise {
   readonly reponses_obtenues: readonly Ulid[];
   /** D33 : celles des réponses obtenues qui sont un refus de l'API (`normalise.refus_api`). */
   readonly refus_api: readonly Ulid[];
+  /**
+   * Annexe C, D74 (26) : le texte projeté (`normalise.texte`) de chaque réponse obtenue, tel que
+   * stocké. Une notation de contexte run sur une réponse dont le texte manque ici lève : le marqueur
+   * `sur_texte_vide` ne se contrôle pas sans lui, et rien n'est supposé.
+   */
+  readonly textes: ReadonlyMap<Ulid, string>;
   readonly notations: readonly NotationIndividuelle[];
   readonly verdicts: readonly VerdictProduit[];
 }
@@ -90,6 +102,7 @@ export function controleCroise(entree: EntreeControleCroise): readonly Violation
   return [
     ...violationsDuRun(entree.run),
     ...marqueursRefus(entree.notations, new Set(entree.refus_api)),
+    ...marqueursTexteVide(entree.notations, new Set(entree.refus_api), entree.textes),
     ...entree.verdicts.flatMap((verdict) => violationsDuVerdict(verdict, ctx)),
   ];
 }
@@ -107,6 +120,38 @@ function marqueursRefus(notations: readonly NotationIndividuelle[], refus: Reado
       code: "marqueur_refus_api_incoherent" as const,
       detail: `notation ${n.id} (${n.notateur.type} ${n.notateur.id}) : sur_refus_api ${n.sur_refus_api === true ? "posé" : "absent"}, alors que la réponse ${n.objet_note.id} ${refus.has(n.objet_note.id) ? "est" : "n'est pas"} un refus de l'API.`,
     }));
+}
+
+/**
+ * Annexe C (protocole 0.32, D74 (23) et (26)) : une notation de contexte run sur une réponse porte
+ * `sur_texte_vide` si et seulement si la réponse n'est pas un refus de l'API (qui porte
+ * `sur_refus_api` seul) et que son texte est la chaîne vide, et elle seule
+ * (`extrait.ts:reponseAuTexteVide`) : une réponse faite d'espaces a un texte. Comme `sur_refus_api`,
+ * le marqueur exempte de l'extrait justificatif ; posé à tort, il ferait passer une note sans
+ * justification ; absent à tort, la réponse a été notée comme si elle avait un texte.
+ */
+function marqueursTexteVide(notations: readonly NotationIndividuelle[], refus: ReadonlySet<Ulid>, textes: ReadonlyMap<Ulid, string>): Violation[] {
+  return notations
+    .filter((n) => n.contexte === "run" && n.objet_note.type === "reponse")
+    .flatMap((n) => {
+      const attendu = !refus.has(n.objet_note.id) && reponseAuTexteVide(texteDe(textes, n));
+      if ((n.sur_texte_vide === true) === attendu) return [];
+      return [
+        {
+          code: "marqueur_texte_vide_incoherent" as const,
+          detail: `notation ${n.id} (${n.notateur.type} ${n.notateur.id}) : sur_texte_vide ${n.sur_texte_vide === true ? "posé" : "absent"}, alors que la réponse ${n.objet_note.id} ${attendu ? "a le texte vide" : "n'a pas le texte vide hors refus de l'API"}.`,
+        },
+      ];
+    });
+}
+
+/** Le texte projeté de la réponse notée ; son absence lève, jamais remplacée par une valeur plausible. */
+function texteDe(textes: ReadonlyMap<Ulid, string>, notation: NotationIndividuelle): string {
+  const texte = textes.get(notation.objet_note.id);
+  if (texte === undefined) {
+    throw new Error(`Contrôle croisé : la notation ${notation.id} porte sur la réponse ${notation.objet_note.id}, dont le texte projeté n'est pas fourni.`);
+  }
+  return texte;
 }
 
 function violationsDuRun(run: RunDeNotation): Violation[] {

@@ -64,6 +64,7 @@ import { decrireEcart, ecartsDeDates } from "../validation/domaine/dates-sources
 import type { LotEffectif } from "../validation/domaine/lot.ts";
 import { VersionMesureEcart, type Issue } from "../validation/domaine/promotion.ts";
 import { renvoisAReextraction, type RenvoisReextraction } from "../validation/domaine/renvoi-reextraction.ts";
+import { decrireRejetsArbitresSansMotif, rejetsArbitresSansMotif } from "../validation/domaine/rejet-arbitre-sans-motif.ts";
 import {
   jugementsDesVerdicts,
   planifierTexteErrone,
@@ -198,6 +199,13 @@ function imprimerRenvoisReextraction({ sources }: RenvoisReextraction): void {
   for (const source of sources) {
     const texte = source.texte_sha256 === undefined ? "sans texte_sha256" : `texte ${source.texte_sha256}`;
     process.stdout.write(`  ${source.sha256}  ${texte}  ${source.url}  items : ${source.items.join(", ")}\n`);
+  }
+}
+
+/** Décision D74 (7) : information seule, qui n'écrit rien et ne bloque rien. */
+function imprimerRejetsArbitresSansMotif(verdicts: readonly Verdict[]): void {
+  for (const ligne of decrireRejetsArbitresSansMotif(rejetsArbitresSansMotif(verdicts))) {
+    process.stdout.write(`${ligne}\n`);
   }
 }
 
@@ -625,6 +633,7 @@ function principal(): void {
   imprimerIntrouvables(introuvables);
   imprimerRenvoyes(renvoyes);
   imprimerRenvoisReextraction(texte.renvois);
+  imprimerRejetsArbitresSansMotif(verdicts);
   imprimerTexteErrone(texte);
   imprimerNonConformes(fautifs);
   imprimerDatesIncoherentes(dates);

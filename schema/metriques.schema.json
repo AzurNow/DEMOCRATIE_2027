@@ -705,7 +705,7 @@
         "valeur_p",
         "valeur_p_corrigee",
         "permutations",
-        "exactitude_outil",
+        "exactitude_de_reference",
         "intervalle_ecart_maximal",
         "candidats",
         "candidats_rapportes_a_part"
@@ -718,7 +718,12 @@
         "valeur_p": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
         "valeur_p_corrigee": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
         "permutations": { "type": "integer", "minimum": 1 },
-        "exactitude_outil": { "$ref": "#/$defs/taux" },
+        "exactitude_de_reference": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "§8 (0.32, D74 (5)) : l'exactitude globale de l'outil contre laquelle se lit la statistique (exactes / classées aux questions qui nomment un candidat comparé), publiée comme la statistique de référence du test, sans intervalle : ce n'est pas un taux publié. Valeur seule, toujours définie quand le test est calculé ; un test sans objet n'en porte pas (analysis/permutation.ts)."
+        },
         "intervalle_ecart_maximal": { "$ref": "#/$defs/intervalle_nomme" },
         "candidats": {
           "type": "array",
