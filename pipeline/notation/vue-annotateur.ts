@@ -26,18 +26,24 @@
  * tel quel : registre et prémisse de la formulation, réponse attendue, texte des pages citées et sa
  * borne. Un champ ajouté à la charge l'est donc à la vue sans autre code, et la garde de complétude
  * de l'écran (`tests/notation-humaine/completude-affichage.test.ts`) exige qu'il soit affiché.
+ *
+ * **Saisie de l'application (D75 (24)).** Un humain note aussi une saisie de testeur (§6) : sa
+ * troncature est absente, comme dans la charge du juge, et la règle est celle de la charge
+ * (`charge-juge.ts:troncatureSoumise`, `TroncatureContraireAuCanal`), appliquée par `contenuSoumis`.
  */
 
 import type { Instant, VerdictExistence } from "../../analysis/types.ts";
 import type { ReponseObtenue } from "../interrogation/types.ts";
+import type { ReponseApplication } from "../interrogation/reponse-application.ts";
 import { contenuSoumis, type CitationSoumise, type ContenuSoumis, type DemandeCharge } from "./charge-juge.ts";
 
 /**
  * Version du format de la vue : un champ ajouté ou retiré la change. v2 : la charge v3 (D27). v3 :
  * la charge v5 (D55 (1), §7) — `reponse.normalisation` n'est plus soumise, D18 obligeant l'humain à
- * recevoir exactement ce que reçoit un juge.
+ * recevoir exactement ce que reçoit un juge. v4 : la charge v6 (D75 (24)) — `reponse.troncature`
+ * facultative, absente sur une saisie de l'application.
  */
-export const VERSION_VUE_ANNOTATEUR = "vue-annotateur-v3";
+export const VERSION_VUE_ANNOTATEUR = "vue-annotateur-v4";
 
 /**
  * Version de la grille de notation humaine : la grille du §7 telle que la saisie la porte
@@ -61,8 +67,8 @@ export interface ExistenceEtablie {
 
 /** La demande de charge du juge, sans prompt, pour une réponse obtenue, plus les existences. */
 export interface DemandeVue extends Omit<DemandeCharge, "prompt" | "reponse"> {
-  /** Un humain ne note que des réponses obtenues du run, jamais une réponse permutée. */
-  readonly reponse: ReponseObtenue;
+  /** Un humain ne note que des réponses obtenues du run, d'un canal ou de l'autre, jamais une réponse permutée. */
+  readonly reponse: ReponseObtenue | ReponseApplication;
   readonly existences: readonly ExistenceEtablie[];
 }
 
@@ -70,7 +76,8 @@ export interface ReponseVue {
   readonly texte: string;
   readonly liens: readonly ExistenceEtablie[];
   readonly citations?: readonly CitationSoumise[];
-  readonly troncature: boolean;
+  /** Absente sur une saisie de l'application, comme dans la charge du juge (D75 (24)). */
+  readonly troncature?: boolean;
   readonly refus_api: boolean;
 }
 
@@ -109,7 +116,7 @@ export function construireVue(demande: DemandeVue): VueAnnotateur {
       texte: soumise.texte,
       liens: soumise.liens.map((url) => existenceDe(demande.reponse.id, url, existences)),
       ...(soumise.citations === undefined ? {} : { citations: soumise.citations }),
-      troncature: soumise.troncature,
+      ...(soumise.troncature === undefined ? {} : { troncature: soumise.troncature }),
       refus_api: soumise.refus_api,
     },
   };

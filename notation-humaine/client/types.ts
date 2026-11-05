@@ -93,7 +93,8 @@ export interface Vue {
     readonly texte: string;
     readonly liens: readonly Existence[];
     readonly citations?: readonly Citation[];
-    readonly troncature: boolean;
+    /** Absente sur une saisie de l'application (D75 (24)). */
+    readonly troncature?: boolean;
     readonly refus_api: boolean;
   };
   readonly references: readonly ItemSoumis[];

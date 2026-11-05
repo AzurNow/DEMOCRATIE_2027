@@ -6,12 +6,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { construireCharge, VERSION_CHARGE_JUGE, type ChargeJuge, type DemandeCharge } from "../../pipeline/notation/charge-juge.ts";
+import { construireCharge, TroncatureContraireAuCanal, VERSION_CHARGE_JUGE, type ChargeJuge, type DemandeCharge, type ReponseSoumissible } from "../../pipeline/notation/charge-juge.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import { itemA, itemO, itemP } from "../aides/fabriques.ts";
-import { ALIAS_CANDIDATS_TEST, aliasDeTest, CANDIDATS_DU_RUN, GEL_DES_TESTS, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
+import { ALIAS_CANDIDATS_TEST, aliasDeTest, CANDIDATS_DU_RUN, GEL_DES_TESTS, pagesSansTexte, reponseApplication, RESOLU_POSITION_POUR } from "./fabriques.ts";
 import { LONGUEUR_MAX_TEXTE_PAGE } from "../../pipeline/notation/pages-citees.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 
@@ -177,7 +177,7 @@ describe("contenu", () => {
     });
     expect(charge.version_normalisation_verbatim).toBe(VERSION_NORMALISATION);
     expect(charge.version_charge).toBe(VERSION_CHARGE_JUGE);
-    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v5");
+    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v6");
   });
 
   it("D55 (1), §7 : reponse.normalisation (fonction et version de l'adaptateur) n'est jamais soumise au juge", () => {
@@ -351,5 +351,67 @@ describe("alias aveugle de candidat (D55 (9))", () => {
   it("un candidat sans alias (hors des candidats interrogés de la table) est refusé, jamais transmis en clair", () => {
     const references = [{ item: itemP({ candidat_id: "candidat-fantome" }), role: "principal" as const }];
     expect(() => construireCharge({ ...demande(), references })).toThrow(/candidat-fantome/);
+  });
+});
+
+/**
+ * D75 (24), §6, annexe D (0.33) : une saisie de l'application ne porte pas de troncature, et sa charge
+ * non plus ; sur le canal API, la troncature reste requise. Le canal n'est pas dans la charge : le
+ * contrôle a lieu à sa construction.
+ */
+describe("D75 (24) : troncature selon le canal", () => {
+  function demandeDe(r: ReponseSoumissible): DemandeCharge<ReponseSoumissible> {
+    return { ...demande(), reponse: r, pages_citees: pagesSansTexte([...new Set(r.normalise.liens)]) };
+  }
+
+  function refusDe(construire: () => unknown): TroncatureContraireAuCanal {
+    try {
+      construire();
+    } catch (erreur) {
+      if (erreur instanceof TroncatureContraireAuCanal) return erreur;
+      throw erreur;
+    }
+    throw new Error("la charge aurait dû être refusée");
+  }
+
+  it("D75 (24) cas 1 : canal API, troncature présente, recopiée true ou false", () => {
+    for (const troncature of [true, false]) {
+      const r = reponse();
+      expect(construireCharge(demande({ ...r, normalise: { ...r.normalise, troncature } })).reponse.troncature).toBe(troncature);
+    }
+  });
+
+  it("D75 (24) cas 1 : canal API sans troncature, refus nommé, jamais une charge sans elle", () => {
+    const r = reponse();
+    const { troncature: _t, ...sansTroncature } = r.normalise;
+    const leve = refusDe(() => construireCharge(demande({ ...r, normalise: sansTroncature } as unknown as ReponseObtenue)));
+    expect(leve.name).toBe("TroncatureContraireAuCanal");
+    expect(leve.canal).toBe("api");
+    expect(leve.reponse_id).toBe(r.id);
+    expect(leve.message).toContain("D75 (24)");
+  });
+
+  it("D75 (24) cas 2 : canal application, troncature absente de la charge, rien d'autre ne change", () => {
+    const app = reponseApplication();
+    const charge = construireCharge(demandeDe(app));
+    expect("troncature" in charge.reponse).toBe(false);
+    expect(charge.reponse).toEqual({ texte: app.normalise.texte, liens: [...app.normalise.liens], refus_api: false });
+    expect(charge.version_charge).toBe("charge-juge-v6");
+  });
+
+  it("D75 (24) cas 2 : canal application avec une troncature, refus nommé (une saisie de testeur n'en porte pas)", () => {
+    for (const troncature of [true, false]) {
+      const app = reponseApplication();
+      const avec = { ...app, normalise: { ...app.normalise, troncature } } as unknown as ReponseSoumissible;
+      const leve = refusDe(() => construireCharge(demandeDe(avec)));
+      expect(leve.canal).toBe("application");
+      expect(leve.message).toContain("ne porte pas de troncature");
+    }
+  });
+
+  it("D75 (24) : la charge d'une saisie ne porte ni le canal, ni l'outil, ni le testeur", () => {
+    const app = reponseApplication();
+    const serialisee = JSON.stringify(construireCharge(demandeDe(app)));
+    for (const valeur of [app.outil_id, app.saisie_manuelle.testeur_id, app.normalisation.fonction, "application", "canal"]) expect(serialisee).not.toContain(valeur);
   });
 });

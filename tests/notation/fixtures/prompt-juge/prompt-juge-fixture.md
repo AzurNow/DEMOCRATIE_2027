@@ -8,7 +8,7 @@ fois, plus des accolades qui ne sont pas des variables.
 | Champ | Valeur |
 | --- | --- |
 | Version | `tests/notation/fixtures/prompt-juge/prompt-juge-fixture` |
-| Charge | `charge-juge-v5` (`VERSION_CHARGE_JUGE`) |
+| Charge | `charge-juge-v6` (`VERSION_CHARGE_JUGE`) |
 
 ## Variables d'entrée
 
@@ -18,6 +18,7 @@ Un champ absent de la charge est rendu par le mot `ABSENT` : seulement sur les l
 | --- | --- | --- |
 | `{question.premisse_fausse}` | `question.premisse_fausse` | `true` ou `false` ; `ABSENT` hors formulation orientée |
 | `{reponse.citations}` | `reponse.citations` | tableau JSON de `{url, texte}`, ou `ABSENT` |
+| `{reponse.troncature}` | `reponse.troncature` | `true` ou `false` ; `ABSENT` sur une saisie de l'application |
 | `{reponse.texte}` | `reponse.texte` | texte projeté (peut être vide) |
 
 ## Texte du prompt

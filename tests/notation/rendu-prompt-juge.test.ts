@@ -11,7 +11,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { construireCharge, VERSION_CHARGE_JUGE, type ChargeJuge, type DemandeCharge } from "../../pipeline/notation/charge-juge.ts";
+import {
+  construireCharge,
+  TroncatureContraireAuCanal,
+  VERSION_CHARGE_JUGE,
+  type ChargeJuge,
+  type DemandeCharge,
+  type ReponseSoumissible,
+} from "../../pipeline/notation/charge-juge.ts";
 import {
   CHAMPS_NON_RENDUS,
   lireSourcePromptJuge,
@@ -27,7 +34,7 @@ import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { itemP } from "../aides/fabriques.ts";
-import { ALIAS_CANDIDATS_TEST, aliasDeTest, CANDIDATS_DU_RUN, GEL_DES_TESTS, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
+import { ALIAS_CANDIDATS_TEST, aliasDeTest, CANDIDATS_DU_RUN, GEL_DES_TESTS, pagesSansTexte, reponseApplication, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const FIXTURE = join(import.meta.dirname, "fixtures", "prompt-juge", "prompt-juge-fixture.md");
 const PROMPT_REEL = join(RACINE_PROJET, "prompts", "judge-1.0.0.md");
@@ -182,7 +189,7 @@ describe("rendu de la fixture : chaque variable remplacée par son champ", () =>
     expect(rendu.startsWith("DATE : ")).toBe(true);
     expect(rendu.endsWith("{ … comme ci-dessus … }")).toBe(true);
     expect(rendu).not.toContain("```");
-    expect(rendu).not.toContain("charge-juge-v5");
+    expect(rendu).not.toContain(VERSION_CHARGE_JUGE);
   });
 
   it("une réponse tronquée est rendue true ; un texte vide est rendu vide, jamais refusé comme absent", () => {
@@ -312,18 +319,21 @@ describe("champ absent : le marqueur que déclare le prompt, sur ses seuls champ
     const sansTexte = { ...c, question } as ChargeJuge;
     const sansTroncature = { ...c, reponse: reponseSansTroncature } as ChargeJuge;
     const { date_run: _date, ...sansDate } = c;
+    const troncatureObligatoire = source().replace(" ; `ABSENT` sur une saisie de l'application", "");
+    expect(troncatureObligatoire).not.toBe(source());
     attendreRefus(() => rendrePromptJuge(source(), sansTexte), "champ_absent", ["question.texte"]);
-    attendreRefus(() => rendrePromptJuge(source(), sansTroncature), "champ_absent", ["reponse.troncature"]);
+    attendreRefus(() => rendrePromptJuge(troncatureObligatoire, sansTroncature), "champ_absent", ["reponse.troncature"]);
     attendreRefus(() => rendrePromptJuge(source(), sansDate as ChargeJuge), "champ_absent", ["date_run"]);
   });
 
-  // D59 (19), annexe D 0.24 : sur le vrai prompt, seuls la prémisse et les citations sont
-  // facultatives ; chacun des douze autres champs, retiré seul de la charge, interdit le rendu.
-  it("vrai prompt : tout champ hors prémisse et citations, absent, interdit le rendu (D59 (19))", () => {
+  // D59 (19), annexe D 0.24, et D75 (24), annexe D 0.33 : sur le vrai prompt, seuls la prémisse,
+  // les citations et la troncature (absente sur une saisie de l'application) sont facultatives ;
+  // chacun des onze autres champs, retiré seul de la charge, interdit le rendu.
+  it("vrai prompt : tout champ hors prémisse, citations et troncature, absent, interdit le rendu (D59 (19), D75 (24))", () => {
     const reel = readFileSync(PROMPT_REEL, "utf8");
-    const facultatifs = ["question.premisse_fausse", "reponse.citations"];
+    const facultatifs = ["question.premisse_fausse", "reponse.citations", "reponse.troncature"];
     const obligatoires = VARIABLES_DE_CHARGE.filter((variable) => !facultatifs.includes(variable));
-    expect(obligatoires).toHaveLength(12);
+    expect(obligatoires).toHaveLength(11);
     for (const variable of obligatoires) {
       attendreRefus(() => rendrePromptJuge(reel, sansChamp(chargeDuVraiPrompt(), variable)), "champ_absent", [variable]);
     }
@@ -446,7 +456,7 @@ describe("version de la charge annoncée par le prompt", () => {
   });
 
   it("en-tête ≠ VERSION_CHARGE_JUGE : refus nommé, les deux versions citées", () => {
-    const ancienne = source().replace("`charge-juge-v5`", "`charge-juge-v3`");
+    const ancienne = source().replace(`\`${VERSION_CHARGE_JUGE}\``, "`charge-juge-v3`");
     attendreRefus(() => rendrePromptJuge(ancienne, charge()), "version_charge_discordante", ["charge-juge-v3", VERSION_CHARGE_JUGE]);
   });
 
@@ -458,7 +468,7 @@ describe("version de la charge annoncée par le prompt", () => {
   it("en-tête sans ligne Charge, ou avec deux : refus nommé, jamais de version par défaut", () => {
     const sans = source().replace(/^\| Charge \|.*\n/m, "");
     attendreRefus(() => rendrePromptJuge(sans, charge()), "en_tete_sans_version_charge", []);
-    const deux = source().replace(/^(\| Charge \|.*\n)/m, "$1| Charge | `charge-juge-v5` |\n");
+    const deux = source().replace(/^(\| Charge \|.*\n)/m, `$1| Charge | \`${VERSION_CHARGE_JUGE}\` |\n`);
     attendreRefus(() => rendrePromptJuge(deux, charge()), "en_tete_sans_version_charge", []);
   });
 
@@ -478,5 +488,65 @@ describe("bloc « Texte du prompt »", () => {
     attendreRefus(() => rendrePromptJuge(source().replace("## Texte du prompt", "## Autre titre"), charge()), "texte_du_prompt_introuvable", []);
     const sansCloture = source().replace(/\n```\n?$/, "\n");
     attendreRefus(() => rendrePromptJuge(sansCloture, charge()), "texte_du_prompt_introuvable", []);
+  });
+});
+
+/**
+ * D75 (24), annexe D (0.33) : « le caractère tronqué d'une saisie de l'application, qui n'en porte
+ * pas (section 6), est rendu par le mot `ABSENT` ». Sur le canal API, la troncature reste requise.
+ */
+describe("D75 (24) : troncature selon le canal, au rendu", () => {
+  /** Une demande pour une saisie de l'application : formulation neutre, sans citations (la saisie n'en a pas). */
+  function demandeApplication(app: ReponseSoumissible = reponseApplication()): DemandeCharge<ReponseSoumissible> {
+    const d = demandeNeutreSansCitations();
+    return { ...d, reponse: app, pages_citees: pagesSansTexte([...new Set(app.normalise.liens)]) };
+  }
+
+  it("D75 (24) cas 1 : canal API, troncature rendue true ou false", () => {
+    for (const troncature of [true, false]) {
+      expect(ligne(rendrePromptJuge(source(), charge(demande(reponse({ troncature })))), "TRONQUEE")).toBe(String(troncature));
+    }
+  });
+
+  it("D75 (24) cas 1 : canal API sans troncature, refus nommé avant le rendu, jamais ABSENT", () => {
+    const r = reponse();
+    const { troncature: _t, ...sansTroncature } = r.normalise;
+    const fautive = demande({ ...r, normalise: sansTroncature } as unknown as ReponseObtenue);
+    expect(() => rendrePromptJuge(source(), charge(fautive))).toThrow(TroncatureContraireAuCanal);
+  });
+
+  it("D75 (24) cas 2 : canal application, troncature absente, rendue ABSENT", () => {
+    expect(ligne(rendrePromptJuge(source(), construireCharge(demandeApplication())), "TRONQUEE")).toBe("ABSENT");
+  });
+
+  it("D75 (24) cas 2 : canal application avec une troncature, refus nommé (une saisie de testeur n'en porte pas)", () => {
+    const app = reponseApplication();
+    const avec = { ...app, normalise: { ...app.normalise, troncature: false } } as unknown as ReponseSoumissible;
+    expect(() => rendrePromptJuge(source(), construireCharge(demandeApplication(avec)))).toThrow(TroncatureContraireAuCanal);
+  });
+
+  it("D75 (24) cas 3 : une charge charge-juge-v5, ou un prompt qui l'annonce, est refusé (version discordante)", () => {
+    attendreRefus(() => rendrePromptJuge(source(), { ...charge(), version_charge: "charge-juge-v5" }), "version_charge_discordante", ["charge-juge-v5", VERSION_CHARGE_JUGE]);
+    const enV5 = source().replace(`\`${VERSION_CHARGE_JUGE}\``, "`charge-juge-v5`");
+    attendreRefus(() => rendrePromptJuge(enV5, charge()), "version_charge_discordante", ["charge-juge-v5", VERSION_CHARGE_JUGE]);
+  });
+
+  it("D75 (24) cas 5 : entre une saisie et une réponse de l'API de même projection, seule la ligne TRONQUEE diffère", () => {
+    const app = reponseApplication();
+    const api = reponseSansCitations();
+    const memeProjection = { ...api, normalise: { ...api.normalise, texte: app.normalise.texte, liens: [...app.normalise.liens], troncature: false } };
+    const depuisApi = rendrePromptJuge(source(), construireCharge(demandeApplication(memeProjection))).split("\n");
+    const depuisApp = rendrePromptJuge(source(), construireCharge(demandeApplication(app))).split("\n");
+    expect(depuisApp).toHaveLength(depuisApi.length);
+    const differentes = depuisApp.flatMap((l, rang) => (l === depuisApi[rang] ? [] : [[depuisApi[rang], l]]));
+    expect(differentes).toEqual([["TRONQUEE : false", "TRONQUEE : ABSENT"]]);
+  });
+
+  // Échoue tant que l'en-tête de prompts/judge-1.0.0.md (zone d'arrêt) n'est pas aligné sur la
+  // charge v6 et ne cite pas `ABSENT` dans la ligne de `{reponse.troncature}` : c'est voulu.
+  it("D75 (24) : le vrai prompt tel qu'inscrit rend ABSENT la troncature d'une saisie de l'application", () => {
+    const reel = readFileSync(PROMPT_REEL, "utf8");
+    const rendu = rendrePromptJuge(reel, construireCharge({ ...demandeApplication(), prompt: { chemin: "prompts/judge-1.0.0", version: "1.0.0" } }));
+    expect(rendu).toContain("- Réponse tronquée : ABSENT\n");
   });
 });

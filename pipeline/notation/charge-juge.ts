@@ -58,6 +58,13 @@
  * fois (`inverserTable`), puis consultée pour chaque champ. Un candidat sans alias — hors des
  * candidats interrogés au run — fait refuser la charge (`CandidatSansAlias`), jamais transmettre
  * son vrai identifiant.
+ *
+ * **Troncature selon le canal (charge-juge-v6, D75 (24), §6, annexe D 0.33).** Une saisie de
+ * l'application (`reponse-application.ts`) « ne porte ni mode ni caractère tronqué » (§6) : sa
+ * charge n'a pas de `reponse.troncature`, et le prompt la rend par le marqueur d'absence. Sur le
+ * canal API, la troncature reste requise. Le canal n'est pas transmis au juge (aveuglement) : il est
+ * contrôlé ici, à la construction, et tout écart est un refus nommé (`TroncatureContraireAuCanal`) ;
+ * une réponse de l'API sans troncature n'est jamais rendue `ABSENT`.
  */
 
 import type { Gabarit, Instant, RoleItem } from "../../analysis/types.ts";
@@ -67,6 +74,7 @@ import { aliasDeCandidat, inverserTable, type TableAliasCandidats } from "./alia
 import { LONGUEUR_MAX_TEXTE_PAGE, type PageCitee } from "./pages-citees.ts";
 import type { ReponseContrefactuelle } from "./reponse-contrefactuelle.ts";
 import type { ReponseContrefactuelleOutil } from "./reponse-contrefactuelle-outil.ts";
+import type { ReponseApplication } from "../interrogation/reponse-application.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
 
@@ -77,8 +85,9 @@ import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
  * plus ni la fraîcheur ni le bloc d'attribution (`juge.ts`). v4 (D55 (9), protocole 0.20) :
  * `candidat_id` et `candidats_attendus` portent l'alias aveugle du candidat, jamais son identifiant.
  * v5 (D55 (1), §7) : `reponse.normalisation` retirée de `ReponseSoumise`, qui nommait l'éditeur noté.
+ * v6 (D75 (24), annexe D 0.33) : `reponse.troncature` facultative, absente sur le canal application.
  */
-export const VERSION_CHARGE_JUGE = "charge-juge-v5";
+export const VERSION_CHARGE_JUGE = "charge-juge-v6";
 
 export interface PromptDeJuge {
   /** Chemin d'un fichier de `prompts/`, fourni par l'appelant. */
@@ -120,15 +129,19 @@ export interface ReferenceSoumise {
   readonly role: RoleItem;
 }
 
-/** Ce qu'un juge peut recevoir à noter : une réponse obtenue du run, ou l'une de ses copies permutées. */
+/** Une réponse obtenue du canal API, ou l'une de ses copies permutées (ce que les tests contrefactuels permutent). */
 export type ReponseNotable = ReponseObtenue | ReponseContrefactuelle | ReponseContrefactuelleOutil;
 
-export interface DemandeCharge {
+/** Tout ce qu'un juge peut recevoir à noter : une réponse du canal API, ou une saisie de l'application (§6, D75 (24)). */
+export type ReponseSoumissible = ReponseNotable | ReponseApplication;
+
+export interface DemandeCharge<R extends ReponseSoumissible = ReponseNotable> {
   /**
    * Une réponse du run, ou sa copie permutée du test contrefactuel des candidats
    * (`reponse-contrefactuelle.ts`) ou des outils (`reponse-contrefactuelle-outil.ts`, §7 0.24).
+   * `construireCharge` accepte aussi une saisie de l'application (`DemandeCharge<ReponseSoumissible>`).
    */
-  readonly reponse: ReponseNotable;
+  readonly reponse: R;
   readonly question: QuestionPosee;
   readonly references: readonly ReferenceSoumise[];
   /** `run.date_gel` : l'instant de référence unique du run. */
@@ -180,7 +193,8 @@ export interface ReponseSoumise {
   readonly texte: string;
   readonly liens: readonly string[];
   readonly citations?: readonly CitationSoumise[];
-  readonly troncature: boolean;
+  /** Canal API seul : absente sur une saisie de l'application, qui n'en porte pas (§6, D75 (24)). */
+  readonly troncature?: boolean;
   readonly refus_api: boolean;
 }
 
@@ -210,7 +224,7 @@ export interface ChargeJuge {
 /** La charge sans ce qui ne regarde que le juge automatique (version du format, prompt) : D18, la vue humaine en part. */
 export type ContenuSoumis = Omit<ChargeJuge, "version_charge" | "prompt">;
 
-export function construireCharge(demande: DemandeCharge): ChargeJuge {
+export function construireCharge(demande: DemandeCharge<ReponseSoumissible>): ChargeJuge {
   return {
     version_charge: VERSION_CHARGE_JUGE,
     prompt: { chemin: demande.prompt.chemin, version: demande.prompt.version },
@@ -219,7 +233,7 @@ export function construireCharge(demande: DemandeCharge): ChargeJuge {
 }
 
 /** Tout ce que voit un juge, hors prompt : partagé par la charge et la vue annotateur (D18). */
-export function contenuSoumis(demande: Omit<DemandeCharge, "prompt">): ContenuSoumis {
+export function contenuSoumis(demande: Omit<DemandeCharge<ReponseSoumissible>, "prompt">): ContenuSoumis {
   if (demande.references.length === 0) {
     throw new Error(`Réponse ${demande.reponse.id} : aucun item de référence, rien contre quoi noter (notation.schema.json, references_item).`);
   }
@@ -239,7 +253,7 @@ export function contenuSoumis(demande: Omit<DemandeCharge, "prompt">): ContenuSo
 }
 
 /** Une page par lien distinct de la réponse, dans l'ordre de première citation : ni plus, ni moins. */
-function exigerUnePageParLien(reponse: ReponseNotable, pages: readonly PageCitee[]): void {
+function exigerUnePageParLien(reponse: ReponseSoumissible, pages: readonly PageCitee[]): void {
   const attendues = [...new Set(reponse.normalise.liens)];
   const recues = pages.map((page) => page.url_citee);
   if (attendues.length !== recues.length || attendues.some((url, rang) => url !== recues[rang])) {
@@ -287,15 +301,50 @@ function pageSoumise(page: PageCitee): PageCitee {
   };
 }
 
-export function reponseSoumise(reponse: ReponseNotable): ReponseSoumise {
-  const projection = reponse.normalise;
+/** La projection telle que la charge la lit, commune aux deux canaux : citations et troncature facultatives. */
+interface ProjectionLue {
+  readonly texte: string;
+  readonly liens: readonly string[];
+  readonly citations?: readonly ObjetJson[];
+  readonly troncature?: boolean;
+  readonly refus_api: boolean;
+}
+
+export function reponseSoumise(reponse: ReponseSoumissible): ReponseSoumise {
+  const projection: ProjectionLue = reponse.normalise;
   return {
     texte: projection.texte,
     liens: [...projection.liens],
     ...(projection.citations === undefined ? {} : { citations: projection.citations.map(citationSoumise) }),
-    troncature: projection.troncature,
+    ...troncatureSoumise(reponse.id, reponse.canal, projection.troncature),
     refus_api: projection.refus_api,
   };
+}
+
+/** Une troncature contraire à son canal : absente sur l'API, ou présente sur une saisie de l'application. */
+export class TroncatureContraireAuCanal extends Error {
+  readonly reponse_id: string;
+  readonly canal: ReponseSoumissible["canal"];
+
+  constructor(reponse_id: string, canal: ReponseSoumissible["canal"], detail: string) {
+    super(`Réponse ${reponse_id} du canal ${canal} : ${detail} (§6, annexe D, D75 (24)).`);
+    this.name = "TroncatureContraireAuCanal";
+    this.reponse_id = reponse_id;
+    this.canal = canal;
+  }
+}
+
+/**
+ * D75 (24) : la troncature est requise sur le canal API, interdite sur le canal application. Absente
+ * de la charge, elle est rendue par le marqueur du prompt : seule une saisie de l'application y arrive.
+ */
+function troncatureSoumise(reponse_id: string, canal: ReponseSoumissible["canal"], troncature: boolean | undefined): { readonly troncature?: boolean } {
+  if (canal === "application") {
+    if (troncature !== undefined) throw new TroncatureContraireAuCanal(reponse_id, canal, "une saisie de testeur ne porte pas de troncature");
+    return {};
+  }
+  if (troncature === undefined) throw new TroncatureContraireAuCanal(reponse_id, canal, "troncature absente ; elle ne se devine pas et n'est jamais rendue par le marqueur d'absence");
+  return { troncature };
 }
 
 /**

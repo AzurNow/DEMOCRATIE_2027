@@ -13,8 +13,11 @@
  * **Champ absent (décision du 2026-11-01, option a).** Le marqueur est lu dans le prompt, jamais
  * écrit ici : la phrase « Un champ absent de la charge est rendu par le mot `…` » de ses variables
  * d'entrée. Il n'est admis que sur les champs dont la ligne du tableau des variables le cite dans sa
- * colonne « Rendu » (dans 1.0.0 : `question.premisse_fausse` et `reponse.citations`) ; tout autre
- * champ absent est refusé. Un prompt sans cette phrase n'a aucun champ optionnel.
+ * colonne « Rendu » (dans 1.0.0 : `question.premisse_fausse` et `reponse.citations` ; depuis la
+ * charge v6, D75 (24), annexe D 0.33, aussi `reponse.troncature`, absente sur une saisie de
+ * l'application) ; tout autre champ absent est refusé. Un prompt sans cette phrase n'a aucun champ
+ * optionnel. Que la troncature ne manque que sur le canal application est contrôlé à la construction
+ * de la charge (`charge-juge.ts:TroncatureContraireAuCanal`), le canal n'y figurant pas.
  *
  * **Marqueur et valeur réelle.** Les champs optionnels du prompt 1.0.0 portent, présents, un booléen
  * ou un tableau JSON : leur rendu ne peut pas s'écrire `ABSENT`. Un texte (réponse, question) égal à

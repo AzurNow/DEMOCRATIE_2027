@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { empreinte, ulid } from "../analysis/fabriques.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
+import { reponseDepuisDepot, type ReponseApplication } from "../../pipeline/interrogation/reponse-application.ts";
 import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
 import { notationParRegle } from "../../pipeline/notation/regle-refus.ts";
 import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/graine.ts";
@@ -217,4 +218,26 @@ export function runDeNotation(retires: readonly string[] = [], surcharges: Parti
     alias_candidats: ALIAS_CANDIDATS_TEST,
     ...surcharges,
   };
+}
+
+/**
+ * Une saisie de testeur du canal application (§6), passée par la vraie conversion du dépôt
+ * (`reponse-application.ts`) : ni mode ni troncature (D75 (24)). Aucun contenu réel.
+ */
+export function reponseApplication(texte_copie = "Le candidat propose la TVA à 5,5 % sur l'énergie.", id: string = ulid("reponse-application")): ReponseApplication {
+  return reponseDepuisDepot(
+    {
+      run_id: RUN_ID,
+      outil_id: "outil-alpha",
+      question_id: `q_${"a".repeat(32)}`,
+      formulation_id: ulid("formulation-application"),
+      echantillon: 1,
+      testeur_id: "testeur-1",
+      compte: "dedie",
+      horodatage_saisie: "2026-12-02T10:00:00+01:00",
+      texte_copie,
+      captures: [{ sha256: "1".repeat(64), chemin_local: "captures/t1/a.png" }],
+    },
+    id,
+  );
 }
