@@ -391,7 +391,51 @@ pas par `assembler()` : les premiers servent l'audit du §6 ; les notations et l
 contrefactuelles sont relues par `lireNotationsDuRun`, pour le contrôle croisé et le recalcul de
 robustesse §8(a).
 
-## `pnpm analyze <repertoire_run> [--premier=<repertoire_run>]`
+## `pnpm contestations-posterieures [<repertoire_runs>] [--ecrire | --depot-des-items=<clone>]`
+
+Inscrit dans `run.json#/contestations_posterieures` de chaque run gelé non invalide les contestations
+des items publiés que ne porte pas son commit des données (§8, recalcul (b) ; D73 (2) et (4)). À
+lancer après chaque `pnpm contester` commité, après chaque gel, et toujours avant `pnpm analyze`.
+
+- **`<repertoire_runs>`** : le répertoire des runs, `runs/` du projet s'il est omis.
+- **Les items ne se désignent pas** (D75 (12)) : ceux de chaque run se lisent dans le `data/items` de
+  la racine du dépôt Git qui le porte, comme pour `pnpm analyze`. Les anciennes options `--data`,
+  `--racine` et `--runs` sont refusées (`OptionRetiree`, code 2), jamais ignorées. Un run hors d'un
+  dépôt Git, ou un dépôt sans item, est refusé (code 1).
+- **Simulation par défaut.** `--ecrire` exige un arbre Git propre dans le dépôt des runs, écrit en
+  ajout seul et imprime la commande Git à signer ; rien n'est commité.
+- **`--depot-des-items`** : la vérification d'un run hors de son clone, ci-dessous. Simulation
+  seulement : avec `--ecrire`, refus (code 2).
+
+Codes de sortie : 0, ajouts écrits, simulés ou rien à ajouter ; 1, arbre sale ou refus ; 2, commande
+mal appelée.
+
+## Vérifier un run hors de son clone : `--depot-des-items=<clone>`
+
+Un tiers qui vérifie un run rangé hors de tout dépôt Git (code sans `.git`, image conteneur, archive
+Zenodo dépliée) ne peut pas en déduire les items : sans option, `pnpm analyze` et
+`pnpm contestations-posterieures` refusent ce run (`DepotDuRunIntrouvable`). `--depot-des-items`
+désigne alors la racine d'un clone Git du projet, dont le `data/items` tient lieu de celui du dépôt du
+run (D75 (13)). Pour que ce choix ne rende pas muet le contrôle des contestations postérieures, il
+est refusé (`DepotDesItemsRefuse`) si :
+
+- le run est dans un dépôt Git (`run_dans_un_depot`) : il lit toujours les items de ce dépôt ;
+- le chemin n'est pas la racine d'un dépôt Git (`pas_la_racine_d_un_depot`) : répertoire vide, absent,
+  ou sous-répertoire ;
+- le commit des données du gel (`versions.donnees_commit`) n'est pas dans l'historique de son `HEAD`
+  (`commit_du_gel_absent`) : un autre projet, ou un clone arrêté avant le gel.
+
+Un clone qui satisfait ces conditions mais ne porte aucun item reste refusé (`ItemsDuDepotAbsents`).
+Le contrôle lit les contestations de l'arbre de travail du clone : il ne voit que celles que ce clone
+porte, d'où l'usage d'un clone à jour.
+
+```bash
+git clone https://github.com/AzurNow/DEMOCRATIE_2027.git /chemin/clone
+pnpm contestations-posterieures /chemin/archive/runs --depot-des-items=/chemin/clone
+pnpm analyze /chemin/archive/runs/2026-12-01 --depot-des-items=/chemin/clone
+```
+
+## `pnpm analyze <repertoire_run> [--premier=<repertoire_run>] [--depot-des-items=<clone>]`
 
 Les analyses préenregistrées du §8 sur un run noté (`analysis/analyse-du-run.ts`, sous-lot A). Lit le
 run par `lireRun` (table ci-dessus), les notations individuelles du volume et le plan d'interrogation
@@ -403,7 +447,8 @@ du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.sch
   Un run hors d'un dépôt Git, ou un dépôt sans item validé, est refusé (code 2). Les contestations
   connues de ce `data/items`, lues contre le commit des données du gel, doivent toutes être inscrites
   dans `run.json#/contestations_posterieures` (D73 (2) et (4)) : sinon refus,
-  `ContestationsPosterieuresNonInscrites`.
+  `ContestationsPosterieuresNonInscrites`. Un run hors de tout dépôt Git se vérifie avec
+  `--depot-des-items` (section précédente) ; le premier run de `--premier` lit alors les mêmes items.
 
 - **Un seul partage de la population.** Les couples comparés et incomplets (seuil de 20 % compté sur
   le plan, §8), les candidats comparés et rapportés à part (seuil de couverture lu au gel, §4), les

@@ -6,11 +6,12 @@
  * items de fixture sont rangés dans un dépôt Git temporaire, jamais dans celui du projet.
  */
 
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ContestationPosterieure } from "../../analysis/types.ts";
+import { executerGit } from "../../outils/executer-git.ts";
 import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import {
   cleDeContestation,
@@ -19,11 +20,14 @@ import {
   contestationsAAjouter,
   contestationsAuCommit,
   contestationsRecues,
+  DepotDesItemsRefuse,
   DepotDuRunIntrouvable,
   exigerContestationsInscrites,
   ItemsDuDepotAbsents,
   repertoireDesItemsDuRun,
+  repertoireDesItemsPourLeRun,
   synchroniserContestationsPosterieures,
+  type AjoutAuRun,
   type RunEtSesContestations,
 } from "../../pipeline/run/contestations-posterieures.ts";
 import type { Item } from "../../validation/domaine/types.ts";
@@ -258,7 +262,7 @@ describe("synchroniserContestationsPosterieures (D73 (2) et (4))", () => {
   it("chaque run gelé non invalide reçoit ce que son commit des données ne porte pas ; le run invalide ne reçoit rien", () => {
     const b = bac();
     const avantQuatrieme = texteRun(b.quatrieme);
-    const ajouts = synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
+    const ajouts = synchroniserContestationsPosterieures(b.runs, null, true);
     expect(ajouts.map((ajout) => ajout.repertoire)).toEqual([b.premier, b.second, b.troisieme]);
     // Premier, au commit 1 : C43 (avant le gel, absente du commit), C42 (à l'instant du gel), C44
     // (après, item hors tirage) ; C41, portée par le commit, n'entre jamais.
@@ -272,21 +276,21 @@ describe("synchroniserContestationsPosterieures (D73 (2) et (4))", () => {
 
   it("ajout seul : relancer n'écrit rien de nouveau, et une divergence n'écrit rien nulle part", () => {
     const b = bac();
-    synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
+    synchroniserContestationsPosterieures(b.runs, null, true);
     const apres = [texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)];
-    expect(synchroniserContestationsPosterieures(b.runs, b.data, items(b), true)).toEqual([]);
+    expect(synchroniserContestationsPosterieures(b.runs, null, true)).toEqual([]);
     expect([texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)]).toEqual(apres);
     const i44 = lireItemsData(b.data).get("01JBANCESSA1000000000TEM44") as Item;
     const divergent = { ...i44, contestations: [{ ...contestationRecue("01JBANCESSA1C0NTESTAT10N44"), date_reception: "2026-12-11T09:00:00+01:00" }] };
     poserItem(b.data, divergent);
-    expect(() => synchroniserContestationsPosterieures(b.runs, b.data, items(b), true)).toThrow(ContestationPosterieureDivergente);
+    expect(() => synchroniserContestationsPosterieures(b.runs, null, true)).toThrow(ContestationPosterieureDivergente);
     expect([texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)]).toEqual(apres);
   });
 
   it("sans écrire : le résultat dit les ajouts, aucun fichier ne change", () => {
     const b = bac();
     const avant = [texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)];
-    expect(synchroniserContestationsPosterieures(b.runs, b.data, items(b), false)).toHaveLength(3);
+    expect(synchroniserContestationsPosterieures(b.runs, null, false)).toHaveLength(3);
     expect([texteRun(b.premier), texteRun(b.second), texteRun(b.troisieme)]).toEqual(avant);
   });
 
@@ -295,7 +299,7 @@ describe("synchroniserContestationsPosterieures (D73 (2) et (4))", () => {
     const brut = JSON.parse(texteRun(b.second)) as Objet;
     writeFileSync(join(b.second, "run.json"), `${JSON.stringify({ ...brut, versions: { ...(brut["versions"] as Objet), donnees_commit: "f".repeat(40) } }, null, 2)}\n`, "utf8");
     const avant = texteRun(b.premier);
-    expect(() => synchroniserContestationsPosterieures(b.runs, b.data, items(b), true)).toThrow(/ItemsDuGelIllisibles|introuvable/);
+    expect(() => synchroniserContestationsPosterieures(b.runs, null, true)).toThrow(/ItemsDuGelIllisibles|introuvable/);
     expect(texteRun(b.premier)).toBe(avant);
   });
 });
@@ -304,7 +308,7 @@ describe("exigerContestationsInscrites (D73 (4), avant pnpm analyze)", () => {
   it("refuse un run où manque une contestation postérieure connue, accepte quand tout est inscrit", () => {
     const b = bac();
     expect(() => exigerContestationsInscrites(b.troisieme)).toThrow(ContestationsPosterieuresNonInscrites);
-    synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
+    synchroniserContestationsPosterieures(b.runs, null, true);
     expect(() => exigerContestationsInscrites(b.troisieme)).not.toThrow();
     expect(() => exigerContestationsInscrites(b.premier)).not.toThrow();
   });
@@ -316,7 +320,7 @@ describe("exigerContestationsInscrites (D73 (4), avant pnpm analyze)", () => {
       expect.objectContaining({ name: "ContestationsPosterieuresNonInscrites", manquantes: [entree(43, C43, 41), entree(42, C42), entree(44, C44)] }),
     );
     // C41, que le commit 1 porte, n'entre pas dans run.json et n'est jamais exigée.
-    synchroniserContestationsPosterieures(b.runs, b.data, items(b), true);
+    synchroniserContestationsPosterieures(b.runs, null, true);
     expect(JSON.stringify(listeDe(b.premier))).not.toContain("01JBANCESSA1C0NTESTAT10N41");
     expect(() => exigerContestationsInscrites(b.premier)).not.toThrow();
   });
@@ -370,7 +374,7 @@ describe("pnpm contestations-posterieures", () => {
   it("simule par défaut, écrit avec --ecrire sur un arbre propre, puis n'ajoute plus rien", () => {
     const b = bac();
     commiterTout(b.racine, "contestations reçues après les gels");
-    const options = [`--racine=${b.racine}`];
+    const options = [b.runs];
     const avant = texteRun(b.premier);
 
     const simulation = executerOutil("contestations-posterieures.ts", options);
@@ -390,5 +394,157 @@ describe("pnpm contestations-posterieures", () => {
     const relance = executerOutil("contestations-posterieures.ts", [...options, "--ecrire"]);
     expect(relance.status, relance.erreur).toBe(0);
     expect(relance.sortie).toMatch(/Aucune contestation postérieure à ajouter/);
+  });
+
+  it("D75 (12) : --data, --racine et --runs sont refusées, code 2, par un message qui nomme l'option ; rien n'est écrit", () => {
+    const b = bac();
+    commiterTout(b.racine, "contestations reçues après les gels");
+    const avant = texteRun(b.premier);
+    for (const [cle, valeur] of [["data", b.data], ["racine", b.racine], ["runs", b.runs]] as const) {
+      for (const appel of [[`--${cle}=${valeur}`], [b.runs, `--${cle}=${valeur}`, "--ecrire"]]) {
+        const resultat = executerOutil("contestations-posterieures.ts", appel);
+        expect(resultat.status, resultat.erreur).toBe(2);
+        expect(resultat.erreur).toContain("OptionRetiree");
+        expect(resultat.erreur).toContain(`--${cle} n'existe plus`);
+        expect(texteRun(b.premier)).toBe(avant);
+      }
+    }
+  });
+
+  it("D75 (12) : un second répertoire, ou une option inconnue, est refusé, code 2", () => {
+    const b = bac();
+    expect(executerOutil("contestations-posterieures.ts", [b.runs, b.runs]).status).toBe(2);
+    const inconnue = executerOutil("contestations-posterieures.ts", [b.runs, "--items=ailleurs"]);
+    expect(inconnue.status).toBe(2);
+    expect(inconnue.erreur).toContain("OptionsInconnues");
+  });
+});
+
+/* ------------------------------------------------------------ D75 (13) : run hors de son clone */
+
+/** Les runs de `b` recopiés hors de tout dépôt Git (une archive Zenodo dépliée). */
+function horsDuClone(b: Bac): { readonly runs: string; readonly premier: string; readonly troisieme: string; readonly quatrieme: string } {
+  const runs = join(racineTemporaire(), "runs");
+  cpSync(b.runs, runs, { recursive: true });
+  return { runs, premier: join(runs, "2026-12-01"), troisieme: join(runs, "2026-12-15"), quatrieme: join(runs, "2026-12-22") };
+}
+
+function commitDe(repertoire_run: string): string {
+  return (JSON.parse(texteRun(repertoire_run)) as { versions: { donnees_commit: string } }).versions.donnees_commit;
+}
+
+/** Un clone de `b`, ramené au commit `commit`. */
+function cloneAu(b: Bac, commit: string): string {
+  const clone = join(racineTemporaire(), "clone");
+  expect(executerGit(b.racine, ["clone", "--quiet", b.racine, clone]).ok).toBe(true);
+  expect(executerGit(clone, ["reset", "--quiet", "--hard", commit]).ok).toBe(true);
+  return clone;
+}
+
+describe("D75 (13) : items d'un run hors de son clone, lus dans un dépôt désigné", () => {
+  it("run dans son clone, sans option : inchangé, les items du dépôt du run", () => {
+    const b = bac();
+    expect(realpathSync.native(repertoireDesItemsPourLeRun(b.troisieme, null))).toBe(realpathSync.native(b.data));
+    expect(() => exigerContestationsInscrites(b.troisieme, null)).toThrow(ContestationsPosterieuresNonInscrites);
+  });
+
+  it("run dans son clone, avec l'option : refus run_dans_un_depot, même vers son propre clone", () => {
+    const b = bac();
+    expect(() => exigerContestationsInscrites(b.troisieme, b.racine)).toThrow(expect.objectContaining({ name: "DepotDesItemsRefuse", motif: "run_dans_un_depot" }));
+    expect(() => synchroniserContestationsPosterieures(b.runs, b.racine, false)).toThrow(DepotDesItemsRefuse);
+  });
+
+  it("run hors clone, sans option : refus DepotDuRunIntrouvable, inchangé", () => {
+    const hors = horsDuClone(bac());
+    expect(() => exigerContestationsInscrites(hors.troisieme)).toThrow(DepotDuRunIntrouvable);
+    expect(() => synchroniserContestationsPosterieures(hors.runs, null, false)).toThrow(DepotDuRunIntrouvable);
+  });
+
+  it("option vers un dépôt qui porte le commit gelé : accepté, mêmes résultats que dans le clone", () => {
+    const b = bac();
+    commiterTout(b.racine, "contestations reçues après les gels");
+    const hors = horsDuClone(b);
+    expect(realpathSync.native(repertoireDesItemsPourLeRun(hors.troisieme, b.racine))).toBe(realpathSync.native(b.data));
+    const manquantes = (repertoire: string, depot: string | null): unknown => {
+      try {
+        exigerContestationsInscrites(repertoire, depot);
+        return [];
+      } catch (erreur) {
+        return (erreur as ContestationsPosterieuresNonInscrites).manquantes;
+      }
+    };
+    for (const nom of ["premier", "troisieme", "quatrieme"] as const) {
+      expect(manquantes(hors[nom], b.racine)).toEqual(manquantes(b[nom], null));
+    }
+    const resume = (ajouts: readonly AjoutAuRun[]) => ajouts.map(({ run_id, ajoutees }) => ({ run_id, ajoutees }));
+    expect(resume(synchroniserContestationsPosterieures(hors.runs, b.racine, false))).toEqual(resume(synchroniserContestationsPosterieures(b.runs, null, false)));
+    // Un clone tiers, à jour, vaut le dépôt de l'auteur.
+    const tiers = cloneAu(b, head(b.racine));
+    expect(resume(synchroniserContestationsPosterieures(hors.runs, tiers, false))).toEqual(resume(synchroniserContestationsPosterieures(b.runs, null, false)));
+    synchroniserContestationsPosterieures(hors.runs, tiers, true);
+    expect(listeDe(hors.premier)).toEqual([PRESENTE, entree(43, C43, 41), entree(42, C42), entree(44, C44)]);
+    expect(() => exigerContestationsInscrites(hors.troisieme, tiers)).not.toThrow();
+  });
+
+  it("option vers un dépôt sans le commit gelé : un autre dépôt, ou un clone arrêté avant le gel, refus commit_du_gel_absent", () => {
+    const b = bac();
+    const hors = horsDuClone(b);
+    const autre = racineTemporaire();
+    poserItem(join(autre, "data", "items"), itemPromu({ id: "01JBANCESSA1000000000TEM41" }));
+    initialiserDepot(autre);
+    // Le troisième run est gelé au second commit ; ce clone s'arrête au premier.
+    const avantLeGel = cloneAu(b, commitDe(b.premier));
+    for (const depot of [autre, avantLeGel]) {
+      expect(() => exigerContestationsInscrites(hors.troisieme, depot)).toThrow(expect.objectContaining({ name: "DepotDesItemsRefuse", motif: "commit_du_gel_absent" }));
+    }
+    expect(() => synchroniserContestationsPosterieures(hors.runs, avantLeGel, false)).toThrow(DepotDesItemsRefuse);
+  });
+
+  it("option vers un répertoire vide, absent ou qui n'est pas la racine d'un dépôt : refus pas_la_racine_d_un_depot", () => {
+    const b = bac();
+    const hors = horsDuClone(b);
+    for (const depot of [racineTemporaire(), join(racineTemporaire(), "absent"), join(b.racine, "data")]) {
+      expect(() => exigerContestationsInscrites(hors.troisieme, depot)).toThrow(expect.objectContaining({ name: "DepotDesItemsRefuse", motif: "pas_la_racine_d_un_depot" }));
+    }
+  });
+
+  it("option vers un dépôt qui porte le commit gelé mais aucun item : refus ItemsDuDepotAbsents, jamais « zéro contestation »", () => {
+    const b = bac();
+    const hors = horsDuClone(b);
+    rmSync(b.data, { recursive: true, force: true });
+    mkdirSync(b.data, { recursive: true });
+    expect(() => exigerContestationsInscrites(hors.troisieme, b.racine)).toThrow(ItemsDuDepotAbsents);
+    rmSync(join(b.racine, "data"), { recursive: true, force: true });
+    commiterTout(b.racine, "plus aucun item");
+    expect(() => exigerContestationsInscrites(hors.troisieme, b.racine)).toThrow(ItemsDuDepotAbsents);
+    expect(() => synchroniserContestationsPosterieures(hors.runs, b.racine, false)).toThrow(ItemsDuDepotAbsents);
+  });
+
+  it("pnpm contestations-posterieures --depot-des-items : simule hors du clone ; sans option, sans valeur ou avec --ecrire, refus", () => {
+    const b = bac();
+    commiterTout(b.racine, "contestations reçues après les gels");
+    const hors = horsDuClone(b);
+    const avant = texteRun(hors.premier);
+
+    const simulation = executerOutil("contestations-posterieures.ts", [hors.runs, `--depot-des-items=${b.racine}`]);
+    expect(simulation.status, simulation.erreur).toBe(0);
+    expect(simulation.sortie).toMatch(/Simulation/);
+    expect(simulation.sortie).toContain("01JBANCESSA1C0NTESTAT10N44");
+
+    const sansOption = executerOutil("contestations-posterieures.ts", [hors.runs]);
+    expect(sansOption.status).toBe(1);
+    expect(sansOption.erreur).toContain("DepotDuRunIntrouvable");
+
+    const avecEcriture = executerOutil("contestations-posterieures.ts", [hors.runs, `--depot-des-items=${b.racine}`, "--ecrire"]);
+    expect(avecEcriture.status).toBe(2);
+    expect(avecEcriture.erreur).toContain("CommandeMalAppelee");
+
+    const sansValeur = executerOutil("contestations-posterieures.ts", [hors.runs, "--depot-des-items"]);
+    expect(sansValeur.status).toBe(2);
+
+    const refuse = executerOutil("contestations-posterieures.ts", [hors.runs, `--depot-des-items=${racineTemporaire()}`]);
+    expect(refuse.status).toBe(1);
+    expect(refuse.erreur).toContain("DepotDesItemsRefuse");
+    expect(texteRun(hors.premier)).toBe(avant);
   });
 });

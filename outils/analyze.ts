@@ -12,6 +12,15 @@
  * rendait muet le contrôle des contestations postérieures (DETTE 2026-11-04 n° 1). Un run hors d'un
  * dépôt Git (`DepotDuRunIntrouvable`) ou un dépôt sans item validé (`ItemsDuDepotAbsents`) est refusé.
  *
+ *   pnpm analyze <repertoire_run> --depot-des-items=<racine d'un clone>
+ *
+ * D75 (13) : un run rangé hors de tout dépôt Git (archive Zenodo vérifiée par un tiers) lit ses
+ * items dans le `data/items` du clone désigné, à trois conditions
+ * (`pipeline/run/contestations-posterieures.ts:repertoireDesItemsDesigne`, `DepotDesItemsRefuse`) :
+ * le run n'est dans aucun dépôt Git, le chemin est la racine d'un dépôt, et le commit des données du
+ * gel est dans l'historique de son `HEAD`. Un clone sans item reste refusé (`ItemsDuDepotAbsents`).
+ * Le premier run de `--premier` lit les items du même répertoire.
+ *
  * Lit le run comme `analysis/lecture-run.ts:lireRun` (chaque fichier validé), ses notations
  * individuelles et son plan d'interrogation ; écrit `runs/<date>/metriques/metriques.json`, validé
  * contre `schema/metriques.schema.json` avant toute écriture. Ne publie rien, n'écrit rien d'autre.
@@ -27,9 +36,10 @@
  * porte les contestations connues à son calcul). Lancer d'abord `pnpm contestations-posterieures --ecrire`.
  *
  * Codes de sortie : 0, le fichier est écrit ou déjà là à l'identique ; 2, la commande est mal
- * appelée, le run n'est dans aucun dépôt Git ou son dépôt n'a aucun item, un fichier du run est
- * illisible ou non conforme, une contestation postérieure connue n'y est pas inscrite, le document
- * n'est pas conforme à son schéma, ou `metriques.json` existe et diffère. Dans ces cas, rien n'est écrit.
+ * appelée, le run n'est dans aucun dépôt Git ou son dépôt n'a aucun item, le dépôt désigné est
+ * refusé (`DepotDesItemsRefuse`), un fichier du run est illisible ou non conforme, une contestation
+ * postérieure connue n'y est pas inscrite, le document n'est pas conforme à son schéma, ou
+ * `metriques.json` existe et diffère. Dans ces cas, rien n'est écrit.
  */
 
 import { analyserEtEcrire, PARAMETRES_PRODUCTION } from "../analysis/analyse-du-run.ts";
@@ -37,36 +47,43 @@ import { requetesDuPlanDuRun } from "../pipeline/interrogation/plan-du-run.ts";
 import { questionsDuSousEchantillonDuRun } from "../pipeline/interrogation/sous-echantillon-application.ts";
 import { echantillonHumainDuRun } from "../pipeline/notation/echantillons.ts";
 import { etatsDesLectures } from "../pipeline/notation/lectures-comparateur.ts";
-import { exigerContestationsInscrites, repertoireDesItemsDuRun } from "../pipeline/run/contestations-posterieures.ts";
-import { analyserArguments } from "./arguments.ts";
+import { exigerContestationsInscrites, repertoireDesItemsPourLeRun } from "../pipeline/run/contestations-posterieures.ts";
+import { analyserArguments, type Arguments } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 
-const USAGE = "usage : pnpm analyze <repertoire_run> [--premier=<repertoire_run>]";
+const USAGE = "usage : pnpm analyze <repertoire_run> [--premier=<repertoire_run>] [--depot-des-items=<racine d'un clone>]";
 
 interface Demande {
   readonly repertoire: string;
   /** `null` : aucun premier run demandé, H5 sans objet. */
   readonly premier: string | null;
+  /** `null` : les items se déduisent du dépôt du run (D75 (13)). */
+  readonly depot: string | null;
+}
+
+/** La valeur de `--<cle>`, `null` sans l'option ; une option sans valeur est refusée. */
+function chemin(table: Arguments, cle: string, attendu: string): string | null {
+  const valeur = table.get(cle);
+  if (valeur === "true" || valeur === "") throw new Error(`--${cle} attend ${attendu}. ${USAGE}`);
+  return valeur === undefined ? null : valeur;
 }
 
 function demande(bruts: readonly string[]): Demande {
-  const table = analyserArguments(bruts, ["premier"]);
+  const table = analyserArguments(bruts, ["premier", "depot-des-items"]);
   const positionnels = bruts.filter((argument) => !argument.startsWith("--"));
   const [repertoire] = positionnels;
   if (repertoire === undefined || positionnels.length > 1) throw new Error(`un seul répertoire de run est attendu. ${USAGE}`);
-  const premier = table.get("premier");
-  if (premier === "true" || premier === "") throw new Error(`--premier attend un répertoire de run. ${USAGE}`);
-  return { repertoire, premier: premier === undefined ? null : premier };
+  return { repertoire, premier: chemin(table, "premier", "un répertoire de run"), depot: chemin(table, "depot-des-items", "la racine d'un clone Git du projet") };
 }
 
 const LIBELLE_ISSUE = { ecrit: "écrit", inchange: "inchangé (déjà identique au recalcul)" } as const;
 
 function principal(): void {
   try {
-    const { repertoire, premier } = demande(process.argv.slice(2));
-    exigerContestationsInscrites(repertoire);
+    const { repertoire, premier, depot } = demande(process.argv.slice(2));
+    exigerContestationsInscrites(repertoire, depot);
     const options = {
-      items: repertoireDesItemsDuRun(repertoire),
+      items: repertoireDesItemsPourLeRun(repertoire, depot),
       plan_du_run: requetesDuPlanDuRun,
       echantillon_humain: echantillonHumainDuRun,
       sous_echantillon_application: questionsDuSousEchantillonDuRun,

@@ -71,8 +71,12 @@ export const CHAMPS_DES_INCIDENTS_ET_CONTESTATIONS: ChampsDeRunJson = {
 /**
  * Ce que `pnpm go-no-go` écrit (`pipeline/go-no-go/go-no-go.ts:fusionner`, §12, D24, D55 (7)). Il
  * se lance après l'analyse et lit `metriques.json` : hors de l'empreinte, pour qu'une analyse
- * relancée ensuite reste identique. Le §9 ne nomme pas ces champs (conformité 2026-11-03,
- * constat 16, révision du protocole proposée).
+ * relancée ensuite reste identique. Le §9 les nomme depuis la 0.33 (D75 (17) ; conformité
+ * 2026-11-03, constat 16) : l'empreinte du fichier du run est calculée « hors de ceux qu'y inscrit
+ * le go/no-go (section 12), sa décision, le motif d'une publication provisoire, les comptes et les
+ * kappas de l'échantillon humain et les réponses manquantes de chaque outil par mode, champs que ce
+ * fichier reçoit après l'analyse et dont la liste exacte est publiée avec le code ». Cette liste
+ * exacte est celle-ci.
  */
 export const CHAMPS_DU_GO_NO_GO: ChampsDeRunJson = {
   ...AUCUN,
