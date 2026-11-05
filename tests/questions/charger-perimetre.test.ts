@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { parse, stringify } from "yaml";
+import { SEUIL_COUVERTURE_ITEMS_P } from "../../analysis/parametres-protocole.ts";
 import {
   chargerPerimetre,
   construirePerimetre,
@@ -23,7 +24,6 @@ import {
   PerimetreIncomplet,
   PerimetreRefuse,
   revelationsDansAlias,
-  SEUIL_COUVERTURE_ITEMS_P,
 } from "../../pipeline/questions/charger-perimetre.ts";
 import type { ContexteDuGel } from "../../pipeline/questions/charger-perimetre.ts";
 import { idsInterroges } from "../../analysis/candidats-interroges.ts";

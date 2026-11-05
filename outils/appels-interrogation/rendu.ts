@@ -14,10 +14,10 @@
  * Pur : aucune lecture, aucune écriture, aucun appel réseau. `outils/appels-interrogation.ts` écrit.
  */
 
+import { DUREE_FENETRE_MS } from "../../analysis/parametres-protocole.ts";
 import {
   ATTENTES_AVANT_RELANCE_MS,
   DELAI_TENTATIVE_MS,
-  DUREE_FENETRE_MS,
   ECHANTILLONS,
   HEURE_OUVERTURE_FENETRE,
   JOUR_OUVERTURE_FENETRE,

@@ -229,7 +229,7 @@
 
         "reprise": {
           "type": "boolean",
-          "description": "§5 : 80 % des questions sont reprises du run précédent, 20 % neuves. Protocole 0.9 : une question est reprise si elle porte le même identifiant et les mêmes empreintes des trois formulations qu'au run précédent (pipeline/questions/signature.ts, définition partagée avec la tendance du §8). Budget calculé par candidat présent aux deux runs ; un candidat nouveau est hors du calcul (voir bilan_reprise)."
+          "description": "§5 : 80 % des questions sont reprises du run précédent, 20 % neuves. Protocole 0.9 : une question est reprise si elle porte le même identifiant et les mêmes empreintes des trois formulations qu'au run précédent (analysis/signature-question.ts, définition partagée avec la tendance du §8). Budget calculé par candidat présent aux deux runs ; un candidat nouveau est hors du calcul (voir bilan_reprise)."
         },
         "run_origine_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
         "empreinte_texte_precedente": {

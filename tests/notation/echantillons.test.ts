@@ -5,12 +5,12 @@
 
 import { describe, expect, it } from "vitest";
 import { graineDerivee } from "../../analysis/graines.ts";
+import { TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL } from "../../analysis/parametres-protocole.ts";
 import {
   CLE_ECHANTILLON_HUMAIN,
   CLE_SOUS_ENSEMBLE_CONTREFACTUEL,
   ordreEchantillonHumain,
   tailleEchantillonHumain,
-  TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL,
   tirerEchantillonHumain,
   tirerSousEnsembleContrefactuel,
 } from "../../pipeline/notation/echantillons.ts";

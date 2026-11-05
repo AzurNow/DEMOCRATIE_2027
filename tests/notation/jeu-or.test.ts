@@ -6,10 +6,10 @@
 
 import { describe, expect, it } from "vitest";
 import { graineDerivee } from "../../analysis/graines.ts";
+import { TAILLE_JEU_OR } from "../../analysis/parametres-protocole.ts";
 import {
   CLE_ECHANTILLON_HUMAIN,
   CLE_JEU_OR,
-  TAILLE_JEU_OR,
   tirerEchantillonHumain,
   tirerJeuOr,
 } from "../../pipeline/notation/echantillons.ts";

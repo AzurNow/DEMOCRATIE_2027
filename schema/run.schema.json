@@ -175,7 +175,7 @@
         },
         "alias_candidats": {
           "$ref": "#/$defs/graine_generateur_du_tirage",
-          "description": "§7 (protocole 0.20), D55 (9) : amorce la table alias aveugle de candidat (pipeline/notation/alias-candidats.ts)."
+          "description": "§7 (protocole 0.20), D55 (9) : amorce la table alias aveugle de candidat (analysis/alias-candidats.ts)."
         }
       }
     },
@@ -183,7 +183,7 @@
       "type": "object",
       "minProperties": 1,
       "additionalProperties": false,
-      "description": "§7 (protocole 0.20), D55 (9) : la table alias aveugle de candidat, publiée avec le run et transmise au juge à la place de candidat_id (pipeline/notation/alias-candidats.ts, pipeline/notation/charge-juge.ts). Une entrée par candidat interrogé au run (perimetre.candidats[].interroge), alias C1 à Cn dans un ordre tiré par graines.alias_candidats ; un candidat non interrogé n'a pas d'alias. Recalculable à l'identique depuis cette graine et la liste des candidats interrogés ; un écart est un refus à la relecture.",
+      "description": "§7 (protocole 0.20), D55 (9) : la table alias aveugle de candidat, publiée avec le run et transmise au juge à la place de candidat_id (analysis/alias-candidats.ts, pipeline/notation/charge-juge.ts). Une entrée par candidat interrogé au run (perimetre.candidats[].interroge), alias C1 à Cn dans un ordre tiré par graines.alias_candidats ; un candidat non interrogé n'a pas d'alias. Recalculable à l'identique depuis cette graine et la liste des candidats interrogés ; un écart est un refus à la relecture.",
       "patternProperties": {
         "^C[1-9][0-9]*$": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"

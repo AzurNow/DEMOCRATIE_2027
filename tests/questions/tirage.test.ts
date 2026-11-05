@@ -15,9 +15,9 @@ import {
   ArbitrageSansDecision,
   DecisionPanelPosterieureAuGel,
   DecisionsPanelSimultanees,
-  PART_REPRISE,
   tirer,
 } from "../../pipeline/questions/tirage.ts";
+import { PART_REPRISE } from "../../analysis/parametres-protocole.ts";
 import {
   empreinteNeutre,
   tiragePrecedentDe,

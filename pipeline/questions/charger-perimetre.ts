@@ -41,6 +41,7 @@ import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import type { Mode } from "../../analysis/types.ts";
 import { validerFragment, valider } from "../../outils/schemas/valider.ts";
+import { SEUIL_COUVERTURE_ITEMS_P } from "../../analysis/parametres-protocole.ts";
 import { idsInterroges } from "../../analysis/candidats-interroges.ts";
 import { itemsPAuGel } from "./couverture.ts";
 import { FENETRE_NOTICES_MOIS, inclusionAvantListe, SONDAGES_MINIMUM } from "./perimetre.ts";
@@ -48,14 +49,6 @@ import { AMORCE_GROUPE_ATTRIBUTION } from "./tirage.ts";
 import { THEMES } from "./types.ts";
 import type { Item, Mesure, ParametresTirage, StatutAuGel } from "./types.ts";
 import type { RegimeInclusion } from "../../analysis/types-run.ts";
-
-/**
- * §4 : « Un candidat comptant moins de 10 items P vérifiés à la date du run est rapporté à part. »
- * Aucune constante du code ne portait ce seuil avant ce chargeur : il n'était écrit que dans
- * `run.schema.json` (lien `items_p_verifies` ↔ `sous_seuil`), qui revalide l'instantané produit et
- * lèverait si les deux divergeaient.
- */
-export const SEUIL_COUVERTURE_ITEMS_P = 10;
 
 /** `run.schema.json#/$defs/preuve_archivee`. */
 export interface PreuveArchivee {

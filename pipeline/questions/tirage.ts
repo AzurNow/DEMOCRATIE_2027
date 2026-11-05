@@ -27,6 +27,7 @@
  */
 
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
+import { PART_REPRISE } from "../../analysis/parametres-protocole.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
 import { itemsPContestesAuGel } from "./couverture.ts";
@@ -53,9 +54,6 @@ import type {
 } from "./types.ts";
 import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { candidatsInterroges, candidatsNonInterroges } from "../../analysis/candidats-interroges.ts";
-
-/** §5 : 80 % des questions sont reprises du run précédent, 20 % sont neuves. */
-export const PART_REPRISE = 0.8;
 
 export type { ParametresTirage } from "./types.ts";
 
