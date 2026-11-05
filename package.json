@@ -17,6 +17,7 @@
     "schemas": "node --experimental-strip-types outils/schemas.ts",
     "test": "vitest run",
     "build:client": "tsc -p validation/client/tsconfig.json",
+    "build:site": "ASTRO_TELEMETRY_DISABLED=1 astro build --root site",
     "build:client:notation": "tsc -p notation-humaine/client/tsconfig.json",
     "notation:humaine": "pnpm run build:client:notation && node --experimental-strip-types outils/notation-humaine.ts",
     "validate": "pnpm run build:client && node --experimental-strip-types validation/serveur/principal.ts",
@@ -64,6 +65,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "astro": "7.4.5",
     "eslint": "10.10.0",
     "eslint-plugin-sonarjs": "4.2.1",
     "typescript": "^5.7.2",

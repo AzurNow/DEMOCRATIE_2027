@@ -26,7 +26,8 @@ const RACINE = resolve(import.meta.dirname, "..");
 const REPERTOIRES = ["outils", "pipeline", "validation", "analysis", "notation-humaine"];
 /** Répertoires de premier niveau qui ne sont pas du code de production, même s'ils contiennent du .ts ou du .py. */
 const HORS_PRODUCTION = new Set(["scratch", "tests", "node_modules", "docs", "schema", "config", "prompts", "runs"]);
-const IGNORES = new Set(["node_modules", "dist", "__pycache__"]);
+// `.astro` : types générés par Astro à la construction du site (site/.astro, ignoré par Git).
+const IGNORES = new Set(["node_modules", "dist", "__pycache__", ".astro"]);
 
 interface Protege {
   readonly repertoire: string;

@@ -1,0 +1,21 @@
+---
+// Gabarit commun : aucune police externe, aucun script externe.
+interface Props {
+  titre: string;
+  description: string;
+}
+const { titre, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{titre}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

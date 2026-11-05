@@ -27,6 +27,9 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      # Site statique (plan de la page pédagogique, 2026-11-05) : construit avant les tests, car les
+      # tests de garde de tests/site/ lisent site/dist/ (ressources externes, noms, renvois au protocole).
+      - run: pnpm build:site
       - run: pnpm test
       # Pipeline Python (sous-lot C1, décision du 2026-09-22) : Python épinglé par .python-version,
       # uv installé par pip à version fixe (aucune action tierce), dépendances rejouées depuis uv.lock.

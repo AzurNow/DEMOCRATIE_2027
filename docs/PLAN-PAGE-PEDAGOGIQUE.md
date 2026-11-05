@@ -1,6 +1,6 @@
 # Plan — page pédagogique du site (« Comment ça marche »)
 
-Statut : **plan, non lancé.** Rédigé le 2026-11-05 à la demande de l'auteur ; aucun code n'est
+Statut : **lancé le 2026-11-05 sur décision de l'auteur.** Rédigé le 2026-11-05 à la demande de l'auteur ; aucun code n'est
 écrit tant que l'auteur ne l'a pas validé et n'a pas dit de commencer.
 
 ## Place dans le projet
@@ -137,4 +137,4 @@ Les PR 3 et 4 peuvent avancer en parallèle de la 2.
    pour des illustrations commandées plus tard ; aucune commande pour le moment.
 4. **Langue** : français seul pour le moment.
 
-La page reste non lancée : l'auteur dira quand commencer.
+La page est lancée : l'auteur a dit de commencer le 2026-11-05.
