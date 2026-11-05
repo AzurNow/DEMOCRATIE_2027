@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dispositionRunNote, lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe } from "../../analysis/lecture-run.ts";
 import { bilanNotation, ReponsePerdue, type BilanNotation, texteContrefactuelInscrit } from "../../pipeline/notation/bilan-notation.ts";
-import { identifiantDerive, JugesNonConformes, noterRun, RunInvalideRefuse, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { identifiantDerive, JugesNonConformes, noterRun, RunInvalideRefuse, type EnvironnementChaine, type ReponseANoter, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
 import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import { renvoiJuge } from "./fabriques.ts";
@@ -22,7 +22,7 @@ import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { tailleEchantillonHumain, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { VERSION_CHARGE_JUGE, type ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
-import { JugeDefaillant, type SortieJuge } from "../../pipeline/notation/juge.ts";
+import { FraicheurIndefinie, JugeDefaillant, type SortieJuge } from "../../pipeline/notation/juge.ts";
 import { ContrefactuelDejaInscrit } from "../../pipeline/notation/inscription-contrefactuel.ts";
 import {
   environnementSimule,
@@ -107,12 +107,14 @@ function issuesDe(execution: Execution): ReadonlySet<string> {
 function violations(repertoire_run: string): readonly unknown[] {
   const run = lireRunJson(repertoire_run);
   const obtenues = readdirSync(dispositionRunNote(repertoire_run).reponses)
-    .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string; normalise?: { refus_api: boolean } })
+    .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string; normalise?: { refus_api: boolean; texte: string } })
     .filter((r) => r.statut_reponse === "obtenue");
   return controleCroise({
     run: runDeNotationDe(run),
     reponses_obtenues: obtenues.map((r) => r.id),
     refus_api: obtenues.filter((r) => r.normalise?.refus_api === true).map((r) => r.id),
+    // Une réponse sans projection n'a pas de texte : le contrôle lève s'il en a besoin.
+    textes: new Map(obtenues.flatMap((r) => (r.normalise === undefined ? [] : [[r.id, r.normalise.texte] as const]))),
     notations: lireNotationsDuRun(repertoire_run, run.id).notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
   });
@@ -715,6 +717,93 @@ describe("§7 (0.27, §7.59 ; conformité 2026-11-03, constat 8) : un juge défa
     expect(renvois).toEqual([expect.objectContaining({ motif: "erreur_api_persistante", notateur: expect.objectContaining({ id: "juge-simule-a" }) })]);
     expect(resultat.attentes.find((a) => a.reponse_id === cible)?.motifs).toContain("juge_defaillant");
     expect(lireVerdicts(prepare.repertoire_run, resultat.run_id).length).toBeGreaterThan(0);
+  });
+});
+
+describe("§7 (0.32, D74 (25)) : drapeau obsolescence sur des items de plusieurs dates de changement, la notation s'arrête", () => {
+  /**
+   * Le run simulé n'a que des items P, un par question. La réponse visée, d'une question qui ne nomme
+   * aucun candidat (hors du sous-ensemble contrefactuel, notée à la masse), reçoit ici son item soumis
+   * deux fois, en item O, aux deux dates données (la seconde en contexte), les deux états repris de
+   * son assertion : seule compte la date du changement. Le reprendre plutôt que l'item d'une autre
+   * question évite de rendre la réponse éligible au test contrefactuel.
+   */
+  function avecDatesDeChangement(reponses: readonly ReponseANoter[], cible: string, dates: readonly [string, string]): readonly ReponseANoter[] {
+    return reponses.map((r) => {
+      const [propre] = r.references;
+      if (r.reponse.id !== cible || propre === undefined) return r;
+      const assertion = propre.item.assertion;
+      if (assertion === undefined) throw new Error("item P attendu");
+      const versO = (date_changement: string) => ({ ...propre.item, obsolescence: { date_changement, etat_anterieur: assertion, etat_posterieur: assertion } });
+      return { ...r, references: [{ ...propre, item: versO(dates[0]) }, { item: versO(dates[1]), role: "contexte" as const }] };
+    });
+  }
+
+  /**
+   * Les juges reçus, qui rendent sur la réponse visée une note inexacte avec le drapeau obsolescence
+   * (le juge simulé refuse un item soumis deux fois : il n'est pas appelé sur elle).
+   */
+  function obsolescencePosee(cible: string): (env: EnvironnementChaine) => EnvironnementChaine {
+    return (env) => ({
+      ...env,
+      juges: env.juges.map((juge) => ({
+        identite: juge.identite,
+        noter: (charge: ChargeJuge): Promise<SortieJuge> => {
+          if (charge.reponse_id !== cible) return juge.noter(charge);
+          return Promise.resolve({
+            categorie: "inexacte",
+            drapeaux: ["obsolescence"],
+            motif_inexactitude: "position_opposee",
+            sourcage: { cite: false, soutiens: [] },
+            extrait_justificatif: { provenance: "reponse", texte: charge.reponse.texte },
+          });
+        },
+      })),
+    });
+  }
+
+  async function preparerAvecCible(): Promise<{ readonly preparation: RunSimulePrepare; readonly cible: string }> {
+    const preparation = await preparerNotationSimulee(options(nouvelleSortie()));
+    const cible = preparation.reponses.find((r) => r.reponse.question_id === QUESTION_SANS_NOM)?.reponse.id;
+    if (cible === undefined) throw new Error("une réponse de la question sans nom attendue");
+    return { preparation, cible };
+  }
+
+  it("deux dates distinctes : défaut du banc nommé (réponse, dates) ; ni renvoi ni notation pour la réponse ; aucune invalidation ; la relance corrigée reprend sans rien réécrire", async () => {
+    const { preparation, cible } = await preparerAvecCible();
+    const env = environnementSimule(preparation.repertoire_run, parametresDeReference());
+
+    const arret = noterRun(avecDatesDeChangement(preparation.reponses, cible, ["2026-11-18", "2026-10-01"]), obsolescencePosee(cible)(env));
+    await expect(arret).rejects.toBeInstanceOf(FraicheurIndefinie);
+    await expect(arret).rejects.toThrow(new RegExp(`réponse ${cible} .*\\(2026-11-18, 2026-10-01\\)`));
+
+    const run = lireRunJson(preparation.repertoire_run);
+    const ecrits = lireNotationsDuRun(preparation.repertoire_run, run.id);
+    expect(ecrits.notations.filter((n) => n.objet_note.id === cible)).toEqual([]);
+    expect(ecrits.renvois.filter((r) => r.objet_note.id === cible)).toEqual([]);
+    expect(run.invalidation).toBeUndefined();
+    // Ce qui précède l'arrêt reste écrit (règle 7) : le test contrefactuel inscrit, ses notations, et
+    // les notations de masse déjà faites. Aucun verdict n'est écrit : la décision suit la notation de
+    // chaque réponse, et la notation de masse s'arrête à la réponse visée.
+    expect(run.contrefactuel_candidats).toBeDefined();
+    expect(ecrits.notations.some((n) => n.contexte === "contrefactuel_candidat")).toBe(true);
+
+    const avant = instantane(preparation.repertoire_run);
+    const reprise = await noterRun(preparation.reponses, env);
+    const apres = instantane(preparation.repertoire_run);
+    for (const [chemin, empreinte] of avant) expect([chemin, apres.get(chemin)]).toEqual([chemin, empreinte]);
+    expect(lireNotationsDuRun(preparation.repertoire_run, run.id).notations.filter((n) => n.objet_note.id === cible)).toHaveLength(2);
+    expect(reprise.verdicts.length + reprise.attentes.length).toBe(preparation.reponses.length);
+    expect(lireRunJson(preparation.repertoire_run).invalidation).toBeUndefined();
+  });
+
+  it("deux items de la même date de changement : la notation n'est pas arrêtée, la fraîcheur est calculée (inchangé)", async () => {
+    const { preparation, cible } = await preparerAvecCible();
+    const reponses = avecDatesDeChangement(preparation.reponses, cible, ["2026-11-18", "2026-11-18"]);
+    const resultat = await noterRun(reponses, obsolescencePosee(cible)(environnementSimule(preparation.repertoire_run, parametresDeReference())));
+    const notations = lireNotationsDuRun(preparation.repertoire_run, resultat.run_id).notations.filter((n) => n.objet_note.id === cible);
+    expect(notations).toHaveLength(2);
+    for (const notation of notations) expect(typeof notation.obsolescence_fraiche).toBe("boolean");
   });
 });
 

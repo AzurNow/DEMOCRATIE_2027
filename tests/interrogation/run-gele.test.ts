@@ -104,7 +104,7 @@ function sha256(contenu: string): string {
 }
 
 function lancer(repertoire: string, profils = PROFILS) {
-  return lancerRunGeleSimule({ repertoire, profils });
+  return lancerRunGeleSimule({ repertoire, profils, runs: RUNS_DU_PROJET });
 }
 
 async function refus(promesse: Promise<unknown>): Promise<Error> {

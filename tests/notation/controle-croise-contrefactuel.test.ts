@@ -26,7 +26,7 @@ function runAvec(juges: readonly JugeDuRun[]): RunDeNotation {
 }
 
 function codes(run: RunDeNotation): readonly string[] {
-  return controleCroise({ run, reponses_obtenues: [], refus_api: [], notations: [], verdicts: [] }).map((v) => v.code);
+  return controleCroise({ run, reponses_obtenues: [], refus_api: [], textes: new Map(), notations: [], verdicts: [] }).map((v) => v.code);
 }
 
 describe("13. retrait et taux du test contrefactuel", () => {
@@ -35,7 +35,7 @@ describe("13. retrait et taux du test contrefactuel", () => {
   });
 
   it("juge retiré à 6/200 : violation, 3 % n'est pas au-delà de 3 %", () => {
-    const violations = controleCroise({ run: runAvec([juge("j1", false, 0), juge("j2", true, 6)]), reponses_obtenues: [], refus_api: [], notations: [], verdicts: [] });
+    const violations = controleCroise({ run: runAvec([juge("j1", false, 0), juge("j2", true, 6)]), reponses_obtenues: [], refus_api: [], textes: new Map(), notations: [], verdicts: [] });
     expect(violations).toEqual([expect.objectContaining({ code: "retrait_contrefactuel_incoherent" })]);
     expect(violations[0]?.detail).toContain("j2");
     expect(violations[0]?.verdict_id).toBeUndefined();
@@ -57,7 +57,7 @@ describe("13. retrait et taux du test contrefactuel", () => {
 
   it("dénominateur d'un juge différent de contrefactuel_candidats.taille : violation", () => {
     const run = { ...runAvec([juge("j1", false, 2, 199), juge("j2", false, 2)]), contrefactuel_candidats: { taille: 200 } };
-    const violations = controleCroise({ run, reponses_obtenues: [], refus_api: [], notations: [], verdicts: [] });
+    const violations = controleCroise({ run, reponses_obtenues: [], refus_api: [], textes: new Map(), notations: [], verdicts: [] });
     expect(violations.map((v) => v.code)).toEqual(["denominateur_contrefactuel_incoherent"]);
     expect(violations[0]?.detail).toContain("j1");
   });

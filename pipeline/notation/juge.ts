@@ -21,8 +21,10 @@
  * - (C) `obsolescence_fraiche` : quand le juge pose le drapeau `obsolescence`, la fraîcheur se
  *   calcule depuis la date de gel et la date du changement de l'item O soumis
  *   (`fraicheur.ts:fraicheurDesItems`, règle du §11), exactement comme pour un humain. Sans item O,
- *   ou avec deux dates de changement, la sortie est incohérente (`SortieJugeIncoherente`) : le schéma
- *   exige la fraîcheur avec le drapeau, et aucune date n'est choisie.
+ *   la sortie est incohérente (`SortieJugeIncoherente`) : le schéma exige la fraîcheur avec le
+ *   drapeau. Avec des items de plusieurs dates de changement, la fraîcheur n'est pas définie : ce
+ *   n'est pas une sortie illisible mais un défaut du banc, qui arrête la notation
+ *   (`FraicheurIndefinie` ; §7, protocole 0.32, D74 (25)). Aucune date n'est jamais choisie.
  * - (D), D29 (1) : sur une Q-ATT, toute la note — catégorie, drapeaux, motif et bloc d'attribution —
  *   se calcule (`note-attribution.ts:noterAttribution`) depuis la liste attendue du tirage et les
  *   noms que le juge relève (`noms_cites`, rattachés par `rattachement.ts`), avec sa déclaration
@@ -173,6 +175,32 @@ export class SortieJugeIncoherente extends Error {
   }
 }
 
+/**
+ * §7 (protocole 0.32, D74 (25)) : « Quand un juge pose le drapeau obsolescence alors que les items qui
+ * lui sont soumis portent plusieurs dates de changement, la fraîcheur n'est pas définie : ce n'est pas
+ * une sortie illisible, renvoyée à un humain, mais un défaut du banc, qui arrête la notation. »
+ * `issueDeJuge` ne la convertit jamais : elle remonte de la chaîne, qui s'arrête avant d'écrire quoi
+ * que ce soit pour ce juge et cette réponse. Aucune invalidation n'est enregistrée (D75 (3)) : on
+ * corrige, puis la relance reprend sans rien réécrire.
+ */
+export class FraicheurIndefinie extends Error {
+  readonly juge_id: string;
+  readonly objet_id: string;
+  readonly contexte: CadreNotationJuge["contexte"];
+  readonly dates: readonly string[];
+
+  constructor(juge_id: string, cadre: Pick<CadreNotationJuge, "objet_id" | "contexte">, dates: readonly string[]) {
+    super(
+      `Défaut du banc (§7, D74 (25)) : le juge ${juge_id} pose le drapeau obsolescence sur la réponse ${cadre.objet_id} (contexte ${cadre.contexte}), dont les items soumis portent plusieurs dates de changement (${dates.join(", ")}) : la fraîcheur n'est pas définie (§11). La notation s'arrête, sans renvoi ni notation pour cette réponse et ce juge, et sans invalidation du run : corriger, puis relancer.`,
+    );
+    this.name = "FraicheurIndefinie";
+    this.juge_id = juge_id;
+    this.objet_id = cadre.objet_id;
+    this.contexte = cadre.contexte;
+    this.dates = [...dates];
+  }
+}
+
 /** `run.schema.json#/properties/juges/items/properties/version_prompt` et `notateur.version_prompt`. */
 export function versionPromptDe(prompt: PromptDeJuge): string {
   return `${prompt.chemin}@${prompt.version}`;
@@ -240,7 +268,8 @@ export type IssueDeJuge = { readonly type: "notation"; readonly notation: Notati
 /**
  * L'issue d'une sortie de juge. Une sortie incohérente (`SortieJugeIncoherente`) n'arrête pas la
  * notation : la réponse est renvoyée à un humain sous `sortie_illisible`, le détail en raison (§7,
- * 0.27). Toute autre erreur (lien sans verdict d'existence…) est un défaut du banc et remonte.
+ * 0.27). Toute autre erreur (lien sans verdict d'existence, fraîcheur indéfinie de D74 (25)…) est un
+ * défaut du banc et remonte.
  */
 export function issueDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): IssueDeJuge {
   try {
@@ -419,7 +448,10 @@ function noterOuRefuser(juge_id: string, cadre: CadreNotationJuge, sortie: Sorti
   }
 }
 
-/** D27 (C) : la fraîcheur se calcule ; le drapeau sans date de changement unique est incohérent. */
+/**
+ * D27 (C) : la fraîcheur se calcule. Le drapeau sans item O est une sortie incohérente ; sur des items
+ * de plusieurs dates de changement, un défaut du banc (D74 (25)).
+ */
 function fraicheurCalculee(juge_id: string, drapeaux: readonly Drapeau[], cadre: CadreNotationJuge): boolean | undefined {
   const fraicheur = fraicheurDesItems(drapeaux, cadre.items, cadre.date_gel);
   switch (fraicheur.statut) {
@@ -430,7 +462,7 @@ function fraicheurCalculee(juge_id: string, drapeaux: readonly Drapeau[], cadre:
     case "sans_item_o":
       throw new SortieJugeIncoherente(juge_id, cadre.objet_id, "drapeau obsolescence sans item O parmi les items soumis : la date du changement manque (§11).");
     case "ambigue":
-      throw new SortieJugeIncoherente(juge_id, cadre.objet_id, `drapeau obsolescence avec plusieurs dates de changement (${fraicheur.dates.join(", ")}) : la fraîcheur est ambiguë (§11).`);
+      throw new FraicheurIndefinie(juge_id, cadre, fraicheur.dates);
   }
 }
 

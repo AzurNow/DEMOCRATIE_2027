@@ -59,6 +59,12 @@
  * elle est renvoyée à un humain avec son motif (`juge.ts:noterOuRenvoyer`), comme une Q-ATT
  * indécidable.
  *
+ * **Fraîcheur indéfinie (§7, 0.32, D74 (25)).** Un drapeau obsolescence posé sur des items de
+ * plusieurs dates de changement est un défaut du banc (`juge.ts:FraicheurIndefinie`) : il remonte et
+ * arrête la chaîne, sans notation ni renvoi pour ce juge et cette réponse, et sans invalidation du
+ * run. Ce qui est déjà écrit le reste (notations des réponses et des juges précédents, test
+ * contrefactuel inscrit) ; une relance après correction le retrouve et reprend (Reprise, ci-dessus).
+ *
  * **Humains.** La chaîne n'en simule aucun. Elle lit les notations humaines déjà écrites (écran
  * `pnpm notation:humaine`) et les passe à `decider` : une relance après la saisie humaine résout les
  * attentes qui peuvent l'être.

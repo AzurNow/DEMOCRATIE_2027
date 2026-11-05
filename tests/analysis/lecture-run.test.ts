@@ -441,6 +441,8 @@ describe("9. aller-retour : écrire, relire, assembler", () => {
       run: runDeNotationDe(runLu),
       reponses_obtenues: entrees.reponses.map((r) => r.id),
       refus_api: [],
+      // Une réponse sans projection n'a pas de texte : le contrôle lève s'il en a besoin.
+      textes: new Map(entrees.reponses.flatMap((r) => (r.normalise === undefined ? [] : [[r.id, r.normalise.texte] as const]))),
       notations,
       verdicts: lireVerdicts(run.repertoire_run, runLu.id),
     });

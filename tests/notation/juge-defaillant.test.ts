@@ -12,6 +12,7 @@
 import { describe, expect, it } from "vitest";
 import type { ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import {
+  FraicheurIndefinie,
   issueDeJuge,
   JugeDefaillant,
   noterOuRenvoyer,
@@ -23,6 +24,7 @@ import {
 } from "../../pipeline/notation/juge.ts";
 import { MOTIFS_RENVOI_DEFAILLANCE, type NotationIndividuelle, type RenvoiHumain } from "../../pipeline/notation/types.ts";
 import { ContexteAttributionIncoherent } from "../../pipeline/notation/note-attribution.ts";
+import { DateCivileInvalide } from "../../pipeline/questions/reponse-attendue.ts";
 import { LienSansVerdictExistence } from "../../pipeline/notation/vue-annotateur.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -118,6 +120,64 @@ describe("§7 (0.27) : une sortie incohérente devient un renvoi sortie_illisibl
 
   it("une sortie cohérente reste une notation", () => {
     expect(notationDe(issueDeJuge(IDENTITE, EXACTE, cadre())).categorie).toBe("exacte");
+  });
+});
+
+describe("§7 (0.32, D74 (25)) : drapeau obsolescence sur des items de plusieurs dates de changement, défaut du banc", () => {
+  const OBSOLETE: SortieJuge = {
+    categorie: "inexacte",
+    drapeaux: ["obsolescence"],
+    motif_inexactitude: "position_opposee",
+    sourcage: { cite: false, soutiens: [] },
+    extrait_justificatif: { provenance: "reponse", texte: REPONSE_PROJETEE },
+  };
+  const itemO = (date_changement: string) => ({ obsolescence: { date_changement } });
+  const DEUX_DATES = { items: [itemO("2026-11-18"), { obsolescence: undefined }, itemO("2026-10-01")] };
+
+  it("deux dates distinctes : FraicheurIndefinie remonte d'issueDeJuge, ni notation ni renvoi", () => {
+    expect(() => issueDeJuge(IDENTITE, OBSOLETE, cadre(DEUX_DATES))).toThrow(FraicheurIndefinie);
+  });
+
+  it("le message nomme le juge, la réponse et les dates en cause, et dit que la notation s'arrête", () => {
+    let leve: unknown;
+    try {
+      issueDeJuge(IDENTITE, OBSOLETE, cadre(DEUX_DATES));
+    } catch (erreur) {
+      leve = erreur;
+    }
+    if (!(leve instanceof FraicheurIndefinie)) throw new Error("FraicheurIndefinie attendue");
+    expect(leve.message).toContain("j1");
+    expect(leve.message).toContain(REPONSE_ID);
+    expect(leve.message).toContain("2026-11-18, 2026-10-01");
+    expect(leve.message).toMatch(/^Défaut du banc/);
+    expect(leve.message).toMatch(/arrête/);
+    expect(leve).toMatchObject({ juge_id: "j1", objet_id: REPONSE_ID, contexte: "run", dates: ["2026-11-18", "2026-10-01"] });
+  });
+
+  it("sur le côté permuté du test contrefactuel aussi : le contexte est nommé", () => {
+    expect(() => issueDeJuge(IDENTITE, OBSOLETE, cadre({ ...DEUX_DATES, contexte: "contrefactuel_candidat", motif_notation: "contrefactuel" }))).toThrow(/contrefactuel_candidat/);
+  });
+
+  it("noterOuRenvoyer rejette de même : aucune issue n'est rendue à la chaîne", async () => {
+    await expect(noterOuRenvoyer(juge(() => Promise.resolve(OBSOLETE)), CHARGE, cadre(DEUX_DATES))).rejects.toBeInstanceOf(FraicheurIndefinie);
+  });
+
+  it("une seule date de changement, portée par deux items : notation, fraîcheur calculée (inchangé)", () => {
+    expect(notationDe(issueDeJuge(IDENTITE, OBSOLETE, cadre({ items: [itemO("2026-11-18"), itemO("2026-11-18")] }))).obsolescence_fraiche).toBe(true);
+  });
+
+  it("deux dates distinctes mais aucun drapeau obsolescence : notation, sans fraîcheur (inchangé)", () => {
+    const notation = notationDe(issueDeJuge(IDENTITE, EXACTE, cadre(DEUX_DATES)));
+    expect(notation.categorie).toBe("exacte");
+    expect("obsolescence_fraiche" in notation).toBe(false);
+  });
+
+  it("une graphie de date hors AAAA-MM-JJ est refusée (DateCivileInvalide), jamais renvoyée", () => {
+    expect(() => issueDeJuge(IDENTITE, OBSOLETE, cadre({ items: [itemO("2026-11-18"), itemO("2026-11-18T00:00:00Z")] }))).toThrow(DateCivileInvalide);
+  });
+
+  it("drapeau sans item O : toujours une sortie illisible, renvoyée (inchangé)", () => {
+    expect(renvoiDe(issueDeJuge(IDENTITE, OBSOLETE, cadre({ items: [{ obsolescence: undefined }] }))).motif).toBe("sortie_illisible");
   });
 });
 

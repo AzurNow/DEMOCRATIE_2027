@@ -639,11 +639,7 @@
           "statistique_observee": 0.08333333333333337,
           "valeur_p": 1,
           "permutations": 10,
-          "exactitude_outil": {
-            "numerateur": 22,
-            "denominateur": 24,
-            "valeur": 0.9166666666666666
-          },
+          "exactitude_de_reference": 0.9166666666666666,
           "intervalle_ecart_maximal": {
             "cle": [
               "bootstrap",
