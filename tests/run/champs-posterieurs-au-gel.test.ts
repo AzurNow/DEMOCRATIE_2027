@@ -144,8 +144,11 @@ describe("la part que le go/no-go compare à son recalcul", () => {
 
 describe("empreinte du run publiée : non-régression (aucune empreinte publiée ne change)", () => {
   // Valeurs relevées avant la centralisation des listes (code de 35ef707) : elles ne bougent pas.
-  const EMPREINTE_AU_GEL = "6e0ef9a5f29e7cac406a62c11b98336a04b9ff9508cf16a0a4c4601e8af02234";
-  const EMPREINTE_NOTE = "aae9edbfa151ea7249a37e3783503cbd2e7eae40f7734df61c230c3f05506373";
+  // Relevées de nouveau au protocole 0.32 (D74 (17)) : le tirage de la fixture porte désormais
+  // incompatibles_au_gel, son SHA-256 change, et run.json#/tirage/sha256 avec lui ; c'est le seul
+  // champ de run.json modifié (avant : 6e0ef9a5…02234 au gel, aae9edbf…06373 noté).
+  const EMPREINTE_AU_GEL = "833c5f2d2d3635f18a72a71411a4eaeafde8f3c40f8f1f39dfe2a8f76adcc705";
+  const EMPREINTE_NOTE = "35bfc9698c438a9aece2381b65697bbc09edf791f78771f5fdad921bd8bc3cc6";
 
   function note(run: Objet): Objet {
     return { ...run, reponses: { ...(run["reponses"] as Objet), obtenues: 50 }, contrefactuel_candidats: { x: 1 } };

@@ -84,7 +84,7 @@ function jeuComplet(q: Question): readonly Question[] {
 
 function barriere(texte: string): StatutSymetrie | undefined {
   const q = attribution(texte);
-  const tirage = { run_id: RUN.id, date_gel: GEL, graine_tirage: graine(), parametres: quotas() /* conformité n° 59 */, entrees: entreesPour([q], [ITEM], [MESURE], RUN), exclusions: [], contestes_au_gel: [], bilan_reprise: [], compensations: [] };
+  const tirage = { run_id: RUN.id, date_gel: GEL, graine_tirage: graine(), parametres: quotas() /* conformité n° 59 */, entrees: entreesPour([q], [ITEM], [MESURE], RUN), exclusions: [], contestes_au_gel: [], incompatibles_au_gel: [], bilan_reprise: [], compensations: [] };
   const symetrie = verifierSymetrie(tirage, jeuComplet(q), [ITEM], [MESURE], RUN);
   return symetrie.conditions.find((c) => c.code === "aucun_nom_candidat_dans_q_att")?.statut;
 }
@@ -138,7 +138,7 @@ describe("cas 9 : un nom inexploitable dans le périmètre est refusé, jamais s
   ] as const)("%s sans aucun mot : la vérification de symétrie lève", (_champ, surcharge) => {
     const vide = run([{ ...DUPONT, ...surcharge }, DUPRE], GEL);
     const q = attribution("Quels candidats proposent tarif réduit des cantines ?");
-    const tirage = { run_id: vide.id, date_gel: GEL, graine_tirage: graine(), parametres: quotas() /* conformité n° 59 */, entrees: entreesPour([q], [ITEM], [MESURE], vide), exclusions: [], contestes_au_gel: [], bilan_reprise: [], compensations: [] };
+    const tirage = { run_id: vide.id, date_gel: GEL, graine_tirage: graine(), parametres: quotas() /* conformité n° 59 */, entrees: entreesPour([q], [ITEM], [MESURE], vide), exclusions: [], contestes_au_gel: [], incompatibles_au_gel: [], bilan_reprise: [], compensations: [] };
     expect(() => verifierSymetrie(tirage, [q], [ITEM], [MESURE], vide)).toThrow(/sans aucun mot/);
   });
 });

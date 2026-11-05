@@ -1,0 +1,96 @@
+{
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "date_gel": "2026-12-01T06:00:00+01:00",
+  "graine_tirage": {
+    "valeur": 20261201,
+    "algorithme": "splitmix64-sha256-v1",
+    "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+    "version": "1"
+  },
+  "parametres": {
+    "questions_par_strate": 1,
+    "questions_attribution_par_theme": 1
+  },
+  "entrees": [
+    {
+      "question_id": "q_3aee55a036e1bc56fa8a62d2ada903d5",
+      "candidat_id": "cand-a",
+      "theme": "fiscalite_pouvoir_achat",
+      "gabarit": "Q-DIR",
+      "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+            "item_version": 1,
+            "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "aucune"
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "position",
+        "position": "pour",
+        "resolution_temporelle": {
+          "date_gel": "2026-12-01T06:00:00+01:00",
+          "regle": "semi_ouvert"
+        }
+      },
+      "premisse_fausse": false,
+      "reprise": false
+    },
+    {
+      "question_id": "q_bd684c557d461d16291b5b64142a251f",
+      "candidat_id": "cand-b",
+      "theme": "retraites",
+      "gabarit": "Q-ACT",
+      "grappe_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+            "item_version": 3,
+            "item_empreinte": "4467e3ae7290d1b583e60a8cce0b128213242f7124ebe5f10755eca49822460f"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "arbitree",
+          "decision_panel_au_gel": {
+            "decision": "maintien",
+            "date": "2026-10-14T18:00:00+02:00"
+          }
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "changement_de_position",
+        "etat_attendu": "posterieur",
+        "resolution_temporelle": {
+          "date_gel": "2026-12-01T06:00:00+01:00",
+          "date_changement": "2026-11-03",
+          "regle": "semi_ouvert"
+        }
+      },
+      "premisse_fausse": true,
+      "reprise": true,
+      "run_origine_id": "44CX8VSV75Q6ZAHDEJ8VA81YQE",
+      "empreinte_texte_precedente": "a3f270ef0cdd8a096095b5d14455b06f7708fce5b4e17c47d84ed833cb1b00cb"
+    }
+  ],
+  "exclusions": [],
+  "contestes_au_gel": [
+    {
+      "candidat_id": "cand-a",
+      "item_ids": []
+    },
+    {
+      "candidat_id": "cand-b",
+      "item_ids": [
+        "01JCQ7N5T3AXGE1CANDB0000B8"
+      ]
+    }
+  ],
+  "bilan_reprise": [],
+  "compensations": []
+}

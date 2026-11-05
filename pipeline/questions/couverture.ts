@@ -7,7 +7,12 @@
  * « pourrait entrer au tirage à l'instant de gel ». Un item P compte s'il est vérifié, en vigueur
  * au gel, et non contesté ou arbitré par un maintien ou une correction. Décision de l'auteur du
  * 2026-09-29 (conformité n° 2) : un item qui épingle une version dépassée de sa mesure n'entre pas au
- * tirage (`epingleLaVersionCourante`), il ne compte donc pas non plus.
+ * tirage (`epingleLaVersionCourante`), il ne compte donc pas non plus. Protocole 0.32 (§4, D74 (16)) :
+ * un item que le tirage exclut parce que sa position est incompatible avec celle d'un autre item du
+ * même candidat sur la même mesure ne compte pas non plus. Cette règle se juge sur l'ensemble des
+ * items, pas sur un item seul : `itemsPAuGel` l'applique, avec la détection du tirage
+ * (`tirabilite.ts:positionsIncompatiblesAuGel`, lue par `itemsAuxPositionsIncompatibles`), jamais
+ * recopiée ; `itemPCompteAuGel` ne juge que l'item.
  *
  * Aucune de ces règles n'est réécrite ici : la validation et la contestation sont celles de
  * l'engendrement (`itemEngendreDesQuestions`), la vigueur celle de la réponse attendue
@@ -26,6 +31,7 @@ import { decisionPanelAuGel } from "./contestation.ts";
 import { epingleLaVersionCourante, itemEngendreDesQuestions, mesureDe } from "./engendrement.ts";
 import { placeAuGel } from "./place-au-gel.ts";
 import { estEnVigueur } from "./reponse-attendue.ts";
+import { itemsAuxPositionsIncompatibles, positionsIncompatiblesAuGel } from "./tirabilite.ts";
 import type { Item, Mesure } from "./types.ts";
 
 function estItemPDuCandidat(item: Item, candidat_id: string): boolean {
@@ -33,7 +39,8 @@ function estItemPDuCandidat(item: Item, candidat_id: string): boolean {
 }
 
 /**
- * Vrai si l'item compte pour le seuil de couverture de ce candidat au gel. Pour un item arbitré,
+ * Vrai si l'item, jugé seul, compte pour le seuil de couverture de ce candidat au gel : la règle des
+ * positions incompatibles, qui se juge sur l'ensemble des items, est appliquée par `itemsPAuGel`. Pour un item arbitré,
  * la décision est lue au gel : une décision postérieure lève `DecisionPanelPosterieureAuGel`,
  * comme au tirage, plutôt que de compter un item sur un état que le gel ne connaissait pas.
  * `referentiel` : les mesures au gel, par identifiant ; une mesure absente lève `MesureIntrouvable`.
@@ -67,16 +74,25 @@ function admisAuGelHorsContestation(item: Item, date_gel: string, referentiel: R
  * cette liste est aussi celle des « items P de référence » des comparateurs, figée dans
  * `run.perimetre.candidats[].items_p_au_gel`. Deux items comptés de même identifiant lèvent : la
  * liste ne se dédoublonne pas en silence.
+ *
+ * Protocole 0.32 (§4, D74 (16)) : les items que le tirage exclut pour des positions incompatibles en
+ * sont retirés. `interroges` : les candidats interrogés au run, ceux que la détection examine (§5,
+ * D74 (14)) ; l'item d'un candidat non interrogé n'est exclu du tirage pour aucune incompatibilité,
+ * il compte donc s'il remplit le reste de la règle.
  */
 export function itemsPAuGel(
   items: readonly Item[],
   candidat_id: string,
   date_gel: string,
   mesures: readonly Mesure[],
+  interroges: ReadonlySet<string>,
 ): readonly string[] {
   const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
-  const ids = items
-    .filter((item) => itemPCompteAuGel(item, candidat_id, date_gel, referentiel))
+  const comptes = items.filter((item) => itemPCompteAuGel(item, candidat_id, date_gel, referentiel));
+  const conflits = positionsIncompatiblesAuGel(items, date_gel, interroges, referentiel);
+  const incompatibles = new Set(itemsAuxPositionsIncompatibles(conflits, candidat_id));
+  const ids = comptes
+    .filter((item) => !incompatibles.has(item.id))
     .map((item) => item.id)
     .sort();
   const doublon = ids.find((id, rang) => ids[rang + 1] === id);
@@ -92,8 +108,9 @@ export function itemsPComptesAuGel(
   candidat_id: string,
   date_gel: string,
   mesures: readonly Mesure[],
+  interroges: ReadonlySet<string>,
 ): number {
-  return itemsPAuGel(items, candidat_id, date_gel, mesures).length;
+  return itemsPAuGel(items, candidat_id, date_gel, mesures, interroges).length;
 }
 
 /**

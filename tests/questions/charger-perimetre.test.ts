@@ -26,6 +26,7 @@ import {
   SEUIL_COUVERTURE_ITEMS_P,
 } from "../../pipeline/questions/charger-perimetre.ts";
 import type { ContexteDuGel } from "../../pipeline/questions/charger-perimetre.ts";
+import { idsInterroges } from "../../analysis/candidats-interroges.ts";
 import { itemsPAuGel } from "../../pipeline/questions/couverture.ts";
 import { AMORCE_GROUPE_ATTRIBUTION } from "../../pipeline/questions/tirage.ts";
 import { THEMES } from "../../pipeline/questions/types.ts";
@@ -429,12 +430,30 @@ describe("cas 10 : seuil de couverture du §4 et items P au gel", () => {
   });
 
   it("items_p_au_gel est trié et égal à itemsPAuGel, pour chaque candidat, retiré compris", () => {
-    for (const candidat of charger(perimetreComplet()).perimetre.candidats) {
-      const attendus = itemsPAuGel(ITEMS, candidat.candidat_id, GEL, [MESURE]);
+    const candidats = charger(perimetreComplet()).perimetre.candidats;
+    for (const candidat of candidats) {
+      const attendus = itemsPAuGel(ITEMS, candidat.candidat_id, GEL, [MESURE], idsInterroges(candidats));
       expect(candidat.items_p_au_gel).toEqual(attendus);
       expect(candidat.items_p_au_gel).toEqual([...attendus].sort());
       expect(candidat.items_p_verifies).toBe(attendus.length);
     }
+  });
+
+  it("D74 (16) : un candidat passe sous le seuil quand ses items aux positions incompatibles sont retirés du compte", () => {
+    const conflit = mesure({ cle: "charger-perimetre-conflit", theme: "retraites" });
+    const pour = itemP({ cle: "charger-alpha-conflit-pour", candidat_id: "demo-alpha", mesure: conflit, position: "pour" });
+    const contre = itemP({ cle: "charger-alpha-conflit-contre", candidat_id: "demo-alpha", mesure: conflit, position: "contre" });
+    const neuf = itemsDe("demo-alpha", 9);
+    const autres = ITEMS.filter((item) => item.candidat_id !== "demo-alpha");
+    const avec = (items: readonly Item[]) =>
+      construirePerimetre(perimetreComplet(), { ...contexte(), items: [...items, ...autres], mesures: [MESURE, conflit] }, "essai");
+
+    const sansConflit = rang(avec([...neuf, pour]).perimetre.candidats, 0);
+    expect(sansConflit).toMatchObject({ candidat_id: "demo-alpha", items_p_verifies: 10, sous_seuil: false });
+
+    const alpha = rang(avec([...neuf, pour, contre]).perimetre.candidats, 0);
+    expect(alpha).toMatchObject({ candidat_id: "demo-alpha", items_p_verifies: 9, sous_seuil: true });
+    expect(alpha.items_p_au_gel).toEqual(neuf.map((item) => item.id).sort());
   });
 
   it("compte zéro item pour un candidat qui n'en a aucun, sans valeur supposée", () => {

@@ -107,6 +107,7 @@ function jeuNominal(): Jeu {
       entrees: entreesPour(tirees, items, mesures, run as unknown as RunAuGel),
       exclusions: [],
       contestes_au_gel: [],
+      incompatibles_au_gel: [],
       bilan_reprise: [],
       compensations: [],
     },

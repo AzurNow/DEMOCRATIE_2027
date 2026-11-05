@@ -94,6 +94,7 @@ function barriere(texte: string): StatutSymetrie {
     entrees: entreesPour([q], [ITEM], [MESURE], RUN),
     exclusions: [],
     contestes_au_gel: [],
+    incompatibles_au_gel: [],
     bilan_reprise: [],
     compensations: [],
   };

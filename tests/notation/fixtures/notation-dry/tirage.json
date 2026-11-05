@@ -111,6 +111,16 @@
       "item_ids": []
     }
   ],
+  "incompatibles_au_gel": [
+    {
+      "candidat_id": "demo-alpha",
+      "item_ids": []
+    },
+    {
+      "candidat_id": "demo-beta",
+      "item_ids": []
+    }
+  ],
   "bilan_reprise": [],
   "compensations": []
 }
