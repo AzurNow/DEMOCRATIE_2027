@@ -1,0 +1,43 @@
+---
+import Illustration from "../composants/Illustration.astro";
+import Renvoi from "../composants/Renvoi.astro";
+---
+<section class="section section--accroche" id="accroche" aria-labelledby="titre-accroche">
+  <div class="section__texte">
+    <h1 id="titre-accroche">Que répondent les IA quand on leur demande ce que propose un candidat ?</h1>
+    <p class="section__chapo">
+      Le Banc d'essai 2027 pose les mêmes questions, dans les mêmes conditions, à des assistants
+      d'intelligence artificielle, lit ce qu'affichent des comparateurs citoyens, et confronte le tout
+      à ce que chaque candidat à l'élection présidentielle a publiquement dit.
+    </p>
+    <p>
+      Il mesure si ces réponses sont exactes, complètes, et équilibrées d'un candidat à l'autre. Ce
+      sont les outils qui sont notés ; les candidats ne le sont jamais.
+    </p>
+    <Renvoi section="2" />
+    <div class="encadre">
+      <p><strong>Ce que le projet n'est pas.</strong></p>
+      <ul>
+        <li>
+          Pas un comparateur de programmes : il vérifie ce que des outils disent des candidats, il ne
+          présente pas les programmes pour aider à choisir.
+        </li>
+        <li>
+          Pas un avis sur les candidats : il ne juge ni la faisabilité, ni le coût, ni la qualité
+          d'une proposition, et ne donne aucune note à un candidat.
+        </li>
+        <li>Pas un classement des candidats, ni une recommandation de vote.</li>
+      </ul>
+      <Renvoi section="10" />
+    </div>
+    <p>
+      Toute la méthode est écrite dans un document public, le protocole, fixé avant le premier
+      résultat. Cette page l'explique sans le remplacer : en cas de doute, c'est le protocole qui fait
+      foi, dans sa version publiée.
+    </p>
+  </div>
+  <Illustration
+    nom="accroche"
+    alt="Une personne pose une question à une boîte qui parle, image d'un outil d'IA, pendant qu'à côté un archiviste tient une pile de documents sourcés."
+  />
+</section>

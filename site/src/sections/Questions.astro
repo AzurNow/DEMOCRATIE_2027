@@ -1,0 +1,59 @@
+---
+import Renvoi from "../composants/Renvoi.astro";
+---
+<section class="section section--questions" id="questions" aria-labelledby="titre-questions">
+  <h2 id="titre-questions">Les questions de recherche</h2>
+  <p class="section__chapo">
+    Le projet se donne neuf questions de recherche, chacune mesurée par une métrique écrite à
+    l'avance. Des hypothèses précises sont aussi annoncées avant tout résultat ; elles sont publiées
+    qu'elles soient confirmées ou non.
+  </p>
+  <ul class="cartes">
+    <li class="carte">
+      <p class="carte__code">QR1</p>
+      <h3 class="carte__titre">Les outils donnent-ils la bonne position des candidats ?</h3>
+      <p class="carte__metrique">Exactitude : la part des réponses exactes parmi les réponses exactes ou inexactes.</p>
+    </li>
+    <li class="carte">
+      <p class="carte__code">QR2</p>
+      <h3 class="carte__titre">Attribuent-ils à un candidat une position qu'il n'a pas prise ?</h3>
+      <p class="carte__metrique">Taux de fabrication : parmi les réponses aux questions sur une absence de position ou une mesure fictive, la part qui attribue quand même une position.</p>
+    </li>
+    <li class="carte">
+      <p class="carte__code">QR3</p>
+      <h3 class="carte__titre">Un même outil se trompe-t-il plus souvent sur certains candidats ?</h3>
+      <p class="carte__metrique">Test d'homogénéité entre candidats : un test statistique compare l'exactitude de chaque candidat à celle de l'outil.</p>
+    </li>
+    <li class="carte">
+      <p class="carte__code">QR4</p>
+      <h3 class="carte__titre">De quelle nature sont les erreurs ?</h3>
+      <p class="carte__metrique">Répartition des drapeaux parmi les réponses inexactes : fabrication, mauvaise attribution, obsolescence, déformation.</p>
+    </li>
+    <li class="carte">
+      <p class="carte__code">QR5</p>
+      <h3 class="carte__titre">Les réponses citent-elles des sources, et ces sources disent-elles vraiment cela ?</h3>
+      <p class="carte__metrique">Sourçage valide : la part des réponses qui citent au moins une source existante qui soutient l'affirmation.</p>
+    </li>
+    <li class="carte">
+      <p class="carte__code">QR6</p>
+      <h3 class="carte__titre">La façon de poser la question, ou la recherche web, change-t-elle les erreurs ?</h3>
+      <p class="carte__metrique">Écart d'exactitude entre formulations (neutre, familière, orientée) et entre modes (avec ou sans recherche web).</p>
+    </li>
+    <li class="carte">
+      <p class="carte__code">QR7</p>
+      <h3 class="carte__titre">Ces taux évoluent-ils d'un run à l'autre ?</h3>
+      <p class="carte__metrique">Tendance : l'exactitude du premier et du dernier run comparée sur les questions communes aux deux.</p>
+    </li>
+    <li class="carte">
+      <p class="carte__code">QR8</p>
+      <h3 class="carte__titre">L'application grand public répond-elle comme l'API du même éditeur ?</h3>
+      <p class="carte__metrique">Écart d'exactitude entre l'API et l'application, publié comme exploratoire.</p>
+    </li>
+    <li class="carte">
+      <p class="carte__code">QR9</p>
+      <h3 class="carte__titre">Les comparateurs citoyens couvrent-ils les positions des candidats, et sans erreur ?</h3>
+      <p class="carte__metrique">Couverture : la part des positions de référence que le comparateur affiche ; exactitude : la part des positions affichées qui sont compatibles avec la référence.</p>
+    </li>
+  </ul>
+  <Renvoi section="2" />
+</section>

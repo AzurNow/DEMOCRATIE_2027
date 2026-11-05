@@ -1,0 +1,60 @@
+---
+import Renvoi from "../composants/Renvoi.astro";
+---
+<section class="section section--limites" id="limites" aria-labelledby="titre-limites">
+  <h2 id="titre-limites">Ce que le banc ne mesure pas</h2>
+  <p class="section__chapo">
+    Les limites de la mesure sont écrites avant le premier résultat, pour qu'aucune ne serve ensuite
+    d'excuse ou de surprise. En voici cinq ; le protocole en donne la liste complète.
+  </p>
+  <ul class="limites">
+    <li class="limite">
+      <h3 class="limite__titre">L'API n'est pas l'application</h3>
+      <p>
+        La mesure principale passe par l'API des outils, sans instruction ajoutée. Ce que voient les
+        électeurs dans l'application grand public passe en plus par des instructions de l'éditeur,
+        une mémoire et des outils que le projet ne reproduit pas. L'écart est mesuré, mais sur un
+        petit échantillon saisi à la main.
+      </p>
+      <Renvoi section="11" />
+    </li>
+    <li class="limite">
+      <h3 class="limite__titre">La référence, c'est ce qui est public et explicite</h3>
+      <p>
+        Une position formulée en creux, une évolution non documentée ou un désaccord entre un
+        candidat et son parti échappent à la mesure. Le projet mesure la conformité à ce qui a été
+        dit, pas la vérité politique.
+      </p>
+      <Renvoi section="11" />
+    </li>
+    <li class="limite">
+      <h3 class="limite__titre">Le juge est un modèle, avec ses biais</h3>
+      <p>
+        Sa fiabilité est mesurée contre des humains, mais ceux-ci sont peu nombreux et l'accord n'est
+        jamais parfait. Le lecteur dispose de la marge d'erreur de la mesure, pas d'une mesure sans
+        marge.
+      </p>
+      <Renvoi section="11" />
+    </li>
+    <li class="limite">
+      <h3 class="limite__titre">Le français seul</h3>
+      <p>Un électeur qui interroge un outil dans une autre langue n'est pas couvert.</p>
+      <Renvoi section="11" />
+    </li>
+    <li class="limite">
+      <h3 class="limite__titre">Un projet porté par une seule personne</h3>
+      <p>
+        L'auteur écrit le code, choisit les annotateurs et publie. Le panel d'arbitrage, la
+        publication intégrale et la possibilité de tout refaire sont des contrepoids, pas des
+        garanties absolues.
+      </p>
+      <Renvoi section="11" />
+    </li>
+  </ul>
+  <p>
+    Les autres limites reconnues portent notamment sur la fragilité des items d'absence, le
+    classement des magasins d'applications qui décide de la liste des outils, la réaction possible des
+    éditeurs aux questions publiées et la précision des fourchettes pour un candidat peu couvert.
+  </p>
+  <Renvoi section="11" libelle="§11, liste complète des limites" />
+</section>
