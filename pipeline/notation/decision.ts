@@ -21,8 +21,9 @@
  *    juge : elle ne compte pas, et un humain est requis, sous le motif `extrait_invalide` (D15).
  * 4. **Échantillon humain.** La note humaine prévaut : celle des deux humains s'ils s'accordent,
  *    sinon celle du troisième (`echantillon_humain_10`, nom du schéma conservé à 25 %). Deux humains
- *    qui s'accordent sur la note mais divergent sur le motif d'inexactitude sont arbitrés de même
- *    (§7, protocole 0.31 ; D73 (14) ; `note-retenue.ts:humainsAArbitrer`).
+ *    qui s'accordent sur la note mais divergent sur le motif d'inexactitude, la citation d'une
+ *    source ou l'existence d'un lien sont arbitrés de même (§7, protocole 0.33 ; D73 (14), D75 (15) ;
+ *    `note-retenue.ts:humainsAArbitrer`).
  * 5. **Hors échantillon.** Désaccord, extrait invalide ou drapeau grave posé par un juge non retiré
  *    : un humain tranche (`tranche_humain`, ou `revue_erreur_grave` dès qu'un drapeau grave est posé
  *    par un juge non retiré ou par cet humain). Accord des deux juges sans note commune : un humain
@@ -50,9 +51,8 @@
  * Hors échantillon (D15, « accord partiel → humain »), cet humain note sous `accord_partiel_juges`,
  * et sa note est retenue (`tranche_humain`, ou `revue_erreur_grave` s'il pose un drapeau grave),
  * avec les deux juges et lui pour sources. Dans l'échantillon, deux humains qui s'accordent mais
- * divergent sur le motif d'inexactitude appellent le troisième humain (§7, 0.31 ; D73 (14)) ; avec
- * le même motif et un sourçage partiel différent, le §7 n'admet pas d'arbitre : la réponse reste en
- * attente sous `accord_sans_note_commune` (question ouverte).
+ * divergent sur l'un de ces trois champs appellent le troisième humain (§7, 0.33 ; D73 (14),
+ * D75 (15)), dont la note est retenue : `accord_sans_note_commune` n'y est jamais rendu.
  *
  * Toute incohérence des entrées (notation d'un autre run ou d'un autre objet, juge inconnu, deux
  * notations d'un même juge, humain sous un motif que la situation n'appelle pas…) lève
@@ -429,8 +429,9 @@ function deciderEchantillon(entree: EntreeDecision, tri: Tri, bilan: BilanJuges)
 
 /**
  * Deux humains qui divergent, ou qui s'accordent sur la note mais divergent sur le motif
- * d'inexactitude (§7, 0.31 ; D73 (14)) : un troisième humain note à l'aveugle, et sa note est
- * retenue, qu'il rejoigne l'un des deux motifs ou en donne un troisième.
+ * d'inexactitude, la citation d'une source ou l'existence d'un lien (§7, 0.33 ; D73 (14),
+ * D75 (15)) : un troisième humain note à l'aveugle, et sa note est retenue, qu'il rejoigne l'un des
+ * deux ou donne une troisième valeur.
  */
 function arbitrageDesHumains(
   entree: EntreeDecision,
@@ -456,11 +457,11 @@ function accordDesHumains(
   [premiere, seconde]: readonly [NotationIndividuelle, NotationIndividuelle],
 ): Decision {
   if (tri.arbitrages.length > 0) {
-    throw new NotationsIncoherentes(entree.objet_note.id, "arbitrage d'un troisième humain alors que les deux s'accordent, sur la note et sur le motif.");
+    throw new NotationsIncoherentes(entree.objet_note.id, "arbitrage d'un troisième humain alors que les deux s'accordent, sur la note, le motif et le sourçage.");
   }
   const note = noteCommune(premiere, seconde);
-  // Même motif, sourçage partiel différent : le §7 n'y admet pas d'arbitre (question ouverte).
-  if (note === null) return enAttente("humain", ["accord_sans_note_commune"]);
+  // `humainsAArbitrer` est faux : par définition, les deux humains ont une note commune.
+  if (note === null) throw new Error(`Objet noté ${entree.objet_note.id} : deux humains sans arbitre ni note commune (incohérence interne).`);
   return verdict(entree, {
     note,
     mode: "echantillon_humain_10",
