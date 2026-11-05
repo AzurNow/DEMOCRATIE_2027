@@ -34,7 +34,9 @@
  *    `{statut: "calcule", …}` ou `{statut: "sans_objet", motif}` : jamais une section vide qui
  *    passerait pour un résultat. La population publie aussi le régime d'inclusion du run (§3, D68).
  *    Après les comparateurs, l'écart de chaque juge sur l'outil de son propre éditeur (§7, D73 (7),
- *    `sectionEcartJugeEditeur`), sur la liste déclarée au gel et lue dans `run.json#/juges[]`.
+ *    `sectionEcartJugeEditeur`), sur la liste déclarée au gel et lue dans `run.json#/juges[]`. Puis le
+ *    nombre de renvois à un humain de chaque juge, par contexte et par motif (§7, D74 (22),
+ *    `sectionRenvoisHumains`).
  * 9. `collecterGraines` relève chaque couple `{cle, graine}` publié dans le document.
  * 10. `validerEtEcrire` valide le document contre `schema/metriques.schema.json` avant toute écriture,
  *    puis écrit `runs/<date>/metriques/metriques.json` s'il est absent, ne fait rien s'il est
@@ -88,6 +90,7 @@ import {
   type RunLu,
 } from "./lecture-run.ts";
 import { exactitude, lecturesNoteesParComparateur, type LectureNotee } from "./metriques.ts";
+import { renvoisParJuge, type RenvoisDUnJuge } from "./renvois-humains.ts";
 import { modelesDuRun, type ModeleDUnOutil } from "./modeles-du-run.ts";
 import { corrigerFamilleAsymetrie, PERMUTATIONS_PRODUCTION, testHomogeneiteCandidats, type FamilleAsymetrie, type ResultatCouple } from "./permutation.ts";
 import { tauxRecalcules } from "./robustesse-taux.ts";
@@ -97,7 +100,7 @@ import { candidatsComparables, cleCouple, couplesComparables, type PartageCandid
 import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate-recente.ts";
 import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
 import type { CandidatAuGel, CategorieRetenue, CoupleOutilMode, EntreeTirage, IdentifiantCourt, Item, LectureComparateur, Mode, Notation, Question, Reponse, Run, Ulid } from "./types.ts";
-import type { NotationIndividuelle } from "../pipeline/notation/types.ts";
+import type { NotationIndividuelle, RenvoiHumain } from "../pipeline/notation/types.ts";
 import { CHAMPS_HORS_EMPREINTE_DU_RUN, retirerChamps } from "../pipeline/run/champs-posterieurs-au-gel.ts";
 
 /* ------------------------------------------------------------------ entrées */
@@ -132,6 +135,8 @@ export interface EntreesDuRun extends Omit<EntreesAnalyse, "run" | "items"> {
   /** Les items épinglés, validés contre `item.schema.json` : ils portent `valide_du` (strate de 60 jours). */
   readonly items: readonly (Item & ItemDate)[];
   readonly notations: readonly Notation[];
+  /** §7 : les renvois de juge vers un humain (`volume/renvois/`, validés par `lireNotationsDuRun`). */
+  readonly renvois: readonly RenvoiHumain[];
   readonly plan: readonly RequeteDuPlan[];
   /**
    * §6, QR8 : les questions du sous-échantillon de l'application. `null` exactement quand le run n'a
@@ -203,13 +208,14 @@ export function lireEntreesDuRun(repertoire_run: string, options: OptionsLecture
   const { entrees } = lireRun(repertoire_run, options);
   // run.schema.json exige versions, tirage et graines.bootstrap / permutation ; lireRun l'a validé.
   const run = entrees.run as RunLu & RunAnalyse;
-  const { notations } = lireNotationsDuRun(repertoire_run, run.id);
+  const { notations, renvois } = lireNotationsDuRun(repertoire_run, run.id);
   const lectures = lireLecturesDuRun(repertoire_run, run);
   return {
     ...entrees,
     run,
     items: entrees.items as readonly (Item & ItemDate)[],
     notations,
+    renvois,
     plan: options.plan_du_run(repertoire_run, run),
     questions_sous_echantillon: aDesReponsesApplication(entrees.reponses)
       ? options.sous_echantillon_application({ run, entrees_tirage: entrees.entrees_tirage, questions: entrees.questions })
@@ -737,6 +743,17 @@ export function sectionEcartJugeEditeur(contexte: ContexteDuRun, entrees: Entree
   return { statut: "calcule", ...ecartsJugesEditeurs(contexte.unites, entrees.notations, juges, options) };
 }
 
+/* ------------------------------------------------------------------ renvois à un humain */
+
+/**
+ * §7 (§7.59, D74 (22)) : le nombre de renvois à un humain de chaque juge déclaré au gel, par
+ * contexte et par motif (`renvois-humains.ts`), chaque motif connu publié à 0 compris. Jamais sans
+ * objet : un run déclare toujours ses deux juges (§7), un juge retiré compris (`retire: true`).
+ */
+export function sectionRenvoisHumains(entrees: EntreesDuRun): { readonly statut: "calcule"; readonly par_juge: readonly RenvoisDUnJuge[] } {
+  return { statut: "calcule", par_juge: renvoisParJuge(entrees.run.juges, entrees.renvois) };
+}
+
 /* ------------------------------------------------------------------ exploratoire */
 
 /** §3 (D68) : le régime où la corrélation, « non calculée sous trois candidats », est sans objet. */
@@ -906,6 +923,7 @@ export function analyserRun(entrees: EntreesDuRun, parametres: ParametresAnalyse
     variabilite_echantillons: sectionVariabilite(contexte, entrees),
     comparateurs: sectionComparateurs(contexte, entrees),
     ecart_juge_editeur: sectionEcartJugeEditeur(contexte, entrees),
+    renvois_humains: sectionRenvoisHumains(entrees),
     hypotheses: sectionHypotheses(contexte, { taux, asymetrie, conditions, h3 }, tendance),
     exploratoire: sectionExploratoire(contexte, entrees),
   };
