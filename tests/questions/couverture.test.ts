@@ -16,8 +16,12 @@ import { arbitre, contestation, decidePar, itemA, itemF, itemO, itemP, mesure } 
 const GEL = "2026-11-20T10:00:00Z";
 const CANDIDAT = "demo-alpha";
 const AUTRE = "demo-beta";
+/** Les candidats interrogés du run : ceux que la détection des positions incompatibles examine (§5, D74 (14)). */
+const INTERROGES: ReadonlySet<string> = new Set([CANDIDAT, AUTRE]);
 const MESURE = mesure({ cle: "couverture", theme: "sante" });
 const REFERENTIEL = new Map([[MESURE.id, MESURE]]);
+/** La mesure de l'item O du test « mélange », hors de MESURE : ses deux états n'y croisent aucun item P. */
+const MESURE_O = mesure({ cle: "couverture-o", theme: "sante" });
 const AVANT_GEL = "2026-10-01T10:00:00+02:00";
 
 function p(cle: string, options: Partial<Parameters<typeof itemP>[0]> = {}): Item {
@@ -113,11 +117,11 @@ describe("itemPCompteAuGel : un item, les cas limites du brief", () => {
 
 describe("itemsPComptesAuGel : le total d'un candidat", () => {
   it("compte exactement 9 items", () => {
-    expect(itemsPComptesAuGel(nItems(9, "neuf"), CANDIDAT, GEL, [MESURE])).toBe(9);
+    expect(itemsPComptesAuGel(nItems(9, "neuf"), CANDIDAT, GEL, [MESURE], INTERROGES)).toBe(9);
   });
 
   it("compte exactement 10 items", () => {
-    expect(itemsPComptesAuGel(nItems(10, "dix"), CANDIDAT, GEL, [MESURE])).toBe(10);
+    expect(itemsPComptesAuGel(nItems(10, "dix"), CANDIDAT, GEL, [MESURE], INTERROGES)).toBe(10);
   });
 
   it("n'ajoute au total ni les items exclus ni ceux des autres candidats", () => {
@@ -126,28 +130,28 @@ describe("itemsPComptesAuGel : le total d'un candidat", () => {
       ...nItems(10, "melange"),
       p("m-conteste", { statut_contestation: "contestee" }),
       p("m-expire", { valide_au: "2026-11-20" }),
-      itemO({ cle: "m-o", ...options }),
+      itemO({ cle: "m-o", candidat_id: CANDIDAT, mesure: MESURE_O }),
       itemA({ cle: "m-a", ...options }),
       itemF({ cle: "m-f", ...options }),
       itemP({ cle: "m-autre", candidat_id: AUTRE, mesure: MESURE }),
       arbitre(p("m-maintien"), [contestation("m-maintien", "maintien", AVANT_GEL)]),
     ];
-    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [MESURE])).toBe(11);
+    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [MESURE, MESURE_O], INTERROGES)).toBe(11);
   });
 
   it("n'ajoute pas au total un item P qui épingle une version dépassée de sa mesure (conformité n° 2)", () => {
     const courante = { ...MESURE, version: 2 };
     const items = [...nItems(9, "version"), itemP({ cle: "version-a-jour", candidat_id: CANDIDAT, mesure: courante })];
-    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [courante])).toBe(1);
+    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [courante], INTERROGES)).toBe(1);
   });
 
   it("rend 0 pour un candidat sans item, jamais une absence", () => {
-    expect(itemsPComptesAuGel([], CANDIDAT, GEL, [MESURE])).toBe(0);
+    expect(itemsPComptesAuGel([], CANDIDAT, GEL, [MESURE], INTERROGES)).toBe(0);
   });
 
   it("signale un arbitrage illisible d'un item du candidat au lieu de l'ignorer", () => {
     const illisible = { ...p("illisible"), statut_contestation: "arbitree" as const, contestations: [{}] };
-    expect(() => itemsPComptesAuGel([illisible], CANDIDAT, GEL, [MESURE])).toThrow();
+    expect(() => itemsPComptesAuGel([illisible], CANDIDAT, GEL, [MESURE], INTERROGES)).toThrow();
   });
 });
 
@@ -163,23 +167,23 @@ describe("itemsPAuGel : la liste que le run fige, dont le compte est la longueur
       p("l-conteste", { statut_contestation: "contestee" }),
       itemP({ cle: "l-autre", candidat_id: AUTRE, mesure: MESURE }),
     ];
-    const liste = itemsPAuGel(items, CANDIDAT, GEL, [MESURE]);
+    const liste = itemsPAuGel(items, CANDIDAT, GEL, [MESURE], INTERROGES);
     const attendus = nItems(3, "liste").map((item) => item.id).sort();
     expect(liste).toEqual(attendus);
-    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [MESURE])).toBe(liste.length);
+    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [MESURE], INTERROGES)).toBe(liste.length);
   });
 
   it("exclut l'item obsolète exactement à l'instant du gel", () => {
     const obsolete = p("l-obsolete-au-gel", { valide_du: "2026-09-01", valide_au: "2026-11-20" });
-    expect(itemsPAuGel([obsolete], CANDIDAT, "2026-11-20T00:00:00Z", [MESURE])).toEqual([]);
+    expect(itemsPAuGel([obsolete], CANDIDAT, "2026-11-20T00:00:00Z", [MESURE], INTERROGES)).toEqual([]);
   });
 
   it("rend une liste vide pour un candidat sans item, jamais une absence", () => {
-    expect(itemsPAuGel([], CANDIDAT, GEL, [MESURE])).toEqual([]);
+    expect(itemsPAuGel([], CANDIDAT, GEL, [MESURE], INTERROGES)).toEqual([]);
   });
 
   it("lève sur deux items comptés de même identifiant, au lieu de les dédoublonner en silence", () => {
     const item = p("l-double");
-    expect(() => itemsPAuGel([item, { ...item }], CANDIDAT, GEL, [MESURE])).toThrow(item.id);
+    expect(() => itemsPAuGel([item, { ...item }], CANDIDAT, GEL, [MESURE], INTERROGES)).toThrow(item.id);
   });
 });

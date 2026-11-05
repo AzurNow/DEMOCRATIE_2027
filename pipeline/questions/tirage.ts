@@ -33,7 +33,7 @@ import { itemsPContestesAuGel } from "./couverture.ts";
 import { entreeDe, precedenteSiReprise } from "./entrees-tirage.ts";
 import type { TiragePrecedent } from "./entrees-tirage.ts";
 import { verifierGraine } from "./graine.ts";
-import { estCompare, indexer, separer, themeDeQuestion } from "./tirabilite.ts";
+import { estCompare, indexer, itemsAuxPositionsIncompatibles, separer, themeDeQuestion } from "./tirabilite.ts";
 import type { Index, PositionsIncompatibles } from "./tirabilite.ts";
 import type {
   BilanReprise,
@@ -43,6 +43,7 @@ import type {
   ContestesAuGel,
   EntreeTirage,
   GraineTirage,
+  IncompatiblesAuGel,
   Item,
   Mesure,
   ParametresTirage,
@@ -436,6 +437,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
       entrees: resultats.flatMap((resultat) => resultat.entrees),
       exclusions: separation.exclusions,
       contestes_au_gel: contestes,
+      incompatibles_au_gel: incompatiblesAuGel(separation.incompatibles, interroges),
       bilan_reprise: resultats.map((resultat) => resultat.bilan),
       compensations: resultats.flatMap((resultat) => resultat.compensations),
     },
@@ -462,6 +464,22 @@ function contestesAuGel(demande: DemandeTirage, interroges: readonly CandidatAuG
       candidat_id,
       item_ids: itemsPContestesAuGel(demande.items, candidat_id, demande.run.date_gel, demande.mesures),
     }));
+}
+
+/**
+ * Protocole 0.32 (§5, D74 (17)) : « les deux items sont exclus du tirage, comptés à part dans le
+ * rapport du run et publiés un à un avec le tirage ». Par candidat interrogé, zéro compris, trié comme
+ * `contestes_au_gel` : les items de ses groupes aux positions incompatibles, lus sur la détection que
+ * le tirage vient d'appliquer (`separer`), jamais recalculés.
+ */
+function incompatiblesAuGel(
+  conflits: readonly PositionsIncompatibles[],
+  interroges: readonly CandidatAuGel[],
+): readonly IncompatiblesAuGel[] {
+  return interroges
+    .map((candidat) => candidat.candidat_id)
+    .sort(comparerChaines)
+    .map((candidat_id) => ({ candidat_id, item_ids: itemsAuxPositionsIncompatibles(conflits, candidat_id) }));
 }
 
 interface ContexteTirage {

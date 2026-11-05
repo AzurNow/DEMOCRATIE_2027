@@ -13,8 +13,8 @@
  * définie au gel — item hors de sa fenêtre de validité, position « sans objet » sur un gabarit
  * fermé, négatif ou orienté, liste d'attribution non définie — est exclue. Une question dont l'item
  * principal est celui d'un candidat non interrogé au run est exclue aussi (`principal_non_interroge`,
- * D57 (1), protocole 0.22). Deux items retenus d'un même candidat interrogé sur une même mesure, en
- * vigueur au gel et de positions différentes, excluent toutes leurs questions et la question
+ * D57 (1), protocole 0.22). Deux items retenus d'un même candidat interrogé sur une même mesure,
+ * épinglés sur sa version courante (D74 (18)), en vigueur au gel et de positions différentes, excluent toutes leurs questions et la question
  * d'attribution de la mesure (`positions_incompatibles`, protocole 0.27, D67), au lieu d'arrêter le
  * tirage. Chaque exclusion est inscrite dans `tirage.exclusions` avec un seul motif, le premier dans
  * l'ordre : `attribution_contestee`, `mesure_version_depassee`, `positions_incompatibles`,
@@ -230,7 +230,14 @@ function versionDepassee(gardes: readonly ItemDeQuestion[], index: Index): Motif
  * dont la fin de validité est l'instant de gel n'est plus en vigueur et n'y entre pas (intervalles
  * semi-ouverts, §4) ; une source postérieure qui retire une position la rend obsolète, donc hors de
  * vigueur. Seuls les candidats interrogés au run comptent, comme pour un item contesté : le tirage
- * n'examine que leurs questions, et la liste d'une question d'attribution ne lit qu'eux.
+ * n'examine que leurs questions, et la liste d'une question d'attribution ne lit qu'eux (protocole
+ * 0.32, D74 (14)). Un item vérifié sur une version de sa mesure qui n'est pas la version en vigueur,
+ * que le tirage exclut déjà (`mesure_version_depassee`), n'entre pas dans la comparaison et ne fait
+ * exclure aucun autre item (protocole 0.32, D74 (18)).
+ *
+ * Ces items ne comptent pas au seuil de couverture du §4 (`couverture.ts:itemsPAuGel`, D74 (16)) et
+ * sont publiés un à un avec le tirage (`tirage.incompatibles_au_gel`, D74 (17)), tous deux lus par
+ * `itemsAuxPositionsIncompatibles`, seule définition de la liste par candidat.
  */
 export interface PositionsIncompatibles {
   readonly candidat_id: string;
@@ -249,9 +256,16 @@ interface PositionLue {
   readonly position: Position;
 }
 
-function positionRetenueAuGel(item: Item, date_gel: string, interroges: ReadonlySet<string>): PositionLue | undefined {
-  if (!interroges.has(item.candidat_id) || placeAuGel(item) !== "retenu") return undefined;
-  const position = positionEnVigueur(item, date_gel);
+/**
+ * La position qu'un item apporte à la détection : celle d'un item retenu d'un candidat interrogé,
+ * épinglé sur la version courante de sa mesure, en vigueur au gel. La version est lue après la
+ * place : une mesure absente du référentiel lève `MesureIntrouvable` pour tout item retenu d'un
+ * candidat interrogé, jamais une position supposée.
+ */
+function positionRetenueAuGel(item: Item, gel: GelDeLaDetection): PositionLue | undefined {
+  if (!gel.interroges.has(item.candidat_id) || placeAuGel(item) !== "retenu") return undefined;
+  if (!epingleLaVersionCourante(item, gel.mesures)) return undefined;
+  const position = positionEnVigueur(item, gel.date_gel);
   return position === undefined ? undefined : { item, position };
 }
 
@@ -267,15 +281,27 @@ function enConflit(lues: readonly PositionLue[]): PositionsIncompatibles | undef
   };
 }
 
-/** Les groupes incompatibles au gel, triés par candidat puis par mesure. Évalué sans la graine. */
+/** Ce que la détection lit du gel : son instant, les candidats interrogés, le référentiel des mesures. */
+interface GelDeLaDetection {
+  readonly date_gel: string;
+  readonly interroges: ReadonlySet<string>;
+  readonly mesures: ReadonlyMap<string, Mesure>;
+}
+
+/**
+ * Les groupes incompatibles au gel, triés par candidat puis par mesure. Évalué sans la graine.
+ * `mesures` : le référentiel au gel, par identifiant, dont la version courante de chaque mesure.
+ */
 export function positionsIncompatiblesAuGel(
   items: readonly Item[],
   date_gel: string,
   interroges: ReadonlySet<string>,
+  mesures: ReadonlyMap<string, Mesure>,
 ): readonly PositionsIncompatibles[] {
+  const gel: GelDeLaDetection = { date_gel, interroges, mesures };
   const groupes = new Map<string, PositionLue[]>();
   for (const item of items) {
-    const lue = positionRetenueAuGel(item, date_gel, interroges);
+    const lue = positionRetenueAuGel(item, gel);
     if (lue === undefined) continue;
     const cle = `${item.candidat_id}|${item.mesure_id}`;
     const groupe = groupes.get(cle);
@@ -286,6 +312,21 @@ export function positionsIncompatiblesAuGel(
     .sort(([a], [b]) => comparerChaines(a, b))
     .map(([, lues]) => enConflit(lues))
     .filter((conflit): conflit is PositionsIncompatibles => conflit !== undefined);
+}
+
+/**
+ * Les identifiants, triés, des items de ce candidat que la détection exclut du tirage, tous groupes
+ * (mesures) confondus. Vide si le candidat n'en porte aucun. Seule définition de la liste par
+ * candidat : le seuil de couverture (D74 (16)) et le tirage publié (D74 (17)) la lisent.
+ */
+export function itemsAuxPositionsIncompatibles(
+  conflits: readonly PositionsIncompatibles[],
+  candidat_id: string,
+): readonly string[] {
+  return conflits
+    .filter((conflit) => conflit.candidat_id === candidat_id)
+    .flatMap((conflit) => conflit.items.map((lu) => lu.item_id))
+    .sort(comparerChaines);
 }
 
 /**
@@ -335,7 +376,7 @@ interface ContexteDuGel {
 }
 
 function contexteDuGel(items: readonly Item[], index: Index, run: GelDuRun, interroges: ReadonlySet<string>): ContexteDuGel {
-  return { index, run, interroges, incompatibles: positionsIncompatiblesAuGel(items, run.date_gel, interroges) };
+  return { index, run, interroges, incompatibles: positionsIncompatiblesAuGel(items, run.date_gel, interroges, index.mesures) };
 }
 
 function lireAuGel(question: Question, contexte: ContexteDuGel): LectureAuGel {

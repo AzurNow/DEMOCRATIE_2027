@@ -49,6 +49,10 @@
       "item_ids": []
     }
   ],
+  "incompatibles_au_gel": [
+    { "candidat_id": "cand-a", "item_ids": [] },
+    { "candidat_id": "cand-b", "item_ids": ["B1Q2W3E4R5T6Y7V8K9M0P1A2S3", "C4D5F6G7H8J9K0N1Z2X3C4V5B6"] }
+  ],
   "bilan_reprise": [],
   "compensations": []
 }

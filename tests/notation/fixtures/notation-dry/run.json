@@ -254,7 +254,7 @@
   },
   "tirage": {
     "chemin": "runs/2026-11-27/tirage.json",
-    "sha256": "d7674f1060f55b4f57a77b17f39c6fb67821b4ff6a3d5e23b0187e1ad2fab5e4",
+    "sha256": "ea39cad6a3ab52b1c551585dcf3151e03fa0b7dcf8275cc4d46a797cdcc87cf6",
     "nombre_questions": 3
   },
   "questions": {

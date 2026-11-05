@@ -5,7 +5,7 @@
   "description": "Les questions effectivement tirées pour un run, avec ce qu'elles valaient AU GEL : versions d'items, statuts d'items, réponse attendue résolue à la date de gel. Fichier autonome, référencé par run.tirage avec son empreinte — il compte environ 400 entrées, et l'intégrer à l'objet run obligerait tout contrôle go/no-go à le charger entier. C'est ce gel qui rend le critère du §12 décidable après coup et l'analyse de robustesse §8(b) reproductible.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "date_gel", "graine_tirage", "parametres", "entrees", "exclusions", "contestes_au_gel", "bilan_reprise", "compensations"],
+  "required": ["run_id", "date_gel", "graine_tirage", "parametres", "entrees", "exclusions", "contestes_au_gel", "incompatibles_au_gel", "bilan_reprise", "compensations"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -101,6 +101,25 @@
             "uniqueItems": true,
             "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
             "description": "Identifiants des items, triés. Vide si aucun item P vérifié du candidat n'est contesté au gel."
+          }
+        }
+      }
+    },
+
+    "incompatibles_au_gel": {
+      "type": "array",
+      "description": "Protocole 0.32 (§5, D74 (17)) : « Deux items d'un même candidat interrogé au run sur la même mesure, tous deux en vigueur au gel, dont les positions diffèrent, sans qu'une source postérieure ait retiré l'une d'elles, ne disent pas laquelle fait foi : les deux items sont exclus du tirage, comptés à part dans le rapport du run et publiés un à un avec le tirage. » Même forme et même rigueur que contestes_au_gel : une entrée par candidat interrogé, y compris ceux dont la liste est vide, pour que l'absence soit publiée et non déduite ; triée par candidat_id. Un item y figure s'il appartient, au gel, à un groupe candidat × mesure d'items retenus, épinglés sur la version courante de la mesure (D74 (18)) et en vigueur, dont au moins deux positions diffèrent (pipeline/questions/tirabilite.ts:positionsIncompatiblesAuGel) ; items P et O, toutes mesures confondues. Ces items ne comptent pas au seuil de couverture du §4 (D74 (16)). Évalué sans la graine.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidat_id", "item_ids"],
+        "properties": {
+          "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "item_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+            "description": "Identifiants des items, triés. Vide si le candidat ne porte au gel aucun item aux positions incompatibles."
           }
         }
       }

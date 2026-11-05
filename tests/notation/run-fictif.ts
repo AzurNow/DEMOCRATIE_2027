@@ -196,6 +196,7 @@ export function poserRunGele(): Omit<RunFictif, "reponses" | "notations" | "verd
     entrees: entreesPour(tirees, [ITEM_P, ITEM_F], [MESURE_P, MESURE_F], runProvisoire as unknown as RunAuGel),
     exclusions: [],
     contestes_au_gel: [],
+    incompatibles_au_gel: [],
     bilan_reprise: [],
     compensations: [],
   };

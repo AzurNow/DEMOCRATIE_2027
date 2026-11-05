@@ -95,6 +95,7 @@ function tirageDe(questions: readonly Question[], surcharge: Partial<Tirage> = {
     entrees: entreesPour(questions, ITEMS, MESURES, RUN),
     exclusions: [],
     contestes_au_gel: [],
+    incompatibles_au_gel: [],
     bilan_reprise: [],
     compensations: [],
     ...surcharge,

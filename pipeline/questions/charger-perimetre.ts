@@ -41,6 +41,7 @@ import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import type { Mode } from "../../analysis/types.ts";
 import { validerFragment, valider } from "../../outils/schemas/valider.ts";
+import { idsInterroges } from "../../analysis/candidats-interroges.ts";
 import { itemsPAuGel } from "./couverture.ts";
 import { FENETRE_NOTICES_MOIS, inclusionAvantListe, SONDAGES_MINIMUM } from "./perimetre.ts";
 import { AMORCE_GROUPE_ATTRIBUTION } from "./tirage.ts";
@@ -535,9 +536,18 @@ function exigerCoherent(perimetre: PerimetrePourRun, contexte: ContexteDuGel, pr
 
 /* ------------------------------------------------------------- 4. instantané */
 
-function candidatAuGel(candidat: CandidatSaisi, date_gel: string, contexte: ContexteDuGel): CandidatDeRun {
+/**
+ * `interroges` : les candidats interrogés du périmètre, déjà jugé cohérent (`exigerCoherent`) ; le
+ * seuil du §4 ne compte pas les items qu'une incompatibilité exclut chez eux (D74 (16)).
+ */
+function candidatAuGel(
+  candidat: CandidatSaisi,
+  date_gel: string,
+  contexte: ContexteDuGel,
+  interroges: ReadonlySet<string>,
+): CandidatDeRun {
   const { contact_notification: _horsInstantane, ...saisi } = candidat;
-  const items_p_au_gel = itemsPAuGel(contexte.items, candidat.candidat_id, date_gel, contexte.mesures);
+  const items_p_au_gel = itemsPAuGel(contexte.items, candidat.candidat_id, date_gel, contexte.mesures, interroges);
   return {
     ...saisi,
     items_p_verifies: items_p_au_gel.length,
@@ -556,11 +566,12 @@ function outilAuGel(outil: OutilSaisi, alias: ReadonlyMap<string, string>): Outi
 function instantane(perimetre: PerimetrePourRun, contexte: ContexteDuGel): PerimetreDeRun {
   const liste = perimetre.liste_officielle === null ? {} : { liste_officielle: perimetre.liste_officielle };
   const proclamation = proclamationDe(perimetre);
+  const interroges = idsInterroges(perimetre.candidats);
   return {
     regime_inclusion: perimetre.regime_inclusion,
     ...liste,
     ...(proclamation === null ? {} : { proclamation_premier_tour: proclamation }),
-    candidats: perimetre.candidats.map((candidat) => candidatAuGel(candidat, perimetre.date_gel, contexte)),
+    candidats: perimetre.candidats.map((candidat) => candidatAuGel(candidat, perimetre.date_gel, contexte, interroges)),
     outils: perimetre.outils.map((outil) => outilAuGel(outil, contexte.alias_aveugles)),
   };
 }

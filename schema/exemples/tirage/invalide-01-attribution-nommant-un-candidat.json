@@ -66,6 +66,12 @@
       "item_ids": []
     }
   ],
+  "incompatibles_au_gel": [
+    {
+      "candidat_id": "cand-a",
+      "item_ids": []
+    }
+  ],
   "bilan_reprise": [],
   "compensations": []
 }

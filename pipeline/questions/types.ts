@@ -318,6 +318,17 @@ export interface ContestesAuGel {
   readonly item_ids: readonly string[];
 }
 
+/**
+ * Protocole 0.32 (§5, D74 (17)) : pour un candidat interrogé, les items que le tirage exclut pour des
+ * positions incompatibles (`tirabilite.ts:itemsAuxPositionsIncompatibles`), triés, toutes mesures
+ * confondues, publiés un à un avec le tirage. Même forme que `ContestesAuGel` : vide quand il n'y en
+ * a aucun, l'absence est publiée, jamais déduite.
+ */
+export interface IncompatiblesAuGel {
+  readonly candidat_id: string;
+  readonly item_ids: readonly string[];
+}
+
 export interface Tirage {
   readonly run_id: string;
   readonly date_gel: string;
@@ -327,6 +338,8 @@ export interface Tirage {
   readonly exclusions: readonly ExclusionTirage[];
   /** Une entrée par candidat interrogé, triée par `candidat_id` (décision n° 8 du 2026-09-29). */
   readonly contestes_au_gel: readonly ContestesAuGel[];
+  /** Une entrée par candidat interrogé, triée par `candidat_id` (protocole 0.32, D74 (17)). */
+  readonly incompatibles_au_gel: readonly IncompatiblesAuGel[];
   readonly bilan_reprise: readonly BilanReprise[];
   readonly compensations: readonly CompensationTirage[];
 }
