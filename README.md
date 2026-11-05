@@ -27,6 +27,7 @@ python3 -m venv ~/.outils-uv && ~/.outils-uv/bin/pip install uv==0.12.17 \
 uv sync --frozen                # crée .venv depuis uv.lock
 pnpm check:py && pnpm test:py
 pnpm build                      # clients navigateur (sortie dans */client/dist, ignorée)
+pnpm build:site                 # site statique (sortie dans site/dist, ignorée)
 ANNOTATEUR_ID=a1 pnpm dev       # http://127.0.0.1:4173/, jeu de démonstration
 ```
 
@@ -60,7 +61,8 @@ analysis/              Métriques §8, bootstrap, tests de permutation, robustes
 notation-humaine/      Écran local de notation humaine des réponses (serveur + client).
 outils/                Points d'entrée des commandes `pnpm <script>` (fines enveloppes).
 tests/                 Vitest (*.test.ts) et pytest (test_*.py), miroir de l'arborescence.
-site/                  Site statique généré. Aucune logique métier. (Pas encore créé.)
+site/                  Site statique Astro, construit par `pnpm build:site` dans site/dist/ (ignoré).
+                       Aucune logique métier.
 scratch/               Explorations jetables. Hors CI, hors production.
 docs/                  Protocole, CONTRATS.md, DETTE.md, TACHES-AUTEUR.md, revues/, conformite/,
                        critiques/, contexte-agentique/, feuille-de-route.json (l'état d'avancement

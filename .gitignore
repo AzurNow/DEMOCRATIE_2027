@@ -1,6 +1,8 @@
 node_modules/
 validation/client/dist/
 notation-humaine/client/dist/
+site/dist/
+site/.astro/
 
 # Brouillons de saisie : ni décisions, ni données publiables. Écrasables par nature,
 # donc hors du journal append-only et hors du dépôt.

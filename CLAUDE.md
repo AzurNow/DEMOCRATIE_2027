@@ -100,6 +100,7 @@ pnpm check             # types + lint + validation des schémas
 pnpm check:py          # ruff sur pipeline/ et tests/ (CI)
 pnpm lint              # ESLint seul
 pnpm build             # compile les deux clients navigateur (validation, notation humaine)
+pnpm build:site         # construit le site statique dans site/dist/ (télémétrie Astro coupée)
 pnpm dev               # interface de validation sur le jeu de démonstration (BANC_DEMO=1)
 pnpm symmetry          # tests de symétrie du tirage (bloquants avant un run)
 pnpm validate          # lance l'interface de validation humaine en local (production)
@@ -108,8 +109,8 @@ pnpm analyze           # métriques §8 d'un run noté → runs/<date>/metriques
 pnpm proprete          # signaux de propreté, matière de la revue de code (non bloquant)
 ```
 
-Pas encore écrites (lots à venir, ne pas les appeler) : `pnpm run:live` (run réel — jamais lancé
-par un agent), `pnpm build:site`.
+Pas encore écrite (lot à venir, ne pas l'appeler) : `pnpm run:live` (run réel — jamais lancé
+par un agent).
 La liste complète est dans `package.json` ; chaque script pointe vers `outils/<nom>.ts` ou un
 module `pipeline.*` lancé par `uv run`.
 
