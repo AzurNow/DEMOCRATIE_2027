@@ -1,6 +1,6 @@
 /**
- * Les trois tirages de la notation (§7) : l'échantillon humain, le sous-ensemble du test
- * contrefactuel et le jeu d'or.
+ * Les tirages de la notation (§7) : l'échantillon humain, le sous-ensemble du test contrefactuel, le
+ * jeu d'or, et l'ordre de la file des annotateurs humains.
  *
  * §7 (protocole 0.13) : « L'échantillon humain et ce sous-ensemble sont tirés avec le générateur du
  * tirage (SplitMix64, `splitmix64-sha256-v1`), chacun avec sa graine dérivée de la graine publiée et
@@ -38,6 +38,13 @@
  * des deux autres tirages : tri croissant des identifiants reçus, Fisher-Yates du dernier au premier,
  * préfixe de 300. Moins de 300 réponses obtenues : toutes sont prises, et `sous_effectif` le dit.
  * Texte haché : `<valeur>␀jeu_or`.
+ *
+ * **Ordre de la file humaine** (§7 ; D79 de l'auteur du 2026-11-05, texte proposé pour la 0.34) :
+ * « L'ordre dans lequel les réponses sont présentées à un annotateur ne dépend pas du motif qui les
+ * lui envoie : il est tiré parmi les réponses obtenues du run, avec une graine dérivée de la graine
+ * publiée de l'échantillon humain et de la clé « ordre_file_humaine ». » Toutes les réponses obtenues
+ * sont rangées (aucun préfixe), même consommation que les autres tirages. Un seul ordre par run,
+ * commun à tous les annotateurs. Texte haché : `<valeur>␀ordre_file_humaine`.
  */
 
 import { graineDerivee } from "../../analysis/graines.ts";
@@ -83,6 +90,13 @@ export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS = 200;
  * Texte haché : `<valeur>␀jeu_or`.
  */
 export const CLE_JEU_OR: readonly string[] = ["jeu_or"];
+
+/**
+ * Clé lisible de la graine de l'ordre de la file humaine, dérivée de `run.graines.echantillon_humain`
+ * (D79) : distincte de celles de l'échantillon et du jeu d'or, donc une autre suite aléatoire.
+ * Texte haché : `<valeur>␀ordre_file_humaine`.
+ */
+export const CLE_ORDRE_FILE_HUMAINE: readonly string[] = ["ordre_file_humaine"];
 
 /** §7 : « 300 réponses issues d'un run pilote sont doublement notées par des humains ». */
 export const TAILLE_JEU_OR = 300;
@@ -194,6 +208,14 @@ export function tirerJeuOr(reponse_ids: readonly string[], graine: GraineTirage)
     taille_visee: TAILLE_JEU_OR,
     sous_effectif: reponse_ids.length < TAILLE_JEU_OR,
   };
+}
+
+/**
+ * L'ordre de présentation des réponses obtenues du run aux annotateurs humains (D79), toutes
+ * rangées. `graine` est `run.graines.echantillon_humain`.
+ */
+export function ordreFileHumaine(reponse_ids: readonly string[], graine: GraineTirage): readonly string[] {
+  return ordreTire(reponse_ids, graine, CLE_ORDRE_FILE_HUMAINE);
 }
 
 function ordreTire(ids: readonly string[], graine: GraineTirage, cle: readonly string[]): readonly string[] {
