@@ -15,12 +15,18 @@ question : c'est elle qui fait foi sur les pratiques, cette grille fixe seulemen
     .claude/agents/*.md .claude/briefs/GABARIT.md | tr -d '`' | sort -u \
     | while read -r p; do case "$p" in *'<'*|*'*'*|*AAAA*) ;; *) [ -e "$p" ] || echo "absent : $p";; esac; done
   # scripts pnpm cités, absents de package.json
-  grep -ohE 'pnpm [a-z:-]+' CLAUDE.md HANDOFF.md .claude -r | awk '{print $2}' | sort -u | grep -vxE 'install|run|exec|dlx' \
+  grep -ohE 'pnpm [a-z:-]+' CLAUDE.md HANDOFF.md LESSONS.md .claude/skills .claude/agents .claude/briefs/GABARIT.md -r \
+    | awk '{print $2}' | sort -u | grep -vxE 'install|run|exec|dlx' \
     | while read -r s; do node -e "process.exit(require('./package.json').scripts['$s']?0:1)" \
       || echo "script absent : $s"; done
   ```
 
-  Un chemin absent n'est pas forcément faux (`data/`, `site/` naissent plus tard) : lire la phrase.
+  Jamais `.claude` en entier : `.claude/worktrees/` contient des copies complètes du dépôt (8,5 Mo
+  de sortie à la passe du 2026-11-05). Un chemin absent n'est pas forcément faux (`data/`, `site/`
+  naissent plus tard) : lire la phrase.
+- `/doctor prompt-audit` (Claude Code 2.1.283 et plus, lancé par l'utilisateur, pas par l'agent)
+  relève chemins et commandes périmés et fichiers d'instructions contradictoires : si l'auteur l'a
+  lancé avant la passe, sa sortie entre comme signal, pas comme constat.
 - Les faits datés (« pas encore écrit », « en cours », versions d'outils, dates d'absence) sont
   encore vrais.
 - Les noms et alias de modèles des en-têtes (`model:`) et des consignes sont valides à date.
@@ -60,6 +66,9 @@ for f in .claude/skills/*/SKILL.md .claude/agents/*.md; do
 - Une compétence coûteuse ou à effet de bord est réservée au lancement manuel.
 - Chaque agent dit ce qu'on lui confie et ce qu'on ne lui confie pas ; le gabarit de brief
   produit un brief autonome (but, fichiers, ce qui est exclu, critère de fin).
+- Un sous-agent reçoit sa définition, `CLAUDE.md` et l'état Git, pas la conversation ni la mémoire
+  du parent (doc des sous-agents, vérifié par la lecture à froid du 2026-11-05) : sa définition ne
+  répète pas `CLAUDE.md`, elle porte ce qui lui est propre.
 - Les affectations de modèle et d'effort suivent la nature de la tâche et la veille du jour.
 
 ## 5. Garde-fous déterministes
