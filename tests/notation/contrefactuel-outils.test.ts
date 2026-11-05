@@ -18,7 +18,7 @@ import type { ReponseManquante, ReponseObtenue } from "../../pipeline/interrogat
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemP } from "../aides/fabriques.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { ALIAS_CANDIDATS_TEST, inexacte, lien, notationJuge, pagesSansTexte, renvoiJuge, REPONSE_PROJETEE, RESOLU_POSITION_POUR, runDeNotation } from "./fabriques.ts";
+import { ALIAS_CANDIDATS_TEST, inexacte, lien, notationJuge, pagesSansTexte, renvoiDefaillant, renvoiJuge, REPONSE_PROJETEE, RESOLU_POSITION_POUR, runDeNotation } from "./fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const NOUVEL_ID = ulid("reponse-contrefactuelle-outil");
@@ -238,5 +238,42 @@ describe("taux de changement du contrefactuel d'outil : un diagnostic, jamais un
 
   it("les deux juges retirés : le run est invalide, le test ne se joue pas (refus nommé)", () => {
     expect(() => testerContrefactuelOutils(jeu(1, {}, [], ["j1", "j2"]))).toThrow(ContrefactuelIncoherent);
+  });
+});
+
+describe("D75 (2) : une paire renvoyée à un humain par un juge est écartée du taux de ce juge seul (§7, protocole 0.33)", () => {
+  /** Trois paires, un changement de chaque juge sur la paire 0 ; chaque renvoi remplace la notation de son juge sur son objet. */
+  function troisPaires(renvois: readonly RenvoiHumain[]): EntreeContrefactuel {
+    const renvoyes = new Set(renvois.map((r) => `${r.notateur.id}\u0000${r.objet_note.id}`));
+    const complet = jeu(3, { j1: 1, j2: 1 });
+    const notations = complet.notations.filter((n) => !renvoyes.has(`${n.notateur.id}\u0000${n.objet_note.id}`));
+    return entree(3, notations, [], renvois);
+  }
+
+  it("D75 (2) cas 1 : renvoi d'un seul juge sur la réponse d'origine : hors numérateur et dénominateur de ce juge, l'autre juge garde la paire", () => {
+    const renvoi = renvoiJuge("j1", { objet_note: { type: "reponse", id: origineId(0) } });
+    const resultat = testerContrefactuelOutils(troisPaires([renvoi]));
+    expect(jugeDe(resultat, "j1")).toEqual({ juge_id: "j1", taux: { numerateur: 0, denominateur: 2, valeur: 0 }, paires_ecartees: 1 });
+    expect(jugeDe(resultat, "j2")).toEqual({ juge_id: "j2", taux: { numerateur: 1, denominateur: 3, valeur: 1 / 3 }, paires_ecartees: 0 });
+  });
+
+  it("D75 (2) cas 1 bis : renvoi d'un juge défaillant sur la copie permutée, quel que soit le motif : même règle", () => {
+    const renvoi = valider<RenvoiHumain>(
+      "renvoi-humain",
+      renvoiDefaillant("j2", { objet_note: { type: "reponse", id: permuteeId(0) }, contexte: "contrefactuel_outil" }),
+      "renvoi de test",
+    );
+    const resultat = testerContrefactuelOutils(troisPaires([renvoi]));
+    expect(jugeDe(resultat, "j1")).toEqual({ juge_id: "j1", taux: { numerateur: 1, denominateur: 3, valeur: 1 / 3 }, paires_ecartees: 0 });
+    expect(jugeDe(resultat, "j2")).toEqual({ juge_id: "j2", taux: { numerateur: 0, denominateur: 2, valeur: 0 }, paires_ecartees: 1 });
+  });
+
+  it("D75 (2) cas 2 : renvoi des deux juges sur la même réponse : la paire sort du taux de chacun, comptée écartée chez chacun", () => {
+    const renvois = ["j1", "j2"].map((juge) => renvoiJuge(juge, { objet_note: { type: "reponse", id: origineId(0) } }));
+    const resultat = testerContrefactuelOutils(troisPaires(renvois));
+    expect(resultat.statut).toBe("termine");
+    for (const juge of ["j1", "j2"]) {
+      expect(jugeDe(resultat, juge)).toEqual({ juge_id: juge, taux: { numerateur: 0, denominateur: 2, valeur: 0 }, paires_ecartees: 1 });
+    }
   });
 });

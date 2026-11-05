@@ -18,9 +18,9 @@
  * **Outils permutés et outils cherchés.** Comme pour les candidats (D55 (4)), deux listes : les
  * outils du dérangement (`permutes`), seuls à avoir une image, et tout le périmètre (`perimetre`),
  * dont les formes sont cherchées sans être remplacées hors du dérangement, pour qu'un nom d'outil qui
- * en contient un autre ne soit jamais réécrit en partie. Ce module ne décide pas lesquels des outils
- * du périmètre sont « les outils du run » : l'appelant les lui passe (question ouverte au rapport du
- * lot D59, assistants inclus seuls ou aussi comparateurs).
+ * en contient un autre ne soit jamais réécrit en partie. « Les outils du dérangement sont les
+ * assistants du run » (§7, 0.27) : `outilsDuDerangement` les lit au périmètre du gel, et l'appelant
+ * les passe.
  *
  * **Formes.** Le libellé et l'éditeur de chaque outil du périmètre sont non blancs et deux à deux
  * distincts sur tout le périmètre, y compris entre le libellé et l'éditeur d'un même outil : une
@@ -35,19 +35,25 @@
  * rejeté et le rangement remélangé avec le même générateur (`derangement.ts:melangeSansPointFixe`).
  * L'outil de rang i a pour image l'outil de rang i du mélange retenu.
  *
- * **Test absent, jamais bloquant** (§7, protocole 0.31, D73 (15)) : « Quand deux outils du
- * dérangement ont le même éditeur, le test contrefactuel d'outil est publié absent, avec ce motif,
- * sans bloquer le run. » `derangementOutilsOuAbsence` est l'entrée de l'appelant : elle rend le
- * dérangement, ou l'absence et son motif — `moins_de_deux_outils` sous deux outils,
- * `outils_du_meme_editeur` dès que deux outils du dérangement partagent un éditeur (casse exacte,
- * comme les formes), avec les éditeurs partagés et leurs outils. Aucun dérangement partiel : le §7
- * rend le test absent dès que « deux outils du dérangement » ont le même éditeur, quel que soit le
- * nombre des autres. L'absence ne dépend ni de la graine ni de l'ordre des outils reçus. Restent des
- * refus nommés, parce qu'ils sont des incohérences et non le cas que le §7 prévoit : graine non
- * conforme, outil permuté hors du périmètre ou déclaré autrement, identifiant en double, forme
- * blanche, et toute autre forme partagée (un outil hors dérangement qui porte l'éditeur d'un outil
- * permuté compris : le §7 ne le règle pas). `tirerDerangementOutils` garde ses préconditions et
- * n'est appelée que sur un dérangement défini.
+ * **Test absent, jamais bloquant** (§7, protocole 0.31, D73 (15) ; 0.33, D75 (6)) : « Quand deux
+ * outils du dérangement ont le même éditeur, le test contrefactuel d'outil est publié absent, avec
+ * ce motif, sans bloquer le run ; il en va de même quand un comparateur du périmètre a le même
+ * éditeur qu'un outil du dérangement. » `derangementOutilsOuAbsence` est l'entrée de l'appelant :
+ * elle rend le dérangement, ou l'absence et son motif — `moins_de_deux_outils` sous deux outils
+ * (`absenceFauteDOutils`), `outils_du_meme_editeur` dès que deux outils du dérangement partagent un
+ * éditeur, `comparateur_du_meme_editeur` sinon, dès qu'un comparateur du périmètre porte l'éditeur
+ * d'un outil du dérangement (casse exacte, comme les formes). `editeurs_partages` nomme chaque
+ * éditeur en cause avec ses outils, permutés et comparateurs confondus. Aucun dérangement partiel :
+ * le §7 rend le test absent dès que l'un de ces cas se présente, quel que soit le nombre des autres
+ * outils. L'absence ne dépend ni de la graine ni de l'ordre des outils reçus. Les comparateurs sont
+ * désignés par l'appelant (`comparateurs`, identifiants du périmètre hors dérangement) : ce module ne
+ * lit pas les familles. Restent des refus nommés, parce qu'ils sont des incohérences et non les cas
+ * que le §7 prévoit : graine non conforme, outil permuté hors du périmètre ou déclaré autrement,
+ * comparateur hors du périmètre, permuté ou en double, identifiant en double, forme blanche, et
+ * toute autre forme partagée (un outil hors dérangement qui n'est pas un comparateur et porte
+ * l'éditeur d'un outil permuté, deux comparateurs d'un éditeur qu'aucun outil du dérangement ne
+ * porte, un libellé égal à un éditeur : le §7 ne les règle pas).
+ * `tirerDerangementOutils` garde ses préconditions et n'est appelée que sur un dérangement défini.
  */
 
 import { graineDerivee } from "../../analysis/graines.ts";
@@ -107,29 +113,65 @@ export interface EditeurPartage {
   readonly outil_ids: readonly string[];
 }
 
+/** §7 0.24, 0.31 et 0.33 : pourquoi le dérangement des outils n'est pas tiré. */
+export const MOTIFS_ABSENCE_CONTREFACTUEL_OUTILS = ["moins_de_deux_outils", "outils_du_meme_editeur", "comparateur_du_meme_editeur"] as const;
+
+export type MotifAbsenceContrefactuelOutils = (typeof MOTIFS_ABSENCE_CONTREFACTUEL_OUTILS)[number];
+
 /**
- * Le contrefactuel d'outil publié absent, avec son motif (§7 0.24 et 0.31). `outils` : le nombre
- * d'outils du dérangement ; `editeurs_partages` : vide sous `moins_de_deux_outils`, triés par éditeur
- * sous `outils_du_meme_editeur`. Jamais 0 %, jamais de sous-ensemble ni de paire.
+ * Le contrefactuel d'outil publié absent, avec son motif (§7 0.24, 0.31 et 0.33). `outils` : le
+ * nombre d'outils du dérangement ; `editeurs_partages` : vide sous `moins_de_deux_outils`, triés par
+ * éditeur sous les deux autres motifs. Jamais 0 %, jamais de sous-ensemble ni de paire.
  */
 export interface AbsenceContrefactuelOutils {
   readonly statut: "indefini";
-  readonly motif: "moins_de_deux_outils" | "outils_du_meme_editeur";
+  readonly motif: MotifAbsenceContrefactuelOutils;
   readonly outils: number;
   readonly editeurs_partages: readonly EditeurPartage[];
 }
 
 export type IssueDerangementOutils = { readonly statut: "tire"; readonly derangement: DerangementOutils } | AbsenceContrefactuelOutils;
 
-/** L'entrée de l'appelant : le dérangement, ou le test absent avec son motif, sans exception (D73 (15)). */
-export function derangementOutilsOuAbsence(permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[], graine: GraineTirage): IssueDerangementOutils {
+/** Ce que `run.json#/perimetre/outils[]` dit de la famille d'un outil. */
+export interface OutilDeFamille {
+  readonly outil_id: string;
+  readonly famille: "assistant" | "comparateur";
+  readonly inclus: boolean;
+}
+
+/**
+ * §7 (0.27) : « Les outils du dérangement sont les assistants du run » — les assistants inclus du
+ * périmètre au gel, dans l'ordre du périmètre. Les comparateurs n'y entrent pas.
+ */
+export function outilsDuDerangement(outils: readonly OutilDeFamille[]): readonly string[] {
+  return outils.filter((outil) => outil.famille === "assistant" && outil.inclus).map((outil) => outil.outil_id);
+}
+
+/** §7 0.24 : sous deux outils au dérangement, le test est absent ; sinon `null`, rien n'est encore décidé. */
+export function absenceFauteDOutils(outils: number): AbsenceContrefactuelOutils | null {
+  return outils < MINIMUM_OUTILS_DERANGEMENT ? absence("moins_de_deux_outils", outils, []) : null;
+}
+
+/**
+ * L'entrée de l'appelant : le dérangement, ou le test absent avec son motif, sans exception (D73 (15),
+ * D75 (6)). `comparateurs` : les identifiants des comparateurs du périmètre (§7 0.33), tous hors du
+ * dérangement.
+ */
+export function derangementOutilsOuAbsence(
+  permutes: readonly OutilNomme[],
+  perimetre: readonly OutilNomme[],
+  graine: GraineTirage,
+  comparateurs: readonly string[],
+): IssueDerangementOutils {
   verifierIdentifiants(perimetre);
   perimetre.forEach(exigerFormesNonBlanches);
   exigerDansLePerimetre(permutes, perimetre);
+  const outils_comparateurs = comparateursDuPerimetre(comparateurs, permutes, perimetre);
   verifierGraine(graine, "du dérangement des outils");
-  if (permutes.length < MINIMUM_OUTILS_DERANGEMENT) return absence("moins_de_deux_outils", permutes.length, []);
-  const partages = editeursPartages(permutes);
-  if (partages.length > 0) return absence("outils_du_meme_editeur", permutes.length, partages);
+  const faute = absenceFauteDOutils(permutes.length);
+  if (faute !== null) return faute;
+  const partages = editeursPartages(permutes, outils_comparateurs);
+  if (partages.length > 0) return absence(motifDesPartages(partages, permutes), permutes.length, partages);
   return { statut: "tire", derangement: tirerDerangementOutils(permutes, perimetre, graine) };
 }
 
@@ -215,10 +257,15 @@ function exigerNonBlanche(forme: string, porteur: string): void {
   if (forme.trim().length === 0) throw new FormesOutilsAmbigues(`${porteur} vide ou blanc : il nommerait n'importe quel texte.`);
 }
 
-/** Les éditeurs portés par au moins deux outils, triés par éditeur, leurs outils par `outil_id`. */
-function editeursPartages(permutes: readonly OutilNomme[]): readonly EditeurPartage[] {
+/**
+ * Les éditeurs d'un outil permuté que portent au moins deux outils, permutés ou comparateurs, triés
+ * par éditeur, leurs outils par `outil_id`. Un éditeur que ne portent que des comparateurs n'en est
+ * pas : le §7 ne le règle pas (refus de `verifierOutils` au tirage).
+ */
+function editeursPartages(permutes: readonly OutilNomme[], comparateurs: readonly OutilNomme[]): readonly EditeurPartage[] {
+  const editeurs_permutes = new Set(permutes.map((outil) => outil.editeur));
   const parEditeur = new Map<string, string[]>();
-  for (const outil of permutes) {
+  for (const outil of [...permutes, ...comparateurs.filter((comparateur) => editeurs_permutes.has(comparateur.editeur))]) {
     const ids = parEditeur.get(outil.editeur);
     if (ids === undefined) parEditeur.set(outil.editeur, [outil.outil_id]);
     else ids.push(outil.outil_id);
@@ -229,7 +276,26 @@ function editeursPartages(permutes: readonly OutilNomme[]): readonly EditeurPart
     .sort((a, b) => comparerChaines(a.editeur, b.editeur));
 }
 
-function absence(motif: AbsenceContrefactuelOutils["motif"], outils: number, editeurs_partages: readonly EditeurPartage[]): AbsenceContrefactuelOutils {
+/** Deux outils du dérangement sous un même éditeur l'emportent ; sinon, c'est un comparateur qui le partage. */
+function motifDesPartages(partages: readonly EditeurPartage[], permutes: readonly OutilNomme[]): MotifAbsenceContrefactuelOutils {
+  const ids = new Set(permutes.map((outil) => outil.outil_id));
+  const entre_permutes = partages.some((partage) => partage.outil_ids.filter((id) => ids.has(id)).length > 1);
+  return entre_permutes ? "outils_du_meme_editeur" : "comparateur_du_meme_editeur";
+}
+
+/** Les comparateurs désignés, lus au périmètre : chacun y figure, une fois, hors du dérangement. */
+function comparateursDuPerimetre(comparateurs: readonly string[], permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[]): readonly OutilNomme[] {
+  if (new Set(comparateurs).size !== comparateurs.length) throw new FormesOutilsAmbigues("comparateur en double.");
+  const permutes_ids = new Set(permutes.map((outil) => outil.outil_id));
+  const permutes_aussi = comparateurs.filter((id) => permutes_ids.has(id));
+  if (permutes_aussi.length > 0) throw new FormesOutilsAmbigues(`comparateur(s) au dérangement : ${permutes_aussi.join(", ")}.`);
+  const connus = new Map(perimetre.map((outil) => [outil.outil_id, outil]));
+  const etrangers = comparateurs.filter((id) => !connus.has(id));
+  if (etrangers.length > 0) throw new FormesOutilsAmbigues(`comparateur(s) absent(s) du périmètre : ${etrangers.join(", ")}.`);
+  return perimetre.filter((outil) => comparateurs.includes(outil.outil_id));
+}
+
+function absence(motif: MotifAbsenceContrefactuelOutils, outils: number, editeurs_partages: readonly EditeurPartage[]): AbsenceContrefactuelOutils {
   return { statut: "indefini", motif, outils, editeurs_partages };
 }
 

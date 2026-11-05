@@ -23,6 +23,16 @@
  *    `run.json` (`inscription-contrefactuel.ts`) : retrait éventuel d'un juge, échantillon à 25 %.
  *    Deux juges retirés (D16 (3)) : le test est inscrit avec l'invalidation du run (la raison, la
  *    date ; statut inchangé, D51 (2)), et la chaîne s'arrête là.
+ * 3 bis. **Contrefactuel d'outil** (§7, « Conflit d'intérêts » ; D75 (7)). Seuls les juges non
+ *    retirés au test des candidats y sont mesurés : il le suit. Son absence se publie dans
+ *    `run.json#/contrefactuel_outils` (`publication-contrefactuel-outils.ts`,
+ *    `inscription-contrefactuel-outils.ts`), une fois. Aujourd'hui, la chaîne ne décide que
+ *    l'absence que l'instantané du gel suffit à établir : moins de deux assistants inclus
+ *    (`outilsDuDerangement`, `absenceFauteDOutils`). Au-delà, l'éditeur partagé et le test lui-même
+ *    exigent le libellé et l'éditeur de chaque outil, que le §7 lit à l'instantané du gel et que
+ *    `run.json` ne porte pas encore : rien n'est inscrit, et le résultat le dit
+ *    (`libelles_et_editeurs_hors_du_gel`), jamais en silence. Un run invalide ou un test des
+ *    candidats en attente ne le passe pas (`contrefactuel_candidats_non_conclu`).
  * 4. **Masse.** Le run est relu ; chaque réponse obtenue est notée par les juges non retirés (un juge
  *    retiré n'est plus appelé, ses notations du sous-ensemble restent écrites et sont écartées par
  *    `decider`, D13), puis décidée (`decider`) avec l'appartenance à l'échantillon humain
@@ -81,6 +91,9 @@ import { construireCharge, type DemandeCharge, type QuestionPosee, type Referenc
 import { testerContrefactuel, type ContrefactuelFauteDInterroges, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
 import { decider, type MotifAttente } from "./decision.ts";
 import { MINIMUM_INTERROGES_DERANGEMENT, tirerDerangement, type Derangement } from "./derangement.ts";
+import { absenceFauteDOutils, outilsDuDerangement } from "./derangement-outils.ts";
+import { inscrireContrefactuelOutils } from "./inscription-contrefactuel-outils.ts";
+import { publierAbsenceContrefactuelOutils, type BlocContrefactuelOutils } from "./publication-contrefactuel-outils.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { tirerEchantillonHumain, tirerSousEnsembleContrefactuel } from "./echantillons.ts";
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
@@ -131,9 +144,15 @@ export type EtatContrefactuel =
   | { readonly statut: "en_attente_test_liens"; readonly reponse_ids: readonly Ulid[] }
   | { readonly statut: "run_invalide"; readonly raison: string; readonly resultat: ResultatContrefactuel; readonly inscription: IssueInscription };
 
+/** Le contrefactuel d'outil : son absence inscrite, ou la raison pour laquelle rien ne l'est (étape 3 bis). */
+export type EtatContrefactuelOutils =
+  | { readonly statut: IssueInscription; readonly bloc: BlocContrefactuelOutils }
+  | { readonly statut: "non_joue"; readonly motif: "contrefactuel_candidats_non_conclu" | "libelles_et_editeurs_hors_du_gel" };
+
 export interface ResultatChaine {
   readonly run_id: Ulid;
   readonly contrefactuel: EtatContrefactuel;
+  readonly contrefactuel_outils: EtatContrefactuelOutils;
   /** Les réponses dont le verdict est écrit, maintenant ou par une exécution précédente. */
   readonly verdicts: readonly Ulid[];
   /** Les réponses sans verdict, chacune avec ses motifs. */
@@ -236,10 +255,12 @@ export async function noterRun(reponses: readonly ReponseANoter[], env: Environn
   const etat = ouvrir(reponses, env);
   const contrefactuel = await passerContrefactuel(etat);
   if (contrefactuel.statut === "en_attente_test_liens" || contrefactuel.statut === "run_invalide") {
-    return { run_id: etat.run.id, contrefactuel, verdicts: [], attentes: etat.reponses.map((r) => attenteSansMasse(r, contrefactuel.statut)) };
+    const contrefactuel_outils: EtatContrefactuelOutils = { statut: "non_joue", motif: "contrefactuel_candidats_non_conclu" };
+    return { run_id: etat.run.id, contrefactuel, contrefactuel_outils, verdicts: [], attentes: etat.reponses.map((r) => attenteSansMasse(r, contrefactuel.statut)) };
   }
+  const contrefactuel_outils = passerContrefactuelOutils(etat);
   const run = runDeNotationDe(lireRunJson(env.repertoire_run));
-  return { run_id: etat.run.id, contrefactuel, ...(await noterEnMasse(etat, run)) };
+  return { run_id: etat.run.id, contrefactuel, contrefactuel_outils, ...(await noterEnMasse(etat, run)) };
 }
 
 function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): Etat {
@@ -549,6 +570,20 @@ function renvoisDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[]): 
 function notationsDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[]): readonly NotationIndividuelle[] {
   const objets = new Set(paires.flatMap((p) => [p.reponse_id, p.contrefactuelle_id]));
   return etat.notations.filter((n) => n.notateur.type === "juge" && objets.has(n.objet_note.id));
+}
+
+/* ------------------------------------------------------------------ contrefactuel d'outil */
+
+/**
+ * Étape 3 bis : sous deux assistants inclus au gel, le test d'outil est absent et son absence est
+ * inscrite, sans tirage ni juge. Au-delà, rien n'est inscrit : la suite exige le libellé et
+ * l'éditeur de chaque outil, absents de l'instantané du gel (§7).
+ */
+function passerContrefactuelOutils(etat: Etat): EtatContrefactuelOutils {
+  const absence = absenceFauteDOutils(outilsDuDerangement(etat.run.perimetre.outils).length);
+  if (absence === null) return { statut: "non_joue", motif: "libelles_et_editeurs_hors_du_gel" };
+  const bloc = publierAbsenceContrefactuelOutils(absence);
+  return { statut: inscrireContrefactuelOutils(etat.env.repertoire_run, bloc), bloc };
 }
 
 /* ------------------------------------------------------------------ notation de masse */
