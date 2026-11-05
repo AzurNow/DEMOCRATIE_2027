@@ -1,0 +1,20 @@
+---
+import BasculeTheme from "./BasculeTheme.astro";
+
+const liens = [
+  { href: "#parcours", libelle: "Parcours" },
+  { href: "#questions", libelle: "Questions" },
+  { href: "#limites", libelle: "Limites" },
+  { href: "#contester", libelle: "Contester" },
+  { href: "#faq", libelle: "FAQ" },
+];
+---
+
+<header class="entete">
+  <a class="lien-evitement" href="#contenu">Aller au contenu</a>
+  <a class="entete__nom" href="#accroche">Banc d'essai 2027</a>
+  <nav class="entete__nav" aria-label="Sections de la page">
+    {liens.map((lien) => <a class="entete__lien" href={lien.href}>{lien.libelle}</a>)}
+  </nav>
+  <BasculeTheme />
+</header>

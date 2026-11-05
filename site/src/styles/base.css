@@ -1,0 +1,159 @@
+/* Reset léger, typographie, liens, focus, utilitaires partagés. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: var(--police-texte);
+  font-size: 1.0625rem; /* 17 px */
+  line-height: 1.65;
+  overflow-wrap: break-word;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+.etape__numero,
+.carte__code {
+  font-family: var(--police-titre);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere; /* Silkscreen est large : pas de débordement à 320 px */
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.5rem, 7vw, 2.75rem);
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.25rem, 5vw, 1.875rem);
+}
+
+h3 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1rem, 4vw, 1.25rem);
+}
+
+p {
+  margin: 0 0 1rem;
+  max-width: var(--largeur-texte);
+}
+
+ul,
+ol {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+li {
+  margin-bottom: 0.4rem;
+}
+
+strong {
+  font-weight: 700;
+}
+
+a {
+  color: var(--lien);
+  text-decoration: underline;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration-thickness: 0.2em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* Texte réservé aux lecteurs d'écran. */
+.visuellement-cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Bloc mis en avant. */
+.encadre {
+  max-width: var(--largeur-texte);
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--fond);
+  border: var(--trait) solid var(--bordure);
+  border-left: 0.5rem solid var(--accent-1);
+  box-shadow: var(--ombre-dure) var(--ombre-dure) 0 var(--bordure);
+}
+
+.encadre > :last-child {
+  margin-bottom: 0;
+}
+
+/* Tout exemple : la mention « exemple fictif » est ajoutée ici et ne peut pas être oubliée. */
+.exemple-fictif {
+  position: relative;
+  max-width: var(--largeur-texte);
+  margin: 1.75rem 0 1.25rem;
+  padding: 1.5rem 1.25rem 1rem;
+  background: var(--fond);
+  border: var(--trait) dashed var(--accent-3);
+}
+
+.exemple-fictif::before {
+  content: "Exemple fictif";
+  position: absolute;
+  top: -0.9rem;
+  left: 0.75rem;
+  padding: 0.1rem 0.6rem;
+  background: var(--fond);
+  border: var(--trait) solid var(--accent-3);
+  color: var(--accent-3);
+  font-family: var(--police-titre);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.exemple-fictif > :last-child {
+  margin-bottom: 0;
+}
+
+.section__chapo {
+  font-size: 1.1875rem;
+  color: var(--texte-doux);
+}
+
+.renvoi {
+  margin-bottom: 0;
+  font-size: 0.9375rem;
+  color: var(--texte-doux);
+}

@@ -1,0 +1,131 @@
+/*
+ * Jetons de la page : couleurs des deux thèmes et mesures communes.
+ *
+ * Quatre sélecteurs (contrat commun) :
+ *   :root                                  thème clair (valeur par défaut)
+ *   @media dark + :root:not([data-theme="clair"])   le navigateur demande le sombre, rien de choisi
+ *   :root[data-theme="sombre"]             choix explicite du visiteur
+ *   :root[data-theme="clair"]              choix explicite du visiteur
+ * Les deux blocs d'un même thème portent EXACTEMENT les mêmes valeurs ; tests/site/contraste.test.ts
+ * le vérifie et calcule le contraste WCAG de chaque couple texte/fond.
+ *
+ * Palette originale : nuit indigo, orchidée, menthe glacée, abricot. Les valeurs hexadécimales sont
+ * écrites en dur ici et nulle part ailleurs ; le reste des feuilles n'utilise que des var(--…).
+ */
+
+:root {
+  /* Mesures et polices (identiques dans les deux thèmes). */
+  --police-titre: "Silkscreen", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --police-texte: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --gouttiere: 1rem;
+  --largeur-texte: 44rem;
+  --largeur-page: 72rem;
+  --rayon: 0; /* pixel art : angles vifs */
+  --trait: 2px;
+  --ombre-dure: 4px;
+
+  /* Thème clair. */
+  color-scheme: light;
+  --fond: #f8f5ff;
+  --fond-section: #ece6fb;
+  --texte: #191433;
+  --texte-doux: #4b4572;
+  --accent-1: #6c2bd0;
+  --accent-2: #05695a;
+  --accent-3: #9a3b00;
+  --bordure: #6b5fa8;
+  --lien: #2b45c4;
+  --focus: #b03a00;
+
+  --px-ciel: #cfe0ff;
+  --px-sol: #b9a8e8;
+  --px-mur: #a79bd6;
+  --px-encre: #1b1636;
+  --px-clair: #ffffff;
+  --px-corps: #6a7f9f;
+  --px-accent-1: #6c2bd0;
+  --px-accent-2: #0a9a82;
+  --px-accent-3: #e07a1f;
+  --px-papier: #fffdf3;
+  --px-ecran: #d9f6ee;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="clair"]) {
+    color-scheme: dark;
+    --fond: #0d0a1f;
+    --fond-section: #171232;
+    --texte: #ece9ff;
+    --texte-doux: #b7b0dc;
+    --accent-1: #c88cff;
+    --accent-2: #4eeac4;
+    --accent-3: #ffb066;
+    --bordure: #6f63b3;
+    --lien: #86c8ff;
+    --focus: #ffd23f;
+
+    --px-ciel: #1d1747;
+    --px-sol: #2a2360;
+    --px-mur: #3a3170;
+    --px-encre: #07050f;
+    --px-clair: #cfc8ff;
+    --px-corps: #7f93b5;
+    --px-accent-1: #c88cff;
+    --px-accent-2: #4eeac4;
+    --px-accent-3: #ffb066;
+    --px-papier: #e9e4d4;
+    --px-ecran: #0f2a30;
+  }
+}
+
+:root[data-theme="sombre"] {
+  color-scheme: dark;
+  --fond: #0d0a1f;
+  --fond-section: #171232;
+  --texte: #ece9ff;
+  --texte-doux: #b7b0dc;
+  --accent-1: #c88cff;
+  --accent-2: #4eeac4;
+  --accent-3: #ffb066;
+  --bordure: #6f63b3;
+  --lien: #86c8ff;
+  --focus: #ffd23f;
+
+  --px-ciel: #1d1747;
+  --px-sol: #2a2360;
+  --px-mur: #3a3170;
+  --px-encre: #07050f;
+  --px-clair: #cfc8ff;
+  --px-corps: #7f93b5;
+  --px-accent-1: #c88cff;
+  --px-accent-2: #4eeac4;
+  --px-accent-3: #ffb066;
+  --px-papier: #e9e4d4;
+  --px-ecran: #0f2a30;
+}
+
+:root[data-theme="clair"] {
+  color-scheme: light;
+  --fond: #f8f5ff;
+  --fond-section: #ece6fb;
+  --texte: #191433;
+  --texte-doux: #4b4572;
+  --accent-1: #6c2bd0;
+  --accent-2: #05695a;
+  --accent-3: #9a3b00;
+  --bordure: #6b5fa8;
+  --lien: #2b45c4;
+  --focus: #b03a00;
+
+  --px-ciel: #cfe0ff;
+  --px-sol: #b9a8e8;
+  --px-mur: #a79bd6;
+  --px-encre: #1b1636;
+  --px-clair: #ffffff;
+  --px-corps: #6a7f9f;
+  --px-accent-1: #6c2bd0;
+  --px-accent-2: #0a9a82;
+  --px-accent-3: #e07a1f;
+  --px-papier: #fffdf3;
+  --px-ecran: #d9f6ee;
+}
