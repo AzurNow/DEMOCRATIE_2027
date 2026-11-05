@@ -18,6 +18,60 @@ Options :
 
 Lots portant cette décision : aucun
 
+### D82 — Une saisie de l'application est rendue au juge avec « Réponse tronquée : ABSENT » (charge-juge-v6, D75 (24)). Deux points restent : (1) le corps de prompts/judge-1.0.0.md n'explique pas ce que signifie ABSENT pour la troncature ; (2) l'écran de notation humaine affiche une troncature absente comme « pas d'alerte », c'est-à-dire comme false, alors que le juge lit ABSENT. Faut-il agir ?
+
+Questions ouvertes du lot D75 (24), PR #313. L'annexe D (0.33) ne demande que le rendu ABSENT. Le §7 veut qu'un humain reçoive exactement ce que reçoit un juge : sur (2), l'humain reçoit moins (pas de marqueur de canal), pas plus. Toucher au corps du prompt est un amendement au protocole.
+
+Options :
+
+1. (1) ne rien changer au corps du prompt, le juge notant de toute façon sur ce que la réponse contient ; (2) afficher à l'écran humain « troncature : non renseignée (saisie de l'application) », pour que l'humain voie ce que voit le juge (contenu-vue.ts, vue-annotateur-v5).
+2. (1) ajouter une phrase au corps du prompt (amendement) ; (2) comme l'option 1.
+3. Ne rien changer ni au prompt ni à l'écran.
+
+**Recommandation :** Option 1 : le prompt reste inchangé, et l'écran humain suit le juge, ce qui tient la symétrie du §7 sans amendement.
+
+Lots portant cette décision : aucun
+
+### D83 — pnpm liens:textes écrit le texte intégral extrait de chaque page citée sous volume/liens/textes/<texte_sha256>.txt, qui part sur Zenodo avec le volume. Le §9 retient les pages citées ; leur texte intégral en est une copie fidèle. Faut-il le sortir du volume comme les pages (D75 (4)) ?
+
+Question ouverte du lot D75 (4), PR #315, qui sort les pages de volume/ sans toucher aux textes (hors brief). Les fiches volume/liens/extractions/*.json ne portent qu'empreinte, longueur et extracteur, et peuvent rester publiées.
+
+Options :
+
+1. Sortir aussi les textes du volume, sous runs/<date>/pages-citees/textes/, en gardant les fiches d'extraction dans le volume : un lot de la forme de D75 (4).
+2. Publier les textes en jugeant qu'un texte extrait n'est pas « la page », et l'écrire au §9.
+3. Décider au cas par cas selon la licence de la page, ce que le banc ne sait pas établir.
+
+**Recommandation :** Option 1 : même raison que pour les pages (droits d'autrui), et l'empreinte publiée suffit à vérifier le texte.
+
+Lots portant cette décision : aucun
+
+### D85 — Le §7 rend le contrefactuel d'outil absent quand un comparateur du périmètre partage l'éditeur d'un outil permuté (D75 (6)). Un outil hors dérangement qui n'est pas un comparateur (un assistant exclu, par exemple) et partage cet éditeur lève encore FormesOutilsAmbigues et bloque le run, alors que l'ambiguïté de remplacement est la même. Étendre l'absence à tout outil du périmètre hors dérangement ?
+
+Question B du lot D75 (2), (6), (7), PR #317. Le texte ne nomme que les comparateurs ; l'étendre est un amendement.
+
+Options :
+
+1. Amender le §7 : « un outil du périmètre hors dérangement » au lieu de « un comparateur », puis étendre le code.
+2. Garder la lecture stricte : un tel cas bloque le run.
+
+**Recommandation :** Option 1 : même ambiguïté, même traitement ; un blocage de run pour un cas que le test sait publier absent n'apporte rien.
+
+Lots portant cette décision : aucun
+
+### D86 — Deux comparateurs du même éditeur, qu'aucun outil permuté ne porte, lèvent FormesOutilsAmbigues au tirage du contrefactuel d'outil, alors que leurs formes sont seulement cherchées, jamais remplacées. Le §7 n'en dit rien. Relâcher ce refus ?
+
+Question C du lot D75 (2), (6), (7), PR #317. Le refus vient de verifierOutils (pipeline/notation/derangement-outils.ts) ; il bloque un run sans que le protocole l'écrive.
+
+Options :
+
+1. Relâcher verifierOutils pour les formes qu'aucun outil permuté ne porte ; aucune mesure ne change.
+2. Garder le refus.
+
+**Recommandation :** Option 1 : retire un blocage que le protocole n'écrit pas, sans effet sur aucune mesure.
+
+Lots portant cette décision : aucun
+
 ## Décisions tranchées
 
 ### D1 — Brancher une intégration continue GitHub Actions qui exécute `pnpm check` et `pnpm test` sur chaque PR ?
@@ -336,6 +390,14 @@ Lots portant cette décision : aucun
 
 **Décision du 2026-11-05 :** Option 1 (décision de l'auteur du 2026-11-05), après le code restant de D75 : geler --simule hors de runs/, notation:dry --run=<gel simulé>, analyze sur un run simulé désigné avec ses items (D75 (13)), puis la section « De bout en bout en mode simulé » de runs/README.md et .env.example.
 
+### D84 — Le §7 veut que le libellé et l'éditeur de chaque outil du contrefactuel d'outil soient « ceux de l'instantané du périmètre inscrit au gel », mais run.schema.json#/perimetre/outils[] ne les porte pas (charger-perimetre.ts les retire). Sans eux, la chaîne ne peut décider ni les motifs d'éditeur ni l'éligibilité, et répond non_joue (libelles_et_editeurs_hors_du_gel) au-delà d'un assistant. Où les lire ?
+
+**Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt, le §7 la prescrivant déjà). Lot de gel à venir, avec la vague (14), (20), (21), (27).
+
+### D87 — Depuis D75 (16), le taux d'un comparateur lit la note de chaque lecture dans son verdict, mais aucun code n'appelle verdictDeLecture (pipeline/notation/lectures-comparateur.ts) : sur un vrai run, tout comparateur qui affiche une lecture sortirait absent (lectures_sans_verdict). Qui écrit les verdicts de lecture ?
+
+**Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation à venir, avant D80.
+
 ### D9 — Durcir le lint au-delà des deux règles de complexité fixées le 2026-09-18 ?
 
 **Décision du 2026-09-23 :** Option 1 : typescript-eslint typé (no-unused-vars, no-floating-promises, no-misused-promises, await-thenable, only-throw-error, switch-exhaustiveness-check, no-unnecessary-type-assertion, no-unnecessary-condition, no-explicit-any, no-non-null-assertion, eqeqeq, no-fallthrough) et ruff C901, F, B. Toujours aucune règle de style.
@@ -384,6 +446,10 @@ flowchart LR
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
   dec_D81{{"D81<br/>Le §6 (QR9) ne nomme que le motif comme divergence qui appel…"}}:::decision
+  dec_D82{{"D82<br/>Une saisie de l'application est rendue au juge avec « Répons…"}}:::decision
+  dec_D83{{"D83<br/>pnpm liens:textes écrit le texte intégral extrait de chaque …"}}:::decision
+  dec_D85{{"D85<br/>Le §7 rend le contrefactuel d'outil absent quand un comparat…"}}:::decision
+  dec_D86{{"D86<br/>Deux comparateurs du même éditeur, qu'aucun outil permuté ne…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
