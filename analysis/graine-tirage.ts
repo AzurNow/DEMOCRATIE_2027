@@ -7,13 +7,20 @@
  * (`GENERATEUR_DU_TIRAGE`) est refusée avant tout tirage (constat n° 24) : un tiers qui rejouerait
  * avec le générateur déclaré obtiendrait un autre tirage.
  *
- * Seule définition, partagée par le tirage (`tirage.ts:tirer`) et les tirages de notation
- * (`pipeline/notation/echantillons.ts`, `derangement.ts`, `alias-candidats.ts`), qui vérifient
+ * Seule définition, partagée par le tirage (`pipeline/questions/tirage.ts:tirer`) et les tirages de
+ * notation (`pipeline/notation/echantillons.ts`, `derangement.ts`, `analysis/alias-candidats.ts`), qui vérifient
  * chacun leur propre graine contre le même générateur (constat n° 18 de la revue du 2026-10-12).
  */
 
-import { ALGORITHME_ALEA } from "../../validation/domaine/alea.ts";
-import type { GraineTirage } from "./types.ts";
+import { ALGORITHME_ALEA } from "../validation/domaine/alea.ts";
+
+/** Une graine publiée (`schema/tirage.schema.json#/properties/graine_tirage`, `run.json#/graines`). */
+export interface GraineTirage {
+  readonly valeur: number;
+  readonly algorithme: string;
+  readonly bibliotheque: string;
+  readonly version: string;
+}
 
 /**
  * Le générateur que les tirages emploient réellement, tel qu'une graine publiée doit le déclarer

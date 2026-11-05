@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { etatDesTaches } from "../../notation-humaine/serveur/taches.ts";
 import type { Contexte } from "../../notation-humaine/serveur/contexte.ts";
 import { valider } from "../../outils/schemas/valider.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import { appeler, fournisseurQuiConnait, humain, juge, JUGES, LIEN, monter, SAISIE_EXACTE, type Monde } from "./fixture.ts";
 
 let monde: Monde | null = null;

@@ -17,6 +17,7 @@ import type {
   Mesure,
   TypeItem,
 } from "../../validation/domaine/types.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 
 /*
  * Chaque liste fermée de ce fichier recopie un `enum` de `schema/` ; son union est dérivée de la
@@ -232,13 +233,6 @@ export interface EntreeTirage {
   readonly empreinte_texte_precedente?: string;
 }
 
-export interface GraineTirage {
-  readonly valeur: number;
-  readonly algorithme: string;
-  readonly bibliotheque: string;
-  readonly version: string;
-}
-
 /**
  * §5 (protocole 0.9) : pourquoi une question n'entre pas au tirage alors que ses items sont
  * vérifiés. `hors_validite` : la fenêtre de validité d'un item ne contient pas l'instant du gel ;
@@ -349,14 +343,6 @@ export interface Tirage {
 /** `schema/perimetre.schema.json#/$defs/candidat/properties/statut_au_gel`, recopiée une seule fois ici. */
 export const STATUTS_AU_GEL = ["actif", "nouveau", "retire"] as const;
 export type StatutAuGel = (typeof STATUTS_AU_GEL)[number];
-
-/**
- * §3 (protocole 0.11 ; `entre_deux_tours` en 0.27, D68) : chaque run déclare son régime d'inclusion.
- * `schema/perimetre.schema.json#/properties/regime_inclusion` et
- * `schema/run.schema.json#/properties/perimetre/properties/regime_inclusion`.
- */
-export const REGIMES_INCLUSION = ["avant_liste_officielle", "liste_officielle", "entre_deux_tours"] as const;
-export type RegimeInclusion = (typeof REGIMES_INCLUSION)[number];
 
 /**
  * Le nom d'un candidat, saisi par l'auteur dans le périmètre du run : `libelle` (prénom et nom tels

@@ -46,7 +46,8 @@ import { itemsPAuGel } from "./couverture.ts";
 import { FENETRE_NOTICES_MOIS, inclusionAvantListe, SONDAGES_MINIMUM } from "./perimetre.ts";
 import { AMORCE_GROUPE_ATTRIBUTION } from "./tirage.ts";
 import { THEMES } from "./types.ts";
-import type { Item, Mesure, ParametresTirage, RegimeInclusion, StatutAuGel } from "./types.ts";
+import type { Item, Mesure, ParametresTirage, StatutAuGel } from "./types.ts";
+import type { RegimeInclusion } from "../../analysis/types-run.ts";
 
 /**
  * §4 : « Un candidat comptant moins de 10 items P vérifiés à la date du run est rapporté à part. »

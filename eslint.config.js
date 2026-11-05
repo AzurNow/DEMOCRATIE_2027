@@ -48,4 +48,35 @@ export default [
       "no-fallthrough": "error",
     },
   },
+  {
+    // CLAUDE.md, « Architecture » : `pipeline/` importe des fonctions et des types d'`analysis/`,
+    // jamais l'inverse (revue du 2026-11-05, constats 2 et 3). Un tiers lit `analysis/` seul pour
+    // vérifier les métriques. Types compris (`allowTypeImports` laissé à faux), et les imports
+    // dynamiques ou de type (`import("…")`) aussi.
+    files: ["analysis/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "(^|/)pipeline(/|$)",
+              message: "analysis/ n'importe rien de pipeline/ (CLAUDE.md, « Architecture ») : déplacer la règle partagée dans analysis/.",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ImportExpression[source.value=/(^|\\u002F)pipeline(\\u002F|$)/]",
+          message: "analysis/ n'importe rien de pipeline/ (CLAUDE.md, « Architecture »), pas même dynamiquement.",
+        },
+        {
+          selector: "TSImportType[argument.literal.value=/(^|\\u002F)pipeline(\\u002F|$)/]",
+          message: "analysis/ n'importe rien de pipeline/ (CLAUDE.md, « Architecture »), pas même un type.",
+        },
+      ],
+    },
+  },
 ];

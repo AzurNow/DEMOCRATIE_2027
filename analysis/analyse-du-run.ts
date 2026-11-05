@@ -8,7 +8,7 @@
  * 1. `lireEntreesDuRun` lit le run (`lecture-run.ts:lireRun`, qui valide chaque fichier) et ses
  *    notations individuelles (`lireNotationsDuRun`). Le plan d'interrogation et le tirage de
  *    l'échantillon humain sont **injectés** par l'appelant (`outils/analyze.ts`) : `analysis/`
- *    n'importe pas le code d'interrogation ni de notation (flux à sens unique, CLAUDE.md).
+ *    n'importe rien de `pipeline/` (CLAUDE.md, « Architecture » ; tenu par `eslint.config.js`).
  * 2. `assembler` (`filtre.ts`) construit les unités ; seules celles du canal API entrent dans le
  *    partage et dans les sections du §8. Celles du canal application (QR8) n'entrent que dans l'écart
  *    API / application, section exploratoire.
@@ -100,8 +100,8 @@ import { candidatsComparables, cleCouple, couplesComparables, type PartageCandid
 import { STRATE_RECENTE, unitesDeLaStrateRecente, type ItemDate } from "./strate-recente.ts";
 import { tendanceDuRun, type TendanceDuRun } from "./tendance.ts";
 import type { CandidatAuGel, CategorieRetenue, CoupleOutilMode, EntreeTirage, IdentifiantCourt, Item, LectureComparateur, Mode, Notation, Question, Reponse, Run, Ulid } from "./types.ts";
-import type { NotationIndividuelle, RenvoiHumain } from "../pipeline/notation/types.ts";
-import { CHAMPS_HORS_EMPREINTE_DU_RUN, retirerChamps } from "../pipeline/run/champs-posterieurs-au-gel.ts";
+import type { NotationIndividuelle, RenvoiHumain } from "./types-notation.ts";
+import { CHAMPS_HORS_EMPREINTE_DU_RUN, retirerChamps } from "./champs-posterieurs-au-gel.ts";
 
 /* ------------------------------------------------------------------ entrées */
 
@@ -159,7 +159,7 @@ export interface FichiersGelesDuRun {
 /**
  * Les questions du sous-échantillon de l'application d'un run lu (§6). Injecté par l'appelant —
  * `pipeline/interrogation/sous-echantillon-application.ts:questionsDuSousEchantillonDuRun` — comme
- * le plan d'interrogation : `analysis/` n'importe pas le code d'interrogation.
+ * le plan d'interrogation : `analysis/` n'importe rien de `pipeline/` (CLAUDE.md, « Architecture »).
  */
 export type SousEchantillonDuRun = (fichiers: FichiersGelesDuRun) => readonly string[];
 
@@ -174,8 +174,8 @@ export type EtatDeLecture =
 /**
  * La règle de l'échantillon sur les notations des lectures (§6 : deux humains à l'aveugle, un
  * troisième s'ils divergent ; une notation sans déclaration d'aveuglement refusée, D62). Injectée
- * (`pipeline/notation/lectures-comparateur.ts:etatsDesLectures`) : `analysis/` n'importe pas le code de
- * notation.
+ * (`pipeline/notation/lectures-comparateur.ts:etatsDesLectures`) : `analysis/` n'importe rien de
+ * `pipeline/` (CLAUDE.md, « Architecture »).
  */
 export type EtatsDesLectures = (run_id: Ulid, lectures: readonly LectureComparateur[], notations: readonly NotationIndividuelle[]) => readonly EtatDeLecture[];
 
@@ -906,7 +906,7 @@ export function collecterGraines(document: object): GrainePubliee[] {
  * SHA-256 de la forme canonique de `run.json`, sans les champs qu'il reçoit après l'analyse, pour
  * qu'une analyse relancée ensuite reste identique : le statut, la publication et le dépôt (§9), et
  * ce que `pnpm go-no-go` y écrit. La liste vit avec les autres champs écrits après le gel
- * (`pipeline/run/champs-posterieurs-au-gel.ts:CHAMPS_HORS_EMPREINTE_DU_RUN`), une seule fois.
+ * (`analysis/champs-posterieurs-au-gel.ts:CHAMPS_HORS_EMPREINTE_DU_RUN`), une seule fois.
  */
 export function empreinteDuRun(run: object): string {
   return createHash("sha256").update(canoniser(retirerChamps(run, CHAMPS_HORS_EMPREINTE_DU_RUN)), "utf8").digest("hex");

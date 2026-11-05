@@ -18,7 +18,8 @@
 
 import { estInterroge } from "../../analysis/candidats-interroges.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import type { RegimeInclusion, StatutAuGel } from "../questions/types.ts";
+import type { StatutAuGel } from "../questions/types.ts";
+import type { RegimeInclusion } from "../../analysis/types-run.ts";
 
 /** La part du périmètre au gel (`run.json#/perimetre`) que lit cette règle. */
 export interface PerimetreAuGel {

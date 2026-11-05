@@ -17,7 +17,7 @@ import {
   TypeRunInconnu,
   type MaillonDeRemplacement,
 } from "../../pipeline/interrogation/fenetre.ts";
-import { dateParis, instantParis } from "../../pipeline/interrogation/heure-paris.ts";
+import { dateParis, instantParis } from "../../analysis/heure-paris.ts";
 
 /** Aucun run du dépôt : un run qui n'est pas une réexécution n'en lit aucun. */
 function AUCUN_RUN(): readonly MaillonDeRemplacement[] {

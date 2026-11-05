@@ -23,9 +23,9 @@
  */
 
 import { canoniser } from "../../validation/domaine/empreinte.ts";
-import { lireInstant } from "../interrogation/heure-paris.ts";
-import { STATUT_EN_COURS, STATUT_PLANIFIE } from "./types.ts";
-import type { StatutRun } from "./types.ts";
+import { lireInstant } from "../../analysis/heure-paris.ts";
+import { STATUT_EN_COURS, STATUT_PLANIFIE } from "../../analysis/types-run.ts";
+import type { StatutRun } from "../../analysis/types-run.ts";
 
 export interface Invalidation {
   readonly motif: string;

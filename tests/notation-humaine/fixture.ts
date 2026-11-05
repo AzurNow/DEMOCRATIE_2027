@@ -15,7 +15,7 @@ import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import type { ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
 import { creerContexte, type Contexte } from "../../notation-humaine/serveur/contexte.ts";
 import { FOURNISSEUR_SANS_EXISTENCE, type FournisseurExistences } from "../../notation-humaine/serveur/fournisseur.ts";

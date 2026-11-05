@@ -20,8 +20,8 @@ import {
   publierSansReponseEligible,
   type BlocContrefactuelOutils,
 } from "../../pipeline/notation/publication-contrefactuel-outils.ts";
-import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/graine.ts";
-import type { GraineTirage } from "../../pipeline/questions/types.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { ErreurSchema, valider } from "../../outils/schemas/valider.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { runDeNotation } from "./fabriques.ts";

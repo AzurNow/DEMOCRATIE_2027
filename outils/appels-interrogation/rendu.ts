@@ -4,7 +4,8 @@
  * `docs/APPELS-INTERROGATION.md`, document engendré depuis le code de l'interrogation, qui documente
  * exactement quels appels faire. »
  *
- * Rien n'y est recopié à la main : les conditions viennent de `pipeline/interrogation/conditions.ts`,
+ * Rien n'y est recopié à la main : les conditions viennent de `pipeline/interrogation/conditions.ts`
+ * (le fuseau, de `analysis/heure-paris.ts`),
  * les en-têtes retirés de `editeur.ts`, et chaque requête est **construite par l'adaptateur
  * lui-même** (`construireRequete`, `parametresEffectifs`), avec une clé fictive, un modèle et un
  * texte en marque-place. Un adaptateur qui change sa requête change le document ; le test
@@ -18,12 +19,12 @@ import {
   DELAI_TENTATIVE_MS,
   DUREE_FENETRE_MS,
   ECHANTILLONS,
-  FUSEAU_DU_RUN,
   HEURE_OUVERTURE_FENETRE,
   JOUR_OUVERTURE_FENETRE,
   TENTATIVES_MAX,
   TOKENS_SORTIE_MAX,
 } from "../../pipeline/interrogation/conditions.ts";
+import { FUSEAU_DU_RUN } from "../../analysis/heure-paris.ts";
 import { EN_TETES_AUTHENTIFICATION, type Adaptateur } from "../../pipeline/interrogation/editeur.ts";
 import { adaptateurSimule } from "../../pipeline/interrogation/editeur-simule.ts";
 import { MODES, type Mode } from "../../pipeline/interrogation/types.ts";
@@ -67,7 +68,7 @@ function conditions(): string {
   return [
     "## Conditions figées (§6)",
     "",
-    "Valeurs lues dans `pipeline/interrogation/conditions.ts`, identiques pour tous les outils.",
+    "Valeurs lues dans `pipeline/interrogation/conditions.ts` (le fuseau, dans `analysis/heure-paris.ts`), identiques pour tous les outils.",
     "",
     "| Condition | Valeur |",
     "| --- | --- |",

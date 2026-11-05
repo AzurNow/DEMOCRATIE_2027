@@ -3,7 +3,7 @@
  * 0.9).
  *
  * **La reprise.** Une question est reprise si elle a le même identifiant et les mêmes empreintes
- * de texte qu'au run précédent (`signature.ts`, seule définition, partagée avec la tendance du
+ * de texte qu'au run précédent (`analysis/signature-question.ts`, seule définition, partagée avec la tendance du
  * §8). Par candidat, et pour les questions d'attribution sur l'ensemble des thèmes, le budget est
  * `⌊0,8 × questions tirées⌋`, compensations comprises. Il se consomme strate par strate, dans
  * l'ordre mélangé par la graine ; une strate sans assez de questions neuves est complétée par des
@@ -18,7 +18,7 @@
 
 import { decisionPanelAuGel } from "./contestation.ts";
 import { premisseFausseAuGel, reponseAttendue } from "./reponse-attendue.ts";
-import { signatureQuestion } from "./signature.ts";
+import { signatureQuestion } from "../../analysis/signature-question.ts";
 import { indexer, interrogesDe, itemDe, itemsGardesAuGel, themeDeQuestion } from "./tirabilite.ts";
 import type { GelDuRun, Index } from "./tirabilite.ts";
 import type { EntreeTirage, Item, ItemAuGel, Mesure, Question, Tirage } from "./types.ts";

@@ -22,7 +22,7 @@
  * qu'écrite, sans cas ajouté.
  */
 
-import { instantDe, instantDeDateCivile } from "../questions/reponse-attendue.ts";
+import { instantDe, instantDeDateCivile } from "../../analysis/instants.ts";
 
 /** §11 : « la date du changement plus 14 jours ». */
 export const DELAI_FRAICHEUR_JOURS = 14;

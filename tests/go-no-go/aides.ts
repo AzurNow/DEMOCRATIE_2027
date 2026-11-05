@@ -12,7 +12,7 @@ import type { CategorieRetenue, Mode, Reponse } from "../../analysis/types.ts";
 import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { lancerNotationSimulee } from "../../pipeline/notation/notation-simulee.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import { idQuestion, ulid } from "../analysis/fabriques.ts";
 import { inexacte, notationHumaine, notationJuge } from "../notation/fabriques.ts";
 import { options, parametresDeReference } from "../notation/simulation.ts";

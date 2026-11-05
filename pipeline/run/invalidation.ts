@@ -11,7 +11,7 @@
 
 import { dispositionRunNote, lireRunJson } from "../../analysis/lecture-run.ts";
 import { valider } from "../../outils/schemas/valider.ts";
-import { instantParis } from "../interrogation/heure-paris.ts";
+import { instantParis } from "../../analysis/heure-paris.ts";
 import { ecrireParRenommage } from "./ecriture.ts";
 import { invalider } from "./statut.ts";
 

@@ -22,9 +22,9 @@ import {
   type SortieJuge,
   type SortieJugeAttribution,
 } from "../../pipeline/notation/juge.ts";
-import { MOTIFS_RENVOI_DEFAILLANCE, type NotationIndividuelle, type RenvoiHumain } from "../../pipeline/notation/types.ts";
+import { MOTIFS_RENVOI_DEFAILLANCE, type NotationIndividuelle, type RenvoiHumain } from "../../analysis/types-notation.ts";
 import { ContexteAttributionIncoherent } from "../../pipeline/notation/note-attribution.ts";
-import { DateCivileInvalide } from "../../pipeline/questions/reponse-attendue.ts";
+import { DateCivileInvalide } from "../../analysis/instants.ts";
 import { LienSansVerdictExistence } from "../../pipeline/notation/vue-annotateur.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";

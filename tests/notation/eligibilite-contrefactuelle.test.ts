@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { estEligible } from "../../pipeline/notation/chaine.ts";
 import type { ReferenceSoumise } from "../../pipeline/notation/charge-juge.ts";
-import type { CandidatDuRun } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemP } from "../aides/fabriques.ts";

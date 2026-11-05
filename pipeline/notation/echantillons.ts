@@ -50,9 +50,9 @@
 import { graineDerivee } from "../../analysis/graines.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
-import { verifierGraine } from "../questions/graine.ts";
-import type { GraineTirage } from "../questions/types.ts";
-import type { TauxEchantillonHumain } from "./types.ts";
+import { verifierGraine } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
+import type { TauxEchantillonHumain } from "../../analysis/types-notation.ts";
 
 /**
  * Clé lisible de la graine de l'échantillon humain, dérivée de `run.graines.echantillon_humain`.

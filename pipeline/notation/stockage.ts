@@ -31,7 +31,7 @@ import { join } from "node:path";
 import { dispositionRunNote, lireDossier, lireRunJson, lireVerdicts, type DispositionRunNote } from "../../analysis/lecture-run.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import type { ContexteMesure } from "../../analysis/types.ts";
-import type { NotationIndividuelle, RenvoiHumain, VerdictProduit } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, VerdictProduit } from "../../analysis/types-notation.ts";
 
 /**
  * Une réponse contrefactuelle telle que l'écrivain la contrôle : le reste de l'objet est validé

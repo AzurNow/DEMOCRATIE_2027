@@ -19,7 +19,7 @@ import {
 } from "../../pipeline/notation/echantillons.ts";
 import { construireFile, FileIncoherente, separerCalibration, type EntreeFile, type FileHumaine } from "../../pipeline/notation/file-humaine.ts";
 import { MOTIFS_HUMAINS, PseudonymeVide } from "../../pipeline/notation/notation-humaine.ts";
-import type { NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle, RunDeNotation } from "../../analysis/types-notation.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
 import { inexacte, lien, notationHumaine, notationJuge, notationRegle, renvoiDefaillant, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";

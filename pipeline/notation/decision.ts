@@ -64,7 +64,7 @@ import type { Instant, MotifNotation, ObjetNote, Ulid } from "../../analysis/typ
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
 import { construireVerdict, humainsAArbitrer, noteCommune, noteDe, porteDrapeauGrave, type NoteRetenue, type Resolution } from "./note-retenue.ts";
-import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, VerdictProduit } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, VerdictProduit } from "../../analysis/types-notation.ts";
 
 export interface EntreeDecision {
   readonly run: RunDeNotation;

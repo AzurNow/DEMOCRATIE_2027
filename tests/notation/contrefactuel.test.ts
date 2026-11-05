@@ -16,10 +16,10 @@ import {
   type ResultatContrefactuel,
   type ResultatJuge,
 } from "../../pipeline/notation/contrefactuel.ts";
-import { MOTIFS_RENVOI_DEFAILLANCE, type MotifRenvoiDefaillance, type RenvoiHumain } from "../../pipeline/notation/types.ts";
+import { MOTIFS_RENVOI_DEFAILLANCE, type MotifRenvoiDefaillance, type RenvoiHumain } from "../../analysis/types-notation.ts";
 import { JugeIndetermine } from "../../pipeline/notation/decision.ts";
 import type { TextesDeVerification } from "../../pipeline/notation/extrait.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { inexacte, lien, notationHumaine, notationJuge, renvoiDefaillant, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";

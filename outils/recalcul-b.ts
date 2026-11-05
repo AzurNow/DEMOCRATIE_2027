@@ -17,7 +17,7 @@
  */
 
 import { recalculerEtEcrireB } from "../analysis/recalcul-b.ts";
-import { dateParis } from "../pipeline/interrogation/heure-paris.ts";
+import { dateParis } from "../analysis/heure-paris.ts";
 import { requetesDuPlanDuRun } from "../pipeline/interrogation/plan-du-run.ts";
 import { questionsDuSousEchantillonDuRun } from "../pipeline/interrogation/sous-echantillon-application.ts";
 import { echantillonHumainDuRun } from "../pipeline/notation/echantillons.ts";

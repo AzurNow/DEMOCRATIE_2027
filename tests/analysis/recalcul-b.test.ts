@@ -17,7 +17,7 @@ import { analyserRun, cheminMetriques, empreinteDuRun, type EntreesDuRun } from 
 import { cheminRecalculB, recalculB, recalculerEtEcrireB } from "../../analysis/recalcul-b.ts";
 import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
 import { questionsDuSousEchantillonDuRun } from "../../pipeline/interrogation/sous-echantillon-application.ts";
-import { dateParis } from "../../pipeline/interrogation/heure-paris.ts";
+import { dateParis } from "../../analysis/heure-paris.ts";
 import { echantillonHumainDuRun } from "../../pipeline/notation/echantillons.ts";
 import { etatsDesLectures } from "../../pipeline/notation/lectures-comparateur.ts";
 import { valider } from "../../outils/schemas/valider.ts";

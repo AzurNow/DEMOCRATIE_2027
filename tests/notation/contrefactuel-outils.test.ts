@@ -13,7 +13,7 @@ import { testerContrefactuelOutils, type ResultatContrefactuelOutils, type Resul
 import type { DerangementOutils, OutilNomme } from "../../pipeline/notation/derangement-outils.ts";
 import type { TextesDeVerification } from "../../pipeline/notation/extrait.ts";
 import { demandePermuteeOutils, reponseContrefactuelleOutil } from "../../pipeline/notation/reponse-contrefactuelle-outil.ts";
-import type { NotationIndividuelle, RenvoiHumain } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle, RenvoiHumain } from "../../analysis/types-notation.ts";
 import type { ReponseManquante, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemP } from "../aides/fabriques.ts";

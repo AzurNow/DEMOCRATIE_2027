@@ -60,7 +60,7 @@ import { ordreFileHumaine, tirerEchantillonHumain, tirerJeuOr, type JeuOr } from
 import type { TextesDeVerification } from "./extrait.ts";
 import { exigerPseudonyme, MOTIFS_HUMAINS, type MotifHumain } from "./notation-humaine.ts";
 import { humainsAArbitrer } from "./note-retenue.ts";
-import type { NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, RunDeNotation } from "../../analysis/types-notation.ts";
 
 export interface ReponseDeLaFile {
   readonly reponse_id: Ulid;

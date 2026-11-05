@@ -9,7 +9,7 @@
  * Ce module porte l'algorithme et son orchestration (`tirer`) ; trois responsabilités voisines
  * vivent dans leur propre module, importé ici sans cycle (constat 15 de la revue du 2026-10-12) :
  * la tirabilité au gel (`tirabilite.ts`), les entrées publiées et la reprise (`entrees-tirage.ts`),
- * et la déclaration du générateur (`graine.ts`).
+ * et la déclaration du générateur (`analysis/graine-tirage.ts`).
  *
  * **La compensation** (§5, protocole 0.9), seule règle propre à ce module. Pour chaque strate
  * thème × gabarit, la cible d'un candidat comparé (interrogé, au-dessus du seuil) est `min(quota,
@@ -32,7 +32,7 @@ import { generateur, graineDepuisTexte, melanger } from "../../validation/domain
 import { itemsPContestesAuGel } from "./couverture.ts";
 import { entreeDe, precedenteSiReprise } from "./entrees-tirage.ts";
 import type { TiragePrecedent } from "./entrees-tirage.ts";
-import { verifierGraine } from "./graine.ts";
+import { verifierGraine } from "../../analysis/graine-tirage.ts";
 import { estCompare, indexer, itemsAuxPositionsIncompatibles, separer, themeDeQuestion } from "./tirabilite.ts";
 import type { Index, PositionsIncompatibles } from "./tirabilite.ts";
 import type {
@@ -42,7 +42,6 @@ import type {
   CompensationTirage,
   ContestesAuGel,
   EntreeTirage,
-  GraineTirage,
   IncompatiblesAuGel,
   Item,
   Mesure,
@@ -52,6 +51,7 @@ import type {
   Theme,
   Tirage,
 } from "./types.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { candidatsInterroges, candidatsNonInterroges } from "../../analysis/candidats-interroges.ts";
 
 /** §5 : 80 % des questions sont reprises du run précédent, 20 % sont neuves. */

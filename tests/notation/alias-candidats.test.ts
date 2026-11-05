@@ -13,9 +13,9 @@ import {
   CLE_ALIAS_CANDIDATS,
   inverserTable,
   tableAliasCandidats,
-} from "../../pipeline/notation/alias-candidats.ts";
-import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../pipeline/questions/graine.ts";
-import type { GraineTirage } from "../../pipeline/questions/types.ts";
+} from "../../analysis/alias-candidats.ts";
+import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { CANDIDATS_DU_RUN } from "./fabriques.ts";
 
 function graine(valeur: number): GraineTirage {

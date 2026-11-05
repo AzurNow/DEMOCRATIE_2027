@@ -42,7 +42,7 @@ import { createHash } from "node:crypto";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { TexteCanoniqueAltere } from "../../validation/io/staging.ts";
 import { CorpsNonUtf8, ErreurReseau, type Contenu, type ReponseHttp } from "../interrogation/editeur.ts";
-import { instantParis } from "../interrogation/heure-paris.ts";
+import { instantParis } from "../../analysis/heure-paris.ts";
 import { AucunTexteEpingle, FicheDUneAutreSource, PlusieursTextesEpingles } from "./choix-texte.ts";
 import type { ConfigurationExtraction } from "./configuration.ts";
 import { appelerExtracteur, estEchecTransportHttp, lectureDe, type EditeurExtraction, type LectureTexteModele } from "./editeur.ts";

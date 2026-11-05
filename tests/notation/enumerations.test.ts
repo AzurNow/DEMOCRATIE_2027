@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { DRAPEAUX } from "../../analysis/types.ts";
-import { DRAPEAUX_GRAVES, MODES_RESOLUTION, MOTIFS_INEXACTITUDE } from "../../pipeline/notation/types.ts";
+import { DRAPEAUX_GRAVES, MODES_RESOLUTION, MOTIFS_INEXACTITUDE } from "../../analysis/types-notation.ts";
 
 /** L'`enum` de la propriété nommée ; une propriété sans `enum` fait échouer le test. */
 function enumDe(fichier: string, propriete: string): readonly string[] {

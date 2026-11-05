@@ -27,8 +27,8 @@ import {
   tirerSousEnsembleContrefactuelOutils,
 } from "../../pipeline/notation/echantillons.ts";
 import type { ReponseEcrite, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
-import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../pipeline/questions/graine.ts";
-import type { GraineTirage } from "../../pipeline/questions/types.ts";
+import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";

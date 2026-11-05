@@ -25,13 +25,13 @@
  * celle d'un run supplémentaire ouverte un samedi le contient : elle dure 48 heures réelles.
  */
 
-import { TYPE_REEXECUTION, TYPES_RUN, type TypeRun } from "../run/types.ts";
+import { TYPE_REEXECUTION, TYPES_RUN, type TypeRun } from "../../analysis/types-run.ts";
 import {
   DUREE_FENETRE_MS,
   HEURE_OUVERTURE_FENETRE,
   JOUR_OUVERTURE_FENETRE,
 } from "./conditions.ts";
-import { dateParis, heureParis, instantParis, lireInstant } from "./heure-paris.ts";
+import { dateParis, heureParis, instantParis, lireInstant } from "../../analysis/heure-paris.ts";
 
 export interface Fenetre {
   readonly debut: string;

@@ -31,7 +31,7 @@ import { metriquesPrimaires, type TauxPrimaires } from "../../analysis/metriques
 import { notationsConcordent } from "../../analysis/note-lue.ts";
 import { DRAPEAUX, type TypeItem } from "../../analysis/types.ts";
 import { construireVerdict, noteDe } from "../../pipeline/notation/note-retenue.ts";
-import type { LienNotation, NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { LienNotation, NotationIndividuelle } from "../../analysis/types-notation.ts";
 import { lien, notationJuge } from "../notation/fabriques.ts";
 import { entreeTirage, item, question, reponse, run, ulid } from "./fabriques.ts";
 

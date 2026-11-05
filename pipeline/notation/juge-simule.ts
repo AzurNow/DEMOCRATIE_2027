@@ -61,7 +61,7 @@ import type { ChargeJuge } from "./charge-juge.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { Juge, SortieJuge } from "./juge.ts";
-import type { MotifInexactitude } from "./types.ts";
+import type { MotifInexactitude } from "../../analysis/types-notation.ts";
 
 export type RoleSimule = "a" | "b";
 

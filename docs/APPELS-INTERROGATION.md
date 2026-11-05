@@ -6,7 +6,7 @@
 
 ## Conditions figées (§6)
 
-Valeurs lues dans `pipeline/interrogation/conditions.ts`, identiques pour tous les outils.
+Valeurs lues dans `pipeline/interrogation/conditions.ts` (le fuseau, dans `analysis/heure-paris.ts`), identiques pour tous les outils.
 
 | Condition | Valeur |
 | --- | --- |

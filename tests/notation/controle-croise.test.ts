@@ -10,7 +10,7 @@ import { controleCroise, type EntreeControleCroise } from "../../pipeline/notati
 import { decider } from "../../pipeline/notation/decision.ts";
 import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { MOTIF_DOUBLE_NOTATION_COMPARATEUR, verdictDeLecture } from "../../pipeline/notation/lectures-comparateur.ts";
-import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "../../analysis/types-notation.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { inexacte, notationHumaine, notationJuge, notationRegle, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
 

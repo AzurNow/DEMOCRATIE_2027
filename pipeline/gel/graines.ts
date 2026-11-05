@@ -6,17 +6,17 @@
  * émis à l'instant de gel ou après, chacune par sa clé lisible (`balise.ts:valeursDesGraines`,
  * `run.json#/balise/cles`). Nul ne les choisit, et aucun chemin de `pnpm geler` n'en accepte d'autres.
  * La sixième, `alias_candidats` (protocole 0.20, D55 (9)), amorce la table alias aveugle de candidat
- * (`pipeline/notation/alias-candidats.ts`).
+ * (`analysis/alias-candidats.ts`).
  *
- * Les six graines déclarent le générateur du tirage (`graine.ts:GENERATEUR_DU_TIRAGE`,
+ * Les six graines déclarent le générateur du tirage (`analysis/graine-tirage.ts:GENERATEUR_DU_TIRAGE`,
  * SplitMix64 amorcé par sha256) : `run.schema.json` l'impose à l'échantillon humain, au
  * contrefactuel et à l'alias des candidats, `tirage.ts` le vérifie pour le tirage, et
  * `analysis/graines.ts` dérive les graines du bootstrap et de la permutation avec le même
  * algorithme.
  */
 
-import { GENERATEUR_DU_TIRAGE } from "../questions/graine.ts";
-import type { GraineTirage } from "../questions/types.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 
 export const NOMS_GRAINES = ["tirage", "echantillon_humain", "bootstrap", "permutation", "contrefactuel", "alias_candidats"] as const;
 export type NomGraine = (typeof NOMS_GRAINES)[number];

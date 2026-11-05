@@ -82,7 +82,7 @@ export interface ReponseDuJeuOr {
   readonly renvois: readonly RenvoiDuJeuOr[];
 }
 
-/** Ce que le kappa lit d'un renvoi de juge (`pipeline/notation/types.ts:RenvoiHumain` s'y conforme). */
+/** Ce que le kappa lit d'un renvoi de juge (`analysis/types-notation.ts:RenvoiHumain` s'y conforme). */
 export interface RenvoiDuJeuOr {
   readonly id: Ulid;
   readonly notateur: { readonly type: string; readonly id: string };

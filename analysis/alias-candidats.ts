@@ -9,7 +9,7 @@
  * run. »
  *
  * **Candidats.** Seuls les candidats interrogés au run (`run.perimetre.candidats[].interroge`,
- * la même définition que celle du dérangement du test contrefactuel, `derangement.ts`) reçoivent
+ * la même définition que celle du dérangement du test contrefactuel, `pipeline/notation/derangement.ts`) reçoivent
  * un alias : un candidat retiré ou sous le seuil, non interrogé, n'en a pas besoin, puisque le juge
  * ne note jamais de référence à lui par cette voie.
  *
@@ -27,11 +27,11 @@
  * mélange reçoit l'alias `C{k+1}`.
  */
 
-import { graineDerivee } from "../../analysis/graines.ts";
-import { generateur, melanger } from "../../validation/domaine/alea.ts";
-import { verifierGraine } from "../questions/graine.ts";
-import type { GraineTirage } from "../questions/types.ts";
-import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import { graineDerivee } from "./graines.ts";
+import { generateur, melanger } from "../validation/domaine/alea.ts";
+import { verifierGraine } from "./graine-tirage.ts";
+import type { GraineTirage } from "./graine-tirage.ts";
+import { comparerChaines } from "../outils/ordre-chaines.ts";
 
 /**
  * Clé lisible de la graine de l'alias des candidats, dérivée de `run.graines.alias_candidats`.

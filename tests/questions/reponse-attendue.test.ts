@@ -11,12 +11,12 @@
 import { describe, expect, it } from "vitest";
 import { engendrer, referenceDe } from "../../pipeline/questions/engendrement.ts";
 import {
-  instantDe,
   ItemHorsValidite,
   ReponseAttendueIndecidable,
   reponseAttendue,
   type QuestionNotable,
 } from "../../pipeline/questions/reponse-attendue.ts";
+import { instantDe } from "../../analysis/instants.ts";
 import type { CodeGabarit, Item, Mesure, QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { candidat, itemA, itemF, itemO, itemP, mesure, perimetre } from "./fabriques.ts";
 

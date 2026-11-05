@@ -31,7 +31,7 @@ import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { ouvrirTemporaireExclusif, TemporaireOrphelin, type EcritureTemporaire } from "../run/ecriture.ts";
-import { dateParis, lireInstant } from "./heure-paris.ts";
+import { dateParis, lireInstant } from "../../analysis/heure-paris.ts";
 import { cleDe, type ReponseEcrite } from "./types.ts";
 
 /** `runs/README.md` : où vivent les fichiers d'un run, sous une racine donnée (`runs/` ou autre). */

@@ -11,7 +11,7 @@
  * table d'alias et le dérangement) est écartée, pour toute question : la règle ne retire rien quand
  * tous les candidats des items sont interrogés. L'item principal n'est jamais écarté : une question
  * n'est tirée que pour un interrogé, et un principal d'un non-interrogé est une incohérence du gel,
- * refusée (`ItemPrincipalNonInterroge`). `CandidatSansAlias` (`alias-candidats.ts`) reste la garde
+ * refusée (`ItemPrincipalNonInterroge`). `CandidatSansAlias` (`analysis/alias-candidats.ts`) reste la garde
  * de la charge, en aval.
  *
  * Un item épinglé que les items lus ne portent pas est refusé, qu'il soit écarté ensuite ou non :

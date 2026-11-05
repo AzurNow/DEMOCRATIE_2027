@@ -18,7 +18,7 @@ import { identifiantDerive } from "../../pipeline/notation/chaine.ts";
 import { echantillonHumainDuRun } from "../../pipeline/notation/echantillons.ts";
 import { etatsDesLectures } from "../../pipeline/notation/lectures-comparateur.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
-import type { VerdictProduit } from "../../pipeline/notation/types.ts";
+import type { VerdictProduit } from "../../analysis/types-notation.ts";
 import { ecrireVerdictsDeLecture, type CadreDeLecture, type EtatLecturesDuRun } from "../../pipeline/notation/verdicts-de-lecture.ts";
 import { arbitrage, doubleNotation, EXACTE, INEXACTE, poserLecturesAffichees } from "./lectures-sur-disque.ts";
 import { poserRunNote, RUN_ID, type RunFictif } from "./run-fictif.ts";

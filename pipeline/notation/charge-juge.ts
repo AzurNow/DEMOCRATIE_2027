@@ -52,7 +52,7 @@
  * réponse.
  *
  * **Alias aveugle de candidat (charge-juge-v4, §7, protocole 0.20, D55 (9)).** Tout identifiant de
- * candidat qui atteindrait la charge est remplacé par son alias du run (`alias-candidats.ts`) :
+ * candidat qui atteindrait la charge est remplacé par son alias du run (`analysis/alias-candidats.ts`) :
  * `ItemSoumis.candidat_id` et `reponse_attendue.candidats_attendus`. La table (alias → candidat_id,
  * publiée avec le run) est reçue de l'appelant dans `DemandeCharge.alias_candidats`, inversée une
  * fois (`inverserTable`), puis consultée pour chaque champ. Un candidat sans alias — hors des
@@ -70,7 +70,7 @@
 import type { Gabarit, Instant, RoleItem } from "../../analysis/types.ts";
 import type { ObjetJson, ReponseObtenue } from "../interrogation/types.ts";
 import type { EntreeTirage, Registre, ReponseAttendue } from "../questions/types.ts";
-import { aliasDeCandidat, inverserTable, type TableAliasCandidats } from "./alias-candidats.ts";
+import { aliasDeCandidat, inverserTable, type TableAliasCandidats } from "../../analysis/alias-candidats.ts";
 import { LONGUEUR_MAX_TEXTE_PAGE, type PageCitee } from "./pages-citees.ts";
 import type { ReponseContrefactuelle } from "./reponse-contrefactuelle.ts";
 import type { ReponseContrefactuelleOutil } from "./reponse-contrefactuelle-outil.ts";

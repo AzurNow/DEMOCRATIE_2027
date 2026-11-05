@@ -21,7 +21,7 @@ import {
   unitesDeLaStrateRecente,
   type ItemDate,
 } from "../../analysis/strate-recente.ts";
-import { DateCivileInvalide } from "../../pipeline/questions/reponse-attendue.ts";
+import { DateCivileInvalide } from "../../analysis/instants.ts";
 import { tousCompares, ulid, unite } from "./fabriques.ts";
 
 /** Gel à minuit UTC : « 60 jours avant » tombe exactement sur une date civile. */

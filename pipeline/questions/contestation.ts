@@ -7,7 +7,7 @@
  * l'engendrement et la symétrie l'appellent sans cycle d'import (tirage importe l'engendrement).
  */
 
-import { instantDe } from "./reponse-attendue.ts";
+import { instantDe } from "../../analysis/instants.ts";
 import type { DecisionPanelAuGel, Item } from "./types.ts";
 
 /** Un item arbitré dont aucune décision du panel n'est lisible : refus, jamais exclusion muette. */

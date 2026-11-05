@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { VERSION_CHARGE_JUGE } from "../../pipeline/notation/charge-juge.ts";
 import { AttributionIndecidable, FraicheurIndefinie, issueDeJuge, notationDeJuge, SortieJugeIncoherente, type CadreNotationJuge, type IdentiteJuge, type SortieJuge, type SortieJugeAttribution } from "../../pipeline/notation/juge.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";

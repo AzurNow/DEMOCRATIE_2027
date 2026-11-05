@@ -116,7 +116,7 @@ import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle
 import { DepotNotation } from "./stockage.ts";
 import { ecrireVerdictsDeLecture, type EtatLecturesDuRun } from "./verdicts-de-lecture.ts";
 import { TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
-import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
+import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "../../analysis/types-notation.ts";
 import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
 import { candidatsInterroges as candidatsInterrogesDuRun } from "../../analysis/candidats-interroges.ts";
 import { candidatsElimines } from "./elimines.ts";

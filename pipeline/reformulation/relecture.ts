@@ -15,7 +15,7 @@
 
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { neutreSuitVersionGabarits, empreintesSuiventTextes, type Violation } from "../questions/invariants.ts";
-import { instantDe } from "../questions/reponse-attendue.ts";
+import { instantDe } from "../../analysis/instants.ts";
 import type { Formulation, QuestionEngendree, Registre } from "../questions/types.ts";
 import { REGISTRES } from "../questions/types.ts";
 import { AUCUNE, type PositionAffirmable, type PositionDemandee } from "./position-affirmee.ts";

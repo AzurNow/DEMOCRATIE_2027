@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { erreurDeSchema } from "../../outils/schemas/valider.ts";
-import { instantParis } from "../../pipeline/interrogation/heure-paris.ts";
+import { instantParis } from "../../analysis/heure-paris.ts";
 import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { TransitionRefusee } from "../../pipeline/run/statut.ts";
 import type { MotifTransition } from "../../pipeline/run/statut.ts";

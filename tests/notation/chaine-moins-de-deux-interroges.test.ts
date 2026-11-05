@@ -12,12 +12,12 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { dispositionRunNote, lireRunJson } from "../../analysis/lecture-run.ts";
 import { critereTestContrefactuel } from "../../pipeline/go-no-go/criteres-juges.ts";
-import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
+import { tableAliasCandidats } from "../../analysis/alias-candidats.ts";
 import { bilanNotation, texteContrefactuelInscrit } from "../../pipeline/notation/bilan-notation.ts";
 import { noterRun, type ReponseANoter } from "../../pipeline/notation/chaine.ts";
 import { environnementSimule, preparerNotationSimulee } from "../../pipeline/notation/notation-simulee.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
-import type { GraineTirage } from "../../pipeline/questions/types.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { ecrireJson } from "./run-fictif.ts";
 import { enregistreurs, instantane, nettoyerSorties, nouvelleSortie, options, parametresDeReference, type Appel } from "./simulation.ts";
 
@@ -51,7 +51,7 @@ function nInterroger(repertoire_run: string, gardes: readonly string[]): void {
  * Les réponses d'un run qui n'interroge que demo-alpha : celles dont chaque item de référence est de
  * lui. Le run simulé interroge les deux candidats ; ses réponses sur demo-beta n'existeraient pas
  * dans un run qui ne l'interroge pas (§3 : aucune question ne nomme un candidat non interrogé), et
- * leur charge ne trouverait pas d'alias à son item (`alias-candidats.ts`, D55 (9)).
+ * leur charge ne trouverait pas d'alias à son item (`analysis/alias-candidats.ts`, D55 (9)).
  */
 function reponsesDAlpha(reponses: readonly ReponseANoter[]): readonly ReponseANoter[] {
   const gardees = reponses.filter((r) => r.references.every((reference) => reference.item.candidat_id === "demo-alpha"));

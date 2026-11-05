@@ -23,7 +23,7 @@
 import { join } from "node:path";
 import { lireRunsDuDepot } from "./precedent.ts";
 import type { RunDeRuns } from "./precedent.ts";
-import { TYPE_REEXECUTION } from "../run/types.ts";
+import { TYPE_REEXECUTION } from "../../analysis/types-run.ts";
 
 export type MotifRemplacement =
   | "remplace_sans_reexecution"

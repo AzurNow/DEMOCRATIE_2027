@@ -28,9 +28,10 @@ import { OrdreDesInstantsRefuse } from "../../pipeline/gel/instants.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
 import { FamilleDeJugeAbsente, JugesDeMemeFamille } from "../../pipeline/notation/familles-juges.ts";
-import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
+import { tableAliasCandidats } from "../../analysis/alias-candidats.ts";
 import { identifiantAttribution } from "../../pipeline/questions/engendrement.ts";
-import type { GraineTirage, Item, Mesure } from "../../pipeline/questions/types.ts";
+import type { Item, Mesure } from "../../pipeline/questions/types.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { head, RACINE_PROJET } from "../aides/depot.ts";
 import {
   ALPHA,

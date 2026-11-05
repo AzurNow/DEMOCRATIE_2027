@@ -1,7 +1,7 @@
 # `runs/` — disposition des fichiers d'un run
 
 Un run vit dans `runs/<date>/`, où `<date>` est la date de `date_gel` **à Paris**, au format
-`AAAA-MM-JJ` (`pipeline/interrogation/heure-paris.ts:dateParis`), jamais la date d'ouverture de la
+`AAAA-MM-JJ` (`analysis/heure-paris.ts:dateParis`), jamais la date d'ouverture de la
 fenêtre d'interrogation. Un gel le 27 novembre 2026 à 00:30, heure de Paris, range le run sous
 `runs/2026-11-27/`, même si l'instant UTC tombe la veille.
 
@@ -142,7 +142,7 @@ remplit ces conditions : l'absence est déclarée, jamais omise, et le tirage es
 `tirage.json` et son `questions.json` sont relus, leur SHA-256 recalculé et comparé à celui que son
 `run.json` déclare (D48 (4) pour les questions, qui décident des reprises). Une question est reprise si
 elle porte le même identifiant et les mêmes empreintes de texte qu'alors (§5,
-`pipeline/questions/signature.ts`).
+`analysis/signature-question.ts`).
 
 Refus nommé (`PrecedentRefuse`), jamais « pas de précédent » : un répertoire de `runs/` sans
 `run.json` lisible ou dont `id`, `date_gel`, `type_run`, `statut`, `tirage` ou, s'il est présent,
@@ -226,7 +226,7 @@ schéma `bls-unchained-g1-rfc9380`, le message signé est SHA-256 du numéro de 
 gros-boutistes, la signature est sur G1 ; (3) recalculer l'aléa, les six graines et l'identifiant
 par les règles ci-dessus, et les comparer à `run.json#/balise/alea`, `run.json#/graines` et
 `run.json#/id` ; (4) recalculer la table alias aveugle de candidat depuis `graines.alias_candidats`
-et les candidats interrogés (`pipeline/notation/alias-candidats.ts:tableAliasCandidats`, §7,
+et les candidats interrogés (`analysis/alias-candidats.ts:tableAliasCandidats`, §7,
 protocole 0.20), et la comparer à `run.json#/alias_candidats`. Cette procédure n'a pas encore été rejouée de bout en bout sur un vrai run.
 
 ## `verdicts/`, `volume/notations/`, `volume/reponses-contrefactuelles/`

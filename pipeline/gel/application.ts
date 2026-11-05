@@ -29,7 +29,7 @@
 
 import { join } from "node:path";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import type { TypeRun } from "../run/types.ts";
+import type { TypeRun } from "../../analysis/types-run.ts";
 import { lireRunsDuDepot } from "./precedent.ts";
 
 /** §6 : les seuls types qu'on désigne ; les autres sont nommés par leur exclusion. */

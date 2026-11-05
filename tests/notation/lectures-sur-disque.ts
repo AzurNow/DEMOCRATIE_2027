@@ -13,7 +13,7 @@ import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { MOTIF_ARBITRAGE_COMPARATEUR, MOTIF_DOUBLE_NOTATION_COMPARATEUR } from "../../pipeline/notation/lectures-comparateur.ts";
 import type { DepotNotation } from "../../pipeline/notation/stockage.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { notationHumaine } from "./fabriques.ts";

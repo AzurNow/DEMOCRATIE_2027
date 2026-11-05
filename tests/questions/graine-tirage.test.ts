@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 import { ALGORITHME_ALEA } from "../../validation/domaine/alea.ts";
 import { tirer } from "../../pipeline/questions/tirage.ts";
 import type { DemandeTirage } from "../../pipeline/questions/tirage.ts";
-import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../pipeline/questions/graine.ts";
+import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../analysis/graine-tirage.ts";
 import { tiragePrecedentDe } from "../../pipeline/questions/entrees-tirage.ts";
 import { candidat, graine, jeu, run } from "./fabriques.ts";
 

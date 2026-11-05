@@ -20,7 +20,6 @@ import type {
   CandidatNomme,
   CodeGabarit,
   Formulation,
-  GraineTirage,
   ItemDeQuestion,
   ParametresTirage,
   Position,
@@ -29,6 +28,7 @@ import type {
   RunAuGel,
   Theme,
 } from "../../pipeline/questions/types.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import type { QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { REGISTRES } from "../../pipeline/questions/types.ts";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";

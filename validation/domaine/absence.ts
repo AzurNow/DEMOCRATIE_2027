@@ -25,7 +25,7 @@
  */
 
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import { instantDe } from "../../pipeline/questions/reponse-attendue.ts";
+import { instantDe } from "../../analysis/instants.ts";
 import type { RegistreRattachementsItem } from "./rattachements-item.ts";
 import type { RegistreRelecturesMesure } from "./relectures-mesure.ts";
 import type { BlocAbsence, Item, Source } from "./types.ts";

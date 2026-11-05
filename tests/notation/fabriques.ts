@@ -9,11 +9,11 @@ import { empreinte, ulid } from "../analysis/fabriques.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { reponseDepuisDepot, type ReponseApplication } from "../../pipeline/interrogation/reponse-application.ts";
-import { tableAliasCandidats } from "../../pipeline/notation/alias-candidats.ts";
+import { tableAliasCandidats } from "../../analysis/alias-candidats.ts";
 import { notationParRegle } from "../../pipeline/notation/regle-refus.ts";
-import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/graine.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../analysis/graine-tirage.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
-import type { CandidatDuRun, LienNotation, NotationIndividuelle, RenvoiAttribution, RenvoiDefaillance, RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun, LienNotation, NotationIndividuelle, RenvoiAttribution, RenvoiDefaillance, RunDeNotation } from "../../analysis/types-notation.ts";
 import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 import type { PageCitee } from "../../pipeline/notation/pages-citees.ts";
 

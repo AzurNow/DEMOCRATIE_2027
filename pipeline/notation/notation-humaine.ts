@@ -60,7 +60,7 @@ import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "./charge-juge.ts";
 import { fraicheurDesItems } from "./fraicheur.ts";
 import { attributionRelevee, AttributionIncoherente, noterAttribution, type ContexteAttribution, type NoteAttribution } from "./note-attribution.ts";
 import { NomCiteSansMot } from "./rattachement.ts";
-import type { CandidatDuRun, ExtraitJustificatif, LienNotation, MotifInexactitude, MotifNonClassement, NotationIndividuelle } from "./types.ts";
+import type { CandidatDuRun, ExtraitJustificatif, LienNotation, MotifInexactitude, MotifNonClassement, NotationIndividuelle } from "../../analysis/types-notation.ts";
 import type { ExistenceEtablie, VueAnnotateur } from "./vue-annotateur.ts";
 
 /**

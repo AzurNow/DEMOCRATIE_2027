@@ -10,7 +10,7 @@
 import { describe, expect, it } from "vitest";
 import { VERDICTS_SOUTIEN, type VerdictSoutien } from "../../analysis/types.ts";
 import { notationDeJuge, soutienApresTestHttp, type IdentiteJuge, type SortieJuge } from "../../pipeline/notation/juge.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import type { ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";

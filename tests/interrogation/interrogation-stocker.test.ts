@@ -10,7 +10,7 @@ import { basename, join, resolve } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { geler } from "../../pipeline/gel/geler.ts";
 import { adaptateurSimule } from "../../pipeline/interrogation/editeur-simule.ts";
-import { instantParis } from "../../pipeline/interrogation/heure-paris.ts";
+import { instantParis } from "../../analysis/heure-paris.ts";
 import { JournalRequete, nomOctets } from "../../pipeline/interrogation/journal.ts";
 import { planifier } from "../../pipeline/interrogation/plan.ts";
 import { lireRunGele } from "../../pipeline/interrogation/run-gele.ts";

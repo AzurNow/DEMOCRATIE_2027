@@ -22,7 +22,7 @@
  * compte, quel que soit le sondage qu'elle accompagne ». Elle est déclarée, jamais téléchargée ici.
  */
 
-import { instantDe, instantDeDateCivile } from "./reponse-attendue.ts";
+import { instantDe, instantDeDateCivile } from "../../analysis/instants.ts";
 import { normaliserUrlSondage } from "./url-sondage.ts";
 
 /** §3 : « au cours des 60 jours précédents ». */

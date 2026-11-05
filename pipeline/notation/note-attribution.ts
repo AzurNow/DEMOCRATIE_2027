@@ -70,7 +70,7 @@
 import type { Drapeau } from "../../analysis/types.ts";
 import type { Registre, ReponseAttendue } from "../questions/types.ts";
 import { candidatsDe, rattacherNoms } from "./rattachement.ts";
-import type { CandidatDuRun, MotifInexactitude, MotifNonClassement, NotationIndividuelle } from "./types.ts";
+import type { CandidatDuRun, MotifInexactitude, MotifNonClassement, NotationIndividuelle } from "../../analysis/types-notation.ts";
 
 /** Ce que relève le notateur d'une Q-ATT, et lui seul. */
 export interface ReleveAttribution {

@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import { DELAI_FRAICHEUR_JOURS, fraicheurDesItems, obsolescenceFraiche } from "../../pipeline/notation/fraicheur.ts";
-import { DateCivileInvalide } from "../../pipeline/questions/reponse-attendue.ts";
+import { DateCivileInvalide } from "../../analysis/instants.ts";
 
 const CHANGEMENT = "2026-11-01";
 

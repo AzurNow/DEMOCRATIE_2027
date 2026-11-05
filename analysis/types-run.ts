@@ -1,7 +1,8 @@
 /**
- * Le statut et le type d'un run (`schema/run.schema.json#/properties/statut` et `#/properties/type_run`),
- * recopiés une seule fois : `tests/enumerations-schemas.test.ts` confronte `STATUTS_RUN` et
- * `TYPES_RUN` à leur `enum` (constat 30, revue du 2026-10-17, avec le constat 38 du 2026-10-12).
+ * Le statut, le type et le régime d'inclusion d'un run (`schema/run.schema.json#/properties/statut`,
+ * `#/properties/type_run` et `#/properties/perimetre/properties/regime_inclusion`), recopiés une
+ * seule fois : `tests/enumerations-schemas.test.ts` confronte `STATUTS_RUN`, `TYPES_RUN` et
+ * `REGIMES_INCLUSION` à leur `enum` (constat 30, revue du 2026-10-17, avec le constat 38 du 2026-10-12).
  * Les constantes nommées ne couvrent que les valeurs effectivement écrites ailleurs que dans ce
  * fichier ou dans `schema/` : pas de valeur exportée sans lecteur.
  */
@@ -27,3 +28,11 @@ export type TypeRun = (typeof TYPES_RUN)[number];
 
 export const TYPE_PILOTE = "pilote" satisfies TypeRun;
 export const TYPE_REEXECUTION = "reexecution" satisfies TypeRun;
+
+/**
+ * §3 (protocole 0.11 ; `entre_deux_tours` en 0.27, D68) : chaque run déclare son régime d'inclusion.
+ * `schema/perimetre.schema.json#/properties/regime_inclusion` et
+ * `schema/run.schema.json#/properties/perimetre/properties/regime_inclusion`.
+ */
+export const REGIMES_INCLUSION = ["avant_liste_officielle", "liste_officielle", "entre_deux_tours"] as const;
+export type RegimeInclusion = (typeof REGIMES_INCLUSION)[number];

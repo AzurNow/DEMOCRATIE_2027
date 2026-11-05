@@ -37,7 +37,7 @@ import { CLE_DERANGEMENT_CANDIDATS, correspondancesDe, type Derangement } from "
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL, type SousEnsembleContrefactuel } from "./echantillons.ts";
 import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
-import type { ChangementsContrefactuel, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
+import type { ChangementsContrefactuel, RunDeNotation, TauxEchantillonHumain } from "../../analysis/types-notation.ts";
 
 /** `run.schema.json#/properties/contrefactuel_candidats`, test joué (terminé, ou sans réponse éligible). */
 export interface BlocContrefactuelJoue {

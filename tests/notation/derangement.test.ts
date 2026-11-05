@@ -13,9 +13,9 @@ import {
   tirerDerangement,
   verifierCandidats,
 } from "../../pipeline/notation/derangement.ts";
-import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../pipeline/questions/graine.ts";
-import type { GraineTirage } from "../../pipeline/questions/types.ts";
-import type { CandidatDuRun } from "../../pipeline/notation/types.ts";
+import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../analysis/graine-tirage.ts";
+import type { GraineTirage } from "../../analysis/graine-tirage.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
 import { CANDIDATS_DU_RUN } from "./fabriques.ts";
 

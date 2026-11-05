@@ -17,9 +17,10 @@ import { tirerDerangement } from "../../pipeline/notation/derangement.ts";
 import { candidatsElimines, type PerimetreAuGel } from "../../pipeline/notation/elimines.ts";
 import { ContexteAttributionIncoherent, noterAttribution, type ContexteAttribution } from "../../pipeline/notation/note-attribution.ts";
 import { nommeUnInterroge, permuterTexte } from "../../pipeline/notation/permutation.ts";
-import type { RegimeInclusion, ReponseAttendue } from "../../pipeline/questions/types.ts";
-import type { CandidatDuRun } from "../../pipeline/notation/types.ts";
-import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/graine.ts";
+import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
+import type { RegimeInclusion } from "../../analysis/types-run.ts";
+import type { CandidatDuRun } from "../../analysis/types-notation.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../analysis/graine-tirage.ts";
 import { GEL_DES_TESTS } from "./fabriques.ts";
 
 const GRAINE = { valeur: 20270424, ...GENERATEUR_DU_TIRAGE };

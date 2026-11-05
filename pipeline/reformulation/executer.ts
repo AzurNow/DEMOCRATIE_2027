@@ -34,7 +34,7 @@ import { createHash } from "node:crypto";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { ulid } from "../../validation/domaine/ulid.ts";
 import { ErreurReseau, lireContenu, type Contenu, type ReponseHttp, type RequeteHttp } from "../interrogation/editeur.ts";
-import { instantParis } from "../interrogation/heure-paris.ts";
+import { instantParis } from "../../analysis/heure-paris.ts";
 import type { Horloge } from "../interrogation/horloge.ts";
 import type { CandidatNomme } from "../questions/types.ts";
 import { controlerSortie, SortieRejetee } from "./controle.ts";

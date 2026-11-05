@@ -27,7 +27,7 @@ import type { Reponse, Ulid } from "../../analysis/types.ts";
 import { conditionDeSymetrie } from "../questions/symetrie.ts";
 import type { Symetrie } from "../questions/types.ts";
 import { porteDrapeauGrave } from "../notation/note-retenue.ts";
-import type { JugeDuRun, NotationIndividuelle, VerdictProduit } from "../notation/types.ts";
+import type { JugeDuRun, NotationIndividuelle, VerdictProduit } from "../../analysis/types-notation.ts";
 import type { Critere } from "./types.ts";
 
 /* ------------------------------------------------------------------ tirage et symétrie */
