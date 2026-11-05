@@ -14,6 +14,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, expectTypeOf, it } from "vitest";
 import { valider } from "../../outils/schemas/valider.ts";
+import { lireRunJson } from "../../analysis/lecture-run.ts";
+import { ECHANTILLONS } from "../../pipeline/interrogation/conditions.ts";
+import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
 import { STATUT_AU_GEL } from "../../pipeline/gel/assemblage.ts";
 import { BaliseRefusee, identifiantDuRun, QUICKNET, RELAIS, urlTour, valeursDesGraines } from "../../pipeline/gel/balise.ts";
 import { DepotSale } from "../../pipeline/gel/depot.ts";
@@ -184,7 +187,33 @@ describe("gel nominal", () => {
     const questions = JSON.parse(lire(run, "questions.json")) as { id: string; formulations: unknown[] }[];
     const formulations = questions.filter((q) => tirees.has(q.id)).reduce((total, q) => total + q.formulations.length, 0);
     expect(modes).toBeGreaterThan(0);
-    expect(objet["reponses"]).toEqual({ prevues: modes * formulations * 2 });
+    expect(objet["reponses"]).toEqual({ echantillons_par_question: 2, prevues: modes * formulations * 2 });
+  });
+
+  it("D75 (14) : run.json inscrit au gel le nombre d'échantillons du §6, et le plan relu du gel le suit", async () => {
+    const { run } = await gelNominal();
+    const objet = json(run, "run.json");
+    expect((objet["reponses"] as { echantillons_par_question: number }).echantillons_par_question).toBe(ECHANTILLONS);
+    const plan = requetesDuPlanDuRun(run, lireRunJson(run));
+    expect(plan).toHaveLength((objet["reponses"] as { prevues: number }).prevues);
+    expect(new Set(plan.map((requete) => requete.echantillon))).toEqual(new Set([1, 2]));
+  });
+
+  it("D75 (14) : planifier avec 1 échantillon inscrit au gel : planifie 1, pas 2 (levier 2 → 1 du §12, plan relu du gel)", async () => {
+    const { run } = await gelNominal();
+    const objet = json(run, "run.json");
+    const prevues = (objet["reponses"] as { prevues: number }).prevues;
+    writeFileSync(join(run, "run.json"), `${JSON.stringify({ ...objet, reponses: { echantillons_par_question: 1, prevues: prevues / 2 } }, null, 2)}\n`, "utf8");
+    const plan = requetesDuPlanDuRun(run, lireRunJson(run));
+    expect(plan).toHaveLength(prevues / 2);
+    expect(new Set(plan.map((requete) => requete.echantillon))).toEqual(new Set([1]));
+  });
+
+  it("D75 (14) : run.json sans nombre d'échantillons : refusé par le schéma, aucun nombre supposé", async () => {
+    const { run } = await gelNominal();
+    const objet = json(run, "run.json");
+    const { echantillons_par_question: _retire, ...reponses } = objet["reponses"] as Record<string, unknown>;
+    expect(() => valider("run", { ...objet, reponses }, "run.json sans echantillons_par_question")).toThrow(/echantillons_par_question/);
   });
 
   it("D48 (4), cas 6 : run.json déclare questions.json par son chemin sous runs/<date>/ et le SHA-256 de ses octets exacts", async () => {

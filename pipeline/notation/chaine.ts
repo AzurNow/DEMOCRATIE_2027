@@ -26,12 +26,14 @@
  * 3 bis. **Contrefactuel d'outil** (§7, « Conflit d'intérêts » ; D75 (7)). Seuls les juges non
  *    retirés au test des candidats y sont mesurés : il le suit. Son absence se publie dans
  *    `run.json#/contrefactuel_outils` (`publication-contrefactuel-outils.ts`,
- *    `inscription-contrefactuel-outils.ts`), une fois. Aujourd'hui, la chaîne ne décide que
- *    l'absence que l'instantané du gel suffit à établir : moins de deux assistants inclus
- *    (`outilsDuDerangement`, `absenceFauteDOutils`). Au-delà, l'éditeur partagé et le test lui-même
- *    exigent le libellé et l'éditeur de chaque outil, que le §7 lit à l'instantané du gel et que
- *    `run.json` ne porte pas encore : rien n'est inscrit, et le résultat le dit
- *    (`libelles_et_editeurs_hors_du_gel`), jamais en silence. Un run invalide ou un test des
+ *    `inscription-contrefactuel-outils.ts`), une fois. Le libellé et l'éditeur de chaque outil sont
+ *    ceux de l'instantané du gel (`run.json#/perimetre/outils`, D84), jamais du périmètre courant ;
+ *    `derangement-outils.ts:derangementOutilsOuAbsence` les reçoit avec les assistants inclus
+ *    (`outilsDuDerangement`), tout le périmètre et ses comparateurs, et décide l'absence : moins de
+ *    deux assistants, deux assistants du même éditeur, un comparateur du même éditeur qu'un
+ *    assistant. Quand le dérangement est tiré, le test joué (sous-ensemble, paires, taux par juge)
+ *    n'a pas encore de forme publiée : rien n'est inscrit, et le résultat le dit
+ *    (`derangement_tire_test_non_branche`), jamais en silence. Un run invalide ou un test des
  *    candidats en attente ne le passe pas (`contrefactuel_candidats_non_conclu`).
  * 4. **Masse.** Le run est relu ; chaque réponse obtenue est notée par les juges non retirés (un juge
  *    retiré n'est plus appelé, ses notations du sous-ensemble restent écrites et sont écartées par
@@ -91,7 +93,7 @@ import { construireCharge, type DemandeCharge, type QuestionPosee, type Referenc
 import { testerContrefactuel, type ContrefactuelFauteDInterroges, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
 import { decider, type MotifAttente } from "./decision.ts";
 import { MINIMUM_INTERROGES_DERANGEMENT, tirerDerangement, type Derangement } from "./derangement.ts";
-import { absenceFauteDOutils, outilsDuDerangement } from "./derangement-outils.ts";
+import { derangementOutilsOuAbsence, outilsDuContrefactuel } from "./derangement-outils.ts";
 import { inscrireContrefactuelOutils } from "./inscription-contrefactuel-outils.ts";
 import { publierAbsenceContrefactuelOutils, type BlocContrefactuelOutils } from "./publication-contrefactuel-outils.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
@@ -147,7 +149,7 @@ export type EtatContrefactuel =
 /** Le contrefactuel d'outil : son absence inscrite, ou la raison pour laquelle rien ne l'est (étape 3 bis). */
 export type EtatContrefactuelOutils =
   | { readonly statut: IssueInscription; readonly bloc: BlocContrefactuelOutils }
-  | { readonly statut: "non_joue"; readonly motif: "contrefactuel_candidats_non_conclu" | "libelles_et_editeurs_hors_du_gel" };
+  | { readonly statut: "non_joue"; readonly motif: "contrefactuel_candidats_non_conclu" | "derangement_tire_test_non_branche" };
 
 export interface ResultatChaine {
   readonly run_id: Ulid;
@@ -575,14 +577,15 @@ function notationsDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[])
 /* ------------------------------------------------------------------ contrefactuel d'outil */
 
 /**
- * Étape 3 bis : sous deux assistants inclus au gel, le test d'outil est absent et son absence est
- * inscrite, sans tirage ni juge. Au-delà, rien n'est inscrit : la suite exige le libellé et
- * l'éditeur de chaque outil, absents de l'instantané du gel (§7).
+ * Étape 3 bis : les outils lus à l'instantané du gel (D84), le dérangement ou l'absence décidés par
+ * `derangementOutilsOuAbsence`. Une absence est inscrite, sans tirage ni juge. Un dérangement tiré
+ * n'inscrit rien : le test joué n'a pas encore de forme publiée, et le résultat le dit.
  */
 function passerContrefactuelOutils(etat: Etat): EtatContrefactuelOutils {
-  const absence = absenceFauteDOutils(outilsDuDerangement(etat.run.perimetre.outils).length);
-  if (absence === null) return { statut: "non_joue", motif: "libelles_et_editeurs_hors_du_gel" };
-  const bloc = publierAbsenceContrefactuelOutils(absence);
+  const { permutes, perimetre, comparateurs } = outilsDuContrefactuel(etat.run.perimetre.outils);
+  const issue = derangementOutilsOuAbsence(permutes, perimetre, etat.run.graines.contrefactuel, comparateurs);
+  if (issue.statut === "tire") return { statut: "non_joue", motif: "derangement_tire_test_non_branche" };
+  const bloc = publierAbsenceContrefactuelOutils(issue);
   return { statut: inscrireContrefactuelOutils(etat.env.repertoire_run, bloc), bloc };
 }
 

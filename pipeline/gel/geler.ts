@@ -18,7 +18,8 @@
  *    `precedent.ts`) : lu sous `runs/` du dépôt, publié, son tirage et son `questions.json` vérifiés
  *    sur les empreintes que son `run.json` déclare, ou son absence déclarée ; tout défaut est refusé.
  *    Puis le run de l'application du mois (§6, D73 (11), `application.ts`) : désigné
- *    d'après les runs déjà gelés sous `runs/`, ou refusé si leur ordre ne permet pas de le dire. Puis le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus. Rien de tout
+ *    d'après les runs déjà gelés sous `runs/`, ou refusé si leur ordre ne permet pas de le dire ; pour
+ *    une réexécution, hérité du run qu'elle remplace (D75 (20)). Puis le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus. Rien de tout
  *    cela n'appelle le réseau. Puis l'engagement archivé (D46, `engagement.ts`) : capture du commit HEAD, antérieure à
  *    `date_gel`, servie par la Wayback Machine. Puis la balise, lue sur les deux relais (D44,
  *    `balise.ts:lireBalise`). Chaque refus est nommé ; aucun repli.
@@ -207,7 +208,7 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   exigerGelApresDateGel(maintenant_ms, date_gel_ms);
   exigerGelAvantFenetre(maintenant_ms, prepare.fenetre.debut_ms);
   const precedent = lirePrecedent(options.racine, date_gel_ms);
-  const application_testee = lireApplicationTestee(options.racine, options.type_run, date_gel_ms);
+  const application_testee = lireApplicationTestee(options.racine, options.type_run, date_gel_ms, run_remplace_id);
   const { engagement, balise } = await lireAlea(options, commit, date_gel_ms);
   const run_id = identifiantDuRun(date_gel_ms, balise.alea);
   const tire = tirerAuGel(prepare, entrees, run_id, valeursDesGraines(balise.alea), precedent);

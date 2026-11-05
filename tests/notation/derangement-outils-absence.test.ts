@@ -12,6 +12,7 @@ import {
   absenceFauteDOutils,
   correspondancesOutils,
   derangementOutilsOuAbsence,
+  outilsDuContrefactuel,
   outilsDuDerangement,
   FormesOutilsAmbigues,
   tirerDerangementOutils,
@@ -213,5 +214,25 @@ describe("outils du dérangement : les assistants inclus du périmètre (§7)", 
     expect(absenceFauteDOutils(0)).toEqual({ statut: "indefini", motif: "moins_de_deux_outils", outils: 0, editeurs_partages: [] });
     expect(absenceFauteDOutils(1)).toEqual({ statut: "indefini", motif: "moins_de_deux_outils", outils: 1, editeurs_partages: [] });
     expect(absenceFauteDOutils(2)).toBeNull();
+  });
+});
+
+describe("D84 : les entrées du contrefactuel d'outil, lues de l'instantané du gel (§7)", () => {
+  it("permutés : les assistants inclus ; périmètre : tous les outils, libellé et éditeur du gel ; comparateurs : ceux du périmètre", () => {
+    const outils = [
+      { outil_id: "b", libelle: "Outil B", editeur: "Éditeur B", famille: "assistant", inclus: true },
+      { outil_id: "c", libelle: "Comparateur C", editeur: "Éditeur C", famille: "comparateur", inclus: true },
+      { outil_id: "x", libelle: "Outil X", editeur: "Éditeur X", famille: "assistant", inclus: false },
+      { outil_id: "d", libelle: "Comparateur D", editeur: "Éditeur D", famille: "comparateur", inclus: false },
+      { outil_id: "a", libelle: "Outil A", editeur: "Éditeur A", famille: "assistant", inclus: true },
+    ] as const;
+    expect(outilsDuContrefactuel(outils)).toEqual({
+      permutes: [
+        { outil_id: "b", libelle: "Outil B", editeur: "Éditeur B" },
+        { outil_id: "a", libelle: "Outil A", editeur: "Éditeur A" },
+      ],
+      perimetre: outils.map(({ outil_id, libelle, editeur }) => ({ outil_id, libelle, editeur })),
+      comparateurs: ["c", "d"],
+    });
   });
 });

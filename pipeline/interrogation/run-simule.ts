@@ -34,6 +34,7 @@ import { adaptateurSimule, scenarioParEmpreinte, TransportSimule } from "./edite
 import { estObjetJson } from "./editeur.ts";
 import { executerRun, type BilanExecution } from "./executer.ts";
 import { ouvrirFenetre, type Fenetre } from "./fenetre.ts";
+import { ECHANTILLONS } from "./conditions.ts";
 import { horlogeSysteme, HorlogeVirtuelle } from "./horloge.ts";
 import { planifier, type PlanInterrogation } from "./plan.ts";
 import { inscrireDemarrage, lireRunGele } from "./run-gele.ts";
@@ -182,7 +183,8 @@ export async function lancerRunSimule(options: OptionsRunSimule): Promise<Result
     alias_aveugles: parametres.alias_aveugles,
   });
   return executerSimulation({
-    plan: planifier(perimetre.perimetre.outils, lireQuestions(join(fixtures, "questions.json"))),
+    // Sans gel, aucun run.json ne porte encore le nombre d'échantillons : celui du §6, comme le gel l'inscrirait.
+    plan: planifier(perimetre.perimetre.outils, lireQuestions(join(fixtures, "questions.json")), ECHANTILLONS),
     run_id: parametres.run_id,
     // Un run simulé sur fixtures n'a pas de dépôt de runs : une réexécution y est refusée (run remplacé introuvable).
     fenetre: ouvrirFenetre(parametres.fenetre_debut, { type_run: parametres.type_run, date_gel: perimetre.date_gel }, () => []),
@@ -210,7 +212,7 @@ export async function lancerRunGeleSimule(options: OptionsRunGeleSimule): Promis
   const gele = lireRunGele(options.repertoire, () => lireRunsDuDepot(options.runs));
   const simulation = simulationDe(lireObjet(options.profils), options.profils);
   const resultat = await executerSimulation({
-    plan: planifier(gele.outils, gele.questions_tirees),
+    plan: planifier(gele.outils, gele.questions_tirees, gele.echantillons),
     run_id: gele.run_id,
     fenetre: gele.fenetre,
     disposition: dispositionDuRepertoire(gele.repertoire),
@@ -241,7 +243,7 @@ export interface ResultatStockageGeleSimule {
 export function stockerRunGeleSimule(options: OptionsStockageGeleSimule): ResultatStockageGeleSimule {
   const gele = lireRunGele(options.repertoire, () => lireRunsDuDepot(options.runs));
   const simulation = simulationDe(lireObjet(options.profils), options.profils);
-  const plan = planifier(gele.outils, gele.questions_tirees);
+  const plan = planifier(gele.outils, gele.questions_tirees, gele.echantillons);
   const adaptateurs = new Map(
     [...plan.keys()].map((outil_id) => {
       if (!simulation.profils.has(outil_id)) throw new ProfilSimuleAbsent(outil_id);

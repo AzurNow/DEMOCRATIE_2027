@@ -92,9 +92,14 @@ interface CandidatSaisi {
   readonly contact_notification: unknown;
 }
 
-/** Ce que l'outil porte dans l'instantané : tout ce qui est saisi, sauf libelle, editeur et sdk. */
+/**
+ * Ce que l'outil porte dans l'instantané : tout ce qui est saisi, sauf sdk. Le libellé et l'éditeur y
+ * sont recopiés tels quels (D84) : le contrefactuel d'outil les lit à l'instantané du gel (§7).
+ */
 interface OutilCommun {
   readonly outil_id: string;
+  readonly libelle: string;
+  readonly editeur: string;
   readonly famille: "assistant" | "comparateur";
   readonly inclus: boolean;
   readonly motif_exclusion?: string;
@@ -107,8 +112,6 @@ interface OutilCommun {
 }
 
 interface OutilSaisi extends OutilCommun {
-  readonly libelle: string;
-  readonly editeur: string;
   readonly sdk?: { readonly paquet: string; readonly version: string };
 }
 
@@ -556,9 +559,12 @@ function candidatAuGel(
   };
 }
 
-/** L'alias absent reste absent : `run.schema.json` refuse alors l'assistant inclus qui n'en a pas. */
+/**
+ * L'alias absent reste absent : `run.schema.json` refuse alors l'assistant inclus qui n'en a pas.
+ * Seul le SDK est retiré : le libellé et l'éditeur restent dans l'instantané (D84, §7).
+ */
 function outilAuGel(outil: OutilSaisi, alias: ReadonlyMap<string, string>): OutilDeRun {
-  const { libelle: _libelle, editeur: _editeur, sdk: _sdk, ...reste } = outil;
+  const { sdk: _sdk, ...reste } = outil;
   const alias_aveugle = alias.get(outil.outil_id);
   return alias_aveugle === undefined ? reste : { ...reste, alias_aveugle };
 }

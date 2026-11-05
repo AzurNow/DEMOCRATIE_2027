@@ -4,7 +4,9 @@
  *
  * - Sont interrogés les assistants inclus du périmètre ; un comparateur est lu, pas interrogé (§6).
  * - Pour chacun, chaque mode qu'il déclare dans `perimetre.outils[].modes` — un outil sans mode
- *   web n'a que `web_desactivee` —, chaque question, chaque formulation, `ECHANTILLONS` fois (§2, §6).
+ *   web n'a que `web_desactivee` —, chaque question, chaque formulation, `echantillons` fois (§2,
+ *   §6) : le nombre inscrit au gel dans `run.json#/reponses/echantillons_par_question` (D75 (14)),
+ *   que l'appelant passe, jamais reconstruit ici ; sous le levier 2 → 1 du §12, un seul tour.
  * - Ordre : tous les échantillons 1 avant tous les échantillons 2 (un tour par échantillon) ;
  *   dans un tour, tri croissant par chaîne sur (question_id, mode, formulation_id). Aucune graine.
  *
@@ -14,7 +16,7 @@
 
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import { ECHANTILLONS } from "./conditions.ts";
+import type { EchantillonsParQuestion } from "./conditions.ts";
 import type { Mode, RequetePlanifiee } from "./types.ts";
 
 /** Ce que le plan lit d'une question : son identifiant et le texte de ses formulations. */
@@ -85,9 +87,9 @@ function combinaisons(questions: readonly QuestionAInterroger[], modes: readonly
     .sort(comparerCombinaisons);
 }
 
-function fileDe(outil: OutilInterroge, questions: readonly QuestionAInterroger[]): readonly RequetePlanifiee[] {
+function fileDe(outil: OutilInterroge, questions: readonly QuestionAInterroger[], nombre: EchantillonsParQuestion): readonly RequetePlanifiee[] {
   const tour = combinaisons(questions, outil.modes);
-  const echantillons = Array.from({ length: ECHANTILLONS }, (_, rang) => rang + 1);
+  const echantillons = Array.from({ length: nombre }, (_, rang) => rang + 1);
   return echantillons.flatMap((echantillon) =>
     tour.map((c) => ({
       outil_id: outil.outil_id,
@@ -110,8 +112,12 @@ function exigerQuestionsUniques(questions: readonly QuestionAInterroger[]): void
   }
 }
 
-export function planifier(outils: readonly OutilDeRun[], questions: readonly QuestionAInterroger[]): PlanInterrogation {
+export function planifier(
+  outils: readonly OutilDeRun[],
+  questions: readonly QuestionAInterroger[],
+  echantillons: EchantillonsParQuestion,
+): PlanInterrogation {
   exigerQuestionsUniques(questions);
   const interroges = outils.filter(estInterroge).map(exigerInterrogeable);
-  return new Map(interroges.map((outil) => [outil.outil_id, fileDe(outil, questions)]));
+  return new Map(interroges.map((outil) => [outil.outil_id, fileDe(outil, questions, echantillons)]));
 }

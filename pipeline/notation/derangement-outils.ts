@@ -147,6 +147,36 @@ export function outilsDuDerangement(outils: readonly OutilDeFamille[]): readonly
   return outils.filter((outil) => outil.famille === "assistant" && outil.inclus).map((outil) => outil.outil_id);
 }
 
+/** Ce que `run.json#/perimetre/outils[]` porte d'un outil au gel : sa famille et ses noms (D84). */
+export interface OutilAuGelNomme extends OutilDeFamille {
+  readonly libelle: string;
+  readonly editeur: string;
+}
+
+/** Les trois listes que `derangementOutilsOuAbsence` reçoit de l'appelant. */
+export interface OutilsDuContrefactuel {
+  readonly permutes: readonly OutilNomme[];
+  readonly perimetre: readonly OutilNomme[];
+  readonly comparateurs: readonly string[];
+}
+
+/**
+ * Les outils du contrefactuel d'outil, lus à l'instantané du périmètre inscrit au gel (§7 : « Le
+ * libellé et l'éditeur de chaque outil sont ceux de l'instantané du périmètre inscrit au gel » ; D84),
+ * jamais au périmètre courant : les assistants inclus, permutés (`outilsDuDerangement`), tout le
+ * périmètre, dont les noms sont cherchés, et ses comparateurs (« un comparateur du périmètre »,
+ * famille `comparateur`, inclus ou non : leurs noms sont cherchés de même), dans l'ordre du périmètre.
+ */
+export function outilsDuContrefactuel(outils: readonly OutilAuGelNomme[]): OutilsDuContrefactuel {
+  const perimetre = outils.map(({ outil_id, libelle, editeur }) => ({ outil_id, libelle, editeur }));
+  const derangement = new Set(outilsDuDerangement(outils));
+  return {
+    permutes: perimetre.filter((outil) => derangement.has(outil.outil_id)),
+    perimetre,
+    comparateurs: outils.filter((outil) => outil.famille === "comparateur").map((outil) => outil.outil_id),
+  };
+}
+
 /** §7 0.24 : sous deux outils au dérangement, le test est absent ; sinon `null`, rien n'est encore décidé. */
 export function absenceFauteDOutils(outils: number): AbsenceContrefactuelOutils | null {
   return outils < MINIMUM_OUTILS_DERANGEMENT ? absence("moins_de_deux_outils", outils, []) : null;

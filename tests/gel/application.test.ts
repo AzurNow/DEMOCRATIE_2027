@@ -23,6 +23,8 @@ import { jeuNominal } from "./jeux.ts";
 
 const RUN_A = "01JF0000000000000000000001";
 const RUN_B = "01JF0000000000000000000002";
+const RUN_C = "01JF0000000000000000000003";
+const DESIGNE_MARS = { designe: true, mois_utc: "2027-03" } as const;
 
 /** Le statut est porté comme sous `runs/`, pour montrer qu'il n'est pas lu. */
 function run(repertoire: string, id: string, type_run: string, date_gel: string, statut = "publie"): RunGelePourApplication & { readonly statut: string } {
@@ -109,11 +111,16 @@ describe("applicationDuGel : désignation au gel", () => {
     expect(applicationDuGel(runs, "hebdomadaire", Date.parse("2027-03-09T00:00:00Z"))).toEqual({ designe: true, mois_utc: "2027-03" });
   });
 
-  it("une réexécution n'est ni mensuelle ni hebdomadaire : jamais désignée (lecture littérale, question ouverte)", () => {
-    expect(applicationDuGel([], "reexecution", Date.parse("2027-03-10T00:00:00Z"))).toEqual({
+  it("une réexécution ne prend jamais la place du premier run du mois : le run mensuel suivant reste non désigné", () => {
+    const runs = [
+      { ...run("2027-03-02", RUN_A, "mensuel", "2027-03-02T00:00:00Z", "invalide"), application_testee: DESIGNE_MARS },
+      { ...run("2027-03-03", RUN_B, "reexecution", "2027-03-03T00:00:00Z"), application_testee: DESIGNE_MARS },
+    ];
+    expect(applicationDuGel(runs, "mensuel", Date.parse("2027-03-16T00:00:00Z"))).toEqual({
       designe: false,
       mois_utc: "2027-03",
-      motif: "type_run_exclu",
+      motif: "mois_deja_servi",
+      premier_run_id: RUN_A,
     });
   });
 
@@ -180,6 +187,55 @@ describe("applicationDuGel : désignation au gel", () => {
 
 /* ---------------------------------------------------------------- schéma */
 
+/* ------------------------------------------------- réexécution : héritage */
+
+describe("D75 (20), §6 (0.33) : une réexécution hérite de la désignation du run qu'elle remplace", () => {
+  it("réexécution du premier run du mois, invalidé : désignée comme lui, même gelée le mois suivant", () => {
+    const runs = [{ ...run("2027-03-30", RUN_A, "mensuel", "2027-03-30T00:00:00Z", "invalide"), application_testee: DESIGNE_MARS }];
+    expect(applicationDuGel(runs, "reexecution", Date.parse("2027-04-02T00:00:00Z"), RUN_A)).toEqual(DESIGNE_MARS);
+  });
+
+  it("réexécution d'un run non désigné (mois déjà servi) : non désignée, avec le même premier run", () => {
+    const servi = { designe: false, mois_utc: "2027-03", motif: "mois_deja_servi", premier_run_id: RUN_A } as const;
+    const runs = [
+      { ...run("2027-03-02", RUN_A, "mensuel", "2027-03-02T00:00:00Z"), application_testee: DESIGNE_MARS },
+      { ...run("2027-03-09", RUN_B, "hebdomadaire", "2027-03-09T00:00:00Z", "invalide"), application_testee: servi },
+    ];
+    expect(applicationDuGel(runs, "reexecution", Date.parse("2027-03-10T00:00:00Z"), RUN_B)).toEqual(servi);
+  });
+
+  it("réexécution d'un pilote : type_run_exclu hérité", () => {
+    const exclu = { designe: false, mois_utc: "2027-03", motif: "type_run_exclu" } as const;
+    const runs = [{ ...run("2027-03-02", RUN_A, "pilote", "2027-03-02T00:00:00Z", "invalide"), application_testee: exclu }];
+    expect(applicationDuGel(runs, "reexecution", Date.parse("2027-03-03T00:00:00Z"), RUN_A)).toEqual(exclu);
+  });
+
+  it("réexécution d'une réexécution : la désignation est héritée de proche en proche", () => {
+    const runs = [
+      { ...run("2027-03-02", RUN_A, "mensuel", "2027-03-02T00:00:00Z", "invalide"), application_testee: DESIGNE_MARS },
+      { ...run("2027-03-03", RUN_B, "reexecution", "2027-03-03T00:00:00Z", "invalide"), application_testee: applicationDuGel([], "mensuel", Date.parse("2027-03-02T00:00:00Z")) },
+    ];
+    const seconde = applicationDuGel(runs, "reexecution", Date.parse("2027-04-01T00:00:00Z"), RUN_B);
+    expect(seconde).toEqual(DESIGNE_MARS);
+    const troisieme = applicationDuGel(
+      [...runs, { ...run("2027-04-01", RUN_C, "reexecution", "2027-04-01T00:00:00Z", "invalide"), application_testee: seconde }],
+      "reexecution",
+      Date.parse("2027-04-02T00:00:00Z"),
+      RUN_C,
+    );
+    expect(troisieme).toEqual(DESIGNE_MARS);
+  });
+
+  it("run remplacé sans application_testee : refus run_remplace_sans_designation, rien n'est hérité par défaut", () => {
+    const runs = [run("2027-03-02", RUN_A, "mensuel", "2027-03-02T00:00:00Z", "invalide")];
+    expect(refusDe(() => applicationDuGel(runs, "reexecution", Date.parse("2027-03-03T00:00:00Z"), RUN_A)).motif).toBe("run_remplace_sans_designation");
+  });
+
+  it("run remplacé absent des runs lus : invariant violé (remplacement.ts l'a déjà refusé), jamais une désignation", () => {
+    expect(() => applicationDuGel([], "reexecution", Date.parse("2027-03-03T00:00:00Z"), RUN_A)).toThrow(/Invariant violé/);
+  });
+});
+
 describe("run.schema.json#/properties/application_testee", () => {
   /** valide-01 est un run mensuel publié ; `type_run` est surchargé au besoin. */
   const fragment = (valeur: unknown, type_run = "mensuel") => valider<unknown>("run", { ...exempleValide(), type_run, application_testee: valeur }, "test");
@@ -190,8 +246,18 @@ describe("run.schema.json#/properties/application_testee", () => {
     expect(() => fragment({ designe: false, mois_utc: "2027-02", motif: "mois_deja_servi", premier_run_id: RUN_A })).not.toThrow();
   });
 
-  it("un run.json sans le champ reste conforme : un run gelé avant ce lot reste lisible", () => {
+  it("D75 (21) : application_testee absent ⇒ refusé, jamais lu comme une non-désignation", () => {
+    const { application_testee: _retire, ...sans } = exempleValide();
     expect(() => valider<unknown>("run", exempleValide(), "test")).not.toThrow();
+    expect(() => valider<unknown>("run", sans, "test")).toThrow(/application_testee/);
+  });
+
+  it("D75 (20) : une réexécution porte la désignation héritée sous l'une quelconque des trois formes", () => {
+    const remplace = { run_remplace_id: RUN_A };
+    const pour = (valeur: unknown) => valider<unknown>("run", { ...exempleValide(), type_run: "reexecution", ...remplace, application_testee: valeur }, "test");
+    expect(() => pour({ designe: true, mois_utc: "2027-02" })).not.toThrow();
+    expect(() => pour({ designe: false, mois_utc: "2027-02", motif: "type_run_exclu" })).not.toThrow();
+    expect(() => pour({ designe: false, mois_utc: "2027-02", motif: "mois_deja_servi", premier_run_id: RUN_A })).not.toThrow();
   });
 
   it("un run mensuel ou hebdomadaire ne porte jamais le motif type_run_exclu", () => {

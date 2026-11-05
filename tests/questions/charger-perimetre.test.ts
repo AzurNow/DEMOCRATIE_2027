@@ -758,14 +758,21 @@ describe("cas 14 : l'instantané est conforme à run.schema.json et garde les pr
     expect(rang(perimetre.outils, 0).preuve_inclusion).toEqual(PREUVE_STORE);
   });
 
-  it("projette libelle, editeur et sdk hors de l'instantané, et n'y met pas par_mode", () => {
+  it("projette sdk hors de l'instantané, et n'y met pas par_mode", () => {
     const { perimetre } = charger(perimetreComplet());
     for (const outil of perimetre.outils) {
-      expect(outil).not.toHaveProperty("libelle");
-      expect(outil).not.toHaveProperty("editeur");
       expect(outil).not.toHaveProperty("sdk");
       expect(outil).not.toHaveProperty("par_mode");
     }
+  });
+
+  it("D84 : recopie tels quels le libellé et l'éditeur de chaque outil, inclus ou non, dans l'instantané", () => {
+    const { perimetre } = charger(perimetreComplet());
+    expect(perimetre.outils.map(({ outil_id, libelle, editeur }) => ({ outil_id, libelle, editeur }))).toEqual([
+      { outil_id: "outil-alpha", libelle: "Outil Alpha", editeur: "Éditeur Alpha" },
+      { outil_id: "comparateur-gamma", libelle: "Comparateur Gamma", editeur: "Association Gamma" },
+      { outil_id: "outil-beta", libelle: "Outil Beta", editeur: "Éditeur Beta" },
+    ]);
   });
 
   it("run.schema refuse désormais une déclaration sans sha256 ni archive_url", () => {

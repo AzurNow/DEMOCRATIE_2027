@@ -189,7 +189,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["outil_id", "libelle", "editeur", "famille", "inclus"],
-      "description": "libelle, editeur et sdk restent dans ce fichier : run.schema.json ne les porte pas, et le chargeur les projette hors de l'instantané.",
+      "description": "sdk reste dans ce fichier : run.schema.json ne le porte pas, et le chargeur le projette hors de l'instantané. libelle et editeur sont recopiés dans l'instantané au gel (run.schema.json#/properties/perimetre/properties/outils, D84), où le contrefactuel d'outil les lit (§7).",
       "properties": {
         "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
         "libelle": { "$ref": "#/$defs/texte" },

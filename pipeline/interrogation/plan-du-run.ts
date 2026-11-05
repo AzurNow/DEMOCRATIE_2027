@@ -5,9 +5,11 @@
  * chaque échantillon —, et non sur les réponses enregistrées ».
  *
  * Aucune copie de la règle du plan : `pipeline/interrogation/plan.ts:planifier`, celle qu'a suivie
- * l'interrogation, reçoit les outils au gel (`run.json#/perimetre/outils`) et les questions du
- * tirage (`tirage.json#/entrees`, prises avec leurs formulations dans `questions.json`). Les deux
- * fichiers sont lus par `analysis/lecture-run.ts` (empreinte du tirage contre `run.json`, schémas).
+ * l'interrogation, reçoit les outils au gel (`run.json#/perimetre/outils`), les questions du
+ * tirage (`tirage.json#/entrees`, prises avec leurs formulations dans `questions.json`) et le nombre
+ * d'échantillons inscrit au gel (`run.json#/reponses/echantillons_par_question`, D75 (14)), jamais
+ * la constante du §6 : un run gelé sous le levier 2 → 1 du §12 garde un plan à un échantillon. Les
+ * deux fichiers sont lus par `analysis/lecture-run.ts` (empreinte du tirage contre `run.json`, schémas).
  *
  * Le résultat est la liste à plat des requêtes, que `analysis/seuils.ts` reçoit en paramètre
  * (`RequeteDuPlan`) : `analysis/` n'importe pas le code d'interrogation (flux à sens unique).
@@ -51,5 +53,5 @@ function questionsTirees(repertoire_run: string, run: RunLu): readonly Question[
 export function requetesDuPlanDuRun(repertoire_run: string, run: RunLu): readonly RequetePlanifiee[] {
   exigerFichier(cheminDuTirage(repertoire_run, run));
   exigerFichier(dispositionRunNote(repertoire_run).questions);
-  return [...planifier(run.perimetre.outils, questionsTirees(repertoire_run, run)).values()].flat();
+  return [...planifier(run.perimetre.outils, questionsTirees(repertoire_run, run), run.reponses.echantillons_par_question).values()].flat();
 }
