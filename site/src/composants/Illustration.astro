@@ -1,0 +1,39 @@
+---
+/**
+ * Une illustration pixel art de la page pédagogique, insérée en ligne (le SVG lit les variables
+ * --px-… du thème). Le cadre a un format fixe 4:3 : c'est l'emplacement où une illustration
+ * commandée remplacera plus tard le SVG, sans toucher au reste de la page.
+ * Un nom sans fichier fait échouer la construction : jamais de cadre vide silencieux.
+ */
+type NomIllustration =
+  | "accroche"
+  | "collecter"
+  | "valider"
+  | "questionner"
+  | "interroger"
+  | "noter"
+  | "analyser"
+  | "publier";
+
+interface Props {
+  nom: NomIllustration;
+  alt: string;
+}
+
+const { nom, alt } = Astro.props;
+
+const fichiers = import.meta.glob<string>("../illustrations/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+const svg = fichiers[`../illustrations/${nom}.svg`];
+if (svg === undefined) {
+  throw new Error(`Illustration inconnue : « ${nom} » (aucun fichier site/src/illustrations/${nom}.svg).`);
+}
+---
+
+<figure class={`illustration illustration--${nom}`}>
+  <div class="illustration__cadre" role="img" aria-label={alt} set:html={svg} />
+</figure>
