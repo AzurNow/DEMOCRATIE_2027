@@ -3157,6 +3157,65 @@
     "statut": "sans_objet",
     "motif": "outils_de_son_editeur_non_declares"
   },
+  "renvois_humains": {
+    "statut": "calcule",
+    "par_juge": [
+      {
+        "juge_id": "juge-1",
+        "retire": false,
+        "par_contexte": {
+          "run": {
+            "attribution_indecidable": 0,
+            "erreur_api_persistante": 0,
+            "contexte_depasse": 0,
+            "sortie_refusee": 0,
+            "sortie_illisible": 0
+          },
+          "contrefactuel_candidat": {
+            "attribution_indecidable": 0,
+            "erreur_api_persistante": 0,
+            "contexte_depasse": 0,
+            "sortie_refusee": 0,
+            "sortie_illisible": 0
+          },
+          "contrefactuel_outil": {
+            "attribution_indecidable": 0,
+            "erreur_api_persistante": 0,
+            "contexte_depasse": 0,
+            "sortie_refusee": 0,
+            "sortie_illisible": 0
+          }
+        }
+      },
+      {
+        "juge_id": "juge-2",
+        "retire": false,
+        "par_contexte": {
+          "run": {
+            "attribution_indecidable": 0,
+            "erreur_api_persistante": 0,
+            "contexte_depasse": 0,
+            "sortie_refusee": 0,
+            "sortie_illisible": 0
+          },
+          "contrefactuel_candidat": {
+            "attribution_indecidable": 0,
+            "erreur_api_persistante": 0,
+            "contexte_depasse": 0,
+            "sortie_refusee": 0,
+            "sortie_illisible": 0
+          },
+          "contrefactuel_outil": {
+            "attribution_indecidable": 0,
+            "erreur_api_persistante": 0,
+            "contexte_depasse": 0,
+            "sortie_refusee": 0,
+            "sortie_illisible": 0
+          }
+        }
+      }
+    ]
+  },
   "hypotheses": {
     "H1": {
       "statut": "calcule",

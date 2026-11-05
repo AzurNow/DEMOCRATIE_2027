@@ -5,7 +5,7 @@
   "description": "§8 : runs/<date>/metriques/metriques.json, écrit par pnpm analyze (analysis/analyse-du-run.ts, sous-lot A), jamais réécrit : absent, il est écrit ; identique à l'octet près, rien n'est fait ; différent, la commande refuse. Toutes les sections reposent sur un seul partage de la population (population), calculé une fois au calcul principal et repris tel quel par chaque recalcul de robustesse (§8 : « les seuils de non-publication ne sont pas réappliqués à la population restreinte »). Chaque section est calculée ou sans objet, avec son motif. Les kappas et le test contrefactuel n'y sont pas recopiés : ils vivent dans run.json, que entrees.run_json_sha256 désigne.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "comparateurs", "ecart_juge_editeur", "hypotheses", "exploratoire", "graines"],
+  "required": ["run_id", "entrees", "parametres", "population", "taux", "asymetrie", "conditions", "robustesse", "variabilite_echantillons", "comparateurs", "ecart_juge_editeur", "renvois_humains", "hypotheses", "exploratoire", "graines"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -271,6 +271,16 @@
         }
       ]
     },
+    "renvois_humains": {
+      "description": "§7, « Juges automatiques » (§7.59 de docs/conformite/exigences.json ; décision D74 (22)) : « Une réponse qu'un juge ne peut pas noter […] est renvoyée à un humain […] ; elle sort du kappa de ce juge, et leur nombre est publié par juge, avec leur motif. » Le nombre de renvois (volume/renvois/, schema/renvoi-humain.schema.json) de chaque juge déclaré au gel (run.json#/juges[], dans son ordre, désigné par son identifiant de gel, juge retiré compris avec retire: true), par contexte du renvoi et par motif (analysis/renvois-humains.ts). Chaque contexte et chaque motif connus sont présents, 0 compris : une clé absente ne vaut jamais zéro, et un motif inconnu du schéma des renvois est refusé avant l'écriture. Les renvois du test contrefactuel (contrefactuel_candidat, contrefactuel_outil) portent sur des copies permutées : comptés sous leur contexte, jamais additionnés à ceux du run. Jamais sans objet : un run déclare toujours ses deux juges (§7).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statut", "par_juge"],
+      "properties": {
+        "statut": { "const": "calcule" },
+        "par_juge": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/renvois_d_un_juge" } }
+      }
+    },
     "hypotheses": {
       "type": "object",
       "additionalProperties": false,
@@ -475,6 +485,39 @@
         "exactitude_juge": { "$ref": "#/$defs/taux" },
         "exactitude_autre_juge": { "$ref": "#/$defs/taux" },
         "ecart": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": -1, "maximum": 1 }] }
+      }
+    },
+    "renvois_d_un_juge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["juge_id", "retire", "par_contexte"],
+      "properties": {
+        "juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "retire": { "type": "boolean", "description": "run.json#/juges[]/retire : un juge retiré au test contrefactuel reste déclaré (§7) et ses renvois restent publiés." },
+        "par_contexte": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["run", "contrefactuel_candidat", "contrefactuel_outil"],
+          "description": "Les contextes de schema/renvoi-humain.schema.json, tous présents.",
+          "properties": {
+            "run": { "$ref": "#/$defs/renvois_par_motif" },
+            "contrefactuel_candidat": { "$ref": "#/$defs/renvois_par_motif" },
+            "contrefactuel_outil": { "$ref": "#/$defs/renvois_par_motif" }
+          }
+        }
+      }
+    },
+    "renvois_par_motif": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attribution_indecidable", "erreur_api_persistante", "contexte_depasse", "sortie_refusee", "sortie_illisible"],
+      "description": "Les motifs de schema/renvoi-humain.schema.json, tous présents, 0 compris ; aucun autre.",
+      "properties": {
+        "attribution_indecidable": { "$ref": "#/$defs/effectif" },
+        "erreur_api_persistante": { "$ref": "#/$defs/effectif" },
+        "contexte_depasse": { "$ref": "#/$defs/effectif" },
+        "sortie_refusee": { "$ref": "#/$defs/effectif" },
+        "sortie_illisible": { "$ref": "#/$defs/effectif" }
       }
     },
     "ecart_juge_editeur": {

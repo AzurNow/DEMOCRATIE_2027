@@ -37,7 +37,12 @@ describe("pnpm analyze sur un run lu sur disque", () => {
     const accord = (fictif.run["accord_humains_echantillon"] as Record<string, unknown>)["motif_indefini_kappa"];
     expect(accord).toBe("accord_attendu_maximal");
     const document = analyserRun(lireEntreesDuRun(fictif.repertoire_run, options(fictif)), PARAMETRES, null);
-    expect(JSON.stringify(document)).not.toMatch(/kappa|contrefactuel/);
+    // §7 (D74 (22)) : la section renvois_humains nomme les contextes de renvoi du test contrefactuel
+    // (contrefactuel_candidat, contrefactuel_outil) pour y ranger des comptes ; elle ne recopie ni
+    // kappa ni taux. Le reste du document ne nomme ni l'un ni l'autre.
+    const { renvois_humains, ...reste } = document as { renvois_humains: unknown };
+    expect(JSON.stringify(reste)).not.toMatch(/kappa|contrefactuel/);
+    expect(JSON.stringify(renvois_humains)).not.toMatch(/kappa|taux|changement|paires/);
     // Le seul couple du run fictif est incomplet (10 requêtes sur 12 sans réponse) : rien n'est comparé.
     expect(document).toMatchObject({ taux: { statut: "sans_objet", motif: "aucun_couple_compare" }, hypotheses: { H1: { verdict: "sans_objet" }, H4: { verdict: "indecidable" } } });
   });
