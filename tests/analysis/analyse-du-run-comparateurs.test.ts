@@ -5,17 +5,20 @@
  * `bootstrap / <outil> / lecture / <métrique> / global` (§8, « Graines de l'analyse » : « Un taux qui
  * n'a pas de mode, celui d'un comparateur […], porte à la place du mode le composant `lecture` »).
  *
- * La note retenue d'une lecture affichée vient de ses notations humaines, par la règle de
- * l'échantillon (§6 ; `pipeline/notation/lectures-comparateur.ts:etatsDesLectures`, injectée comme
- * `pnpm analyze` l'injecte) : une notation sans déclaration d'aveuglement est refusée (D62).
+ * La note retenue d'une lecture affichée est celle de son verdict de lecture (§6, 0.31, D73 (13) ;
+ * D75 (16)), construit ici comme la chaîne le construit
+ * (`pipeline/notation/lectures-comparateur.ts:verdictDeLecture`), et recoupée par la règle de
+ * l'échantillon sur ses notations humaines (`etatsDesLectures`, injectée comme `pnpm analyze`
+ * l'injecte) : une notation sans déclaration d'aveuglement est refusée (D62).
  */
 
 import { describe, expect, it } from "vitest";
-import { analyserRun, etatsDesLecturesDuRun, LectureNonRetenue, VerdictDeLectureNonDefini, type EntreesDuRun } from "../../analysis/analyse-du-run.ts";
+import { analyserRun, etatsDesLecturesDuRun, LectureNonRetenue, VerdictDeLectureIncoherent, type EntreesDuRun } from "../../analysis/analyse-du-run.ts";
+import { VerdictEnDouble } from "../../analysis/filtre.ts";
 import { LecturesComparateurIncoherentes } from "../../analysis/reference-comparateurs.ts";
-import type { CategorieRetenue, LectureComparateur, Notation } from "../../analysis/types.ts";
+import type { CategorieRetenue, LectureComparateur, Notation, Verdict } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
-import { etatsDesLectures, MOTIF_DOUBLE_NOTATION_COMPARATEUR, NotationLectureRefusee } from "../../pipeline/notation/lectures-comparateur.ts";
+import { etatsDesLectures, MOTIF_DOUBLE_NOTATION_COMPARATEUR, NotationLectureRefusee, verdictDeLecture } from "../../pipeline/notation/lectures-comparateur.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import { notationHumaine } from "../notation/fabriques.ts";
 import { empreinte, outil, ulid, verdict } from "./fabriques.ts";
@@ -105,18 +108,34 @@ function poserLectures(entrees: EntreesDuRun, spec: SpecComparateurs): LecturesP
   return posees;
 }
 
-/** Le run de référence, ou `base`, avec ses comparateurs inclus, leurs lectures et leurs notations. */
+const DATE_VERDICT_LECTURE = "2026-12-06T12:00:00+01:00";
+
+/** §6 (0.31, D73 (13)) : le verdict de chaque lecture affichée, construit comme la chaîne le construit, depuis ses notations. */
+function verdictsDesLectures(run_id: string, lectures: readonly LectureComparateur[], notations: readonly NotationIndividuelle[]): Verdict[] {
+  return lectures
+    .filter((l) => l.affiche)
+    .map((l) => verdictDeLecture(run_id, lectures, notations, l.id, { verdict_id: ulid(`v-${l.id}`), date: DATE_VERDICT_LECTURE }));
+}
+
+/** Le run de référence, ou `base`, avec ses comparateurs inclus, leurs lectures, leurs notations et leurs verdicts. */
 function avecComparateurs(spec: SpecComparateurs, base: SpecRun = SPEC_REFERENCE, ajuster: (e: EntreesDuRun) => EntreesDuRun = (e) => e): EntreesDuRun {
   const sans = ajuster(entreesDuRunAnalysable(base));
   const comparateurs = Object.keys(spec.comparateurs).map((outil_id) => outil({ outil_id, famille: "comparateur", mode_de_tete: undefined }));
   const entrees: EntreesDuRun = { ...sans, run: { ...sans.run, perimetre: { ...sans.run.perimetre, outils: [...sans.run.perimetre.outils, ...comparateurs] } } };
   const { lectures, notations } = poserLectures(entrees, spec);
+  const etats_des_lectures = etatsDesLecturesDuRun(entrees.run.id, lectures, notations, etatsDesLectures);
   return {
     ...entrees,
     lectures,
     notations: [...entrees.notations, ...(notations as Notation[])],
-    etats_des_lectures: etatsDesLecturesDuRun(entrees.run.id, lectures, notations, etatsDesLectures),
+    verdicts: [...entrees.verdicts, ...verdictsDesLectures(entrees.run.id, lectures, notations)],
+    etats_des_lectures,
   };
+}
+
+/** Les entrées sans le verdict de la lecture `lecture_id`. */
+function sansVerdictDe(entrees: EntreesDuRun, lecture_id: string): EntreesDuRun {
+  return { ...entrees, verdicts: entrees.verdicts.filter((v) => v.objet_note.id !== lecture_id) };
 }
 
 function sectionDe(entrees: EntreesDuRun): Json {
@@ -269,26 +288,102 @@ describe("notes des lectures : humaines, à l'aveugle, complètes", () => {
     }
   });
 
-  it("une lecture affichée encore à noter ou à arbitrer : refus nommé, jamais une note en repli", () => {
-    const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
-    const [premier, ...reste] = entrees.etats_des_lectures;
-    if (premier === undefined) throw new Error("aucun état");
-    const aNoter = { ...entrees, etats_des_lectures: [{ statut: "a_noter" as const, lecture_id: premier.lecture_id }, ...reste] };
-    expect(() => analyserRun(aNoter, PARAMETRES, null)).toThrow(LectureNonRetenue);
-  });
-
   it("une note pour une lecture qui n'est pas une lecture affichée du run : refus", () => {
     const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
     const etranger = { statut: "retenue" as const, lecture_id: ulid("lecture-etrangere"), note: { categorie: "exacte" as const } };
     expect(() => analyserRun({ ...entrees, etats_des_lectures: [...entrees.etats_des_lectures, etranger] }, PARAMETRES, null)).toThrow(LectureNonRetenue);
   });
+});
 
-  it("un verdict de lecture dans verdicts/ : refus, la note d'une lecture ne se lit pas à deux endroits", () => {
+/** La première lecture affichée de `outil_id` (UN_SUR_DEUX : rang 0, exacte). */
+function premiereAffichee(entrees: EntreesDuRun, outil_id: string): LectureComparateur {
+  const lecture = entrees.lectures.find((l) => l.outil_id === outil_id && l.affiche);
+  if (lecture === undefined) throw new Error(`aucune lecture affichée de ${outil_id}`);
+  return lecture;
+}
+
+describe("D75 (16) : la section des comparateurs lit le verdict de lecture", () => {
+  it("D75 (16) verdict de lecture présent : la section le lit (mode lecture_comparateur_humaine), et le document est conforme", () => {
     const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
-    const [lecture] = entrees.lectures;
-    if (lecture === undefined) throw new Error("aucune lecture");
-    const surLecture = verdict({ id: ulid("v-lecture"), objet_note: { type: "lecture_comparateur", id: lecture.id } });
-    expect(() => analyserRun({ ...entrees, verdicts: [...entrees.verdicts, surLecture] }, PARAMETRES, null)).toThrow(VerdictDeLectureNonDefini);
+    const deLecture = entrees.verdicts.filter((v) => v.objet_note.type === "lecture_comparateur");
+    expect(deLecture).toHaveLength(21);
+    expect(deLecture.every((v) => (v as Verdict & { mode_resolution?: string }).mode_resolution === "lecture_comparateur_humaine")).toBe(true);
+    const document = analyserRun(entrees, PARAMETRES, null) as Json;
+    const un = comparateur(document["comparateurs"] as Json, "comparateur-un");
+    expect(un.exactitude.taux).toMatchObject({ numerateur: 19, denominateur: 20 });
+    expect(() => valider("metriques", document, "verdicts de lecture lus")).not.toThrow();
+  });
+
+  it("D75 (16) verdict de lecture absent : le comparateur est absent avec son motif et la lecture nommée, sans exception ; les autres sont calculés", () => {
+    const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX, "comparateur-deux": UN_SUR_DEUX } });
+    const lecture = premiereAffichee(entrees, "comparateur-un");
+    const document = analyserRun(sansVerdictDe(entrees, lecture.id), PARAMETRES, null) as Json;
+    const section = document["comparateurs"] as Json;
+    expect(section["statut"]).toBe("calcule");
+    const liste = section["comparateurs"] as Json[];
+    expect(liste[0]).toEqual({ outil_id: "comparateur-un", motif_absence: "lectures_sans_verdict", lectures_sans_verdict: [lecture.id] });
+    expect(JSON.stringify(liste[0])).not.toMatch(/couverture|exactitude/);
+    expect(comparateur(section, "comparateur-deux").exactitude.taux).toMatchObject({ numerateur: 19, denominateur: 20 });
+    // Aucune graine publiée pour le comparateur absent.
+    const graines = (document["graines"] as { cle: string[] }[]).map((g) => g.cle.join("/"));
+    expect(graines.some((c) => c.includes("comparateur-un"))).toBe(false);
+    expect(() => valider("metriques", document, "comparateur sans verdict")).not.toThrow();
+  });
+
+  it("D75 (16) aucun verdict de lecture (aucun appelant ne les écrit encore) : chaque comparateur absent, ses lectures affichées toutes nommées, triées", () => {
+    const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
+    const sans = { ...entrees, verdicts: entrees.verdicts.filter((v) => v.objet_note.type !== "lecture_comparateur") };
+    const liste = ((analyserRun(sans, PARAMETRES, null) as Json)["comparateurs"] as Json)["comparateurs"] as Json[];
+    const affichees = entrees.lectures.filter((l) => l.affiche).map((l) => l.id).sort();
+    expect(liste).toEqual([{ outil_id: "comparateur-un", motif_absence: "lectures_sans_verdict", lectures_sans_verdict: affichees }]);
+  });
+
+  it("D75 (16) un comparateur qui n'affiche rien n'attend aucun verdict : il reste calculé", () => {
+    const entrees = avecComparateurs({ comparateurs: { "comparateur-deux": AUCUN } });
+    expect(entrees.verdicts.some((v) => v.objet_note.type === "lecture_comparateur")).toBe(false);
+    const deux = comparateur((analyserRun(entrees, PARAMETRES, null) as Json)["comparateurs"] as Json, "comparateur-deux");
+    expect(deux.couverture.taux).toMatchObject({ numerateur: 0, denominateur: REFERENCE });
+  });
+
+  it("D75 (16) verdict qui ne concorde pas avec ses notations humaines (autre catégorie) : refus VerdictDeLectureIncoherent", () => {
+    const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
+    const lecture = premiereAffichee(entrees, "comparateur-un");
+    const verdicts = entrees.verdicts.map((v) => (v.objet_note.id === lecture.id ? { ...v, categorie_retenue: "non_reponse" as const } : v));
+    expect(() => analyserRun({ ...entrees, verdicts }, PARAMETRES, null)).toThrow(VerdictDeLectureIncoherent);
+  });
+
+  it("D75 (16) verdict d'une lecture que ses notations laissent à noter ou à arbitrer : refus VerdictDeLectureIncoherent, jamais une note en repli", () => {
+    const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
+    const lecture = premiereAffichee(entrees, "comparateur-un");
+    for (const statut of ["a_noter", "a_arbitrer"] as const) {
+      const etats = entrees.etats_des_lectures.map((e) => (e.lecture_id === lecture.id ? { statut, lecture_id: lecture.id } : e));
+      expect(() => analyserRun({ ...entrees, etats_des_lectures: etats }, PARAMETRES, null)).toThrow(VerdictDeLectureIncoherent);
+    }
+  });
+
+  it("D75 (16) lecture à noter sans verdict : le comparateur est absent avec son motif, sans exception", () => {
+    const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
+    const lecture = premiereAffichee(entrees, "comparateur-un");
+    const etats = entrees.etats_des_lectures.map((e) => (e.lecture_id === lecture.id ? { statut: "a_noter" as const, lecture_id: lecture.id } : e));
+    const liste = ((analyserRun({ ...sansVerdictDe(entrees, lecture.id), etats_des_lectures: etats }, PARAMETRES, null) as Json)["comparateurs"] as Json)["comparateurs"] as Json[];
+    expect(liste).toEqual([{ outil_id: "comparateur-un", motif_absence: "lectures_sans_verdict", lectures_sans_verdict: [lecture.id] }]);
+  });
+
+  it("D75 (16) verdict sur une lecture non affichée, ou étrangère au run : refus LectureNonRetenue", () => {
+    const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
+    const cachee = entrees.lectures.find((l) => !l.affiche);
+    if (cachee === undefined) throw new Error("aucune lecture non affichée");
+    for (const id of [cachee.id, ulid("lecture-etrangere")]) {
+      const deTrop = verdict({ id: ulid(`v-de-trop-${id}`), objet_note: { type: "lecture_comparateur", id } });
+      expect(() => analyserRun({ ...entrees, verdicts: [...entrees.verdicts, deTrop] }, PARAMETRES, null)).toThrow(LectureNonRetenue);
+    }
+  });
+
+  it("D75 (16) deux verdicts sur une même lecture : refus VerdictEnDouble, jamais le dernier", () => {
+    const entrees = avecComparateurs({ comparateurs: { "comparateur-un": UN_SUR_DEUX } });
+    const lecture = premiereAffichee(entrees, "comparateur-un");
+    const second = verdict({ id: ulid("v-second"), objet_note: { type: "lecture_comparateur", id: lecture.id } });
+    expect(() => analyserRun({ ...entrees, verdicts: [...entrees.verdicts, second] }, PARAMETRES, null)).toThrow(VerdictEnDouble);
   });
 });
 

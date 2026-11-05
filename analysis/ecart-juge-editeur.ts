@@ -14,6 +14,10 @@
  *   au gel (`config/gel.json`), vide comprise, et publiée dans `run.json#/juges[]` ;
  *   `analyse-du-run.ts:sectionEcartJugeEditeur` l'y lit et la passe ici.
  * - La population des réponses (`unites`) : celles que l'appelant passe, des unités d'analyse du run.
+ *   §7 (0.33, D75 (26)) : « ce sont les réponses obtenues du canal API, les deux modes confondus,
+ *   couples marqués « run incomplet » (section 8) compris » ;
+ *   `analyse-du-run.ts:sectionEcartJugeEditeur` passe les unités du canal API du contexte, que le
+ *   partage des couples ne restreint pas.
  * - La métrique et la strate de la clé de la graine : `options.cle` (`exactitude`, `global`, dans
  *   l'ordre du §8). Ce module y ajoute le composant qui nomme la comparaison, `<juge>:propre-editeur`
  *   (§8, « Graines de l'analyse », protocole 0.25, D60).
@@ -22,12 +26,21 @@
  * - L'exactitude d'un juge sur un outil est `metriques.ts:exactitude` appliquée à ses notations des
  *   réponses de cet outil ; l'écart signé est la sienne moins celle de l'autre juge. Les deux juges
  *   sont lus sur les mêmes réponses : celles que tous deux ont notées.
- * - Une réponse qu'aucun juge n'a notée (refus de l'API, noté par règle, §7) est nommée dans
- *   `reponses_sans_note_de_juge` et sort du calcul ; une réponse notée par un seul des deux juges, ou
- *   deux fois par le même, lève (`NotationDeJugeIncoherente`) : §7 fait noter chaque réponse par les
- *   deux juges, une fois.
- * - Un autre outil dont l'écart n'est pas défini au calcul principal (un juge n'y classe aucune
- *   réponse) sort de la moyenne et est nommé dans `autres_outils_sans_ecart`. Les outils de la
+ * - Une réponse qu'aucun juge n'a notée ni renvoyée (refus de l'API, noté par règle, §7) est nommée
+ *   dans `reponses_sans_note_de_juge` et sort du calcul.
+ * - D75 (25) : une réponse qu'un juge au moins a renvoyée à un humain (`volume/renvois/`, contexte
+ *   `run`), quel que soit le motif, n'est pas de celles « que tous deux ont notées » (§7) : elle sort
+ *   du calcul et est nommée dans `reponses_renvoyees`, avec chaque juge qui l'a renvoyée et son
+ *   motif ; jamais une note prise ailleurs à la place de celle qui manque.
+ * - Lève (`NotationDeJugeIncoherente`), §7 faisant noter chaque réponse par les deux juges, une
+ *   fois : une réponse notée par un seul juge sans renvoi de l'autre, ou renvoyée par un juge sans
+ *   notation ni renvoi de l'autre ; deux notations, ou deux renvois, d'un même juge ; un juge qui
+ *   note et renvoie la même réponse ; une notation ou un renvoi d'un juge que le run ne déclare pas.
+ * - Les outils comparés sont ceux de la population. Un outil dont l'écart n'est pas défini au calcul
+ *   principal (un juge n'y classe aucune réponse, toutes renvoyées ou sans note de juge comprises) a
+ *   un écart `null`, jamais 0 : sur l'outil de l'éditeur, la différence est absente
+ *   (`ecart_indefini_sur_son_outil`) ; un autre outil sort de la moyenne et est nommé dans
+ *   `autres_outils_sans_ecart`. Les outils de la
  *   moyenne sont fixés au calcul principal : un rééchantillon où l'un d'eux, ou l'outil de l'éditeur,
  *   n'a plus d'écart défini ne définit pas la différence (écarté et compté, comme l'écart maximal du
  *   test d'asymétrie, §8).
@@ -56,6 +69,7 @@ import {
 } from "./bootstrap.ts";
 import { filtrerContexteRun, type UniteAnalyse } from "./filtre.ts";
 import { exactitude } from "./metriques.ts";
+import type { RenvoiLu } from "./renvois-humains.ts";
 import type { CategorieRetenue, IdentifiantCourt, Intervalle95, Notation, Taux, Ulid } from "./types.ts";
 
 /** Un juge déclaré du run et les outils du run qu'édite son éditeur (aucun : liste vide). */
@@ -100,12 +114,27 @@ export interface EcartJugeEditeur {
   readonly motif_absence: MotifSansEcartEditeur | null;
 }
 
+/** Le renvoi d'une réponse à un humain par un juge (D75 (25)) : qui, et pourquoi. */
+export interface RenvoiNomme {
+  readonly juge_id: IdentifiantCourt;
+  readonly motif: string;
+}
+
+/** Une réponse de la population qu'un juge au moins a renvoyée à un humain : hors calcul, nommée. */
+export interface ReponseRenvoyee {
+  readonly reponse_id: Ulid;
+  /** Un renvoi par juge qui l'a renvoyée, trié par juge. */
+  readonly renvois: readonly RenvoiNomme[];
+}
+
 export interface EcartsJugesEditeurs {
   /** Un résultat par juge dont l'éditeur édite au moins un outil du run, dans l'ordre déclaré. */
   readonly par_juge: readonly EcartJugeEditeur[];
   readonly juges_sans_outil_de_leur_editeur: readonly IdentifiantCourt[];
-  /** Réponses du run qu'aucun juge n'a notées : hors calcul, nommées. */
+  /** Réponses du run qu'aucun juge n'a notées ni renvoyées : hors calcul, nommées. */
   readonly reponses_sans_note_de_juge: readonly Ulid[];
+  /** D75 (25) : réponses du run renvoyées à un humain par un juge au moins, dans l'ordre de la population. */
+  readonly reponses_renvoyees: readonly ReponseRenvoyee[];
 }
 
 /** Notations de juges du run qui ne forment pas la double notation du §7 sur une réponse. */
@@ -145,23 +174,34 @@ function exactitudesComparees(ecarts: readonly EcartSurOutil[], outils: readonly
 /** Les deux notes d'une réponse, par juge. */
 type NotesDesJuges = ReadonlyMap<IdentifiantCourt, CategorieRetenue>;
 
+/** Les renvois d'une réponse, par juge : leur motif. */
+type RenvoisDesJuges = ReadonlyMap<IdentifiantCourt, string>;
+
+/**
+ * `renvois` : les renvois de juge vers un humain du run (`volume/renvois/`) ; seuls ceux du contexte
+ * `run` sont lus, comme les notations.
+ */
 export function ecartsJugesEditeurs(
   unites: readonly UniteAnalyse[],
   notations: readonly Notation[],
+  renvois: readonly RenvoiLu[],
   juges: readonly JugeEtSonEditeur[],
   options: OptionsBootstrap,
 ): EcartsJugesEditeurs {
   const [premier, second] = exigerDeuxJuges(juges);
-  const notes = notesParReponse(notations, new Set([premier.juge_id, second.juge_id]));
-  const { notees, sans_note } = apparier(unites, notes);
+  const declares = new Set([premier.juge_id, second.juge_id]);
+  const notes = notesParReponse(notations, declares);
+  const { notees, sans_note, renvoyees } = apparier(unites, notes, renvoisParReponse(renvois, declares, notes));
+  const outils = [...new Set(unites.map((u) => u.outil_id))].sort(comparerChaines);
   const concernes = [
     { juge: premier, autre: second },
     { juge: second, autre: premier },
   ].filter(({ juge }) => juge.outils_de_son_editeur.length > 0);
   return {
-    par_juge: concernes.map(({ juge, autre }) => ecartDuJuge(juge, autre.juge_id, notees, notes, options)),
+    par_juge: concernes.map(({ juge, autre }) => ecartDuJuge(juge, { autre_juge_id: autre.juge_id, outils, notees, notes }, options)),
     juges_sans_outil_de_leur_editeur: juges.filter((j) => j.outils_de_son_editeur.length === 0).map((j) => j.juge_id),
     reponses_sans_note_de_juge: sans_note,
+    reponses_renvoyees: renvoyees,
   };
 }
 
@@ -190,19 +230,63 @@ function notesParReponse(notations: readonly Notation[], declares: ReadonlySet<I
   return parReponse;
 }
 
-function apparier(
-  unites: readonly UniteAnalyse[],
+/**
+ * D75 (25) : les renvois du run (contexte `run`) de chaque réponse, par juge. Lève sur un renvoi d'un
+ * juge non déclaré, sur deux renvois d'un même juge, et sur un juge qui renvoie une réponse qu'il a
+ * aussi notée : deux issues, aucune n'est choisie.
+ */
+function renvoisParReponse(
+  renvois: readonly RenvoiLu[],
+  declares: ReadonlySet<IdentifiantCourt>,
   notes: ReadonlyMap<Ulid, NotesDesJuges>,
-): { notees: UniteAnalyse[]; sans_note: Ulid[] } {
-  const notees: UniteAnalyse[] = [];
-  const sans_note: Ulid[] = [];
+): Map<Ulid, Map<IdentifiantCourt, string>> {
+  const parReponse = new Map<Ulid, Map<IdentifiantCourt, string>>();
+  for (const renvoi of renvois.filter((r) => r.contexte === "run")) {
+    const { id: juge_id } = renvoi.notateur;
+    const reponse_id = renvoi.objet_note.id;
+    if (!declares.has(juge_id)) throw new NotationDeJugeIncoherente(reponse_id, `renvoi ${renvoi.id} du juge ${juge_id}, que le run ne déclare pas.`);
+    if (notes.get(reponse_id)?.has(juge_id) === true) {
+      throw new NotationDeJugeIncoherente(reponse_id, `le juge ${juge_id} l'a renvoyée à un humain (renvoi ${renvoi.id}) et l'a aussi notée.`);
+    }
+    const connus = parReponse.get(reponse_id);
+    const motifs = connus === undefined ? new Map<IdentifiantCourt, string>() : connus;
+    if (motifs.has(juge_id)) throw new NotationDeJugeIncoherente(reponse_id, `deux renvois du juge ${juge_id}.`);
+    motifs.set(juge_id, renvoi.motif);
+    parReponse.set(reponse_id, motifs);
+  }
+  return parReponse;
+}
+
+interface Appariement {
+  readonly notees: UniteAnalyse[];
+  readonly sans_note: Ulid[];
+  readonly renvoyees: ReponseRenvoyee[];
+}
+
+function apparier(unites: readonly UniteAnalyse[], notes: ReadonlyMap<Ulid, NotesDesJuges>, renvois: ReadonlyMap<Ulid, RenvoisDesJuges>): Appariement {
+  const appariement: Appariement = { notees: [], sans_note: [], renvoyees: [] };
   for (const unite of unites) {
     const recues = notes.get(unite.reponse_id);
-    if (recues === undefined) sans_note.push(unite.reponse_id);
-    else if (recues.size === 2) notees.push(unite);
-    else throw new NotationDeJugeIncoherente(unite.reponse_id, `notée par le seul juge ${[...recues.keys()].join(", ")}.`);
+    const renvoyee = renvois.get(unite.reponse_id);
+    if (renvoyee !== undefined) appariement.renvoyees.push(reponseRenvoyee(unite.reponse_id, recues, renvoyee));
+    else if (recues === undefined) appariement.sans_note.push(unite.reponse_id);
+    else if (recues.size === 2) appariement.notees.push(unite);
+    else throw new NotationDeJugeIncoherente(unite.reponse_id, `notée par le seul juge ${[...recues.keys()].join(", ")}, sans renvoi de l'autre.`);
   }
-  return { notees, sans_note };
+  return appariement;
+}
+
+/**
+ * Une réponse renvoyée par un juge au moins. Chaque juge l'a notée ou renvoyée (un juge qui fait les
+ * deux a déjà levé) ; sinon la double notation du §7 n'est pas faite, et la réponse lève.
+ */
+function reponseRenvoyee(reponse_id: Ulid, recues: NotesDesJuges | undefined, renvoyee: RenvoisDesJuges): ReponseRenvoyee {
+  const notee = recues === undefined ? 0 : recues.size;
+  if (notee + renvoyee.size !== 2) {
+    throw new NotationDeJugeIncoherente(reponse_id, `renvoyée par le juge ${[...renvoyee.keys()].join(", ")}, que l'autre juge n'a ni notée ni renvoyée.`);
+  }
+  const renvois = [...renvoyee].map(([juge_id, motif]) => ({ juge_id, motif })).sort((a, b) => comparerChaines(a.juge_id, b.juge_id));
+  return { reponse_id, renvois };
 }
 
 /** Ce qui fixe la statistique d'un juge : qui il est, à qui il se compare, et sur quels outils. */
@@ -212,15 +296,18 @@ interface Comparaison {
   readonly notes: ReadonlyMap<Ulid, NotesDesJuges>;
 }
 
-function ecartDuJuge(
-  juge: JugeEtSonEditeur,
-  autre_juge_id: IdentifiantCourt,
-  notees: readonly UniteAnalyse[],
-  notes: ReadonlyMap<Ulid, NotesDesJuges>,
-  options: OptionsBootstrap,
-): EcartJugeEditeur {
+/** Ce que les deux juges partagent : l'autre juge, les outils de la population, les réponses notées par les deux. */
+interface Population {
+  readonly autre_juge_id: IdentifiantCourt;
+  readonly outils: readonly IdentifiantCourt[];
+  readonly notees: readonly UniteAnalyse[];
+  readonly notes: ReadonlyMap<Ulid, NotesDesJuges>;
+}
+
+function ecartDuJuge(juge: JugeEtSonEditeur, population: Population, options: OptionsBootstrap): EcartJugeEditeur {
+  const { autre_juge_id, outils, notees, notes } = population;
   const comparaison: Comparaison = { juge_id: juge.juge_id, autre_juge_id, notes };
-  const ecarts = ecartsParOutil(notees, comparaison);
+  const ecarts = outils.map((outil_id) => ecartSurOutil(outil_id, notees.filter((u) => u.outil_id === outil_id), comparaison));
   const base = { juge_id: juge.juge_id, autre_juge_id, outils_de_son_editeur: juge.outils_de_son_editeur, ecarts };
   const [sonOutil] = juge.outils_de_son_editeur;
   if (juge.outils_de_son_editeur.length > 1 || sonOutil === undefined) return absent(base, [], "plusieurs_outils_de_son_editeur");
@@ -272,11 +359,6 @@ function moyenneDesEcarts(ecarts: readonly EcartSurOutil[]): number | null {
   const definis = ecarts.flatMap((e) => (e.ecart === null ? [] : [e.ecart]));
   if (definis.length === 0) return null;
   return definis.reduce((somme, e) => somme + e, 0) / definis.length;
-}
-
-function ecartsParOutil(unites: readonly UniteAnalyse[], comparaison: Comparaison): EcartSurOutil[] {
-  const outils = [...new Set(unites.map((u) => u.outil_id))].sort(comparerChaines);
-  return outils.map((outil_id) => ecartSurOutil(outil_id, unites.filter((u) => u.outil_id === outil_id), comparaison));
 }
 
 function ecartSurOutil(outil_id: IdentifiantCourt, unites: readonly UniteAnalyse[], comparaison: Comparaison): EcartSurOutil {

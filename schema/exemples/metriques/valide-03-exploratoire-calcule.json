@@ -3744,7 +3744,8 @@
     "juges_sans_outil_de_leur_editeur": [
       "juge-2"
     ],
-    "reponses_sans_note_de_juge": []
+    "reponses_sans_note_de_juge": [],
+    "reponses_renvoyees": []
   },
   "renvois_humains": {
     "statut": "calcule",

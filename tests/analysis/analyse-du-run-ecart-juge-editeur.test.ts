@@ -10,8 +10,11 @@
 
 import { describe, expect, it } from "vitest";
 import { analyserRun, type EntreesDuRun } from "../../analysis/analyse-du-run.ts";
+import { exactitude } from "../../analysis/metriques.ts";
+import type { Reponse, Taux } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
-import { avecNotesDeJuges, entreesDuRunAnalysable, SPEC_REFERENCE, type JugeDuRunAnalysable } from "./run-analysable.ts";
+import { renvoiDefaillant } from "../notation/fabriques.ts";
+import { avecNotesDeJuges, entreesDuRunAnalysable, SPEC_APPLICATION, SPEC_REFERENCE, type JugeDuRunAnalysable } from "./run-analysable.ts";
 
 const PARAMETRES = { reechantillonnages: 40, permutations: 40 };
 
@@ -93,5 +96,94 @@ describe("D73 (7) : écart juge-éditeur lu de la liste déclarée dans run.json
   it("le run de référence, sans notes de juge ni liste déclarée, reste analysable : motif visible", () => {
     const ecart = section(entreesDuRunAnalysable(SPEC_REFERENCE));
     expect(ecart).toEqual({ statut: "sans_objet", motif: "outils_de_son_editeur_non_declares" });
+  });
+});
+
+/* ------------------------------------------------------------------ D75 (26) : population */
+
+const DECLARES: readonly JugeDuRunAnalysable[] = [
+  { juge_id: "juge-1", retire: false, outils_de_son_editeur: ["outil-alpha"] },
+  { juge_id: "juge-2", retire: false, outils_de_son_editeur: [] },
+];
+
+interface EcartSurOutilJson {
+  readonly outil_id: string;
+  readonly exactitude_autre_juge: Taux;
+}
+
+/** Les écarts par outil de juge-1, publiés. */
+function ecartsDeJuge1(entrees: EntreesDuRun): readonly EcartSurOutilJson[] {
+  const ecart = section(entrees) as { par_juge: { juge_id: string; ecarts: EcartSurOutilJson[] }[] };
+  const juge1 = ecart.par_juge.find((j) => j.juge_id === "juge-1");
+  if (juge1 === undefined) throw new Error("juge-1 absent de la section");
+  return juge1.ecarts;
+}
+
+/**
+ * L'exactitude attendue de juge-2 (conforme au verdict) sur les réponses obtenues du canal API de
+ * `outil_id` qui passent `garder` : la même fonction que le calcul, sur les verdicts.
+ */
+function exactitudeAttendue(entrees: EntreesDuRun, outil_id: string, garder: (r: Reponse) => boolean): Taux {
+  const reponses = new Set(entrees.reponses.filter((r) => r.canal === "api" && r.statut_reponse === "obtenue" && r.outil_id === outil_id && garder(r)).map((r) => r.id));
+  return exactitude(entrees.verdicts.filter((v) => reponses.has(v.objet_note.id)).map((v) => ({ categorie: v.categorie_retenue })));
+}
+
+function ecartDe(ecarts: readonly EcartSurOutilJson[], outil_id: string): EcartSurOutilJson {
+  const trouve = ecarts.find((e) => e.outil_id === outil_id);
+  if (trouve === undefined) throw new Error(`${outil_id} absent des écarts`);
+  return trouve;
+}
+
+describe("D75 (26) : population de l'écart juge-éditeur (§7, 0.33) — canal API, modes confondus, couples incomplets compris", () => {
+  it("D75 (26) les réponses du canal application sont exclues : ni comptées, ni nommées", () => {
+    const base = entreesDuRunAnalysable(SPEC_APPLICATION);
+    const application = base.reponses.filter((r) => r.canal === "application").map((r) => r.id);
+    expect(application.length).toBeGreaterThan(0);
+    // avecNotesDeJuges ne note que le canal API : une saisie de l'application lue ici serait nommée sans note de juge.
+    const entrees = avecNotesDeJuges(base, DECLARES, (retenue) => retenue);
+    const ecart = section(entrees) as { reponses_sans_note_de_juge: string[]; reponses_renvoyees: unknown[] };
+    expect(ecart.reponses_sans_note_de_juge).toEqual([]);
+    expect(ecart.reponses_renvoyees).toEqual([]);
+    for (const id of application) expect(JSON.stringify(ecart)).not.toContain(id);
+    expect(ecartDe(ecartsDeJuge1(entrees), "outil-alpha").exactitude_autre_juge).toEqual(exactitudeAttendue(entrees, "outil-alpha", () => true));
+  });
+
+  it("D75 (26) les deux modes sont lus ensemble : l'exactitude d'outil-alpha porte sur ses deux modes", () => {
+    const entrees = avecNotesDeJuges(entreesDuRunAnalysable(SPEC_REFERENCE), DECLARES, (retenue) => retenue);
+    const deuxModes = exactitudeAttendue(entrees, "outil-alpha", () => true);
+    const unMode = exactitudeAttendue(entrees, "outil-alpha", (r) => r.mode === "web_desactivee");
+    expect(deuxModes.denominateur).toBeGreaterThan(unMode.denominateur);
+    expect(ecartDe(ecartsDeJuge1(entrees), "outil-alpha").exactitude_autre_juge).toEqual(deuxModes);
+  });
+
+  it("D75 (26) un couple marqué run incomplet reste dans la population : outil-gamma / web_activee compte", () => {
+    const entrees = avecNotesDeJuges(entreesDuRunAnalysable(SPEC_REFERENCE), DECLARES, (retenue) => retenue);
+    const document = analyserRun(entrees, PARAMETRES, null) as { taux: { couples_incomplets: { outil_id: string; mode: string }[] } };
+    expect(document.taux.couples_incomplets).toContainEqual({ outil_id: "outil-gamma", mode: "web_activee" });
+    const incomplet = exactitudeAttendue(entrees, "outil-gamma", (r) => r.mode === "web_activee");
+    expect(incomplet.denominateur).toBeGreaterThan(0);
+    expect(ecartDe(ecartsDeJuge1(entrees), "outil-gamma").exactitude_autre_juge).toEqual(exactitudeAttendue(entrees, "outil-gamma", () => true));
+  });
+
+  it("D75 (26) un juge retiré : l'écart est sans objet, motif juge_retire, quel que soit le juge retiré", () => {
+    for (const retire of ["juge-1", "juge-2"]) {
+      const juges = DECLARES.map((j) => ({ ...j, retire: j.juge_id === retire }));
+      expect(section(avecNotesDeJuges(entreesDuRunAnalysable(SPEC_REFERENCE), juges, (retenue) => retenue))).toEqual({ statut: "sans_objet", motif: "juge_retire" });
+    }
+  });
+
+  it("D75 (25) une réponse renvoyée par un seul juge, lue par pnpm analyze dans les renvois du run : hors du calcul, nommée, document conforme", () => {
+    const entrees = avecNotesDeJuges(entreesDuRunAnalysable(SPEC_REFERENCE), DECLARES, (retenue) => retenue);
+    const cible = entrees.reponses.find((r) => r.canal === "api" && r.statut_reponse === "obtenue" && r.outil_id === "outil-beta");
+    if (cible === undefined) throw new Error("aucune réponse d'outil-beta");
+    const avec: EntreesDuRun = {
+      ...entrees,
+      notations: entrees.notations.filter((n) => !(n.objet_note.id === cible.id && n.notateur.id === "juge-2")),
+      renvois: [renvoiDefaillant("juge-2", { objet_note: { type: "reponse", id: cible.id }, run_id: entrees.run.id })],
+    };
+    const ecart = section(avec) as { reponses_renvoyees: unknown[] };
+    expect(ecart.reponses_renvoyees).toEqual([{ reponse_id: cible.id, renvois: [{ juge_id: "juge-2", motif: "sortie_illisible" }] }]);
+    const sans = exactitudeAttendue(entrees, "outil-beta", (r) => r.id !== cible.id);
+    expect(ecartDe(ecartsDeJuge1(avec), "outil-beta").exactitude_autre_juge).toEqual(sans);
   });
 });
