@@ -4,7 +4,8 @@
 après `pnpm liens`, avant la notation.
 
 La charge du juge v3 transmet le texte de chaque page citée (`pipeline/notation/pages-citees.ts`).
-Ce passage le tire des copies que le test des liens a conservées sous `volume/liens/pages/` : la page
+Ce passage le tire des copies que le test des liens a conservées sous `pages-citees/`, hors de
+`volume/` (D75 (4)), au chemin que déclare chaque résultat de `volume/liens/` : la page
 reçue pour un lien qui existe (`page`), la version brute de l'instantané téléchargée pour un lien
 inaccessible ou non testable (`wayback.telechargement`, D21). Rien n'est demandé au réseau.
 
@@ -44,6 +45,7 @@ from pipeline.collecte.manifeste import serialiser
 from pipeline.collecte.textes.extraction import GENRE_PDF, GENRES
 from pipeline.collecte.textes.fiche import Extraction, bloc_specifique as _bloc_specifique
 from pipeline.collecte.textes.refus import ExtractionRefusee
+from pipeline.liens.sortie import repertoire_liens
 
 REPERTOIRE_EXTRACTIONS = "extractions"
 REPERTOIRE_TEXTES = "textes"
@@ -62,7 +64,8 @@ class Dependances:
 
 @dataclass(frozen=True)
 class Copie:
-    """Une copie conservée : son empreinte, son chemin relatif à `volume/liens/`, son type reçu."""
+    """Une copie conservée : son empreinte, son chemin relatif au répertoire du run
+    (`pages-citees/<sha256><extension>`, D75 (4)), son type reçu."""
 
     sha256: str
     chemin: str
@@ -140,12 +143,13 @@ def _copie_du_resultat(resultat: dict[str, object]) -> Copie | None:
     return Copie(sha256, str(source["chemin"]), type_contenu if isinstance(type_contenu, str) else None)
 
 
-def copies_conservees(repertoire_liens: Path) -> list[Copie]:
+def copies_conservees(repertoire_run: Path) -> list[Copie]:
     """Les copies distinctes (par empreinte) que déclarent les résultats du test des liens, triées."""
-    if not repertoire_liens.is_dir():
-        raise RepertoireRefuse(f"{repertoire_liens} absent : lancer pnpm liens d'abord")
+    liens = repertoire_liens(repertoire_run)
+    if not liens.is_dir():
+        raise RepertoireRefuse(f"{liens} absent : lancer pnpm liens d'abord")
     copies: dict[str, Copie] = {}
-    for chemin in sorted(repertoire_liens.glob("*.json")):
+    for chemin in sorted(liens.glob("*.json")):
         copie = _copie_du_resultat(json.loads(chemin.read_text(encoding="utf-8")))
         if copie is not None:
             copies.setdefault(copie.sha256, copie)
@@ -188,8 +192,9 @@ def fiche_refusee(sha256_contenu: str, motif: str, date: str) -> dict[str, objec
     return {"sha256_contenu": sha256_contenu, "issue": "refuse", "motif": motif, "date_extraction": date}
 
 
-def _octets_verifies(copie: Copie, repertoire_liens: Path) -> bytes | EnErreur:
-    chemin = repertoire_liens / copie.chemin
+def _octets_verifies(copie: Copie, repertoire_run: Path) -> bytes | EnErreur:
+    """D75 (4) : la copie se lit au chemin déclaré, relatif au run ; absente, c'est une erreur nommée."""
+    chemin = repertoire_run / copie.chemin
     if not chemin.is_file():
         return EnErreur(copie.sha256, f"copie absente : {copie.chemin}")
     octets = chemin.read_bytes()
@@ -208,12 +213,13 @@ def _ecrire_texte(sha256_contenu: str, extraction: Extraction, repertoire_liens:
     return None
 
 
-def extraire_copie(copie: Copie, repertoire_liens: Path, deps: Dependances) -> Resultat:
+def extraire_copie(copie: Copie, repertoire_run: Path, deps: Dependances) -> Resultat:
     """Le texte d'abord, la fiche ensuite : une fiche « extrait » n'existe jamais sans son texte."""
-    fiche = repertoire_liens / chemin_fiche(copie.sha256)
+    liens = repertoire_liens(repertoire_run)
+    fiche = liens / chemin_fiche(copie.sha256)
     if fiche.exists():
         return DejaExtrait(copie.sha256)
-    octets = _octets_verifies(copie, repertoire_liens)
+    octets = _octets_verifies(copie, repertoire_run)
     if isinstance(octets, EnErreur):
         return octets
     date = instant_iso(deps.horloge.maintenant())
@@ -223,15 +229,15 @@ def extraire_copie(copie: Copie, repertoire_liens: Path, deps: Dependances) -> R
         ecrire_atomiquement(fiche, serialiser(fiche_refusee(copie.sha256, refus.motif, date)))
         return Refuse(copie.sha256, refus.motif)
     contenu_fiche = serialiser(fiche_extraite(copie.sha256, extraction, date))
-    erreur = _ecrire_texte(copie.sha256, extraction, repertoire_liens)
+    erreur = _ecrire_texte(copie.sha256, extraction, liens)
     if erreur is not None:
         return erreur
     ecrire_atomiquement(fiche, contenu_fiche)
     return Extrait(copie.sha256, extraction.texte.sha256, extraction.outil)
 
 
-def extraire_tout(repertoire_liens: Path, deps: Dependances) -> list[Resultat]:
-    return [extraire_copie(copie, repertoire_liens, deps) for copie in copies_conservees(repertoire_liens)]
+def extraire_tout(repertoire_run: Path, deps: Dependances) -> list[Resultat]:
+    return [extraire_copie(copie, repertoire_run, deps) for copie in copies_conservees(repertoire_run)]
 
 
 def code_de_sortie(resultats: Sequence[Resultat]) -> int:
@@ -277,9 +283,8 @@ def dependances_reelles() -> Dependances:
 
 def principal(arguments: Sequence[str], construire: Callable[[], Dependances] = dependances_reelles) -> int:
     options = _arguments(arguments)
-    repertoire_liens = options.repertoire_run / "volume" / "liens"
     try:
-        resultats = extraire_tout(repertoire_liens, construire())
+        resultats = extraire_tout(options.repertoire_run, construire())
     except RepertoireRefuse as refus:
         print(f"passage refusé, rien n'est écrit — {refus}", file=sys.stderr)
         return CODE_PASSAGE_REFUSE

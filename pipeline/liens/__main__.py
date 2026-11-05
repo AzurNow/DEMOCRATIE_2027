@@ -1,8 +1,8 @@
 """`uv run python -m pipeline.liens <repertoire_du_run>` (ou `pnpm liens <repertoire_du_run>`).
 
 Un passage par run, après la fermeture de la fenêtre d'interrogation, avant la notation (D20, D21).
-Écrit `volume/liens/<sha256 de l'URL>.json` et `volume/liens/pages/` (pages des liens qui existent,
-versions brutes des instantanés téléchargés). Une relance reprend les
+Écrit `volume/liens/<sha256 de l'URL>.json` et, hors de `volume/`, `pages-citees/` (pages des liens qui
+existent, versions brutes des instantanés téléchargés ; D75 (4)). Une relance reprend les
 résultats déjà écrits sans les retester ni les réécrire, et teste les autres.
 
 Codes de sortie : 0 si chaque URL a son verdict (un échec Wayback est consigné, il ne compte pas) ;
@@ -88,7 +88,7 @@ def principal(
         print(f"passage refusé, aucune requête envoyée — {type(refus).__name__} :", file=sys.stderr)
         print(f"  {refus}", file=sys.stderr)
         return CODE_PASSAGE_REFUSE
-    bilans = passer(liens, options.repertoire_run / "volume" / "liens", deps)
+    bilans = passer(liens, options.repertoire_run, deps)
     print(formater_bilan(bilans, deps.table.version))
     return code_de_sortie(bilans)
 

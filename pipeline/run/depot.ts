@@ -7,19 +7,14 @@
  * leur licence n'en permet pas la republication : pour ces objets, l'empreinte, le lien d'archive et
  * l'extrait cité sont publiés.
  *
- * - **Pages citées.** Le test des liens les écrit sous `volume/liens/pages/` (`pipeline/liens/sortie.py`).
- *   Elles restent dans `volume/` parce que la notation les lit (`pipeline/notation/fournisseur-fichiers.ts`),
- *   mais aucune archive ne peut en contenir un fichier : `verifierEntreesArchive` refuse tout chemin
- *   dont les segments contiennent `SEGMENTS_HORS_DEPOT` (une donnée, pas un `if`). Seules leurs
- *   empreintes, dans `volume/liens/<sha256 de l'URL>.json`, partent.
+ * - **Pages citées.** Le test des liens les écrit hors de `volume/`, sous `runs/<date>/pages-citees/`
+ *   (`pipeline/liens/sortie.py`, D75 (4)) : le volume part en entier, sans exception ni exclusion
+ *   nommée. Seules leurs empreintes, dans `volume/liens/<sha256 de l'URL>.json`, partent.
  * - **Sources archivées.** Une archive `sources_archivees` n'est admise que si chaque source qu'elle
  *   contient déclare `publication: "publique"` (`schema/commun.schema.json#/$defs/source`). `interne`,
  *   toute autre valeur et l'absence du champ sont refusées : aucun défaut permissif. Sans source
  *   déclarée, l'archive ne peut pas être justifiée et est refusée aussi.
  */
-
-/** Séquences de segments consécutifs qui écartent un chemin de toute archive. */
-export const SEGMENTS_HORS_DEPOT: readonly (readonly string[])[] = [["liens", "pages"]];
 
 /** Le seul contenu d'archive conditionné à `source.publication` (`run.schema.json#/depot/archives`). */
 export const CONTENU_SOURCES_ARCHIVEES = "sources_archivees";
@@ -28,7 +23,6 @@ export const CONTENU_SOURCES_ARCHIVEES = "sources_archivees";
 export const PUBLICATION_REPUBLIABLE = "publique";
 
 export type MotifDepotRefuse =
-  | "page_citee_dans_archive"
   | "source_non_republiable"
   | "publication_absente"
   | "sources_archivees_sans_source";
@@ -52,33 +46,6 @@ export interface ArchiveDeclaree {
 export interface SourceDeclaree {
   readonly url: string;
   readonly publication?: unknown;
-}
-
-function segmentsDe(chemin: string): readonly string[] {
-  return chemin.split(/[\\/]+/).filter((segment) => segment !== "" && segment !== ".");
-}
-
-function contientSequence(segments: readonly string[], sequence: readonly string[]): boolean {
-  for (let debut = 0; debut + sequence.length <= segments.length; debut += 1) {
-    if (sequence.every((segment, i) => segments[debut + i] === segment)) return true;
-  }
-  return false;
-}
-
-function estHorsDepot(chemin: string): boolean {
-  const segments = segmentsDe(chemin);
-  return SEGMENTS_HORS_DEPOT.some((sequence) => contientSequence(segments, sequence));
-}
-
-/** Refuse une archive dont la liste de fichiers contient une page citée par les réponses. */
-export function verifierEntreesArchive(nom: string, chemins: readonly string[]): void {
-  const fautif = chemins.find(estHorsDepot);
-  if (fautif === undefined) return;
-  throw new DepotRefuse(
-    "page_citee_dans_archive",
-    `l'archive « ${nom} » contient « ${fautif} » : les pages citées par les réponses ne partent jamais ` +
-      `(seuls l'empreinte, le lien d'archive et l'extrait cité sont publiés).`,
-  );
 }
 
 function verifierSource(source: SourceDeclaree): void {

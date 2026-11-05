@@ -13,9 +13,9 @@ délai `delai_s` de la table), jusqu'à trois tentatives pour un échec transito
 chaque tentative après un échec de lecture) → verdict lu dans la table `config/test-liens.toml`
 (table-liens-v3) → copie conservée (corps et Save Page Now pour `existe` ; pour `inaccessible` et `non_testable`,
 instantané Wayback existant le plus proche, jamais créé, retenu seulement de statut 200 et alors
-téléchargé en version brute `id_` sous `volume/liens/pages/` ; rien pour `mort`) → un fichier par
-URL, `volume/liens/<sha256 de l'URL citée exacte>.json` (`schema/existence-lien.schema.json`),
-écrit une fois.
+téléchargé en version brute `id_` ; rien pour `mort`), octets intacts sous `pages-citees/`, hors de
+`volume/` (D75 (4)) → un fichier par URL, `volume/liens/<sha256 de l'URL citée exacte>.json`
+(`schema/existence-lien.schema.json`), écrit une fois.
 
 La notation lit ces fichiers par `pipeline/notation/fournisseur-fichiers.ts`.
 """

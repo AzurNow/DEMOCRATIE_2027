@@ -6,6 +6,10 @@ suivent la version de la table, le journal des tentatives, la page conservée et
 L'ordre des clés est fixé ici, la sérialisation est déterministe (fichiers dorés de `tests/liens/dore/`).
 
 Le nom du fichier est le SHA-256 de l'URL citée encodée en UTF-8, prise telle qu'écrite.
+
+Les pages conservées (copies des liens qui existent, versions brutes des instantanés) vivent hors de
+`volume/`, sous `runs/<date>/pages-citees/` (D75 (4)) : le volume part en entier sur Zenodo, et les
+pages citées ne sont pas republiables (§9). Leur `chemin` est relatif au répertoire du run.
 """
 
 from __future__ import annotations
@@ -20,7 +24,13 @@ from pipeline.collecte.manifeste import serialiser
 from pipeline.liens.constat import Constat
 from pipeline.liens.schemas import ResultatNonConforme, verifier_resultat
 
-REPERTOIRE_PAGES = "pages"
+REPERTOIRE_PAGES = "pages-citees"
+"""Relatif au répertoire du run, hors de `volume/` (D75 (4)) ; ignoré par Git (`/runs/*/pages-citees/`)."""
+
+
+def repertoire_liens(repertoire_run: Path) -> Path:
+    """`<repertoire_run>/volume/liens`, où le test des liens écrit ses résultats."""
+    return repertoire_run / "volume" / "liens"
 
 
 @dataclass(frozen=True)
@@ -45,8 +55,8 @@ def nom_resultat(url: str) -> str:
     return f"{hashlib.sha256(url.encode('utf-8')).hexdigest()}.json"
 
 
-def conserver_page(repertoire_liens: Path, constat: Constat) -> tuple[str, dict[str, object]]:
-    """Écrit les octets reçus tels quels (règle 7) sous `pages/<sha256><extension>`, une fois.
+def conserver_page(repertoire_run: Path, constat: Constat) -> tuple[str, dict[str, object]]:
+    """Écrit les octets reçus tels quels (règle 7) sous `<run>/pages-citees/<sha256><extension>`, une fois.
 
     Deux liens qui servent les mêmes octets avec le même type partagent le fichier : déjà présent,
     il n'est pas réécrit (son nom est son empreinte)."""
@@ -54,7 +64,7 @@ def conserver_page(repertoire_liens: Path, constat: Constat) -> tuple[str, dict[
         raise ValueError("page à conserver sans corps : constat incohérent")
     sha256 = empreinte(constat.corps)
     chemin = PurePosixPath(REPERTOIRE_PAGES, f"{sha256}{extension_pour(constat.type_contenu)}")
-    cible = repertoire_liens / chemin
+    cible = repertoire_run / chemin
     if not cible.exists():
         ecrire_atomiquement(cible, constat.corps)
     page: dict[str, object] = {

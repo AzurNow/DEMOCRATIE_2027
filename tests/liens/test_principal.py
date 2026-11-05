@@ -115,7 +115,7 @@ def test_passage_nominal_code_0_et_fichiers_dores(tmp_path: Path, capsys: pytest
                       (ECHEC, "inaccessible-telechargement-echec.json")]:
         assert (liens / nom_resultat(url)).read_bytes() == (DORE / dore).read_bytes(), dore
     pages = sorted(f"{hashlib.sha256(octets).hexdigest()}.html" for octets in (PAGE, COPIE))
-    assert sorted(p.name for p in (liens / "pages").iterdir()) == pages
+    assert sorted(p.name for p in (run / "pages-citees").iterdir()) == pages  # D75 (4) : hors de volume/
     assert b.archiveur.urls == [EXISTE]
     assert b.chercheur.demandes == [  # type: ignore[attr-defined]  # ordre trié des URL
         (ECARTE, datetime.fromisoformat("2026-09-21T08:00:00+02:00")),
