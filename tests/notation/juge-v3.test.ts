@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import { VERSION_CHARGE_JUGE } from "../../pipeline/notation/charge-juge.ts";
-import { AttributionIndecidable, issueDeJuge, notationDeJuge, SortieJugeIncoherente, type CadreNotationJuge, type IdentiteJuge, type SortieJuge, type SortieJugeAttribution } from "../../pipeline/notation/juge.ts";
+import { AttributionIndecidable, FraicheurIndefinie, issueDeJuge, notationDeJuge, SortieJugeIncoherente, type CadreNotationJuge, type IdentiteJuge, type SortieJuge, type SortieJugeAttribution } from "../../pipeline/notation/juge.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -79,8 +79,12 @@ describe("(C) fraîcheur de l'obsolescence : calculée depuis les dates, jamais 
     expect(() => noter(OBSOLETE, { items: [{ obsolescence: undefined }] })).toThrow(SortieJugeIncoherente);
   });
 
-  it("drapeau obsolescence avec deux dates de changement : sortie incohérente, aucune date choisie", () => {
-    expect(() => noter(OBSOLETE, { items: [itemO("2026-11-18"), itemO("2026-10-01")] })).toThrow(/ambiguë/);
+  it("drapeau obsolescence avec deux dates de changement : défaut du banc (§7, 0.32, D74 (25)), aucune date choisie", () => {
+    expect(() => noter(OBSOLETE, { items: [itemO("2026-11-18"), itemO("2026-10-01")] })).toThrow(FraicheurIndefinie);
+  });
+
+  it("deux items O de la même date : une seule date, fraîcheur calculée", () => {
+    expect(noter(OBSOLETE, { items: [itemO("2026-11-18"), itemO("2026-11-18")] }).obsolescence_fraiche).toBe(true);
   });
 
   it("un juge qui rend encore obsolescence_fraiche est refusé, même si sa valeur est celle du calcul", () => {
