@@ -618,6 +618,9 @@ function construire(nom, scene) {
   [...used].forEach((c) => css.push(`.${p}${ROLES[c]}{fill:var(${VARS[ROLES[c]][0]},${VARS[ROLES[c]][1]})}`));
   S.anims.forEach((a) => css.push(`.${p}${a.cls}{${a.base}${a.regle}}`));
   const css2 = S.cssExtra.join("\n");
+  // Mouvement réduit : plus d'animation, donc position de repos = première image. Les cadres alternatifs
+  // (aiguilles d'horloge, manivelle, barres d'erreur) ont opacity:0 de base et restent cachés, la première
+  // image est visible (vérifié au rendu avec --force-prefers-reduced-motion).
   const reduit = S.anims.map((a) => `.${p}${a.cls}`).join(",");
   const style = `${css.join("\n")}\n${css2}\n@media (prefers-reduced-motion: reduce){${reduit}{animation:none}}`;
   const corps = [

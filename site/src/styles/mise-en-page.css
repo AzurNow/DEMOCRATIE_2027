@@ -215,7 +215,7 @@
 
 .cartes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
   gap: 1rem;
   margin: 2rem 0 0;
   padding: 0;
@@ -237,7 +237,10 @@
 }
 
 .carte__titre {
-  font-size: 1.0625rem;
+  /* Questions longues : police de texte (lisible) plutôt que la police pixel. */
+  font-family: var(--police-texte);
+  font-size: 1.125rem;
+  letter-spacing: 0;
 }
 
 .carte__metrique {
@@ -264,6 +267,24 @@
 
 .limite > :last-child {
   margin-bottom: 0;
+}
+
+.limite__titre {
+  font-size: 1.0625rem;
+}
+
+/* ---- Contester : procédure numérotée ---- */
+
+.contestation {
+  max-width: var(--largeur-texte);
+  margin: 0 0 1.25rem;
+  padding-left: 2rem;
+}
+
+.contestation > li::marker {
+  color: var(--accent-1);
+  font-family: var(--police-titre);
+  font-weight: 700;
 }
 
 /* ---- FAQ ---- */
