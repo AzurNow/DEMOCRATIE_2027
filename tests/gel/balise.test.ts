@@ -32,7 +32,7 @@ import {
 import { NOMS_GRAINES } from "../../pipeline/gel/graines.ts";
 import type { ReponseHttp } from "../../pipeline/gel/reseau.ts";
 import { estUlid, ulidDe } from "../../validation/domaine/ulid.ts";
-import { INFO_QUICKNET, octetsJson, relaisDeFixture, reponseJson, reponseTour, signatureDeFixture } from "./reseau-fixture.ts";
+import { INFO_QUICKNET, octetsJson, relaisSimules, reponseJson, reponseTour, signatureSimulee } from "../../pipeline/gel/reseau-simule.ts";
 
 /** Le vecteur réel du brief : quicknet, tour 1000, lu le 2026-10-16 sur drand.cloudflare.com. */
 const VECTEUR_1000 = {
@@ -233,20 +233,20 @@ const TOUR = 1000;
 
 describe("lecture des deux relais", () => {
   it("deux relais d'accord ⇒ la balise, l'aléa recalculé, les deux réponses archivées telles quelles", async () => {
-    const port = relaisDeFixture();
+    const port = relaisSimules();
     const balise = await lireBalise(TOUR, port.lire);
     expect(balise.tour).toBe(TOUR);
-    expect(balise.signature).toBe(signatureDeFixture(TOUR));
-    expect(balise.alea).toBe(createHash("sha256").update(Buffer.from(signatureDeFixture(TOUR), "hex")).digest("hex"));
+    expect(balise.signature).toBe(signatureSimulee(TOUR));
+    expect(balise.alea).toBe(createHash("sha256").update(Buffer.from(signatureSimulee(TOUR), "hex")).digest("hex"));
     expect(balise.lectures.map((lu) => lu.relais.nom)).toEqual(RELAIS.map((relais) => relais.nom));
     for (const lu of balise.lectures) expect(Buffer.from(lu.octets)).toEqual(Buffer.from(octetsJson(reponseTour(TOUR))));
     expect(port.appels).toEqual(RELAIS.flatMap((relais) => [urlInfo(relais), urlTour(relais, TOUR)]));
   });
 
   it("balise, cas 3 : les deux relais diffèrent par la signature ⇒ refus", async () => {
-    const autre = { ...reponseTour(TOUR), signature: signatureDeFixture(TOUR + 1) };
+    const autre = { ...reponseTour(TOUR), signature: signatureSimulee(TOUR + 1) };
     autre.randomness = aleaDe(autre.signature);
-    const port = relaisDeFixture((url) => (url === urlTour(RELAIS_B, TOUR) ? reponseJson(autre) : undefined));
+    const port = relaisSimules((url) => (url === urlTour(RELAIS_B, TOUR) ? reponseJson(autre) : undefined));
     const refus = await refusDe(() => lireBalise(TOUR, port.lire));
     expect(refus.motif).toBe("relais_en_desaccord");
     expect(refus.message).toContain(RELAIS_A.nom);
@@ -254,14 +254,14 @@ describe("lecture des deux relais", () => {
   });
 
   it("balise, cas 3 : un relais rend un autre tour ⇒ refus", async () => {
-    const port = relaisDeFixture((url) => (url === urlTour(RELAIS_B, TOUR) ? reponseJson(reponseTour(TOUR + 1)) : undefined));
+    const port = relaisSimules((url) => (url === urlTour(RELAIS_B, TOUR) ? reponseJson(reponseTour(TOUR + 1)) : undefined));
     const refus = await refusDe(() => lireBalise(TOUR, port.lire));
     expect(refus.motif).toBe("tour_different");
     expect(refus.relais).toBe(RELAIS_B.nom);
   });
 
   it("balise, cas 4 : un relais injoignable ⇒ refus, l'autre n'est pas retenu seul", async () => {
-    const port = relaisDeFixture((url) => (url.startsWith(RELAIS_B.base) ? new Error("ECONNREFUSED (simulé)") : undefined));
+    const port = relaisSimules((url) => (url.startsWith(RELAIS_B.base) ? new Error("ECONNREFUSED (simulé)") : undefined));
     const refus = await refusDe(() => lireBalise(TOUR, port.lire));
     expect(refus.motif).toBe("injoignable");
     expect(refus.relais).toBe(RELAIS_B.nom);
@@ -269,7 +269,7 @@ describe("lecture des deux relais", () => {
   });
 
   it("balise, cas 4 : le premier relais en erreur HTTP ⇒ refus, le second n'est pas lu", async () => {
-    const port = relaisDeFixture((url) => (url === urlTour(RELAIS_A, TOUR) ? { statut: 503, octets: new Uint8Array() } : undefined));
+    const port = relaisSimules((url) => (url === urlTour(RELAIS_A, TOUR) ? { statut: 503, octets: new Uint8Array() } : undefined));
     const refus = await refusDe(() => lireBalise(TOUR, port.lire));
     expect(refus.motif).toBe("statut_http");
     expect(refus.relais).toBe(RELAIS_A.nom);
@@ -277,7 +277,7 @@ describe("lecture des deux relais", () => {
   });
 
   it("balise, cas 6 : /info d'un relais sur une autre chaîne ⇒ refus avant la lecture de son tour", async () => {
-    const port = relaisDeFixture((url) => (url === urlInfo(RELAIS_B) ? reponseJson({ ...INFO_QUICKNET, period: 30 }) : undefined));
+    const port = relaisSimules((url) => (url === urlInfo(RELAIS_B) ? reponseJson({ ...INFO_QUICKNET, period: 30 }) : undefined));
     const refus = await refusDe(() => lireBalise(TOUR, port.lire));
     expect(refus.motif).toBe("chaine_differente");
     expect(port.appels).not.toContain(urlTour(RELAIS_B, TOUR));

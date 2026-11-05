@@ -2,7 +2,7 @@
  * Fixtures du lot gel : un dépôt Git jetable qui a la disposition du vrai (`data/items/`,
  * `data/mesures/`, `data/formulations/`, `config/perimetre.yaml`, `config/gel.json`,
  * `docs/PROTOCOLE.md`), commité, donc propre. Jamais le dépôt du projet : `pipeline/gel/geler.ts:geler`
- * reçoit sa racine. Le réseau (relais drand, Wayback) est rejoué par `reseau-fixture.ts`.
+ * reçoit sa racine. Le réseau (relais drand, Wayback) est rejoué par `pipeline/gel/reseau-simule.ts`.
  *
  * Aucun candidat, outil, sondage, mesure ni URL réels : tout est ouvertement fictif (`demo-*`,
  * `*.invalid`). Les items sont fabriqués par les fabriques du lot questions et complétés de ce que
@@ -30,7 +30,7 @@ import { itemA, itemF, itemP, mesure } from "../questions/fabriques.ts";
 import type { OptionsItem } from "../questions/fabriques.ts";
 import { promu } from "../reformulation/aides.ts";
 import { identifiants, proposition, RELECTEUR, toutCoche } from "../reformulation/fabriques-relecture.ts";
-import { relaisDeFixture, waybackDeFixture } from "./reseau-fixture.ts";
+import { relaisSimules, waybackSimulee } from "../../pipeline/gel/reseau-simule.ts";
 
 /** 2026-12-01T00:00:00Z : le gel tombe à minuit UTC, un `valide_au` du 1er décembre l'atteint pile. */
 export const GEL = "2026-12-01T01:00:00+01:00";
@@ -252,10 +252,11 @@ export function optionsGel(racine: string, sortie: string | undefined, surcharge
     type_run: "pilote",
     remplace: undefined,
     engagement: engagementDe(head(racine)),
-    relais: relaisDeFixture().lire,
-    wayback: waybackDeFixture().lire,
+    relais: relaisSimules().lire,
+    wayback: waybackSimulee().lire,
     maintenant: () => MAINTENANT,
     ecrire: ecrireExclusif,
+    simule: false,
     ...surcharges,
   };
 }

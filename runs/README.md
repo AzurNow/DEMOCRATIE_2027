@@ -75,7 +75,11 @@ et `questions.json` suivent l'usage déjà documenté de `pnpm symmetry` (`outil
 
 ```
 pnpm geler --type-run=<type> --engagement=<url de capture> [--sortie=<répertoire>]
+pnpm geler --simule --type-run=<type> --sortie=<répertoire hors de tout dépôt Git>
 ```
+
+`--simule` (D80) est le gel de répétition, sans clé ni réseau : section « De bout en bout en mode
+simulé » plus bas. Le reste de cette section décrit le vrai gel.
 
 Le gel d'un run (décisions D41, D44, D45, D46, D47 ; `pipeline/gel/`). **Seul l'auteur gèle un vrai
 run**, c'est-à-dire lance la commande sans `--sortie` : elle écrit alors sous `runs/<date>/`. Un agent
@@ -458,6 +462,9 @@ du run ; écrit `metriques/metriques.json`, validé contre `schema/metriques.sch
   dans `run.json#/contestations_posterieures` (D73 (2) et (4)) : sinon refus,
   `ContestationsPosterieuresNonInscrites`. Un run hors de tout dépôt Git se vérifie avec
   `--depot-des-items` (section précédente) ; le premier run de `--premier` lit alors les mêmes items.
+  Un run simulé (`simule: true`, D80) sans `--depot-des-items` est refusé avant la lecture des items
+  (`ItemsDuRunSimuleNonDesignes`, code 2) : ses items vivent dans le dépôt simulé, jamais dans le
+  `data/items` du clone.
 
 - **Un seul partage de la population.** Les couples comparés et incomplets (seuil de 20 % compté sur
   le plan, §8), les candidats comparés et rapportés à part (seuil de couverture lu au gel, §4), les
@@ -604,7 +611,15 @@ temporaire neuf, ou `--sortie=<chemin>` ; **une sortie sous `runs/` est refusée
 ```
 pnpm run:dry --sortie=X && pnpm notation:dry --sortie=X     note le run interrogé
 pnpm notation:dry                                           interroge (comme run:dry) puis note
+pnpm notation:dry --run=<run> --depot-des-items=<dépôt>     note un gel simulé interrogé (D80)
 ```
+
+Avec `--run`, la commande note le run de `pnpm geler --simule` interrogé par `pnpm run:dry --run`
+(section suivante) : rien n'est posé depuis les fixtures, les items sont lus au commit du gel dans
+`--depot-des-items` (exigé, vérifié comme pour `pnpm analyze`). Refusés, code 2, sans rien écrire :
+un `run.json` sans `simule: true` (`GelNonSimule` : un vrai gel ne se note jamais avec des juges
+simulés), `--run` sans `--depot-des-items` (`ItemsDuRunSimuleNonDesignes`), `--run` avec `--sortie`,
+`--depot-des-items` sans `--run`. Le reste de cette section décrit le mode des fixtures.
 
 Ce que la commande ajoute sous `<sortie>/<date>/` :
 
@@ -624,6 +639,56 @@ Ce que la commande ajoute sous `<sortie>/<date>/` :
 Les réponses qui attendent un humain ne reçoivent aucun verdict : le bilan imprimé, relu du disque,
 les compte par motif. Relancer sur la même sortie ne réécrit aucun fichier.
 `pnpm notation:controle <sortie>/<date>` passe sur le répertoire produit.
+
+## De bout en bout en mode simulé
+
+La chaîne du vrai run, gel → interrogation → notation → analyse → go/no-go, en commandes, sans clé ni
+appel réseau (décision D80). Rien n'est écrit dans `runs/`, `data/` ou `config/` : tout vit sous un
+répertoire temporaire `$S`, hors de tout dépôt Git. À lancer depuis la racine du clone, dépôt propre
+ou non (le gel simulé ne gèle pas le clone).
+
+```bash
+S=$(mktemp -d)
+R="$S/2026-12-01"
+D="$S/depot-simule"
+pnpm geler --simule --type-run=mensuel --sortie="$S"
+pnpm run:dry --run="$R"
+pnpm notation:dry --run="$R" --depot-des-items="$D"
+node --experimental-strip-types -e "import('./tests/aides/humains-simules.ts').then((m) => console.log(m.jouerLesHumains({ repertoire_run: process.argv[1], repertoire_items: process.argv[2], juge_recopie: 'juge-simule-b', date: '2026-12-05T09:30:00+01:00' })))" "$R" "$D/data/items"
+pnpm notation:dry --run="$R" --depot-des-items="$D"
+pnpm analyze "$R" --depot-des-items="$D"
+pnpm go-no-go "$R"
+pnpm notation:controle "$R"
+```
+
+- **Le gel** (`pipeline/gel/gel-simule.ts`) pose sous `$D` un dépôt Git jetable, copié du jeu fictif
+  `tests/gel/depot-simule/` (deux candidats fictifs, deux outils, deux juges simulés) et commité à la
+  date de `tests/gel/gel-simule.json`, puis le gèle sous `$R` avec l'horloge figée de ce fichier et les
+  relais drand et la Wayback Machine rejoués en mémoire (`pipeline/gel/reseau-simule.ts` : la
+  signature d'un tour est le SHA-384 de `fixture:<tour>`, jamais une signature drand). `2026-12-01`, dans
+  `$R`, est la date de ce gel figé, à Paris. Le gel est déterministe : deux gels simulés écrivent le même `run.json`.
+- **Ce qui empêche de le prendre pour un vrai run.** `run.json` porte `simule: true`, que le schéma
+  n'admet qu'au statut `planifie` ou `en_cours`, sans `publication` ni `depot` : un run simulé ne se
+  publie pas. Le dépôt simulé, le `PROTOCOLE.md` fictif qu'il porte et les juges `simule/juge-a` et
+  `simule/juge-b` le disent aussi. `--sortie` sous `runs/` ou dans un dépôt Git, ou absente, est
+  refusée, comme `--engagement`.
+- **L'interrogation et la notation** sont celles de `pnpm run:dry --run` et de
+  `pnpm notation:dry --run` (sections précédentes). Les profils de l'éditeur simulé de `outil-alpha`
+  et `outil-beta` sont dans `tests/interrogation/fixtures/run-gele/profils-simules.json`.
+- **Les humains.** Aucune commande ne fabrique de notation humaine, et `pnpm analyze` refuse un run
+  dont une réponse obtenue n'a pas de verdict (`ReponsesNonNotees`). La quatrième ligne joue la file
+  humaine de la vraie chaîne avec une aide de test, `tests/aides/humains-simules.ts` : trois
+  annotateurs `humain-simule-<n>` recopient la notation du juge `juge-simule-b`. La seconde
+  `notation:dry` lit leurs notations et rend les verdicts qui manquaient.
+- **Sans comparateur.** Le périmètre simulé n'inclut aucun comparateur : aucune commande de la vraie
+  chaîne ne collecte de lecture de comparateur (`volume/lectures-comparateur/` s'écrit à la main), il
+  n'y a donc rien à simuler fidèlement. `metriques.json#/comparateurs` dit `aucun_comparateur_inclus`.
+- **Go/no-go.** `pnpm go-no-go` écrit sa décision et `checklist.json` sans toucher `statut` ; le
+  schéma refuse de toute façon un run simulé publié.
+
+`tests/chaine-simulee.test.ts` enchaîne ces commandes en sous-processus, avec un préchargement
+(`tests/aides/sans-reseau.ts`) qui inscrit et refuse tout `fetch` et toute connexion de socket, et
+vérifie que `metriques.json` est produit et qu'aucun appel réseau n'a été tenté.
 
 ## `pnpm preuve <url> [<url>…]`
 

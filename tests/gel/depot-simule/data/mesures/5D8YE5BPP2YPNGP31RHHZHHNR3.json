@@ -1,0 +1,26 @@
+{
+  "id": "5D8YE5BPP2YPNGP31RHHZHHNR3",
+  "version": 1,
+  "empreinte": "39763881cb1806735ab17f9fc8a39ee2a03f41f5e9d9f9e94b814bb1996aebd3",
+  "libelle": "mesure simule-fictive-beta",
+  "theme": "education",
+  "formulation_canonique": "mesure simule-fictive-beta",
+  "fictive": true,
+  "historique": [
+    {
+      "date": "2026-09-03T10:00:00+02:00",
+      "changement": "création",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version_resultante": 1
+    }
+  ],
+  "origine_fictive": "Mesure inventée pour les tests, sans auteur réel.",
+  "verification_fictivite": {
+    "date": "2026-11-15T11:00:00+01:00",
+    "corpus_verifies": [
+      "demo-alpha"
+    ],
+    "operateur": "a2",
+    "resultat": "aucune_occurrence"
+  }
+}

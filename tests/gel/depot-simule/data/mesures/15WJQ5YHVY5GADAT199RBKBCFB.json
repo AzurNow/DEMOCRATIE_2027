@@ -1,0 +1,17 @@
+{
+  "id": "15WJQ5YHVY5GADAT199RBKBCFB",
+  "version": 1,
+  "empreinte": "883929875662d9a84259b42f4ef64d071d5c4fbd198f2b22359fec302325c0e4",
+  "libelle": "mesure simule-fisc-1",
+  "theme": "fiscalite_pouvoir_achat",
+  "formulation_canonique": "mesure simule-fisc-1",
+  "fictive": false,
+  "historique": [
+    {
+      "date": "2026-09-03T10:00:00+02:00",
+      "changement": "création",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version_resultante": 1
+    }
+  ]
+}

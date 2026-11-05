@@ -176,6 +176,8 @@ export interface MetaDuRun {
   readonly run_remplace_id: string | undefined;
   /** §6, D73 (11) : le run de l'application du mois, désigné au gel (`application.ts`). */
   readonly application_testee: ApplicationTestee;
+  /** D80 : un gel de `pnpm geler --simule` (`gel-simule.ts`) inscrit `simule: true` ; un gel réel n'inscrit rien. */
+  readonly simule: boolean;
 }
 
 /** Un fichier JSON du run : deux espaces d'indentation, une fin de ligne. */
@@ -225,6 +227,7 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
     fenetre: { debut: prepare.fenetre.debut, fin: prepare.fenetre.fin },
     type_run: meta.type_run,
     statut: STATUT_AU_GEL,
+    ...(meta.simule ? { simule: true } : {}),
     ...(meta.run_remplace_id === undefined ? {} : { run_remplace_id: meta.run_remplace_id }),
     versions: {
       protocole: entrees.configuration.version_protocole,

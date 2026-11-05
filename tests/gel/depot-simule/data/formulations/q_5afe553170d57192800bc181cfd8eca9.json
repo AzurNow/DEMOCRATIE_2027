@@ -1,0 +1,53 @@
+{
+  "question_id": "q_5afe553170d57192800bc181cfd8eca9",
+  "empreinte_texte_neutre": "e5c6b531f1e058b157ddd2d2b9841f347dba673f0c97dcaf83f1e5ee226b3745",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "6CGC7AQ1ANX8MVAMRSBVMR64HG",
+  "formulations": [
+    {
+      "id": "499HBPKV6DY7QM5096BQX97P24",
+      "registre": "neutre",
+      "texte": "Basile Fictif propose-t-il ou elle mesure simule-retr-1 ?",
+      "empreinte_texte": "e5c6b531f1e058b157ddd2d2b9841f347dba673f0c97dcaf83f1e5ee226b3745",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "4WQJCA012F9ZCB1TQ01EHRJ6YD",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Basile Fictif propose-t-il ou elle mesure simule-retr-1 ?",
+      "empreinte_texte": "506801ac8464edefcff04524fedbaa8822175ac4af7e9d481bef333937a337c8",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "69HJZVYTJ0VKT5QAT9AQVMW8HK",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Basile Fictif propose-t-il ou elle mesure simule-retr-1 ?",
+      "empreinte_texte": "a90c5e57b7f60f25dfc1189bf928bb229394a59412b2730c9103c2f3e703d5f9",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "contre"
+    }
+  ]
+}

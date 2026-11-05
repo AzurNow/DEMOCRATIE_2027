@@ -15,7 +15,7 @@ import {
   urlDisponibilite,
   verifierEngagement,
 } from "../../pipeline/gel/engagement.ts";
-import { capturePresente, octetsJson, reponseJson, waybackDeFixture } from "./reseau-fixture.ts";
+import { capturePresente, octetsJson, reponseJson, waybackSimulee } from "../../pipeline/gel/reseau-simule.ts";
 
 const HEAD = "0123456789abcdef0123456789abcdef01234567";
 const AUTRE = "fedcba9876543210fedcba9876543210fedcba98";
@@ -94,7 +94,7 @@ describe("balise, cas 8 : l'URL de capture", () => {
 
 describe("balise, cas 8 : la Wayback Machine sert la capture", () => {
   it("l'API de disponibilité est interrogée sur la page et l'horodatage exacts, une fois", async () => {
-    const port = waybackDeFixture();
+    const port = waybackSimulee();
     const engagement = await verifierEngagement(URL_CAPTURE, HEAD, GEL, port.lire);
     expect(port.appels).toEqual([urlDisponibilite(engagement)]);
     const parametres = new URL(urlDisponibilite(engagement)).searchParams;
@@ -118,7 +118,7 @@ describe("balise, cas 8 : la Wayback Machine sert la capture", () => {
   });
 
   it("une URL refusée n'appelle pas la Wayback Machine", async () => {
-    const port = waybackDeFixture();
+    const port = waybackSimulee();
     await refusDe(() => verifierEngagement(URL_CAPTURE.replace(HEAD, AUTRE), HEAD, GEL, port.lire));
     expect(port.appels).toEqual([]);
   });
@@ -138,27 +138,27 @@ describe("balise, cas 8 : la Wayback Machine sert la capture", () => {
   ];
   for (const [nom, corps] of nonServies) {
     it(`balise, cas 8 : Wayback ne sert pas la capture (${nom}) ⇒ refus`, async () => {
-      const port = waybackDeFixture(() => reponseJson(corps));
+      const port = waybackSimulee(() => reponseJson(corps));
       expect((await refusDe(() => verifierEngagement(URL_CAPTURE, HEAD, GEL, port.lire))).motif).toBe("non_servie");
     });
   }
 
   it("Wayback injoignable ⇒ refus nommé", async () => {
-    const port = waybackDeFixture(() => new Error("ETIMEDOUT (simulé)"));
+    const port = waybackSimulee(() => new Error("ETIMEDOUT (simulé)"));
     const refus = await refusDe(() => verifierEngagement(URL_CAPTURE, HEAD, GEL, port.lire));
     expect(refus.motif).toBe("injoignable");
     expect(refus.message).toContain("ETIMEDOUT (simulé)");
   });
 
   it("Wayback en erreur HTTP ⇒ refus nommé", async () => {
-    const port = waybackDeFixture(() => reponseJson({}, 503));
+    const port = waybackSimulee(() => reponseJson({}, 503));
     expect((await refusDe(() => verifierEngagement(URL_CAPTURE, HEAD, GEL, port.lire))).motif).toBe("statut_http");
   });
 
   it("une réponse Wayback qui n'est pas du JSON attendu ⇒ refus nommé", async () => {
-    const port = waybackDeFixture(() => ({ statut: 200, octets: new TextEncoder().encode("<html>") }));
+    const port = waybackSimulee(() => ({ statut: 200, octets: new TextEncoder().encode("<html>") }));
     expect((await refusDe(() => verifierEngagement(URL_CAPTURE, HEAD, GEL, port.lire))).motif).toBe("illisible");
-    const autre = waybackDeFixture(() => reponseJson({ archived_snapshots: { closest: { timestamp: 20261130120000 } } }));
+    const autre = waybackSimulee(() => reponseJson({ archived_snapshots: { closest: { timestamp: 20261130120000 } } }));
     expect((await refusDe(() => verifierEngagement(URL_CAPTURE, HEAD, GEL, autre.lire))).motif).toBe("illisible");
   });
 });

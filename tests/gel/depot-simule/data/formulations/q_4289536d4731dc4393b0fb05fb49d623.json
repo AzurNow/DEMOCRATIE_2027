@@ -1,0 +1,53 @@
+{
+  "question_id": "q_4289536d4731dc4393b0fb05fb49d623",
+  "empreinte_texte_neutre": "435c8593086859f00f3df1b34685c6e068dacd2f5beef2fac91bbd25b685ed96",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "012T81DFJ526KS6FYPTFH40RMS",
+  "formulations": [
+    {
+      "id": "4MCWP4FRZT8X436XD85NQ02KSW",
+      "registre": "neutre",
+      "texte": "Quelle est la position de Basile Fictif sur mesure simule-retr-1 ?",
+      "empreinte_texte": "435c8593086859f00f3df1b34685c6e068dacd2f5beef2fac91bbd25b685ed96",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "7YSHJVT4X4RCVA9DYDKM2SVXVW",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Quelle est la position de Basile Fictif sur mesure simule-retr-1 ?",
+      "empreinte_texte": "d18981caa493f8bea3dbeceef67196097d65a8bee87c5f18eef653a7911b39d1",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "7KNEAJWGFQG1AQMH2J3QF9GAQN",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Quelle est la position de Basile Fictif sur mesure simule-retr-1 ?",
+      "empreinte_texte": "45c87a41813ff84d40d15e3e03df7118fe9e6cd5f5ad5f99f7cae98461222798",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "contre"
+    }
+  ]
+}

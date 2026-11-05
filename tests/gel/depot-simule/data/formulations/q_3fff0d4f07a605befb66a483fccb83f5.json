@@ -1,0 +1,53 @@
+{
+  "question_id": "q_3fff0d4f07a605befb66a483fccb83f5",
+  "empreinte_texte_neutre": "b52ec0554170300479085b8d2aa8d0f0d667f90825576317b3aee44e30ffdc42",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "32D4GK0CYWMJZR7QRKCKJZF0GC",
+  "formulations": [
+    {
+      "id": "3SBXZX8WV6AF9T51Q087ZZQPZX",
+      "registre": "neutre",
+      "texte": "Hélène Durand-Aubry propose-t-il ou elle mesure simule-retr-1 ?",
+      "empreinte_texte": "b52ec0554170300479085b8d2aa8d0f0d667f90825576317b3aee44e30ffdc42",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "3Y01H2EXC4YM4TF9VXDN9HW0RP",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Hélène Durand-Aubry propose-t-il ou elle mesure simule-retr-1 ?",
+      "empreinte_texte": "d716e87fcc936ef0e52b7b7fe81fcba40524737d0435dd23776728788560fd6f",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "0GPQ5G52EXVP3R648SRW50YJZK",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Hélène Durand-Aubry propose-t-il ou elle mesure simule-retr-1 ?",
+      "empreinte_texte": "28d255bf012ba41ccef4eccf80e63c28773c11fcacdd08c159e6770742605645",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "contre"
+    }
+  ]
+}

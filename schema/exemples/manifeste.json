@@ -3912,6 +3912,34 @@
       }
     },
     {
+      "objet": "run",
+      "fichier": "run/valide-18-gel-simule.json",
+      "attendu": "valide",
+      "motif": "D80 : run.json d'un gel de pnpm geler --simule, au statut en_cours que pnpm run:dry --run écrit, marqué simule: true. Copie de valide-09 sans invalidation, simule ajouté après statut."
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-79-simule-publie.json",
+      "attendu": "invalide",
+      "motif": "D80 : copie de valide-01 (publié, avec publication et dépôt) marquée simule: true. Un run simulé n'est jamais publié : il reste planifie ou en_cours, sans publication ni dépôt.",
+      "regle_protocole": "Décision D80 de l'auteur (2026-11-05) : une chaîne simulée continue, dont aucun run ne peut passer pour un vrai ; règle 8 de CLAUDE.md",
+      "erreur_visee": {
+        "keyword": "enum",
+        "instance_path": "/statut"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-80-simule-faux.json",
+      "attendu": "invalide",
+      "motif": "D80 : copie de valide-18 dont simule vaut false. Le champ n'existe que vrai : un gel réel ne le porte pas, jamais à false, pour qu'un seul test (présence) dise si le run est simulé.",
+      "regle_protocole": "Décision D80 de l'auteur (2026-11-05)",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/simule"
+      }
+    },
+    {
       "objet": "recalcul-b",
       "fichier": "recalcul-b/valide-01-contestation-posterieure.json",
       "attendu": "valide",

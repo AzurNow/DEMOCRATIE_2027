@@ -1,0 +1,83 @@
+{
+  "id": "7V6FBFQDJW3JK81C0EQ8HEX37H",
+  "version": 1,
+  "candidat_id": "demo-alpha",
+  "libelle_lisible": "Candidat demo-alpha",
+  "mesure_id": "2QS87RK3P6F871Q3STE9KYW7M1",
+  "mesure_version": 1,
+  "statut_validation": "verifie",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [
+    {
+      "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-001",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a2",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-001",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    }
+  ],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-03T10:00:00+02:00",
+      "changement": "création",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version_resultante": 1
+    },
+    {
+      "date": "2026-09-21T09:00:00+02:00",
+      "changement": "promotion vers data/ : verifie",
+      "motif": "lot lot-001, deux décisions concordantes",
+      "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "version_resultante": 1
+    }
+  ],
+  "type": "A",
+  "absence": {
+    "source_couverture_theme": {
+      "tier": "T1",
+      "url": "https://demo.invalid/programme.pdf",
+      "type_document": "programme_pdf",
+      "format": "pdf",
+      "page": 14,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "texte_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "archive_url": "https://archive.invalid/programme.pdf",
+      "date_source": "2026-09-01",
+      "date_collecte": "2026-09-03T09:12:00+02:00",
+      "chemin_local": "validation/fixtures/archives/programme.pdf",
+      "publication": "publique"
+    },
+    "corpus_examine": [
+      {
+        "url": "https://demo.invalid/programme.pdf",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "tier": "T1"
+      }
+    ],
+    "date_examen": "2026-09-04T10:00:00+02:00",
+    "reverifications": []
+  },
+  "empreinte": "a56a4f01435c0e03fb85583d90868d66a17403494d23134d049a4f6c05140e26"
+}

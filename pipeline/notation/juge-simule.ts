@@ -27,6 +27,14 @@
  * aucun candidat n'y entre pas non plus (D14 (2)).
  * Une réponse tronquée est notée comme une autre (§8 : « notée sur ce qu'elle contient »).
  *
+ * **Questions d'attribution** (D80 ; modifié ouvertement : il les refusait). Un juge ne note pas une
+ * Q-ATT, il relève les noms cités et dit s'il y a non-réponse (D27 (D), D29 (1)) ; la note se calcule
+ * ensuite (`note-attribution.ts`). Le juge simulé ne lit aucun nom : il relève une liste vide et
+ * aucune non-réponse, ce qui est exactement le contenu d'une réponse de l'éditeur simulé, dont le
+ * texte ne nomme aucun candidat. Ni scénario ni biais : les deux juges rendent le même relevé. Le gel
+ * simulé de `pnpm geler --simule` tire des Q-ATT (quota du périmètre d'au moins 1), que
+ * `pnpm notation:dry --run` doit pouvoir noter.
+ *
  * **Clé de contenu, et ce qu'elle ne lit pas.** La clé est la forme canonique de la question posée
  * (gabarit, texte), de la réponse soumise (texte, liens, troncature, refus) et de l'identité des
  * items soumis (identifiant, version, rôle, type) ; ni l'identifiant de la réponse, ni le
@@ -177,12 +185,10 @@ function jugeSimule(declare: JugeSimuleDeclare, parametres: ParametresJugeSimule
 }
 
 function noterSimule(charge: ChargeJuge, declare: JugeSimuleDeclare, parametres: ParametresJugeSimule): SortieJuge {
-  if (charge.question.gabarit === "Q-ATT") {
-    throw new JugeSimuleMalRegle("une question d'attribution (Q-ATT) exige les noms cités relevés dans la réponse (noms_cites, D27), que le juge simulé ne sait pas relever.");
-  }
   if (charge.reponse.refus_api) {
     throw new JugeSimuleMalRegle(`réponse ${charge.reponse_id} : un refus de l'API n'est soumis à aucun juge, la chaîne le note par règle (D32).`);
   }
+  if (charge.question.gabarit === "Q-ATT") return releveAttributionSimule(charge);
   const contenu = cleDeContenu(charge);
   const scenario = tirerScenario(repartitionDe(charge, parametres), parametres.graine, contenu);
   const scenarios: Readonly<Record<string, Readonly<Record<RoleSimule, NomNote>>>> = REGLES_JUGE_SIMULE.scenarios;
@@ -229,15 +235,37 @@ function estBiaise(charge: ChargeJuge, declare: JugeSimuleDeclare, graine: numbe
   return generateur(graineDerivee(graine, ["juge_simule", "biais", declare.juge_id, contenu])).flottant() < biais.taux;
 }
 
-function sortieDe(note: NoteSimulee, charge: ChargeJuge): SortieJuge {
+function sourcageDe(charge: ChargeJuge, soutien: VerdictSoutien): SortieJuge["sourcage"] {
   const cite = charge.reponse.liens.length > 0;
+  return { cite, soutiens: cite ? charge.reponse.liens.map((url_citee) => ({ url_citee, verdict_soutien: soutien })) : [] };
+}
+
+function sortieDe(note: NoteSimulee, charge: ChargeJuge): SortieJuge {
   const extrait = extraitDe(note, charge);
   return {
     categorie: note.categorie,
     drapeaux: note.drapeaux,
     ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }),
-    sourcage: { cite, soutiens: cite ? charge.reponse.liens.map((url_citee) => ({ url_citee, verdict_soutien: note.soutien })) : [] },
+    sourcage: sourcageDe(charge, note.soutien),
     ...(extrait === null ? {} : { extrait_justificatif: extrait }),
+  };
+}
+
+/**
+ * D80 : sur une Q-ATT, le juge simulé rend le relevé que la règle du §7 attend d'un juge (D27 (D),
+ * D29 (1)) et ne note rien : la note se calcule (`note-attribution.ts`), la même pour les deux juges.
+ * Il ne lit aucun nom, et n'en relève donc aucun (`noms_cites` vide) ni ne déclare de non-réponse :
+ * c'est exactement ce que contient une réponse de l'éditeur simulé, dont le texte ne nomme aucun
+ * candidat (`pipeline/interrogation/editeur-simule.ts`). Ni scénario ni biais sur une Q-ATT. L'extrait
+ * est le texte entier de la réponse, s'il n'est pas vide : il passe le test verbatim.
+ */
+function releveAttributionSimule(charge: ChargeJuge): SortieJuge {
+  const texte = charge.reponse.texte;
+  return {
+    noms_cites: [],
+    non_reponse: false,
+    sourcage: sourcageDe(charge, "ne_soutient_pas"),
+    ...(texte.trim().length > 0 ? { extrait_justificatif: { provenance: "reponse" as const, texte } } : {}),
   };
 }
 

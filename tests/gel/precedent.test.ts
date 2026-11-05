@@ -5,7 +5,7 @@
  * Le choix (`choisirPrecedent`) est éprouvé sur des `run.json` déjà lus ; la lecture et la
  * vérification, sur un dépôt de fixture où un premier gel écrit sous `runs/` (dépôt jetable, jamais
  * celui du projet), puis un second gel, à une `date_gel` plus tardive, écrit vers une sortie
- * temporaire. Le réseau est rejoué par `reseau-fixture.ts`.
+ * temporaire. Le réseau est rejoué par `pipeline/gel/reseau-simule.ts`.
  */
 
 import { createHash } from "node:crypto";
@@ -22,7 +22,7 @@ import type { RunDeRuns } from "../../pipeline/gel/precedent.ts";
 import { executerOutil, RACINE_PROJET } from "../aides/depot.ts";
 import { ALPHA, CONFIGURATION_GEL, depotDuJeu, optionsGel, perimetreSaisi, recommiter } from "./fixtures.ts";
 import { jeuNominal } from "./jeux.ts";
-import { relaisDeFixture, waybackDeFixture } from "./reseau-fixture.ts";
+import { relaisSimules, waybackSimulee } from "../../pipeline/gel/reseau-simule.ts";
 
 const DATE_1 = "2026-12-01";
 /** Le second gel : le lendemain, sa fenêtre le mardi suivant ; les deux sondages restent dans les 60 jours. */
@@ -154,8 +154,8 @@ async function secondRefuse(racine: string): Promise<PrecedentRefuse> {
   recommiter(racine, "altération du premier run");
   avancer(racine);
   const sortie = temporaire("banc-gel-precedent-");
-  const relais = relaisDeFixture();
-  const wayback = waybackDeFixture();
+  const relais = relaisSimules();
+  const wayback = waybackSimulee();
   const erreur = await refusDe(optionsDuSecond(racine, sortie, { relais: relais.lire, wayback: wayback.lire }));
   expect(erreur).toBeInstanceOf(PrecedentRefuse);
   expect(arborescence(sortie)).toEqual([]);

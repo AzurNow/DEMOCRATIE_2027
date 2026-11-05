@@ -4,7 +4,7 @@
  *
  * Un premier gel écrit `runs/2026-12-01/` d'un dépôt de fixture (jamais celui du projet) ; il est
  * invalidé par la vraie commande (`invaliderRun`), commité ; un second gel, le lendemain, vers une
- * sortie temporaire, le remplace. Le réseau est rejoué par `reseau-fixture.ts`.
+ * sortie temporaire, le remplace. Le réseau est rejoué par `pipeline/gel/reseau-simule.ts`.
  */
 
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -25,7 +25,7 @@ import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { ALPHA, CONFIGURATION_GEL, depotDuJeu, optionsGel, perimetreSaisi, recommiter } from "./fixtures.ts";
 import { jeuNominal } from "./jeux.ts";
-import { relaisDeFixture, waybackDeFixture } from "./reseau-fixture.ts";
+import { relaisSimules, waybackSimulee } from "../../pipeline/gel/reseau-simule.ts";
 
 const DATE_1 = "2026-12-01";
 const GEL_1_MS = Date.parse("2026-12-01T01:00:00+01:00");
@@ -122,8 +122,8 @@ function optionsDuSecond(racine: string, sortie: string, surcharges: Partial<Opt
 async function secondRefuse(racine: string, surcharges: Partial<OptionsGel>): Promise<MotifRemplacement> {
   avancer(racine);
   const sortie = temporaire("banc-gel-remplacement-");
-  const relais = relaisDeFixture();
-  const wayback = waybackDeFixture();
+  const relais = relaisSimules();
+  const wayback = waybackSimulee();
   const erreur = await geler(optionsDuSecond(racine, sortie, { ...surcharges, relais: relais.lire, wayback: wayback.lire })).then(
     () => new Error("Le gel a été accepté alors qu'un refus était attendu."),
     (refus: unknown) => refus,

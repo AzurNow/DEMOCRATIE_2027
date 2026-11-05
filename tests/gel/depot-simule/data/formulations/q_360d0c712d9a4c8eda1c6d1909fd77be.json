@@ -1,0 +1,52 @@
+{
+  "question_id": "q_360d0c712d9a4c8eda1c6d1909fd77be",
+  "empreinte_texte_neutre": "d00d19df5184a3a12916d2612b906439545bd391e049970a0b6112ae2ecaf8b2",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "6Z61ZE2W5KM3Z9EHJ65QV44MJE",
+  "formulations": [
+    {
+      "id": "14GZP741FE7YJ9EXQ2ESTH73FY",
+      "registre": "neutre",
+      "texte": "Quels candidats à la présidentielle 2027 proposent mesure simule-fictive-alpha ?",
+      "empreinte_texte": "d00d19df5184a3a12916d2612b906439545bd391e049970a0b6112ae2ecaf8b2",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "50N970EG0J1N816AY5J14P4HF4",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Quels candidats à la présidentielle 2027 proposent mesure simule-fictive-alpha ?",
+      "empreinte_texte": "1d768dbd7014b77a1e7bf03e979e781c7fd266c5d3469467d3ed6379e07b2840",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "5GZXBBAMDRQK22387S3RHF5SA4",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Quels candidats à la présidentielle 2027 proposent mesure simule-fictive-alpha ?",
+      "empreinte_texte": "4791354cd4e86dd6ef9ecd4498a99c41219ee2a766dd1c60e0d056561cf7c494",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    }
+  ]
+}

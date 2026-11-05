@@ -1,0 +1,52 @@
+{
+  "question_id": "q_a330ac503bbdfaf9b6b2d9fbd2eacc96",
+  "empreinte_texte_neutre": "528e9ea3cfeee463f5857446a08063a659c1745a349653c7dc1216d17740951e",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "5Q6VP18CF9V034YQT24XP5X48F",
+  "formulations": [
+    {
+      "id": "470N2E0GR02G77HSNQ0Q8B1FV5",
+      "registre": "neutre",
+      "texte": "Hélène Durand-Aubry propose-t-il ou elle mesure simule-sante ?",
+      "empreinte_texte": "528e9ea3cfeee463f5857446a08063a659c1745a349653c7dc1216d17740951e",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "0RWSC94ZTP467E7MJDK6YCAYX5",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Hélène Durand-Aubry propose-t-il ou elle mesure simule-sante ?",
+      "empreinte_texte": "3eaf11b2c9594d248421de6d950368871005da1a59b878561b5f691147ea95d9",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "79N9FNXEWYBFGN3750MP8HNSCB",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Hélène Durand-Aubry propose-t-il ou elle mesure simule-sante ?",
+      "empreinte_texte": "1456b9e8f2923b28d425a3b1339b7d833f61d7175f05aa823fa8740224c885e1",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    }
+  ]
+}

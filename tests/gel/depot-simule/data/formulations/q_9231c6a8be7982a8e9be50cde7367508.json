@@ -1,0 +1,52 @@
+{
+  "question_id": "q_9231c6a8be7982a8e9be50cde7367508",
+  "empreinte_texte_neutre": "7f36d1cba889f354668841b0946a4da5432ca67806f8d63066fc14d0708fbd8a",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "7Y1ZYA648K9ACXGZGA9GDG2EE1",
+  "formulations": [
+    {
+      "id": "1CSNVVKV7ZZWDG06VBY2SDVFJE",
+      "registre": "neutre",
+      "texte": "Quels candidats à la présidentielle 2027 proposent mesure simule-fisc-1 ?",
+      "empreinte_texte": "7f36d1cba889f354668841b0946a4da5432ca67806f8d63066fc14d0708fbd8a",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "3HCZHSERE744G6AZCJ4D8XJ4X4",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Quels candidats à la présidentielle 2027 proposent mesure simule-fisc-1 ?",
+      "empreinte_texte": "7ba2583af58a960d66f3619d90fc742540362d08f6b04f60949f37ab9aebbd1b",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "58KQGV6D81HPTJJV7ZQFJE5E7W",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Quels candidats à la présidentielle 2027 proposent mesure simule-fisc-1 ?",
+      "empreinte_texte": "91fba2e01149986eb87bb21fbffb50c37d33255943278a92c11a1c0951fa284e",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    }
+  ]
+}

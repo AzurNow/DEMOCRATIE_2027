@@ -1,0 +1,53 @@
+{
+  "question_id": "q_d6023bf38067c17cec1eafd2fc91c110",
+  "empreinte_texte_neutre": "dfb74034967ade8dc7b10066c415665464760aab3ad6a95c97dc4bfd069c5407",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "3ED083FGCYP5JRK03NNKVF0JMC",
+  "formulations": [
+    {
+      "id": "4GPWCYHKNN03B8QYRN5MN6YY55",
+      "registre": "neutre",
+      "texte": "Quelle est la position de Hélène Durand-Aubry sur mesure simule-fisc-0 ?",
+      "empreinte_texte": "dfb74034967ade8dc7b10066c415665464760aab3ad6a95c97dc4bfd069c5407",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "74XQX81JF2BEVFQVSFHWK3EZFF",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Quelle est la position de Hélène Durand-Aubry sur mesure simule-fisc-0 ?",
+      "empreinte_texte": "b3d83c3dfe50257146e54f45b3611f12de2a5f8fbcc3b471ab0605e16c17dccd",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "1204PRDNDXDMAE3A2MWED42JK3",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Quelle est la position de Hélène Durand-Aubry sur mesure simule-fisc-0 ?",
+      "empreinte_texte": "1facf1c1e9633df5e1a220dc8b7cac1217f54f58e0c6ebcec864d07779ba4fbb",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "pour"
+    }
+  ]
+}

@@ -246,6 +246,8 @@ export interface CandidatDuRunLu extends CandidatAuGel {
 /** La part de `run.json` que lisent l'analyse, la notation et la lecture du run. */
 export interface RunLu extends Run {
   readonly statut: StatutRun;
+  /** D80 : présent (et vrai) seulement dans un gel de `pnpm geler --simule` ; absent d'un gel réel. */
+  readonly simule?: true;
   /** `run.schema.json`, `type_run` : `pilote` désigne le run qui porte le jeu d'or (D18). */
   readonly type_run: TypeRun;
   readonly perimetre: {

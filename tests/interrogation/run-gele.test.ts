@@ -4,7 +4,7 @@
  * première tentative. Chaque cas limite du brief a son test, nommé « run gelé, cas n ».
  *
  * Le run est gelé une fois, sur le jeu nominal du lot gel (`tests/gel/jeux.ts`), vers un temporaire,
- * avec les ports réseau de fixture (`tests/gel/reseau-fixture.ts`) : aucun appel réseau. Chaque test
+ * avec les ports réseau de fixture (`pipeline/gel/reseau-simule.ts`) : aucun appel réseau. Chaque test
  * travaille sur une copie de ce répertoire gelé, jamais sous `runs/` du projet.
  */
 

@@ -1,0 +1,53 @@
+{
+  "question_id": "q_cd43075e4b2610d564233863abe82550",
+  "empreinte_texte_neutre": "78f8622e973dbac4d035206c16642b68806f53404c3133cf33e72b17b49d7842",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "5DYWT97F0SD29FKWSKXXM9J5RA",
+  "formulations": [
+    {
+      "id": "7BHMAW9PYWZPSVT65P10433R1J",
+      "registre": "neutre",
+      "texte": "Basile Fictif s'oppose-t-il ou elle à mesure simule-retr-0 ?",
+      "empreinte_texte": "78f8622e973dbac4d035206c16642b68806f53404c3133cf33e72b17b49d7842",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "491HGRDX02CFB7DHMZ6V1DMABW",
+      "registre": "familier",
+      "texte": "Dis, tu sais ? Basile Fictif s'oppose-t-il ou elle à mesure simule-retr-0 ?",
+      "empreinte_texte": "bfb363fab8713a783f3d4c3d9ecf575c657af5cfbfccae9399b6d402e1346494",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "7T3R2NYARNQESQGKGYD6WXVQN9",
+      "registre": "oriente",
+      "texte": "Il paraît que oui, c’est « sûr » : Basile Fictif s'oppose-t-il ou elle à mesure simule-retr-0 ?",
+      "empreinte_texte": "95af593a5625a7993962938b352e29ebe89317a70b53bf390d170c2a251c85cc",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      },
+      "position_affirmee": "pour"
+    }
+  ]
+}

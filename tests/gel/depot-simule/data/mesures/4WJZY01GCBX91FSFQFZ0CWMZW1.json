@@ -1,0 +1,17 @@
+{
+  "id": "4WJZY01GCBX91FSFQFZ0CWMZW1",
+  "version": 1,
+  "empreinte": "6c77496627c401e1c8a33c6f9010a13c9f7489789e8224f088bd476f31504d08",
+  "libelle": "mesure simule-retr-1",
+  "theme": "retraites",
+  "formulation_canonique": "mesure simule-retr-1",
+  "fictive": false,
+  "historique": [
+    {
+      "date": "2026-09-03T10:00:00+02:00",
+      "changement": "création",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version_resultante": 1
+    }
+  ]
+}

@@ -25,6 +25,13 @@
  *    humaine emploie aussi (constat 21, D18).
  * 5. **Notation** (`noterRun`), puis **bilan** relu du disque (`bilan-notation.ts`).
  *
+ * **Run gelé simulé** (`lancerNotationDuGelSimule`, `pnpm notation:dry --run`, D80). Le run gelé par
+ * `pnpm geler --simule` et interrogé par `pnpm run:dry --run` est noté dans son propre répertoire,
+ * sans étape 2 ni 3 : `run.json`, `questions.json` et `tirage.json` sont ceux du gel. Un run réel
+ * (sans `simule: true`) est refusé avant toute écriture (`pipeline/run/simulation.ts:GelNonSimule`),
+ * et ses items ne se lisent que dans le dépôt simulé désigné, au commit des données du gel, par la
+ * lecture d'un vrai run (`lireItemsEpingles`), jamais dans les fixtures.
+ *
  * Les paramètres (`notation-simulee.json` des fixtures) sont lus et contrôlés à la frontière :
  * l'instant posé sur les notations et les verdicts, les juges simulés et leur répartition, la table
  * des existences.
@@ -32,7 +39,7 @@
 
 import { constants, copyFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { dispositionRunNote, ItemEpingleIntrouvable, lireDossier, lireRunJson, lireTirage } from "../../analysis/lecture-run.ts";
+import { dispositionRunNote, ItemEpingleIntrouvable, lireDossier, lireItemsEpingles, lireRunJson, lireTirage, type RunLu } from "../../analysis/lecture-run.ts";
 import { estDuRun } from "../../analysis/filtre.ts";
 import type { Instant } from "../../analysis/types.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
@@ -45,6 +52,7 @@ import { noterRun, type EnvironnementChaine, type ReponseANoter, type ResultatCh
 import { resolusAuGel } from "./charge-juge.ts";
 import { fournisseurSimule, type TexteSimule } from "./fournisseur-simule.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
+import { repertoireDesItemsDuRunSimule } from "../run/simulation.ts";
 import { memeGel } from "../../analysis/champs-posterieurs-au-gel.ts";
 import { interrogesDuRun, preparerANoter, type GelDeNotation } from "./preparation.ts";
 import { jugesSimules, type BiaisSimule, type JugeSimuleDeclare, type ParametresJugeSimule } from "./juge-simule.ts";
@@ -74,10 +82,15 @@ export interface RunSimulePrepare {
   readonly reponses: readonly ReponseANoter[];
 }
 
-export interface ResultatNotationSimulee extends RunSimulePrepare {
+/** Ce que rend toute notation simulée, quel que soit son mode. */
+export interface NotationSimuleeFaite {
+  readonly repertoire_run: string;
+  readonly reponses: readonly ReponseANoter[];
   readonly resultat: ResultatChaine;
   readonly bilan: BilanNotation;
 }
+
+export interface ResultatNotationSimulee extends RunSimulePrepare, NotationSimuleeFaite {}
 
 export class GelDivergent extends Error {
   constructor(chemin: string) {
@@ -108,7 +121,30 @@ export async function preparerNotationSimulee(options: OptionsNotationSimulee): 
   const interrogation = await lancerRunSimule({ sortie: options.sortie, fixtures: options.fixtures_interrogation });
   const repertoire_run = interrogation.disposition.run;
   poserGel(repertoire_run, options);
-  return { interrogation, repertoire_run, reponses: lireReponsesANoter(repertoire_run, join(options.fixtures_notation, "items")) };
+  const items = join(options.fixtures_notation, "items");
+  return { interrogation, repertoire_run, reponses: lireReponsesANoter(repertoire_run, (questions) => lireItemsDesFixtures(questions, items)) };
+}
+
+export interface OptionsNotationDuGelSimule {
+  /** Le répertoire `<sortie>/<date>/` gelé par `pnpm geler --simule`, interrogé par `pnpm run:dry --run`. */
+  readonly repertoire_run: string;
+  /** `--depot-des-items` : la racine du dépôt simulé (`<sortie>/depot-simule/`) ; `null` est refusé. */
+  readonly depot_des_items: string | null;
+}
+
+/**
+ * D80 : la notation simulée d'un run gelé simulé, dans son propre répertoire. Refuse, avant toute
+ * écriture, un répertoire sous `runs/`, un run réel (`GelNonSimule`), un run sans dépôt des items
+ * désigné (`ItemsDuRunSimuleNonDesignes`) et un dépôt que D75 (13) refuse.
+ */
+export async function lancerNotationDuGelSimule(options: OptionsNotationDuGelSimule, parametres: ParametresNotationSimulee): Promise<NotationSimuleeFaite> {
+  const { repertoire_run } = options;
+  exigerHorsDeRuns(repertoire_run);
+  const { items } = repertoireDesItemsDuRunSimule(repertoire_run, options.depot_des_items, "pnpm notation:dry --run");
+  const reponses = lireReponsesANoter(repertoire_run, itemsAuCommitDuGel(items));
+  const resultat = await noterRun(reponses, environnementSimule(repertoire_run, parametres));
+  const bilan = bilanNotation(repertoire_run, resultat, reponses.map((r) => r.reponse.id));
+  return { repertoire_run, reponses, resultat, bilan };
 }
 
 /** Les deux éléments simulés, et l'horloge figée. */
@@ -150,11 +186,14 @@ function memeRunAuGel(lu: string, source: string): boolean {
 
 /* ------------------------------------------------------------------ lecture */
 
-function lireReponsesANoter(repertoire_run: string, repertoire_items: string): readonly ReponseANoter[] {
+/** Les items épinglés par les questions du run, indexés par identifiant : où ils se lisent dépend du mode. */
+type LireItems = (questions: readonly Question[], run: RunLu, chemin_questions: string) => ReadonlyMap<string, Item>;
+
+function lireReponsesANoter(repertoire_run: string, lireItems: LireItems): readonly ReponseANoter[] {
   const run = lireRunJson(repertoire_run);
   const disposition = dispositionRunNote(repertoire_run);
   const questions = lireQuestions(disposition.questions);
-  const items = lireItemsDesFixtures(questions, repertoire_items);
+  const items = lireItems(questions, run, disposition.questions);
   // `lireTirage` a validé tirage.json contre son schéma, qui exige reponse_attendue et premisse_fausse de chaque entrée.
   const resolus = resolusAuGel(lireTirage(repertoire_run, run).entrees as unknown as readonly EntreeTirage[]);
   const gel: GelDeNotation = { questions: new Map(questions.map((q) => [q.id, q])), items, resolus, interroges: interrogesDuRun(run) };
@@ -169,6 +208,16 @@ function lireQuestions(chemin: string): readonly Question[] {
   const brut: unknown = JSON.parse(readFileSync(chemin, "utf8"));
   if (!Array.isArray(brut)) throw new ParametresSimulesInvalides(chemin, "un tableau de questions est attendu.");
   return brut.map((question: unknown, rang) => valider<Question>("question", question, `${chemin}, élément ${rang}`));
+}
+
+/**
+ * D80 : les items d'un run gelé simulé, lus au commit des données du gel dans le dépôt simulé, par la
+ * lecture d'un vrai run (`lireItemsEpingles` : identifiant, version et empreinte épinglés vérifiés).
+ */
+function itemsAuCommitDuGel(repertoire_items: string): LireItems {
+  // `lireItemsEpingles` valide chaque item contre `item.schema.json` : l'objet lu est un item complet.
+  return (questions, run, chemin_questions) =>
+    new Map(lireItemsEpingles(questions, repertoire_items, run.versions.donnees_commit, chemin_questions).map((item) => [item.id, item as unknown as Item]));
 }
 
 function lireItemsDesFixtures(questions: readonly Question[], repertoire_items: string): ReadonlyMap<string, Item> {

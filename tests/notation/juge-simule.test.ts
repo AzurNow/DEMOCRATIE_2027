@@ -136,9 +136,25 @@ describe("le juge simulé", () => {
     }
   });
 
-  it("refuse une question d'attribution, qu'il ne sait pas noter", async () => {
+  it("D80 : sur une question d'attribution, relève aucun nom et aucune non-réponse, sans catégorie, le même pour les deux juges", async () => {
+    const juges = jugesSimules(parametresDeReference().juge_simule, temporaire());
+    const c = charge(reponse({}), "Q-ATT");
+    const sorties = await Promise.all(juges.map((juge) => juge.noter(c)));
+    for (const sortie of sorties) {
+      expect(sortie).toEqual({
+        noms_cites: [],
+        non_reponse: false,
+        sourcage: { cite: true, soutiens: [{ url_citee: LIEN, verdict_soutien: "ne_soutient_pas" }] },
+        extrait_justificatif: { provenance: "reponse", texte: "Réponse simulée, sans contenu réel." },
+      });
+      expect(sortie).not.toHaveProperty("categorie");
+    }
+  });
+
+  it("D80 : sur une question d'attribution au texte vide, ne rend aucun extrait", async () => {
     const [juge] = jugesSimules(parametresDeReference().juge_simule, temporaire());
-    await expect(Promise.resolve().then(() => juge?.noter(charge(reponse({}), "Q-ATT")))).rejects.toBeInstanceOf(JugeSimuleMalRegle);
+    const sortie = await juge?.noter(charge(reponse({ texte: "" }), "Q-ATT"));
+    expect(sortie).not.toHaveProperty("extrait_justificatif");
   });
 
   it("refuse une répartition qui nomme un scénario inconnu, sans poids, ou un biais hors de [0, 1]", () => {
