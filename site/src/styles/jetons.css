@@ -23,6 +23,10 @@
   --rayon: 0; /* pixel art : angles vifs */
   --trait: 2px;
   --ombre-dure: 4px;
+  --cible-tactile: 2.75rem; /* 44 px : taille minimale d'une cible au doigt */
+  --duree: 180ms;
+  --courbe: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --decalage-ancre: 0.5rem; /* marge au-dessus d'une cible d'ancre ; plus grande quand l'en-tête est collant */
 
   /* Thème clair. */
   color-scheme: light;
@@ -48,6 +52,18 @@
   --px-accent-3: #e07a1f;
   --px-papier: #fffdf3;
   --px-ecran: #d9f6ee;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --decalage-ancre: 7.5rem; /* en-tête collant sur deux rangées */
+  }
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --decalage-ancre: 5rem; /* en-tête collant sur une rangée */
+  }
 }
 
 @media (prefers-color-scheme: dark) {
