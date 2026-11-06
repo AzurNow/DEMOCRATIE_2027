@@ -19,6 +19,7 @@ import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import { renvoiJuge } from "./fabriques.ts";
 import { SEUIL_RETRAIT } from "../../analysis/parametres-protocole.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
+import { contrefactuelOutilsDuRun } from "../../pipeline/notation/controle-croise-outils.ts";
 import { tailleEchantillonHumain, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { VERSION_CHARGE_JUGE, type ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
@@ -109,14 +110,16 @@ function violations(repertoire_run: string): readonly unknown[] {
   const obtenues = readdirSync(dispositionRunNote(repertoire_run).reponses)
     .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string; normalise?: { refus_api: boolean; texte: string } })
     .filter((r) => r.statut_reponse === "obtenue");
+  const volume = lireNotationsDuRun(repertoire_run, run.id);
   return controleCroise({
     run: runDeNotationDe(run),
     reponses_obtenues: obtenues.map((r) => r.id),
     refus_api: obtenues.filter((r) => r.normalise?.refus_api === true).map((r) => r.id),
     // Une réponse sans projection n'a pas de texte : le contrôle lève s'il en a besoin.
     textes: new Map(obtenues.flatMap((r) => (r.normalise === undefined ? [] : [[r.id, r.normalise.texte] as const]))),
-    notations: lireNotationsDuRun(repertoire_run, run.id).notations,
+    notations: volume.notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
+    contrefactuel_outils: contrefactuelOutilsDuRun(run, volume.reponses_contrefactuelles),
   });
 }
 

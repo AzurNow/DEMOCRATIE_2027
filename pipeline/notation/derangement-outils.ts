@@ -249,10 +249,26 @@ export function estEligibleOutils(reponse: ReponseEcrite, permutes: readonly Out
   verifierOutils(perimetre);
   exigerDansLePerimetre(permutes, perimetre);
   if (reponse.statut_reponse !== "obtenue" || reponse.normalise.refus_api) return false;
+  return nommeUnOutilPermute(reponse.normalise.texte, permutes, perimetre);
+}
+
+/**
+ * La règle de texte de `estEligibleOutils`, seule : le texte projeté d'une réponse obtenue, hors
+ * refus de l'API, nomme-t-il un outil permuté ? Le contrôle croisé (`controle-croise-outils.ts`) la
+ * rejoue sur les textes stockés, qui ne sont pas des `ReponseEcrite` ; l'exclusion du refus reste à
+ * l'appelant.
+ */
+export function texteNommeUnOutilPermute(texte: string, permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[]): boolean {
+  verifierOutils(perimetre);
+  exigerDansLePerimetre(permutes, perimetre);
+  return nommeUnOutilPermute(texte, permutes, perimetre);
+}
+
+function nommeUnOutilPermute(texte: string, permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[]): boolean {
   const ids = new Set(permutes.map((outil) => outil.outil_id));
   // Le remplaçant d'un outil permuté n'a pas d'importance ici : seule compte l'occurrence.
   const formes = perimetre.flatMap((outil) => formesDeLOutil(outil, ids.has(outil.outil_id) ? outil : null));
-  return nommeUneForme([reponse.normalise.texte], formes);
+  return nommeUneForme([texte], formes);
 }
 
 /** Pour chaque paire, libellé → libellé de l'image, éditeur → éditeur de l'image ; puis les formes intactes. */

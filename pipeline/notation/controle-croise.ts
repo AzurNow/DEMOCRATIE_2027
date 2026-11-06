@@ -18,10 +18,14 @@
  * Les marqueurs qu'une notation porte sur la réponse notée (`sur_refus_api`, D33 ; `sur_texte_vide`,
  * annexe C, D74 (26)) sont relus contre les faits déterministes de la réponse : sa projection dit si
  * elle est un refus de l'API, et quel est son texte.
+ *
+ * Le contrefactuel d'outil terminé (D90) est recoupé par `controle-croise-outils.ts` : sous-ensemble
+ * rejoué, juges mesurés, effectifs, et notations de contexte `contrefactuel_outil` du volume.
  */
 
 import type { Ulid } from "../../analysis/types.ts";
 import { depasseSeuilRetrait } from "./contrefactuel.ts";
+import { violationsContrefactuelOutils, type ContrefactuelOutilsAControler } from "./controle-croise-outils.ts";
 import { jugesDuRun } from "./decision.ts";
 import { tirerEchantillonHumain } from "./echantillons.ts";
 import { reponseAuTexteVide } from "./extrait.ts";
@@ -44,8 +48,17 @@ export const CODES_VIOLATION = [
   "notation_par_regle_incoherente",
   "marqueur_refus_api_incoherent",
   "marqueur_texte_vide_incoherent",
+  // D90 : le contrefactuel d'outil terminé (`controle-croise-outils.ts`).
+  "sous_ensemble_contrefactuel_outils_non_rejoue",
+  "mesure_contrefactuel_outils_incoherente",
+  "denominateur_contrefactuel_outils_incoherent",
+  "taux_contrefactuel_outils_incoherent",
+  "notation_contrefactuel_outil_hors_sous_ensemble",
+  "notation_contrefactuel_outil_de_juge_non_mesure",
 ] as const;
 export type CodeViolation = (typeof CODES_VIOLATION)[number];
+
+export type { ContrefactuelOutilsAControler } from "./controle-croise-outils.ts";
 
 export interface Violation {
   readonly code: CodeViolation;
@@ -68,6 +81,12 @@ export interface EntreeControleCroise {
   readonly textes: ReadonlyMap<Ulid, string>;
   readonly notations: readonly NotationIndividuelle[];
   readonly verdicts: readonly VerdictProduit[];
+  /**
+   * D90 : `run.json#/contrefactuel_outils` et de quoi le recouper (`contrefactuelOutilsDuRun`), ou
+   * `null` quand le run ne porte pas le bloc. Exigé de chaque appelant : un oubli ne doit pas taire
+   * le contrôle.
+   */
+  readonly contrefactuel_outils: ContrefactuelOutilsAControler | null;
 }
 
 interface Contexte {
@@ -103,6 +122,14 @@ export function controleCroise(entree: EntreeControleCroise): readonly Violation
     ...violationsDuRun(entree.run),
     ...marqueursRefus(entree.notations, new Set(entree.refus_api)),
     ...marqueursTexteVide(entree.notations, new Set(entree.refus_api), entree.textes),
+    ...violationsContrefactuelOutils({
+      run: entree.run,
+      reponses_obtenues: entree.reponses_obtenues,
+      refus_api: new Set(entree.refus_api),
+      textes: entree.textes,
+      notations: entree.notations,
+      a_controler: entree.contrefactuel_outils,
+    }),
     ...entree.verdicts.flatMap((verdict) => violationsDuVerdict(verdict, ctx)),
   ];
 }

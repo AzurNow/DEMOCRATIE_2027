@@ -7,7 +7,8 @@
  * Lit `run.json`, les réponses du volume (`volume/reponses/`, dont les réponses obtenues de contexte
  * `run` forment la population de l'échantillon humain), les notations individuelles
  * (`volume/notations/`, avec les réponses contrefactuelles, validées au passage) et les verdicts
- * (`verdicts/`), chaque fichier validé contre son schéma (`analysis/lecture-run.ts`), puis lance
+ * (`verdicts/`), chaque fichier validé contre son schéma (`analysis/lecture-run.ts`), avec le
+ * contrefactuel d'outil inscrit s'il l'est (`run.json#/contrefactuel_outils`, D90), puis lance
  * `pipeline/notation/controle-croise.ts:controleCroise` et imprime chaque violation.
  *
  * Codes de sortie : 0, aucune violation ; 1, au moins une violation ; 2, le run n'a pas pu être lu
@@ -19,6 +20,7 @@ import { estDuRun } from "../analysis/filtre.ts";
 import type { Reponse } from "../analysis/types.ts";
 import { lireNotationsDuRun, lireReponses, lireRunJson, lireVerdicts, runDeNotationDe } from "../analysis/lecture-run.ts";
 import { controleCroise, type EntreeControleCroise, type Violation } from "../pipeline/notation/controle-croise.ts";
+import { contrefactuelOutilsDuRun } from "../pipeline/notation/controle-croise-outils.ts";
 import { analyserArguments } from "./arguments.ts";
 
 const USAGE = "usage : pnpm notation:controle <repertoire_run>";
@@ -48,7 +50,7 @@ function lireEntree(repertoire_run: string): EntreeControleCroise {
   const run = lireRunJson(repertoire_run);
   // `lireReponses` valide chaque réponse contre son schéma, qui exige `normalise` d'une réponse obtenue.
   const reponses = lireReponses<ReponseLue>(repertoire_run, run.id);
-  const { notations } = lireNotationsDuRun(repertoire_run, run.id);
+  const { notations, reponses_contrefactuelles } = lireNotationsDuRun(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue");
   return {
     run: runDeNotationDe(run),
@@ -57,6 +59,7 @@ function lireEntree(repertoire_run: string): EntreeControleCroise {
     textes: new Map(obtenues.map((r) => [r.id, projectionDe(r).texte])),
     notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
+    contrefactuel_outils: contrefactuelOutilsDuRun(run, reponses_contrefactuelles),
   };
 }
 
