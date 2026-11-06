@@ -33,6 +33,17 @@
   overflow: visible;
 }
 
+/*
+ * Atténuation : un décor qui passe sous du texte ne doit jamais le gêner. L'état écrit ici (gris et
+ * pâle, sans animation) est l'état par défaut et celui du mouvement réduit ; au défilement, le décor
+ * part moins grisé quand sa section entre, et se grise à mesure que le texte le recouvre. Les valeurs
+ * sont des jetons non colorés (jetons.css).
+ */
+.decor svg {
+  filter: grayscale(var(--decor-gris));
+  opacity: var(--decor-opacite);
+}
+
 /* ---- États fixes (repli sans animation-timeline, et mouvement réduit) ---- */
 
 .decor-limites-coin-hg { transform: translate(28px, 28px); }
@@ -80,6 +91,16 @@
 
   .decor-questions__rail {
     width: 18rem;
+  }
+
+  /* Fondu vers le bas et vers la gauche, côté texte : le décor reste plein dans la marge haute droite. */
+  .decor-accroche__colonne,
+  .decor-limites__rail,
+  .decor-questions__rail,
+  .decor-preenregistrement__rail,
+  .decor-contester__rail {
+    -webkit-mask-image: linear-gradient(to bottom left, black 35%, transparent 110%);
+    mask-image: linear-gradient(to bottom left, black 35%, transparent 110%);
   }
 
   /* Accroche : la colonne de droite de la grille, au-dessus et au-dessous de l'illustration. */
@@ -140,6 +161,15 @@
         view-timeline: --decor block;
       }
 
+      /* Atténuation progressive : de l'état d'entrée (peu grisé) à l'état couvert par le texte. */
+      .decor svg {
+        animation-name: decor-attenue;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: --decor;
+        animation-range: cover 0% cover 70%;
+      }
+
       /* Réglages communs, de spécificité nulle : seuls les groupes qui ont un animation-name bougent. */
       :where(.decor svg g) {
         animation-timing-function: linear;
@@ -183,6 +213,11 @@
       /* Contester : l'enveloppe va au panel, puis la fiche nouvelle se pose à côté de l'ancienne. */
       .decor-contester-enveloppe { animation-name: decor-contester-enveloppe; }
       .decor-contester-nouvelle { animation-name: decor-contester-nouvelle; }
+    }
+
+    @keyframes decor-attenue {
+      from { filter: grayscale(var(--decor-gris-debut)); opacity: var(--decor-opacite-debut); }
+      to { filter: grayscale(var(--decor-gris)); opacity: var(--decor-opacite); }
     }
 
     @keyframes decor-accroche-monte-1 { from { transform: translateY(12px); } to { transform: translateY(-8px); } }

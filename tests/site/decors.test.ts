@@ -209,3 +209,46 @@ describe("décors : SVG sources", () => {
     }
   });
 });
+
+describe("décors : atténuation sous le texte", () => {
+  const css = (): string => fichiersCss().find((f) => f.nom === "decors.css")?.css ?? "";
+  const jetons = (): string => fichiersCss().find((f) => f.nom === "jetons.css")?.css ?? "";
+
+  it("grise et estompe chaque décor par défaut (filter et opacity sur le svg des décors)", () => {
+    expect(css()).toMatch(/\.decor svg\s*\{[^}]*filter:\s*grayscale\(var\(--decor-gris\)\)[^}]*opacity:\s*var\(--decor-opacite\)/);
+  });
+
+  it("estompe par un masque chaque rail ou colonne de décor, côté texte", () => {
+    for (const rail of ["decor-accroche__colonne", "decor-limites__rail", "decor-questions__rail", "decor-preenregistrement__rail", "decor-contester__rail"]) {
+      expect(css(), rail).toMatch(new RegExp(`\\.${rail}[^{]*\\{[^}]*mask-image:\\s*linear-gradient`));
+    }
+  });
+
+  it("écrit les valeurs d'atténuation par des jetons non colorés", () => {
+    for (const jeton of ["--decor-gris", "--decor-opacite", "--decor-gris-debut", "--decor-opacite-debut"]) {
+      expect(jetons()).toMatch(new RegExp(`${jeton}:\\s*[0-9.]+;`));
+    }
+  });
+
+  it("ne progresse au défilement que sous @supports et prefers-reduced-motion: no-preference", () => {
+    const source = css();
+    const i = source.indexOf("animation-name: decor-attenue");
+    expect(i).toBeGreaterThan(0);
+    const preludes = preludesEnglobants(source, i);
+    expect(preludes.some((p) => /^@supports\s*\(\s*animation-timeline\s*:/.test(p))).toBe(true);
+    expect(preludes.some((p) => /prefers-reduced-motion:\s*no-preference/.test(p))).toBe(true);
+  });
+
+  it("garde l'état atténué statique sous reduced-motion (animation coupée, filtre jamais retiré)", () => {
+    const source = css();
+    expect(source).toMatch(/prefers-reduced-motion:\s*reduce\)[^{]*\{[\s\S]*animation:\s*none/);
+    expect(preludesEnglobants(source, source.indexOf(".decor svg {"))).toEqual([]);
+  });
+
+  it("n'emploie backdrop-filter que sous @supports, avec repli (aujourd'hui : aucun)", () => {
+    const source = css();
+    for (const m of source.matchAll(/backdrop-filter\s*:/g)) {
+      expect(preludesEnglobants(source, m.index).some((p) => /^@supports/.test(p))).toBe(true);
+    }
+  });
+});
