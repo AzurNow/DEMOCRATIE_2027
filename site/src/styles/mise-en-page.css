@@ -1,18 +1,23 @@
 /* Mise en page : mobile d'abord (320 px, gouttière 16 px), élargie à partir de 48 rem. */
 
-/* ---- En-tête ---- */
+/* ---- En-tête ----
+ * Mobile (< 40 rem) : deux rangées (nom + bouton de thème, puis liens défilables au pouce), non collant.
+ * Tablette (40 rem et plus) : mêmes deux rangées, compactes, collantes. Bureau (64 rem) : une rangée. */
 
 .entete {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 1rem;
-  padding: 0.75rem max(var(--gouttiere), calc((100% - var(--largeur-page)) / 2));
+  gap: 0 1rem;
+  padding: 0.25rem max(var(--gouttiere), calc((100% - var(--largeur-page)) / 2)) 0;
   background: var(--fond-section);
   border-bottom: var(--trait) solid var(--bordure);
 }
 
 .entete__nom {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cible-tactile);
   margin: 0;
   font-family: var(--police-titre);
   font-size: 1rem;
@@ -22,21 +27,32 @@
   overflow-wrap: anywhere;
 }
 
+/* Rangée de liens : défile horizontalement si elle ne tient pas ; la barre reste discrète. */
 .entete__nav {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0 0.25rem;
   flex: 1 1 100%;
   order: 3;
+  gap: 0 0.25rem;
+  margin-inline: calc(var(--gouttiere) * -1);
+  padding-inline: var(--gouttiere);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
 }
 
 .entete__lien {
-  display: inline-block;
-  padding: 0.5rem 0.6rem;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: var(--cible-tactile);
+  padding: 0.25rem 0.75rem;
   color: var(--texte);
   font-weight: 700;
   text-decoration: none;
+  white-space: nowrap;
   border-bottom: var(--trait) solid transparent;
+  scroll-snap-align: start;
 }
 
 .entete__lien:hover {
@@ -60,8 +76,12 @@
 }
 
 .bascule-theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-left: auto;
-  min-height: 2.75rem;
+  min-width: var(--cible-tactile);
+  min-height: var(--cible-tactile);
   padding: 0.4rem 0.8rem;
   background: var(--fond);
   color: var(--texte);
@@ -71,6 +91,16 @@
   font-size: 0.9375rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* Pastille « clair / sombre » : un carré à moitié plein, dessiné en CSS. */
+.bascule-theme::before {
+  content: "";
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: var(--trait) solid currentcolor;
+  background: linear-gradient(90deg, currentcolor 50%, transparent 50%);
 }
 
 .bascule-theme[hidden] {
@@ -87,26 +117,57 @@
   box-shadow: 1px 1px 0 var(--bordure);
 }
 
-@media (min-width: 48rem) {
+/* Petit écran : le bouton ne montre que la pastille ; le libellé reste lu par les lecteurs d'écran. */
+@media (max-width: 39.999rem) {
+  .bascule-theme {
+    padding-inline: 0.6rem;
+  }
+
+  .bascule-theme__libelle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 40rem) {
   .entete {
     position: sticky;
     top: 0;
     z-index: 10;
   }
 
+  .entete__nav {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+}
+
+@media (min-width: 64rem) {
   .entete {
     flex-wrap: nowrap;
+    padding-block: 0;
   }
 
   .entete__nav {
     flex: 1 1 auto;
     order: 0;
-    justify-content: center;
+    justify-content: safe center;
   }
 
   .bascule-theme {
     margin-left: 0;
   }
+}
+
+/* ---- Retour en haut : n'existe que si le navigateur lie une animation au défilement ---- */
+
+.haut-de-page {
+  display: none;
 }
 
 /* ---- Sections ---- */
@@ -353,4 +414,10 @@
 
 .pied__liens li {
   margin: 0;
+}
+
+.pied__liens a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cible-tactile);
 }

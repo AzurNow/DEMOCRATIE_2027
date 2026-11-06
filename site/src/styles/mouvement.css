@@ -1,4 +1,8 @@
 /*
+ * Système d'interactions commun : tout mouvement vit ici ou sous `prefers-reduced-motion: no-preference`
+ * (fil.css, decors.css). Les effets de survol sont sous `hover: hover` : jamais d'information
+ * accessible seulement au survol, ils ne font qu'accompagner ce qui est déjà lisible.
+ *
  * Apparition douce des sections au défilement, en CSS seul : sans prise en charge de
  * animation-timeline, ou si le visiteur demande moins de mouvement, rien ne bouge et tout est visible.
  */
@@ -26,6 +30,86 @@
       animation-timeline: view();
       animation-range: entry 0% entry 30%;
     }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Transitions douces : couleur, soulignement, ombre. */
+  a,
+  .bascule-theme,
+  .faq__question,
+  .carte,
+  .illustration__cadre {
+    transition:
+      color var(--duree) var(--courbe),
+      background-color var(--duree) var(--courbe),
+      border-color var(--duree) var(--courbe),
+      box-shadow var(--duree) var(--courbe),
+      text-decoration-thickness var(--duree) var(--courbe),
+      transform var(--duree) var(--courbe);
+  }
+
+  :focus-visible {
+    transition: outline-offset var(--duree) var(--courbe);
+  }
+
+  /* Retour en haut : visible après un peu de défilement, là où le navigateur sait le mesurer. */
+  @supports (animation-timeline: view()) {
+    @keyframes haut-de-page-paraitre {
+      from {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(0.75rem);
+      }
+
+      to {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+      }
+    }
+
+    .haut-de-page {
+      position: fixed;
+      right: max(var(--gouttiere), env(safe-area-inset-right));
+      bottom: max(var(--gouttiere), env(safe-area-inset-bottom));
+      z-index: 9;
+      display: inline-flex;
+      align-items: center;
+      min-width: var(--cible-tactile);
+      min-height: var(--cible-tactile);
+      padding: 0.4rem 0.8rem;
+      background: var(--fond);
+      color: var(--texte);
+      border: var(--trait) solid var(--bordure);
+      box-shadow: 3px 3px 0 var(--bordure);
+      font-weight: 700;
+      text-decoration: none;
+      animation: haut-de-page-paraitre linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 40rem;
+    }
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .carte:hover,
+  .illustration__cadre:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: calc(var(--ombre-dure) + 2px) calc(var(--ombre-dure) + 2px) 0 var(--accent-2);
+  }
+
+  .faq__question:hover {
+    background: var(--fond-section);
+  }
+
+  .entete__lien:hover {
+    background: var(--fond);
+  }
+
+  .haut-de-page:hover {
+    border-color: var(--accent-1);
+    box-shadow: 3px 3px 0 var(--accent-1);
   }
 }
 
