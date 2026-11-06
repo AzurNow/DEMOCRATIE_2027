@@ -41,38 +41,46 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-05 (nuit)
+## État au 2026-11-06 (après-midi)
 
-- Protocole **0.34** (#309, D79). Décisions D1 à D92 inscrites ; **D81, D82, D83, D85, D86, D88,
-  D91 attendent l'auteur** (D85 et D88 se tranchent ensemble). D89, D90, D92 tranchées par la règle
-  du 2026-11-01.
-- Fusionnées le 2026-11-05 au soir : #327 (revue de code, `docs/revues/2026-11-05.md`), #328 (D75 (8)
-  et commentaires), #329 (D87, verdicts de lecture), #330 (CLAUDE.md, accord de l'auteur), #331 (gel :
-  D75 (14), (20), (21), (27), D84), #332 (écriture atomique de `metriques.json`), #333 (site : gardes,
-  `pnpm test` construit le site), #334 (`analysis/` n'importe plus `pipeline/`, règle ESLint), #335
-  (`analysis/parametres-protocole.ts`), #336 (D80, chaîne simulée continue). Code de D75 terminé.
-- Revue du 2026-11-05 : constats 1 à 5, 7 à 9 corrigés ; constat 6 (journaux en retard) réglé par
-  cette clôture et #330.
-- Worktree `.claude/worktrees/agent-a0e98d279de57a40f` (`site/habillage`, fusionnée) gardé : il porte
-  un fichier non suivi `scratch/maquette-habillage.html` ; à supprimer seulement avec l'accord de
-  l'auteur.
+- Protocole **0.34**. Fusionnées le 2026-11-06 au matin : #343 (conformité 0.34,
+  `docs/conformite/2026-11-06.md`, aucun constat haut), #344 (D92 (c)), #345 (D93), #346 (suite de
+  D90), #347 (jeu d'or hors de `decider`). Les décisions en attente de l'auteur et le reste des lots
+  de notation sont dans `docs/feuille-de-route.json`, qui fait foi.
+- **Page pédagogique du site**, sur demande de l'auteur (lisibilité, détails dépliables, cas exemple,
+  interactivité, mobile et tablette) :
+  - fusionnées : #348 (sections hors parcours : « En bref », détails en `<details>`), #349 (cadre
+    mobile et tablette, en-tête, survol, retour en haut), #350 (parcours : vue d'ensemble, phrase-clé,
+    points-clés, cas fictif suivi sur sept étapes), #351 puis #352 (le décor passe sous le texte : voile
+    tiré de `--fond-courant` sous chaque bloc, plus de fondu en diagonale) ;
+  - en cours à l'écriture de cet état : #353 (page `/exemple/` : « un banc à chaque arrêt de bus »,
+    animée au défilement en CSS seul ; les gardes de `tests/site` lisent chaque page) et #354
+    (`animation-timeline` fusionnée par le minificateur dans le raccourci `animation:` : l'apparition
+    des sections et le retour en haut ne tournaient jamais). #354 se fusionne après #353.
+  - **Le texte nouveau de la page (phrases-clés, « En bref », page `/exemple/`) attend la relecture
+    de l'auteur avant tout déploiement** (`docs/PLAN-PAGE-PEDAGOGIQUE.md`).
+  - Aucun rendu vérifié dans un vrai navigateur ni sur un vrai téléphone : seulement des captures
+    Chrome sans tête. Le serveur de développement d'Astro ne démarre pas dans le bac à sable de
+    Claude Code ; le site local se sert par `python3 -m http.server` sur `site/dist`.
+- Worktree `.claude/worktrees/agent-a0e98d279de57a40f` (`site/habillage`, fusionnée) gardé : fichier
+  non suivi `scratch/maquette-habillage.html`, à supprimer seulement avec l'accord de l'auteur.
 - Rien n'a jamais tourné sur un appel réel. Avant le prochain gel, l'auteur renseigne
   `juges[].outils_de_son_editeur` dans `config/gel.json`.
-- Dette : `docs/DETTE.md`, entrée du 2026-11-05 (soir). Dernière passe de conformité :
-  `docs/conformite/2026-11-03.md` (0.30).
+- `docs/DETTE.md` et `LESSONS.md` ne sont pas encore à jour pour la session du 2026-11-06 : la
+  clôture (`cloture-de-session`) reste à faire.
 
 ## Ce qui était en cours
 
-Rien : toutes les PR de la session sont fusionnées. L'auteur a demandé de ne plus lancer d'agents en
-fin de session.
+#353 et #354 (voir ci-dessus) : vérifier qu'elles sont fusionnées, sinon les reprendre (CI, fusion
+de `main` par commit de fusion, puis `gh pr merge --merge`).
 
 ## Prochaines tâches, par priorité
 
-1. **Passe `conformite-protocole`** sur la 0.34 (code de D75 terminé).
-2. **D89** (commande qui écrit le kappa juge-humain et `comptes_jeu_or`) et **D90** (test
-   contrefactuel d'outil tiré), lots de notation ; **D92 (c)** : `run:dry --run` exige `simule: true`.
-3. Dette du 2026-11-05 (soir) n° 2 : exception nommée du filet de la règle 3 pour `gel-simule.ts`.
-4. **Site** généré depuis `runs/` : après la passe de conformité (`docs/PLAN-PAGE-PEDAGOGIQUE.md`).
+1. Fusion de #353 puis #354 ; clôture de session (`docs/DETTE.md`, `LESSONS.md`).
+2. Relecture du texte du site par l'auteur ; vérification sur un vrai téléphone et une vraie tablette.
+3. Suite des lots de notation et des décisions en attente, d'après `docs/feuille-de-route.json`.
+4. **Site** généré depuis `runs/` : seulement après la passe d'optimisation et la revue de code
+   (`docs/PLAN-PAGE-PEDAGOGIQUE.md`).
 
 Hors mission sans accord explicite de l'auteur : appels d'API réels, collecte réelle, écriture dans
 `data/` ou `config/perimetre.yaml`, déploiement, `pnpm run:live`, gel de la 1.0.
