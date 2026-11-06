@@ -98,6 +98,56 @@ function ecrituresInterdites(chemin: string, contenu: string): readonly string[]
   );
 }
 
+/**
+ * Exception nommée (dette 2026-11-05 (soir) n° 2) : `pnpm geler --simule` copie un arbre fictif qui
+ * contient un `data/` d'un seul `cpSync`, sans nommer `data/items` : le détecteur ci-dessus ne le voit
+ * pas. Plutôt qu'un silence, ce fichier précis (et lui seul) doit appeler `exigerSortieSimulee` avant
+ * la copie (`poserDepotSimule`, qui porte le `cpSync`), garde qui refuse toute sortie dans un dépôt Git.
+ */
+const GEL_SIMULE = "pipeline/gel/gel-simule.ts";
+const APPEL_GARDE = /(?<!function )\bexigerSortieSimulee\(/;
+const APPEL_COPIE = /(?<!function )\bposerDepotSimule\(/;
+
+/** Les manquements d'un fichier à son exception nommée ; `undefined` si aucune exception ne le vise. */
+export function manquementsDeLException(chemin: string, contenu: string): readonly string[] | undefined {
+  if (chemin !== GEL_SIMULE) return undefined;
+  const copie = contenu.search(APPEL_COPIE);
+  const garde = contenu.search(APPEL_GARDE);
+  if (!/\bcpSync\(/.test(contenu) || copie < 0) return ["la copie du data/ fictif (cpSync dans poserDepotSimule) a disparu : l'exception est périmée"];
+  if (garde < 0) return ["aucun appel à exigerSortieSimulee"];
+  if (garde > copie) return ["exigerSortieSimulee est appelé après la copie du data/ fictif"];
+  return [];
+}
+
+describe("exception nommée : le gel simulé", () => {
+  const reel = readFileSync(join(RACINE, GEL_SIMULE), "utf8");
+
+  it("gel-simule.ts actuel appelle exigerSortieSimulee avant la copie", () => {
+    expect(manquementsDeLException(GEL_SIMULE, reel)).toEqual([]);
+  });
+
+  it("cas limite : sans appel à exigerSortieSimulee, le contrôle échoue (chaîne fabriquée)", () => {
+    const sans = reel.replace(/(?<!function )\bexigerSortieSimulee\(/g, "autreChose(");
+    expect(sans).not.toBe(reel);
+    expect(manquementsDeLException(GEL_SIMULE, sans)).toEqual(["aucun appel à exigerSortieSimulee"]);
+  });
+
+  it("cas limite : appel après la copie, le contrôle échoue (chaîne fabriquée)", () => {
+    const apres = "function poserDepotSimule() { cpSync(a, b); }\nposerDepotSimule(x);\nexigerSortieSimulee(y);\n";
+    expect(manquementsDeLException(GEL_SIMULE, apres)).toEqual(["exigerSortieSimulee est appelé après la copie du data/ fictif"]);
+  });
+
+  it("cas limite : copie disparue, l'exception est signalée périmée", () => {
+    expect(manquementsDeLException(GEL_SIMULE, "exigerSortieSimulee(y);\n")).toHaveLength(1);
+  });
+
+  it("cas limite : un autre fichier qui copie un data/ n'est pas couvert par l'exception", () => {
+    const copieur = 'exigerSortieSimulee(y);\nposerDepotSimule(x);\ncpSync(join(racine, "data/items"), depot, { recursive: true });\n';
+    expect(manquementsDeLException("outils/autre.ts", copieur)).toBeUndefined();
+    expect(ecrituresInterdites("outils/autre.ts", copieur)).toEqual(["data/items"]);
+  });
+});
+
 describe("détecteur", () => {
   it("attrape une écriture directe vers data/items, en TypeScript comme en Python", () => {
     expect(ecritDansData("x.ts", 'writeFileSync(join("data/items", nom), texte)')).toBe(true);

@@ -28,7 +28,7 @@ de `tests/` qui le déplace casse une commande documentée dans `runs/README.md`
 **Ce qu'il faut faire.** Mettre le jeu simulé à jour dans la PR qui ajoute le champ ; s'il grossit, le
 sortir de `tests/` vers un répertoire nommé comme jeu de démonstration.
 
-### 2. Le filet textuel de la règle 3 ne voit plus le gel simulé, qui écrit un `data/` — *moyenne*
+### ~~2. Le filet textuel de la règle 3 ne voit plus le gel simulé, qui écrit un `data/`~~ — réglé le 2026-11-06 par #338 (exception nommée de `tests/ecriture-data.test.ts` : `gel-simule.ts` doit appeler `exigerSortieSimulee` avant la copie)
 
 Pour passer `tests/ecriture-data.test.ts`, `gel-simule.ts` copie l'arbre fictif d'un seul `cpSync` au
 lieu de nommer `data/items`. L'écriture va dans un dépôt jetable hors de tout dépôt Git ; la seule
