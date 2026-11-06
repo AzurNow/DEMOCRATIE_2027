@@ -183,6 +183,19 @@ describe("écart API / application (§6, QR8)", () => {
     expect(document["graines"]).toContainEqual({ cle, graine: graineHexadecimale(20261203, cle) });
   });
 
+  it("DETTE 2026-10-02 n° 1 : les sections du §8 ne lisent que le canal API, à l'identique du même run sans saisie", () => {
+    // Les métriques secondaires lèvent sur une unité du canal application (`CanalHorsMetriquesSecondaires`) :
+    // `contexteDuRun` doit donc les en tenir à l'écart. Le même run sans saisie de l'application
+    // publie les mêmes taux (répartition des drapeaux comprise), la même asymétrie (exactitude par
+    // candidat), les mêmes conditions et la même corrélation.
+    const sansSaisie: SpecRun = { candidats: SPEC_APPLICATION.candidats, outils: SPEC_APPLICATION.outils, categorie: SPEC_APPLICATION.categorie };
+    const entrees = entreesDuRunAnalysable(SPEC_APPLICATION);
+    expect(entrees.reponses.some((r) => r.canal === "application")).toBe(true);
+    const reference = analyser(entreesDuRunAnalysable(sansSaisie));
+    for (const section of ["taux", "asymetrie", "conditions"]) expect(document[section]).toEqual(reference[section]);
+    expect(exploratoire(document)["correlation_couverture"]).toEqual(exploratoire(reference)["correlation_couverture"]);
+  });
+
   it("aucune réponse de l'application dans le run : section sans objet, motif aucune_reponse_application", () => {
     const sansApplication = analyser(entreesDuRunAnalysable(SPEC_REFERENCE));
     expect(exploratoire(sansApplication)["ecart_api_application"]).toEqual({ statut: "sans_objet", motif: "aucune_reponse_application" });

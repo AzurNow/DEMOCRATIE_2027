@@ -8,9 +8,11 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  CanalHorsMetriquesSecondaires,
   confirmationPremisse,
   exactitude,
   exactitudeParCandidat,
+  exactitudeParCle,
   exactitudeParFormulation,
   exactitudeParGabarit,
   exactitudeParTheme,
@@ -26,7 +28,7 @@ import {
   tauxObsolescence,
   tauxObsolescenceFraiche,
 } from "../../analysis/metriques.ts";
-import { VerdictEnDouble } from "../../analysis/filtre.ts";
+import { VerdictEnDouble, type UniteAnalyse } from "../../analysis/filtre.ts";
 import { LecturesComparateurIncoherentes } from "../../analysis/reference-comparateurs.ts";
 import type { CategorieRetenue, LectureComparateur, Taux } from "../../analysis/types.ts";
 import {
@@ -387,6 +389,122 @@ describe("métriques secondaires", () => {
     expect([...exactitudeParTheme(jeu).keys()]).toEqual(["retraites", "sante"]);
     expect(exactitudeParGabarit(jeu).get("Q-ATT")).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
     expect(exactitudeParFormulation(jeu).get("oriente")).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+  });
+});
+
+describe("métriques secondaires : canal API seul (DETTE 2026-10-02, n° 1)", () => {
+  // §8 : les métriques secondaires sont des affirmations chiffrées ; §6, QR8 : le canal application
+  // est exploratoire. Une unité de ce canal mêlée aux unités API lève, nommée, jamais retirée en silence.
+  const API = [
+    unite({ candidat_id: "candidat-a", theme: "retraites", gabarit: "Q-DIR", registre: "neutre", categorie: "exacte" }),
+    unite({ candidat_id: "candidat-a", theme: "sante", gabarit: "Q-NEG", registre: "familier", categorie: "inexacte", drapeaux: ["deformation"] }),
+    unite({
+      candidat_id: "candidat-b",
+      theme: "sante",
+      gabarit: "Q-DIR",
+      registre: "oriente",
+      premisse_fausse: false,
+      categorie: "inexacte",
+      drapeaux: ["obsolescence", "deformation"],
+    }),
+    unite({ candidat_id: "candidat-b", theme: "retraites", gabarit: "Q-NEG", registre: "neutre", categorie: "indeterminee" }),
+    unite({ candidat_id: "candidat-c", theme: "retraites", gabarit: "Q-DIR", registre: "neutre", categorie: "inexacte", drapeaux: [] }),
+    unite({ candidat_id: null, theme: null, gabarit: "Q-ATT", registre: "familier", categorie: "exacte" }),
+  ];
+  const PARTAGE = { compares: ["candidat-a", "candidat-b"], rapportes_a_part: ["candidat-c"] };
+  const APPLICATION = unite({
+    reponse_id: ulid("reponse-application"),
+    canal: "application",
+    mode: null,
+    candidat_id: "candidat-a",
+    theme: "retraites",
+    gabarit: "Q-DIR",
+    registre: "neutre",
+    categorie: "inexacte",
+    drapeaux: ["deformation"],
+  });
+  /** L'unité application glissée au milieu des unités API. */
+  const MELEES = [...API.slice(0, 3), APPLICATION, ...API.slice(3)];
+
+  /** Sérialisation stable d'un résultat, les `Map` rendues en paires dans leur ordre d'insertion. */
+  function octets(resultat: unknown): string {
+    return JSON.stringify(resultat, (_cle, valeur: unknown) => (valeur instanceof Map ? [...valeur] : valeur));
+  }
+
+  /** Chaque métrique secondaire, sous le nom que son erreur doit porter. */
+  const SECONDAIRES: readonly (readonly [string, (unites: readonly UniteAnalyse[]) => unknown])[] = [
+    ["repartitionDrapeaux", repartitionDrapeaux],
+    ["exactitudeParCle", (u) => exactitudeParCle(u, (x) => x.candidat_id)],
+    ["exactitudeParCandidat", (u) => exactitudeParCandidat(u, PARTAGE)],
+    ["exactitudeParTheme", exactitudeParTheme],
+    ["exactitudeParGabarit", exactitudeParGabarit],
+    ["exactitudeParFormulation", exactitudeParFormulation],
+  ];
+
+  it.each(SECONDAIRES)("%s : une unité application au milieu d'unités API lève CanalHorsMetriquesSecondaires, nommée", (nom, metrique) => {
+    expect(() => metrique(MELEES)).toThrow(CanalHorsMetriquesSecondaires);
+    expect(() => metrique(MELEES)).toThrow(new RegExp(`${APPLICATION.reponse_id} du canal application reçue par ${nom}`));
+  });
+
+  it.each(SECONDAIRES)("%s : une liste vide ne lève pas", (_nom, metrique) => {
+    expect(() => metrique([])).not.toThrow();
+  });
+
+  it("liste vide : résultats inchangés (dénominateurs nuls, aucune clé, aucun candidat à part)", () => {
+    const nul = '{"numerateur":0,"denominateur":0}';
+    expect(octets(repartitionDrapeaux([]))).toBe(
+      `{"denominateur":0,"parts":{"fabrication":${nul},"mauvaise_attribution":${nul},"obsolescence":${nul},"deformation":${nul},"confirmation_premisse":${nul}}}`,
+    );
+    expect(octets(exactitudeParCle([], (u) => u.candidat_id))).toBe("[]");
+    expect(octets(exactitudeParCandidat([], PARTAGE))).toBe('{"compares":[],"rapportes_a_part":[]}');
+    expect(octets(exactitudeParTheme([]))).toBe("[]");
+    expect(octets(exactitudeParGabarit([]))).toBe("[]");
+    expect(octets(exactitudeParFormulation([]))).toBe("[]");
+  });
+
+  it("aucune unité application : résultats identiques, octet pour octet, à ceux d'avant la garde", () => {
+    // Valeurs relevées sur le code d'avant la garde, sur ce même jeu.
+    expect(octets(repartitionDrapeaux(API))).toBe(
+      '{"denominateur":3,"parts":{"fabrication":{"numerateur":0,"denominateur":3,"valeur":0},' +
+        '"mauvaise_attribution":{"numerateur":0,"denominateur":3,"valeur":0},' +
+        '"obsolescence":{"numerateur":1,"denominateur":3,"valeur":0.3333333333333333},' +
+        '"deformation":{"numerateur":2,"denominateur":3,"valeur":0.6666666666666666},' +
+        '"confirmation_premisse":{"numerateur":0,"denominateur":3,"valeur":0}}}',
+    );
+    expect(octets(exactitudeParCle(API, (u) => u.candidat_id))).toBe(
+      '[["candidat-a",{"numerateur":1,"denominateur":2,"valeur":0.5}],["candidat-b",{"numerateur":0,"denominateur":1,"valeur":0}],' +
+        '["candidat-c",{"numerateur":0,"denominateur":1,"valeur":0}]]',
+    );
+    expect(octets(exactitudeParCandidat(API, PARTAGE))).toBe(
+      '{"compares":[["candidat-a",{"numerateur":1,"denominateur":2,"valeur":0.5}],["candidat-b",{"numerateur":0,"denominateur":1,"valeur":0}]],' +
+        '"rapportes_a_part":["candidat-c"]}',
+    );
+    expect(octets(exactitudeParTheme(API))).toBe(
+      '[["retraites",{"numerateur":1,"denominateur":2,"valeur":0.5}],["sante",{"numerateur":0,"denominateur":2,"valeur":0}]]',
+    );
+    expect(octets(exactitudeParGabarit(API))).toBe(
+      '[["Q-DIR",{"numerateur":1,"denominateur":3,"valeur":0.3333333333333333}],["Q-NEG",{"numerateur":0,"denominateur":1,"valeur":0}],' +
+        '["Q-ATT",{"numerateur":1,"denominateur":1,"valeur":1}]]',
+    );
+    expect(octets(exactitudeParFormulation(API))).toBe(
+      '[["neutre",{"numerateur":1,"denominateur":2,"valeur":0.5}],["familier",{"numerateur":1,"denominateur":2,"valeur":0.5}],' +
+        '["oriente",{"numerateur":0,"denominateur":1,"valeur":0}]]',
+    );
+  });
+
+  it("une unité application d'un candidat rapporté à part lève aussi : la garde précède le partage", () => {
+    const aPart = unite({ ...APPLICATION, candidat_id: "candidat-c" });
+    expect(() => exactitudeParCandidat([...API, aPart], PARTAGE)).toThrow(CanalHorsMetriquesSecondaires);
+  });
+
+  it("une unité application sans clé (Q-ATT, thème non tiré) lève aussi : elle n'est pas écartée en silence", () => {
+    const sansCle = unite({ ...APPLICATION, candidat_id: null, theme: null, gabarit: "Q-ATT" });
+    expect(() => exactitudeParTheme([...API, sansCle])).toThrow(CanalHorsMetriquesSecondaires);
+    expect(() => exactitudeParCle([...API, sansCle], (u) => u.candidat_id)).toThrow(CanalHorsMetriquesSecondaires);
+  });
+
+  it("une seule unité, du canal application : lève, comme au milieu d'unités API", () => {
+    expect(() => repartitionDrapeaux([APPLICATION])).toThrow(CanalHorsMetriquesSecondaires);
   });
 });
 
