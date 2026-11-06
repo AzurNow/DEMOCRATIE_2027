@@ -31,10 +31,20 @@
  *    `derangement-outils.ts:derangementOutilsOuAbsence` les reçoit avec les assistants inclus
  *    (`outilsDuDerangement`), tout le périmètre et ses comparateurs, et décide l'absence : moins de
  *    deux assistants, deux assistants du même éditeur, un comparateur du même éditeur qu'un
- *    assistant. Quand le dérangement est tiré, le test joué (sous-ensemble, paires, taux par juge)
- *    n'a pas encore de forme publiée : rien n'est inscrit, et le résultat le dit
- *    (`derangement_tire_test_non_branche`), jamais en silence. Un run invalide ou un test des
- *    candidats en attente ne le passe pas (`contrefactuel_candidats_non_conclu`).
+ *    assistant. Quand le dérangement est tiré, le test est joué (D90), sur le modèle de celui des
+ *    candidats : les réponses éligibles (le texte nomme un outil permuté, hors refus de l'API :
+ *    `derangement-outils.ts:estEligibleOutils`) sont tirées (`tirerSousEnsembleContrefactuelOutils`,
+ *    clé `contrefactuel_outil`) ; chaque réponse du sous-ensemble est notée par les juges non retirés
+ *    (notation ordinaire du run), puis sa copie aux noms d'outils permutés
+ *    (`reponse-contrefactuelle-outil.ts`) est écrite et notée par eux (contexte
+ *    `contrefactuel_outil`, motif `contrefactuel`) ; un juge retiré au test des candidats n'est pas
+ *    appelé, et ses notations déjà rendues sont écartées du test (§7). Le taux de chaque juge
+ *    (`testerContrefactuelOutils`, renvois écartés comme au test des candidats) est publié dans le
+ *    bloc (`publierContrefactuelOutilsJoue`) ; zéro réponse éligible donne le bloc
+ *    `aucune_reponse_eligible`. Le test ne retire aucun juge ; la masse ne dépend pas de lui. Une
+ *    réponse du sous-ensemble en attente du test des liens le laisse en attente, sans rien inscrire
+ *    (`en_attente_test_liens`), et la masse suit. Un run invalide ou un test des candidats en
+ *    attente ne le passe pas (`contrefactuel_candidats_non_conclu`).
  * 4. **Masse.** Le run est relu ; chaque réponse obtenue est notée par les juges non retirés (un juge
  *    retiré n'est plus appelé, ses notations du sous-ensemble restent écrites et sont écartées par
  *    `decider`, D13), puis décidée (`decider`) avec l'appartenance à l'échantillon humain
@@ -99,11 +109,13 @@ import { construireCharge, type DemandeCharge, type QuestionPosee, type Referenc
 import { testerContrefactuel, type ContrefactuelFauteDInterroges, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
 import { decider, type MotifAttente } from "./decision.ts";
 import { MINIMUM_INTERROGES_DERANGEMENT, tirerDerangement, type Derangement } from "./derangement.ts";
-import { derangementOutilsOuAbsence, outilsDuContrefactuel } from "./derangement-outils.ts";
+import { derangementOutilsOuAbsence, estEligibleOutils, outilsDuContrefactuel, type DerangementOutils, type OutilsDuContrefactuel } from "./derangement-outils.ts";
 import { inscrireContrefactuelOutils } from "./inscription-contrefactuel-outils.ts";
-import { publierAbsenceContrefactuelOutils, type BlocContrefactuelOutils } from "./publication-contrefactuel-outils.ts";
+import { publierAbsenceContrefactuelOutils, publierContrefactuelOutilsJoue, type BlocContrefactuelOutils } from "./publication-contrefactuel-outils.ts";
+import { testerContrefactuelOutils } from "./contrefactuel-outils.ts";
+import { demandePermuteeOutils, type ReponseContrefactuelleOutil } from "./reponse-contrefactuelle-outil.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import { tirerEchantillonHumain, tirerSousEnsembleContrefactuel } from "./echantillons.ts";
+import { tirerEchantillonHumain, tirerSousEnsembleContrefactuel, tirerSousEnsembleContrefactuelOutils } from "./echantillons.ts";
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";
@@ -114,7 +126,7 @@ import { pagesCitees, type PageCitee } from "./pages-citees.ts";
 import { nommeUnInterroge } from "./permutation.ts";
 import { publierContrefactuel, publierFauteDInterroges } from "./publication-contrefactuel.ts";
 import { notationParRegle, REGLE_REFUS_API } from "./regle-refus.ts";
-import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle.ts";
+import { demandePermutee, type DemandePermutee, type ReponseContrefactuelle } from "./reponse-contrefactuelle.ts";
 import { DepotNotation } from "./stockage.ts";
 import { ecrireVerdictsDeLecture, type EtatLecturesDuRun } from "./verdicts-de-lecture.ts";
 import { TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
@@ -153,10 +165,11 @@ export type EtatContrefactuel =
   | { readonly statut: "en_attente_test_liens"; readonly reponse_ids: readonly Ulid[] }
   | { readonly statut: "run_invalide"; readonly raison: string; readonly resultat: ResultatContrefactuel; readonly inscription: IssueInscription };
 
-/** Le contrefactuel d'outil : son absence inscrite, ou la raison pour laquelle rien ne l'est (étape 3 bis). */
+/** Le contrefactuel d'outil : son bloc inscrit (absent ou joué), ou la raison pour laquelle rien ne l'est (étape 3 bis). */
 export type EtatContrefactuelOutils =
   | { readonly statut: IssueInscription; readonly bloc: BlocContrefactuelOutils }
-  | { readonly statut: "non_joue"; readonly motif: "contrefactuel_candidats_non_conclu" | "derangement_tire_test_non_branche" };
+  | { readonly statut: "en_attente_test_liens"; readonly reponse_ids: readonly Ulid[] }
+  | { readonly statut: "non_joue"; readonly motif: "contrefactuel_candidats_non_conclu" };
 
 export interface ResultatChaine {
   readonly run_id: Ulid;
@@ -248,10 +261,13 @@ interface Etat {
   readonly verdicts: Set<Ulid>;
 }
 
-type Cote = { readonly contexte: "run"; readonly motif: "notation_juge" } | { readonly contexte: "contrefactuel_candidat"; readonly motif: "contrefactuel" };
+type Cote =
+  | { readonly contexte: "run"; readonly motif: "notation_juge" }
+  | { readonly contexte: "contrefactuel_candidat" | "contrefactuel_outil"; readonly motif: "contrefactuel" };
 
 const COTE_RUN: Cote = { contexte: "run", motif: "notation_juge" };
 const COTE_PERMUTE: Cote = { contexte: "contrefactuel_candidat", motif: "contrefactuel" };
+const COTE_PERMUTE_OUTIL: Cote = { contexte: "contrefactuel_outil", motif: "contrefactuel" };
 
 /** Ce qu'un juge note : une demande de charge, d'un côté, et ce qu'il faut pour assembler la notation. */
 interface Cible {
@@ -270,8 +286,9 @@ export async function noterRun(reponses: readonly ReponseANoter[], env: Environn
     const lectures: EtatLecturesDuRun = { statut: "non_jouees", motif: "contrefactuel_candidats_non_conclu" };
     return { run_id: etat.run.id, contrefactuel, contrefactuel_outils, verdicts: [], attentes: etat.reponses.map((r) => attenteSansMasse(r, contrefactuel.statut)), lectures };
   }
-  const contrefactuel_outils = passerContrefactuelOutils(etat);
+  // Le run tel que le test des candidats l'a inscrit : ses retraits valent pour le test d'outil et la masse.
   const run = runDeNotationDe(lireRunJson(env.repertoire_run));
+  const contrefactuel_outils = await passerContrefactuelOutils(etat, run);
   const masse = await noterEnMasse(etat, run);
   return { run_id: etat.run.id, contrefactuel, contrefactuel_outils, ...masse, lectures: passerLectures(etat) };
 }
@@ -562,18 +579,27 @@ async function noterPaire(etat: Etat, r: Preparee, derangement: Derangement): Pr
 
 /** La demande permutée ; sa réponse est écrite une fois, et une relance la retrouve identique. */
 function permuter(etat: Etat, r: Preparee, liens: LiensEtablis, contrefactuelle_id: Ulid, derangement: Derangement): DemandePermutee {
+  const permutee = demandePermutee({ ...demandeDe(etat, r, liens), prompt: premierPrompt(etat) }, contrefactuelle_id, derangement);
+  ecrireUneFois(etat, permutee.reponse);
+  return permutee;
+}
+
+/** Le prompt ne touche ni la réponse ni les textes permutés ; chaque juge reçoit le sien (noterParLesJuges). */
+function premierPrompt(etat: Etat): DemandeCharge["prompt"] {
   const [premier] = etat.env.juges;
   if (premier === undefined) throw new JugesNonConformes("aucun juge.");
-  // Le prompt ne touche ni la réponse ni les textes permutés ; chaque juge reçoit le sien (noterParLesJuges).
-  const permutee = demandePermutee({ ...demandeDe(etat, r, liens), prompt: premier.identite.prompt }, contrefactuelle_id, derangement);
-  const deja = etat.contrefactuelles.get(contrefactuelle_id);
+  return premier.identite.prompt;
+}
+
+/** Une réponse contrefactuelle est écrite une fois ; une relance doit retrouver la même, sinon refus. */
+function ecrireUneFois(etat: Etat, reponse: ReponseContrefactuelle | ReponseContrefactuelleOutil): void {
+  const deja = etat.contrefactuelles.get(reponse.id);
   if (deja === undefined) {
-    etat.depot.ecrireReponseContrefactuelle(permutee.reponse);
-    etat.contrefactuelles.set(contrefactuelle_id, canoniser(permutee.reponse));
-  } else if (deja !== canoniser(permutee.reponse)) {
-    throw new ReponsesNonConformes(`la réponse contrefactuelle ${contrefactuelle_id} écrite diffère de celle que la permutation redonne.`);
+    etat.depot.ecrireReponseContrefactuelle(reponse);
+    etat.contrefactuelles.set(reponse.id, canoniser(reponse));
+  } else if (deja !== canoniser(reponse)) {
+    throw new ReponsesNonConformes(`la réponse contrefactuelle ${reponse.id} écrite diffère de celle que la permutation redonne.`);
   }
-  return permutee;
 }
 
 function exigerLiens(r: Preparee): LiensEtablis {
@@ -597,15 +623,63 @@ function notationsDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[])
 
 /**
  * Étape 3 bis : les outils lus à l'instantané du gel (D84), le dérangement ou l'absence décidés par
- * `derangementOutilsOuAbsence`. Une absence est inscrite, sans tirage ni juge. Un dérangement tiré
- * n'inscrit rien : le test joué n'a pas encore de forme publiée, et le résultat le dit.
+ * `derangementOutilsOuAbsence`. Une absence est inscrite, sans tirage ni juge ; un dérangement tiré
+ * fait jouer le test (D90), sur le run tel que le test des candidats l'a laissé (`run`).
  */
-function passerContrefactuelOutils(etat: Etat): EtatContrefactuelOutils {
-  const { permutes, perimetre, comparateurs } = outilsDuContrefactuel(etat.run.perimetre.outils);
-  const issue = derangementOutilsOuAbsence(permutes, perimetre, etat.run.graines.contrefactuel, comparateurs);
-  if (issue.statut === "tire") return { statut: "non_joue", motif: "derangement_tire_test_non_branche" };
+async function passerContrefactuelOutils(etat: Etat, run: RunDeNotation): Promise<EtatContrefactuelOutils> {
+  const outils = outilsDuContrefactuel(etat.run.perimetre.outils);
+  const issue = derangementOutilsOuAbsence(outils.permutes, outils.perimetre, run.graines.contrefactuel, outils.comparateurs);
+  if (issue.statut === "tire") return jouerContrefactuelOutils(etat, run, outils, issue.derangement);
   const bloc = publierAbsenceContrefactuelOutils(issue);
   return { statut: inscrireContrefactuelOutils(etat.env.repertoire_run, bloc), bloc };
+}
+
+/**
+ * D90 : le test joué, sur le modèle de `passerContrefactuel`. Seuls les juges non retirés sont appelés
+ * et mesurés (§7) ; les notations et renvois déjà rendus par un juge retiré, sur une réponse d'origine
+ * qui était aussi au sous-ensemble des candidats, sont écartés du test, comme de tout le run.
+ */
+async function jouerContrefactuelOutils(etat: Etat, run: RunDeNotation, outils: OutilsDuContrefactuel, derangement: DerangementOutils): Promise<EtatContrefactuelOutils> {
+  const eligibles = etat.reponses.filter((r) => estEligibleOutils(r.reponse, outils.permutes, outils.perimetre)).map((r) => r.reponse.id);
+  const sous_ensemble = tirerSousEnsembleContrefactuelOutils(eligibles, run.graines.contrefactuel);
+  const attendent = sous_ensemble.reponse_ids.filter((id) => exigerPreparee(etat, id).liens === null);
+  if (attendent.length > 0) return { statut: "en_attente_test_liens", reponse_ids: attendent };
+  const juges = jugesNonRetires(etat, run);
+  const paires: PaireContrefactuelle[] = [];
+  for (const id of sous_ensemble.reponse_ids) paires.push(await noterPaireOutils(etat, juges, exigerPreparee(etat, id), derangement));
+  const mesures = new Set(juges.map((juge) => juge.identite.juge_id));
+  const resultat = testerContrefactuelOutils({
+    run,
+    sous_ensemble,
+    paires,
+    notations: notationsDesPaires(etat, paires).filter((n) => mesures.has(n.notateur.id)),
+    renvois: renvoisDesPaires(etat, paires).filter((r) => mesures.has(r.notateur.id)),
+  });
+  const bloc = publierContrefactuelOutilsJoue(resultat, sous_ensemble, derangement, run);
+  return { statut: inscrireContrefactuelOutils(etat.env.repertoire_run, bloc), bloc };
+}
+
+/** Une paire du test d'outil : l'origine notée comme au run, sa copie aux noms d'outils permutés écrite une fois puis notée. */
+async function noterPaireOutils(etat: Etat, juges: readonly Juge[], r: Preparee, derangement: DerangementOutils): Promise<PaireContrefactuelle> {
+  const liens = exigerLiens(r);
+  await noterParLesJuges(etat, juges, cibleOrigine(etat, r, liens));
+  const contrefactuelle_id = identifiantDerive([etat.run.id, "reponse_contrefactuelle", "noms_outils", r.reponse.id]);
+  const permutee = demandePermuteeOutils({ ...demandeDe(etat, r, liens), prompt: premierPrompt(etat) }, contrefactuelle_id, derangement);
+  ecrireUneFois(etat, permutee.reponse);
+  await noterParLesJuges(etat, juges, { cote: COTE_PERMUTE_OUTIL, objet_id: contrefactuelle_id, demande: permutee.demande, textes: permutee.textes, existences: liens.existences });
+  return {
+    reponse_id: r.reponse.id,
+    contrefactuelle_id,
+    textes_origine: r.textes,
+    textes_permutes: permutee.textes,
+    mentions_residuelles: permutee.mentions_residuelles,
+  };
+}
+
+/** Les juges injectés que le run n'a pas retirés : un juge retiré n'est plus appelé (D13). */
+function jugesNonRetires(etat: Etat, run: RunDeNotation): readonly Juge[] {
+  const retires = new Set(run.juges.filter((juge) => juge.retire).map((juge) => juge.juge_id));
+  return etat.env.juges.filter((juge) => !retires.has(juge.identite.juge_id));
 }
 
 /* ------------------------------------------------------------------ notation de masse */
@@ -616,8 +690,7 @@ function attenteSansMasse(r: Preparee, statut: "en_attente_test_liens" | "run_in
 }
 
 async function noterEnMasse(etat: Etat, run: RunDeNotation): Promise<Pick<ResultatChaine, "verdicts" | "attentes">> {
-  const retires = new Set(run.juges.filter((juge) => juge.retire).map((juge) => juge.juge_id));
-  const actifs = etat.env.juges.filter((juge) => !retires.has(juge.identite.juge_id));
+  const actifs = jugesNonRetires(etat, run);
   const echantillon = new Set(tirerEchantillonHumain(etat.reponses.map((r) => r.reponse.id), run.graines.echantillon_humain, run.taux_echantillon_humain));
   const verdicts: Ulid[] = [];
   const attentes: Attente[] = [];

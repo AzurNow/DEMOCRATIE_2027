@@ -3,9 +3,10 @@
  * étape 3 bis), de bout en bout sur le run simulé de `pnpm run:dry`. Libellés et éditeurs sont ceux
  * de l'instantané du périmètre inscrit au gel (`run.json#/perimetre/outils[]`, §7), jamais ceux du
  * périmètre courant. Une absence (moins de deux assistants, éditeur partagé entre outils permutés ou
- * avec un comparateur) est inscrite dans `run.json#/contrefactuel_outils`, sans appel de juge ; un
- * dérangement tiré n'inscrit encore rien (le test joué n'a pas de forme publiée), et le résultat de
- * la chaîne le dit. Le test des candidats ne change pas.
+ * avec un comparateur) est inscrite dans `run.json#/contrefactuel_outils`, sans appel de juge. Un
+ * dérangement tiré fait jouer le test (D90) : sans réponse éligible, le bloc `aucune_reponse_eligible`
+ * est inscrit ; avec, les paires sont notées et le taux de chaque juge est publié. Le test des
+ * candidats ne change pas.
  */
 
 import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
@@ -96,18 +97,35 @@ describe("D75 (7) : la chaîne publie l'absence du contrefactuel d'outil", () =>
     expect(lireRunJson(prepare.repertoire_run)).toHaveProperty("contrefactuel_candidats");
   });
 
-  it("D84 : périmètre courant différent du gel ⇒ c'est le gel qui compte (éditeurs distincts au gel : dérangement tiré, rien d'inscrit)", async () => {
+  it("D84 et D90 (zéro réponse éligible) : périmètre courant différent du gel ⇒ c'est le gel qui compte ; dérangement tiré, aucune réponse ne nomme un outil ⇒ bloc aucune_reponse_eligible inscrit, sans copie ni notation d'outil", async () => {
     const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
     // Le périmètre courant donne encore un même éditeur aux deux assistants : lu, il rendrait le test absent.
     expect(readFileSync(PERIMETRE_COURANT, "utf8").match(/editeur: "Éditeur simulé"/gu)?.length).toBeGreaterThanOrEqual(2);
     editeursAuGel(prepare.repertoire_run, { "outil-alpha": "Éditeur Alpha au gel", "outil-beta": "Éditeur Beta au gel" });
     const resultat = await noterRun(prepare.reponses, environnementSimule(prepare.repertoire_run, parametresDeReference()));
 
-    expect(resultat.contrefactuel_outils).toEqual({ statut: "non_joue", motif: "derangement_tire_test_non_branche" });
-    const run = JSON.parse(readFileSync(dispositionRunNote(prepare.repertoire_run).run_json, "utf8")) as Record<string, unknown>;
-    expect(run).not.toHaveProperty("contrefactuel_outils");
+    // Le chemin existant (publierSansReponseEligible), tel qu'il était : le dérangement et les clés de graine, jamais 0 %.
+    const bloc = {
+      etat: "indefini",
+      motif_indefini: "aucune_reponse_eligible",
+      outils: 2,
+      eligibles: 0,
+      taille_visee: 200,
+      taille: 0,
+      sous_effectif: true,
+      correspondances: { "outil-alpha": "outil-beta", "outil-beta": "outil-alpha" },
+      cle_graine: ["contrefactuel_outil"],
+      cle_graine_derangement: ["contrefactuel", "noms_outils", "derangement"],
+      mentions_residuelles: 0,
+    };
+    expect(resultat.contrefactuel_outils).toEqual({ statut: "inscrit", bloc });
+    // lireRunJson valide run.json contre son schéma.
+    const run = lireRunJson(prepare.repertoire_run) as unknown as Record<string, unknown>;
+    expect(run["contrefactuel_outils"]).toEqual(bloc);
     expect(run).toHaveProperty("contrefactuel_candidats");
-    expect(contextesDu(dispositionRunNote(prepare.repertoire_run).reponses_contrefactuelles)).not.toContain("contrefactuel_outil");
+    const disposition = dispositionRunNote(prepare.repertoire_run);
+    expect(contextesDu(disposition.reponses_contrefactuelles)).not.toContain("contrefactuel_outil");
+    expect(contextesDu(disposition.notations)).not.toContain("contrefactuel_outil");
   });
 
   it("D84 : un comparateur du même éditeur qu'un outil permuté ⇒ absence comparateur_du_meme_editeur inscrite par la chaîne (§7 0.33)", async () => {

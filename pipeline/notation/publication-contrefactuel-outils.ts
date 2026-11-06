@@ -18,14 +18,27 @@
  *   éligibles (zéro), le sous-effectif, les correspondances du dérangement et les deux clés de graine,
  *   pour que le tirage se rejoue.
  *
- * Jamais 0 %, jamais de taux de juge : un test absent n'en a pas. Le test terminé (taux par juge) n'a
- * pas encore de forme publiée : il attend son branchement dans la chaîne, et ce module refuse tout ce
- * qui n'est pas une absence (`ContrefactuelOutilsNonPubliable`).
+ * Jamais 0 %, jamais de taux de juge : un test absent n'en a pas.
+ *
+ * - **Test joué et terminé** (`publierTermineOutils`, D90) : le sous-ensemble est non vide, chaque
+ *   paire est notée ou renvoyée par chaque juge mesuré. Le bloc porte, en plus de ce qui rejoue le
+ *   tirage, `juges` : les deux juges déclarés au run, triés par `juge_id`. Un juge mesuré publie son
+ *   taux et ses effectifs (`changements`), ou `toutes_paires_ecartees` quand ses renvois écartent
+ *   toutes ses paires ; ses paires écartées sont publiées dans les deux cas, 0 compris. Un juge
+ *   retiré au test des candidats n'est pas mesuré (§7) : il figure avec `motif_non_mesure`, sans
+ *   taux, pour que son absence de taux soit visible et motivée. Aucun seuil, aucun retrait.
+ *
+ * `publierContrefactuelOutilsJoue` aiguille un test joué vers l'une des deux formes ; un test en
+ * attente (paire incomplète) ne se publie pas, comme au test des candidats. Ce module ne recalcule
+ * rien : il recoupe le résultat avec le tirage et les juges du run, et refuse ce qui ne concorde pas
+ * (`ContrefactuelOutilsNonPubliable`) plutôt que de le compléter.
  */
 
 import { CLE_DERANGEMENT_OUTILS, correspondancesOutils, type AbsenceContrefactuelOutils, type DerangementOutils, type EditeurPartage, type MotifAbsenceContrefactuelOutils } from "./derangement-outils.ts";
-import type { ResultatContrefactuelOutils } from "./contrefactuel-outils.ts";
+import type { ResultatContrefactuelOutils, ResultatJugeOutils } from "./contrefactuel-outils.ts";
 import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS, type SousEnsembleContrefactuel } from "./echantillons.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
+import type { RunDeNotation } from "../../analysis/types-notation.ts";
 
 /** `run.schema.json#/properties/contrefactuel_outils`, dérangement non tiré. */
 export interface BlocContrefactuelOutilsNonJoue {
@@ -53,7 +66,33 @@ export interface BlocContrefactuelOutilsSansEligible {
   readonly mentions_residuelles: 0;
 }
 
-export type BlocContrefactuelOutils = BlocContrefactuelOutilsNonJoue | BlocContrefactuelOutilsSansEligible;
+/** `run.schema.json#/$defs/juge_contrefactuel_outils` : mesuré, mesuré sans taux, ou non mesuré. */
+export type JugeContrefactuelOutils =
+  | {
+      readonly juge_id: string;
+      readonly taux_changement: number;
+      readonly changements: { readonly numerateur: number; readonly denominateur: number };
+      readonly paires_ecartees: number;
+    }
+  | { readonly juge_id: string; readonly motif_indefini: "toutes_paires_ecartees"; readonly paires_ecartees: number }
+  | { readonly juge_id: string; readonly motif_non_mesure: "retire_au_test_des_candidats" };
+
+/** `run.schema.json#/properties/contrefactuel_outils`, test joué et terminé (D90). */
+export interface BlocContrefactuelOutilsTermine {
+  readonly etat: "termine";
+  readonly outils: number;
+  readonly eligibles: number;
+  readonly taille_visee: number;
+  readonly taille: number;
+  readonly sous_effectif: boolean;
+  readonly correspondances: Readonly<Record<string, string>>;
+  readonly cle_graine: readonly string[];
+  readonly cle_graine_derangement: readonly string[];
+  readonly mentions_residuelles: number;
+  readonly juges: readonly JugeContrefactuelOutils[];
+}
+
+export type BlocContrefactuelOutils = BlocContrefactuelOutilsNonJoue | BlocContrefactuelOutilsSansEligible | BlocContrefactuelOutilsTermine;
 
 export class ContrefactuelOutilsNonPubliable extends Error {
   constructor(detail: string) {
@@ -75,14 +114,14 @@ export function publierAbsenceContrefactuelOutils(absence: AbsenceContrefactuelO
 
 /**
  * Le test joué sans réponse éligible : le résultat doit être celui d'un sous-ensemble vide, tiré
- * parmi zéro éligible. Tout autre résultat se refuse : un taux n'a pas encore de forme publiée.
+ * parmi zéro éligible. Tout autre résultat se refuse : un test terminé se publie par `publierTermineOutils`.
  */
 export function publierSansReponseEligible(
   resultat: ResultatContrefactuelOutils,
   sous_ensemble: SousEnsembleContrefactuel,
   derangement: DerangementOutils,
 ): BlocContrefactuelOutilsSansEligible {
-  if (resultat.statut !== "indefini") throw new ContrefactuelOutilsNonPubliable(`test ${resultat.statut} : seule l'absence se publie aujourd'hui.`);
+  if (resultat.statut !== "indefini") throw new ContrefactuelOutilsNonPubliable(`test ${resultat.statut} : seul un test sans réponse éligible se publie sous aucune_reponse_eligible.`);
   if (sous_ensemble.eligibles !== 0 || sous_ensemble.reponse_ids.length > 0) {
     throw new ContrefactuelOutilsNonPubliable(`aucune réponse éligible au résultat, ${sous_ensemble.eligibles} éligible(s) et ${sous_ensemble.reponse_ids.length} réponse(s) au tirage.`);
   }
@@ -101,4 +140,92 @@ export function publierSansReponseEligible(
     cle_graine_derangement: [...CLE_DERANGEMENT_OUTILS],
     mentions_residuelles: 0,
   };
+}
+
+/**
+ * Un test joué (dérangement tiré) : sans réponse éligible, le bloc `aucune_reponse_eligible`
+ * (`publierSansReponseEligible`, inchangé) ; terminé, le bloc des taux (`publierTermineOutils`). Une
+ * paire incomplète ne se publie pas : aucun taux sur un jeu incomplet (D16 (2)).
+ */
+export function publierContrefactuelOutilsJoue(
+  resultat: ResultatContrefactuelOutils,
+  sous_ensemble: SousEnsembleContrefactuel,
+  derangement: DerangementOutils,
+  run: RunDeNotation,
+): BlocContrefactuelOutilsSansEligible | BlocContrefactuelOutilsTermine {
+  if (resultat.statut === "en_attente") {
+    throw new ContrefactuelOutilsNonPubliable(`${resultat.paires_incompletes.length} paire(s) incomplète(s) : aucun taux sur un jeu incomplet (D16 (2)).`);
+  }
+  if (resultat.statut === "indefini") return publierSansReponseEligible(resultat, sous_ensemble, derangement);
+  return publierTermineOutils(resultat, sous_ensemble, derangement, run);
+}
+
+/**
+ * D90 : le test terminé. Le résultat doit être celui du sous-ensemble reçu (même `sous_effectif`,
+ * sous-ensemble non vide, dénominateur plus paires écartées égal à sa taille pour chaque juge
+ * mesuré), et ses juges exactement les juges non retirés du run.
+ */
+export function publierTermineOutils(
+  resultat: ResultatContrefactuelOutils,
+  sous_ensemble: SousEnsembleContrefactuel,
+  derangement: DerangementOutils,
+  run: RunDeNotation,
+): BlocContrefactuelOutilsTermine {
+  if (resultat.statut !== "termine") throw new ContrefactuelOutilsNonPubliable(`test ${resultat.statut} : seul un test terminé publie des taux.`);
+  const taille = sous_ensemble.reponse_ids.length;
+  if (taille === 0) throw new ContrefactuelOutilsNonPubliable("test terminé sur un sous-ensemble vide.");
+  if (resultat.sous_effectif !== sous_ensemble.sous_effectif) {
+    throw new ContrefactuelOutilsNonPubliable(`sous_effectif ${String(resultat.sous_effectif)} au résultat, ${String(sous_ensemble.sous_effectif)} au tirage.`);
+  }
+  exigerJugesMesures(resultat.juges, run);
+  const mesures = new Map(resultat.juges.map((juge) => [juge.juge_id, jugeMesure(juge, taille)]));
+  return {
+    etat: "termine",
+    outils: derangement.paires.length,
+    eligibles: sous_ensemble.eligibles,
+    taille_visee: sous_ensemble.taille_visee,
+    taille,
+    sous_effectif: sous_ensemble.sous_effectif,
+    correspondances: correspondancesOutils(derangement),
+    cle_graine: [...CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS],
+    cle_graine_derangement: [...CLE_DERANGEMENT_OUTILS],
+    mentions_residuelles: resultat.mentions_residuelles,
+    juges: [...run.juges].sort((a, b) => comparerChaines(a.juge_id, b.juge_id)).map((juge) => (juge.retire ? nonMesure(juge.juge_id) : exigerMesure(mesures, juge.juge_id))),
+  };
+}
+
+function exigerMesure(mesures: ReadonlyMap<string, JugeContrefactuelOutils>, juge_id: string): JugeContrefactuelOutils {
+  const mesure = mesures.get(juge_id);
+  if (mesure === undefined) throw new ContrefactuelOutilsNonPubliable(`juge ${juge_id} non retiré sans résultat au test.`);
+  return mesure;
+}
+
+/** Les juges du résultat sont exactement les juges non retirés du run (§7 : seuls eux sont mesurés). */
+function exigerJugesMesures(juges: readonly ResultatJugeOutils[], run: RunDeNotation): void {
+  const recus = juges.map((juge) => juge.juge_id).sort(comparerChaines);
+  const attendus = run.juges.filter((juge) => !juge.retire).map((juge) => juge.juge_id).sort(comparerChaines);
+  if (attendus.length === 0 || recus.join("\u0000") !== attendus.join("\u0000")) {
+    throw new ContrefactuelOutilsNonPubliable(`juges mesurés (${recus.join(", ")}) différents des juges non retirés du run ${run.id} (${attendus.join(", ")}).`);
+  }
+}
+
+/** §7 : dénominateur + paires écartées = taille du sous-ensemble ; tout écarté, aucun effectif. */
+function jugeMesure(juge: ResultatJugeOutils, taille: number): JugeContrefactuelOutils {
+  if ("motif_indefini" in juge) {
+    if (juge.paires_ecartees !== taille) throw new ContrefactuelOutilsNonPubliable(`juge ${juge.juge_id} : taux indéfini avec ${juge.paires_ecartees} paire(s) écartée(s) sur ${taille}.`);
+    return { juge_id: juge.juge_id, motif_indefini: juge.motif_indefini, paires_ecartees: juge.paires_ecartees };
+  }
+  if (juge.taux.denominateur + juge.paires_ecartees !== taille) {
+    throw new ContrefactuelOutilsNonPubliable(`juge ${juge.juge_id} : dénominateur ${juge.taux.denominateur} et ${juge.paires_ecartees} paire(s) écartée(s) pour un sous-ensemble de ${taille} réponse(s).`);
+  }
+  return {
+    juge_id: juge.juge_id,
+    taux_changement: juge.taux.valeur,
+    changements: { numerateur: juge.taux.numerateur, denominateur: juge.taux.denominateur },
+    paires_ecartees: juge.paires_ecartees,
+  };
+}
+
+function nonMesure(juge_id: string): JugeContrefactuelOutils {
+  return { juge_id, motif_non_mesure: "retire_au_test_des_candidats" };
 }

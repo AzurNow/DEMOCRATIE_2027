@@ -3940,6 +3940,46 @@
       }
     },
     {
+      "objet": "run",
+      "fichier": "run/valide-19-contrefactuel-outils-termine.json",
+      "attendu": "valide",
+      "motif": "D90 : copie de valide-16 dont le contrefactuel d'outil est joué et terminé : 312 réponses éligibles, 200 tirées (pas de sous-effectif), le dérangement et les deux clés de graine, et le taux de chaque juge avec ses effectifs et ses paires écartées (valeurs d'exemple, non recalculées de notations).",
+      "regle_protocole": "§7, « Conflit d'intérêts » : « Le taux de changement est publié ; c'est un diagnostic, qui ne retire aucun juge » ; décision D90 de l'auteur"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-81-contrefactuel-outils-termine-sans-juges.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-19 sans juges : un test terminé publie chaque juge déclaré, son taux ou pourquoi il n'en a pas.",
+      "regle_protocole": "§7, « Conflit d'intérêts » : « Le taux de changement est publié ; c'est un diagnostic, qui ne retire aucun juge » ; décision D90 de l'auteur",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/contrefactuel_outils"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-82-contrefactuel-outils-termine-avec-motif.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-19 qui porte aussi le motif aucune_reponse_eligible : un test terminé n'a pas de motif d'absence.",
+      "regle_protocole": "§7, « Conflit d'intérêts » : « Le taux de changement est publié ; c'est un diagnostic, qui ne retire aucun juge » ; décision D90 de l'auteur",
+      "erreur_visee": {
+        "keyword": "false schema",
+        "instance_path": "/contrefactuel_outils/motif_indefini"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-83-contrefactuel-outils-juge-mesure-et-non-mesure.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-19 dont juge-2 porte à la fois un taux et motif_non_mesure : un juge est mesuré, mesuré sans taux, ou non mesuré, jamais deux à la fois.",
+      "regle_protocole": "§7, « Conflit d'intérêts » : « Seuls les juges non retirés au test des candidats sont mesurés » ; décision D90 de l'auteur",
+      "erreur_visee": {
+        "keyword": "oneOf",
+        "instance_path": "/contrefactuel_outils/juges/1"
+      }
+    },
+    {
       "objet": "recalcul-b",
       "fichier": "recalcul-b/valide-01-contestation-posterieure.json",
       "attendu": "valide",
