@@ -575,7 +575,7 @@ un run, et `--sortie` ou `--run` sous `runs/` est refusé avant toute lecture ou
 ```
 pnpm run:dry                      fixtures, sous un répertoire temporaire neuf
 pnpm run:dry --sortie=<chemin>    fixtures, sous <chemin>/<date>/volume/…
-pnpm run:dry --run=<répertoire>   le run gelé par pnpm geler --sortie, sous <répertoire>/volume/…
+pnpm run:dry --run=<répertoire>   le run gelé par pnpm geler --simule, sous <répertoire>/volume/…
 ```
 
 - **Code de sortie 4** : au moins une requête est en attente de l'opérateur, réponse reçue que le
@@ -585,7 +585,10 @@ pnpm run:dry --run=<répertoire>   le run gelé par pnpm geler --sortie, sous <r
   `tests/interrogation/fixtures/run-simule/` ; seul le volume est écrit (`run.json` et
   `questions.json` ne le sont pas). C'est le mode de la CI et de `pnpm notation:dry`.
 - **Run gelé** (`--run=<répertoire>`, lot gel, PR 4) : le répertoire
-  `<sortie>/<date>/` qu'écrit `pnpm geler --sortie`. `run.json` est validé contre son schéma, les
+  `<sortie>/<date>/` qu'écrit `pnpm geler --simule`. **`run.json` doit porter `simule: true`**
+  (D92 (c), même garde que `pnpm notation:dry --run`, `pipeline/run/simulation.ts:exigerGelSimule`) :
+  `simule` absent ou `false`, ou `run.json` illisible ou non conforme, est refusé avant toute
+  écriture ; un vrai gel ne s'interroge pas avec l'éditeur simulé. `run.json` est validé contre son schéma, les
   octets de `tirage.json` et de `questions.json` vérifiés contre les SHA-256 qu'il déclare (la
   vérification du précédent, `pipeline/gel/precedent.ts`), puis outils, modes, modèles demandés et
   alias aveugles sont lus de `run.json#/perimetre/outils`, la fenêtre de `run.json#/fenetre`, le
