@@ -13,6 +13,38 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-06 — Page pédagogique du site, jeu d'or (D89, D93), contrefactuel d'outil joué (D90) et gardes de tests (PR #338 à #358 : `site/`, `pipeline/notation/`, `analysis/`, `tests/`)
+
+### 1. Les gardes de structure de `tests/` sont textuelles et bornées à quatre répertoires — *basse*
+
+`tests/sens-des-imports.test.ts` (#357) suit les imports relatifs par regex dans `analysis/`,
+`pipeline/`, `outils/` et `validation/` ; `tests/run/classement-des-champs-du-run.test.ts` (#358) ne
+contrôle que la racine de `run.json`, `juges[]`, `perimetre.outils[]` et `reponses`.
+
+**Pourquoi ça casse.** Un module d'un répertoire nouveau (`lib/`, `site/`) importé par `analysis/`
+et qui importe `pipeline/`, un alias tsconfig ou un `import(variable)` passent la première garde ; un
+champ écrit après le gel directement sous `perimetre` passe la seconde et change l'empreinte du run
+sans échec.
+
+**Ce qu'il faut faire.** Ajouter le répertoire ou l'emplacement aux tables des deux tests dans la PR
+qui le crée.
+
+### 2. La mise en page du site repose sur des réglages couplés à la largeur et à l'en-tête — *basse*
+
+`--decalage-ancre` suit la hauteur de l'en-tête (#349) ; le voile des décors et leur masquage sont
+réglés sur la mise en page ≥ 70 rem (#351, #352) ; `parcours.css` surcharge la grille de `.etape`
+entre 48 et 64 rem (#350). Aucun rendu n'a été vérifié dans un vrai navigateur ni sur un vrai
+téléphone : seulement des captures Chrome sans tête.
+
+**Pourquoi ça casse.** Un en-tête plus haut fait tomber les ancres sous lui ; une colonne élargie
+fait réapparaître un chevauchement ou le voile en rectangle. Aucun test ne mesure le rendu, et la
+page ne publie aucun chiffre : la casse est visible, pas silencieuse.
+
+**Ce qu'il faut faire.** Vérification sur appareils réels avant le premier déploiement (auteur), et
+relire ces trois réglages à chaque refonte de l'en-tête ou de la grille.
+
+---
+
 ## 2026-11-05 (soir) — Vague du gel, D80, D87, D75 (8) et constats de la revue du 2026-11-05 (PR #327 à #336 : `pipeline/gel/`, `pipeline/notation/`, `pipeline/run/`, `analysis/`, `site/`, `outils/`, `schema/`)
 
 ### 1. Du code de production lit un jeu fictif rangé sous `tests/` — *moyenne*
@@ -40,7 +72,7 @@ items fictifs dans le `data/` réel, et aucun filet textuel ne le signale.
 **Ce qu'il faut faire.** Ajouter au filet de la règle 3 une exception nommée pour `gel-simule.ts`, qui
 exige la présence de l'appel à `exigerSortieSimulee` avant la copie, plutôt qu'un silence.
 
-### 3. La règle ESLint du sens des imports ne voit que les imports directs — *basse*
+### ~~3. La règle ESLint du sens des imports ne voit que les imports directs~~ — réglé le 2026-11-06 par #357 (`tests/sens-des-imports.test.ts`, fermeture transitive dans `pnpm test`)
 
 #334 interdit tout import de `pipeline/` depuis `analysis/**`. Un module de `outils/` ou `validation/`
 importé par `analysis/` et qui importe lui-même `pipeline/` la contourne ; la fermeture transitive n'a
@@ -96,7 +128,7 @@ variabilité absente avec motif.
 **Ce qu'il faut faire.** Inscrire le nombre d'échantillons dans `run.json` au gel et le passer à
 `planifier` (D75 (14)).
 
-### 4. Un champ écrit après le gel rangé dans le mauvais groupe change l'empreinte publiée sans bruit — *moyenne*
+### ~~4. Un champ écrit après le gel rangé dans le mauvais groupe change l'empreinte publiée sans bruit~~ — réglé le 2026-11-06 par #358 (`CHAMPS_FIGES_AU_GEL`, classement unique exigé, liste hors empreinte figée dans `tests/run/classement-des-champs-du-run.test.ts`)
 
 `pipeline/run/champs-posterieurs-au-gel.ts` (#291) range chaque champ post-gel par auteur ; seuls les
 groupes du go/no-go, du statut et de la publication sortent de l'empreinte. Les tests figent les
@@ -109,7 +141,7 @@ fait couvrir.
 **Ce qu'il faut faire.** À l'ajout d'un champ post-gel, un test qui énumère les propriétés de
 `run.schema.json` et exige que chacune soit soit figée au gel, soit rangée dans un groupe.
 
-### 5. Le compte des objets notants reste écrit en dur — *basse*
+### ~~5. Le compte des objets notants reste écrit en dur~~ — réglé le 2026-11-06 par #356 (compte lu dans le manifeste des exemples)
 
 #285 a dérivé le compte des exemples, mais `tests/questions/invariants.test.ts` garde
 `expect(notants).toHaveLength(51)`. Le 2026-11-04, #290 a dû le corriger à la main après fusion.
@@ -196,7 +228,7 @@ réponse qui rapporte la vraie position sera alors notée comme une fabrication.
 **Ce qu'il faut faire.** Exiger le rattachement de toutes les propositions du corpus avant de
 promouvoir un item A (recommandation de #233, D62 (#233 (3)), décision de l'auteur).
 
-### 3. Les graines publiées dépendent de chaînes écrites dans le code — *moyenne*
+### 3. Les graines publiées dépendent de chaînes écrites dans le code — *moyenne* — test écrit le 2026-11-06 (#359, brouillon) : il échoue sur deux écarts au protocole, décision D97 de l'auteur
 
 Les clés de bootstrap de D59 et D60 (`exactitude`, `global`, `recents:60j`, `contrefactuel_outil`,
 `<outil>:api-application`, `<juge>:propre-editeur`, les noms des métriques de `incertitude.ts`)
@@ -288,7 +320,7 @@ cas est rare (il faut deux octets latin-1 consécutifs de la forme `Ã` + ponctu
 **Ce qu'il faut faire.** Rien avant le premier run ; au premier test des liens réel, compter les
 redirections relues en UTF-8 et en vérifier quelques-unes à la main.
 
-### 4. L'ordre unique des chaînes n'est gardé que contre les formes connues — *moyenne*
+### 4. L'ordre unique des chaînes n'est gardé que contre les formes connues — *moyenne* — étendu le 2026-11-06 par #357 à `Intl.Collator` et `toLocale(Lower|Upper)Case()` sans locale
 
 `comparerChaines` (`outils/ordre-chaines.ts`, #213) remplace tous les `localeCompare` ; un test
 structurel repère les formes connues de comparaison dépendante de la locale.
@@ -1254,7 +1286,7 @@ d'en sortir tant que l'auteur n'a pas dit ce que deviennent ces items (question 
 **Ce qu'il faut faire.** Décision de l'auteur, recommandé : retour en attente et nouvelle
 validation. Puis un chemin outillé (par exemple `pnpm lots --revalider-mesure`), testé.
 
-### 5. Le nombre d'exemples de schéma est écrit en dur à cinq endroits — *basse* — à moitié réglé le 2026-10-12 (revue de code, constat 15 du 2026-09-23) : les comptes sont retirés des commentaires de `outils/schemas*` et de `schema/README.md` ; restent trois assertions de compte dans les tests (`tests/schemas.test.ts`, deux, et `tests/questions/invariants.test.ts`)
+### ~~5. Le nombre d'exemples de schéma est écrit en dur à cinq endroits~~ — réglé le 2026-11-06 par #356 (égalité d'ensembles `schema/` ↔ conformités, compte des notants lu dans le manifeste) ; avant : à moitié réglé le 2026-10-12 (revue de code, constat 15 du 2026-09-23) : les comptes sont retirés des commentaires de `outils/schemas*` et de `schema/README.md` ; restent trois assertions de compte dans les tests (`tests/schemas.test.ts`, deux, et `tests/questions/invariants.test.ts`)
 
 `outils/schemas.ts`, `outils/schemas/registre.ts`, `schema/README.md`, `tests/schemas.test.ts` et
 `tests/questions/invariants.test.ts` répètent le total d'exemples.

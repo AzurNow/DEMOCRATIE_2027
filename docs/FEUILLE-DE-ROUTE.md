@@ -140,6 +140,20 @@ Options :
 
 Lots portant cette décision : notation
 
+### D97 — Les clés de graine que le code emploie et que les §7 et §8 n'écrivent pas : faut-il amender le protocole pour les nommer ?
+
+Le test bidirectionnel de #359 (brouillon, DETTE 2026-11-02 n° 3) échoue sur deux écarts : (1) le composant `couverture` (`analysis/incertitude.ts:METRIQUE_COUVERTURE`, publié dans graines[]) manque à la liste « La métrique s'écrit … » du §8 ; (2) le §7 ne nomme pas les clés `echantillon_humain`, `contrefactuel / noms_candidats / sous_ensemble`, `contrefactuel / noms_candidats / derangement` et `contrefactuel / noms_outils / derangement` : un tiers ne peut pas refaire ces tirages d'après le texte.
+
+Options :
+
+1. Amender le §8 (ajouter `couverture`) et le §7 (écrire les quatre clés telles que le code les emploie) ; aucune graine ne change, #359 passe au vert.
+2. Raccourcir les clés du code en un composant puis les écrire au protocole (change les graines, sans effet tant qu'aucun run n'est publié).
+3. Liste d'écarts tolérés figée dans le test en attendant l'amendement.
+
+**Recommandation :** Option 1 : le texte rejoint le code, aucune graine ne bouge, et le test garde ensuite toute dérive.
+
+Lots portant cette décision : aucun
+
 ## Décisions tranchées
 
 ### D1 — Brancher une intégration continue GitHub Actions qui exécute `pnpm check` et `pnpm test` sur chaque PR ?
@@ -539,6 +553,7 @@ flowchart LR
   dec_D94{{"D94<br/>Comment le kappa juge-humain mesuré au pilote se reporte-t-i…"}}:::decision
   dec_D95{{"D95<br/>Un juge retiré au pilote lui-même n'a aucune calibration ant…"}}:::decision
   dec_D96{{"D96<br/>Les champs du jeu d'or (kappa_juge_humain, son motif, compte…"}}:::decision
+  dec_D97{{"D97<br/>Les clés de graine que le code emploie et que les §7 et §8 n…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction

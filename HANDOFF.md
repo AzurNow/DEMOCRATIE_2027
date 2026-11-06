@@ -41,46 +41,44 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-06 (après-midi)
+## État au 2026-11-06 (soir)
 
-- Protocole **0.34**. Fusionnées le 2026-11-06 au matin : #343 (conformité 0.34,
-  `docs/conformite/2026-11-06.md`, aucun constat haut), #344 (D92 (c)), #345 (D93), #346 (suite de
-  D90), #347 (jeu d'or hors de `decider`). Les décisions en attente de l'auteur et le reste des lots
-  de notation sont dans `docs/feuille-de-route.json`, qui fait foi.
-- **Page pédagogique du site**, sur demande de l'auteur (lisibilité, détails dépliables, cas exemple,
-  interactivité, mobile et tablette) :
-  - fusionnées : #348 (sections hors parcours : « En bref », détails en `<details>`), #349 (cadre
-    mobile et tablette, en-tête, survol, retour en haut), #350 (parcours : vue d'ensemble, phrase-clé,
-    points-clés, cas fictif suivi sur sept étapes), #351 puis #352 (le décor passe sous le texte : voile
-    tiré de `--fond-courant` sous chaque bloc, plus de fondu en diagonale) ;
-  - en cours à l'écriture de cet état : #353 (page `/exemple/` : « un banc à chaque arrêt de bus »,
-    animée au défilement en CSS seul ; les gardes de `tests/site` lisent chaque page) et #354
-    (`animation-timeline` fusionnée par le minificateur dans le raccourci `animation:` : l'apparition
-    des sections et le retour en haut ne tournaient jamais). #354 se fusionne après #353.
-  - **Le texte nouveau de la page (phrases-clés, « En bref », page `/exemple/`) attend la relecture
-    de l'auteur avant tout déploiement** (`docs/PLAN-PAGE-PEDAGOGIQUE.md`).
-  - Aucun rendu vérifié dans un vrai navigateur ni sur un vrai téléphone : seulement des captures
-    Chrome sans tête. Le serveur de développement d'Astro ne démarre pas dans le bac à sable de
-    Claude Code ; le site local se sert par `python3 -m http.server` sur `site/dist`.
+- Protocole **0.34**. Le 2026-11-06, fusionnées sur `main` :
+  - matin : #338 à #347 (conformité 0.34, D89, D90, D92 (c), D93, jeu d'or hors de `decider`) ;
+  - page pédagogique du site : #348 à #354 (sections lisibles, cadre mobile, parcours, décors sous
+    le texte, page `/exemple/`, `animation-timeline` qui ne tournait jamais) ;
+  - soir, quatre agents en parallèle sur la dette : #356 (comptes de schémas et de notants dérivés),
+    #357 (sens des imports par transitivité, ordre des chaînes sans locale implicite), #358 (chaque
+    champ de `run.json` figé au gel ou rangé dans un seul groupe, liste hors empreinte figée).
+- **#359 en brouillon, rouge volontairement** : test bidirectionnel des clés de graine (DETTE
+  2026-11-02 n° 3). Il attend **D97** (amender §7 et §8 : `couverture` et quatre clés de tirage). Ne
+  pas l'affaiblir ni le marquer `skip` ; après l'amendement, fusionner `main` dedans et la sortir du
+  brouillon.
+- Décisions en attente de l'auteur : D81 à D86, D88, D91, D94 à D97 (`docs/feuille-de-route.json`).
+- **Le texte nouveau du site attend la relecture de l'auteur avant tout déploiement** ; aucun rendu
+  vérifié sur un vrai appareil (captures Chrome sans tête seulement ; le site local se sert par
+  `python3 -m http.server` sur `site/dist`).
 - Worktree `.claude/worktrees/agent-a0e98d279de57a40f` (`site/habillage`, fusionnée) gardé : fichier
   non suivi `scratch/maquette-habillage.html`, à supprimer seulement avec l'accord de l'auteur.
+  `site/site/` (cache `.astro` et `node_modules`, non suivi) dans le clone principal : reliquat d'une
+  construction lancée du mauvais répertoire ; il fait échouer `pnpm check` en local (eslint), pas en
+  CI. À supprimer avec l'accord de l'auteur.
 - Rien n'a jamais tourné sur un appel réel. Avant le prochain gel, l'auteur renseigne
   `juges[].outils_de_son_editeur` dans `config/gel.json`.
-- `docs/DETTE.md` et `LESSONS.md` ne sont pas encore à jour pour la session du 2026-11-06 : la
-  clôture (`cloture-de-session`) reste à faire.
+- Clôture du 2026-11-06 faite (`docs/DETTE.md`, `LESSONS.md`, D97).
 
 ## Ce qui était en cours
 
-#353 et #354 (voir ci-dessus) : vérifier qu'elles sont fusionnées, sinon les reprendre (CI, fusion
-de `main` par commit de fusion, puis `gh pr merge --merge`).
+Rien hors de #359 (voir ci-dessus).
 
 ## Prochaines tâches, par priorité
 
-1. Fusion de #353 puis #354 ; clôture de session (`docs/DETTE.md`, `LESSONS.md`).
+1. Décisions de l'auteur (D94 à D97 d'abord : jeu d'or et graines), puis leur code.
 2. Relecture du texte du site par l'auteur ; vérification sur un vrai téléphone et une vraie tablette.
 3. Suite des lots de notation et des décisions en attente, d'après `docs/feuille-de-route.json`.
 4. **Site** généré depuis `runs/` : seulement après la passe d'optimisation et la revue de code
    (`docs/PLAN-PAGE-PEDAGOGIQUE.md`).
+5. Agents en parallèle : tests ciblés en local, suite complète en CI (`LESSONS.md`, Méthode).
 
 Hors mission sans accord explicite de l'auteur : appels d'API réels, collecte réelle, écriture dans
 `data/` ou `config/perimetre.yaml`, déploiement, `pnpm run:live`, gel de la 1.0.
