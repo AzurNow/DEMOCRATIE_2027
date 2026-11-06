@@ -70,15 +70,17 @@ export const CHAMPS_DES_INCIDENTS_ET_CONTESTATIONS: ChampsDeRunJson = {
 };
 
 /**
- * Ce que `pnpm kappa:jeu-or` écrit (`pipeline/notation/inscription-jeu-or.ts`, D89) : pour chaque juge
- * retenu, le kappa juge-humain du jeu d'or ou le motif de son indéfinition, et les comptes qui le
- * fondent, d'un seul appel à `analysis/kappa-jeu-or.ts:inscriptionsJeuOr` (§7 ; D73 (8), D75 (27)).
- * Le §9 ne les nomme pas parmi les champs que l'empreinte du fichier du run laisse de côté (ceux du
- * go/no-go, « les comptes et les kappas de l'échantillon humain ») : ils restent dans l'empreinte,
- * et la commande refuse donc d'écrire après `pnpm analyze` (DETTE 2026-11-04 après-midi n° 4).
+ * Ce que `pnpm kappa:jeu-or` écrit (`pipeline/notation/inscription-jeu-or.ts`, D89, D93) : pour chaque
+ * juge retenu, le kappa juge-humain du jeu d'or ou le motif de son indéfinition, et les comptes qui le
+ * fondent ; à la racine, le kappa de la paire de juges ou le motif de son indéfinition ; le tout d'un
+ * seul appel à `analysis/kappa-jeu-or.ts:inscriptionsJeuOr` (§7 ; D73 (8), D75 (27)). Le §9 ne les
+ * nomme pas parmi les champs que l'empreinte du fichier du run laisse de côté (ceux du go/no-go,
+ * « les comptes et les kappas de l'échantillon humain ») : ils restent dans l'empreinte, et la
+ * commande refuse donc d'écrire après `pnpm analyze` (DETTE 2026-11-04 après-midi n° 4).
  */
 export const CHAMPS_DU_JEU_D_OR: ChampsDeRunJson = {
   ...AUCUN,
+  racine: ["kappa_paire_juges", "motif_indefini_kappa_paire_juges"],
   juges: ["kappa_juge_humain", "motif_indefini_kappa_juge_humain", "comptes_jeu_or"],
 };
 

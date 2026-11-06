@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { empreinteDuRun } from "../../analysis/analyse-du-run.ts";
 import { CHAMPS_DU_JEU_D_OR, CHAMPS_ECRITS_APRES_LE_GEL, CHAMPS_HORS_EMPREINTE_DU_RUN, memeGel, retirerChamps } from "../../analysis/champs-posterieurs-au-gel.ts";
-import { JeuOrIncoherent } from "../../analysis/kappa-jeu-or.ts";
+import { ArbitrageJeuOrEnAttente, JeuOrIncoherent } from "../../analysis/kappa-jeu-or.ts";
 import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import type { CategorieRetenue } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -76,6 +76,8 @@ interface Ligne {
   readonly juges?: Readonly<Record<string, Categorie3>>;
   readonly refus?: true;
   readonly renvoyee_par?: string;
+  /** D93 : la note du troisième humain (`arbitrage_jeu_or`), quand les deux premiers divergent. */
+  readonly arbitre?: CategorieRetenue;
 }
 
 function categorie(c: CategorieRetenue): Partial<NotationIndividuelle> {
@@ -114,6 +116,7 @@ function poserLigne(volume: string, rang: number, ligne: Ligne): void {
   const marqueur = ligne.refus === true ? { sur_refus_api: true as const } : {};
   const notations = [
     ...ligne.humains.map((c, i) => notationHumaine(`annotateur-${i + 1}`, "calibration_jeu_or", { ...sur, ...categorie(c), ...marqueur })),
+    ...(ligne.arbitre === undefined ? [] : [notationHumaine("annotateur-3", "arbitrage_jeu_or", { ...sur, ...categorie(ligne.arbitre), ...marqueur })]),
     ...Object.entries(ligne.juges ?? {}).map(([juge, c]) => notationJuge(juge, { ...sur, ...categorie(c) })),
     ...(ligne.refus === true ? [notationRegle(sur)] : []),
   ];
@@ -271,12 +274,6 @@ describe("D89, cas limites du brief", () => {
 });
 
 describe("D89, refus avant toute écriture", () => {
-  it("deux humains qui divergent : JeuOrIncoherent (aucun motif pour le troisième humain du jeu d'or), rien d'écrit", () => {
-    const pose = poser([...JEU_DEFINI, { humains: ["exacte", "inexacte"], juges: { [JUGE_A]: "exacte", [JUGE_B]: "exacte" } }]);
-    const avant = readFileSync(pose.run_json, "utf8");
-    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(/aucun troisième humain/);
-    expect(readFileSync(pose.run_json, "utf8")).toBe(avant);
-  });
 
   const { contrefactuel_candidats: _contrefactuel, ...sansContrefactuel } = runPilote();
   it.each([
@@ -313,13 +310,148 @@ describe("D89, refus avant toute écriture", () => {
   });
 });
 
+describe("D93, troisième humain du jeu d'or (arbitrage_jeu_or)", () => {
+  it("deux humains d'accord : aucune attente d'arbitrage, kappa comme avant", () => {
+    const pose = poser(JEU_DEFINI);
+    expect(inscrireJeuOr(pose.repertoire).issue).toBe("inscrite");
+    expect(juge(pose.run_json, JUGE_A)).toMatchObject({ kappa_juge_humain: 1, comptes_jeu_or: COMPTES_DE_QUATRE });
+  });
+
+  it("deux humains en désaccord, arbitrage présent : la note du troisième est la référence, le kappa est inscrit", () => {
+    // Référence « inexacte » (le troisième) : juge-a, qui dit « inexacte », garde un kappa de 1 ;
+    // la note du premier humain (« exacte ») le ferait tomber.
+    const pose = poser([...JEU_DEFINI, { humains: ["exacte", "inexacte"], arbitre: "inexacte", juges: { [JUGE_A]: "inexacte", [JUGE_B]: "exacte" } }]);
+    inscrireJeuOr(pose.repertoire);
+    expect(juge(pose.run_json, JUGE_A)).toMatchObject({ kappa_juge_humain: 1, comptes_jeu_or: { ...COMPTES_DE_QUATRE, reponses: 5, comparees: 5 } });
+    expect(() => valider("run", lireObjet(pose.run_json), "run.json écrit")).not.toThrow();
+  });
+
+  it("désaccord sans arbitrage rendu : ArbitrageJeuOrEnAttente nomme les réponses en attente, rien d'écrit", () => {
+    const pose = poser([
+      ...JEU_DEFINI,
+      { humains: ["exacte", "inexacte"], juges: { [JUGE_A]: "exacte", [JUGE_B]: "exacte" } },
+      { humains: ["exacte", "inexacte"], arbitre: "exacte", juges: { [JUGE_A]: "exacte", [JUGE_B]: "exacte" } },
+      { humains: ["inexacte", "exacte"], juges: { [JUGE_A]: "exacte", [JUGE_B]: "exacte" } },
+    ]);
+    const avant = readFileSync(pose.run_json, "utf8");
+    const attendues = [4, 6].map((rang) => ulid(`kappa-jeu-or-reponse-${rang}`));
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(ArbitrageJeuOrEnAttente);
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(new RegExp(`2 réponse\\(s\\)[^]*(${attendues.join(", ")}|${[...attendues].reverse().join(", ")})`));
+    expect(readFileSync(pose.run_json, "utf8")).toBe(avant);
+  });
+
+  it("arbitrage sur une réponse où les deux humains s'accordent : JeuOrIncoherent, rien d'écrit", () => {
+    const pose = poser([...JEU_DEFINI, { humains: ["exacte", "exacte"], arbitre: "inexacte", juges: { [JUGE_A]: "exacte", [JUGE_B]: "exacte" } }]);
+    const avant = readFileSync(pose.run_json, "utf8");
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(JeuOrIncoherent);
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(/s'accordent/);
+    expect(readFileSync(pose.run_json, "utf8")).toBe(avant);
+  });
+
+  it("une notation arbitrage_jeu_or hors du jeu d'or rejoué (301 réponses obtenues) : refus", () => {
+    const pose = poser(Array.from({ length: 301 }, () => ({ humains: [] })));
+    const ids = Array.from({ length: 301 }, (_, rang) => ulid(`kappa-jeu-or-reponse-${rang}`));
+    const jeu = new Set(tirerJeuOr(ids, (GELE["graines"] as { echantillon_humain: Parameters<typeof tirerJeuOr>[1] }).echantillon_humain).reponse_ids);
+    const hors = ids.find((id) => !jeu.has(id));
+    if (hors === undefined) throw new Error("tirage sans réponse hors du jeu d'or");
+    const notation = notationHumaine("annotateur-3", "arbitrage_jeu_or", { objet_note: { type: "reponse", id: hors }, run_id: RUN_ID });
+    ecrireObjet(join(pose.repertoire, "volume", "notations", `${notation.id}.json`), notation);
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(InscriptionJeuOrRefusee);
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(/arbitrage_jeu_or .* hors du jeu d'or rejoué/);
+  });
+});
+
+describe("D93, kappa de la paire de juges inscrit à la racine", () => {
+  it("défini : kappa_paire_juges, le plus faible des deux, sans motif ; même appel que les kappas des juges", () => {
+    const pose = poser(JEU_DEFINI);
+    const resultat = inscrireJeuOr(pose.repertoire);
+    expect(resultat.paire).toEqual({ kappa_paire_juges: 0 });
+    const ecrit = lireObjet(pose.run_json);
+    expect(ecrit["kappa_paire_juges"]).toBe(0);
+    expect(ecrit["motif_indefini_kappa_paire_juges"]).toBeUndefined();
+  });
+
+  it("indéfini : motif_indefini_kappa_paire_juges, sans valeur, conforme au schéma", () => {
+    const pose = poser([accord("exacte", "exacte", "exacte"), accord("exacte", "exacte", "exacte")]);
+    inscrireJeuOr(pose.repertoire);
+    const ecrit = lireObjet(pose.run_json);
+    expect(ecrit["kappa_paire_juges"]).toBeUndefined();
+    expect(ecrit["motif_indefini_kappa_paire_juges"]).toBe("accord_attendu_maximal");
+    expect(() => valider("run", ecrit, "run.json écrit")).not.toThrow();
+  });
+
+  it("juge retiré : la paire est le kappa du juge restant (§7, D13)", () => {
+    const pose = poser(JEU_DEFINI, runPilote(true));
+    inscrireJeuOr(pose.repertoire);
+    expect(lireObjet(pose.run_json)["kappa_paire_juges"]).toBe(1);
+  });
+
+  it("idempotence : relancé, deja_inscrite, octets inchangés, la paire comprise", () => {
+    const pose = poser(JEU_DEFINI);
+    inscrireJeuOr(pose.repertoire);
+    const avant = readFileSync(pose.run_json, "utf8");
+    const resultat = inscrireJeuOr(pose.repertoire);
+    expect(resultat.issue).toBe("deja_inscrite");
+    expect(resultat.paire).toEqual({ kappa_paire_juges: 0 });
+    expect(readFileSync(pose.run_json, "utf8")).toBe(avant);
+  });
+
+  it("un autre kappa de la paire déjà présent : KappaJeuOrDejaInscrit, qui nomme le champ, jamais d'écrasement", () => {
+    const pose = poser(JEU_DEFINI);
+    inscrireJeuOr(pose.repertoire);
+    ecrireObjet(pose.run_json, { ...lireObjet(pose.run_json), kappa_paire_juges: 0.8 });
+    const avant = readFileSync(pose.run_json, "utf8");
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(KappaJeuOrDejaInscrit);
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(/racine\.kappa_paire_juges/);
+    expect(readFileSync(pose.run_json, "utf8")).toBe(avant);
+  });
+
+  it("un motif de la paire déjà présent là où le recalcul donne une valeur : refus, le motif n'est pas retiré", () => {
+    const pose = poser(JEU_DEFINI);
+    inscrireJeuOr(pose.repertoire);
+    const { kappa_paire_juges: _k, ...sansPaire } = lireObjet(pose.run_json);
+    ecrireObjet(pose.run_json, { ...sansPaire, motif_indefini_kappa_paire_juges: "accord_attendu_maximal" });
+    const avant = readFileSync(pose.run_json, "utf8");
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(/racine\.motif_indefini_kappa_paire_juges/);
+    expect(readFileSync(pose.run_json, "utf8")).toBe(avant);
+  });
+
+  it("run inscrit par la version de D89 (kappas des juges, sans paire) : la paire est ajoutée (completee), rien d'autre ne change", () => {
+    const pose = poser(JEU_DEFINI);
+    inscrireJeuOr(pose.repertoire);
+    const complet = lireObjet(pose.run_json);
+    const { kappa_paire_juges: _k, ...ancien } = complet;
+    ecrireObjet(pose.run_json, ancien);
+    const resultat = inscrireJeuOr(pose.repertoire);
+    expect(resultat.issue).toBe("completee");
+    const apres = lireObjet(pose.run_json);
+    expect(canoniser(apres)).toBe(canoniser(complet));
+    expect(canoniser(retirerChamps(apres, { racine: CHAMPS_DU_JEU_D_OR.racine, juges: [], outils: [], reponses: [] }))).toBe(canoniser(ancien));
+    expect(inscrireJeuOr(pose.repertoire).issue).toBe("deja_inscrite");
+  });
+
+  it("run inscrit par la version de D89 dont un kappa de juge diffère du recalcul : KappaJeuOrDejaInscrit, la paire n'est pas ajoutée", () => {
+    const pose = poser(JEU_DEFINI);
+    inscrireJeuOr(pose.repertoire);
+    const { kappa_paire_juges: _k, ...ancien } = lireObjet(pose.run_json);
+    const juges = (ancien["juges"] as Objet[]).map((j) => (j["juge_id"] === JUGE_A ? { ...j, kappa_juge_humain: 0.5 } : j));
+    ecrireObjet(pose.run_json, { ...ancien, juges });
+    const avant = readFileSync(pose.run_json, "utf8");
+    expect(() => inscrireJeuOr(pose.repertoire)).toThrow(new RegExp(`juges\\[${JUGE_A}\\]\\.kappa_juge_humain`));
+    expect(readFileSync(pose.run_json, "utf8")).toBe(avant);
+  });
+});
+
 describe("D89, champs postérieurs au gel", () => {
-  it("les trois champs sont écrits après le gel, et restent dans l'empreinte du run (§9)", () => {
-    const apres = new Set(CHAMPS_ECRITS_APRES_LE_GEL.juges);
-    for (const champ of CHAMPS_DU_JEU_D_OR.juges) {
-      expect(apres.has(champ)).toBe(true);
-      expect(CHAMPS_HORS_EMPREINTE_DU_RUN.juges.includes(champ)).toBe(false);
+  it("les champs du jeu d'or (juges et racine) sont écrits après le gel, et restent dans l'empreinte du run (§9)", () => {
+    for (const emplacement of ["juges", "racine"] as const) {
+      const apres = new Set(CHAMPS_ECRITS_APRES_LE_GEL[emplacement]);
+      for (const champ of CHAMPS_DU_JEU_D_OR[emplacement]) {
+        expect(apres.has(champ)).toBe(true);
+        expect(CHAMPS_HORS_EMPREINTE_DU_RUN[emplacement].includes(champ)).toBe(false);
+      }
     }
+    expect(CHAMPS_DU_JEU_D_OR.racine).toEqual(["kappa_paire_juges", "motif_indefini_kappa_paire_juges"]);
   });
 
   it("l'inscription garde le même gel (memeGel) et change l'empreinte du run", () => {
@@ -338,6 +470,7 @@ describe("D89, pnpm kappa:jeu-or en ligne de commande", () => {
     const resultat = executerOutil("kappa-jeu-or.ts", [pose.repertoire]);
     expect(resultat.sortie).toContain("kappa du jeu d'or inscrit");
     expect(resultat.sortie).toContain(`${JUGE_A} : kappa 1`);
+    expect(resultat.sortie).toContain("paire de juges : kappa 0");
     expect(resultat.status).toBe(0);
   });
 

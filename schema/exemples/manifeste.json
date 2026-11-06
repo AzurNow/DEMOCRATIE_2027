@@ -2585,6 +2585,23 @@
       }
     },
     {
+      "objet": "notation",
+      "fichier": "notation/valide-13-humain-arbitrage-jeu-or.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-03 sous le motif arbitrage_jeu_or (D93) : le troisième humain qui note à l'aveugle une réponse du jeu d'or du run pilote dont les deux notations calibration_jeu_or divergent (§7 « Calibration et fiabilité publiée » : « sinon celle d'un troisième humain qui note à l'aveugle »). Motif distinct de arbitrage_echantillon_10 : le jeu d'or et l'échantillon de 10 % sont deux populations."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-24-arbitrage-jeu-or-par-un-juge.json",
+      "attendu": "invalide",
+      "motif": "Copie d'invalide-04 sous le motif arbitrage_jeu_or (D93) : arbitrage du jeu d'or confié à un juge automatique. §7 : la référence du kappa juge-humain est la note d'un troisième HUMAIN ; un juge sous ce motif deviendrait la référence contre laquelle les juges sont mesurés.",
+      "regle_protocole": "§7, calibration et fiabilité publiée",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/notateur/type"
+      }
+    },
+    {
       "objet": "verdict",
       "fichier": "verdict/valide-04-regle-refus-api.json",
       "attendu": "valide",

@@ -129,6 +129,7 @@ export const MOTIFS_NOTATION = [
   "echantillon_aleatoire_10",
   "erreur_grave",
   "calibration_jeu_or",
+  "arbitrage_jeu_or",
   "contrefactuel",
   "arbitrage_panel",
   "arbitrage_echantillon_10",
