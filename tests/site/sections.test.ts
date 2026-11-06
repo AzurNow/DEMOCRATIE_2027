@@ -5,10 +5,10 @@
  */
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { lireSiteConstruit } from "../../outils/site-gardes.ts";
+import { lirePageConstruite } from "../../outils/site-gardes.ts";
 
 const DIST = join(resolve(import.meta.dirname, "../.."), "site/dist");
-const html = (): string => lireSiteConstruit(DIST).html;
+const html = (): string => lirePageConstruite(DIST, "index.html");
 
 /** Contenu de la section d'identifiant `id`, jusqu'à la section suivante ou la fin de <main>. */
 function section(page: string, id: string): string {

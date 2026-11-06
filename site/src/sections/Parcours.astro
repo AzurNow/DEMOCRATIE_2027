@@ -2,6 +2,7 @@
 import Etape from "../composants/Etape.astro";
 import FilParcours from "../composants/FilParcours.astro";
 import VueEnsemble from "../composants/VueEnsemble.astro";
+import { lienExemple } from "../lib/liens.ts";
 import { PARAMETRES as P, PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
 import "../styles/parcours.css";
 ---
@@ -18,6 +19,9 @@ import "../styles/parcours.css";
     personne.
   </p>
   <VueEnsemble />
+  <p class="parcours__vers-exemple">
+    <a class="parcours__lien-exemple" href={lienExemple(import.meta.env.BASE_URL)}>Suivre un exemple complet, animé</a>
+  </p>
   <div class="parcours">
   <FilParcours />
   <ol class="etapes">

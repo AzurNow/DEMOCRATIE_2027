@@ -1,0 +1,47 @@
+---
+/**
+ * Une étape de la page « exemple » : numéro et titre, puis la scène (le dossier du cas inventé à
+ * cette étape, marqué « Exemple fictif »), puis le récit et le renvoi au protocole.
+ *
+ * La scène est un `<div class="exemple-fictif">` SANS div imbriquée (les gardes la lisent par
+ * expression régulière jusqu'au premier `</div>`) : ses objets sont des <p>, <ul>, <dl>, <figure>,
+ * <blockquote>, <span> et des dessins <svg>. Elle ne porte aucun chiffre.
+ * Sur mobile, la scène est au-dessus du récit ; à partir de 40 rem, elle est une colonne collante
+ * à côté du récit (exemple.css). Son animation, en CSS seul, suit le défilement de l'étape.
+ */
+import Renvoi from "./Renvoi.astro";
+import { ancreEtape, ETAPES_PARCOURS, numeroEtape, type NomEtape } from "../lib/etapes.ts";
+
+interface Props {
+  nom: NomEtape;
+  titre: string;
+  /** Section du protocole qui fixe l'étape. */
+  section: string;
+}
+
+const { nom, titre, section } = Astro.props;
+const numero = numeroEtape(nom);
+const id = ancreEtape(nom);
+---
+
+<li class="ex-etape" id={id}>
+  <div class="ex-etape__tete">
+    <p class="ex-etape__numero">Étape {numero} sur {ETAPES_PARCOURS.length}</p>
+    <h2 class="ex-etape__titre">{titre}</h2>
+  </div>
+  <div class={`exemple-fictif ex-scene ex-scene--${nom}`}>
+    <p class="exemple-fictif__mention">Exemple fictif</p>
+    <p class="ex-progression" aria-hidden="true">
+      {
+        ETAPES_PARCOURS.map((_, i) => (
+          <span class:list={["ex-progression__pas", { "ex-progression__pas--fait": i + 1 < numero, "ex-progression__pas--ici ex-anime ex-anime--cocher ex-t1": i + 1 === numero }]} />
+        ))
+      }
+    </p>
+    <slot name="scene" />
+  </div>
+  <div class="ex-etape__texte">
+    <slot />
+    <Renvoi section={section} />
+  </div>
+</li>

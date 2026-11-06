@@ -104,6 +104,33 @@
   }
 }
 
+/* ---- Vers la page « exemple » : le même cas, suivi en scènes animées ---- */
+
+.parcours__vers-exemple {
+  margin: 1.25rem 0 0;
+}
+
+.parcours__lien-exemple {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  background: var(--fond);
+  color: var(--texte);
+  border: var(--trait) solid var(--accent-1);
+  box-shadow: 3px 3px 0 var(--accent-1);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Flèche décorative, tue aux lecteurs d'écran qui lisent le texte de remplacement. */
+.parcours__lien-exemple::after {
+  content: "\2192";
+  content: "\2192" / "";
+  color: var(--accent-1);
+}
+
 /* ---- Une étape : l'essentiel d'abord ---- */
 
 .parcours .etape__texte {
@@ -280,6 +307,10 @@
   .vue-ensemble__lien:hover {
     border-color: var(--accent-1);
     box-shadow: 3px 3px 0 var(--accent-1);
+  }
+
+  .parcours__lien-exemple:hover {
+    background: var(--fond-section);
   }
 
   .parcours .etape__bascule:hover {

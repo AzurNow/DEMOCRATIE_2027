@@ -1,0 +1,37 @@
+---
+/**
+ * Un petit dessin pixel de la page « exemple », en SVG de rectangles entiers (site/src/lib/pixels.ts).
+ * Couleurs : seulement les classes `ex-px-…`, liées aux variables --px-… du thème (exemple.css).
+ * Sans `alt`, le dessin est décoratif et caché des technologies d'assistance ; avec `alt`, il est
+ * une image nommée (role="img", aria-label).
+ */
+import { dessinDuSprite, type NomSprite } from "../lib/pixels.ts";
+
+interface Props {
+  nom: NomSprite;
+  /** Texte de remplacement ; absent, le dessin est décoratif. */
+  alt?: string;
+  /** Classes supplémentaires (animation, placement). */
+  classe?: string;
+  /** Taille d'un pixel du dessin, en pixels CSS (le dessin garde ses proportions). */
+  echelle?: number;
+}
+
+const { nom, alt, classe, echelle = 3 } = Astro.props;
+const dessin = dessinDuSprite(nom);
+const nomme = alt !== undefined;
+---
+
+<svg
+  class:list={["ex-pixel", `ex-pixel--${nom}`, classe]}
+  width={dessin.largeur * echelle}
+  height={dessin.hauteur * echelle}
+  viewBox={`0 0 ${dessin.largeur} ${dessin.hauteur}`}
+  shape-rendering="crispEdges"
+  focusable="false"
+  role={nomme ? "img" : undefined}
+  aria-label={alt}
+  aria-hidden={nomme ? undefined : "true"}
+>
+  {dessin.rectangles.map((r) => <rect class={`ex-px-${r.couleur}`} x={r.x} y={r.y} width={r.largeur} height="1" />)}
+</svg>

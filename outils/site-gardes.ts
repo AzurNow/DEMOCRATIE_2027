@@ -1,15 +1,18 @@
 /**
  * `outils/site-gardes.ts` — fonctions de garde du site statique (plan de la page pédagogique,
- * « Technique » : tests). Pures, sauf `lireSiteConstruit` qui lit `site/dist/` : elles prennent
- * du texte et rendent des constats, pour que chaque garde soit testable sur un exemple.
+ * « Technique » : tests). Pures, sauf `lireSiteConstruit` et `lirePageConstruite` qui lisent
+ * `site/dist/` : elles prennent du texte et rendent des constats, pour que chaque garde soit
+ * testable sur un exemple. Le site a plusieurs pages : une garde qui vaut page par page (un seul h1,
+ * ancres résolues…) lit `pages`, une garde qui vaut sur tout le site peut lire `html`.
  *
  * Quatre gardes : aucune ressource externe chargée, aucun nom du périmètre, aucun renvoi « §n »
  * sans section dans le protocole, aucun appel réseau dans les scripts.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { parse } from "yaml";
 import { URL_DEPOT } from "../site/src/lib/protocole.ts";
+import { comparerChaines } from "./ordre-chaines.ts";
 
 /** Seul préfixe externe admis, et seulement pour un lien documentaire `<a href>`. */
 export const LIENS_DOCUMENTAIRES_ADMIS: readonly string[] = [URL_DEPOT];
@@ -23,8 +26,23 @@ export class SiteNonConstruit extends Error {
   }
 }
 
-export interface SiteConstruit {
+export class PageNonConstruite extends Error {
+  constructor(dossier: string, chemin: string, presentes: readonly string[]) {
+    super(`${dossier}/${chemin} est absente du site construit (pages présentes : ${presentes.join(", ")}).`);
+  }
+}
+
+/** Une page HTML construite ; `chemin` est relatif au dossier construit, en « / » (« exemple/index.html »). */
+export interface PageConstruite {
+  chemin: string;
   html: string;
+}
+
+export interface SiteConstruit {
+  /** Toutes les pages mises bout à bout, pour les gardes qui valent sur tout le site. */
+  html: string;
+  /** Chaque page à part, triée par chemin, pour les gardes qui valent page par page. */
+  pages: PageConstruite[];
   scripts: string[];
 }
 
@@ -41,9 +59,19 @@ function fichiersSous(dossier: string, extension: string): string[] {
 /** Lit toutes les pages HTML et tous les JS produits ; échoue s'il n'y a pas de page d'accueil. */
 export function lireSiteConstruit(dossier: string): SiteConstruit {
   if (!existsSync(join(dossier, "index.html"))) throw new SiteNonConstruit(dossier);
-  const html = fichiersSous(dossier, ".html").map((f) => readFileSync(f, "utf8")).join("\n");
+  const pages = fichiersSous(dossier, ".html")
+    .map((f) => ({ chemin: relative(dossier, f).split(sep).join("/"), html: readFileSync(f, "utf8") }))
+    .sort((a, b) => comparerChaines(a.chemin, b.chemin));
   const scripts = fichiersSous(dossier, ".js").map((f) => readFileSync(f, "utf8"));
-  return { html, scripts };
+  return { html: pages.map((p) => p.html).join("\n"), pages, scripts };
+}
+
+/** Le HTML d'une seule page construite (« index.html » par défaut) ; une page absente est une erreur. */
+export function lirePageConstruite(dossier: string, chemin = "index.html"): string {
+  const { pages } = lireSiteConstruit(dossier);
+  const page = pages.find((p) => p.chemin === chemin);
+  if (page === undefined) throw new PageNonConstruite(dossier, chemin, pages.map((p) => p.chemin));
+  return page.html;
 }
 
 // --- ressources externes ---------------------------------------------------------------------

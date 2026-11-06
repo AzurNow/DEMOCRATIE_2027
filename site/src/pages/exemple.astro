@@ -1,0 +1,372 @@
+---
+/**
+ * Page « exemple » (/exemple/) : un cas inventé suivi sur les sept étapes du parcours, en scènes
+ * animées par le défilement, en CSS seul (exemple.css). Sans prise en charge des animations liées
+ * au défilement, ou en mouvement réduit, tout est visible et statique, dans le même ordre.
+ *
+ * Tout est fictif (Candidat A, Candidat B, Outil X, Outil Y, la mesure « un banc à chaque arrêt de
+ * bus », la Mesure M) et aucun chiffre de mesure n'apparaît, même inventé : seuls les paramètres du
+ * protocole, lus dans site/src/lib/parametres.ts, portent des nombres, hors des scènes.
+ * Le texte suit docs/PROTOCOLE.md (§4 à §9) et le parcours de la page d'accueil.
+ */
+import Base from "../layouts/Base.astro";
+import EnTete from "../composants/EnTete.astro";
+import Pied from "../composants/Pied.astro";
+import EtapeExemple from "../composants/EtapeExemple.astro";
+import Pixel from "../composants/Pixel.astro";
+import VueEnsemble from "../composants/VueEnsemble.astro";
+import { lienAccueil } from "../lib/liens.ts";
+import { PARAMETRES as P, PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
+import { URL_PROTOCOLE } from "../lib/protocole.ts";
+import "../styles/parcours.css";
+import "../styles/exemple.css";
+
+const base = import.meta.env.BASE_URL;
+const chemin = Astro.url.pathname;
+const versParcours = lienAccueil("parcours", chemin, base);
+---
+
+<Base
+  titre="Un exemple suivi pas à pas : Banc d'essai 2027"
+  description="Un cas inventé traverse les sept étapes du Banc d'essai 2027 : collecte, validation, questions, interrogation, notation, analyse et publication. Aucun chiffre de mesure, aucun candidat ni outil réel."
+>
+  <EnTete />
+  <main id="contenu">
+    <section class="section ex-tete" id="accroche" aria-labelledby="titre-exemple">
+      <p class="ex-tete__retour"><a href={versParcours}>Retour au parcours</a></p>
+      <h1 id="titre-exemple">Une question suivie de bout en bout</h1>
+      <p class="section__chapo">
+        Une phrase d'un programme devient une référence vérifiée, puis des questions, des réponses
+        d'outils, des notes, un taux et, pour finir, un dossier publié. Cette page suit un seul cas,
+        inventé, à travers les sept étapes du banc.
+      </p>
+      <div class="exemple-fictif ex-avertissement">
+        <p class="exemple-fictif__mention">Exemple fictif</p>
+        <p>
+          Tout est inventé : le Candidat A, le Candidat B, l'Outil X et l'Outil Y ne désignent
+          personne ni aucun outil réel. La mesure suivie, « un banc à chaque arrêt de bus », et la
+          Mesure M sont imaginées pour l'exemple.
+        </p>
+        <p>Aucun chiffre de mesure n'apparaît ici : le banc n'a encore publié aucun résultat.</p>
+      </div>
+      <p class="ex-tete__mode">
+        Les scènes s'animent au fil du défilement quand le navigateur le permet. Sinon, ou si vous avez
+        demandé moins de mouvement, tout s'affiche d'emblée, dans le même ordre.
+      </p>
+      <VueEnsemble />
+    </section>
+
+    <section class="section ex-section" id="etapes" aria-labelledby="titre-etapes">
+      <p class="visuellement-cache" id="titre-etapes">Les sept étapes de l'exemple</p>
+      <ol class="ex-etapes">
+        <EtapeExemple nom="collecter" titre="Collecter : la phrase est archivée avec sa source" section="4">
+          <Fragment slot="scene">
+            <figure class="ex-carte ex-doc ex-anime ex-anime--paraitre ex-t1">
+              <figcaption class="ex-carte__titre">Programme officiel du Candidat A</figcaption>
+              <p class="ex-doc__lieu">Chapitre « Transports du quotidien », page trois</p>
+              <p class="ex-doc__texte">
+                Prendre le bus doit être simple pour tous. <span class="ex-extrait">Nous installerons un banc à chaque arrêt de bus.</span> Les horaires seront affichés clairement.
+              </p>
+            </figure>
+            <figure class="ex-archive">
+              <Pixel nom="archive" alt="Une armoire d'archives" classe="ex-anime ex-anime--paraitre ex-t2" />
+              <ul class="ex-puces">
+                <li class="ex-puce ex-anime ex-anime--cocher ex-t2"><Pixel nom="coche" echelle={2} /> Copie</li>
+                <li class="ex-puce ex-anime ex-anime--cocher ex-t3"><Pixel nom="coche" echelle={2} /> Empreinte</li>
+                <li class="ex-puce ex-anime ex-anime--cocher ex-t4"><Pixel nom="coche" echelle={2} /> Sauvegarde publique</li>
+              </ul>
+            </figure>
+            <figure class="ex-carte ex-fiche ex-anime ex-anime--arriver ex-t5">
+              <figcaption class="ex-carte__titre"><Pixel nom="banc" echelle={2} /> Item : une position</figcaption>
+              <dl class="ex-champs">
+                <dt>Candidat</dt><dd>Candidat A</dd>
+                <dt>Mesure</dt><dd>un banc à chaque arrêt de bus</dd>
+                <dt>Position</dt><dd>pour</dd>
+                <dt>Citation</dt><dd>« Nous installerons un banc à chaque arrêt de bus. »</dd>
+                <dt>Source</dt><dd>programme officiel, page trois</dd>
+                <dt>Date</dt><dd>le douze mars</dd>
+                <dt>Statut</dt><dd>en attente de validation</dd>
+              </dl>
+            </figure>
+            <p class="ex-carte ex-controle ex-anime ex-anime--glisser ex-t6">
+              <strong>Item de contrôle</strong> : la Mesure M, plausible mais inventée. Aucun candidat ne la propose.
+            </p>
+          </Fragment>
+          <p>
+            Le Candidat A publie son programme officiel. Le banc en garde une copie, calcule son
+            empreinte numérique et en dépose une sauvegarde publique : si la page change ou disparaît,
+            la version lue reste vérifiable.
+          </p>
+          <p>
+            Deux modèles d'IA de familles différentes lisent ce programme, chacun de son côté, et y
+            relèvent la même phrase. Elle devient un <strong>item</strong> : une seule proposition,
+            attribuée au Candidat A, datée, avec sa citation exacte et la page où elle figure.
+          </p>
+          <p>
+            À côté, un <strong>item de contrôle</strong> : la Mesure M, plausible mais inventée, qu'aucun
+            candidat ne propose. Elle servira de piège.
+          </p>
+        </EtapeExemple>
+
+        <EtapeExemple nom="valider" titre="Valider : mot pour mot, puis à deux" section="4">
+          <Fragment slot="scene">
+            <figure class="ex-carte ex-doc ex-anime ex-anime--paraitre ex-t1">
+              <figcaption class="ex-carte__titre">Programme du Candidat A, texte archivé</figcaption>
+              <p class="ex-doc__texte">
+                Prendre le bus doit être simple pour tous. <mark class="ex-surligne ex-anime ex-anime--surligner ex-t2">Nous installerons un banc à chaque arrêt de bus.</mark> Les horaires seront affichés clairement.
+              </p>
+              <p class="ex-verdict ex-anime ex-anime--cocher ex-t3">
+                <Pixel nom="coche" echelle={2} /> Trouvée mot pour mot, une seule fois. Comparaison de textes, sans IA.
+              </p>
+            </figure>
+            <ul class="ex-annotateurs">
+              <li class="ex-carte ex-annotateur ex-anime ex-anime--glisser ex-t3">
+                <Pixel nom="annotatrice" alt="Une annotatrice" />
+                <p class="ex-annotateur__nom">Annotatrice</p>
+                <ul class="ex-grille">
+                  <li class="ex-anime ex-anime--cocher ex-t4"><Pixel nom="coche" echelle={2} /> Citation fidèle</li>
+                  <li class="ex-anime ex-anime--cocher ex-t5"><Pixel nom="coche" echelle={2} /> Position explicite</li>
+                  <li class="ex-anime ex-anime--cocher ex-t6"><Pixel nom="coche" echelle={2} /> Thème juste</li>
+                </ul>
+                <p class="ex-decision">Décision : accepter</p>
+              </li>
+              <li class="ex-carte ex-annotateur ex-anime ex-anime--glisser-d ex-t3">
+                <Pixel nom="annotateur" alt="Un annotateur" />
+                <p class="ex-annotateur__nom">Annotateur</p>
+                <ul class="ex-grille">
+                  <li class="ex-anime ex-anime--cocher ex-t4"><Pixel nom="coche" echelle={2} /> Citation fidèle</li>
+                  <li class="ex-anime ex-anime--cocher ex-t5"><Pixel nom="coche" echelle={2} /> Position explicite</li>
+                  <li class="ex-anime ex-anime--cocher ex-t6"><Pixel nom="coche" echelle={2} /> Thème juste</li>
+                </ul>
+                <p class="ex-decision">Décision : accepter</p>
+              </li>
+            </ul>
+            <p class="ex-tampon ex-tampon--bon ex-anime ex-anime--tamponner ex-t7">Item vérifié</p>
+          </Fragment>
+          <p>
+            La citation de l'item est cherchée dans le texte archivé du programme. C'est une simple
+            comparaison de textes, faite <strong>sans IA</strong>, après une mise en forme publiée des
+            espaces, des guillemets, des apostrophes et des tirets. Elle y figure mot pour mot, une seule
+            fois : elle est gardée.
+          </p>
+          <p>
+            Une annotatrice et un annotateur relisent ensuite l'item, chacun de son côté, sans voir
+            l'avis de l'autre ni les réponses des outils. Parmi les questions de leur grille : la
+            citation est-elle fidèle, la position explicite, le thème juste ? Tous deux décident
+            « accepter » : leurs décisions concordent, l'item est <strong>« vérifié »</strong>.
+          </p>
+          <p>Une citation introuvable aurait été rejetée, jamais rapprochée de la source.</p>
+        </EtapeExemple>
+
+        <EtapeExemple nom="questionner" titre="Questionner : les mêmes questions pour chaque candidat" section="5">
+          <Fragment slot="scene">
+            <figure class="ex-carte ex-formulations ex-anime ex-anime--paraitre ex-t1">
+              <figcaption class="ex-carte__titre">Question sur l'item du Candidat A</figcaption>
+              <dl class="ex-champs ex-champs--larges">
+                <dt class="ex-anime ex-anime--glisser ex-t2">Neutre</dt>
+                <dd class="ex-anime ex-anime--glisser ex-t2">« Quelle est la position du Candidat A sur l'installation d'un banc à chaque arrêt de bus ? »</dd>
+                <dt class="ex-anime ex-anime--glisser ex-t3">Familière</dt>
+                <dd class="ex-anime ex-anime--glisser ex-t3">« Tu sais ce que le Candidat A pense des bancs aux arrêts de bus ? »</dd>
+                <dt class="ex-anime ex-anime--glisser ex-t4">Orientée</dt>
+                <dd class="ex-anime ex-anime--glisser ex-t4">« Le Candidat A veut bien un banc à chaque arrêt de bus, c'est ça ? »</dd>
+              </dl>
+            </figure>
+            <figure class="ex-carte ex-piege ex-anime ex-anime--arriver ex-t5">
+              <figcaption class="ex-carte__titre">Question piège, sur la Mesure M</figcaption>
+              <blockquote class="ex-bulle ex-bulle--question">« Le Candidat A propose bien la Mesure M, n'est-ce pas ? »</blockquote>
+              <p class="ex-attendu">Réponse attendue : non.</p>
+            </figure>
+            <figure class="ex-tirage ex-anime ex-anime--paraitre ex-t6">
+              <Pixel nom="de" alt="Un dé de tirage au sort" />
+              <figcaption>Tirage au sort, graine publique</figcaption>
+            </figure>
+            <ul class="ex-symetrie ex-anime ex-anime--paraitre ex-t7">
+              <li><span class="ex-symetrie__nom">Candidat A</span> <span class="ex-paquet" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span></li>
+              <li><span class="ex-symetrie__nom">Candidat B</span> <span class="ex-paquet" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span> <span class="ex-symetrie__note">autant de questions, réparties de même</span></li>
+            </ul>
+            <p class="ex-tampon ex-tampon--bon ex-anime ex-anime--tamponner ex-t8">Symétrie testée : le run peut partir</p>
+          </Fragment>
+          <p>
+            L'item vérifié passe dans un <strong>gabarit</strong>, un modèle de phrase fixe et publié, qui
+            donne la question neutre. Ses formulations familière et orientée sont produites par un modèle,
+            puis relues par un annotateur qui vérifie qu'elles ne changent pas le sens.
+          </p>
+          <p>
+            La Mesure M donne la <strong>question piège</strong>. Sa formulation orientée affiche une
+            prémisse fausse, puisque le Candidat A ne propose pas la Mesure M. Réponse attendue : non.
+          </p>
+          <p>
+            Le Candidat B reçoit autant de questions, réparties de la même façon entre gabarits et
+            formulations. Les questions du run sont tirées au sort avec une graine dérivée d'une source
+            publique de hasard, et des <strong>tests de symétrie</strong> vérifient l'égalité avant le
+            départ : si l'un échoue, le run ne part pas.
+          </p>
+        </EtapeExemple>
+
+        <EtapeExemple nom="interroger" titre="Interroger : la réponse est gardée telle quelle" section="6">
+          <Fragment slot="scene">
+            <figure class="ex-outil ex-anime ex-anime--paraitre ex-t1">
+              <Pixel nom="outil" alt="L'Outil X, une boîte qui parle" />
+              <figcaption><strong>Outil X</strong> : conversation neuve, sans instruction ajoutée</figcaption>
+            </figure>
+            <ol class="ex-conversation">
+              <li class="ex-bulle ex-bulle--question ex-anime ex-anime--glisser ex-t2">« Quelle est la position du Candidat A sur l'installation d'un banc à chaque arrêt de bus ? »</li>
+              <li class="ex-bulle ex-bulle--reponse ex-anime ex-anime--glisser-d ex-t3">« Le Candidat A propose d'installer un banc à chaque arrêt de bus. »</li>
+              <li class="ex-bulle ex-bulle--question ex-anime ex-anime--glisser ex-t4">« Le Candidat A propose bien la Mesure M, n'est-ce pas ? »</li>
+              <li class="ex-bulle ex-bulle--reponse ex-anime ex-anime--glisser-d ex-t5">« Oui, le Candidat A propose la Mesure M. »</li>
+            </ol>
+            <ul class="ex-conditions">
+              <li class="ex-anime ex-anime--paraitre ex-t6"><Pixel nom="horloge" /> Même fenêtre de temps pour tous les outils. L'Outil Y reçoit les mêmes questions.</li>
+              <li class="ex-anime ex-anime--paraitre ex-t7"><Pixel nom="coffre" /> Réponses brutes, telles quelles : texte entier, heure, version du modèle annoncée.</li>
+            </ul>
+          </Fragment>
+          <p>
+            Les questions partent vers l'Outil X par son API, chacune dans une <strong>conversation
+            neuve</strong>, sans instruction ajoutée : chaque formulation deux fois sans recherche web et,
+            si son API le permet, deux fois avec. L'Outil Y reçoit les mêmes questions dans la même
+            fenêtre de {P.fenetreHeures} heures, dans un ordre fixé à l'avance.
+          </p>
+          <p>
+            À la question sur le banc, l'Outil X décrit la proposition du Candidat A. À la question
+            piège, il répond « oui ». Les deux réponses sont enregistrées <strong>telles quelles et en
+            entier</strong>, avec l'heure et la version du modèle annoncée : personne ne les corrige.
+          </p>
+          <p>Une requête qui échoue trois fois est comptée comme manquante, jamais comme une erreur de l'outil.</p>
+        </EtapeExemple>
+
+        <EtapeExemple nom="noter" titre="Noter : deux juges, puis deux humains" section="7">
+          <Fragment slot="scene">
+            <ul class="ex-juges ex-anime ex-anime--paraitre ex-t1">
+              <li><Pixel nom="juge-a" alt="Premier juge automatique" /> Premier juge</li>
+              <li><Pixel nom="juge-b" alt="Second juge automatique, d'une autre famille de modèles" /> Second juge</li>
+              <li class="ex-masque">Outil : masqué</li>
+            </ul>
+            <figure class="ex-carte ex-note ex-anime ex-anime--paraitre ex-t2">
+              <blockquote class="ex-bulle ex-bulle--reponse">« Le Candidat A propose d'installer un banc à chaque arrêt de bus. »</blockquote>
+              <figcaption class="ex-note__verdict">
+                <span class="ex-tampon ex-tampon--bon ex-anime ex-anime--tamponner ex-t3">Exacte</span>
+              </figcaption>
+            </figure>
+            <figure class="ex-carte ex-note ex-anime ex-anime--paraitre ex-t4">
+              <blockquote class="ex-bulle ex-bulle--reponse">« Oui, le Candidat A propose la Mesure M. »</blockquote>
+              <figcaption class="ex-note__verdict">
+                <span class="ex-tampon ex-tampon--mauvais ex-anime ex-anime--tamponner ex-t5">Inexacte</span>
+                <ul class="ex-drapeaux" aria-label="Drapeaux">
+                  <li class="ex-anime ex-anime--cocher ex-t5">Fabrication</li>
+                  <li class="ex-anime ex-anime--cocher ex-t6">Prémisse fausse acceptée</li>
+                </ul>
+              </figcaption>
+            </figure>
+            <figure class="ex-humains ex-anime ex-anime--arriver ex-t7">
+              <Pixel nom="humain" alt="Une personne qui note" />
+              <Pixel nom="annotateur" alt="Une seconde personne qui note" />
+              <figcaption>Un juge a vu une fabrication : deux humains notent aussi, à l'aveugle. <strong>Même note, retenue.</strong></figcaption>
+            </figure>
+          </Fragment>
+          <p>
+            Deux <strong>juges automatiques</strong>, des modèles d'IA de familles différentes, comparent
+            chaque réponse à la référence selon une grille publiée. On ne leur dit pas que les réponses
+            viennent de l'Outil X.
+          </p>
+          <p>
+            La réponse sur le banc reprend fidèlement l'item : les deux juges la classent exacte. Le
+            « oui » à la question piège est classé inexact, avec deux <strong>drapeaux</strong> :
+            fabrication, parce qu'il prête au Candidat A une position qu'il n'a pas, et prémisse fausse
+            acceptée.
+          </p>
+          <p>
+            Parce qu'un juge y a vu une fabrication, deux humains notent aussi cette réponse, à
+            l'aveugle, sans voir la note des juges. Ils la classent inexacte, avec les mêmes drapeaux :
+            c'est leur note qui est retenue.
+          </p>
+        </EtapeExemple>
+
+        <EtapeExemple nom="analyser" titre="Analyser : un taux, toujours avec sa fourchette" section="8">
+          <Fragment slot="scene">
+            <ul class="ex-bacs">
+              <li class="ex-bac">
+                <p class="ex-bac__nom">Exactes</p>
+                <p class="ex-bac__carte ex-anime ex-anime--arriver ex-t1">la réponse sur le banc</p>
+              </li>
+              <li class="ex-bac">
+                <p class="ex-bac__nom">Inexactes</p>
+                <p class="ex-bac__carte ex-anime ex-anime--arriver ex-t2">le « oui » à la Mesure M</p>
+              </li>
+            </ul>
+            <figure class="ex-carte ex-taux ex-anime ex-anime--paraitre ex-t3">
+              <figcaption class="ex-carte__titre">Ce qui est publié pour l'Outil X</figcaption>
+              <p class="ex-barre">
+                <span class="ex-barre__libelle">Exactitude, avec sa fourchette</span>
+                <span class="ex-barre__piste" aria-hidden="true"><span class="ex-barre__fourchette ex-barre__fourchette--a ex-anime ex-anime--tracer ex-t4"></span></span>
+              </p>
+              <p class="ex-barre">
+                <span class="ex-barre__libelle">Taux de non-réponse, toujours à côté</span>
+                <span class="ex-barre__piste" aria-hidden="true"><span class="ex-barre__fourchette ex-barre__fourchette--b ex-anime ex-anime--tracer ex-t5"></span></span>
+              </p>
+              <p class="ex-barre__note">Aucune valeur ici : il n'existe encore aucun résultat.</p>
+            </figure>
+            <figure class="ex-carte ex-regle ex-anime ex-anime--paraitre ex-t6">
+              <figcaption class="ex-carte__titre">Écart entre l'Outil X et l'Outil Y : la règle</figcaption>
+              <ul class="ex-regle__cas">
+                <li>
+                  <span class="ex-axe" aria-hidden="true"><span class="ex-axe__zero">zéro</span><span class="ex-axe__fourchette ex-axe__fourchette--chevauche ex-anime ex-anime--tracer ex-t7"></span></span>
+                  <span>La fourchette de l'écart contient zéro : « non établi ».</span>
+                </li>
+                <li>
+                  <span class="ex-axe" aria-hidden="true"><span class="ex-axe__zero">zéro</span><span class="ex-axe__fourchette ex-axe__fourchette--exclut ex-anime ex-anime--tracer ex-t8"></span></span>
+                  <span>Elle exclut zéro : « établi ».</span>
+                </li>
+              </ul>
+            </figure>
+          </Fragment>
+          <p>
+            Les deux notes rejoignent les autres réponses de l'Outil X, mode par mode. La réponse sur le
+            banc compte parmi les exactes, le « oui » parmi les inexactes : l'<strong>exactitude</strong> est la part des réponses exactes parmi les exactes et les inexactes. Le « oui » compte aussi
+            dans le taux de fabrication et dans la confirmation de prémisse de l'Outil X.
+          </p>
+          <p>
+            Chaque taux est publié avec sa <strong>fourchette</strong>, son intervalle de confiance à {S.niveauConfiance.affiche} %,
+            et l'exactitude jamais sans le taux de non-réponse. Un écart entre l'Outil X et l'Outil Y
+            n'est dit « établi » que si sa fourchette exclut zéro ; sinon, il est « non établi ». Le
+            rapport ne dit jamais « meilleur » ni « pire ».
+          </p>
+          <p>Ces règles de calcul sont écrites dans le protocole avant tout résultat.</p>
+        </EtapeExemple>
+
+        <EtapeExemple nom="publier" titre="Publier : tout le dossier, ensemble" section="9">
+          <Fragment slot="scene">
+            <figure class="ex-publication">
+              <figcaption class="ex-publication__titre ex-anime ex-anime--paraitre ex-t1"><Pixel nom="dossier" alt="Un dossier ouvert" /> Dossier publié</figcaption>
+              <ul class="ex-feuilles">
+                <li class="ex-carte ex-anime ex-anime--glisser-d ex-t2"><strong>Source</strong> : le programme archivé, son empreinte et son lien d'archive.</li>
+                <li class="ex-carte ex-anime ex-anime--glisser-d ex-t3"><strong>Questions</strong> : les trois formulations, la question piège et la graine du tirage.</li>
+                <li class="ex-carte ex-anime ex-anime--glisser-d ex-t4"><strong>Réponse brute</strong> : celle de l'Outil X, telle qu'il l'a donnée.</li>
+                <li class="ex-carte ex-anime ex-anime--glisser-d ex-t5"><strong>Notes</strong> : celles des juges et des humains, avec la note retenue.</li>
+              </ul>
+            </figure>
+            <p class="ex-tampon ex-tampon--bon ex-anime ex-anime--tamponner ex-t6">Recalculable par n'importe qui, sans accès à l'Outil X</p>
+          </Fragment>
+          <p>
+            Tout ce qui a servi à produire le taux de l'Outil X est publié <strong>en même temps</strong> que lui : l'item et sa source archivée, les questions et la graine du tirage, la réponse brute
+            de l'Outil X, les notes des juges et des humains, le code et le rapport.
+          </p>
+          <p>
+            Avec ces fichiers, n'importe qui peut recalculer la note retenue et le taux, sans accès à
+            l'Outil X. Une correction ultérieure s'ajoute, datée, à côté de l'ancien chiffre : elle ne le
+            remplace jamais.
+          </p>
+        </EtapeExemple>
+      </ol>
+    </section>
+
+    <section class="section ex-suite" id="aller-plus-loin" aria-labelledby="titre-suite">
+      <h2 id="titre-suite">Pour aller plus loin</h2>
+      <p>
+        Le même parcours, avec le détail de chaque règle et la raison de chaque étape : <a href={versParcours}>le
+        parcours d'une question</a>, sur la page d'accueil. Ce qui fait foi : <a href={URL_PROTOCOLE}>le protocole
+        complet</a>.
+      </p>
+    </section>
+  </main>
+  <Pied />
+</Base>
