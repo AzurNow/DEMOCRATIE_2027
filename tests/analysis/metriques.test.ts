@@ -33,6 +33,7 @@ import {
   candidat,
   empreinte,
   lectureComparateur,
+  referenceP,
   runDeComparateurs,
   tousCompares,
   ulid,
@@ -419,7 +420,7 @@ function lectureSur(id: string, item: string, affiche: boolean, outil_id = "comp
     id: ulid(id),
     outil_id,
     affiche,
-    reference_item: { item_id: ulid(item), item_version: 1, item_empreinte: empreinte(item) },
+    reference_item: referenceP(item),
   });
 }
 
@@ -429,7 +430,7 @@ function verdictDeLecture(id: string, lecture: string, categorie_retenue: Catego
 
 /** Le run dont les items P de référence sont les items nommés `noms`. */
 function runSur(noms: readonly string[], comparateurs?: readonly string[]) {
-  return runDeComparateurs(noms.map((nom) => ulid(nom)), comparateurs);
+  return runDeComparateurs(noms.map(referenceP), comparateurs);
 }
 
 describe("comparateurs (QR9)", () => {
@@ -540,6 +541,7 @@ describe("conformité n° 11 : couverture des comparateurs sur les items P de r�
     expect(erreur.manquantes).toEqual([{ outil_id: "comparateur-un", item_id: ulid("i2") }]);
     expect(erreur.en_double).toEqual([]);
     expect(erreur.hors_reference).toEqual([]);
+    expect(erreur.epingles_divergentes).toEqual([]);
     expect(erreur.message).toContain(ulid("i2"));
   });
 
@@ -566,7 +568,7 @@ describe("conformité n° 11 : couverture des comparateurs sur les items P de r�
       statut_au_gel: "retire",
       interroge: false,
       items_p_verifies: 1,
-      items_p_au_gel: [ulid("item-du-retire")],
+      items_p_au_gel: [referenceP("item-du-retire")],
       sous_seuil: true,
     });
     const reference = { ...base, perimetre: { ...base.perimetre, candidats: [...base.perimetre.candidats, retire] } };
@@ -618,6 +620,51 @@ describe("conformité n° 11 : couverture des comparateurs sur les items P de r�
       ["comparateur-un", { numerateur: 3, denominateur: 3, valeur: 1 }],
       ["comparateur-deux", { numerateur: 1, denominateur: 3, valeur: 1 / 3 }],
     ]);
+  });
+
+  it("accepte une lecture à la version et à l'empreinte de l'item au gel", () => {
+    const lecture = lectureSur("l1", "i1", false);
+    expect(lecture.reference_item).toEqual(referenceP("i1"));
+    const [mesure] = metriquesComparateur(runSur(["i1"]), [lecture], []);
+    expect(mesure?.couverture).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+  });
+
+  it("lève sur une lecture d'une autre version de l'item qu'au gel, au lieu de la noter sur l'ancien contenu", () => {
+    // L'item a été corrigé entre la lecture (version 1) et le gel (version 2).
+    const au_gel = { ...referenceP("i1"), item_version: 2, item_empreinte: empreinte("i1-corrige") };
+    const lecture = lectureSur("l1", "i1", true);
+    const erreur = fautes(() => metriquesComparateur(runDeComparateurs([au_gel]), [lecture], [verdictDeLecture("v1", "l1")]));
+    expect(erreur.epingles_divergentes).toEqual([{ lecture_id: ulid("l1"), lue: referenceP("i1"), au_gel }]);
+    // La lecture reste celle de son item : il n'est pas dit manquant en plus.
+    expect(erreur.manquantes).toEqual([]);
+    expect(erreur.hors_reference).toEqual([]);
+    expect(erreur.message).toContain(`${ulid("l1")} : ${ulid("i1")} lu en v1/${empreinte("i1")}, v2/${empreinte("i1-corrige")} au gel`);
+  });
+
+  it("lève sur une lecture de même version que l'item au gel mais d'empreinte différente", () => {
+    const au_gel = { ...referenceP("i1"), item_empreinte: empreinte("i1-autre-contenu") };
+    const erreur = fautes(() => metriquesComparateur(runDeComparateurs([au_gel]), [lectureSur("l1", "i1", false)], []));
+    expect(erreur.epingles_divergentes).toEqual([{ lecture_id: ulid("l1"), lue: referenceP("i1"), au_gel }]);
+  });
+
+  it("liste chaque lecture divergente, par comparateur, et accepte celles qui ne le sont pas", () => {
+    const au_gel = { ...referenceP("i2"), item_version: 3 };
+    const reference = runDeComparateurs([referenceP("i1"), au_gel], ["comparateur-un", "comparateur-deux"]);
+    const lectures = [
+      lectureSur("a1", "i1", false),
+      lectureSur("a2", "i2", false),
+      lectureSur("b1", "i1", false, "comparateur-deux"),
+      lectureComparateur({ ...lectureSur("b2", "i2", false, "comparateur-deux"), reference_item: au_gel }),
+    ];
+    const erreur = fautes(() => metriquesComparateur(reference, lectures, []));
+    expect(erreur.epingles_divergentes.map((d) => d.lecture_id)).toEqual([ulid("a2")]);
+  });
+
+  it("une lecture hors de la liste reste hors référence, sans épingle à confronter", () => {
+    const lectures = [lectureSur("l1", "i1", false), lectureSur("l-absent", "absent-du-gel", false)];
+    const erreur = fautes(() => metriquesComparateur(runSur(["i1"]), lectures, []));
+    expect(erreur.hors_reference).toEqual([ulid("l-absent")]);
+    expect(erreur.epingles_divergentes).toEqual([]);
   });
 
   it("lève sur le comparateur auquel il manque un item, même quand l'autre est complet", () => {

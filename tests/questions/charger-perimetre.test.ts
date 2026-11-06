@@ -429,13 +429,26 @@ describe("cas 10 : seuil de couverture du §4 et items P au gel", () => {
     expect(beta).toMatchObject({ candidat_id: "demo-beta", items_p_verifies: 9, sous_seuil: true });
   });
 
-  it("items_p_au_gel est trié et égal à itemsPAuGel, pour chaque candidat, retiré compris", () => {
+  it("items_p_au_gel est trié et porte les items de itemsPAuGel, pour chaque candidat, retiré compris", () => {
     const candidats = charger(perimetreComplet()).perimetre.candidats;
     for (const candidat of candidats) {
       const attendus = itemsPAuGel(ITEMS, candidat.candidat_id, GEL, [MESURE], idsInterroges(candidats));
-      expect(candidat.items_p_au_gel).toEqual(attendus);
-      expect(candidat.items_p_au_gel).toEqual([...attendus].sort());
+      const ids = candidat.items_p_au_gel.map((reference) => reference.item_id);
+      expect(ids).toEqual(attendus);
+      expect(ids).toEqual([...attendus].sort());
       expect(candidat.items_p_verifies).toBe(attendus.length);
+    }
+  });
+
+  it("DETTE 2026-10-02 n° 2 : chaque item P au gel est épinglé à sa version et à son empreinte au gel", () => {
+    const candidats = charger(perimetreComplet()).perimetre.candidats;
+    const parId = new Map(ITEMS.map((item) => [item.id, item]));
+    const epingles = candidats.flatMap((candidat) => candidat.items_p_au_gel);
+    expect(epingles.length).toBeGreaterThan(0);
+    for (const epingle of epingles) {
+      const item = parId.get(epingle.item_id);
+      if (item === undefined) throw new Error(`item ${epingle.item_id} absent des items du gel`);
+      expect(epingle).toEqual({ item_id: item.id, item_version: item.version, item_empreinte: item.empreinte });
     }
   });
 
@@ -453,7 +466,7 @@ describe("cas 10 : seuil de couverture du §4 et items P au gel", () => {
 
     const alpha = rang(avec([...neuf, pour, contre]).perimetre.candidats, 0);
     expect(alpha).toMatchObject({ candidat_id: "demo-alpha", items_p_verifies: 9, sous_seuil: true });
-    expect(alpha.items_p_au_gel).toEqual(neuf.map((item) => item.id).sort());
+    expect(alpha.items_p_au_gel.map((reference) => reference.item_id)).toEqual(neuf.map((item) => item.id).sort());
   });
 
   it("compte zéro item pour un candidat qui n'en a aucun, sans valeur supposée", () => {

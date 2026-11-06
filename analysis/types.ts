@@ -267,11 +267,13 @@ export interface CandidatAuGel {
   readonly statut_au_gel: "actif" | "nouveau" | "retire";
   readonly items_p_verifies: number;
   /**
-   * Les identifiants triés des items P comptés au gel, dont `items_p_verifies` est la longueur.
-   * Décision de l'auteur du 2026-10-02 (conformité n° 11, texte à écrire au §8 en 0.15) : ce sont
-   * les « items P de référence » des comparateurs pour un candidat interrogé. Lu, jamais recalculé.
+   * Les items P comptés au gel, épinglés à leur version et à leur empreinte au gel, triés par
+   * identifiant ; `items_p_verifies` en est la longueur. Décision de l'auteur du 2026-10-02
+   * (conformité n° 11, texte à écrire au §8 en 0.15) : ce sont les « items P de référence » des
+   * comparateurs pour un candidat interrogé. L'épingle (DETTE 2026-10-02, constats soldés, n° 2)
+   * refuse une lecture faite sur une autre version de l'item. Lu, jamais recalculé.
    */
-  readonly items_p_au_gel: readonly Ulid[];
+  readonly items_p_au_gel: readonly ReferenceItem[];
   /** §4 et §8 : lu, jamais recalculé ici. */
   readonly sous_seuil: boolean;
   readonly interroge: boolean;

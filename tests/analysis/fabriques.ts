@@ -18,6 +18,7 @@ import type {
   Notation,
   OutilAuGel,
   Question,
+  ReferenceItem,
   Reponse,
   Run,
   Verdict,
@@ -25,6 +26,7 @@ import type {
 import type { UniteAnalyse } from "../../analysis/filtre.ts";
 import type { PartageCouples, RequeteDuPlan } from "../../analysis/seuils.ts";
 import type { CoupleOutilMode, Mode } from "../../analysis/types.ts";
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
@@ -230,9 +232,22 @@ export function entreeTirage(partiel: Partiel<EntreeTirage> = {}): EntreeTirage 
   }, partiel);
 }
 
-/** Identifiants triés de `n` items P, au format du run (`items_p_au_gel`). */
-export function itemsPAuGel(prefixe: string, n: number): readonly string[] {
-  return Array.from({ length: n }, (_, rang) => ulid(`${prefixe}-${rang}`)).sort();
+/**
+ * L'épingle de l'item P nommé `nom` au gel : version 1, empreinte tirée du nom. Une lecture de
+ * comparateur fabriquée sur le même nom porte la même épingle.
+ */
+export function referenceP(nom: string): ReferenceItem {
+  return { item_id: ulid(nom), item_version: 1, item_empreinte: empreinte(nom) };
+}
+
+/** Les épingles de `n` items P, triées par identifiant, au format du run (`items_p_au_gel`). */
+export function itemsPAuGel(prefixe: string, n: number): readonly ReferenceItem[] {
+  return trierParItem(Array.from({ length: n }, (_, rang) => referenceP(`${prefixe}-${rang}`)));
+}
+
+/** Des épingles triées par identifiant, l'ordre de `items_p_au_gel`. */
+export function trierParItem(references: readonly ReferenceItem[]): readonly ReferenceItem[] {
+  return [...references].sort((a, b) => comparerChaines(a.item_id, b.item_id));
 }
 
 export function candidat(partiel: Partiel<CandidatAuGel> = {}): CandidatAuGel {
@@ -268,11 +283,11 @@ export function run(partiel: Partiel<Run> = {}): Run {
 }
 
 /**
- * Run dont l'unique candidat interrogé porte `items` comme items P de référence, et dont les
- * comparateurs inclus sont `comparateurs` (plus l'assistant neutre de la fabrique).
+ * Run dont l'unique candidat interrogé porte `items` comme items P de référence (épingles), et dont
+ * les comparateurs inclus sont `comparateurs` (plus l'assistant neutre de la fabrique).
  */
-export function runDeComparateurs(items: readonly string[], comparateurs: readonly string[] = ["comparateur-un"]): Run {
-  const tries = [...items].sort();
+export function runDeComparateurs(items: readonly ReferenceItem[], comparateurs: readonly string[] = ["comparateur-un"]): Run {
+  const tries = trierParItem(items);
   return run({
     perimetre: {
       candidats: [candidat({ items_p_verifies: tries.length, items_p_au_gel: tries, sous_seuil: tries.length < 10 })],

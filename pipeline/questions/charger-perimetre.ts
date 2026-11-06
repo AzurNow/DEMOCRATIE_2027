@@ -26,7 +26,8 @@
  *      `revelationsDansAlias`, D48 (2) et (3)), qu'aucun autre outil ne partage, après
  *      normalisation (`normaliserAlias`, D45 (2)), et qui n'est pas confondable avec un alias
  *      aveugle de candidat — la lettre « C » suivie uniquement de chiffres (§7, protocole 0.20) ;
- *   4. l'instantané est calculé — `items_p_au_gel` par `couverture.ts:itemsPAuGel`,
+ *   4. l'instantané est calculé — `items_p_au_gel` par `couverture.ts:referencesPAuGel`, chaque
+ *      item épinglé à sa version et à son empreinte au gel,
  *      `items_p_verifies` en est la longueur (la définition de `itemsPComptesAuGel`), `sous_seuil`
  *      le seuil du §4 — puis validé contre `run.schema.json#/properties/perimetre`.
  *
@@ -43,11 +44,11 @@ import type { Mode } from "../../analysis/types.ts";
 import { validerFragment, valider } from "../../outils/schemas/valider.ts";
 import { SEUIL_COUVERTURE_ITEMS_P } from "../../analysis/parametres-protocole.ts";
 import { idsInterroges } from "../../analysis/candidats-interroges.ts";
-import { itemsPAuGel } from "./couverture.ts";
+import { referencesPAuGel } from "./couverture.ts";
 import { FENETRE_NOTICES_MOIS, inclusionAvantListe, SONDAGES_MINIMUM } from "./perimetre.ts";
 import { AMORCE_GROUPE_ATTRIBUTION } from "./tirage.ts";
 import { THEMES } from "./types.ts";
-import type { Item, Mesure, ParametresTirage, StatutAuGel } from "./types.ts";
+import type { Item, Mesure, ParametresTirage, ReferenceItem, StatutAuGel } from "./types.ts";
 import type { RegimeInclusion } from "../../analysis/types-run.ts";
 
 /** `run.schema.json#/$defs/preuve_archivee`. */
@@ -145,7 +146,7 @@ export interface CandidatDeRun {
   readonly declaration_candidature?: DeclarationCandidature;
   readonly preuves_inclusion?: readonly PreuveSondage[];
   readonly items_p_verifies: number;
-  readonly items_p_au_gel: readonly string[];
+  readonly items_p_au_gel: readonly ReferenceItem[];
   readonly sous_seuil: boolean;
 }
 
@@ -566,7 +567,7 @@ function candidatAuGel(
   interroges: ReadonlySet<string>,
 ): CandidatDeRun {
   const { contact_notification: _horsInstantane, ...saisi } = candidat;
-  const items_p_au_gel = itemsPAuGel(contexte.items, candidat.candidat_id, date_gel, contexte.mesures, interroges);
+  const items_p_au_gel = referencesPAuGel(contexte.items, candidat.candidat_id, date_gel, contexte.mesures, interroges);
   return {
     ...saisi,
     items_p_verifies: items_p_au_gel.length,
@@ -601,7 +602,7 @@ function instantane(perimetre: PerimetrePourRun, contexte: ContexteDuGel): Perim
 /**
  * La partie pure : le YAML déjà lu, les items et mesures au gel, les alias. Rend l'instantané
  * validé et les paramètres du tirage, ou lève (`ErreurSchema`, `PerimetreIncomplet`,
- * `PerimetreRefuse`, ou l'erreur de `itemsPAuGel` sur un item ou une mesure incohérents).
+ * `PerimetreRefuse`, ou l'erreur de `referencesPAuGel` sur un item ou une mesure incohérents).
  */
 export function construirePerimetre(brut: unknown, contexte: ContexteDuGel, provenance: string): PerimetreCharge {
   const saisi = valider<PerimetreSaisi>("perimetre", brut, provenance);

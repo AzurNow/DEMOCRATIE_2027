@@ -7,17 +7,22 @@
  * sont la base du tirage, c'est-à-dire les items P comptés au gel pour les candidats interrogés, ceux
  * dont le total décide du seuil de couverture du §4. Ce module ne recalcule pas cette admission : il
  * lit la liste que le run a figée (`perimetre.candidats[].items_p_au_gel`, produite par
- * `pipeline/questions/couverture.ts:itemsPAuGel`) et contrôle ce que le JSON Schema ne sait pas
- * exprimer : la liste est triée, sans doublon, et sa longueur vaut `items_p_verifies`.
+ * `pipeline/questions/couverture.ts:referencesPAuGel`) et contrôle ce que le JSON Schema ne sait pas
+ * exprimer : la liste est triée par identifiant, sans doublon, et sa longueur vaut `items_p_verifies`.
  *
  * §6 : « Pour chaque item P de référence, deux mesures. » Chaque comparateur inclus du run porte
  * donc exactement une lecture par item de la liste, `affiche: false` compris. Une lecture absente
  * sortirait l'item du dénominateur de la couverture, une lecture en double l'y compterait deux fois,
  * une lecture hors de la liste mesurerait un autre ensemble : chacune lève, et l'erreur les liste
  * toutes (sur le modèle de `filtre.ts:ReponsesNonNotees`).
+ *
+ * La liste figée épingle chaque item à sa version et à son empreinte au gel (DETTE 2026-10-02,
+ * constats soldés, n° 2). Une lecture dont `reference_item` porte une autre version ou une autre
+ * empreinte a lu un contenu que le run ne retient pas : elle lève aussi, jamais notée sur l'ancien
+ * contenu. Elle reste comptée comme la lecture de son item, pour ne pas le dire manquant en plus.
  */
 
-import type { CandidatAuGel, IdentifiantCourt, LectureComparateur, Run, Ulid } from "./types.ts";
+import type { CandidatAuGel, IdentifiantCourt, LectureComparateur, ReferenceItem, Run, Ulid } from "./types.ts";
 import { candidatsInterroges } from "./candidats-interroges.ts";
 
 /** Ce que le run fige de la liste de référence se contredit : la mesure ne part pas d'une base fausse. */
@@ -40,7 +45,7 @@ function strictementCroissante(ids: readonly Ulid[]): boolean {
 
 function fautesDuCandidat(candidat: CandidatAuGel): string[] {
   const fautes: string[] = [];
-  const liste = candidat.items_p_au_gel;
+  const liste = candidat.items_p_au_gel.map((reference) => reference.item_id);
   if (liste.length !== candidat.items_p_verifies) {
     fautes.push(
       `${candidat.candidat_id} : items_p_verifies vaut ${candidat.items_p_verifies}, items_p_au_gel en liste ${liste.length}`,
@@ -52,19 +57,23 @@ function fautesDuCandidat(candidat: CandidatAuGel): string[] {
   return fautes;
 }
 
+/** Les items P de référence, par identifiant, chacun avec son épingle au gel. */
+export type ItemsPDeReference = ReadonlyMap<Ulid, ReferenceItem>;
+
 /**
- * La réunion des `items_p_au_gel` des candidats interrogés. Lève `ItemsPDeReferenceIncoherents` sur
- * tout candidat du run (interrogé ou non) dont la liste contredit son compte ou n'est pas triée sans
- * doublon, et sur un item listé pour deux candidats interrogés.
+ * La réunion des `items_p_au_gel` des candidats interrogés, par identifiant. Lève
+ * `ItemsPDeReferenceIncoherents` sur tout candidat du run (interrogé ou non) dont la liste contredit
+ * son compte ou n'est pas triée sans doublon, et sur un item listé pour deux candidats interrogés.
  */
-export function itemsPDeReference(run: Run): ReadonlySet<Ulid> {
+export function itemsPDeReference(run: Run): ItemsPDeReference {
   const fautes = run.perimetre.candidats.flatMap(fautesDuCandidat);
-  const reference = new Set<Ulid>();
+  const reference = new Map<Ulid, ReferenceItem>();
   for (const candidat of candidatsInterroges(run.perimetre.candidats)) {
     // Un doublon interne au candidat est déjà une faute de `fautesDuCandidat` : on ne le compte pas deux fois.
-    for (const id of new Set(candidat.items_p_au_gel)) {
+    const propres = new Map(candidat.items_p_au_gel.map((epingle) => [epingle.item_id, epingle]));
+    for (const [id, epingle] of propres) {
       if (reference.has(id)) fautes.push(`item ${id} listé pour deux candidats interrogés`);
-      reference.add(id);
+      reference.set(id, epingle);
     }
   }
   if (fautes.length > 0) throw new ItemsPDeReferenceIncoherents(fautes);
@@ -85,6 +94,15 @@ export interface LecturesEnDouble extends LectureAbsente {
   readonly lectures: readonly Ulid[];
 }
 
+/** Une lecture faite sur une autre version, ou une autre empreinte, de l'item qu'au gel. */
+export interface EpingleDivergente {
+  readonly lecture_id: Ulid;
+  /** L'épingle que porte la lecture (`reference_item`). */
+  readonly lue: ReferenceItem;
+  /** L'épingle de l'item au gel (`perimetre.candidats[].items_p_au_gel`). */
+  readonly au_gel: ReferenceItem;
+}
+
 export interface ConstatLectures {
   /** Un item P de référence qu'un comparateur inclus ne lit pas. */
   readonly manquantes: readonly LectureAbsente[];
@@ -94,6 +112,12 @@ export interface ConstatLectures {
   readonly hors_reference: readonly Ulid[];
   /** Lectures d'un outil qui n'est pas un comparateur inclus du run. */
   readonly hors_perimetre: readonly Ulid[];
+  /** Lectures d'un item de référence à une autre version ou une autre empreinte qu'au gel. */
+  readonly epingles_divergentes: readonly EpingleDivergente[];
+}
+
+function epingle(reference: ReferenceItem): string {
+  return `v${reference.item_version}/${reference.item_empreinte}`;
 }
 
 /** Les lectures du run ne recouvrent pas exactement les items P de référence, une fois par comparateur. */
@@ -102,6 +126,7 @@ export class LecturesComparateurIncoherentes extends Error implements ConstatLec
   readonly en_double: readonly LecturesEnDouble[];
   readonly hors_reference: readonly Ulid[];
   readonly hors_perimetre: readonly Ulid[];
+  readonly epingles_divergentes: readonly EpingleDivergente[];
 
   constructor(constat: ConstatLectures) {
     super(
@@ -110,7 +135,10 @@ export class LecturesComparateurIncoherentes extends Error implements ConstatLec
         `${constat.manquantes.length} manquante(s) [${constat.manquantes.map((m) => `${m.outil_id}/${m.item_id}`).join(", ")}],`,
         `${constat.en_double.length} item(s) lu(s) plusieurs fois [${constat.en_double.map((d) => `${d.outil_id}/${d.item_id}`).join(", ")}],`,
         `${constat.hors_reference.length} lecture(s) hors de la liste [${constat.hors_reference.join(", ")}],`,
-        `${constat.hors_perimetre.length} lecture(s) d'un outil hors des comparateurs inclus [${constat.hors_perimetre.join(", ")}].`,
+        `${constat.hors_perimetre.length} lecture(s) d'un outil hors des comparateurs inclus [${constat.hors_perimetre.join(", ")}],`,
+        `${constat.epingles_divergentes.length} lecture(s) d'une autre version de l'item qu'au gel [${constat.epingles_divergentes
+          .map((d) => `${d.lecture_id} : ${d.lue.item_id} lu en ${epingle(d.lue)}, ${epingle(d.au_gel)} au gel`)
+          .join(", ")}].`,
       ].join(" "),
     );
     this.name = "LecturesComparateurIncoherentes";
@@ -118,6 +146,7 @@ export class LecturesComparateurIncoherentes extends Error implements ConstatLec
     this.en_double = constat.en_double;
     this.hors_reference = constat.hors_reference;
     this.hors_perimetre = constat.hors_perimetre;
+    this.epingles_divergentes = constat.epingles_divergentes;
   }
 }
 
@@ -125,23 +154,42 @@ interface Tri {
   readonly groupes: ReadonlyMap<IdentifiantCourt, LectureComparateur[]>;
   readonly hors_reference: Ulid[];
   readonly hors_perimetre: Ulid[];
+  readonly epingles_divergentes: EpingleDivergente[];
+}
+
+/** Même version et même empreinte : la lecture porte sur le contenu que le run a figé. */
+function memeEpingle(lue: ReferenceItem, au_gel: ReferenceItem): boolean {
+  return lue.item_version === au_gel.item_version && lue.item_empreinte === au_gel.item_empreinte;
+}
+
+/** Range la lecture d'un comparateur inclus : hors de la liste, ou dans son groupe, épingle confrontée. */
+function rangerDansSonGroupe(tri: Tri, groupe: LectureComparateur[], lecture: LectureComparateur, reference: ItemsPDeReference): void {
+  const au_gel = reference.get(lecture.reference_item.item_id);
+  if (au_gel === undefined) {
+    tri.hors_reference.push(lecture.id);
+    return;
+  }
+  if (!memeEpingle(lecture.reference_item, au_gel)) {
+    tri.epingles_divergentes.push({ lecture_id: lecture.id, lue: lecture.reference_item, au_gel });
+  }
+  groupe.push(lecture);
 }
 
 function trier(
   lectures: readonly LectureComparateur[],
-  reference: ReadonlySet<Ulid>,
+  reference: ItemsPDeReference,
   comparateurs: readonly IdentifiantCourt[],
 ): Tri {
   const tri: Tri = {
     groupes: new Map(comparateurs.map((outil_id) => [outil_id, []])),
     hors_reference: [],
     hors_perimetre: [],
+    epingles_divergentes: [],
   };
   for (const lecture of lectures) {
     const groupe = tri.groupes.get(lecture.outil_id);
     if (groupe === undefined) tri.hors_perimetre.push(lecture.id);
-    else if (!reference.has(lecture.reference_item.item_id)) tri.hors_reference.push(lecture.id);
-    else groupe.push(lecture);
+    else rangerDansSonGroupe(tri, groupe, lecture, reference);
   }
   return tri;
 }
@@ -173,29 +221,38 @@ function recouvrement(
   return { manquantes, en_double };
 }
 
+function nombreDeFautes(constat: ConstatLectures): number {
+  return (
+    constat.manquantes.length +
+    constat.en_double.length +
+    constat.hors_reference.length +
+    constat.hors_perimetre.length +
+    constat.epingles_divergentes.length
+  );
+}
+
 /**
  * Les lectures du run (contexte déjà filtré), groupées par comparateur inclus, après contrôle
- * qu'elles recouvrent exactement la référence : une lecture par item et par comparateur. Un
- * comparateur sans lecture a un groupe vide, et lève dès que la référence n'est pas vide. Lève
- * `LecturesComparateurIncoherentes` avec tous les fautifs.
+ * qu'elles recouvrent exactement la référence : une lecture par item et par comparateur, chacune à
+ * la version et à l'empreinte de l'item au gel. Un comparateur sans lecture a un groupe vide, et
+ * lève dès que la référence n'est pas vide. Lève `LecturesComparateurIncoherentes` avec tous les
+ * fautifs.
  */
 export function lecturesParComparateur(
   lectures: readonly LectureComparateur[],
-  reference: ReadonlySet<Ulid>,
+  reference: ItemsPDeReference,
   comparateurs: readonly IdentifiantCourt[],
 ): ReadonlyMap<IdentifiantCourt, readonly LectureComparateur[]> {
   const tri = trier(lectures, reference, comparateurs);
-  const ordonnee = [...reference].sort();
+  const ordonnee = [...reference.keys()].sort();
   const recouvrements = [...tri.groupes].map(([outil_id, groupe]) => recouvrement(outil_id, groupe, ordonnee));
   const constat: ConstatLectures = {
     manquantes: recouvrements.flatMap((r) => r.manquantes),
     en_double: recouvrements.flatMap((r) => r.en_double),
     hors_reference: tri.hors_reference,
     hors_perimetre: tri.hors_perimetre,
+    epingles_divergentes: tri.epingles_divergentes,
   };
-  const fautes = constat.manquantes.length + constat.en_double.length;
-  if (fautes + constat.hors_reference.length + constat.hors_perimetre.length > 0) {
-    throw new LecturesComparateurIncoherentes(constat);
-  }
+  if (nombreDeFautes(constat) > 0) throw new LecturesComparateurIncoherentes(constat);
   return tri.groupes;
 }

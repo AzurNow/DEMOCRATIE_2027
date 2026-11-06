@@ -20,19 +20,21 @@
  * (`decisionPanelAuGel`, qui refuse une décision postérieure au gel). Le total est STOCKÉ dans
  * `run.perimetre.candidats[].items_p_verifies` ; `analysis/seuils.ts` lit `sous_seuil`, jamais ce
  * module, et le schéma du run lie les deux dans les deux sens. La liste dont ce total est la
- * longueur est stockée à côté, dans `items_p_au_gel` (`itemsPAuGel`, conformité n° 11).
+ * longueur est stockée à côté, dans `items_p_au_gel` (`referencesPAuGel`, conformité n° 11), chaque
+ * item épinglé à sa version et à son empreinte au gel (DETTE 2026-10-02, constats soldés, n° 2).
  *
  * Même définition, autre usage (décision de l'auteur du 2026-09-29, n° 8) : les items P qu'une
  * contestation pendante tient hors du tirage, en vigueur au gel, quelle que soit leur version de mesure
  * (`itemsPContestesAuGel`), publiés dans `tirage.contestes_au_gel`.
  */
 
+import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { decisionPanelAuGel } from "./contestation.ts";
-import { epingleLaVersionCourante, itemEngendreDesQuestions, mesureDe } from "./engendrement.ts";
+import { epingleLaVersionCourante, itemEngendreDesQuestions, mesureDe, referenceDe } from "./engendrement.ts";
 import { placeAuGel } from "./place-au-gel.ts";
 import { estEnVigueur } from "./reponse-attendue.ts";
 import { itemsAuxPositionsIncompatibles, positionsIncompatiblesAuGel } from "./tirabilite.ts";
-import type { Item, Mesure } from "./types.ts";
+import type { Item, Mesure, ReferenceItem } from "./types.ts";
 
 function estItemPDuCandidat(item: Item, candidat_id: string): boolean {
   return item.type === "P" && item.candidat_id === candidat_id;
@@ -69,17 +71,43 @@ function admisAuGelHorsContestation(item: Item, date_gel: string, referentiel: R
 }
 
 /**
- * Les identifiants, triés, des items P de ce candidat qui comptent au gel. Tous les items sont
- * évalués. Décision de l'auteur du 2026-10-02 (conformité n° 11, texte à écrire au §8 en 0.15) :
- * cette liste est aussi celle des « items P de référence » des comparateurs, figée dans
- * `run.perimetre.candidats[].items_p_au_gel`. Deux items comptés de même identifiant lèvent : la
- * liste ne se dédoublonne pas en silence.
+ * Les items P de ce candidat qui comptent au gel, chacun épinglé à sa version et à son empreinte
+ * (`engendrement.ts:referenceDe`), triés par identifiant. Tous les items sont évalués. Décision de
+ * l'auteur du 2026-10-02 (conformité n° 11, texte à écrire au §8 en 0.15) : cette liste est aussi
+ * celle des « items P de référence » des comparateurs, figée dans
+ * `run.perimetre.candidats[].items_p_au_gel` ; l'épingle refuse une lecture de comparateur faite sur
+ * une autre version de l'item (`analysis/reference-comparateurs.ts`, DETTE 2026-10-02, constats
+ * soldés, n° 2). Deux items comptés de même identifiant lèvent : la liste ne se dédoublonne pas en
+ * silence.
  *
  * Protocole 0.32 (§4, D74 (16)) : les items que le tirage exclut pour des positions incompatibles en
  * sont retirés. `interroges` : les candidats interrogés au run, ceux que la détection examine (§5,
  * D74 (14)) ; l'item d'un candidat non interrogé n'est exclu du tirage pour aucune incompatibilité,
  * il compte donc s'il remplit le reste de la règle.
  */
+export function referencesPAuGel(
+  items: readonly Item[],
+  candidat_id: string,
+  date_gel: string,
+  mesures: readonly Mesure[],
+  interroges: ReadonlySet<string>,
+): readonly ReferenceItem[] {
+  const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
+  const comptes = items.filter((item) => itemPCompteAuGel(item, candidat_id, date_gel, referentiel));
+  const conflits = positionsIncompatiblesAuGel(items, date_gel, interroges, referentiel);
+  const incompatibles = new Set(itemsAuxPositionsIncompatibles(conflits, candidat_id));
+  const references = comptes
+    .filter((item) => !incompatibles.has(item.id))
+    .map(referenceDe)
+    .sort((a, b) => comparerChaines(a.item_id, b.item_id));
+  const doublon = references.find((reference, rang) => references[rang + 1]?.item_id === reference.item_id);
+  if (doublon !== undefined) {
+    throw new Error(`Item ${doublon.item_id} compté deux fois au gel pour ${candidat_id} : identifiant en double dans les items lus.`);
+  }
+  return references;
+}
+
+/** Les identifiants, triés, des items P de ce candidat qui comptent au gel : ceux de `referencesPAuGel`, seule définition. */
 export function itemsPAuGel(
   items: readonly Item[],
   candidat_id: string,
@@ -87,19 +115,7 @@ export function itemsPAuGel(
   mesures: readonly Mesure[],
   interroges: ReadonlySet<string>,
 ): readonly string[] {
-  const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
-  const comptes = items.filter((item) => itemPCompteAuGel(item, candidat_id, date_gel, referentiel));
-  const conflits = positionsIncompatiblesAuGel(items, date_gel, interroges, referentiel);
-  const incompatibles = new Set(itemsAuxPositionsIncompatibles(conflits, candidat_id));
-  const ids = comptes
-    .filter((item) => !incompatibles.has(item.id))
-    .map((item) => item.id)
-    .sort();
-  const doublon = ids.find((id, rang) => ids[rang + 1] === id);
-  if (doublon !== undefined) {
-    throw new Error(`Item ${doublon} compté deux fois au gel pour ${candidat_id} : identifiant en double dans les items lus.`);
-  }
-  return ids;
+  return referencesPAuGel(items, candidat_id, date_gel, mesures, interroges).map((reference) => reference.item_id);
 }
 
 /** Le nombre d'items P de ce candidat qui comptent au gel : la longueur de `itemsPAuGel`, seule définition. */
