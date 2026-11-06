@@ -192,10 +192,16 @@ describe("D75 (6) : un comparateur du même éditeur qu'un outil du dérangement
     expect(derangementOutilsOuAbsence([ALPHA, BETA], [ALPHA, BETA, comparateur], graine(1), ["comparateur-alpha"])).toMatchObject({ statut: "tire" });
   });
 
-  it("D75 (6) : deux comparateurs du même éditeur, sans outil du dérangement qui le porte : le §7 n'en dit rien, refus nommé inchangé", () => {
+  it("D86 : deux comparateurs du même éditeur, sans outil du dérangement qui le porte : ni absence ni refus, le dérangement est celui du périmètre sans ce doublon", () => {
     const comparateur = { ...COMPARATEUR_ALPHA_BIS, editeur: "Éditeur Commun" };
     const autre = { ...COMPARATEUR_ALPHA, editeur: "Éditeur Commun" };
-    expect(() => derangementOutilsOuAbsence([ALPHA, BETA], [ALPHA, BETA, comparateur, autre], graine(1), ["comparateur-alpha", "comparateur-alpha-bis"])).toThrow(FormesOutilsAmbigues);
+    const perimetre = [ALPHA, BETA, comparateur, autre];
+    const comparateurs = ["comparateur-alpha", "comparateur-alpha-bis"];
+    const issue = derangementOutilsOuAbsence([ALPHA, BETA], perimetre, graine(1), comparateurs);
+    expect(issue).toEqual({ statut: "tire", derangement: tirerDerangementOutils([ALPHA, BETA], perimetre, graine(1)) });
+    if (issue.statut !== "tire") throw new Error(`dérangement attendu, reçu ${issue.motif}`);
+    expect(issue.derangement.paires).toEqual(tirerDerangementOutils([ALPHA, BETA], [ALPHA, BETA, comparateur], graine(1)).paires);
+    expect(derangementOutilsOuAbsence([BETA, ALPHA], [...perimetre].reverse(), graine(1), [...comparateurs].reverse())).toEqual(issue);
   });
 });
 

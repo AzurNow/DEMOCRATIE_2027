@@ -65,6 +65,19 @@ async function preparer(sortie: string = nouvelleSortie()): Promise<RunSimulePre
 }
 
 /**
+ * D86 : ajoute à l'instantané du gel un second comparateur, du même éditeur que comparateur-gamma
+ * (« Association simulée »), qu'aucun outil permuté ne porte.
+ */
+function ajouterComparateurJumeau(repertoire_run: string): void {
+  const disposition = dispositionRunNote(repertoire_run);
+  const run = JSON.parse(readFileSync(disposition.run_json, "utf8")) as Objet & { perimetre: { outils: (OutilBrut & Objet)[] } };
+  const gamma = run.perimetre.outils.find((outil) => outil.outil_id === "comparateur-gamma");
+  if (gamma === undefined) throw new Error("comparateur-gamma attendu à l'instantané du gel");
+  const jumeau = { ...gamma, outil_id: "comparateur-epsilon", libelle: "Comparateur Epsilon (simulé)" };
+  ecrireJson(disposition.run_json, { ...run, perimetre: { ...run.perimetre, outils: [...run.perimetre.outils, jumeau] } });
+}
+
+/**
  * Deux sorties qui portent le même run simulé, interrogé une fois : l'interrogation simulée dépend de
  * l'heure (réponses lentes), pas la notation (comme `chaine.test.ts`, cas 1).
  */
@@ -283,6 +296,24 @@ describe("D90 : le contrefactuel d'outil joué par la chaîne", () => {
     expect(copies(second)).toEqual(copies(premier));
     const notations = (prepare: RunSimulePrepare): readonly Objet[] => sousContexteOutil(dispositionRunNote(prepare.repertoire_run).notations);
     expect(notations(second)).toEqual(notations(premier));
+  });
+
+  it("D86 : deux comparateurs du même éditeur, qu'aucun outil permuté ne porte ⇒ test joué, bloc, copies et notations octet pour octet ceux du run sans ce doublon", async () => {
+    const [premiere, seconde] = await deuxCopies();
+    const sans_doublon = await preparer(premiere);
+    const avec_doublon = await preparer(seconde);
+    ajouterComparateurJumeau(avec_doublon.repertoire_run);
+    const bloc = termine(await noter(sans_doublon));
+    expect(bloc.taille).toBeGreaterThan(0);
+    expect(termine(await noter(avec_doublon))).toEqual(bloc);
+    const octets = (prepare: RunSimulePrepare, dossier: "reponses_contrefactuelles" | "notations"): ReadonlyMap<string, string> => {
+      const tous = contenus(dispositionRunNote(prepare.repertoire_run)[dossier]);
+      return new Map([...tous].filter(([, texte]) => texte.includes('"contrefactuel_outil"')));
+    };
+    for (const dossier of ["reponses_contrefactuelles", "notations"] as const) {
+      expect(octets(sans_doublon, dossier).size).toBe(dossier === "notations" ? 2 * bloc.taille : bloc.taille);
+      expect(octets(avec_doublon, dossier)).toEqual(octets(sans_doublon, dossier));
+    }
   });
 
   it("relancé : reprise, rien n'est réécrit ni redemandé ; le bloc est déjà inscrit", async () => {

@@ -22,11 +22,15 @@
  * assistants du run » (§7, 0.27) : `outilsDuDerangement` les lit au périmètre du gel, et l'appelant
  * les passe.
  *
- * **Formes.** Le libellé et l'éditeur de chaque outil du périmètre sont non blancs et deux à deux
- * distincts sur tout le périmètre, y compris entre le libellé et l'éditeur d'un même outil : une
- * forme partagée rendrait le remplaçant ambigu (libellé ou éditeur de l'image ? image de quel
- * outil ?). Elle est refusée (`FormesOutilsAmbigues`), jamais départagée. Identifiants en double :
- * erreur.
+ * **Formes.** Le libellé et l'éditeur de chaque outil du périmètre sont non blancs. Une forme que
+ * porte un outil permuté n'est portée qu'une fois sur tout le périmètre, y compris entre le libellé
+ * et l'éditeur de cet outil : partagée, elle rendrait le remplaçant ambigu (libellé ou éditeur de
+ * l'image ? image de quel outil ?). Elle est refusée (`FormesOutilsAmbigues`), jamais départagée.
+ * Une forme qu'aucun outil permuté ne porte (deux comparateurs du même éditeur, par exemple) est
+ * cherchée, jamais remplacée : partagée, elle n'a pas de remplaçant à départager et n'est pas
+ * refusée (D86, option 1, décision de l'auteur du 2026-11-06) ; le texte permuté, l'éligibilité et
+ * les mentions résiduelles sont ceux que donnerait cette forme portée une seule fois. Identifiants
+ * en double : erreur.
  *
  * **Tirage, pour le rejouer ailleurs.** Graine : `run.graines.contrefactuel` (générateur du tirage,
  * `verifierGraine`), clé `CLE_DERANGEMENT_OUTILS` ; texte haché
@@ -50,9 +54,10 @@
  * lit pas les familles. Restent des refus nommés, parce qu'ils sont des incohérences et non les cas
  * que le §7 prévoit : graine non conforme, outil permuté hors du périmètre ou déclaré autrement,
  * comparateur hors du périmètre, permuté ou en double, identifiant en double, forme blanche, et
- * toute autre forme partagée (un outil hors dérangement qui n'est pas un comparateur et porte
- * l'éditeur d'un outil permuté, deux comparateurs d'un éditeur qu'aucun outil du dérangement ne
- * porte, un libellé égal à un éditeur : le §7 ne les règle pas).
+ * toute autre forme partagée que porte un outil permuté (un outil hors dérangement qui n'est pas un
+ * comparateur et porte l'éditeur d'un outil permuté, D85 ; un libellé d'outil permuté égal à un
+ * éditeur, ou l'inverse : le §7 ne les règle pas). Une forme partagée qu'aucun outil permuté ne
+ * porte n'est pas refusée (D86).
  * `tirerDerangementOutils` garde ses préconditions et n'est appelée que sur un dérangement défini.
  */
 
@@ -206,7 +211,7 @@ export function derangementOutilsOuAbsence(
 }
 
 export function tirerDerangementOutils(permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[], graine: GraineTirage): DerangementOutils {
-  verifierOutils(perimetre);
+  verifierOutils(permutes, perimetre);
   exigerDansLePerimetre(permutes, perimetre);
   if (permutes.length < MINIMUM_OUTILS_DERANGEMENT) throw new DerangementOutilsImpossible(permutes.length);
   verifierGraine(graine, "du dérangement des outils");
@@ -224,13 +229,19 @@ export function correspondancesOutils(derangement: DerangementOutils): Readonly<
   return Object.fromEntries(derangement.paires.map((paire) => [paire.source.outil_id, paire.image.outil_id]));
 }
 
-/** Libellés et éditeurs non blancs, deux à deux distincts sur tout le périmètre ; identifiants uniques. */
-export function verifierOutils(perimetre: readonly OutilNomme[]): void {
+/**
+ * Identifiants uniques, libellés et éditeurs non blancs sur tout le périmètre ; une forme que porte
+ * un outil permuté n'y est portée qu'une fois. Une forme qu'aucun outil permuté ne porte peut être
+ * partagée : elle est cherchée, jamais remplacée (D86).
+ */
+export function verifierOutils(permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[]): void {
   verifierIdentifiants(perimetre);
-  const formes = new Map<string, string>();
-  for (const outil of perimetre) {
-    enregistrerForme(formes, outil.libelle, `libellé de ${outil.outil_id}`);
-    enregistrerForme(formes, outil.editeur, `éditeur de ${outil.outil_id}`);
+  perimetre.forEach(exigerFormesNonBlanches);
+  const ids = new Set(permutes.map((outil) => outil.outil_id));
+  for (const [forme, porteurs] of porteursParForme(perimetre)) {
+    if (porteurs.length > 1 && porteurs.some((porteur) => ids.has(porteur.outil_id))) {
+      throw new FormesOutilsAmbigues(`la forme « ${forme} » est le ${porteurs.map((porteur) => porteur.role).join(" et le ")}, dont un outil permuté : son remplacement serait ambigu.`);
+    }
   }
 }
 
@@ -246,7 +257,7 @@ export function permuterNomsOutils(texte: string, derangement: DerangementOutils
  * n'est jamais éligible ; une `ReponseEcrite` est, par son type, une réponse du run.
  */
 export function estEligibleOutils(reponse: ReponseEcrite, permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[]): boolean {
-  verifierOutils(perimetre);
+  verifierOutils(permutes, perimetre);
   exigerDansLePerimetre(permutes, perimetre);
   if (reponse.statut_reponse !== "obtenue" || reponse.normalise.refus_api) return false;
   return nommeUnOutilPermute(reponse.normalise.texte, permutes, perimetre);
@@ -259,7 +270,7 @@ export function estEligibleOutils(reponse: ReponseEcrite, permutes: readonly Out
  * l'appelant.
  */
 export function texteNommeUnOutilPermute(texte: string, permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[]): boolean {
-  verifierOutils(perimetre);
+  verifierOutils(permutes, perimetre);
   exigerDansLePerimetre(permutes, perimetre);
   return nommeUnOutilPermute(texte, permutes, perimetre);
 }
@@ -306,7 +317,7 @@ function exigerNonBlanche(forme: string, porteur: string): void {
 /**
  * Les éditeurs d'un outil permuté que portent au moins deux outils, permutés ou comparateurs, triés
  * par éditeur, leurs outils par `outil_id`. Un éditeur que ne portent que des comparateurs n'en est
- * pas : le §7 ne le règle pas (refus de `verifierOutils` au tirage).
+ * pas : ses formes sont cherchées sans être remplacées, ni absence ni refus (D86).
  */
 function editeursPartages(permutes: readonly OutilNomme[], comparateurs: readonly OutilNomme[]): readonly EditeurPartage[] {
   const editeurs_permutes = new Set(permutes.map((outil) => outil.editeur));
@@ -345,11 +356,26 @@ function absence(motif: MotifAbsenceContrefactuelOutils, outils: number, editeur
   return { statut: "indefini", motif, outils, editeurs_partages };
 }
 
-function enregistrerForme(formes: Map<string, string>, forme: string, porteur: string): void {
-  exigerNonBlanche(forme, porteur);
-  const deja = formes.get(forme);
-  if (deja !== undefined) throw new FormesOutilsAmbigues(`la forme « ${forme} » est le ${deja} et le ${porteur} : son remplacement serait ambigu.`);
-  formes.set(forme, porteur);
+/** Qui porte une forme : l'outil, et à quel titre (« libellé de alpha », « éditeur de beta »). */
+interface PorteurDeForme {
+  readonly outil_id: string;
+  readonly role: string;
+}
+
+/** Chaque forme du périmètre et ses porteurs, dans l'ordre du périmètre, libellé avant éditeur. */
+function porteursParForme(perimetre: readonly OutilNomme[]): ReadonlyMap<string, readonly PorteurDeForme[]> {
+  const parForme = new Map<string, PorteurDeForme[]>();
+  for (const outil of perimetre) {
+    ajouterPorteur(parForme, outil.libelle, { outil_id: outil.outil_id, role: `libellé de ${outil.outil_id}` });
+    ajouterPorteur(parForme, outil.editeur, { outil_id: outil.outil_id, role: `éditeur de ${outil.outil_id}` });
+  }
+  return parForme;
+}
+
+function ajouterPorteur(parForme: Map<string, PorteurDeForme[]>, forme: string, porteur: PorteurDeForme): void {
+  const porteurs = parForme.get(forme);
+  if (porteurs === undefined) parForme.set(forme, [porteur]);
+  else porteurs.push(porteur);
 }
 
 function exigerDansLePerimetre(permutes: readonly OutilNomme[], perimetre: readonly OutilNomme[]): void {
