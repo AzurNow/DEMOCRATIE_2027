@@ -11,9 +11,9 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ## 0. Fusions en attente
 
-- [ ] (2026-11-06) Trancher **D94**, **D95**, **D96** (jeu d'or : report du kappa, motif d'un juge
-      retiré au pilote, empreinte) et **D97** (clés de graine à écrire aux §7 et §8 ; la PR brouillon
-      **#359** reste rouge jusqu'à l'amendement).
+- [ ] (2026-11-06) **Écrire la 0.35** (texte ci-dessous, section 1, « Protocole ») : D81, D85, D88,
+      D94, D95 et D97 sont tranchées mais l'agent n'écrit pas dans `docs/PROTOCOLE.md`. La PR
+      brouillon **#359** passe au vert après l'amendement ; le code de D85, D94 et D95 attend aussi.
 - [ ] (2026-11-06) Relire le texte nouveau du site (phrases-clés, « En bref », page `/exemple/`) et
       le vérifier sur un vrai téléphone et une vraie tablette avant tout déploiement.
 - [ ] (2026-11-05) Trancher dans `docs/feuille-de-route.json` les décisions en attente : **D81**
@@ -59,6 +59,45 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ### Protocole (`docs/PROTOCOLE.md`)
 
+- [ ] **0.35 à écrire par l'auteur** (décisions du 2026-11-06, option recommandée de chacune). Dix
+      remplacements exacts, chacun unique dans le fichier (vérifié le 2026-11-06 sur la 0.34) :
+      1. En-tête : « version 0.34 du protocole » → « version 0.35 du protocole ».
+      2. Révisions, avant la ligne de la 0.34, ajouter : « - 0.35, 2026-11-06 : décisions de l'auteur
+         du 6 novembre, D81, D85, D88, D94, D95 et D97, prises sur l'option recommandée de chacune ;
+         D82, D83, D86, D91 et D96, tranchées le même jour, ne demandent que du code ou laissent le
+         texte tel qu'il est. Section 6 : divergence sur la citation d'une source ou l'existence d'un
+         lien dans une lecture de comparateur arbitrée comme une divergence sur le motif (D81).
+         Section 7 : contrefactuel d'outil absent quand un outil du périmètre hors du dérangement,
+         comparateur ou non, partage l'éditeur d'un outil du dérangement (D85, D88) ; recopie du
+         kappa juge-humain (D94) ; motif « juge retiré sans calibration » (D95) ; clés de graine de
+         l'échantillon humain, du sous-ensemble contrefactuel et des deux dérangements (D97).
+         Section 8 : métrique `couverture` (D97). »
+      3. §6 (D81) : « s'accordent sur la note mais divergent sur le motif sont arbitrées de même » →
+         « s'accordent sur la note mais divergent sur le motif, sur la citation d'une source ou sur
+         l'existence d'un lien sont arbitrées de même ».
+      4. §7 (D85, D88) : « il en va de même quand un comparateur du périmètre a le même éditeur qu'un
+         outil du dérangement. » → « il en va de même quand un outil du périmètre inscrit au gel, hors
+         du dérangement, comparateur ou non, inclus au run ou non, a le même éditeur qu'un outil du
+         dérangement. »
+      5. §7 (D94), après « porte la mention de ce changement. » : « Le kappa juge-humain mesuré sur le
+         jeu d'or est recopié dans chaque run qui suit et que le juge note, depuis le jeu d'or de sa
+         dernière mesure, tant que son modèle et ses réglages inscrits au gel sont ceux de cette
+         mesure ; la recopie est refusée pour un juge dont le modèle ou les réglages diffèrent, qui
+         doit d'abord être mesuré à nouveau. »
+      6. §7 (D95), après « Un kappa du jeu d'or qui ne porte sur aucune réponse comparable est publié
+         absent, avec ce motif. » : « Un juge retiré au test contrefactuel du run pilote lui-même n'a
+         aucune calibration antérieure : son kappa juge-humain est publié absent, avec le motif « juge
+         retiré sans calibration ». »
+      7. §7 (D97) : « chacun avec sa graine dérivée de la graine publiée et d'une clé lisible, comme en
+         section 8. » → « …comme en section 8 : la clé « echantillon_humain » pour l'échantillon humain
+         et la clé « contrefactuel / noms_candidats / sous_ensemble » pour ce sous-ensemble. »
+      8. §7 (D97) : « un dérangement des candidats interrogés au run, tiré avec sa graine dérivée, » →
+         « …tiré avec sa graine dérivée de la clé « contrefactuel / noms_candidats / derangement », ».
+      9. §7 (D97) : « selon un dérangement des outils du run, qui n'est pas défini sous deux outils. »
+         → « selon un dérangement des outils du run, tiré avec la graine dérivée de la clé
+         « contrefactuel / noms_outils / derangement », qui n'est pas défini sous deux outils. »
+      10. §8 (D97) : « `sourcage_valide`, ou `repartition_drapeaux:<drapeau>` » → « `sourcage_valide`,
+          `couverture` pour la couverture d'un comparateur, ou `repartition_drapeaux:<drapeau>` ».
 - [ ] **Trancher D62** (`docs/feuille-de-route.json`) : vingt et une questions laissées par les lots
       D59 (#230, #232 à #235). Commencer par #233 (3), la fausse absence de `rechercheAbsence`
       (DETTE 2026-11-02, point 2), et #233 (2), le renvoi à la réextraction qu'aucun mécanisme ne

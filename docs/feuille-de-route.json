@@ -1107,7 +1107,7 @@
     },
     {
       "id": "D81",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Le §6 (QR9) ne nomme que le motif comme divergence qui appelle un troisième humain sur une lecture de comparateur, alors que le §7 0.33 (D75 (15)) étend l'arbitrage de l'échantillon à la citation d'une source et à l'existence d'un lien. Le code de D75 (15) applique aux lectures la même règle que l'échantillon (humainsAArbitrer, seule définition). Faut-il écrire cette extension dans le §6 ?",
       "contexte": "Question ouverte du lot D75 (15) (PR du 2026-11-05). Le §6 dit qu'une lecture suit le §7 « comme une réponse de l'échantillon », ce qui couvre déjà le code ; le texte du §6 reste pourtant plus étroit que le §7. Garder une règle « motif seul » pour les lectures ferait deux définitions de l'arbitrage et laisserait le refus sans_note_commune sans issue.",
       "options": [
@@ -1115,11 +1115,13 @@
         "Ne rien écrire : le renvoi du §6 au §7 suffit.",
         "Restreindre les lectures au motif seul (deux définitions dans le code, refus sans_note_commune rétabli)."
       ],
-      "recommandation": "Option 1 : une phrase, et un lecteur du §6 seul n'en tire plus une règle plus étroite que celle qui s'applique."
+      "recommandation": "Option 1 : une phrase, et un lecteur du §6 seul n'en tire plus une règle plus étroite que celle qui s'applique.",
+      "retenu": "Option 1. Texte proposé pour la 0.35 dans docs/TACHES-AUTEUR.md (une phrase au §6) ; aucun code à changer. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D82",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Une saisie de l'application est rendue au juge avec « Réponse tronquée : ABSENT » (charge-juge-v6, D75 (24)). Deux points restent : (1) le corps de prompts/judge-1.0.0.md n'explique pas ce que signifie ABSENT pour la troncature ; (2) l'écran de notation humaine affiche une troncature absente comme « pas d'alerte », c'est-à-dire comme false, alors que le juge lit ABSENT. Faut-il agir ?",
       "contexte": "Questions ouvertes du lot D75 (24), PR #313. L'annexe D (0.33) ne demande que le rendu ABSENT. Le §7 veut qu'un humain reçoive exactement ce que reçoit un juge : sur (2), l'humain reçoit moins (pas de marqueur de canal), pas plus. Toucher au corps du prompt est un amendement au protocole.",
       "options": [
@@ -1127,11 +1129,13 @@
         "(1) ajouter une phrase au corps du prompt (amendement) ; (2) comme l'option 1.",
         "Ne rien changer ni au prompt ni à l'écran."
       ],
-      "recommandation": "Option 1 : le prompt reste inchangé, et l'écran humain suit le juge, ce qui tient la symétrie du §7 sans amendement."
+      "recommandation": "Option 1 : le prompt reste inchangé, et l'écran humain suit le juge, ce qui tient la symétrie du §7 sans amendement.",
+      "retenu": "Option 1 : prompt inchangé ; l'écran humain affiche « troncature : non renseignée (saisie de l'application) ». Code lancé le 2026-11-06. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D83",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "pnpm liens:textes écrit le texte intégral extrait de chaque page citée sous volume/liens/textes/<texte_sha256>.txt, qui part sur Zenodo avec le volume. Le §9 retient les pages citées ; leur texte intégral en est une copie fidèle. Faut-il le sortir du volume comme les pages (D75 (4)) ?",
       "contexte": "Question ouverte du lot D75 (4), PR #315, qui sort les pages de volume/ sans toucher aux textes (hors brief). Les fiches volume/liens/extractions/*.json ne portent qu'empreinte, longueur et extracteur, et peuvent rester publiées.",
       "options": [
@@ -1139,7 +1143,9 @@
         "Publier les textes en jugeant qu'un texte extrait n'est pas « la page », et l'écrire au §9.",
         "Décider au cas par cas selon la licence de la page, ce que le banc ne sait pas établir."
       ],
-      "recommandation": "Option 1 : même raison que pour les pages (droits d'autrui), et l'empreinte publiée suffit à vérifier le texte."
+      "recommandation": "Option 1 : même raison que pour les pages (droits d'autrui), et l'empreinte publiée suffit à vérifier le texte.",
+      "retenu": "Option 1 : textes intégraux des pages citées sortis du volume sous runs/<date>/pages-citees/textes/, fiches d'extraction gardées dans le volume. Code lancé le 2026-11-06. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D84",
@@ -1156,25 +1162,29 @@
     },
     {
       "id": "D85",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Le §7 rend le contrefactuel d'outil absent quand un comparateur du périmètre partage l'éditeur d'un outil permuté (D75 (6)). Un outil hors dérangement qui n'est pas un comparateur (un assistant exclu, par exemple) et partage cet éditeur lève encore FormesOutilsAmbigues et bloque le run, alors que l'ambiguïté de remplacement est la même. Étendre l'absence à tout outil du périmètre hors dérangement ?",
       "contexte": "Question B du lot D75 (2), (6), (7), PR #317. Le texte ne nomme que les comparateurs ; l'étendre est un amendement.",
       "options": [
         "Amender le §7 : « un outil du périmètre hors dérangement » au lieu de « un comparateur », puis étendre le code.",
         "Garder la lecture stricte : un tel cas bloque le run."
       ],
-      "recommandation": "Option 1 : même ambiguïté, même traitement ; un blocage de run pour un cas que le test sait publier absent n'apporte rien."
+      "recommandation": "Option 1 : même ambiguïté, même traitement ; un blocage de run pour un cas que le test sait publier absent n'apporte rien.",
+      "retenu": "Option 1. Texte proposé pour la 0.35 dans docs/TACHES-AUTEUR.md (§7) ; code à faire après l'amendement. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D86",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Deux comparateurs du même éditeur, qu'aucun outil permuté ne porte, lèvent FormesOutilsAmbigues au tirage du contrefactuel d'outil, alors que leurs formes sont seulement cherchées, jamais remplacées. Le §7 n'en dit rien. Relâcher ce refus ?",
       "contexte": "Question C du lot D75 (2), (6), (7), PR #317. Le refus vient de verifierOutils (pipeline/notation/derangement-outils.ts) ; il bloque un run sans que le protocole l'écrive.",
       "options": [
         "Relâcher verifierOutils pour les formes qu'aucun outil permuté ne porte ; aucune mesure ne change.",
         "Garder le refus."
       ],
-      "recommandation": "Option 1 : retire un blocage que le protocole n'écrit pas, sans effet sur aucune mesure."
+      "recommandation": "Option 1 : retire un blocage que le protocole n'écrit pas, sans effet sur aucune mesure.",
+      "retenu": "Option 1 : verifierOutils ne refuse plus les formes qu'aucun outil permuté ne porte. Code lancé le 2026-11-06. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D87",
@@ -1191,14 +1201,16 @@
     },
     {
       "id": "D88",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Le contrefactuel d'outil compte-t-il parmi les « comparateurs du périmètre » (§7) tous les outils de famille comparateur du périmètre inscrit au gel, ou les seuls comparateurs inclus au run ?",
       "contexte": "Question A du lot du gel (#331, D84). Le code suit la lettre du §7 : tous les comparateurs du périmètre, inclus ou non (pipeline/notation/derangement-outils.ts:outilsDuContrefactuel). La différence ne joue qu'avec un comparateur exclu qui partage l'éditeur d'un assistant permuté : absent avec motif dans la lecture retenue, dérangement tiré dans l'autre. Proche de D85.",
       "options": [
         "Tous les comparateurs du périmètre au gel (code actuel, lettre du §7).",
         "Les seuls comparateurs inclus au run (analysis/reference-comparateurs.ts:comparateursDuRun) ; amendement du §7."
       ],
-      "recommandation": "Option 1 : lettre du §7 et lecture prudente ; à trancher avec D85."
+      "recommandation": "Option 1 : lettre du §7 et lecture prudente ; à trancher avec D85.",
+      "retenu": "Option 1 (code actuel, tous les outils du périmètre au gel) ; écrit avec D85 dans le texte proposé pour la 0.35. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D89",
@@ -1228,7 +1240,7 @@
     },
     {
       "id": "D91",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "La chaîne simulée de D80 (#336) passe par une aide de test (tests/aides/humains-simules.ts) pour produire les ~160 notations humaines qu'exige pnpm analyze. Faut-il une commande de production qui joue les humains simulés ?",
       "contexte": "Question (a) du lot D80. Une commande ferait entrer dans le code de production des notations « humaines » fabriquées, sous les mêmes gardes que le juge simulé (run simule: true exigé, sortie sous runs/ refusée). pnpm notation:humaine ne peut pas annoter le run simulé (volume/liens/ non écrit).",
       "options": [
@@ -1236,7 +1248,9 @@
         "Option --humains-simules de pnpm notation:dry (environ une demi-journée).",
         "Commande séparée pnpm humains:simules, mêmes gardes."
       ],
-      "recommandation": "Option 3 si l'auteur veut une chaîne entièrement en commandes, sinon option 1 : c'est une décision métier, elle fait entrer des notations humaines simulées dans le code de production."
+      "recommandation": "Option 3 si l'auteur veut une chaîne entièrement en commandes, sinon option 1 : c'est une décision métier, elle fait entrer des notations humaines simulées dans le code de production.",
+      "retenu": "Option 1 (statu quo) : la recommandation réservait l'option 3 au cas où l'auteur voudrait une chaîne entièrement en commandes, ce qu'il n'a pas demandé ; aucune notation humaine simulée n'entre dans le code de production. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D92",
@@ -1266,7 +1280,7 @@
     },
     {
       "id": "D94",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Comment le kappa juge-humain mesuré au pilote se reporte-t-il dans le run.json des runs mensuels et hebdomadaires qui suivent ?",
       "contexte": "Question Q3 du lot D89. Les exemples valide-01/02/03 du schéma montrent des runs non pilotes porteurs du kappa ; le §7 dit qu'un juge est mesuré « avant son premier run », sans dire comment la mesure est recopiée, comment vérifier que c'est le même juge (modèle, réglages, absents de run.json), ni ce que devient un juge retiré qui « garde sa calibration antérieure ». pnpm kappa:jeu-or refuse aujourd'hui tout run non pilote.",
       "options": [
@@ -1274,11 +1288,13 @@
         "Chaque run recalcule sur son propre jeu d'or (coût humain à chaque run) ; amendement du §7.",
         "Le kappa n'est publié qu'au pilote, les runs suivants y renvoient ; amendement du schéma et du §7."
       ],
-      "recommandation": "Option 1 : lecture la plus proche de « avant son premier run », sans notation humaine de plus ; décision métier qui modifie le §7."
+      "recommandation": "Option 1 : lecture la plus proche de « avant son premier run », sans notation humaine de plus ; décision métier qui modifie le §7.",
+      "retenu": "Option 1 : recopie depuis le jeu d'or de la dernière mesure avec contrôle d'identité du juge (modèle et réglages inscrits au gel). Texte proposé pour la 0.35 dans docs/TACHES-AUTEUR.md (§7) ; code à faire après l'amendement. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D95",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Un juge retiré au pilote lui-même n'a aucune calibration antérieure : quel motif publier pour son kappa juge-humain ?",
       "contexte": "Question Q4 du lot D89. Le schéma exige un kappa ou un motif pour chaque juge d'un run publié ; aucun motif du §7 ne couvre « juge retiré sans calibration ». Ne joue que si le pilote est publié.",
       "options": [
@@ -1286,22 +1302,26 @@
         "Un pilote avec juge retiré n'est jamais publié : il est rejoué.",
         "Le juge retiré disparaît des juges publiés du pilote."
       ],
-      "recommandation": "Option 1 : publication intégrale, l'absence de mesure reste visible et nommée ; décision métier qui modifie le §7."
+      "recommandation": "Option 1 : publication intégrale, l'absence de mesure reste visible et nommée ; décision métier qui modifie le §7.",
+      "retenu": "Option 1 : motif juge_retire_sans_calibration. Texte proposé pour la 0.35 dans docs/TACHES-AUTEUR.md (§7) ; schéma et code après l'amendement. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D96",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Les champs du jeu d'or (kappa_juge_humain, son motif, comptes_jeu_or, kappa_paire_juges) restent-ils dans l'empreinte du run.json (§9) ?",
       "contexte": "Question Q5 du lot D89 (DETTE 2026-11-04 après-midi n° 4). Le §9 ne les nomme pas parmi les champs exclus de l'empreinte ; #340 les y garde, et pnpm kappa:jeu-or refuse donc d'écrire après pnpm analyze.",
       "options": [
         "Les garder dans l'empreinte (code actuel, lettre du §9) : le kappa s'inscrit avant l'analyse.",
         "Les sortir de l'empreinte comme les champs du go/no-go ; amendement du §9."
       ],
-      "recommandation": "Option 1 : lettre du §9 et ordre naturel (calibration avant analyse) ; aucun code à changer."
+      "recommandation": "Option 1 : lettre du §9 et ordre naturel (calibration avant analyse) ; aucun code à changer.",
+      "retenu": "Option 1 : les champs du jeu d'or restent dans l'empreinte (lettre du §9) ; aucun code à changer. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     },
     {
       "id": "D97",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Les clés de graine que le code emploie et que les §7 et §8 n'écrivent pas : faut-il amender le protocole pour les nommer ?",
       "contexte": "Le test bidirectionnel de #359 (brouillon, DETTE 2026-11-02 n° 3) échoue sur deux écarts : (1) le composant `couverture` (`analysis/incertitude.ts:METRIQUE_COUVERTURE`, publié dans graines[]) manque à la liste « La métrique s'écrit … » du §8 ; (2) le §7 ne nomme pas les clés `echantillon_humain`, `contrefactuel / noms_candidats / sous_ensemble`, `contrefactuel / noms_candidats / derangement` et `contrefactuel / noms_outils / derangement` : un tiers ne peut pas refaire ces tirages d'après le texte.",
       "options": [
@@ -1309,7 +1329,9 @@
         "Raccourcir les clés du code en un composant puis les écrire au protocole (change les graines, sans effet tant qu'aucun run n'est publié).",
         "Liste d'écarts tolérés figée dans le test en attendant l'amendement."
       ],
-      "recommandation": "Option 1 : le texte rejoint le code, aucune graine ne bouge, et le test garde ensuite toute dérive."
+      "recommandation": "Option 1 : le texte rejoint le code, aucune graine ne bouge, et le test garde ensuite toute dérive.",
+      "retenu": "Option 1. Texte proposé pour la 0.35 dans docs/TACHES-AUTEUR.md (§7, §8) ; la PR #359 passe au vert une fois l'amendement écrit. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
+      "date_decision": "2026-11-06"
     }
   ],
   "lots": [
