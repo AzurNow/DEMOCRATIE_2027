@@ -41,35 +41,34 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-06 (soir)
+## État au 2026-11-06 (nuit)
 
-- Protocole **0.34**. Le 2026-11-06, fusionnées sur `main` :
-  - matin : #338 à #347 (conformité 0.34, D89, D90, D92 (c), D93, jeu d'or hors de `decider`) ;
-  - page pédagogique du site : #348 à #354 (sections lisibles, cadre mobile, parcours, décors sous
-    le texte, page `/exemple/`, `animation-timeline` qui ne tournait jamais) ;
-  - soir, quatre agents en parallèle sur la dette : #356 (comptes de schémas et de notants dérivés),
-    #357 (sens des imports par transitivité, ordre des chaînes sans locale implicite), #358 (chaque
-    champ de `run.json` figé au gel ou rangé dans un seul groupe, liste hors empreinte figée).
-- **#359 en brouillon, rouge volontairement** : test bidirectionnel des clés de graine (DETTE
-  2026-11-02 n° 3). Il attend **D97** (amender §7 et §8 : `couverture` et quatre clés de tirage). Ne
-  pas l'affaiblir ni le marquer `skip` ; après l'amendement, fusionner `main` dedans et la sortir du
-  brouillon.
-- Décisions en attente de l'auteur : D81 à D86, D88, D91, D94 à D97 (`docs/feuille-de-route.json`).
-- **Le texte nouveau du site attend la relecture de l'auteur avant tout déploiement** ; aucun rendu
-  vérifié sur un vrai appareil (captures Chrome sans tête seulement ; le site local se sert par
-  `python3 -m http.server` sur `site/dist`).
-- Worktree `.claude/worktrees/agent-a0e98d279de57a40f` (`site/habillage`, fusionnée) gardé : fichier
-  non suivi `scratch/maquette-habillage.html`, à supprimer seulement avec l'accord de l'auteur.
-  `site/site/` (cache `.astro` et `node_modules`, non suivi) dans le clone principal : reliquat d'une
-  construction lancée du mauvais répertoire ; il fait échouer `pnpm check` en local (eslint), pas en
-  CI. À supprimer avec l'accord de l'auteur.
+- Protocole **0.34** dans le dépôt. **La 0.35 est tranchée mais pas écrite** : l'auteur a dit « prends
+  les décisions recommandées » ; D81 à D97 sont tranchées dans `docs/feuille-de-route.json` (#361), et
+  les dix remplacements exacts de la 0.35 sont dans `docs/TACHES-AUTEUR.md` (section 1, Protocole).
+  Le classifieur du mode auto refuse à l'agent l'écriture dans `docs/PROTOCOLE.md` (zone d'arrêt de
+  CLAUDE.md) : l'auteur l'écrit, ou autorise l'agent explicitement.
+- Fusionnées le 2026-11-06 : #338 à #358, #360 (clôture), #361 (décisions). Lancées en fusion
+  automatique (CI verte puis `gh pr merge --merge`) : #362 (canal application refusé par les
+  métriques secondaires), #363 (test du partage unique de `pnpm analyze`), #364 (D82, troncature
+  « non renseignée »), #365 (D83, textes des pages citées hors du volume). Vérifier qu'elles sont
+  fusionnées.
+- Encore en cours à l'écriture de cet état, dans des worktrees d'agents (`.claude/worktrees/agent-*`) :
+  lecture de comparateur confrontée à la version de l'item au gel (DETTE 2026-10-02 n° 2) et D86
+  (`verifierOutils` relâché). S'ils ont rendu sans PR : relire leur diff, commiter, PR, fusionner.
+- **#359 en brouillon, rouge volontairement** jusqu'à la 0.35 (D97) ; ensuite fusionner `main` dedans.
+- Après la 0.35 : coder D85 (contrefactuel d'outil absent pour tout outil hors dérangement du même
+  éditeur), D94 (recopie du kappa avec contrôle d'identité du juge), D95 (motif
+  `juge_retire_sans_calibration`, schéma compris).
+- Le texte nouveau du site attend la relecture de l'auteur ; aucun rendu vérifié sur un vrai appareil.
+- `site/site/` (cache `.astro` non suivi) fait échouer `pnpm check` en local, pas en CI : à supprimer
+  avec l'accord de l'auteur. Worktree `agent-a0e98d279de57a40f` gardé (`scratch/maquette-habillage.html`).
 - Rien n'a jamais tourné sur un appel réel. Avant le prochain gel, l'auteur renseigne
   `juges[].outils_de_son_editeur` dans `config/gel.json`.
-- Clôture du 2026-11-06 faite (`docs/DETTE.md`, `LESSONS.md`, D97).
 
 ## Ce qui était en cours
 
-Rien hors de #359 (voir ci-dessus).
+Voir l'État : deux agents, quatre PR en fusion automatique.
 
 ## Prochaines tâches, par priorité
 
