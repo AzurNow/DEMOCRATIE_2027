@@ -201,7 +201,7 @@ friction tant que les lots parallèles qui ajoutent des exemples restent rares.
 
 ## 2026-11-02 — D58 à D61, protocole 0.23 à 0.26 et lots d'analyse, d'extraction, d'interrogation, de notation et de validation (PR #224 à #242 : `analysis/`, `validation/domaine/`, `pipeline/interrogation/`, `pipeline/notation/`, `outils/promote.ts`)
 
-### 1. Les modules d'analyse de D59 et D60 ne sont assemblés par aucun appelant — *haute*
+### ~~1. Les modules d'analyse de D59 et D60 ne sont assemblés par aucun appelant~~ — réglé : `pnpm analyze` calcule le partage une fois (`contexteDuRun`), gardé le 2026-11-06 par #363 (`tests/analysis/analyse-du-run-partage-unique.test.ts`)
 
 `analysis/hypotheses.ts`, `incertitude.ts`, `robustesse-taux.ts`, `ecart-api-application.ts`,
 `correlation-couverture.ts`, `ecart-juge-editeur.ts` et `strate-recente.ts` reçoivent chacun en
@@ -215,7 +215,7 @@ que les chiffres qu'elle doit éprouver. Chaque module reste vert dans ses propr
 **Ce qu'il faut faire.** Dans le lot `pnpm analyze`, calculer le partage une fois et le passer à tous
 les modules, avec un test de bout en bout qui compare les populations. Plan soumis à l'auteur d'abord.
 
-### 2. `rechercheAbsence` ne voit pas une proposition non rattachée à la mesure — *haute*
+### ~~2. `rechercheAbsence` ne voit pas une proposition non rattachée à la mesure~~ — réglé le 2026-11-03 par `refusPromotionAbsence` (`validation/domaine/absence.ts`), appelé par `pnpm promote` (constaté le 2026-11-06)
 
 `validation/domaine/absence.ts` (#233) conclut « rien trouvé » quand aucune proposition de
 l'extraction ne porte sur la mesure. Une proposition encore non rattachée à la mesure (son `mesure_id` en désigne une autre)
@@ -1043,7 +1043,7 @@ deux runs croit voir un en-tête apparaître et un autre disparaître.
 
 ## 2026-10-02 — Constats de la conformité du 2026-09-29 soldés côté code, protocole 0.14 et 0.15 (PR #59 à #70 : `analysis/`, `schema/`, `validation/domaine/`, `validation/serveur/routes.ts`, `pipeline/questions/`, `docs/PROTOCOLE.md`)
 
-### 1. Les métriques secondaires acceptent encore le canal application sans marque exploratoire — *haute*
+### ~~1. Les métriques secondaires acceptent encore le canal application sans marque exploratoire~~ — réglé le 2026-11-06 par #362 (`CanalHorsMetriquesSecondaires`, `analysis/metriques.ts`)
 
 #62 a fermé le canal application aux métriques primaires (`parOutilEtMode` lève, `metriquesApplication`
 marque `exploratoire: true`). `repartitionDrapeaux`, `exactitudeParCle` et ses dérivées (par
