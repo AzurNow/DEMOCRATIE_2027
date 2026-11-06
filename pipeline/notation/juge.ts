@@ -210,7 +210,7 @@ export function versionPromptDe(prompt: PromptDeJuge): string {
 export interface CadreNotationJuge {
   readonly id: Ulid;
   readonly run_id: Ulid;
-  readonly contexte: "run" | "contrefactuel_candidat";
+  readonly contexte: "run" | "contrefactuel_candidat" | "contrefactuel_outil";
   readonly motif_notation: "notation_juge" | "contrefactuel";
   readonly objet_id: Ulid;
   readonly gabarit: Gabarit;
