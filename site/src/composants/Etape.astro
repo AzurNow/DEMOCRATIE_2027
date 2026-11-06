@@ -1,0 +1,61 @@
+---
+/**
+ * Une étape du parcours, en trois niveaux de lecture :
+ * 1. visible d'emblée : numéro, titre, phrase-clé, points-clés, illustration ;
+ * 2. le cas suivi tout au long du parcours, dans un encart « Exemple fictif » ;
+ * 3. replié par défaut (<details> natif, aucun script) : le texte détaillé et le « pourquoi ».
+ * Le renvoi au protocole reste visible. La station du fil reste en tête du <li> (tests/site/fil.test.ts).
+ *
+ * Emplacements : `points` (des <li>), `exemple` (des <p>, jamais de <div> : l'encart est lu par
+ * expression régulière dans les tests), `detail` et `pourquoi` (du texte courant).
+ */
+import FilStation from "./FilStation.astro";
+import Illustration from "./Illustration.astro";
+import Renvoi from "./Renvoi.astro";
+import { ancreEtape, numeroEtape, type NomEtape } from "../lib/etapes.ts";
+
+interface Props {
+  nom: NomEtape;
+  titre: string;
+  /** L'idée de l'étape en une phrase. */
+  cle: string;
+  /** Texte de remplacement de l'illustration. */
+  alt: string;
+  /** Section du protocole qui fixe l'étape. */
+  section: string;
+}
+
+const { nom, titre, cle, alt, section } = Astro.props;
+const numero = numeroEtape(nom);
+const id = ancreEtape(nom);
+---
+
+<li class="etape" id={id}>
+  <FilStation nom={nom} />
+  <Illustration nom={nom} alt={alt} />
+  <div class="etape__texte">
+    <p class="etape__numero">Étape {numero}</p>
+    <h3 class="etape__titre">{titre}</h3>
+    <p class="etape__cle">{cle}</p>
+    <ul class="etape__points">
+      <slot name="points" />
+    </ul>
+    <div class="exemple-fictif etape__exemple">
+      <p class="exemple-fictif__mention">Exemple fictif</p>
+      <slot name="exemple" />
+    </div>
+    <details class="etape__plus">
+      <summary class="etape__bascule">En savoir plus</summary>
+      <div class="etape__deplie">
+        <slot name="detail" />
+      </div>
+    </details>
+    <details class="etape__plus etape__plus--pourquoi">
+      <summary class="etape__bascule">Pourquoi cette étape ?</summary>
+      <div class="etape__deplie">
+        <slot name="pourquoi" />
+      </div>
+    </details>
+    <Renvoi section={section} />
+  </div>
+</li>

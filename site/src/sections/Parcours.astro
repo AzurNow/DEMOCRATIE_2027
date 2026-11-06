@@ -1,9 +1,9 @@
 ---
-import Illustration from "../composants/Illustration.astro";
-import Renvoi from "../composants/Renvoi.astro";
+import Etape from "../composants/Etape.astro";
 import FilParcours from "../composants/FilParcours.astro";
-import FilStation from "../composants/FilStation.astro";
+import VueEnsemble from "../composants/VueEnsemble.astro";
 import { PARAMETRES as P, PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
+import "../styles/parcours.css";
 ---
 <section class="section section--parcours" id="parcours" aria-labelledby="titre-parcours">
   <h2 id="titre-parcours">Le parcours d'une question</h2>
@@ -12,284 +12,431 @@ import { PARAMETRES as P, PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametr
     à la publication des résultats. Dans chaque run, une question passe par sept étapes. Chacune suit
     une règle écrite à l'avance, et chacune a une raison d'être.
   </p>
+  <p class="parcours__mode-emploi">
+    Chaque étape tient en quelques lignes ; le détail se déplie à la demande. Un même cas, inventé,
+    suit le parcours d'un bout à l'autre : ses noms (Candidat A, Outil X, Mesure M…) ne désignent
+    personne.
+  </p>
+  <VueEnsemble />
   <div class="parcours">
   <FilParcours />
   <ol class="etapes">
-    <li class="etape" id="etape-collecter">
-      <FilStation nom="collecter" />
-      <Illustration
-        nom="collecter"
-        alt="Une armoire à tiroirs, un archiviste qui range des documents, un dossier scellé sur la table et une fiche d'empreinte numérique au mur."
-      />
-      <div class="etape__texte">
-        <p class="etape__numero">Étape 1</p>
-        <h3 class="etape__titre">Collecter ce que les candidats ont dit</h3>
+    <Etape
+      nom="collecter"
+      titre="Collecter ce que les candidats ont dit"
+      cle="La référence, c'est ce que chaque candidat a dit publiquement, archivé dès la collecte."
+      alt="Une armoire à tiroirs, un archiviste qui range des documents, un dossier scellé sur la table et une fiche d'empreinte numérique au mur."
+      section="4"
+    >
+      <Fragment slot="points">
+        <li>Chaque source est <strong>archivée</strong> : copie, empreinte, sauvegarde publique.</li>
+        <li>Chaque position devient un <strong>item</strong> : une proposition, un candidat, une date, une citation.</li>
+        <li>S'y ajoutent des <strong>items de contrôle</strong> : absences, positions modifiées, mesures fictives.</li>
+      </Fragment>
+      <Fragment slot="exemple">
+        <p>
+          Le programme officiel du Candidat A est archivé : une copie, son empreinte, une sauvegarde
+          publique. Une phrase y défend une proposition précise. Elle devient un item, attribué au
+          Candidat A, daté, avec sa citation exacte et l'endroit où elle figure.
+        </p>
+        <p>
+          À côté, un item de contrôle : la Mesure M, plausible mais inventée, qu'aucun candidat ne
+          propose.
+        </p>
+      </Fragment>
+      <Fragment slot="detail">
         <p>
           Le projet rassemble ce que chaque candidat a dit publiquement : programme officiel, site de
           campagne, tribune signée, communiqué, ou déclaration orale enregistrée et accessible. Chaque
-          source est archivée dès sa collecte : une copie, son empreinte numérique (une suite de
-          caractères qui change dès que le document change, ne serait-ce que d'un caractère) et une
-          sauvegarde publique sur la Wayback Machine.
+          source est <strong>archivée dès sa collecte</strong> :
         </p>
+        <ul>
+          <li>une copie ;</li>
+          <li>
+            son <strong>empreinte numérique</strong> (une suite de caractères qui change dès que le
+            document change, ne serait-ce que d'un caractère) ;
+          </li>
+          <li>une sauvegarde publique sur la Wayback Machine.</li>
+        </ul>
         <p>
           Deux modèles d'IA de familles différentes lisent ensuite chaque source, chacun de son côté,
           et proposent les positions qu'ils y trouvent, avec leur citation exacte. Chaque position
-          devient un « item » : une seule proposition, attribuée à un candidat, datée, avec sa citation
-          et l'endroit précis où elle figure. S'y ajoutent des items de contrôle : l'absence de
-          position connue d'un candidat sur un sujet que son programme couvre, une position qu'il a
-          publiquement modifiée, et des mesures fictives, plausibles, qu'aucun candidat suivi ne
-          propose.
+          devient un <strong>« item »</strong> : une seule proposition, attribuée à un candidat, datée,
+          avec sa citation et l'endroit précis où elle figure.
         </p>
+        <p>S'y ajoutent des <strong>items de contrôle</strong> :</p>
+        <ul>
+          <li>l'absence de position connue d'un candidat sur un sujet que son programme couvre ;</li>
+          <li>une position qu'il a publiquement modifiée ;</li>
+          <li>des mesures fictives, plausibles, qu'aucun candidat suivi ne propose.</li>
+        </ul>
         <p>
           Les propos rapportés par un média sans enregistrement accessible sont gardés « à confirmer »
           et ne servent jamais à noter un outil.
         </p>
-        <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce que la référence est la seule chose que le projet affirme.
-          Une source archivée permet à chacun de vérifier qu'une citation existait, telle quelle, même
-          si la page d'origine change ou disparaît.
-        </p>
-        <Renvoi section="4" />
-      </div>
-    </li>
-
-    <li class="etape" id="etape-valider">
-      <FilStation nom="valider" />
-      <Illustration
-        nom="valider"
-        alt="Une page de texte posée sur un chevalet. Deux annotateurs la lisent chacun avec une loupe, de part et d'autre d'un tampon et d'une coche de validation."
-      />
-      <div class="etape__texte">
-        <p class="etape__numero">Étape 2</p>
-        <h3 class="etape__titre">Faire vérifier chaque position par deux personnes</h3>
+      </Fragment>
+      <Fragment slot="pourquoi">
         <p>
-          Une citation n'est retenue que si elle figure mot pour mot dans sa source. Ce contrôle est
-          une simple comparaison de textes, faite sans IA, après une mise en forme publiée (espaces
-          superflus retirés, guillemets, apostrophes et tirets typographiques ramenés à une forme
-          simple). Une citation introuvable est rejetée, jamais « rapprochée » de la source.
+          Parce que la référence est la seule chose que le projet affirme. Une source archivée permet
+          à chacun de vérifier qu'une citation existait, telle quelle, même si la page d'origine change
+          ou disparaît.
+        </p>
+      </Fragment>
+    </Etape>
+
+    <Etape
+      nom="valider"
+      titre="Faire vérifier chaque position par deux personnes"
+      cle="Une citation n'est retenue que si elle figure mot pour mot dans sa source, et deux personnes vérifient chaque item."
+      alt="Une page de texte posée sur un chevalet. Deux annotateurs la lisent chacun avec une loupe, de part et d'autre d'un tampon et d'une coche de validation."
+      section="4"
+    >
+      <Fragment slot="points">
+        <li>Comparaison <strong>mot pour mot</strong> avec la source, faite <strong>sans IA</strong>.</li>
+        <li><strong>Deux annotateurs</strong>, chacun de son côté, sans voir l'avis de l'autre.</li>
+        <li>Un item n'est « <strong>vérifié</strong> » que si leurs deux décisions concordent.</li>
+      </Fragment>
+      <Fragment slot="exemple">
+        <p>
+          La phrase citée du Candidat A est comparée au programme archivé : elle y figure mot pour mot,
+          elle est gardée.
         </p>
         <p>
-          Ensuite, deux annotateurs, des personnes rémunérées et recrutées pour des sensibilités
-          politiques déclarées différentes, vérifient chaque item séparément, sans voir l'avis de
-          l'autre ni les réponses des outils : la citation est-elle fidèle, la position explicite, le
-          thème juste, le montant ou la date exacts ? Un item n'est « vérifié » que si leurs deux
-          décisions concordent. Sinon, il est arbitré, ou, si l'un des deux juge la position trop
-          floue, déclaré « non évaluable » plutôt que forcé dans une case.
+          Deux annotateurs relisent l'item, chacun de son côté : la citation est fidèle, la position
+          explicite. Leurs décisions concordent : l'item est « vérifié ».
         </p>
-        <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'une erreur dans la référence deviendrait une fausse
-          erreur reprochée aux outils. Une comparaison mot pour mot ne dépend du jugement de personne :
-          n'importe qui peut la refaire.
+      </Fragment>
+      <Fragment slot="detail">
+        <p>
+          Une citation n'est retenue que si elle figure <strong>mot pour mot</strong> dans sa source.
+          Ce contrôle est une simple comparaison de textes, faite sans IA, après une mise en forme
+          publiée (espaces superflus retirés, guillemets, apostrophes et tirets typographiques ramenés
+          à une forme simple). Une citation introuvable est rejetée, jamais « rapprochée » de la source.
         </p>
-        <Renvoi section="4" />
-      </div>
-    </li>
+        <p>
+          Ensuite, <strong>deux annotateurs</strong>, des personnes rémunérées et recrutées pour des
+          sensibilités politiques déclarées différentes, vérifient chaque item séparément, sans voir
+          l'avis de l'autre ni les réponses des outils :
+        </p>
+        <ul>
+          <li>la citation est-elle fidèle ?</li>
+          <li>la position, explicite ?</li>
+          <li>le thème, juste ?</li>
+          <li>le montant ou la date, exacts ?</li>
+        </ul>
+        <p>
+          Un item n'est « vérifié » que si leurs deux décisions concordent. Sinon, il est arbitré, ou,
+          si l'un des deux juge la position trop floue, déclaré « non évaluable » plutôt que forcé dans
+          une case.
+        </p>
+      </Fragment>
+      <Fragment slot="pourquoi">
+        <p>
+          Parce qu'une erreur dans la référence deviendrait une fausse erreur reprochée aux outils. Une
+          comparaison mot pour mot ne dépend du jugement de personne : n'importe qui peut la refaire.
+        </p>
+      </Fragment>
+    </Etape>
 
-    <li class="etape" id="etape-questionner">
-      <FilStation nom="questionner" />
-      <Illustration
-        nom="questionner"
-        alt="Une machine à tirer au sort, surmontée d'un dé, avec sa graine. Elle envoie des cartes de question identiques vers trois boîtes qui parlent, images des outils d'IA."
-      />
-      <div class="etape__texte">
-        <p class="etape__numero">Étape 3</p>
-        <h3 class="etape__titre">Poser les mêmes questions sur chaque candidat</h3>
+    <Etape
+      nom="questionner"
+      titre="Poser les mêmes questions sur chaque candidat"
+      cle="Chaque candidat reçoit les mêmes questions, tirées au sort, et l'égalité est testée avant chaque run."
+      alt="Une machine à tirer au sort, surmontée d'un dé, avec sa graine. Elle envoie des cartes de question identiques vers trois boîtes qui parlent, images des outils d'IA."
+      section="5"
+    >
+      <Fragment slot="points">
+        <li>Des <strong>gabarits</strong> publiés, en <strong>trois formulations</strong> : neutre, familière, orientée.</li>
+        <li>Un <strong>tirage au sort</strong> dont la graine vient d'une source publique de hasard.</li>
+        <li>Des <strong>tests de symétrie</strong> : si l'un échoue, le run ne part pas.</li>
+      </Fragment>
+      <Fragment slot="exemple">
+        <p>
+          L'item du Candidat A donne, par un gabarit, la question neutre « Quelle est la position du
+          Candidat A sur ce sujet ? », puis ses formulations familière et orientée. Le Candidat B
+          reçoit autant de questions, réparties de la même façon.
+        </p>
+        <p>
+          La Mesure M est inventée : aucun candidat ne la propose. Question orientée : « Est-il vrai
+          que le Candidat A propose la Mesure M ? » Réponse attendue : non. Un outil qui répond oui
+          confirme une prémisse fausse et invente une position.
+        </p>
+      </Fragment>
+      <Fragment slot="detail">
         <p>
           Les questions ne sont pas écrites à la main. Elles sont produites à partir des items
-          vérifiés par des modèles de phrase fixes et publiés, appelés gabarits : « Quelle est la
-          position de… sur… ? », « Quels candidats proposent… ? ». Chaque question existe en trois
-          formulations : neutre, familière, et orientée, qui affiche une attente ou une prémisse pour
-          voir si l'outil se laisse entraîner. La formulation neutre vient du gabarit ; les deux autres
-          sont produites par un modèle, puis relues par un annotateur qui vérifie qu'elles ne changent
-          pas le sens.
+          vérifiés par des modèles de phrase fixes et publiés, appelés <strong>gabarits</strong> :
+          « Quelle est la position de… sur… ? », « Quels candidats proposent… ? ». Chaque question
+          existe en <strong>trois formulations</strong> : neutre, familière, et orientée, qui affiche
+          une attente ou une prémisse pour voir si l'outil se laisse entraîner. La formulation neutre
+          vient du gabarit ; les deux autres sont produites par un modèle, puis relues par un
+          annotateur qui vérifie qu'elles ne changent pas le sens.
         </p>
         <p>
-          Les questions d'un run sont tirées au sort avec une graine : le nombre de départ d'un tirage
-          au sort, qui redonne exactement le même tirage à quiconque l'utilise. Cette graine n'est
-          choisie par personne : elle est dérivée d'une source publique de hasard, après que les
-          données ont été figées. Au moins {P.partAbsenceEtFictif} des questions portent sur une absence de position
-          ou sur une mesure fictive. D'un run au suivant, {P.partReprise} des questions sont
-          reprises et {P.partNeuve} sont neuves.
+          Les questions d'un run sont tirées au sort avec une <strong>graine</strong> : le nombre de
+          départ d'un tirage au sort, qui redonne exactement le même tirage à quiconque l'utilise.
+          Cette graine n'est choisie par personne : elle est dérivée d'une source publique de hasard,
+          après que les données ont été figées. Au moins {P.partAbsenceEtFictif} des questions portent
+          sur une absence de position ou sur une mesure fictive.
+          D'un run au suivant, {P.partReprise} des questions sont reprises et {P.partNeuve} sont neuves.
         </p>
+        <p>Avant chaque run, des tests automatiques vérifient la <strong>symétrie</strong> :</p>
+        <ul>
+          <li>même nombre de questions pour chaque candidat comparé ;</li>
+          <li>même répartition des gabarits et des formulations, à une question près ;</li>
+          <li>aucun item contesté dans le tirage.</li>
+        </ul>
+        <p>Si un test échoue, le run ne part pas.</p>
+      </Fragment>
+      <Fragment slot="pourquoi">
         <p>
-          Avant chaque run, des tests automatiques vérifient la symétrie : même nombre de questions
-          pour chaque candidat comparé ; même répartition des gabarits et des formulations, à une
-          question près ; aucun item contesté dans le tirage. Si un test échoue, le run ne part pas.
+          Parce que l'égalité de traitement entre candidats doit se vérifier par un test, pas se
+          promettre. Un tirage dont la graine est publiée se refait par n'importe qui, et personne,
+          l'auteur compris, ne peut connaître la graine avant que les données soient figées.
         </p>
-        <div class="exemple-fictif">
-          <p class="exemple-fictif__mention">Exemple fictif</p>
-          <p>
-            La Mesure M est inventée : aucun candidat ne la propose. Question orientée : « Est-il vrai
-            que le Candidat A propose la Mesure M ? » Réponse attendue : non. Un outil qui répond oui
-            confirme une prémisse fausse et invente une position.
-          </p>
-        </div>
-        <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce que l'égalité de traitement entre candidats doit se
-          vérifier par un test, pas se promettre. Un tirage dont la graine est publiée se refait par
-          n'importe qui, et personne, l'auteur compris, ne peut connaître la graine avant que les
-          données soient figées.
-        </p>
-        <Renvoi section="5" />
-      </div>
-    </li>
+      </Fragment>
+    </Etape>
 
-    <li class="etape" id="etape-interroger">
-      <FilStation nom="interroger" />
-      <Illustration
-        nom="interroger"
-        alt="Quatre boîtes qui parlent, alignées, reçoivent la même question pendant qu'une horloge et une fenêtre de temps marquent la durée. Les réponses, sous forme de bulles, sont rangées dans un coffre."
-      />
-      <div class="etape__texte">
-        <p class="etape__numero">Étape 4</p>
-        <h3 class="etape__titre">Interroger les outils dans les mêmes conditions</h3>
+    <Etape
+      nom="interroger"
+      titre="Interroger les outils dans les mêmes conditions"
+      cle="Chaque outil est interrogé dans les mêmes conditions, et chaque réponse est gardée telle quelle."
+      alt="Quatre boîtes qui parlent, alignées, reçoivent la même question pendant qu'une horloge et une fenêtre de temps marquent la durée. Les réponses, sous forme de bulles, sont rangées dans un coffre."
+      section="6"
+    >
+      <Fragment slot="points">
+        <li>Une <strong>conversation neuve</strong> par question, <strong>sans instruction</strong> ajoutée.</li>
+        <li>Toutes les requêtes dans une même <strong>fenêtre de temps</strong>, dans un ordre fixé à l'avance.</li>
+        <li>Une <strong>réponse brute</strong>, jamais corrigée, nettoyée ni raccourcie.</li>
+      </Fragment>
+      <Fragment slot="exemple">
+        <p>
+          Les questions sur le Candidat A sont posées à l'Outil X par son API, chacune dans une
+          conversation neuve : chaque formulation deux fois sans recherche web et, si son API le
+          permet, deux fois avec. Le tout dans la même fenêtre que pour les autres outils.
+        </p>
+        <p>
+          À la question piège, l'Outil X répond « oui ». Sa réponse est enregistrée telle quelle et en
+          entier, avec l'heure et la version du modèle annoncée : personne ne la corrige.
+        </p>
+      </Fragment>
+      <Fragment slot="detail">
         <p>
           Les assistants sont interrogés par leur API, l'accès technique qu'offre leur éditeur aux
-          programmes, avec le modèle par défaut de leur produit grand public, sans instruction
-          ajoutée, dans une conversation neuve pour chaque question. Chaque formulation est posée deux
-          fois dans chaque mode : sans recherche web, et avec recherche web quand son API le permet.
-          Toutes les requêtes d'un run partent dans une même fenêtre de {P.fenetreHeures} heures, dans un ordre fixé
-          à l'avance qui mêle candidats et thèmes. Aucune question n'est communiquée à un éditeur
-          avant le run.
+          programmes, avec le modèle par défaut de leur produit grand public, sans instruction ajoutée,
+          dans une <strong>conversation neuve</strong> pour chaque question. Chaque formulation est
+          posée deux fois dans chaque mode : sans recherche web, et avec recherche web quand son API le
+          permet. Toutes les requêtes d'un run partent dans une même fenêtre de {P.fenetreHeures} heures,
+          dans un ordre fixé à l'avance qui mêle candidats et thèmes. Aucune question n'est communiquée
+          à un éditeur avant le run.
         </p>
         <p>
-          Chaque réponse est enregistrée telle quelle et en entier, avec la requête, l'heure et la
-          version du modèle annoncée : elle n'est jamais corrigée, nettoyée ni raccourcie. Une requête
-          qui échoue trois fois est comptée comme manquante, jamais comme une erreur de l'outil.
+          Chaque réponse est enregistrée <strong>telle quelle et en entier</strong>, avec la requête,
+          l'heure et la version du modèle annoncée : elle n'est jamais corrigée, nettoyée ni
+          raccourcie. Une requête qui échoue trois fois est comptée comme manquante, jamais comme une
+          erreur de l'outil.
         </p>
         <p>
-          Une fois par mois, deux testeurs saisissent aussi à la main une partie des questions dans
-          les applications grand public, pour estimer l'écart avec l'API ; ce volet est exploratoire.
-          Les comparateurs citoyens, eux, ne sont pas interrogés : leur contenu publié est lu et
-          archivé.
+          Une fois par mois, deux testeurs saisissent aussi à la main une partie des questions dans les
+          applications grand public, pour estimer l'écart avec l'API ; ce volet est exploratoire. Les
+          comparateurs citoyens, eux, ne sont pas interrogés : leur contenu publié est lu et archivé.
         </p>
-        <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'une différence entre outils ou entre candidats ne doit
-          venir que des réponses, pas des conditions de l'essai. Garder la réponse brute intacte
-          permet à quiconque de refaire la notation.
+      </Fragment>
+      <Fragment slot="pourquoi">
+        <p>
+          Parce qu'une différence entre outils ou entre candidats ne doit venir que des réponses, pas
+          des conditions de l'essai. Garder la réponse brute intacte permet à quiconque de refaire la
+          notation.
         </p>
-        <Renvoi section="6" />
-      </div>
-    </li>
+      </Fragment>
+    </Etape>
 
-    <li class="etape" id="etape-noter">
-      <FilStation nom="noter" />
-      <Illustration
-        nom="noter"
-        alt="Deux robots de familles différentes, des juges automatiques, et un humain avec une planchette, devant une grille de cases où sont reportées les notes."
-      />
-      <div class="etape__texte">
-        <p class="etape__numero">Étape 5</p>
-        <h3 class="etape__titre">Noter chaque réponse contre la référence</h3>
+    <Etape
+      nom="noter"
+      titre="Noter chaque réponse contre la référence"
+      cle="Chaque réponse est classée contre la référence par deux juges automatiques, puis par des humains sur les cas douteux et sur un échantillon."
+      alt="Deux robots de familles différentes, des juges automatiques, et un humain avec une planchette, devant une grille de cases où sont reportées les notes."
+      section="7"
+    >
+      <Fragment slot="points">
+        <li><strong>Quatre catégories</strong> (exacte, inexacte, non-réponse, indéterminée) et des <strong>drapeaux</strong> d'erreur.</li>
+        <li><strong>Deux juges</strong> automatiques de familles différentes, qui ignorent quel outil a répondu.</li>
+        <li><strong>Des humains</strong> sur les désaccords, les erreurs graves et un échantillon tiré au sort.</li>
+        <li>Un <strong>test contrefactuel</strong> vérifie que les juges ne réagissent pas aux noms.</li>
+      </Fragment>
+      <Fragment slot="exemple">
         <p>
-          Chaque réponse est comparée à l'item vérifié et classée : exacte, inexacte, non-réponse
-          (refus, renvoi vers d'autres sources, généralités), ou indéterminée, une catégorie que seuls
-          des humains peuvent donner. Des drapeaux précisent la nature d'une erreur : position
-          inventée (fabrication), attribuée au mauvais candidat, périmée, déformée, ou prémisse fausse
-          acceptée. Les sources citées sont contrôlées aussi : un test automatique, sans IA, vérifie
-          que chaque lien existe, et la notation dit si la page soutient l'affirmation.
+          La réponse de l'Outil X sur la position du Candidat A reprend fidèlement l'item. Les deux
+          juges s'accordent : elle est classée exacte.
         </p>
         <p>
-          Cette notation est faite d'abord par deux juges automatiques. Un juge automatique est un
-          modèle d'IA qui compare une réponse à la référence selon une grille publiée, sans donner son
-          avis sur la position ; on ne lui dit jamais quel outil a répondu. Les deux juges viennent de
-          familles de modèles différentes.
+          Son « oui » à la question piège est classé inexact, avec deux drapeaux : position inventée
+          (fabrication) et prémisse fausse acceptée. Les juges ne savent pas qu'il vient de l'Outil X.
+          Parce qu'un juge y a vu une fabrication, des humains le notent aussi, et leur note est
+          retenue.
+        </p>
+      </Fragment>
+      <Fragment slot="detail">
+        <p>
+          Chaque réponse est comparée à l'item vérifié et classée : <strong>exacte</strong>, <strong>inexacte</strong>, <strong>non-réponse</strong> (refus,
+          renvoi vers d'autres
+          sources, généralités), ou <strong>indéterminée</strong>, une catégorie que seuls des humains
+          peuvent donner. Des drapeaux précisent la nature d'une erreur : position inventée
+          (fabrication), attribuée au mauvais candidat, périmée, déformée, ou prémisse fausse acceptée.
+          Les sources citées sont contrôlées aussi : un test automatique, sans IA, vérifie que chaque
+          lien existe, et la notation dit si la page soutient l'affirmation.
         </p>
         <p>
-          Des humains notent ensuite toute réponse sur laquelle les deux juges ne s'accordent pas,
-          toute réponse qu'un juge marque comme fabrication ou mauvaise attribution, et un échantillon
-          de {P.echantillonHumain} des réponses tiré au sort. Dans cet échantillon, deux personnes notent chaque réponse
-          à l'aveugle, une troisième tranche si elles divergent, et la note humaine l'emporte sur celle
-          des juges.
+          Cette notation est faite d'abord par <strong>deux juges automatiques</strong>. Un juge
+          automatique est un modèle d'IA qui compare une réponse à la référence selon une grille
+          publiée, sans donner son avis sur la position ; on ne lui dit jamais quel outil a répondu.
+          Les deux juges viennent de familles de modèles différentes.
+        </p>
+        <p><strong>Des humains</strong> notent ensuite :</p>
+        <ul>
+          <li>toute réponse sur laquelle les deux juges ne s'accordent pas ;</li>
+          <li>toute réponse qu'un juge marque comme fabrication ou mauvaise attribution ;</li>
+          <li>un échantillon de {P.echantillonHumain} des réponses tiré au sort.</li>
+        </ul>
+        <p>
+          Dans cet échantillon, deux personnes notent chaque réponse à l'aveugle, une troisième tranche
+          si elles divergent, et la note humaine l'emporte sur celle des juges.
         </p>
         <p>
-          Avant de noter le reste du run, un test vérifie que les juges ne réagissent pas aux noms : {P.sousEnsembleContrefactuel} réponses sont notées à nouveau après permutation des noms des candidats. Un juge dont la
-          note change dans plus de {P.seuilRetraitJuge} des cas est retiré du run, et la part notée par des humains
+          Avant de noter le reste du run, un <strong>test contrefactuel</strong> vérifie que les juges
+          ne réagissent pas aux noms : {P.sousEnsembleContrefactuel} réponses sont notées à nouveau
+          après permutation des noms des candidats. Un juge dont la note change dans
+          plus de {P.seuilRetraitJuge} des cas est retiré du run, et la part notée par des humains
           passe à {P.echantillonApresRetrait}.
         </p>
-        <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'un juge automatique a ses propres biais. Deux familles
-          de modèles, des humains sur tous les cas douteux et un accord avec les humains mesuré et
-          publié à chaque run donnent au lecteur la marge d'erreur de la notation elle-même.
+      </Fragment>
+      <Fragment slot="pourquoi">
+        <p>
+          Parce qu'un juge automatique a ses propres biais. Deux familles de modèles, des humains sur
+          tous les cas douteux et un accord avec les humains mesuré et publié à chaque run donnent au
+          lecteur la marge d'erreur de la notation elle-même.
         </p>
-        <Renvoi section="7" />
-      </div>
-    </li>
+      </Fragment>
+    </Etape>
 
-    <li class="etape" id="etape-analyser">
-      <FilStation nom="analyser" />
-      <Illustration
-        nom="analyser"
-        alt="Un tableau de barres, chacune entourée de sa fourchette d'incertitude, sans aucun chiffre, à côté d'un calendrier et d'un cahier scellé."
-      />
-      <div class="etape__texte">
-        <p class="etape__numero">Étape 6</p>
-        <h3 class="etape__titre">Calculer avec des règles écrites avant les résultats</h3>
+    <Etape
+      nom="analyser"
+      titre="Calculer avec des règles écrites avant les résultats"
+      cle="Les calculs sont fixés avant tout résultat, et chaque taux est publié avec sa fourchette."
+      alt="Un tableau de barres, chacune entourée de sa fourchette d'incertitude, sans aucun chiffre, à côté d'un calendrier et d'un cahier scellé."
+      section="8"
+    >
+      <Fragment slot="points">
+        <li>Des règles de calcul <strong>écrites avant</strong> tout résultat.</li>
+        <li>L'<strong>exactitude</strong>, jamais publiée sans le <strong>taux de non-réponse</strong>.</li>
+        <li>Chaque taux avec sa <strong>fourchette</strong> ; une différence n'est « <strong>établie</strong> » que si la sienne exclut zéro.</li>
+        <li>Les hypothèses non confirmées sont <strong>publiées aussi</strong>.</li>
+      </Fragment>
+      <Fragment slot="exemple">
+        <p>
+          Les deux notes rejoignent les autres réponses de l'Outil X : l'une compte parmi les exactes,
+          l'autre parmi les inexactes de son taux d'exactitude, calculé pour chaque mode.
+        </p>
+        <p>
+          Ce taux paraît avec sa fourchette et avec le taux de non-réponse de l'Outil X. Un écart avec
+          l'Outil Y n'est dit « établi » que si sa fourchette exclut zéro.
+        </p>
+      </Fragment>
+      <Fragment slot="detail">
         <p>
           Les calculs sont fixés dans le protocole avant tout résultat : quels taux, sur quelles
-          réponses, avec quels seuils. Le principal est l'exactitude, la part des réponses exactes
-          parmi les réponses exactes ou inexactes ; elle n'est jamais publiée sans le taux de
-          non-réponse.
+          réponses, avec quels seuils. Le principal est l'<strong>exactitude</strong>, la part des
+          réponses exactes parmi les réponses exactes ou inexactes ; elle n'est jamais publiée sans le
+          taux de non-réponse.
         </p>
         <p>
-          Chaque taux est publié avec son intervalle de confiance à {S.niveauConfiance.affiche} % : une fourchette qui dit avec
-          quelle précision le chiffre est connu, plus large quand les données sont peu nombreuses.
-          Elle est obtenue en refaisant le calcul sur {P.reechantillonnages} tirages au hasard dans les données
-          observées. Une différence entre deux outils, deux modes ou deux runs n'est dite « établie »
-          que si sa fourchette exclut zéro ; sinon, elle est « non établie ». Le rapport ne dit jamais
-          « meilleur » ni « pire ».
+          Chaque taux est publié avec son intervalle de confiance à {S.niveauConfiance.affiche} % : une <strong>fourchette</strong> qui
+          dit avec quelle précision le chiffre est connu, plus large
+          quand les données sont peu nombreuses. Elle est obtenue en refaisant le calcul
+          sur {P.reechantillonnages} tirages au hasard dans les données observées. Une différence entre deux
+          outils, deux modes ou deux runs n'est dite « établie » que si sa fourchette exclut zéro ;
+          sinon, elle est « non établie ». Le rapport ne dit jamais « meilleur » ni « pire ».
         </p>
         <p>
           Les hypothèses annoncées à l'avance sont publiées qu'elles soient confirmées ou non, et une
-          hypothèse non confirmée n'est jamais dite « infirmée ». Aucune statistique n'est publiée
-          pour un candidat qui compte moins de {P.couvertureMinimale} positions vérifiées, ni pour un outil dont plus de {P.reponsesManquantesMax} des réponses manquent dans un mode. Les résultats sont recalculés de quatre façons, par
-          exemple sans les questions orientées ou sans les réponses tronquées ; un résultat qui ne
-          tient pas est signalé comme fragile. Toute analyse non prévue porte l'étiquette
-          « exploratoire ».
+          hypothèse non confirmée n'est jamais dite « infirmée ».
         </p>
-        <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'une règle choisie après avoir vu les chiffres peut leur
-          faire dire ce que l'on veut. Fixer les calculs avant, publier les fourchettes et les
-          hypothèses non confirmées, c'est renoncer à cette liberté.
+        <ul>
+          <li>
+            Aucune statistique n'est publiée pour un candidat qui compte
+            moins de {P.couvertureMinimale} positions vérifiées, ni pour un outil dont
+            plus de {P.reponsesManquantesMax} des réponses manquent dans un mode.
+          </li>
+          <li>
+            Les résultats sont recalculés de quatre façons, par exemple sans les questions orientées ou
+            sans les réponses tronquées ; un résultat qui ne tient pas est signalé comme fragile.
+          </li>
+          <li>Toute analyse non prévue porte l'étiquette « exploratoire ».</li>
+        </ul>
+      </Fragment>
+      <Fragment slot="pourquoi">
+        <p>
+          Parce qu'une règle choisie après avoir vu les chiffres peut leur faire dire ce que l'on veut.
+          Fixer les calculs avant, publier les fourchettes et les hypothèses non confirmées, c'est
+          renoncer à cette liberté.
         </p>
-        <Renvoi section="8" />
-      </div>
-    </li>
+      </Fragment>
+    </Etape>
 
-    <li class="etape" id="etape-publier">
-      <FilStation nom="publier" />
-      <Illustration
-        nom="publier"
-        alt="Un coffre ouvert d'où partent un dossier, une bulle de réponse et un morceau de code, en direction d'une étagère publique."
-      />
-      <div class="etape__texte">
-        <p class="etape__numero">Étape 7</p>
-        <h3 class="etape__titre">Tout publier, ensemble</h3>
+    <Etape
+      nom="publier"
+      titre="Tout publier, ensemble"
+      cle="Tout ce qui a servi à produire un chiffre est publié avec lui, quel que soit le résultat."
+      alt="Un coffre ouvert d'où partent un dossier, une bulle de réponse et un morceau de code, en direction d'une étagère publique."
+      section="9"
+    >
+      <Fragment slot="points">
+        <li><strong>Tout, ensemble</strong> : référence, questions, graine, réponses brutes, notations, code et rapport.</li>
+        <li>Publié <strong>quels que soient les résultats</strong>, même un run « provisoire ».</li>
+        <li>Une correction <strong>s'ajoute</strong>, datée : elle ne remplace jamais un chiffre publié.</li>
+      </Fragment>
+      <Fragment slot="exemple">
+        <p>
+          Chacun peut lire l'item du Candidat A et sa source archivée, les questions et la graine du
+          tirage, la réponse brute de l'Outil X telle qu'il l'a donnée, et les notes des juges et des
+          humains.
+        </p>
+        <p>
+          Avec ces fichiers, n'importe qui peut recalculer la note retenue et le taux, sans accès à
+          l'Outil X.
+        </p>
+      </Fragment>
+      <Fragment slot="detail">
         <p>
           Tout ce qui a servi à produire un chiffre est public au moment où le chiffre l'est : la
-          référence et ses sources archivées, les questions et la graine du tirage, les réponses
-          brutes de chaque outil, les notations des juges et des humains avec leurs désaccords et
-          leurs arbitrages, le code et le rapport. Rien n'est publié « sur demande ».
+          référence et ses sources archivées, les questions et la graine du tirage, les réponses brutes
+          de chaque outil, les notations des juges et des humains avec leurs désaccords et leurs
+          arbitrages, le code et le rapport. Rien n'est publié « sur demande ».
         </p>
         <p>
-          Les résultats sont publiés quels qu'ils soient, y compris s'ils ne montrent ni erreur
-          notable ni asymétrie. Un run qui ne passe pas tous ses contrôles n'est pas gardé en privé :
-          il est publié en entier, avec la mention « provisoire » et sa raison. Une correction ne
-          remplace jamais un chiffre publié : le nouveau chiffre paraît à côté de l'ancien, daté.
+          Les résultats sont publiés <strong>quels qu'ils soient</strong>, y compris s'ils ne montrent
+          ni erreur notable ni asymétrie. Un run qui ne passe pas tous ses contrôles n'est pas gardé en
+          privé : il est publié en entier, avec la mention « provisoire » et sa raison. Une correction
+          ne remplace jamais un chiffre publié : le nouveau chiffre paraît à côté de l'ancien, daté.
         </p>
+        <p>Seules exceptions :</p>
+        <ul>
+          <li>les données personnelles des annotateurs et des testeurs, publiés sous pseudonyme ;</li>
+          <li>les clés d'accès aux outils ;</li>
+          <li>
+            les copies de sources dont la licence interdit la republication, remplacées par leur
+            empreinte, leur lien d'archive et l'extrait cité.
+          </li>
+        </ul>
+      </Fragment>
+      <Fragment slot="pourquoi">
         <p>
-          Seules exceptions : les données personnelles des annotateurs et des testeurs, publiés sous
-          pseudonyme, les clés d'accès aux outils, et les copies de sources dont la licence interdit
-          la republication, remplacées par leur empreinte, leur lien d'archive et l'extrait cité.
+          Parce qu'un chiffre que personne ne peut refaire n'a pas de raison d'être cru. Une commande
+          unique permet de recalculer, sans accès aux outils, toute note retenue et toute analyse à
+          partir des réponses brutes et des notations publiées.
         </p>
-        <p class="etape__pourquoi">
-          <strong>Pourquoi ?</strong> Parce qu'un chiffre que personne ne peut refaire n'a pas de
-          raison d'être cru. Une commande unique permet de recalculer, sans accès aux outils, toute
-          note retenue et toute analyse à partir des réponses brutes et des notations publiées.
-        </p>
-        <Renvoi section="9" />
-      </div>
-    </li>
+      </Fragment>
+    </Etape>
   </ol>
   </div>
 </section>

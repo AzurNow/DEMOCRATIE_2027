@@ -1,0 +1,24 @@
+---
+/**
+ * Vue d'ensemble du parcours : les sept étapes en une ligne chacune, chaque pastille renvoyant à
+ * son étape (#etape-…). Liens ordinaires, aucun script.
+ */
+import { ancreEtape, ETAPES_PARCOURS } from "../lib/etapes.ts";
+---
+
+<nav class="vue-ensemble" aria-label="Les sept étapes du parcours">
+  <ol class="vue-ensemble__liste">
+    {
+      ETAPES_PARCOURS.map((e, i) => (
+        <li class="vue-ensemble__item">
+          <a class="vue-ensemble__lien" href={`#${ancreEtape(e.nom)}`}>
+            <span class="vue-ensemble__numero" aria-hidden="true">{i + 1}</span>
+            <span class="vue-ensemble__texte">
+              <span class="vue-ensemble__nom">{e.court}</span><span class="visuellement-cache">, </span><span class="vue-ensemble__ligne">{e.ligne}</span>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>
