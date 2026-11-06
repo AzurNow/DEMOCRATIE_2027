@@ -9,14 +9,14 @@
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { lireSiteConstruit } from "../../outils/site-gardes.ts";
+import { lirePageConstruite } from "../../outils/site-gardes.ts";
 import { ETAPES_PARCOURS } from "../../site/src/lib/etapes.ts";
 
 const RACINE = resolve(import.meta.dirname, "../..");
 const DIST = join(RACINE, "site/dist");
 const IDS = ["collecter", "valider", "questionner", "interroger", "noter", "analyser", "publier"].map((n) => `etape-${n}`);
 
-const html = (): string => lireSiteConstruit(DIST).html;
+const html = (): string => lirePageConstruite(DIST, "index.html");
 
 /** Le corps de la section #parcours, sans les SVG (illustrations et fil). */
 function sectionParcours(page: string): string {

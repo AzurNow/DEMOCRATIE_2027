@@ -1,6 +1,6 @@
 /**
  * Gardes du site statique (plan de la page pédagogique) : lisent site/dist/, produit par
- * `pnpm build:site`. Absent, le site fait ÉCHOUER les tests, jamais les sauter.
+ * `pnpm build:site`, page par page. Absent, le site fait ÉCHOUER les tests, jamais les sauter.
  */
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,9 +9,12 @@ import { describe, expect, it } from "vitest";
 import {
   appelsReseau,
   CleDuPerimetreAbsente,
+  lirePageConstruite,
   lireSiteConstruit,
   nomsDuPerimetre,
   nomsPresents,
+  PageNonConstruite,
+  renvoisDuTexte,
   renvoisSansSection,
   ressourcesExternes,
   scriptsExternes,
@@ -22,6 +25,8 @@ import {
 const RACINE = resolve(import.meta.dirname, "../..");
 const DIST = join(RACINE, "site/dist");
 const GITHUB = "https://github.com/AzurNow/DEMOCRATIE_2027";
+/** Pages du site, triées par chemin : une page ajoutée ou perdue doit se voir ici. */
+const PAGES_ATTENDUES = ["exemple/index.html", "index.html"];
 
 describe("le site construit", () => {
   // Lecture dans le test : un dist absent fait échouer chaque garde avec « lancer pnpm build:site ».
@@ -29,28 +34,38 @@ describe("le site construit", () => {
   const perimetre = readFileSync(join(RACINE, "config/perimetre.yaml"), "utf8");
   const protocole = readFileSync(join(RACINE, "docs/PROTOCOLE.md"), "utf8");
 
-  it("ne charge aucune ressource externe", () => {
-    expect(ressourcesExternes(site().html)).toEqual([]);
+  it("construit exactement les pages attendues : l'accueil et la page exemple", () => {
+    expect(site().pages.map((p) => p.chemin)).toEqual(PAGES_ATTENDUES);
   });
 
-  it("n'a aucun script externe", () => {
-    expect(scriptsExternes(site().html)).toEqual([]);
+  it("ne charge aucune ressource externe, sur aucune page", () => {
+    for (const { chemin, html } of site().pages) expect(ressourcesExternes(html), chemin).toEqual([]);
+  });
+
+  it("n'a aucun script externe, sur aucune page", () => {
+    for (const { chemin, html } of site().pages) expect(scriptsExternes(html), chemin).toEqual([]);
   });
 
   it("n'appelle aucun réseau depuis le HTML ni les JS produits", () => {
-    const { html, scripts } = site();
-    expect([html, ...scripts].flatMap(appelsReseau)).toEqual([]);
+    const { pages, scripts } = site();
+    for (const { chemin, html } of pages) expect(appelsReseau(html), chemin).toEqual([]);
+    expect(scripts.flatMap(appelsReseau)).toEqual([]);
   });
 
-  it("ne nomme aucun candidat ni outil du périmètre (fichier lu)", () => {
+  it("ne nomme aucun candidat ni outil du périmètre (fichier lu), sur aucune page", () => {
     expect(perimetre.length).toBeGreaterThan(0);
-    expect(nomsPresents(texteDePage(site().html), nomsDuPerimetre(perimetre))).toEqual([]);
+    const noms = nomsDuPerimetre(perimetre);
+    for (const { chemin, html } of site().pages) expect(nomsPresents(texteDePage(html), noms), chemin).toEqual([]);
   });
 
-  it("ne renvoie qu'à des sections qui existent dans le protocole", () => {
+  it("ne renvoie qu'à des sections qui existent dans le protocole, sur chaque page", () => {
     const sections = sectionsDuProtocole(protocole);
     expect(sections.length).toBeGreaterThanOrEqual(13);
-    expect(renvoisSansSection(texteDePage(site().html), sections)).toEqual([]);
+    for (const { chemin, html } of site().pages) {
+      const texte = texteDePage(html);
+      expect(renvoisDuTexte(texte).length, `${chemin} : aucun renvoi au protocole`).toBeGreaterThan(0);
+      expect(renvoisSansSection(texte, sections), chemin).toEqual([]);
+    }
   });
 });
 
@@ -65,7 +80,47 @@ describe("lireSiteConstruit", () => {
     mkdirSync(join(dossier, "_astro"));
     writeFileSync(join(dossier, "index.html"), "<p>a</p>");
     writeFileSync(join(dossier, "_astro", "x.js"), "let a = 1;");
-    expect(lireSiteConstruit(dossier)).toEqual({ html: "<p>a</p>", scripts: ["let a = 1;"] });
+    expect(lireSiteConstruit(dossier)).toEqual({
+      html: "<p>a</p>",
+      pages: [{ chemin: "index.html", html: "<p>a</p>" }],
+      scripts: ["let a = 1;"],
+    });
+  });
+
+  it("rend chaque page à part, chemin en « / », triée par chemin", () => {
+    const dossier = mkdtempSync(join(tmpdir(), "banc-site-"));
+    mkdirSync(join(dossier, "exemple"));
+    writeFileSync(join(dossier, "index.html"), "<p>accueil</p>");
+    writeFileSync(join(dossier, "exemple", "index.html"), "<p>exemple</p>");
+    const { pages, html } = lireSiteConstruit(dossier);
+    expect(pages).toEqual([
+      { chemin: "exemple/index.html", html: "<p>exemple</p>" },
+      { chemin: "index.html", html: "<p>accueil</p>" },
+    ]);
+    expect(html).toBe("<p>exemple</p>\n<p>accueil</p>");
+  });
+});
+
+describe("lirePageConstruite", () => {
+  it("lit une seule page, l'accueil par défaut", () => {
+    const dossier = mkdtempSync(join(tmpdir(), "banc-site-"));
+    mkdirSync(join(dossier, "exemple"));
+    writeFileSync(join(dossier, "index.html"), "<p>accueil</p>");
+    writeFileSync(join(dossier, "exemple", "index.html"), "<p>exemple</p>");
+    expect(lirePageConstruite(dossier)).toBe("<p>accueil</p>");
+    expect(lirePageConstruite(dossier, "exemple/index.html")).toBe("<p>exemple</p>");
+  });
+
+  it("échoue en nommant les pages présentes quand la page demandée manque", () => {
+    const dossier = mkdtempSync(join(tmpdir(), "banc-site-"));
+    writeFileSync(join(dossier, "index.html"), "<p>a</p>");
+    expect(() => lirePageConstruite(dossier, "exemple/index.html")).toThrow(PageNonConstruite);
+    expect(() => lirePageConstruite(dossier, "exemple/index.html")).toThrow(/pages présentes : index\.html/);
+  });
+
+  it("échoue comme lireSiteConstruit quand dist est absent", () => {
+    const vide = mkdtempSync(join(tmpdir(), "banc-site-"));
+    expect(() => lirePageConstruite(join(vide, "dist"))).toThrow(/pnpm build:site/);
   });
 });
 

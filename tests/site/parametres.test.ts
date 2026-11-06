@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { lireSiteConstruit, texteDePage } from "../../outils/site-gardes.ts";
+import { lirePageConstruite, texteDePage } from "../../outils/site-gardes.ts";
 import { REECHANTILLONNAGES_PRODUCTION } from "../../analysis/bootstrap.ts";
 import { SEUIL_RUN_INCOMPLET } from "../../analysis/seuils.ts";
 import {
@@ -70,7 +70,7 @@ describe("paramètres sans constante et protocole", () => {
 });
 
 describe("la page construite affiche ces paramètres", () => {
-  const page = () => espaces(texteDePage(lireSiteConstruit(join(RACINE, "site/dist")).html)).replace(/\s+/g, " ");
+  const page = () => espaces(texteDePage(lirePageConstruite(join(RACINE, "site/dist"), "index.html"))).replace(/\s+/g, " ");
 
   it("porte chaque valeur lue dans le code, dans sa phrase", () => {
     const texte = page();

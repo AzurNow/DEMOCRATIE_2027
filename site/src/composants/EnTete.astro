@@ -1,20 +1,31 @@
 ---
+/**
+ * En-tête commun aux pages du site. Les liens visent les sections de la page d'accueil : « #x » sur
+ * l'accueil, « /#x » ailleurs (site/src/lib/liens.ts). Le lien « Exemple » mène à la page qui suit
+ * un cas inventé sur les sept étapes ; il porte aria-current sur cette page.
+ */
 import BasculeTheme from "./BasculeTheme.astro";
+import { estExemple, lienAccueil, lienExemple } from "../lib/liens.ts";
+
+const base = import.meta.env.BASE_URL;
+const chemin = Astro.url.pathname;
+const surExemple = estExemple(chemin, base);
 
 const liens = [
-  { href: "#parcours", libelle: "Parcours" },
-  { href: "#questions", libelle: "Questions" },
-  { href: "#limites", libelle: "Limites" },
-  { href: "#contester", libelle: "Contester" },
-  { href: "#faq", libelle: "FAQ" },
+  { href: lienAccueil("parcours", chemin, base), libelle: "Parcours", courant: false },
+  { href: lienExemple(base), libelle: "Exemple", courant: surExemple },
+  { href: lienAccueil("questions", chemin, base), libelle: "Questions", courant: false },
+  { href: lienAccueil("limites", chemin, base), libelle: "Limites", courant: false },
+  { href: lienAccueil("contester", chemin, base), libelle: "Contester", courant: false },
+  { href: lienAccueil("faq", chemin, base), libelle: "FAQ", courant: false },
 ];
 ---
 
 <header class="entete">
   <a class="lien-evitement" href="#contenu">Aller au contenu</a>
-  <a class="entete__nom" href="#accroche">Banc d'essai 2027</a>
+  <a class="entete__nom" href={lienAccueil("accroche", chemin, base)}>Banc d'essai 2027</a>
   <nav class="entete__nav" aria-label="Sections de la page">
-    {liens.map((lien) => <a class="entete__lien" href={lien.href}>{lien.libelle}</a>)}
+    {liens.map((lien) => <a class="entete__lien" href={lien.href} aria-current={lien.courant ? "page" : undefined}>{lien.libelle}</a>)}
   </nav>
   <BasculeTheme />
 </header>
