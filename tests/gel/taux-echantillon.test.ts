@@ -31,7 +31,7 @@ afterEach(() => {
 
 function violationsDeTaux(retires: readonly string[], taux: 0.1 | 0.25): readonly string[] {
   const run = runDeNotation(retires, { taux_echantillon_humain: taux });
-  return controleCroise({ run, reponses_obtenues: [], refus_api: [], textes: new Map(), notations: [], verdicts: [] })
+  return controleCroise({ run, reponses_obtenues: [], refus_api: [], textes: new Map(), notations: [], verdicts: [], contrefactuel_outils: null })
     .map((violation) => violation.code)
     .filter((code) => code === "taux_echantillon_incoherent");
 }
