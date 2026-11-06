@@ -1377,14 +1377,48 @@
       "additionalProperties": false,
       "required": [
         "etat",
-        "motif_indefini",
         "outils",
         "taille_visee",
         "taille"
       ],
       "allOf": [
         {
-          "$comment": "Dérangement non tiré (moins de deux outils, éditeur partagé) : ni éligibilité, ni sous-ensemble, ni dérangement. Test joué sans réponse éligible : le bloc porte en plus ce qui rejoue le tirage, et au moins deux outils au dérangement.",
+          "$comment": "D90 : un test absent (etat indefini) publie toujours son motif, et aucun taux de juge. Un test terminé publie chaque juge déclaré, sans motif d'absence, sur un sous-ensemble non vide tiré parmi des réponses éligibles.",
+          "if": {
+            "required": [
+              "etat"
+            ],
+            "properties": {
+              "etat": {
+                "const": "indefini"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "motif_indefini"
+            ],
+            "properties": {
+              "juges": false
+            }
+          },
+          "else": {
+            "required": [
+              "juges"
+            ],
+            "properties": {
+              "motif_indefini": false,
+              "eligibles": {
+                "minimum": 1
+              },
+              "taille": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "$comment": "Dérangement non tiré (moins de deux outils, éditeur partagé) : ni éligibilité, ni sous-ensemble, ni dérangement. Test joué (sans réponse éligible, ou terminé) : le bloc porte en plus ce qui rejoue le tirage, et au moins deux outils au dérangement.",
           "if": {
             "required": [
               "motif_indefini"
@@ -1401,6 +1435,9 @@
           },
           "then": {
             "properties": {
+              "taille": {
+                "const": 0
+              },
               "eligibles": false,
               "sous_effectif": false,
               "correspondances": false,
@@ -1475,13 +1512,46 @@
               }
             }
           }
+        },
+        {
+          "$comment": "Test joué sans réponse éligible : rien d'éligible, rien de tiré, aucune paire, aucune mention résiduelle.",
+          "if": {
+            "required": [
+              "motif_indefini"
+            ],
+            "properties": {
+              "motif_indefini": {
+                "const": "aucune_reponse_eligible"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "eligibles": {
+                "const": 0
+              },
+              "taille": {
+                "const": 0
+              },
+              "sous_effectif": {
+                "const": true
+              },
+              "mentions_residuelles": {
+                "const": 0
+              }
+            }
+          }
         }
       ],
-      "description": "§7, « Conflit d'intérêts » : le test contrefactuel d'outil publié absent, avec son motif (décision D75 (7) de l'auteur). Rempli par pipeline/notation/publication-contrefactuel-outils.ts et inscrit une fois par pipeline/notation/inscription-contrefactuel-outils.ts. Seule l'absence a aujourd'hui sa forme publiée : le test terminé (taux de changement de chaque juge) attend son branchement dans la chaîne. Le test d'outil ne retire aucun juge et n'invalide jamais le run : aucun champ de juges ni d'invalidation n'en dépend. Absent tant que la notation ne l'a pas inscrit.",
+      "description": "§7, « Conflit d'intérêts » : le test contrefactuel d'outil, publié absent avec son motif (décision D75 (7) de l'auteur), ou joué et terminé avec le taux de changement de chaque juge (décision D90). Rempli par pipeline/notation/publication-contrefactuel-outils.ts et inscrit une fois par pipeline/notation/inscription-contrefactuel-outils.ts. Le test d'outil ne retire aucun juge et n'invalide jamais le run : aucun champ de juges[] du run ni d'invalidation n'en dépend ; ses taux vivent dans ce bloc seul. Absent tant que la notation ne l'a pas inscrit.",
       "properties": {
         "etat": {
-          "const": "indefini",
-          "description": "Le test est absent : aucun taux n'existe, jamais 0 %."
+          "type": "string",
+          "enum": [
+            "indefini",
+            "termine"
+          ],
+          "description": "indefini : le test est absent, aucun taux n'existe, jamais 0 %. termine (D90) : le dérangement est tiré, le sous-ensemble non vide, chaque paire notée ou renvoyée par chaque juge mesuré ; juges[] porte le taux de chacun."
         },
         "motif_indefini": {
           "type": "string",
@@ -1529,8 +1599,9 @@
           "description": "Les éditeurs d'un outil du dérangement que porte un autre outil du dérangement ou un comparateur du périmètre, triés par éditeur (pipeline/notation/derangement-outils.ts:derangementOutilsOuAbsence)."
         },
         "eligibles": {
-          "const": 0,
-          "description": "Réponses obtenues du run dont le texte nomme un outil du dérangement : aucune."
+          "type": "integer",
+          "minimum": 0,
+          "description": "Réponses obtenues du run, hors refus de l'API, dont le texte nomme un outil du dérangement (pipeline/notation/derangement-outils.ts:estEligibleOutils) : aucune sous aucune_reponse_eligible, au moins une pour un test terminé."
         },
         "taille_visee": {
           "type": "integer",
@@ -1538,12 +1609,13 @@
           "description": "§7 : 200 réponses (pipeline/notation/echantillons.ts, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS)."
         },
         "taille": {
-          "const": 0,
-          "description": "Le test absent n'a pas de sous-ensemble."
+          "type": "integer",
+          "minimum": 0,
+          "description": "Le nombre de réponses du sous-ensemble tiré : 0 pour un test absent, au moins 1 pour un test terminé."
         },
         "sous_effectif": {
-          "const": true,
-          "description": "Aucune réponse éligible, moins que la taille visée : c'est dit, jamais en silence."
+          "type": "boolean",
+          "description": "Moins de réponses éligibles que la taille visée : toutes sont prises, et c'est dit, jamais en silence (pipeline/notation/echantillons.ts:tirerSousEnsembleContrefactuelOutils)."
         },
         "correspondances": {
           "type": "object",
@@ -1575,8 +1647,24 @@
           "description": "La clé lisible de la graine du dérangement des outils, dérivée de graines.contrefactuel (pipeline/notation/derangement-outils.ts, CLE_DERANGEMENT_OUTILS)."
         },
         "mentions_residuelles": {
-          "const": 0,
-          "description": "Aucune paire, aucune mention résiduelle."
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total, sur les paires du sous-ensemble, des formes d'outil restées en clair après permutation (pipeline/notation/permutation.ts) : publié, jamais corrigé. Aucune paire, aucune mention résiduelle, sous aucune_reponse_eligible."
+        },
+        "juges": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/juge_contrefactuel_outils"
+          },
+          "contains": {
+            "required": [
+              "paires_ecartees"
+            ]
+          },
+          "minContains": 1,
+          "description": "D90 : les deux juges déclarés au run, triés par juge_id, chacun une fois. « Seuls les juges non retirés au test des candidats sont mesurés » (§7) : un juge retiré y figure avec motif_non_mesure, sans taux ; au moins un juge est mesuré (un run aux deux juges retirés est invalide et ne joue pas ce test). Le taux est un diagnostic : il ne retire aucun juge."
         }
       }
     },
@@ -2732,6 +2820,92 @@
     }
   ],
   "$defs": {
+    "juge_contrefactuel_outils": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "juge_id"
+      ],
+      "description": "D90 : un juge du run au contrefactuel d'outil terminé (pipeline/notation/publication-contrefactuel-outils.ts). Trois formes exclusives : mesuré, avec son taux et ses effectifs ; mesuré, toutes ses paires écartées par ses renvois, taux absent avec ce motif ; non mesuré, parce que retiré au test des candidats.",
+      "properties": {
+        "juge_id": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+        },
+        "taux_changement": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "changements.numerateur / changements.denominateur. Un diagnostic : aucun seuil, aucun retrait (§7)."
+        },
+        "changements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "numerateur",
+            "denominateur"
+          ],
+          "description": "Les effectifs exacts du taux : paires dont la note change (catégorie, drapeaux, fraîcheur ; un extrait invalide d'un côté compte comme un changement) sur paires comptées.",
+          "properties": {
+            "numerateur": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "denominateur": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "paires_ecartees": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "§7 : paires dont un côté au moins est renvoyé à un humain par ce juge, quel que soit le motif, écartées de son numérateur et de son dénominateur. changements.denominateur + paires_ecartees = taille."
+        },
+        "motif_indefini": {
+          "const": "toutes_paires_ecartees",
+          "description": "Toutes les paires sont écartées pour ce juge : taux absent, jamais 0 %."
+        },
+        "motif_non_mesure": {
+          "const": "retire_au_test_des_candidats",
+          "description": "§7 : « Seuls les juges non retirés au test des candidats sont mesurés. » Le juge porte retire: true dans juges[] du run."
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "taux_changement",
+            "changements",
+            "paires_ecartees"
+          ],
+          "properties": {
+            "motif_indefini": false,
+            "motif_non_mesure": false
+          }
+        },
+        {
+          "required": [
+            "motif_indefini",
+            "paires_ecartees"
+          ],
+          "properties": {
+            "taux_changement": false,
+            "changements": false,
+            "motif_non_mesure": false
+          }
+        },
+        {
+          "required": [
+            "motif_non_mesure"
+          ],
+          "properties": {
+            "taux_changement": false,
+            "changements": false,
+            "paires_ecartees": false,
+            "motif_indefini": false
+          }
+        }
+      ]
+    },
     "preuve_archivee": {
       "type": "object",
       "additionalProperties": false,

@@ -1,13 +1,13 @@
 {
   "$commentaire": "Matrice de conformité code ↔ docs/PROTOCOLE.md. Tenue par la compétence conformite-protocole ; ne pas éditer hors d'une passe.",
   "protocole": {
-    "version": "0.30",
-    "sha256": "808622a4a036f79f1eb47c5227392d3d060f12e3ee57742ae6a7b15358c60728"
+    "version": "0.34",
+    "sha256": "5ad6346c6498eeb5627729da1262ce41122caf02584515a15d1d4235752574eb"
   },
   "passe": {
-    "date": "2026-11-03",
-    "commit": "8342add",
-    "rapport": "docs/conformite/2026-11-03.md"
+    "date": "2026-11-06",
+    "commit": "6c0c427",
+    "rapport": "docs/conformite/2026-11-06.md"
   },
   "exigences": [
     {
@@ -253,20 +253,23 @@
       "section": "2",
       "citation": "Analyse exploratoire annoncée : corrélation entre le taux d'erreur par candidat et le nombre d'items de référence disponibles pour ce candidat (proxy de couverture).",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
         "analysis/correlation-couverture.ts:correlationsParCouple",
-        "analysis/correlation-couverture.ts:correlationCouverture"
+        "analysis/correlation-couverture.ts:correlationCouverture",
+        "analysis/analyse-du-run.ts:sectionCorrelation"
       ],
       "tests": [
         "tests/analysis/correlation-couverture.test.ts « est calculée avec exactement trois candidats comparés »",
         "tests/analysis/correlation-couverture.test.ts « n'est pas calculée avec deux candidats comparés, et publie son motif »",
         "tests/analysis/correlation-couverture.test.ts « traite les ex æquo de taux d'erreur par rangs moyens, sur l'égalité exacte des fractions »",
-        "tests/analysis/correlation-couverture.test.ts « n'y fait pas entrer un candidat sous le seuil de couverture, qui ne compte pas pour les trois »"
+        "tests/analysis/correlation-couverture.test.ts « n'y fait pas entrer un candidat sous le seuil de couverture, qui ne compte pas pour les trois »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « ex aequo : rang moyen, coefficient 1/√22,5, sans intervalle, étiqueté exploratoire ; le candidat sous le seuil n'y entre pas »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « moins de trois candidats comparés : chaque couple comparé publie le motif, aucun coefficient »"
       ],
-      "lot": "analyse",
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : le calcul (analysis/correlation-couverture.ts:correlationsParCouple, testé) n'est pas encore publié par pnpm analyze (analyse-du-run.ts ne l'appelle pas)."
+      "note": "Publiée par pnpm analyze (section exploratoire, sous-lot B livré par #270)."
     },
     {
       "id": "§3.01",
@@ -924,22 +927,25 @@
       "section": "4",
       "citation": "Un texte extrait faux se solde par un rejet de l'item sous le motif énuméré « texte extrait erroné », et c'est ce motif qui renvoie la source à la réextraction.",
       "nature": "processus",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "validation/domaine/corrections.ts:examinerCitation",
         "schema/decision.schema.json:motif_rejet",
         "validation/domaine/decision.ts:controlerMotifRejet",
         "validation/domaine/renvoi-reextraction.ts:renvoisAReextraction",
-        "outils/promote.ts:imprimerRenvoisReextraction"
+        "outils/promote.ts:imprimerRenvoisReextraction",
+        "pipeline/extraction/renvoi.ts:exigerTexteNonRenvoye",
+        "outils/extraire.ts"
       ],
       "tests": [
         "tests/motif-rejet.test.ts « un rejet d'item P sous le motif est accepté, et la ligne de journal le porte »",
         "tests/renvoi-reextraction.test.ts « deux « rejeter » sous le motif, item P à une source : la source est renvoyée, avec l'item et le texte en cause »",
-        "tests/renvoi-reextraction.test.ts « deux « rejeter », un seul sous le motif : à trancher, motifs discordants, aucune source renvoyée »"
+        "tests/renvoi-reextraction.test.ts « deux « rejeter », un seul sous le motif : la source est renvoyée »",
+        "tests/extraction/commande.test.ts « source renvoyée, même empreinte de texte ⇒ refus nommé, aucun appel, rien d'écrit ; la commande lit les renvois de sa racine »"
       ],
-      "lot": "extraction",
-      "constat": 30,
-      "note": "D59 (9) : motif énuméré texte_extrait_errone porté par la ligne de journal, renvoi recalculé et nommé par pnpm promote (établi pour deux « rejeter » concordants sous le motif). Partielle : le renvoi reste un rapport, aucune file ni commande ne le consomme (D62 #233 (2), laissé sans lecture) ; les trois cas que la 0.27 tranche sont contredits (§4.113 à §4.115)."
+      "lot": null,
+      "constat": null,
+      "note": "Le renvoi est consommé : pnpm extraire recalcule les sources renvoyées au démarrage et refuse leur texte rejeté (D73 (9), #277 ; §4.129). Le constat 30 du 2026-11-03 est clos (protocole 0.31)."
     },
     {
       "id": "§4.18",
@@ -1220,7 +1226,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "validation/domaine/promotion.ts:absenceConfirmee"
+        "validation/domaine/promotion.ts:confirmeeParLesDeux (confirmation_absence_manquante)"
       ],
       "tests": [
         "tests/promotion.test.ts « refuse de promouvoir sans les deux confirmations explicites »"
@@ -1974,7 +1980,7 @@
         "tests/notification/test_notifier.py « test_un_courriel_par_campagne_qui_liste_ses_items »"
       ],
       "lot": null,
-      "constat": 29,
+      "constat": null,
       "note": "Corrigé dans le lot contestation-notification (constat n° 18). « modification » n'est émis par aucun chemin : aucun item publié ne change hors contestation et panel. Texte de la 0.27 : « publication » au lieu de « création » ; le code nomme toujours l'événement creation (notification-due.schema.json), émis par pnpm promote à l'écriture dans data/, c'est-à-dire à la publication."
     },
     {
@@ -2731,7 +2737,7 @@
         "tests/questions/gabarits.test.ts « donne F → Q-ATT, Q-ORI »"
       ],
       "lot": null,
-      "constat": 29,
+      "constat": null,
       "note": "Ligne tracée pour le type d'item admis ; la réponse attendue est tracée ligne par ligne en annexe B. Texte de la 0.27 : correction non exigée ; le code nomme encore la réponse attendue non_avec_correction, le prompt de juge tient un « non » sans correction pour exact."
     },
     {
@@ -2786,7 +2792,7 @@
         "tests/questions/sens-preserve.test.ts « une formulation sens_preserve: false est refusée au tirage, en nommant la question »"
       ],
       "lot": null,
-      "constat": 21,
+      "constat": 8,
       "note": "Neutre du gabarit, deux autres de Mistral Large, trois relues ensemble : testé. Partielle : l'écran de relecture montre candidat, mesure, position demandée et les trois textes, pas l'item principal (type, citation, paraphrase, quantification) que la 0.27 ajoute."
     },
     {
@@ -2932,7 +2938,7 @@
         "tests/questions/invariants.test.ts « nomme l'item F qui pointe une mesure réelle »"
       ],
       "lot": null,
-      "constat": 22,
+      "constat": 9,
       "note": "La trace de vérification est exigée (verification_fictivite) ; elle ne dit que les candidats balayés, et sa description (mesure.schema.json) parle encore des seuls « corpus T1 ». Rien ne trace le balayage des corpus T2 et des items T3 ajouté en 0.27. La plausibilité est un jugement humain, hors code."
     },
     {
@@ -3824,8 +3830,8 @@
         "schema/exemples/depot-application/invalide-01-compte-personnel.json"
       ],
       "lot": "interrogation",
-      "constat": 32,
-      "note": "Texte 0.27 réextrait ; la règle « moins de cinq » est §6.35 (contredite), le compte §6.40. Partielle : le sous-échantillon se calcule et se teste (sousEchantillonApplication, bilanDesDepots) mais aucun appelant ne l'écrit au gel ni ne le référence dans run.json, et aucun dépôt n'est converti en réponse du canal application (D62 #234 (4) et (5), ouverts)."
+      "constat": null,
+      "note": "Texte 0.27 réextrait ; la règle « moins de cinq » est §6.35, le compte §6.40, le run désigné §6.45. Partielle : le sous-échantillon se calcule et se teste, et pnpm analyze le recalcule pour l'écart (questionsDuSousEchantillonDuRun), mais aucune commande ne le remet aux testeurs ni ne convertit leurs dépôts en réponses. Constat 32 du 2026-11-03 accepté (questions d'attribution hors sous-échantillon)."
     },
     {
       "id": "§6.17",
@@ -3834,23 +3840,25 @@
       "nature": "donnee",
       "statut": "partielle",
       "code": [
-        "schema/depot-application.schema.json:captures (sha256, chemin_local), texte_copie"
+        "schema/depot-application.schema.json:captures (sha256, chemin_local), texte_copie",
+        "pipeline/interrogation/reponse-application.ts:reponseDepuisDepot"
       ],
       "tests": [
         "schema/exemples/depot-application/invalide-03-sans-capture.json"
       ],
       "lot": "interrogation",
       "constat": null,
-      "note": "Revérifiée : le dépôt porte l'empreinte de chaque capture et le texte copié tel quel ; la conversion d'un dépôt en réponse du canal application, l'archivage des captures et leur notation ne sont toujours pas codés."
+      "note": "La conversion d'un dépôt en réponse du canal application est codée et testée (reponseDepuisDepot, D73 (12)) ; aucune commande ne l'appelle, et l'archivage des captures n'est pas codé."
     },
     {
       "id": "§6.18",
       "section": "6",
       "citation": "L'écart est rapporté avec ses intervalles de confiance et l'étiquette « exploratoire », l'effectif étant faible : c'est la différence d'exactitude entre l'API, dans le mode de tête de l'outil (section 8), et l'application, appariée par question sur les questions du sous-échantillon, dont la graine dérive de la clé `<outil>:api-application` (section 8).",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "analysis/ecart-api-application.ts:ecartsApiApplication (mode de tête lu, exactitude, appariement par question, clé exactitude/global/<outil>:api-application, exploratoire)"
+        "analysis/ecart-api-application.ts:ecartsApiApplication (mode de tête lu, exactitude, appariement par question, clé exactitude/global/<outil>:api-application, exploratoire)",
+        "analysis/analyse-du-run.ts:sectionEcartApiApplication"
       ],
       "tests": [
         "tests/analysis/ecart-api-application.test.ts « réponse API manquante pour une question de l'application : la paire n'est pas appariée, la question est nommée »",
@@ -3858,11 +3866,13 @@
         "tests/analysis/ecart-api-application.test.ts « publie la clé §8 : famille, métrique, strate, puis <outil>:api-application, et la graine qui en dérive »",
         "tests/analysis/ecart-api-application.test.ts « une réponse API en formulation familière ou à l'échantillon 2 n'entre pas dans l'écart »",
         "tests/analysis/ecart-api-application.test.ts « deux saisies (deux testeurs) d'une même question sont deux observations de la même grappe »",
-        "tests/analysis/ecart-api-application.test.ts « une question sans réponse API neutre à l'échantillon 1 est exclue et nommée »"
+        "tests/analysis/ecart-api-application.test.ts « une question sans réponse API neutre à l'échantillon 1 est exclue et nommée »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « API dans le mode de tête, neutre échantillon 1, moins l'application ; apparié par question ; étiqueté exploratoire »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « graine dérivée de la clé bootstrap / exactitude / global / <outil>:api-application, relevée dans graines[] »"
       ],
-      "lot": "analyse",
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : le calcul est fait et testé (analysis/ecart-api-application.ts:ecartsApiApplication : mode de tête lu, appariement, clé, étiquette exploratoire), mais analyserRun ne l'appelle pas, donc rien n'est rapporté ; tests/analysis/cles-de-graines-protocole.test.ts le liste dans ATTENDUES_SOUS_LOT_B."
+      "note": "Publié par pnpm analyze (sous-lot B, #270) ; sans réponse de l'application, la section est sans objet (aucune_reponse_application), ce qui est le cas de tout run tant que §6.17 n'a pas de commande."
     },
     {
       "id": "§6.19",
@@ -3919,7 +3929,7 @@
       ],
       "lot": "notation",
       "constat": null,
-      "note": "Texte 0.24/0.27 réextrait. Domaine fait et testé (lecturesANoter, etatsDesLectures ; juge refusé au schéma et au domaine). La publication des comparateurs côté pnpm analyze relève du sous-lot B en cours. Reste hors sous-lot B : aucun appelant de lectures-comparateur.ts (chaîne, écran notation-humaine/), verdict d'une lecture non défini (D62 #235 (3), ouvert)."
+      "note": "Domaine fait et testé ; la chaîne écrit les verdicts de lecture (D87, #329) et pnpm analyze publie couverture et exactitude (#273). Reste : aucune commande ne collecte les lectures (D92 (b)) et l'écran de notation humaine ne sert pas de lecture."
     },
     {
       "id": "§6.22",
@@ -4351,7 +4361,7 @@
       ],
       "lot": "notation",
       "constat": null,
-      "note": "Revérifiée le 2026-11-03 : kappasJeuOr calcule et teste tout ce que les 0.23, 0.24 et 0.28 définissent (§7.64 à §7.67, §7.69), mais rien ne l'appelle : aucune commande n'assemble le jeu d'or ni n'écrit kappa_juge_humain, kappa_paire_juges ou les comptes du jeu d'or dans run.json (D62 #232 (2), emplacement non tranché)."
+      "note": "Revérifiée le 2026-11-06 : kappasJeuOr et inscriptionsJeuOr (analysis/kappa-jeu-or.ts) calculent tout ce que les 0.23, 0.24, 0.28 et D73 (8) définissent, et le schéma exige comptes_jeu_or avec le kappa (#331) ; aucune commande n'assemble le jeu d'or ni n'écrit kappa_juge_humain, kappa_paire_juges ni les comptes dans run.json (D89, en cours hors de main)."
     },
     {
       "id": "§7.23",
@@ -4369,7 +4379,7 @@
       ],
       "lot": "notation",
       "constat": null,
-      "note": "Texte 0.27. kappaDeLaPaire est calculé et testé ; le kappa de la paire n'est toujours ni écrit dans run.json ni comparé au seuil pour la mention « provisoire » (§7.22). « Jamais leur prompt » : processus, gardé par la règle des amendements (§7.17)."
+      "note": "Texte 0.27. kappaDeLaPaire est calculé et testé ; le kappa de la paire n'est toujours ni écrit dans run.json ni comparé au seuil pour la mention « provisoire » (D89, en cours). « Jamais leur prompt » : processus, gardé par la règle des amendements (§7.17)."
     },
     {
       "id": "§7.24",
@@ -4441,7 +4451,8 @@
         "pipeline/notation/echantillons.ts:tirerSousEnsembleContrefactuelOutils",
         "pipeline/notation/reponse-contrefactuelle-outil.ts:reponseContrefactuelleOutil",
         "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils",
-        "pipeline/notation/contrefactuel.ts:compterChangements"
+        "pipeline/notation/contrefactuel.ts:compterChangements",
+        "pipeline/notation/chaine.ts (contrefactuel d'outil : absence inscrite, ou non_joue derangement_tire_test_non_branche)"
       ],
       "tests": [
         "tests/notation/derangement-outils.test.ts « un seul outil au run : dérangement impossible, refus nommé (jamais une identité) »",
@@ -4452,16 +4463,17 @@
       ],
       "lot": "notation",
       "constat": null,
-      "note": "Citation réextraite (0.24 ; « principale » en 0.27). Domaine fait et testé (dérangement, remplacement, éligibilité, tirage, réponse permutée, taux sans retrait). Reste : aucun appelant de testerContrefactuelOutils (ni chaîne, ni adaptateur), aucun champ de run.json pour le taux, libellé et éditeur absents de l'instantané du gel (§7.74), outils du dérangement non choisis (§7.73)."
+      "note": "Domaine fait et testé ; depuis D75 (7) et D84 la chaîne lit libellés et éditeurs du gel et inscrit l'absence du test (outils_du_meme_editeur, comparateur_du_meme_editeur, moins_de_deux_outils). Quand le dérangement est tiré, le test n'est pas joué : la chaîne rend non_joue, motif derangement_tire_test_non_branche, et rien n'est écrit (D90, en cours hors de main)."
     },
     {
       "id": "§7.28",
       "section": "7",
       "citation": "Pour chaque juge dont l'éditeur édite un outil du run, l'écart signé entre son exactitude et celle de l'autre juge est calculé sur les réponses de chaque outil ; l'écart sur l'outil de son propre éditeur est comparé à la moyenne de ses écarts sur les autres outils, et leur différence reçoit un intervalle par bootstrap en grappes (section 8), dont la clé est celle de l'exactitude, strate `global`, avec le composant `<juge>:propre-editeur`. […] Elle est signalée dans le rapport quand cet intervalle exclut 0.",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "analysis/ecart-juge-editeur.ts:ecartsJugesEditeurs"
+        "analysis/ecart-juge-editeur.ts:ecartsJugesEditeurs",
+        "analysis/analyse-du-run.ts:sectionEcartJugeEditeur"
       ],
       "tests": [
         "tests/analysis/ecart-juge-editeur.test.ts « calcule l'écart signé sur l'outil de l'éditeur contre la moyenne des autres, et le signale s'il exclut 0 »",
@@ -4469,11 +4481,12 @@
         "tests/analysis/ecart-juge-editeur.test.ts « ne signale pas une différence dont l'intervalle touche 0 exactement »",
         "tests/analysis/ecart-juge-editeur.test.ts « publie absent, avec son motif, l'écart d'un juge dont l'éditeur n'a aucune réponse notée »",
         "tests/analysis/ecart-juge-editeur.test.ts « publie la clé §8 (0.25) : famille, métrique et strate, puis le composant <juge>:propre-editeur »",
-        "tests/analysis/ecart-juge-editeur.test.ts « garde le signe : un juge plus sévère que l'autre sur l'outil de son éditeur a une différence négative »"
+        "tests/analysis/ecart-juge-editeur.test.ts « garde le signe : un juge plus sévère que l'autre sur l'outil de son éditeur a une différence négative »",
+        "tests/analysis/analyse-du-run-ecart-juge-editeur.test.ts « D75 (26) les deux modes sont lus ensemble : l'exactitude d'outil-alpha porte sur ses deux modes »"
       ],
-      "lot": "analyse",
-      "constat": 15,
-      "note": "sous-lot B en cours : calcul fait et testé (analysis/ecart-juge-editeur.ts:ecartsJugesEditeurs), non appelé par analyserRun ; tests/analysis/cles-de-graines-protocole.test.ts liste <juge>:propre-editeur dans ATTENDUES_SOUS_LOT_B. L'association juge → outils de son éditeur reste un paramètre (D62 #230 (A), ouvert)."
+      "lot": null,
+      "constat": 4,
+      "note": "Publié par pnpm analyze (#295, #318), sur la liste déclarée au gel (§7.87). Un autre outil sans écart sort de la moyenne et les rééchantillons où un écart retenu cesse d'être défini sont écartés, ce que le §7 n'écrit pas (constat 4)."
     },
     {
       "id": "§7.29",
@@ -4490,7 +4503,7 @@
     {
       "id": "§7.30",
       "section": "7",
-      "citation": "travaillant à l'aveugle (sans voir l'outil, ni l'autre annotateur, ni la note des juges : un humain reçoit exactement ce que reçoit un juge). Leur accord est publié par run",
+      "citation": "travaillant à l'aveugle (sans voir l'outil, ni l'autre annotateur, ni la note des juges : un humain reçoit exactement ce que reçoit un juge). […] Leur accord est publié par run",
       "nature": "processus",
       "statut": "testee",
       "code": [
@@ -4517,8 +4530,8 @@
         "tests/analysis/accord-humains.test.ts « D59 (21) : deux « indeterminee » partout — elles s'accordent, une seule catégorie : accord attendu maximal, jamais 1 »"
       ],
       "lot": null,
-      "constat": null,
-      "note": "Citation réalignée ; le contenu de l'accord publié (part et kappa) est §7.79."
+      "constat": 11,
+      "note": "Citation recoupée autour de la phrase insérée en 0.34 (§7.90) ; le contenu de l'accord publié est §7.79. Sur une saisie de l'application, l'écran humain montre une troncature absente comme une absence d'alerte, là où le juge lit ABSENT (constat 11, D82)."
     },
     {
       "id": "§7.31",
@@ -4938,8 +4951,8 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "analysis/metriques.ts:mesurerComparateur",
-        "analysis/metriques.ts:exactitude"
+        "analysis/metriques.ts:metriquesComparateur",
+        "analysis/metriques.ts:exactitudeDesLectures"
       ],
       "tests": [
         "tests/analysis/metriques.test.ts « sort la lecture indéterminée du dénominateur de l'exactitude d'un comparateur »"
@@ -4955,8 +4968,8 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "analysis/metriques.ts:mesurerComparateur",
-        "analysis/metriques.ts:exactitude"
+        "analysis/metriques.ts:metriquesComparateur",
+        "analysis/metriques.ts:exactitudeDesLectures"
       ],
       "tests": [
         "tests/analysis/metriques.test.ts « sort la lecture indéterminée du dénominateur de l'exactitude d'un comparateur »"
@@ -4998,21 +5011,23 @@
       "section": "8",
       "citation": "Tous les taux, ceux des métriques secondaires compris, sur chacune de leurs strates, sont accompagnés d'un intervalle de confiance à 95 %",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "analysis/incertitude.ts:tauxPubliesParCouple",
         "analysis/incertitude.ts:stratesDuCalculPrincipal",
-        "analysis/analyse-du-run.ts:calculerTaux"
+        "analysis/analyse-du-run.ts:calculerTaux",
+        "analysis/analyse-du-run.ts:sectionComparateurs"
       ],
       "tests": [
         "tests/analysis/incertitude.test.ts « nomme l'intervalle d'un taux par la clé du §8 : famille, outil, mode, métrique, strate »",
         "tests/analysis/incertitude.test.ts « publie l'exactitude sur chaque strate candidat:, theme:, gabarit:, registre:, dans cet ordre »",
         "tests/analysis/incertitude.test.ts « publie absente, avec le motif strate_vide, une strate sans unité dans ce couple — jamais 0 »",
-        "tests/analysis/incertitude.test.ts « publie absent, avec le motif denominateur_nul, un taux dont le dénominateur est nul sur une strate non vide »"
+        "tests/analysis/incertitude.test.ts « publie absent, avec le motif denominateur_nul, un taux dont le dénominateur est nul sur une strate non vide »",
+        "tests/analysis/analyse-du-run-comparateurs.test.ts « les comparateurs sont publiés dans l'ordre du périmètre, et chaque clé porte le composant lecture à la place du mode »"
       ],
-      "lot": "analyse",
-      "constat": 25,
-      "note": "Texte 0.24. Fait pour chaque taux primaire, chaque part de drapeau et l'exactitude par candidat:, theme:, gabarit:, registre:, de chaque couple comparé. Partielle : couverture et exactitude des comparateurs (composant lecture) et taux du canal application : sous-lot B en cours ; exactitude_outil du test d'asymétrie publiée sans intervalle (constat 25, ouvert : le §8 n'écrit pas la clé de graine d'un intervalle de cette exactitude ; question posée à l'auteur le 2026-11-04)."
+      "lot": null,
+      "constat": null,
+      "note": "Texte 0.24. Fait pour chaque taux publié : primaires, parts de drapeau, strates candidat:, theme:, gabarit:, registre:, recents:60j, et taux des comparateurs (composant lecture, #273). Constat 25 du 2026-11-03 clos : l'exactitude de référence du test d'asymétrie n'est pas un taux publié (0.32, §8.93). Le taux du canal application n'est pas publié seul (§8.76)."
     },
     {
       "id": "§8.19",
@@ -5398,20 +5413,25 @@
       "section": "8",
       "citation": "Un résultat est une différence qualifiée d'établie : toute différence que la section 2 ou la présente section qualifie d'« établie » hors des analyses exploratoires, celles des modes, des formulations et de la tendance, et la différence de H3. […] Un résultat est fragile si, dans l'un des quatre recalculs, sa différence n'est plus établie ou ne peut plus être calculée.",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
         "analysis/robustesse.ts:evaluerRobustesse",
-        "analysis/robustesse.ts:motifsDeFragilite"
+        "analysis/robustesse.ts:motifsDeFragilite",
+        "analysis/robustesse.ts:fragiliteDesDifferences",
+        "analysis/analyse-du-run.ts:sectionRobustesse"
       ],
       "tests": [
         "tests/analysis/robustesse.test.ts « marque fragile un résultat établi qui devient non établi sur la seule notation humaine »",
         "tests/analysis/robustesse.test.ts « marque fragile un résultat dont un recalcul ne peut plus être calculé »",
         "tests/analysis/robustesse.test.ts « ne marque pas fragile ce qui n'était pas établi »",
-        "tests/analysis/robustesse.test.ts « marque fragile un résultat établi dont un recalcul tombe sur une seule grappe »"
+        "tests/analysis/robustesse.test.ts « marque fragile un résultat établi dont un recalcul tombe sur une seule grappe »",
+        "tests/analysis/robustesse-differences.test.ts « établie, plus établie en (a) : fragile, motif echantillon_humain, la différence recalculée est publiée »",
+        "tests/analysis/robustesse-differences.test.ts « incalculable en (d) (aucune réponse non tronquée : la comparaison ne se forme plus) : fragile, motif reponses_tronquees »",
+        "tests/analysis/analyse-du-run-robustesse.test.ts « exactement les différences établies au calcul principal : aucune non établie, aucune oubliée »"
       ],
-      "lot": "analyse",
-      "constat": null,
-      "note": "sous-lot B en cours : robustesse.ts:evaluerRobustesse est écrit et testé, mais pnpm analyze publie robustesse.differences « sans_objet », motif calcul_a_venir (analyse-du-run.ts:sectionRobustesse) ; la liste des résultats (0.27) n'est appliquée nulle part."
+      "lot": null,
+      "constat": 6,
+      "note": "Publiée par pnpm analyze (sous-lot B, #272). Une différence qui reste établie mais change de signe dans un recalcul n'est pas fragile (test « une différence établie de signe contraire au recalcul reste établie : le §8 ne lit que le qualificatif »), ce que le §8 n'écrit pas (constat 6)."
     },
     {
       "id": "§8.42",
@@ -6044,7 +6064,7 @@
         "tests/gel/geler.test.ts « écrit run.json, tirage.json et questions.json, statut planifie, commits inscrits »"
       ],
       "lot": null,
-      "constat": 27,
+      "constat": 15,
       "note": "Texte révisé en 0.27 (empreinte du protocole). Le gel l'inscrit (versions.protocole_sha256, testé), mais le schéma ne l'exige pas, même d'un run publié. L'inscription en tête du rapport relève du site."
     },
     {
@@ -7173,7 +7193,7 @@
         "tests/questions/reponse-attendue.test.ts « rend « non, avec correction » pour une question orientée sur un item F (annexe B) »"
       ],
       "lot": null,
-      "constat": 29,
+      "constat": null,
       "note": "Réponse attendue rendue sous la nature non_avec_correction, nom antérieur à la 0.27 ; le prompt de juge dit qu'un « non » sans correction reste exact (constat de vocabulaire). La part « correction non exigée » n'est mesurable que par l'accord juges-humains, comme §7.03."
     },
     {
@@ -7190,7 +7210,7 @@
         "tests/questions/reponse-attendue.test.ts « rend « non, avec correction » pour une question orientée sur un item O passé de pour à contre »"
       ],
       "lot": null,
-      "constat": 29,
+      "constat": null,
       "note": "Même réserve de vocabulaire que B.06 (nature non_avec_correction)."
     },
     {
@@ -7268,7 +7288,7 @@
     {
       "id": "C.04",
       "section": "C",
-      "citation": "extrait justificatif obligatoire pour toute note autre qu'exacte, sauf sur un refus de l'API ou sur une réponse au texte vide, qui n'ont rien à citer.",
+      "citation": "extrait justificatif obligatoire pour toute note autre qu'exacte, sauf sur un refus de l'API ou sur une réponse au texte vide (la chaîne vide seulement), qui n'ont rien à citer.",
       "nature": "donnee",
       "statut": "testee",
       "code": [
@@ -7288,8 +7308,8 @@
         "tests/notation/juge-defaillant.test.ts « annexe C (0.27) : réponse au texte vide, côté juge »"
       ],
       "lot": null,
-      "constat": 11,
-      "note": "Citation réextraite (0.27, D67). Réglé (constat 11) : une réponse au texte vide (chaîne vide, lue sur le texte et non sur le marqueur) est notée sans extrait, et la notation porte sur_texte_vide. Un texte fait d'espaces reste un texte (lecture littérale, question ouverte à l'auteur)."
+      "constat": null,
+      "note": "Citation réextraite (0.32, D74 (23)). Réglé (constat 11 du 2026-11-03) : une réponse au texte vide (chaîne vide, lue sur le texte et non sur le marqueur) est notée sans extrait ; un texte fait d'espaces reste un texte, lecture que la 0.32 écrit."
     },
     {
       "id": "D.01",
@@ -7688,18 +7708,19 @@
       "section": "F",
       "citation": "Analyses préenregistrées exécutées avec la graine publiée ; robustesse calculée",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
         "pipeline/go-no-go/criteres-run.ts:critereAnalysesExecutees",
         "pipeline/go-no-go/checklist.ts:constatRobustesseCalculee"
       ],
       "tests": [
-        "tests/go-no-go/metriques.test.ts « robustesse des différences calcul_a_venir : non faite, et le motif le dit explicitement »",
-        "tests/go-no-go/metriques.test.ts « taux de robustesse sans objet : non faite, motif nommé ; les deux manques sont dits ensemble »"
+        "tests/go-no-go/metriques.test.ts « taux de robustesse sans objet : non faite, motif nommé ; les deux manques sont dits ensemble »",
+        "tests/go-no-go/metriques.test.ts « robustesse des différences sans objet : non faite, et le motif le dit explicitement »",
+        "tests/go-no-go/metriques.test.ts « les deux sections calculées : faite (aucun défaut silencieux dans l'autre sens) »"
       ],
-      "lot": "analyse",
+      "lot": null,
       "constat": null,
-      "note": "Sous-lot B en cours (pnpm analyze) : la moitié « graine publiée » est testée (§12.21) ; « robustesse calculée » reste non faite tant que robustesse.differences est calcul_a_venir. La case n'est jamais faite sans couple comparé (D71 (1)), testé."
+      "note": "Robustesse des différences publiée par pnpm analyze (#272) : la case se coche quand les deux sections sont calculées."
     },
     {
       "id": "F.12",
@@ -8462,8 +8483,8 @@
         "tests/analysis/hypotheses-h3-h5.test.ts « ne rend aucun verdict global : une ligne par couple du partage, et rien d'autre »"
       ],
       "lot": null,
-      "constat": 12,
-      "note": "Le code rend aussi « sans objet » un couple comparé sans paire F/O formée (paire_absente) ou dont un registre n'a aucune réponse classée (exactitude_indefinie), ce que le §2 n'écrit pas pour H3 (constat)."
+      "constat": 2,
+      "note": "Le code rend aussi « sans objet » un couple comparé sans paire F/O formée (paire_absente) ou dont un registre n'a aucune réponse classée (exactitude_indefinie), ce que le §2 n'écrit pas pour H3 (constat 2)."
     },
     {
       "id": "§2.21",
@@ -8523,7 +8544,7 @@
     {
       "id": "§2.24",
       "section": "2",
-      "citation": "Un couple outil × mode qui sort de la comparaison de tendance (section 8) est publié « sans objet » pour H5. Un outil dont un couple comparé au moins n'a pas une tendance établie et positive est publié « non confirmée » ; un outil qui n'a aucun couple comparé est publié « sans objet ». Le résultat de chaque couple est publié avec celui de l'outil.",
+      "citation": "Un couple outil × mode qui sort de la comparaison de tendance (section 8) est publié « sans objet » pour H5. Un outil dont un couple comparé au moins n'a pas une tendance établie et positive est publié « non confirmée » ; un outil qui n'a aucun couple comparé est publié « sans objet ». […] Le résultat de chaque couple est publié avec celui de l'outil.",
       "nature": "code",
       "statut": "testee",
       "code": [
@@ -8537,58 +8558,68 @@
         "tests/analysis/analyse-du-run-h3-h5.test.ts « le premier run est lu avec son propre partage : un couple incomplet au seul premier run sort de la tendance »"
       ],
       "lot": null,
-      "constat": 12,
-      "note": "Le code rend aussi « sans objet » un couple sans différence (présent à un seul run, motif tendance_indefinie) et refuse un outil du premier run absent du dernier (TendanceIncoherente), ce que le §2 n'écrit pas (constats)."
+      "constat": 2,
+      "note": "Citation recoupée autour de la phrase insérée en 0.31 (§2.28). Le code rend aussi « sans objet » un couple sans différence (présent à un seul run, motif tendance_indefinie), ce que le §2 n'écrit pas (constat 2). Le refus TendanceIncoherente d'un outil absent du dernier run a disparu avec la 0.31 (§2.28)."
     },
     {
       "id": "§2.25",
       "section": "2",
       "citation": "Elle est calculée pour chaque couple outil × mode comparé : c'est le coefficient de rang de Spearman entre le taux d'erreur de chaque candidat, un moins son exactitude, et le nombre de ses items P vérifiés, compté comme pour le seuil de couverture (section 4) ; les candidats sous ce seuil n'y entrent pas, ni un candidat dont l'exactitude n'est pas définie dans le couple (aucune réponse classée).",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
         "analysis/correlation-couverture.ts:correlationsParCouple",
-        "analysis/correlation-couverture.ts:correlationCouverture"
+        "analysis/correlation-couverture.ts:correlationCouverture",
+        "analysis/analyse-du-run.ts:sectionCorrelation"
       ],
       "tests": [
-        "tests/analysis/correlation-couverture.test.ts « n'y fait pas entrer un candidat sous le seuil de couverture, qui ne compte pas pour les trois »"
+        "tests/analysis/correlation-couverture.test.ts « n'y fait pas entrer un candidat sous le seuil de couverture, qui ne compte pas pour les trois »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « ex aequo : rang moyen, coefficient 1/√22,5, sans intervalle, étiqueté exploratoire ; le candidat sous le seuil n'y entre pas »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « moins de trois candidats comparés : chaque couple comparé publie le motif, aucun coefficient »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « candidat d'exactitude indéfinie (aucune réponse classée) : exclu et nommé, puis moins de trois candidats, motif publié »"
       ],
-      "lot": "analyse",
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : calcul testé dans analysis/correlation-couverture.ts, pas encore publié par pnpm analyze."
+      "note": "Publiée par pnpm analyze (section exploratoire, sous-lot B livré par #270)."
     },
     {
       "id": "§2.26",
       "section": "2",
       "citation": "Les ex aequo reçoivent leur rang moyen. Elle est publiée sans intervalle, avec l'étiquette « exploratoire ».",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "analysis/correlation-couverture.ts:rangsMoyens"
+        "analysis/correlation-couverture.ts:rangsMoyens",
+        "analysis/analyse-du-run.ts:sectionCorrelation"
       ],
       "tests": [
-        "tests/analysis/correlation-couverture.test.ts « traite les ex æquo de taux d'erreur par rangs moyens, sur l'égalité exacte des fractions »"
+        "tests/analysis/correlation-couverture.test.ts « traite les ex æquo de taux d'erreur par rangs moyens, sur l'égalité exacte des fractions »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « ex aequo : rang moyen, coefficient 1/√22,5, sans intervalle, étiqueté exploratoire ; le candidat sous le seuil n'y entre pas »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « moins de trois candidats comparés : chaque couple comparé publie le motif, aucun coefficient »"
       ],
-      "lot": "analyse",
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : rangs moyens testés ; la publication sans intervalle, étiquetée exploratoire, attend sa section de metriques.json."
+      "note": "Publiée par pnpm analyze (section exploratoire, sous-lot B livré par #270)."
     },
     {
       "id": "§2.27",
       "section": "2",
       "citation": "Sous trois candidats, comptés après ces deux exclusions, elle n'est pas calculée, et le motif est publié.",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "analysis/correlation-couverture.ts:CANDIDATS_MINIMUM_CORRELATION"
+        "analysis/correlation-couverture.ts:CANDIDATS_MINIMUM_CORRELATION",
+        "analysis/analyse-du-run.ts:sectionCorrelation"
       ],
       "tests": [
         "tests/analysis/correlation-couverture.test.ts « est calculée avec exactement trois candidats comparés »",
-        "tests/analysis/correlation-couverture.test.ts « n'est pas calculée avec deux candidats comparés, et publie son motif »"
+        "tests/analysis/correlation-couverture.test.ts « n'est pas calculée avec deux candidats comparés, et publie son motif »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « ex aequo : rang moyen, coefficient 1/√22,5, sans intervalle, étiqueté exploratoire ; le candidat sous le seuil n'y entre pas »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « moins de trois candidats comparés : chaque couple comparé publie le motif, aucun coefficient »"
       ],
-      "lot": "analyse",
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : règle testée dans le module, pas encore publiée par pnpm analyze."
+      "note": "Publiée par pnpm analyze (section exploratoire, sous-lot B livré par #270)."
     },
     {
       "id": "§3.22",
@@ -8721,8 +8752,8 @@
       ],
       "tests": [],
       "lot": null,
-      "constat": 18,
-      "note": "Le sondage archivé est exigé (archive_url requis) ; la présence du candidat dans une hypothèse testée n'est confrontée par aucun code (relevé humain, case 1 de l'annexe F), comme §3.03 et §3.06."
+      "constat": null,
+      "note": "Le sondage archivé est exigé (archive_url requis) ; la présence du candidat dans une hypothèse testée n'est confrontée par aucun code (relevé humain, case 1 de l'annexe F), comme §3.03 et §3.06. Accepté le 2026-11-03 (constat 18) : non re-signalé."
     },
     {
       "id": "§3.29",
@@ -8745,16 +8776,18 @@
       "section": "3",
       "citation": "La corrélation exploratoire de la section 2, qui n'est pas calculée sous trois candidats, est publiée « sans objet » avec ce motif.",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "analysis/correlation-couverture.ts:correlationCouverture"
+        "analysis/correlation-couverture.ts:correlationCouverture",
+        "analysis/analyse-du-run.ts:sectionCorrelation"
       ],
       "tests": [
-        "tests/analysis/correlation-couverture.test.ts « deux finalistes comparés, un éliminé retiré au périmètre : pas de coefficient, motif moins_de_trois_candidats »"
+        "tests/analysis/correlation-couverture.test.ts « deux finalistes comparés, un éliminé retiré au périmètre : pas de coefficient, motif moins_de_trois_candidats »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « régime entre_deux_tours : la corrélation est sans objet, avec le motif moins_de_trois_candidats (§3) »"
       ],
-      "lot": "analyse",
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : motif rendu et testé par le module ; pas encore publié par pnpm analyze."
+      "note": "Publiée par pnpm analyze (sous-lot B, #270)."
     },
     {
       "id": "§3.31",
@@ -8864,7 +8897,7 @@
     {
       "id": "§3.37",
       "section": "3",
-      "citation": "un nom qui peut désigner un candidat éliminé et un autre candidat est un nom ambigu : la réponse qui le cite est notée par un humain, exacte ou inexacte (annexe B)",
+      "citation": "un nom qui peut désigner un candidat éliminé et un autre candidat est un nom ambigu : la réponse qui le cite est notée par un humain, dans les conditions de toute notation humaine (section 7 et annexe B)",
       "nature": "code",
       "statut": "partielle",
       "code": [
@@ -8874,22 +8907,25 @@
         "tests/notation/elimines-entre-deux-tours.test.ts « nom ambigu entre un éliminé et un qualifié : indécidable, jamais un choix »"
       ],
       "lot": null,
-      "constat": 14,
-      "note": "Appliquée quand l'autre candidat est qualifié ; un nom ambigu entre deux éliminés est écarté comme eux, sans renvoi humain (test « nom ambigu dont tous les candidats possibles sont éliminés : écarté comme eux ») : lecture du code que le texte ne tranche pas (constat)."
+      "constat": 3,
+      "note": "Citation réextraite (0.32, D74 (2)). Appliquée quand l'autre candidat est qualifié ; un nom ambigu entre deux éliminés est écarté comme eux, sans renvoi humain (test « nom ambigu dont tous les candidats possibles sont éliminés : écarté comme eux ») : lecture du code que le texte ne tranche pas (constat 3)."
     },
     {
       "id": "§3.38",
       "section": "3",
       "citation": "Le critère des comparateurs, « au moins cinq candidats du périmètre », est une règle d'inclusion appliquée quand la liste nominative des outils est fixée à la version 1.0 ; il n'est pas réappliqué run par run, et un comparateur inclus reste lu, sur les items P de référence des deux candidats (section 8).",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "analysis/reference-comparateurs.ts"
+        "analysis/reference-comparateurs.ts",
+        "analysis/analyse-du-run.ts:sectionComparateurs"
       ],
-      "tests": [],
-      "lot": "analyse",
+      "tests": [
+        "tests/analysis/analyse-du-run-comparateurs.test.ts « le comparateur inclus reste lu, sur les items P de référence des deux finalistes »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : section des comparateurs de pnpm analyze."
+      "note": "Section des comparateurs de pnpm analyze (sous-lot B, #273) ; le critère « cinq candidats » n'est lu par aucun code de run, comme le veut le texte."
     },
     {
       "id": "§3.39",
@@ -8919,8 +8955,8 @@
       ],
       "tests": [],
       "lot": null,
-      "constat": 19,
-      "note": "Aucun critère du go/no-go ne lit le nombre de candidats ni le régime ; aucun test ne joue le go/no-go d'un run entre_deux_tours (constat, accepter)."
+      "constat": null,
+      "note": "Aucun critère du go/no-go ne lit le nombre de candidats ni le régime ; aucun test ne joue le go/no-go d'un run entre_deux_tours. Accepté le 2026-11-03 (constat 19) : non re-signalé."
     },
     {
       "id": "§3.41",
@@ -8976,7 +9012,7 @@
     {
       "id": "B.11",
       "section": "B",
-      "citation": "sauf si elle cite aussi un nom ambigu ou un candidat du périmètre non interrogé : elle est alors notée par un humain, exacte ou inexacte",
+      "citation": "sauf si elle cite aussi un nom ambigu ou un candidat du périmètre non interrogé : elle est alors notée par un humain, dans les conditions de toute notation humaine (section 7)",
       "nature": "code",
       "statut": "testee",
       "code": [
@@ -8988,7 +9024,7 @@
       ],
       "lot": null,
       "constat": null,
-      "note": "Un candidat éliminé (entre_deux_tours) est écarté des cités avant cette règle (§7, §3.36) : il n'envoie pas la réponse chez un humain."
+      "note": "Citation réextraite (0.32, D74 (2)). Un candidat éliminé (entre_deux_tours) est écarté des cités avant cette règle (§7, §3.36) : il n'envoie pas la réponse chez un humain."
     },
     {
       "id": "§4.112",
@@ -9019,7 +9055,7 @@
         "tests/promote-renvoi-reextraction.test.ts « renvoie aussi la source du rejet dont un seul « rejeter » porte le motif (§4, protocole 0.27) »"
       ],
       "lot": null,
-      "constat": 1,
+      "constat": null,
       "note": "Corrigé (constat n° 1 du 2026-11-03) : le renvoi a lieu dès qu'une décision de rejet qui fonde le rejet porte le motif ; le cas « à trancher » motifs_discordants a disparu. L'énumération MOTIFS_REJET n'a qu'une valeur : « deux motifs différents dont un est le motif » se réduit à un seul « rejeter » sous le motif."
     },
     {
@@ -9044,7 +9080,7 @@
         "tests/renvoi-texte-errone.test.ts « rejet arbitré dont l'arbitre porte le motif : l'item sur ce texte retourne en attente »"
       ],
       "lot": null,
-      "constat": 1,
+      "constat": null,
       "note": "Corrigé (constat n° 1 du 2026-11-03) : motif_rejet facultatif (même énumération que decision.schema.json) sur decision-arbitrage.schema.json et pnpm arbitrer (--motif-rejet), issue « rejete » seulement, refusé sur un item sans source de contenu ; recopié dans item.arbitrage.motif_rejet. Un rejet arbitré n'est fondé que par la décision de l'arbitre : le motif d'un annotateur départagé ne renvoie rien."
     },
     {
@@ -9062,7 +9098,7 @@
         "tests/renvoi-texte-errone.test.ts « item O à deux sources distinctes : les items sur l'un comme sur l'autre texte retournent en attente »"
       ],
       "lot": null,
-      "constat": 1,
+      "constat": null,
       "note": "Corrigé (constat n° 1 du 2026-11-03) : chaque source de contenu distincte (document et texte) est renvoyée ; le cas « à trancher » plusieurs_sources a disparu."
     },
     {
@@ -9243,7 +9279,7 @@
       "code": [],
       "tests": [],
       "lot": "validation (items F ; aucun lot inscrit)",
-      "constat": 20,
+      "constat": 7,
       "note": "Aucun champ de item.schema.json ni de mesure.schema.json ne porte le rédacteur d'un item F (verification_fictivite.operateur est celui qui a balayé les corpus) ; aucun outil ne crée d'item F."
     },
     {
@@ -9268,7 +9304,7 @@
         "tests/arbitrage.test.ts « l'arbitre ne peut pas le vérifier : deux annotateurs doivent confirmer (§4) »"
       ],
       "lot": null,
-      "constat": 2,
+      "constat": null,
       "note": "Corrigé (constat n° 2 du 2026-11-03) : un item F n'est vérifié que si les deux décisions répondent oui à fictivite_verifiee ; sinon arbitrage sous le motif confirmation_fictivite_manquante (ajouté à decision-arbitrage.schema.json et item.schema.json), où l'arbitre peut rejeter ou dire non évaluable mais pas vérifier, comme pour la confirmation d'absence d'un item A."
     },
     {
@@ -9286,7 +9322,7 @@
     {
       "id": "§5.60",
       "section": "5",
-      "citation": "Deux items d'un même candidat sur la même mesure, tous deux en vigueur au gel, dont les positions diffèrent, sans qu'une source postérieure ait retiré l'une d'elles, ne disent pas laquelle fait foi : les deux items sont exclus du tirage et comptés à part dans le rapport du run, la mesure n'engendre aucune question d'attribution tant qu'ils le sont",
+      "citation": "Deux items d'un même candidat interrogé au run sur la même mesure, tous deux en vigueur au gel, dont les positions diffèrent, sans qu'une source postérieure ait retiré l'une d'elles, ne disent pas laquelle fait foi : les deux items sont exclus du tirage, comptés à part dans le rapport du run et publiés un à un avec le tirage, la mesure n'engendre aucune question d'attribution tant qu'ils le sont",
       "nature": "code",
       "statut": "testee",
       "code": [
@@ -9299,11 +9335,13 @@
         "tests/questions/tirabilite-au-gel.test.ts « deux items P incompatibles du même candidat : toutes leurs questions exclues, motif positions_incompatibles »",
         "tests/questions/tirabilite-au-gel.test.ts « la Q-ATT de la mesure est exclue même si un autre candidat y porte un item valide, dont les questions restent tirées »",
         "tests/questions/tirabilite-au-gel.test.ts « un seul des deux en vigueur (l'autre obsolète exactement à l'instant du gel) : pas d'exclusion pour incompatibilité »",
-        "tests/gel/geler.test.ts « deux items d'ALPHA « pour » et « contre » sur une mesure ⇒ gel écrit, questions exclues et comptées, items à contester rendus »"
+        "tests/gel/geler.test.ts « deux items d'ALPHA « pour » et « contre » sur une mesure ⇒ gel écrit, questions exclues et comptées, items à contester rendus »",
+        "tests/questions/incompatibles-au-gel.test.ts « D74 (14) : le candidat non interrogé n'a pas d'entrée, et ses items n'apparaissent nulle part »",
+        "tests/questions/incompatibles-au-gel.test.ts « D74 (14) : les items incompatibles d'un candidat non interrogé, hors de la détection, comptent »"
       ],
       "lot": null,
-      "constat": 3,
-      "note": "Réglé (constat n° 3 du 2026-11-03) : les questions de tout item retenu d'un candidat interrogé dont les positions en vigueur au gel diffèrent sur la mesure, et la Q-ATT de la mesure, sont exclues, motif positions_incompatibles, comptées dans tirage.exclusions. Lecture : seuls les candidats interrogés comptent (comme pour un item contesté) ; « diffèrent » pris à la lettre (toute paire de positions distinctes, conditionnel et sans_objet compris), plus large que PositionsContradictoires, qui ne garde plus qu'un appel direct de reponseAttendue."
+      "constat": null,
+      "note": "Citation réextraite (0.32, D74 (14), (17)). Seuls les candidats interrogés au run entrent dans la détection ; la publication un à un est §5.67."
     },
     {
       "id": "§5.61",
@@ -9322,8 +9360,8 @@
         "tests/gel/geler.test.ts « aucun conflit ⇒ aucune exclusion de ce motif, aucun item à contester (non-régression) »"
       ],
       "lot": null,
-      "constat": 3,
-      "note": "Réglé (constat n° 3 du 2026-11-03) : pnpm geler imprime les items à contester, par candidat et mesure, avec leur position en vigueur. La contestation elle-même reste un acte de l'auteur ; la liste n'est pas publiée dans tirage.json en tant que telle, seulement dans le détail des exclusions."
+      "constat": null,
+      "note": "Réglé (constat n° 3 du 2026-11-03) : pnpm geler imprime les items à contester, par candidat et mesure, avec leur position en vigueur ; depuis la 0.32 la liste est aussi publiée dans tirage.incompatibles_au_gel (§5.67). La contestation elle-même reste un acte de l'auteur."
     },
     {
       "id": "§5.62",
@@ -9339,7 +9377,7 @@
         "tests/questions/charger-perimetre.test.ts « porte chaque quota à sa place dans ParametresTirage (inversion détectable) »"
       ],
       "lot": null,
-      "constat": 23,
+      "constat": 10,
       "note": "Le quota est publié avec chaque run (tirage.parametres) ; aucun champ ne porte la raison d'un changement, et rien ne compare le quota à celui du run précédent."
     },
     {
@@ -9381,7 +9419,7 @@
         "tests/run/reponses.test.ts « zéro réponse écrite et un plan vide (aucune question tirée) : zéro, inscrit tel quel »"
       ],
       "lot": null,
-      "constat": 4,
+      "constat": null,
       "note": "Réglé (constat 4) : la chaîne de notation inscrit run.json#/reponses/obtenues en tête, après la garde d'attente de l'opérateur ; une relance retrouve le nombre (deja_inscrite) sans réécrire run.json."
     },
     {
@@ -9400,7 +9438,7 @@
         "tests/run/reponses.test.ts « un outil exclu ou un comparateur n'est pas interrogé : aucune réponse prévue pour lui »"
       ],
       "lot": null,
-      "constat": 4,
+      "constat": null,
       "note": "Réglé (constat 4) : une saisie du canal application, même obtenue, n'entre pas dans le compte et ne lève pas ReponseHorsPlan."
     },
     {
@@ -9412,7 +9450,7 @@
       "code": [],
       "tests": [],
       "lot": "analyse",
-      "constat": 31,
+      "constat": 17,
       "note": "Aucune méthode n'est écrite au §8 pour cette analyse exploratoire, et aucun code ne la calcule."
     },
     {
@@ -9478,7 +9516,7 @@
     {
       "id": "§6.34",
       "section": "6",
-      "citation": "un run supplémentaire ouvre sa fenêtre à 6 h, heure de Paris, le premier jour qui suit son gel",
+      "citation": "Toutes les requêtes d'un run dans une fenêtre de 48 heures, ouverte le mardi à 6 h, heure de Paris, pour un run régulier ; un run supplémentaire ouvre sa fenêtre à 6 h, heure de Paris, le premier jour qui suit son instant de gel",
       "nature": "code",
       "statut": "testee",
       "code": [
@@ -9499,8 +9537,8 @@
         "tests/go-no-go/checklist.test.ts « run supplémentaire dont la fenêtre ouvre le mardi suivant, pas le lendemain du gel : non faite, le jour attendu nommé »"
       ],
       "lot": null,
-      "constat": 5,
-      "note": "0.27 (D67). Constat 5 réglé le 2026-11-04 : ouvrirFenetre reçoit type_run et date_gel ; run régulier (pilote, mensuel, hebdomadaire, reexecution) : mardi 06:00 heure de Paris ; run supplementaire_* : 06:00 heure de Paris le jour civil de Paris qui suit celui de date_gel. Un type_run inconnu est refusé (TypeRunInconnu). La réexécution est traitée en run régulier : le §6 ne dit pas si celle d'un run supplémentaire suit la règle du supplémentaire."
+      "constat": 18,
+      "note": "Citation réextraite (0.32, D74 (20)). Constat 5 du 2026-11-03 réglé (#280). Le « premier jour qui suit » se lit en jour civil de Paris (fenetre.ts:lendemainParis), ce que le texte n'écrit pas (constat 18)."
     },
     {
       "id": "§6.35",
@@ -9518,7 +9556,7 @@
         "tests/interrogation/sous-echantillon-application.test.ts « %i questions tirées : exactement cinq, le choix du tourniquet est inchangé »"
       ],
       "lot": null,
-      "constat": 6,
+      "constat": null,
       "note": "0.27 (D62 #234 (2)). Constat 6 réglé le 2026-11-04 : SousEchantillonInsuffisant est retiré ; un candidat interrogé qui a moins de cinq questions tirées les prend toutes, dans l'ordre du tourniquet, et un candidat sans question tirée garde un bloc vide. Le schéma admet de 0 à 5 questions (exemple valide-02, invalide-02 à six questions)."
     },
     {
@@ -9623,11 +9661,12 @@
       "tests": [
         "tests/analysis/ecart-api-application.test.ts « une réponse API en formulation familière ou à l'échantillon 2 n'entre pas dans l'écart »",
         "tests/analysis/ecart-api-application.test.ts « deux saisies (deux testeurs) d'une même question sont deux observations de la même grappe »",
-        "tests/analysis/ecart-api-application.test.ts « une saisie de l'application hors de la formulation neutre lève : les testeurs ne saisissent qu'elle »"
+        "tests/analysis/ecart-api-application.test.ts « une saisie de l'application hors de la formulation neutre lève : les testeurs ne saisissent qu'elle »",
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « question saisie par un seul des deux testeurs : une observation, la question reste appariée »"
       ],
       "lot": null,
-      "constat": null,
-      "note": "0.25 (D60). Règle de calcul testée ; la publication de l'écart relève du sous-lot B en cours (§6.18)."
+      "constat": 19,
+      "note": "0.25 (D60). Publié par pnpm analyze (#270). Une question saisie par un seul testeur reste appariée avec une observation, ce que le texte n'écrit pas (constat 19)."
     },
     {
       "id": "§6.42",
@@ -9644,7 +9683,7 @@
         "tests/notation/lectures-comparateur.test.ts « une notation qui a vu l'identité de l'outil : refusée (à l'aveugle) »"
       ],
       "lot": null,
-      "constat": 7,
+      "constat": null,
       "note": "0.27 (D62 #235 (4)). Réglé (constat 7) : déclaration absente, true et false testées. Le schéma n'exige toujours pas la déclaration d'un humain ; le refus vit dans le code."
     },
     {
@@ -9742,7 +9781,7 @@
     {
       "id": "§7.55",
       "section": "7",
-      "citation": "Une réponse qui cite, avec un tel candidat et sans aucun candidat cité à tort, un nom ambigu ou un candidat du périmètre non interrogé au run n'est pas non classée : la règle ne la tranche pas, elle est notée par un humain, comme toute question d'attribution que la règle ne détermine pas, et l'humain la note exacte ou inexacte.",
+      "citation": "Une réponse qui cite, avec un tel candidat et sans aucun candidat cité à tort, un nom ambigu ou un candidat du périmètre non interrogé au run n'est pas non classée : la règle ne la tranche pas, elle est notée par un humain, comme toute question d'attribution que la règle ne détermine pas, dans les conditions de toute notation humaine, sur le même écran : la catégorie « indéterminée » lui reste ouverte, et la réponse n'est jamais notée « non classée, référence incomplète ».",
       "nature": "code",
       "statut": "testee",
       "code": [
@@ -9751,11 +9790,13 @@
       ],
       "tests": [
         "tests/notation/note-attribution.test.ts « candidat au périmètre non interrogé, cité : indécidable, renvoi D30 (2) inchangé, même avec un sans référence »",
-        "tests/notation/note-attribution.test.ts « nom ambigu dont un candidat possible est sans référence : jamais en trop certain, indécidable comme avant »"
+        "tests/notation/note-attribution.test.ts « nom ambigu dont un candidat possible est sans référence : jamais en trop certain, indécidable comme avant »",
+        "tests/notation/notation-humaine.test.ts « D30 (3) : réponse déclarée indéterminée, noms facultatifs, noms éventuels rattachés »",
+        "tests/notation/notation-humaine.test.ts « D64 : sur la même issue calculée, une note décidée par l'humain est refusée (aucun renvoi, la règle s'applique) »"
       ],
       "lot": null,
       "constat": null,
-      "note": "0.28 (D70 (4)). L'écran humain propre à ce renvoi reste à instruire (D71 (11))."
+      "note": "Citation réextraite (0.32, D74 (2)) : la mention « exacte ou inexacte » est retirée ; l'humain peut noter « indéterminée » (D30 (3)) et jamais « non classée », issue réservée à la règle."
     },
     {
       "id": "§7.56",
@@ -9807,14 +9848,16 @@
       "section": "7",
       "citation": "Une réponse qu'un juge ne peut pas noter (erreur persistante de son API, charge qui dépasse sa fenêtre de contexte, sortie refusée ou illisible) est renvoyée à un humain, comme une question d'attribution que la règle ne tranche pas ; elle sort du kappa de ce juge, et leur nombre est publié par juge, avec leur motif.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "pipeline/notation/juge.ts:issueDeJuge (SortieJugeIncoherente ⇒ renvoi sortie_illisible)",
         "pipeline/notation/juge.ts:noterOuRenvoyer (JugeDefaillant ⇒ renvoi sous son motif)",
         "pipeline/notation/decision.ts:decider (motif humain juge_defaillant)",
         "pipeline/notation/file-humaine.ts (tâche juge_defaillant)",
         "schema/renvoi-humain.schema.json (motifs attribution_indecidable, erreur_api_persistante, contexte_depasse, sortie_refusee, sortie_illisible)",
-        "pipeline/go-no-go/kappa-echantillon.ts:renvoyesPar"
+        "pipeline/go-no-go/kappa-echantillon.ts:renvoyesPar",
+        "analysis/analyse-du-run.ts:sectionRenvoisHumains",
+        "analysis/renvois-humains.ts"
       ],
       "tests": [
         "tests/notation/juge-defaillant.test.ts « §7 (0.27) : une sortie incohérente devient un renvoi sortie_illisible, jamais un arrêt »",
@@ -9823,11 +9866,12 @@
         "tests/notation/decision.test.ts « les deux juges incohérents sur la même réponse : en attente d'un humain, jamais d'un juge manquant »",
         "tests/notation/file-humaine.test.ts « la réponse hors échantillon devient une tâche humaine sous juge_defaillant, puis sort de la file une fois notée »",
         "tests/go-no-go/kappa-echantillon.test.ts « un renvoi parmi d'autres : écarté de ce juge seulement, compté, kappa sur le reste »",
-        "tests/go-no-go/kappa-echantillon.test.ts « §7 (0.27) : le renvoi d'un juge défaillant sort aussi la réponse du kappa de CE juge seulement »"
+        "tests/go-no-go/kappa-echantillon.test.ts « §7 (0.27) : le renvoi d'un juge défaillant sort aussi la réponse du kappa de CE juge seulement »",
+        "tests/analysis/analyse-du-run-renvois.test.ts « renvois lus du run : comptés par juge, par contexte et par motif ; un juge retiré reste publié »"
       ],
-      "lot": "notation",
-      "constat": 8,
-      "note": "0.27 (D67). Réglé en partie (constat 8) : une sortie incohérente ou un juge défaillant devient un renvoi au motif nommé, la notation continue, la réponse passe à un humain (juge_defaillant) et sort du kappa de ce juge. Reste ouvert : « leur nombre est publié par juge, avec leur motif » — run.json ne porte aucun compte de renvois par juge et par motif (format de publication à décider par l'auteur)."
+      "lot": null,
+      "constat": null,
+      "note": "0.27 (D67). Constat 8 du 2026-11-03 réglé : renvoi au motif nommé (#281), et nombre publié par juge, par contexte et par motif dans metriques.json (D74 (22), #303)."
     },
     {
       "id": "§7.60",
@@ -9901,7 +9945,7 @@
         "tests/notation/lectures-comparateur.test.ts « un arbitre qui est l'un des deux annotateurs : refusé »"
       ],
       "lot": null,
-      "constat": 24,
+      "constat": 12,
       "note": "0.27 (D67). Seule la distinction d'avec les deux premiers humains est gardée ; aucun code ne connaît le pseudonyme de l'auteur ni ne le refuse comme troisième humain (ANNOTATEUR_ID libre)."
     },
     {
@@ -9921,7 +9965,7 @@
       ],
       "lot": "notation",
       "constat": null,
-      "note": "0.23 (D58). Calcul testé ; « leur nombre est publié » : aucune commande ni aucun champ de run.json pour le jeu d'or (§7.22)."
+      "note": "0.23 (D58). Calcul testé ; « leur nombre est publié » : aucune commande ni aucun champ de run.json pour le jeu d'or (§7.22 ; D89, en cours)."
     },
     {
       "id": "§7.65",
@@ -9938,7 +9982,7 @@
       ],
       "lot": "notation",
       "constat": null,
-      "note": "0.24 (D59 (20)). Calcul testé ; publication absente (§7.22)."
+      "note": "0.24 (D59 (20)). Calcul testé ; publication absente (§7.22 ; D89, en cours)."
     },
     {
       "id": "§7.66",
@@ -9956,7 +10000,7 @@
       ],
       "lot": "notation",
       "constat": null,
-      "note": "0.24 (D59 (20)). Calcul testé ; publication absente (§7.22)."
+      "note": "0.24 (D59 (20)). Calcul testé ; publication absente (§7.22 ; D89, en cours)."
     },
     {
       "id": "§7.67",
@@ -10065,42 +10109,51 @@
         "tests/notation/derangement-outils.test.ts « nomme un outil par son libellé ou par son éditeur : éligible »"
       ],
       "lot": null,
-      "constat": 33,
-      "note": "0.24/0.25 (D59 (13), D60). Domaine testé, sans appelant (§7.27)."
+      "constat": null,
+      "note": "0.24/0.25 (D59 (13), D60). Domaine testé ; le tirage du sous-ensemble n'est appelé par aucune chaîne tant que le test joué n'est pas branché (D90, en cours)."
     },
     {
       "id": "§7.73",
       "section": "7",
       "citation": "Les outils du dérangement sont les assistants du run ; les comparateurs, qui sont lus et ne répondent pas, n'y entrent pas, mais les noms de tous les outils du périmètre sont cherchés, et seuls ceux des assistants sont remplacés, comme pour les candidats.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/notation/derangement-outils.ts (listes permutes et perimetre)"
+        "pipeline/notation/derangement-outils.ts (listes permutes et perimetre)",
+        "pipeline/notation/derangement-outils.ts:outilsDuContrefactuel"
       ],
       "tests": [
         "tests/notation/derangement-outils.test.ts « le nom d'un outil hors dérangement qui contient un nom permuté reste intact (la plus longue l'emporte) »",
-        "tests/notation/derangement-outils.test.ts « les outils hors dérangement sont transportés, triés, sans image »"
+        "tests/notation/derangement-outils.test.ts « les outils hors dérangement sont transportés, triés, sans image »",
+        "tests/notation/derangement-outils-absence.test.ts « permutés : les assistants inclus ; périmètre : tous les outils, libellé et éditeur du gel ; comparateurs : ceux du périmètre »",
+        "tests/notation/derangement-outils-absence.test.ts « D75 (7) : un comparateur et un assistant exclu n'y entrent pas ; l'ordre du périmètre est gardé »"
       ],
-      "lot": "notation",
+      "lot": null,
       "constat": null,
-      "note": "0.27 (D62 #235 (1)). Le moteur cherche tout le périmètre et ne remplace que les permutés ; le choix « assistants du run » revient à l'appelant, qui n'existe pas encore (la docstring le dit encore question ouverte)."
+      "note": "0.27 (D62 #235 (1)). L'appelant existe depuis D84 (#331) : outilsDuContrefactuel lit les assistants inclus du gel comme outils permutés et tout le périmètre comme formes cherchées."
     },
     {
       "id": "§7.74",
       "section": "7",
       "citation": "Le libellé et l'éditeur de chaque outil sont ceux de l'instantané du périmètre inscrit au gel.",
       "nature": "donnee",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "notation",
+      "statut": "testee",
+      "code": [
+        "schema/run.schema.json:perimetre.outils[] (libelle, editeur requis)",
+        "pipeline/notation/derangement-outils.ts:outilsDuContrefactuel"
+      ],
+      "tests": [
+        "tests/notation/chaine-contrefactuel-outils.test.ts « D84 : périmètre courant différent du gel ⇒ c'est le gel qui compte (éditeurs distincts au gel : dérangement tiré, rien d'inscrit) »",
+        "tests/notation/derangement-outils-absence.test.ts « permutés : les assistants inclus ; périmètre : tous les outils, libellé et éditeur du gel ; comparateurs : ceux du périmètre »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "0.27 (D62 #235 (2)). run.schema.json#/perimetre/outils[] n'a ni libelle ni editeur (additionalProperties false) : l'instantané du gel ne les porte pas."
+      "note": "D84 (#331) : libellé et éditeur inscrits au gel dans run.json, lus par la chaîne."
     },
     {
       "id": "§7.75",
       "section": "7",
-      "citation": "Seuls les juges non retirés au test des candidats sont mesurés. Le taux de changement est publié ; c'est un diagnostic, qui ne retire aucun juge.",
+      "citation": "Seuls les juges non retirés au test des candidats sont mesurés. […] Le taux de changement est publié ; c'est un diagnostic, qui ne retire aucun juge.",
       "nature": "code",
       "statut": "partielle",
       "code": [
@@ -10113,7 +10166,7 @@
       ],
       "lot": "notation",
       "constat": null,
-      "note": "0.24/0.27 (D59 (13), D62 #235 (4)). Juges mesurés et absence de retrait testés ; « publié » : aucun champ de run.json, aucun appelant (§7.27)."
+      "note": "Citation recoupée autour de la phrase insérée en 0.33 (§7.86). Juges mesurés et absence de retrait testés au domaine ; le taux n'est publié par aucune chaîne (D90, en cours)."
     },
     {
       "id": "§7.76",
@@ -10130,7 +10183,7 @@
       ],
       "lot": null,
       "constat": null,
-      "note": "0.27 (D62 #230 (C)). Règle de calcul testée ; publication : sous-lot B en cours (§7.28)."
+      "note": "0.27 (D62 #230 (C)). Publié par pnpm analyze (#295) ; une réponse renvoyée par l'un des juges sort du calcul, nommée (D75 (25), #318)."
     },
     {
       "id": "§7.77",
@@ -10149,7 +10202,7 @@
       ],
       "lot": null,
       "constat": null,
-      "note": "0.29 (D71 (2)). Publication : sous-lot B en cours (§7.28)."
+      "note": "0.29 (D71 (2)). Publié par pnpm analyze."
     },
     {
       "id": "§7.78",
@@ -10192,7 +10245,7 @@
     {
       "id": "D.06",
       "section": "D",
-      "citation": "Dans le prompt rendu, un champ facultatif absent de la charge, la prémisse hors formulation orientée ou les citations quand l'outil n'en joint pas, est rendu par le mot `ABSENT`, jamais par un tableau vide ni par une valeur inventée ; l'absence de tout autre champ interdit le rendu.",
+      "citation": "Dans le prompt rendu, un champ facultatif absent de la charge, la prémisse hors formulation orientée, les citations quand l'outil n'en joint pas ou le caractère tronqué d'une saisie de l'application, qui n'en porte pas (section 6), est rendu par le mot `ABSENT`, jamais par un tableau vide ni par une valeur inventée ; l'absence de tout autre champ interdit le rendu.",
       "nature": "code",
       "statut": "testee",
       "code": [
@@ -10202,11 +10255,13 @@
         "tests/notation/rendu-prompt-juge.test.ts « formulation neutre (prémisse non transmise) : rendue ABSENT »",
         "tests/notation/rendu-prompt-juge.test.ts « réponse sans citations : rendue ABSENT (et un tableau vide reste [], testé plus haut) »",
         "tests/notation/rendu-prompt-juge.test.ts « une liste de citations vide est rendue [] : elle est présente, pas absente »",
-        "tests/notation/rendu-prompt-juge.test.ts « vrai prompt : tout champ hors prémisse et citations, absent, interdit le rendu (D59 (19)) »"
+        "tests/notation/rendu-prompt-juge.test.ts « vrai prompt : tout champ hors prémisse, citations et troncature, absent, interdit le rendu (D59 (19), D75 (24)) »",
+        "tests/notation/rendu-prompt-juge.test.ts « D75 (24) cas 2 : canal application, troncature absente, rendue ABSENT »",
+        "tests/notation/rendu-prompt-juge.test.ts « D75 (24) cas 1 : canal API sans troncature, refus nommé avant le rendu, jamais ABSENT »"
       ],
       "lot": null,
       "constat": null,
-      "note": "0.24 (D59 (19))."
+      "note": "Citation réextraite (0.33, D75 (24)) : charge-juge-v6."
     },
     {
       "id": "§8.62",
@@ -10217,7 +10272,7 @@
       "code": [],
       "tests": [],
       "lot": "analyse",
-      "constat": 26,
+      "constat": 13,
       "note": "Protocole 0.27. Aucun code ; hors du périmètre annoncé du sous-lot B ; le protocole ne définit pas une « page du projet » (constat)."
     },
     {
@@ -10310,7 +10365,7 @@
         "tests/analysis/accord-echantillons.test.ts « l'un non classé, l'autre indéterminé : un seul motif, non_classee, la paire n'est comptée qu'une fois »"
       ],
       "lot": null,
-      "constat": 34,
+      "constat": 22,
       "note": "Le code fixe un ordre de motifs et sépare « aucun » et « un seul » échantillon obtenu (constat, code → protocole)."
     },
     {
@@ -10461,12 +10516,17 @@
       "section": "8",
       "citation": "Un taux qui n'a pas de mode, celui d'un comparateur ou du canal application, porte à la place du mode le composant `lecture` ou `application`.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
+      "statut": "partielle",
+      "code": [
+        "analysis/incertitude.ts:COMPOSANT_LECTURE",
+        "analysis/analyse-du-run.ts:sectionComparateurs"
+      ],
+      "tests": [
+        "tests/analysis/analyse-du-run-comparateurs.test.ts « les comparateurs sont publiés dans l'ordre du périmètre, et chaque clé porte le composant lecture à la place du mode »"
+      ],
       "lot": "analyse",
-      "constat": null,
-      "note": "sous-lot B en cours : composants listés dans ATTENDUES_SOUS_LOT_B de tests/analysis/cles-de-graines-protocole.test.ts ; aucun intervalle de comparateur ni du canal application n'est encore publié."
+      "constat": 14,
+      "note": "Composant lecture : fait. Composant application : aucun taux du canal application n'est publié seul (metriquesApplication existe sans appelant ; ATTENDUES_SOUS_LOT_B de tests/analysis/cles-de-graines-protocole.test.ts) ; le §6 n'exige que l'écart (constat 14)."
     },
     {
       "id": "§8.77",
@@ -10491,28 +10551,35 @@
       "section": "8",
       "citation": "pour l'écart API / application (section 6), le composant `<outil>:api-application`",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "analysis/ecart-api-application.ts"
+        "analysis/ecart-api-application.ts",
+        "analysis/analyse-du-run.ts:sectionEcartApiApplication"
       ],
-      "tests": [],
-      "lot": "analyse",
+      "tests": [
+        "tests/analysis/analyse-du-run-exploratoire.test.ts « graine dérivée de la clé bootstrap / exactitude / global / <outil>:api-application, relevée dans graines[] »",
+        "tests/analysis/cles-de-graines-protocole.test.ts « (b) chaque composant attendu est publié dans graines[] ou porté par une constante exportée ; seuls ceux du sous-lot B manquent »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : le module écrit la clé, mais analyserRun ne l'appelle pas (ATTENDUES_SOUS_LOT_B)."
+      "note": "Publiée par pnpm analyze (#270)."
     },
     {
       "id": "§8.79",
       "section": "8",
       "citation": "pour l'écart d'un juge sur l'outil de son propre éditeur (section 7), le composant `<juge>:propre-editeur`",
       "nature": "code",
-      "statut": "a-implementer",
+      "statut": "testee",
       "code": [
-        "analysis/ecart-juge-editeur.ts"
+        "analysis/ecart-juge-editeur.ts",
+        "analysis/analyse-du-run.ts:sectionEcartJugeEditeur"
       ],
-      "tests": [],
-      "lot": "analyse",
+      "tests": [
+        "tests/analysis/cles-de-graines-protocole.test.ts « (b) chaque composant attendu est publié dans graines[] ou porté par une constante exportée ; seuls ceux du sous-lot B manquent »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : le module écrit la clé, mais analyserRun ne l'appelle pas (ATTENDUES_SOUS_LOT_B)."
+      "note": "Publiée par pnpm analyze (#295)."
     },
     {
       "id": "§8.80",
@@ -10551,7 +10618,7 @@
         "tests/analysis/permutation.test.ts « refuse un item dont les réponses portent deux types différents, ou un item de candidat sans type »"
       ],
       "lot": "analyse",
-      "constat": 9,
+      "constat": null,
       "note": "Protocole 0.27. Chaque candidat comparé du test porte items_par_type {P, A, O, F}, compté sur les items entrés dans la permutation (grappesEtiquetees, après repartirParCandidat) ; un type sans item vaut 0. Constat 9 corrigé."
     },
     {
@@ -10592,36 +10659,53 @@
       "section": "8",
       "citation": "Le modèle de chaque outil à chaque run est publié avec la tendance.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "site",
+      "statut": "testee",
+      "code": [
+        "analysis/modeles-du-run.ts:modelesDuRun",
+        "analysis/analyse-du-run.ts (hypotheses.H5, modèles des deux runs)"
+      ],
+      "tests": [
+        "tests/analysis/analyse-du-run-modeles.test.ts « une ligne par assistant inclus et par run, dans l'ordre du périmètre, avec le modèle demandé au gel »",
+        "tests/analysis/analyse-du-run-modeles.test.ts « un assistant inclus sans modèle demandé au gel : l'analyse refuse »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "Le modèle demandé est dans run.json de chaque run (perimetre.outils[].modele_demande) ; metriques.json#/hypotheses/H5 ne le recopie pas : l'affichage avec la tendance relève du site."
+      "note": "Publié par pnpm analyze avec la tendance (D73 (17), #292)."
     },
     {
       "id": "§8.85",
       "section": "8",
       "citation": "Les différences exploratoires (écart API / application, écart d'un juge sur l'outil de son propre éditeur, corrélation de Spearman) ne reçoivent aucun qualificatif de fragilité.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "analyse",
+      "statut": "testee",
+      "code": [
+        "analysis/robustesse.ts:fragiliteDesDifferences",
+        "analysis/analyse-du-run.ts:sectionRobustesse"
+      ],
+      "tests": [
+        "tests/analysis/analyse-du-run-robustesse.test.ts « les familles sont celles des résultats ; les différences exploratoires n'ont pas de qualificatif »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : robustesse des différences et analyses exploratoires non composées dans pnpm analyze."
+      "note": "Publiée par pnpm analyze (sous-lot B, #272)."
     },
     {
       "id": "§8.86",
       "section": "8",
       "citation": "Le recalcul (c) ne s'applique pas à une différence qui compare le registre orienté lui-même, celle d'une paire de formulations qui comprend l'orientée et celle de H3, neutre moins orientée : […] pour ces différences, le recalcul (c) est publié « sans objet » et ne rend pas le résultat fragile.",
       "nature": "code",
-      "statut": "a-implementer",
-      "code": [],
-      "tests": [],
-      "lot": "analyse",
+      "statut": "testee",
+      "code": [
+        "analysis/robustesse.ts:fragiliteDesDifferences",
+        "analysis/analyse-du-run.ts:sectionRobustesse"
+      ],
+      "tests": [
+        "tests/analysis/robustesse-differences.test.ts « H3, neutre moins orientée : (c) publié sans objet, sans rendre fragile, même quand (c) n'aurait plus rien à comparer »",
+        "tests/analysis/analyse-du-run-robustesse.test.ts « paire de formulations neutre − orientée, et familière − orientée : (c) sans objet »"
+      ],
+      "lot": null,
       "constat": null,
-      "note": "sous-lot B en cours : robustesse.differences est calcul_a_venir."
+      "note": "Publié par pnpm analyze (sous-lot B, #272)."
     },
     {
       "id": "§8.87",
@@ -10640,8 +10724,8 @@
         "tests/analysis/recalcul-b.test.ts « contestation reçue après le calcul de metriques.json : le recalcul daté diffère, nomme la contestation et les deux empreintes du run »"
       ],
       "lot": null,
-      "constat": 35,
-      "note": "Le recalcul daté porte sur les taux (b) ; la fragilité des différences sous (b) suivra le sous-lot B."
+      "constat": null,
+      "note": "Le recalcul daté porte sur les taux (b). Constat 35 du 2026-11-03 accepté (un fichier par jour) : non re-signalé."
     },
     {
       "id": "§8.88",
@@ -10676,7 +10760,7 @@
       ],
       "lot": null,
       "constat": null,
-      "note": "Appliqué aux taux recalculés ; aux différences, avec le sous-lot B."
+      "note": "Appliqué aux taux recalculés et, depuis le sous-lot B (#272), aux différences."
     },
     {
       "id": "§8.90",
@@ -10733,21 +10817,23 @@
     {
       "id": "§9.23",
       "section": "9",
-      "citation": "il épingle l'empreinte de ses entrées, celle du fichier du run étant calculée hors des champs de statut, de publication et de dépôt, que ce fichier reçoit après l'analyse",
+      "citation": "il épingle l'empreinte de ses entrées, celle du fichier du run étant calculée hors des champs de statut, de publication et de dépôt, et hors de ceux qu'y inscrit le go/no-go (section 12), sa décision, le motif d'une publication provisoire, les comptes et les kappas de l'échantillon humain et les réponses manquantes de chaque outil par mode, champs que ce fichier reçoit après l'analyse et dont la liste exacte est publiée avec le code",
       "nature": "code",
       "statut": "testee",
       "code": [
         "analysis/analyse-du-run.ts:empreinteDuRun",
         "analysis/analyse-du-run.ts:entreesPubliees",
-        "schema/metriques.schema.json:entrees"
+        "schema/metriques.schema.json:entrees",
+        "analysis/champs-posterieurs-au-gel.ts:CHAMPS_HORS_EMPREINTE_DU_RUN",
+        "analysis/champs-posterieurs-au-gel.ts:CHAMPS_DU_GO_NO_GO"
       ],
       "tests": [
         "tests/analysis/recalcul-b.test.ts « run.json modifié seulement sur statut, publication et dépôt : même empreinte »",
         "tests/analysis/analyze-commande.test.ts « l'empreinte de run.json ignore les champs que pnpm go-no-go écrit ensuite »"
       ],
       "lot": null,
-      "constat": 16,
-      "note": "Ajoutée en 0.28 (D70 (13)). Le code exclut aussi de l'empreinte les champs que pnpm go-no-go écrit (go_no_go, motif_provisoire, diagnostics de l'échantillon humain, champs par juge et par_mode), ce que le texte ne liste pas."
+      "constat": null,
+      "note": "Citation réextraite (0.33, D75 (17)) ; règle le constat 16 du 2026-11-03. La liste exacte publiée avec le code est CHAMPS_DU_GO_NO_GO."
     },
     {
       "id": "§9.24",
@@ -10782,8 +10868,8 @@
         "tests/analysis/recalcul-b.test.ts « contestation reçue après le calcul de metriques.json : le recalcul daté diffère, nomme la contestation et les deux empreintes du run »"
       ],
       "lot": null,
-      "constat": 35,
-      "note": "Ajoutée en 0.28 (D70 (13)) ; l'inscription des contestations postérieures suit D72 (1). Un fichier par jour (recalcul-b-AAAA-MM-JJ.json)."
+      "constat": null,
+      "note": "Ajoutée en 0.28 (D70 (13)) ; l'inscription des contestations postérieures suit D73 (4) (§8.97). Un fichier par jour (constat 35 du 2026-11-03, accepté)."
     },
     {
       "id": "§9.26",
@@ -10794,7 +10880,7 @@
       "code": [],
       "tests": [],
       "lot": "notation",
-      "constat": 28,
+      "constat": 16,
       "note": "Ajoutée en 0.27 (D67). Aucune commande ne corrige une notation publiée ni ne publie un erratum ; pipeline/run/statut.ts et run.schema.json (allOf[1]) disent encore que le protocole ne prévoit pas d'erratum."
     },
     {
@@ -10808,15 +10894,17 @@
         ".gitignore:/staging/transcriptions/*.vtt",
         ".gitignore:archives/",
         "pipeline/liens/sortie.py:REPERTOIRE_PAGES",
-        "schema/run.schema.json:depot.archives[].contenu"
+        "schema/run.schema.json:depot.archives[].contenu",
+        "pipeline/run/depot.ts",
+        "pipeline/liens/sortie.py (pages-citees/ hors du volume)"
       ],
       "tests": [
         "tests/textes-hors-git.test.ts « ignore le texte canonique et la transcription intégrale d'une source »",
         "tests/textes-hors-git.test.ts « aucun texte canonique ni aucune transcription intégrale n'est déjà versionné »"
       ],
       "lot": null,
-      "constat": 10,
-      "note": "Ajoutée en 0.27 (D67). Textes canoniques et transcriptions hors Git, testé. Mais le test des liens écrit les pages citées sous runs/<date>/volume/liens/pages/, et le volume part en entier sur Zenodo (runs/README.md) ; l'archive sources_archivees du dépôt n'est filtrée par aucune licence."
+      "constat": 1,
+      "note": "Ajoutée en 0.27 (D67). Textes canoniques et transcriptions hors Git, testé. Constat 10 du 2026-11-03 réglé en partie : les pages citées sont écrites hors du volume, sous runs/<date>/pages-citees/ (D75 (4), #315), et pipeline/run/depot.ts refuse une archive de sources non republiables (#283, sans appelant). Reste : le texte intégral extrait de chaque page citée part avec le volume (volume/liens/textes/, constat 1, D83)."
     },
     {
       "id": "§10.20",
@@ -10876,7 +10964,7 @@
         "tests/panel-sans-majorite.test.ts « membre déporté ⇒ un déporté qui vote est refusé »"
       ],
       "lot": null,
-      "constat": 37,
+      "constat": 23,
       "note": "Ajoutée en 0.30 (D72 (11)). Appliquée aux délibérations sans majorité ; une décision à la majorité (decision_panel) n'a aucun champ des déportés."
     },
     {
@@ -11094,6 +11182,701 @@
       "lot": null,
       "constat": null,
       "note": "Ajoutée en 0.27 (D67). Mesure humaine au run pilote ; aucun code ne compte le coût ni les heures."
+    },
+    {
+      "id": "§2.28",
+      "section": "2",
+      "citation": "H5 est rendue pour chaque assistant inclus au premier ou au dernier run ; un assistant qui manque à l'un des deux runs est publié « sans objet ».",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "analysis/hypotheses.ts:decisionH5",
+        "analysis/hypotheses.ts:motifH5Outil (absent_du_premier_run, absent_du_dernier_run)"
+      ],
+      "tests": [
+        "tests/analysis/hypotheses-h3-h5.test.ts « inclus au premier run seulement : rendu, sans objet, motif absent_du_dernier_run, ses couples publiés »",
+        "tests/analysis/hypotheses-h3-h5.test.ts « inclus au dernier run seulement : rendu, sans objet, motif absent_du_premier_run »",
+        "tests/analysis/hypotheses-h3-h5.test.ts « absent d'un run : sans objet même si une ligne de tendance porte une différence établie et positive »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (16)) ; règle le constat 13 du 2026-11-03."
+    },
+    {
+      "id": "§4.128",
+      "section": "4",
+      "citation": "Une citation rejetée par le test verbatim n'est pas une proposition : elle reste au journal des rejets.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/extraction/rejets.ts",
+        "validation/domaine/absence.ts:refusPromotionAbsence"
+      ],
+      "tests": [
+        "tests/absence-promotion.test.ts « citation rejetée par le test verbatim : jamais déposée, elle n'est pas une proposition et reste au journal des rejets (D73 (10)) »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (10)) ; règle le constat 17 du 2026-11-03."
+    },
+    {
+      "id": "§4.129",
+      "section": "4",
+      "citation": "La réextraction est une nouvelle double extraction sur un texte canonique d'empreinte différente, produit par une nouvelle version épinglée de l'extracteur de texte ou tiré d'une nouvelle capture de la source, jamais sur le texte rejeté.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/extraction/renvoi.ts:exigerTexteNonRenvoye",
+        "pipeline/extraction/staging.ts (journal indexé par texte)",
+        "pipeline/extraction/executer.ts",
+        "outils/extraire.ts"
+      ],
+      "tests": [
+        "tests/extraction/commande.test.ts « source renvoyée, même empreinte de texte ⇒ refus nommé, aucun appel, rien d'écrit ; la commande lit les renvois de sa racine »",
+        "tests/extraction/commande.test.ts « source renvoyée, même empreinte, journal du texte rejeté retiré à la main ⇒ toujours refusée »",
+        "tests/extraction/commande.test.ts « nouvelle capture du même texte (autre document, même URL) ⇒ refusée : c'est le texte rejeté »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (9)). Le code ne lit que l'empreinte du texte, pas l'origine du nouveau texte (version de l'extracteur ou capture) : toute empreinte différente est admise, ce qui est la condition écrite."
+    },
+    {
+      "id": "§4.130",
+      "section": "4",
+      "citation": "Un item que le tirage exclut parce que sa position est incompatible avec celle d'un autre item du même candidat sur la même mesure (section 5) ne compte pas non plus.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/couverture.ts:itemsPAuGel",
+        "pipeline/questions/tirabilite.ts:itemsAuxPositionsIncompatibles"
+      ],
+      "tests": [
+        "tests/questions/incompatibles-au-gel.test.ts « les deux items P incompatibles d'un candidat interrogé sortent de items_p_au_gel, les autres y restent »",
+        "tests/questions/incompatibles-au-gel.test.ts « candidat qui passe sous le seuil à cause des exclusions : 10 items P sans le conflit, 9 avec (11 sans la règle) »",
+        "tests/questions/charger-perimetre.test.ts « D74 (16) : un candidat passe sous le seuil quand ses items aux positions incompatibles sont retirés du compte »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.32 (D74 (16))."
+    },
+    {
+      "id": "§5.67",
+      "section": "5",
+      "citation": "les deux items sont exclus du tirage, comptés à part dans le rapport du run et publiés un à un avec le tirage",
+      "nature": "donnee",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/tirage.ts (incompatibles_au_gel)",
+        "pipeline/questions/tirabilite.ts:itemsAuxPositionsIncompatibles",
+        "schema/tirage.schema.json:incompatibles_au_gel"
+      ],
+      "tests": [
+        "tests/questions/incompatibles-au-gel.test.ts « l'item exclu est publié avec son identifiant, toutes mesures du candidat confondues, triés »",
+        "tests/questions/incompatibles-au-gel.test.ts « aucun conflit : chaque candidat interrogé est publié avec une liste vide, comme contestes_au_gel »",
+        "tests/questions/incompatibles-au-gel.test.ts « le tirage publié est conforme au schéma ; privé du champ, il est refusé »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.32 (D74 (17))."
+    },
+    {
+      "id": "§5.68",
+      "section": "5",
+      "citation": "Un item vérifié sur une version de sa mesure qui n'est pas la version en vigueur, que le tirage exclut déjà (section 4), n'entre pas dans cette comparaison et ne fait exclure aucun autre item.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/tirabilite.ts:positionsIncompatiblesAuGel"
+      ],
+      "tests": [
+        "tests/questions/incompatibles-au-gel.test.ts « épinglé sur version dépassée face à un item en vigueur incompatible : aucun groupe détecté »",
+        "tests/questions/incompatibles-au-gel.test.ts « au tirage, aucun des deux n'est exclu pour ce motif : le courant est tiré, le périmé garde son seul motif de version »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.32 (D74 (18))."
+    },
+    {
+      "id": "§5.69",
+      "section": "5",
+      "citation": "Est postérieure au gel toute contestation que ne porte pas le commit des données inscrit au gel, quelle que soit sa date, y compris une contestation reçue avant l'instant de gel ou à cet instant même : le tirage, fait sur ce commit, ne la voit pas, et elle relève du recalcul (b) de la section 8.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/run/contestations-posterieures.ts:contestationsAAjouter",
+        "pipeline/run/contestations-posterieures.ts:contestationsAuCommit"
+      ],
+      "tests": [
+        "tests/run/contestations-posterieures.test.ts « absente du commit gelé, reçue avant le gel ⇒ postérieure, ajoutée »",
+        "tests/run/contestations-posterieures.test.ts « absente du commit gelé, reçue à l'instant exact du gel ⇒ postérieure, ajoutée »",
+        "tests/run/contestations-posterieures.test.ts « présente au commit gelé ⇒ jamais postérieure, quelle que soit sa date »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (2)) ; règle le constat 36 du 2026-11-03."
+    },
+    {
+      "id": "§6.43",
+      "section": "6",
+      "citation": "une réexécution ouvre la sienne selon la règle du run invalidé qu'elle remplace, lue sur le run qu'elle désigne à son gel, et, quand ce run est lui-même une réexécution, de proche en proche jusqu'au run d'origine",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/fenetre.ts:typeDOrigine",
+        "pipeline/interrogation/fenetre.ts:ouvrirFenetre"
+      ],
+      "tests": [
+        "tests/interrogation/fenetre.test.ts « réexécution d'un run régulier : mardi 06:00 exigé, le lendemain du gel refusé »",
+        "tests/interrogation/fenetre.test.ts « réexécution d'une réexécution (deux niveaux) : la règle du run d'origine, lue de proche en proche (D75 (1)) »",
+        "tests/interrogation/fenetre.test.ts « run remplacé introuvable : erreur nommée, jamais de repli sur le mardi »",
+        "tests/interrogation/fenetre.test.ts « cycle dans la chaîne des remplacements : erreur nommée »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.32 (D74 (19)) et 0.33 (D75 (1))."
+    },
+    {
+      "id": "§6.44",
+      "section": "6",
+      "citation": "cette règle s'applique à la réexécution elle-même : la réexécution d'un run supplémentaire ouvre sa fenêtre le premier jour qui suit son propre instant de gel",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/fenetre.ts:ouvrirFenetre (defautDOuverture, lendemainParis)"
+      ],
+      "tests": [
+        "tests/interrogation/fenetre.test.ts « réexécution d'un run supplémentaire : 06:00 le lendemain de son propre instant de gel, le mardi refusé »",
+        "tests/interrogation/fenetre.test.ts « bord exact : réexécution d'un supplémentaire gelée à minuit UTC, le jour du gel se lit à Paris »"
+      ],
+      "lot": null,
+      "constat": 18,
+      "note": "Ajoutée en 0.33 (D75 (1)). Jour civil de Paris (constat 18)."
+    },
+    {
+      "id": "§6.45",
+      "section": "6",
+      "citation": "Le run dont le sous-échantillon est saisi est le premier run mensuel ou hebdomadaire du mois civil, compté en UTC, un run appartenant au mois civil de son instant de gel, ni le run pilote ni un run supplémentaire, et il est désigné à son gel",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/application.ts:applicationDuGel",
+        "pipeline/gel/application.ts:moisCivilUtc",
+        "pipeline/gel/geler.ts",
+        "schema/run.schema.json:application_testee"
+      ],
+      "tests": [
+        "tests/gel/application.test.ts « gel le 1er février à 00:30 heure de Paris (31 janvier 23:30 UTC) ⇒ janvier »",
+        "tests/gel/application.test.ts « le premier run du mois est un pilote ⇒ le run mensuel suivant est désigné »",
+        "tests/gel/application.test.ts « run supplémentaire seul dans le mois ⇒ jamais désigné (les deux types supplémentaires) »",
+        "tests/gel/application.test.ts « deux runs du même mois ⇒ seul le premier est désigné, le second nomme le premier »",
+        "tests/gel/application.test.ts « premier run mensuel gelé le 1er décembre à 00:00:00 UTC ⇒ désigné, run.json conforme au schéma »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (11)) et 0.32 (D74 (4))."
+    },
+    {
+      "id": "§6.46",
+      "section": "6",
+      "citation": "tous les assistants inclus y sont saisis",
+      "nature": "code",
+      "statut": "a-implementer",
+      "code": [
+        "pipeline/interrogation/depot-application.ts:bilanDesDepots (outils attendus reçus de l'appelant)"
+      ],
+      "tests": [],
+      "lot": "interrogation",
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (11)). bilanDesDepots contrôle les dépôts contre une liste d'outils que l'appelant fournit ; aucune commande n'existe encore qui la tire des assistants inclus du run (§6.16, §6.17)."
+    },
+    {
+      "id": "§6.47",
+      "section": "6",
+      "citation": "Un run désigné qui est ensuite invalidé reste le premier du mois : aucun autre run du mois n'est désigné à sa place, et la réexécution qui le remplace hérite de sa désignation.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/application.ts:applicationDuGel",
+        "pipeline/gel/application.ts:designationHeritee"
+      ],
+      "tests": [
+        "tests/gel/application.test.ts « le premier run du mois invalidé reste le premier : le suivant n'est pas désigné (désignation au gel, statut ignoré) »",
+        "tests/gel/application.test.ts « réexécution du premier run du mois, invalidé : désignée comme lui, même gelée le mois suivant »",
+        "tests/gel/application.test.ts « réexécution d'une réexécution : la désignation est héritée de proche en proche »",
+        "tests/gel/application.test.ts « run remplacé sans application_testee : refus run_remplace_sans_designation, rien n'est hérité par défaut »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.33 (D75 (19), (20))."
+    },
+    {
+      "id": "§6.48",
+      "section": "6",
+      "citation": "La réponse notée d'une saisie est ce texte copié ; ses liens sont les adresses http ou https qui figurent dans ce texte",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/reponse-application.ts:reponseDepuisDepot",
+        "pipeline/interrogation/liens-du-texte.ts:liensDuTexte"
+      ],
+      "tests": [
+        "tests/interrogation/reponse-application.test.ts « brut_texte et normalise.texte sont le texte copié, et rien d'autre »",
+        "tests/interrogation/reponse-application.test.ts « les liens sont les adresses http(s) du texte »",
+        "tests/interrogation/reponse-application.test.ts « ftp:// et www. ne sont pas des liens »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (12)). Domaine testé ; aucune commande ne convertit encore un dépôt en réponse (§6.17)."
+    },
+    {
+      "id": "§6.49",
+      "section": "6",
+      "citation": "elle ne porte ni mode ni caractère tronqué, n'est jamais un refus de l'API, et le recalcul (d) de la section 8, qui exclut les réponses tronquées, ne porte que sur le canal API",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/interrogation/reponse-application.ts:reponseDepuisDepot",
+        "schema/reponse.schema.json (mode et troncature interdits sur le canal application)",
+        "analysis/robustesse.ts:exclureReponsesTronquees (RecalculDHorsCanalApi)"
+      ],
+      "tests": [
+        "tests/interrogation/reponse-application.test.ts « ni mode, ni troncature : les clés sont absentes, pas mises à une valeur par défaut »",
+        "tests/interrogation/reponse-application.test.ts « refus_api est faux : aucune API n'a été appelée, donc aucun refus de modération de l'API »",
+        "tests/interrogation/reponse-application.test.ts « une réponse de l'application qui porte une troncature est refusée »",
+        "tests/analysis/robustesse.test.ts « une unité du canal application qui atteint le recalcul (d) lève, au lieu d'y être gardée ou retirée en silence »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (12)) et 0.33 (D75 (23))."
+    },
+    {
+      "id": "§6.50",
+      "section": "6",
+      "citation": "deux notations humaines d'une lecture qui s'accordent sur la note mais divergent sur le motif sont arbitrées de même par un troisième humain (section 7)",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/note-retenue.ts:humainsAArbitrer",
+        "pipeline/notation/lectures-comparateur.ts"
+      ],
+      "tests": [
+        "tests/notation/lectures-comparateur.test.ts « sans arbitre : à arbitrer, jamais retenue sur la note de l'un des deux »",
+        "tests/notation/lectures-comparateur.test.ts « l'arbitre donne un troisième motif : sa note est retenue (§7, la note du troisième humain) »",
+        "tests/notation/lectures-comparateur.test.ts « même motif : aucun arbitrage admis »"
+      ],
+      "lot": null,
+      "constat": 20,
+      "note": "Ajoutée en 0.31 (D73 (14)). Le code arbitre aussi une lecture dont les humains divergent sur la citation d'une source ou l'existence d'un lien (D75 (15), règle du §7), ce que le §6 ne nomme pas (constat 20, D81)."
+    },
+    {
+      "id": "§6.51",
+      "section": "6",
+      "citation": "La note retenue d'une lecture est résolue par ces seules notations humaines, sous un mode de résolution propre aux lectures de comparateur, et une lecture n'appartient pas à l'échantillon humain des réponses (section 7).",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/lectures-comparateur.ts:verdictDeLecture",
+        "pipeline/notation/verdicts-de-lecture.ts:ecrireVerdictsDeLecture",
+        "analysis/types-notation.ts (lecture_comparateur_humaine)"
+      ],
+      "tests": [
+        "tests/notation/lectures-comparateur.test.ts « deux humains d'accord : mode lecture_comparateur_humaine, hors échantillon humain, sans désaccord de juges, revue humaine »",
+        "tests/notation/verdicts-de-lecture.test.ts « D87 deux humains d'accord ⇒ verdict écrit avec leur note, sous le mode des lectures, hors échantillon »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (13)) ; verdicts écrits par la chaîne depuis D87 (#329)."
+    },
+    {
+      "id": "§7.80",
+      "section": "7",
+      "citation": "Quand un juge pose le drapeau obsolescence alors que les items qui lui sont soumis portent plusieurs dates de changement, la fraîcheur n'est pas définie : ce n'est pas une sortie illisible, renvoyée à un humain, mais un défaut du banc, qui arrête la notation.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/juge.ts:FraicheurIndefinie",
+        "pipeline/notation/fraicheur.ts",
+        "pipeline/notation/chaine.ts"
+      ],
+      "tests": [
+        "tests/notation/juge-defaillant.test.ts « deux dates distinctes : FraicheurIndefinie remonte d'issueDeJuge, ni notation ni renvoi »",
+        "tests/notation/chaine.test.ts « deux dates distinctes : défaut du banc nommé (réponse, dates) ; ni renvoi ni notation pour la réponse ; aucune invalidation ; la relance corrigée reprend sans rien réécrire »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.32 (D74 (25))."
+    },
+    {
+      "id": "§7.81",
+      "section": "7",
+      "citation": "Cet arrêt n'enregistre pas d'invalidation du run : le défaut est corrigé, puis la notation reprend.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/juge.ts:FraicheurIndefinie",
+        "pipeline/notation/chaine.ts"
+      ],
+      "tests": [
+        "tests/notation/chaine.test.ts « deux dates distinctes : défaut du banc nommé (réponse, dates) ; ni renvoi ni notation pour la réponse ; aucune invalidation ; la relance corrigée reprend sans rien réécrire »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.33 (D75 (3))."
+    },
+    {
+      "id": "§7.82",
+      "section": "7",
+      "citation": "Quand deux humains s'accordent ainsi mais divergent sur un autre champ que porte la note retenue (motif d'inexactitude, citation d'une source, existence d'un lien), la réponse est arbitrée par un troisième humain, comme une réponse dont les deux juges s'accordent sur la note mais divergent sur ce champ.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/note-retenue.ts:humainsAArbitrer",
+        "pipeline/notation/decision.ts:decider",
+        "pipeline/notation/file-humaine.ts"
+      ],
+      "tests": [
+        "tests/notation/decision.test.ts « D75 (15) : l'arbitre donne un troisième sourçage partiel : sa note est retenue telle quelle, jamais une fusion des deux premières »",
+        "tests/notation/decision.test.ts « D75 (15) : l'arbitre ne peut pas être l'un des deux premiers »",
+        "tests/notation/decision.test.ts « D75 (15) : accord complet (note, motif, cite, lien existant) → verdict des deux humains, aucun arbitre ; un arbitre en trop est incohérent »",
+        "tests/notation/file-humaine.test.ts « D75 (15) : juges encore absents, la tâche d'arbitrage est ouverte quand même »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (14), motif) et 0.33 (D75 (15), citation et lien)."
+    },
+    {
+      "id": "§7.83",
+      "section": "7",
+      "citation": "Une paire dont un côté au moins est renvoyé à un humain par un juge, qu'il s'agisse d'une question d'attribution que la règle ne tranche pas ou d'une réponse que ce juge ne peut pas noter, est écartée du numérateur et du dénominateur du taux de ce juge, et leur nombre est publié avec ses effectifs : un renvoi n'est pas une note.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/contrefactuel.ts",
+        "pipeline/notation/publication-contrefactuel.ts",
+        "schema/run.schema.json:juges[].paires_ecartees_contrefactuel"
+      ],
+      "tests": [
+        "tests/notation/contrefactuel.test.ts « côté d'origine renvoyé par j1 seul : écartée chez j1 (numérateur et dénominateur), gardée chez j2 »",
+        "tests/notation/contrefactuel.test.ts « deux juges renvoient la même paire sous des motifs de familles différentes : écartée chez chacun »",
+        "tests/notation/contrefactuel.test.ts « renvoi défaillant sur la seule paire qui changeait : le juge passe de retiré (1 sur 20) à gardé (0 sur 19) »",
+        "tests/notation/publication-contrefactuel.test.ts « D31 (1) : paires écartées publiées ; un juge à toutes paires écartées publie le motif, sans taux ni effectifs, conforme au schéma »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.32 (D74 (24))."
+    },
+    {
+      "id": "§7.84",
+      "section": "7",
+      "citation": "Quand deux outils du dérangement ont le même éditeur, le test contrefactuel d'outil est publié absent, avec ce motif, sans bloquer le run",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/derangement-outils.ts:derangementOutilsOuAbsence",
+        "pipeline/notation/publication-contrefactuel-outils.ts:publierAbsenceContrefactuelOutils",
+        "pipeline/notation/inscription-contrefactuel-outils.ts:inscrireContrefactuelOutils"
+      ],
+      "tests": [
+        "tests/notation/derangement-outils-absence.test.ts « deux outils au dérangement, même éditeur : absent, motif outils_du_meme_editeur, aucune exception »",
+        "tests/notation/derangement-outils-absence.test.ts « trois outils dont deux du même éditeur : pas de dérangement partiel (§7 : « deux outils du dérangement »), absent »",
+        "tests/notation/chaine-contrefactuel-outils.test.ts « D84 : deux assistants inclus du même éditeur au gel ⇒ absence outils_du_meme_editeur inscrite, libellés et éditeurs lus du gel ; le test des candidats est joué comme avant »"
+      ],
+      "lot": null,
+      "constat": 5,
+      "note": "Ajoutée en 0.31 (D73 (15)) ; règle en partie le constat 33 du 2026-11-03. Un outil hors dérangement qui n'est pas un comparateur, ou deux comparateurs, du même éditeur bloquent encore (FormesOutilsAmbigues) : constat 5 (D85, D86)."
+    },
+    {
+      "id": "§7.85",
+      "section": "7",
+      "citation": "il en va de même quand un comparateur du périmètre a le même éditeur qu'un outil du dérangement",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/derangement-outils.ts:derangementOutilsOuAbsence",
+        "pipeline/notation/derangement-outils.ts:outilsDuContrefactuel (comparateurs du périmètre)"
+      ],
+      "tests": [
+        "tests/notation/derangement-outils-absence.test.ts « D75 (6) cas 3 : comparateur du même éditeur que l'outil permuté : absent, motif comparateur_du_meme_editeur, plus d'exception »",
+        "tests/notation/chaine-contrefactuel-outils.test.ts « D84 : un comparateur du même éditeur qu'un outil permuté ⇒ absence comparateur_du_meme_editeur inscrite par la chaîne (§7 0.33) »"
+      ],
+      "lot": null,
+      "constat": 21,
+      "note": "Ajoutée en 0.33 (D75 (6)). « Comparateurs du périmètre » lu comme tous les comparateurs du périmètre du gel, inclus ou non (constat 21, D88)."
+    },
+    {
+      "id": "§7.86",
+      "section": "7",
+      "citation": "Comme au test des candidats, une paire dont un côté au moins est renvoyé à un humain par un juge, quel que soit le motif du renvoi, est écartée du numérateur et du dénominateur du taux de ce juge, et leur nombre est publié.",
+      "nature": "code",
+      "statut": "partielle",
+      "code": [
+        "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils"
+      ],
+      "tests": [
+        "tests/notation/contrefactuel-outils.test.ts « D75 (2) cas 1 : renvoi d'un seul juge sur la réponse d'origine : hors numérateur et dénominateur de ce juge, l'autre juge garde la paire »",
+        "tests/notation/contrefactuel-outils.test.ts « D75 (2) cas 1 bis : renvoi d'un juge défaillant sur la copie permutée, quel que soit le motif : même règle »",
+        "tests/notation/contrefactuel-outils.test.ts « D75 (2) cas 2 : renvoi des deux juges sur la même réponse : la paire sort du taux de chacun, comptée écartée chez chacun »"
+      ],
+      "lot": "notation",
+      "constat": null,
+      "note": "Ajoutée en 0.33 (D75 (2)). Règle de calcul testée ; « leur nombre est publié » attend le branchement du test joué (D90, en cours)."
+    },
+    {
+      "id": "§7.87",
+      "section": "7",
+      "citation": "Les outils du run qu'édite l'éditeur de chaque juge forment une liste déclarée par l'auteur au gel, vide comprise, et publiée avec le run.",
+      "nature": "donnee",
+      "statut": "testee",
+      "code": [
+        "pipeline/gel/editeurs.ts",
+        "pipeline/gel/configuration.ts",
+        "schema/run.schema.json:juges[].outils_de_son_editeur"
+      ],
+      "tests": [
+        "tests/gel/geler.test.ts « D73 (7) : run.json porte la liste déclarée des outils de l'éditeur de chaque juge, vide comprise »",
+        "tests/gel/geler.test.ts « D73 (7) : un outil de la liste hors du périmètre du run ⇒ OutilDeSonEditeurHorsDuRun, rien écrit »",
+        "tests/analysis/analyse-du-run-ecart-juge-editeur.test.ts « champ absent de run.json (run gelé avant la 0.31) : section sans objet, motif outils_de_son_editeur_non_declares, jamais une liste vide implicite »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (7)). L'auteur doit encore la renseigner dans config/gel.json avant le prochain gel (HANDOFF.md)."
+    },
+    {
+      "id": "§7.88",
+      "section": "7",
+      "citation": "ce sont les réponses obtenues du canal API, les deux modes confondus, couples marqués « run incomplet » (section 8) compris",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "analysis/analyse-du-run.ts:sectionEcartJugeEditeur",
+        "analysis/ecart-juge-editeur.ts:ecartsJugesEditeurs"
+      ],
+      "tests": [
+        "tests/analysis/analyse-du-run-ecart-juge-editeur.test.ts « D75 (26) les réponses du canal application sont exclues : ni comptées, ni nommées »",
+        "tests/analysis/analyse-du-run-ecart-juge-editeur.test.ts « D75 (26) les deux modes sont lus ensemble : l'exactitude d'outil-alpha porte sur ses deux modes »",
+        "tests/analysis/analyse-du-run-ecart-juge-editeur.test.ts « D75 (26) un couple marqué run incomplet reste dans la population : outil-gamma / web_activee compte »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.33 (D75 (26))."
+    },
+    {
+      "id": "§7.89",
+      "section": "7",
+      "citation": "Quand un juge est retiré au test des candidats, l'écart est publié sans objet, avec ce motif.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "analysis/analyse-du-run.ts:sectionEcartJugeEditeur (juge_retire)"
+      ],
+      "tests": [
+        "tests/analysis/analyse-du-run-ecart-juge-editeur.test.ts « D75 (26) un juge retiré : l'écart est sans objet, motif juge_retire, quel que soit le juge retiré »",
+        "tests/analysis/analyse-du-run-ecart-juge-editeur.test.ts « juge retiré (§7 : ses notations sont écartées de tout le run) : section sans objet, motif juge_retire »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.33 (D75 (26))."
+    },
+    {
+      "id": "§7.90",
+      "section": "7",
+      "citation": "L'ordre dans lequel les réponses sont présentées à un annotateur ne dépend pas du motif qui les lui envoie : il est tiré parmi les réponses obtenues du run, avec une graine dérivée de la graine publiée de l'échantillon humain et de la clé « ordre_file_humaine ».",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/notation/echantillons.ts:ordreFileHumaine",
+        "pipeline/notation/echantillons.ts:CLE_ORDRE_FILE_HUMAINE",
+        "pipeline/notation/file-humaine.ts"
+      ],
+      "tests": [
+        "tests/notation/file-humaine.test.ts « 1. le rang d'une tâche est celui de sa réponse dans l'ordre tiré, quel que soit son motif »",
+        "tests/notation/file-humaine.test.ts « 2. l'ordre ne dépend pas du motif : une même réponse, tirée dans l'échantillon ou appelée par un désaccord des juges, garde sa place face aux autres »",
+        "tests/notation/file-humaine.test.ts « 3. une tâche hors échantillon peut précéder une tâche d'échantillon »",
+        "tests/notation/file-humaine.test.ts « 4. déterministe, quel que soit l'ordre des réponses et des notations reçues »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.34 (D79, #311). À rang égal (une réponse sous deux motifs), l'ordre de MOTIFS_HUMAINS départage : sans effet sur une note."
+    },
+    {
+      "id": "§8.91",
+      "section": "8",
+      "citation": "Les deux échantillons d'une paire sont ceux numérotés 1 et 2, et ces numéros sont contrôlés",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "analysis/accord-echantillons.ts:variabiliteDuRun",
+        "analysis/analyse-du-run.ts:sectionVariabilite"
+      ],
+      "tests": [
+        "tests/analysis/accord-echantillons.test.ts « échantillon 3 au plan, à la place du 2 : refus, seuls 1 et 2 sont des numéros d'échantillon »",
+        "tests/analysis/accord-echantillons.test.ts « une réponse du run numérotée 3, le plan étant à deux échantillons : refus »",
+        "tests/analysis/accord-echantillons.test.ts « plan à deux mais aucune réponse du couple numérotée 2 : refus bruyant, jamais des paires toutes écartées »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (6))."
+    },
+    {
+      "id": "§8.92",
+      "section": "8",
+      "citation": "quand le plan d'interrogation ne prévoit qu'un échantillon par question, le levier de la section 12 ayant été appliqué, la variabilité est publiée absente, avec ce motif.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "analysis/accord-echantillons.ts:variabiliteDuRun",
+        "schema/run.schema.json:reponses.echantillons_par_question"
+      ],
+      "tests": [
+        "tests/analysis/accord-echantillons.test.ts « plan à un échantillon par question : la section est publiée absente avec le motif nommé, aucun couple lu »",
+        "tests/analysis/accord-echantillons.test.ts « plan mêlant des questions à un et à deux échantillons : refus, le levier s'applique au plan entier »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (6)) ; le nombre d'échantillons est inscrit au gel depuis D75 (14) (#331)."
+    },
+    {
+      "id": "§8.93",
+      "section": "8",
+      "citation": "L'exactitude globale de l'outil contre laquelle se lit la statistique, qui n'est pas l'exactitude du couple publiée aux métriques primaires, les questions d'attribution et les candidats sous le seuil de couverture en étant exclus, est publiée comme la statistique de référence du test, sous un nom qui l'en distingue, et sans intervalle : ce n'est pas un taux publié au sens du paragraphe « Incertitude ».",
+      "nature": "donnee",
+      "statut": "testee",
+      "code": [
+        "analysis/permutation.ts:testHomogeneiteCandidats (exactitude_de_reference)",
+        "schema/metriques.schema.json:$defs/test_asymetrie.exactitude_de_reference"
+      ],
+      "tests": [
+        "tests/analysis/permutation.test.ts « est publiée sous son nom propre, valeur seule : ni effectifs, ni intervalle, ni graine, ni mention de taux dégénéré »",
+        "tests/analysis/permutation.test.ts « vaut 0 exactement quand aucune réponse classée n'est exacte, jamais absente »",
+        "schema/exemples/metriques/invalide-12-ancien-nom-exactitude-outil.json"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.32 (D74 (5), #299) ; règle le constat 25 du 2026-11-03."
+    },
+    {
+      "id": "§8.94",
+      "section": "8",
+      "citation": "C'est le modèle demandé, inscrit au gel, avec les identifiants de modèle renvoyés par l'API et leurs effectifs, comptés par outil sur toutes les réponses obtenues du run sur le canal API, les deux modes confondus",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "analysis/modeles-du-run.ts:modelesDuRun"
+      ],
+      "tests": [
+        "tests/analysis/modeles-du-run.test.ts « deux identifiants renvoyés dans le même run : deux lignes, chacune avec son effectif »",
+        "tests/analysis/modeles-du-run.test.ts « les deux modes d'un outil sont comptés ensemble : le modèle est celui de l'outil au run »",
+        "tests/analysis/modeles-du-run.test.ts « seules les réponses API obtenues du contexte run comptent : canal application et pilote sont hors du compte »",
+        "tests/analysis/modeles-du-run.test.ts « une réponse manquante ne compte nulle part : ni dans un identifiant, ni parmi les sans identifiant »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (17)) et 0.33 (D75 (18))."
+    },
+    {
+      "id": "§8.95",
+      "section": "8",
+      "citation": "les réponses sans identifiant renvoyé sont comptées à part",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "analysis/modeles-du-run.ts:modelesDuRun"
+      ],
+      "tests": [
+        "tests/analysis/modeles-du-run.test.ts « les réponses sans identifiant renvoyé sont comptées à part, jamais fondues dans le modèle demandé »",
+        "tests/analysis/modeles-du-run.test.ts « une réponse API obtenue sans la clé modele_renvoye : refus, une clé absente n'est pas un null »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (17))."
+    },
+    {
+      "id": "§8.96",
+      "section": "8",
+      "citation": "Est postérieure toute contestation que ne porte pas le commit des données inscrit au gel du run (section 5), quelle que soit sa date.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/run/contestations-posterieures.ts:contestationsAAjouter"
+      ],
+      "tests": [
+        "tests/run/contestations-posterieures.test.ts « absente du commit gelé, reçue avant le gel ⇒ postérieure, ajoutée »",
+        "tests/run/contestations-posterieures.test.ts « présente au commit gelé ⇒ jamais postérieure, quelle que soit sa date »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (2)) ; même règle que §5.69."
+    },
+    {
+      "id": "§8.97",
+      "section": "8",
+      "citation": "Les contestations postérieures sont enregistrées sur tout run gelé qui n'est pas invalide, avant son analyse, de sorte que le recalcul (b) du fichier des métriques porte les contestations connues à son calcul",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/run/contestations-posterieures.ts:synchroniserContestationsPosterieures",
+        "pipeline/run/contestations-posterieures.ts:exigerContestationsInscrites",
+        "outils/analyze.ts"
+      ],
+      "tests": [
+        "tests/run/contestations-posterieures.test.ts « tout run gelé non invalide la reçoit : planifie, en_cours, publie, publie_provisoire »",
+        "tests/run/contestations-posterieures.test.ts « run invalide ⇒ rien »",
+        "tests/run/contestations-posterieures.test.ts « refuse un run où manque une contestation postérieure connue, accepte quand tout est inscrit »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (4))."
+    },
+    {
+      "id": "§8.98",
+      "section": "8",
+      "citation": "elles le sont aussi quand l'item contesté n'est pas dans le tirage du run",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/run/contestations-posterieures.ts:contestationsAAjouter"
+      ],
+      "tests": [
+        "tests/run/contestations-posterieures.test.ts « chaque run gelé non invalide reçoit ce que son commit des données ne porte pas ; le run invalide ne reçoit rien »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (4)) ; le test porte un item créé contesté, hors de tout tirage (C44)."
+    },
+    {
+      "id": "§12.31",
+      "section": "12",
+      "citation": "la première réception d'un item contesté plusieurs fois étant la plus précoce des dates de réception de ses contestations, quel que soit l'ordre où elles sont enregistrées",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "validation/domaine/critere-j3.ts:premiereReceptionDe"
+      ],
+      "tests": [
+        "tests/critere-j3.test.ts « item recontesté, contestations enregistrées hors de l'ordre chronologique : la première réception se lit sur l'instant réel »",
+        "tests/critere-j3.test.ts « item recontesté (deux contestations sur le même item non couvert) : clos à sa première réception (§12, 0.30) »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (1))."
+    },
+    {
+      "id": "E.09",
+      "section": "E",
+      "citation": "Le contestataire est notifié par une réponse de l'auteur depuis la boîte dédiée, jamais par un envoi automatique, l'accusé de réception de l'étape 1 excepté (section 10).",
+      "nature": "processus",
+      "statut": "testee",
+      "code": [
+        "outils/contester.ts (aucun paramètre ne reçoit l'adresse du contestataire)",
+        "validation/domaine/contestation-item.ts",
+        "schema/item.schema.json:contestations[]"
+      ],
+      "tests": [
+        "schema/exemples/item/invalide-25-contestation-avec-adresse.json"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée en 0.31 (D73 (3)). Garde : aucune adresse de contestataire n'entre dans le projet, donc aucun envoi automatique ne peut la viser ; la réponse elle-même est un geste humain."
     }
   ]
 }

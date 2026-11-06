@@ -5,7 +5,9 @@
  *   pnpm interrogation:stocker --run=<répertoire> [--requete=<clé>]
  *
  * `--run` : le répertoire d'un run gelé (`pnpm geler --sortie`), interrogé par `pnpm run:dry --run`,
- * relu et vérifié comme par celui-ci (`run-gele.ts`), jamais sous `runs/`. Seul run interrogeable
+ * relu et vérifié comme par celui-ci (`run-gele.ts`), jamais sous `runs/`. Son `run.json` doit porter
+ * `simule: true` (D92 (c), `pipeline/run/simulation.ts:exigerGelSimule`) : `simule` absent ou
+ * `false`, ou `run.json` non conforme, est refusé (`GelNonSimule`…) avant toute écriture. Seul run interrogeable
  * aujourd'hui, il l'a été par l'éditeur simulé : les adaptateurs sont ceux des profils simulés
  * (`tests/interrogation/fixtures/run-gele/profils-simules.json`), comme pour `pnpm run:dry --run`.
  * Chaque réception gardée nomme l'adaptateur qui a reçu ses octets (`normalisation`) : des octets
@@ -28,10 +30,13 @@
  *   est refusée (option inconnue, requête inconnue, run refusé) sans rien écrire.
  */
 
-import { resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { messageStockage } from "../pipeline/interrogation/operateur.ts";
 import { stockerRunGeleSimule, type ResultatStockageGeleSimule } from "../pipeline/interrogation/run-simule.ts";
 import { CODE_STOCKAGE_REFUSE, codeSortieStockage } from "../pipeline/interrogation/stocker.ts";
+import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
+import { exigerGelSimule } from "../pipeline/run/simulation.ts";
 import { analyserArguments } from "./arguments.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 
@@ -84,6 +89,9 @@ function imprimer(resultat: ResultatStockageGeleSimule): void {
 function principal(): void {
   try {
     const { repertoire, requete } = demande(process.argv.slice(2));
+    exigerHorsDeRuns(repertoire);
+    // Sans run.json, `stockerRunGeleSimule` refuse en le nommant (`run_json_illisible`) ; la garde lit un run.json présent.
+    if (existsSync(join(repertoire, "run.json"))) exigerGelSimule(repertoire, "pnpm interrogation:stocker");
     const base = { repertoire, profils: PROFILS_RUN_GELE, runs: RUNS_DU_DEPOT };
     const options = requete === undefined ? base : { ...base, requete };
     const resultat = stockerRunGeleSimule(options);
