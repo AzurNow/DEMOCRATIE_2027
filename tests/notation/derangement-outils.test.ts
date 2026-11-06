@@ -15,6 +15,7 @@ import {
   FormesOutilsAmbigues,
   MINIMUM_OUTILS_DERANGEMENT,
   permuterNomsOutils,
+  texteNommeUnOutilPermute,
   tirerDerangementOutils,
   type DerangementOutils,
   type OutilNomme,
@@ -119,8 +120,8 @@ describe("dérangement des outils", () => {
   });
 });
 
-describe("formes des outils : uniques et non blanches sur tout le périmètre", () => {
-  it("deux outils du même éditeur : refus nommé, jamais départagé", () => {
+describe("formes des outils : non blanches sur tout le périmètre, celles d'un outil permuté uniques", () => {
+  it("deux outils du même éditeur, dont un permuté : refus nommé, jamais départagé", () => {
     const memeEditeur = { ...GAMMA, editeur: ALPHA.editeur };
     expect(() => tirerDerangementOutils([ALPHA, BETA], [ALPHA, BETA, memeEditeur], graine(1))).toThrow(FormesOutilsAmbigues);
   });
@@ -234,5 +235,73 @@ describe("sous-ensemble du contrefactuel d'outil", () => {
     const tire = tirerSousEnsembleContrefactuelOutils([], graine(9));
     expect(tire.reponse_ids).toEqual([]);
     expect(tire.sous_effectif).toBe(true);
+  });
+});
+
+/** D86 : deux comparateurs du même éditeur, qu'aucun outil permuté ne porte ; leurs libellés contiennent ceux de BETA et d'ALPHA. */
+const BOUSSOLE: OutilNomme = { outil_id: "boussole", libelle: "Boussole Le Chat", editeur: "Éditeur Commun" };
+const COMPAS: OutilNomme = { outil_id: "compas", libelle: "Compas Alphabot", editeur: "Éditeur Commun" };
+
+describe("D86 : une forme qu'aucun outil permuté ne porte peut être partagée, elle est cherchée sans être remplacée", () => {
+  const permutes = [ALPHA, BETA, GAMMA];
+  const perimetre = [ALPHA, BETA, GAMMA, BOUSSOLE, COMPAS];
+
+  it("D86 : deux comparateurs non permutés du même éditeur : plus de refus, dérangement identique à celui du périmètre sans ce doublon", () => {
+    for (const valeur of [1, 2, 77, 2026]) {
+      const avec = tirerDerangementOutils(permutes, perimetre, graine(valeur));
+      const sans = tirerDerangementOutils(permutes, [ALPHA, BETA, GAMMA, BOUSSOLE], graine(valeur));
+      expect(avec.paires).toEqual(sans.paires);
+      expect(correspondancesOutils(avec)).toEqual(correspondancesOutils(sans));
+      expect(avec.hors_derangement).toEqual([BOUSSOLE, COMPAS]);
+    }
+  });
+
+  it("D86 : libellé égal à l'éditeur d'un même outil hors dérangement, ou à l'éditeur d'un autre outil hors dérangement : cherché, pas refusé", () => {
+    const perplexe = { outil_id: "perplexe", libelle: "Perplexe", editeur: "Perplexe" };
+    const croise = { outil_id: "croise", libelle: "Éditeur Commun", editeur: "Delta Corp" };
+    expect(() => tirerDerangementOutils([ALPHA, BETA], [ALPHA, BETA, perplexe, BOUSSOLE, croise], graine(1))).not.toThrow();
+  });
+
+  it("D86 : une forme partagée par un outil permuté et un autre outil reste refusée, au tirage comme à l'éligibilité", () => {
+    const libelle_partage = { ...BOUSSOLE, libelle: ALPHA.libelle };
+    const editeur_en_libelle = { ...BOUSSOLE, libelle: BETA.editeur };
+    const trois_porteurs = [
+      { ...BOUSSOLE, editeur: ALPHA.editeur },
+      { ...COMPAS, editeur: ALPHA.editeur },
+    ];
+    expect(() => tirerDerangementOutils(permutes, [...permutes, libelle_partage], graine(1))).toThrow(/Alphabot/);
+    expect(() => tirerDerangementOutils(permutes, [...permutes, editeur_en_libelle], graine(1))).toThrow(/Bêta IA/);
+    expect(() => tirerDerangementOutils(permutes, [...permutes, ...trois_porteurs], graine(1))).toThrow(FormesOutilsAmbigues);
+    expect(() => tirerDerangementOutils(permutes, [...permutes, ...trois_porteurs], graine(1))).toThrow(/éditeur de alpha et le éditeur de boussole et le éditeur de compas/);
+    expect(() => estEligibleOutils(reponse("Alphabot"), permutes, [...permutes, libelle_partage])).toThrow(FormesOutilsAmbigues);
+    expect(() => texteNommeUnOutilPermute("Alphabot", permutes, [...permutes, libelle_partage])).toThrow(FormesOutilsAmbigues);
+  });
+
+  it("D86 : les formes des deux comparateurs sont toujours cherchées, au remplacement comme aux mentions résiduelles", () => {
+    const derangement = tirerDerangementOutils(permutes, perimetre, graine(1));
+    const texte = "Boussole Le Chat et Compas Alphabot, d'Éditeur Commun.";
+    expect(permuterNomsOutils(texte, derangement)).toEqual({ texte, remplacements: 0, mentions_residuelles: 0 });
+    // En capitales, « LE CHAT » et « ALPHABOT » reviennent aux comparateurs (la plus longue l'emporte) : aucune mention résiduelle.
+    expect(permuterNomsOutils("BOUSSOLE LE CHAT et COMPAS ALPHABOT.", derangement).mentions_residuelles).toBe(0);
+    expect(permuterNomsOutils("BOUSSOLE LE CHAT et ALPHABOT.", derangement).mentions_residuelles).toBe(1);
+    // Sans COMPAS, sa forme n'est plus cherchée : « ALPHABOT » devient une mention résiduelle.
+    const sans_compas = tirerDerangementOutils(permutes, [ALPHA, BETA, GAMMA, BOUSSOLE], graine(1));
+    expect(permuterNomsOutils("BOUSSOLE LE CHAT et COMPAS ALPHABOT.", sans_compas).mentions_residuelles).toBe(1);
+  });
+
+  it("D86 : éligibilité : un texte qui ne nomme que les comparateurs et leur éditeur commun n'est pas éligible ; un outil permuté à côté le rend éligible", () => {
+    const comparateurs_seuls = "Boussole Le Chat et Compas Alphabot, d'Éditeur Commun.";
+    expect(estEligibleOutils(reponse(comparateurs_seuls), permutes, perimetre)).toBe(false);
+    expect(texteNommeUnOutilPermute(comparateurs_seuls, permutes, perimetre)).toBe(false);
+    expect(estEligibleOutils(reponse("Compas Alphabot cite Le Chat."), permutes, perimetre)).toBe(true);
+    expect(texteNommeUnOutilPermute("Compas Alphabot cite Le Chat.", permutes, perimetre)).toBe(true);
+  });
+
+  it("D86 : déterminisme : même graine ⇒ même tirage, quel que soit l'ordre des outils reçus", () => {
+    for (const valeur of [3, 41]) {
+      const premier = tirerDerangementOutils(permutes, perimetre, graine(valeur));
+      expect(tirerDerangementOutils(permutes, perimetre, graine(valeur))).toEqual(premier);
+      expect(tirerDerangementOutils([...permutes].reverse(), [...perimetre].reverse(), graine(valeur))).toEqual(premier);
+    }
   });
 });
