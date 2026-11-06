@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-11-05",
+  "date_maj": "2026-11-06",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -1250,6 +1250,54 @@
       "recommandation": "Option 1 : seul (c) demande du code, une garde symétrique.",
       "retenu": "Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). (c) au prochain lot d'outillage.",
       "date_decision": "2026-11-05"
+    },
+    {
+      "id": "D93",
+      "statut": "tranchee",
+      "question": "Après D89 (#340), deux trous de code dans pnpm kappa:jeu-or : (1) aucun motif de notation ne désigne le troisième humain du jeu d'or que le §7 retient en cas de désaccord, si bien que tout désaccord humain fait lever JeuOrIncoherent et que la commande refuserait tout vrai pilote ; (2) kappa_paire_juges, exigé par le schéma de tout run publié, n'est inscrit par aucune commande.",
+      "contexte": "Questions Q1 et Q2 du lot D89. Le calcul de la paire existe (analysis/kappa-jeu-or.ts:kappasJeuOr().paire) ; inscriptionsJeuOr ne le rend pas.",
+      "options": [
+        "(1) motif dédié arbitrage_jeu_or (schéma, tâche de la file humaine, lecture dans inscription-jeu-or.ts) ; (2) la même commande inscrit kappa_paire_juges depuis le même appel.",
+        "(1) réutiliser arbitrage_echantillon_10, qui mélange deux populations ; (2) commande séparée."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation lancé le 2026-11-06.",
+      "date_decision": "2026-11-06"
+    },
+    {
+      "id": "D94",
+      "statut": "en_attente",
+      "question": "Comment le kappa juge-humain mesuré au pilote se reporte-t-il dans le run.json des runs mensuels et hebdomadaires qui suivent ?",
+      "contexte": "Question Q3 du lot D89. Les exemples valide-01/02/03 du schéma montrent des runs non pilotes porteurs du kappa ; le §7 dit qu'un juge est mesuré « avant son premier run », sans dire comment la mesure est recopiée, comment vérifier que c'est le même juge (modèle, réglages, absents de run.json), ni ce que devient un juge retiré qui « garde sa calibration antérieure ». pnpm kappa:jeu-or refuse aujourd'hui tout run non pilote.",
+      "options": [
+        "Recopie depuis le pilote : pnpm kappa:jeu-or --jeu-or=<pilote> avec contrôle d'identité du juge (modèle et réglages inscrits au gel) ; amendement du §7 qui le dit.",
+        "Chaque run recalcule sur son propre jeu d'or (coût humain à chaque run) ; amendement du §7.",
+        "Le kappa n'est publié qu'au pilote, les runs suivants y renvoient ; amendement du schéma et du §7."
+      ],
+      "recommandation": "Option 1 : lecture la plus proche de « avant son premier run », sans notation humaine de plus ; décision métier qui modifie le §7."
+    },
+    {
+      "id": "D95",
+      "statut": "en_attente",
+      "question": "Un juge retiré au pilote lui-même n'a aucune calibration antérieure : quel motif publier pour son kappa juge-humain ?",
+      "contexte": "Question Q4 du lot D89. Le schéma exige un kappa ou un motif pour chaque juge d'un run publié ; aucun motif du §7 ne couvre « juge retiré sans calibration ». Ne joue que si le pilote est publié.",
+      "options": [
+        "Nouveau motif juge_retire_sans_calibration (§7 et schéma).",
+        "Un pilote avec juge retiré n'est jamais publié : il est rejoué.",
+        "Le juge retiré disparaît des juges publiés du pilote."
+      ],
+      "recommandation": "Option 1 : publication intégrale, l'absence de mesure reste visible et nommée ; décision métier qui modifie le §7."
+    },
+    {
+      "id": "D96",
+      "statut": "en_attente",
+      "question": "Les champs du jeu d'or (kappa_juge_humain, son motif, comptes_jeu_or, kappa_paire_juges) restent-ils dans l'empreinte du run.json (§9) ?",
+      "contexte": "Question Q5 du lot D89 (DETTE 2026-11-04 après-midi n° 4). Le §9 ne les nomme pas parmi les champs exclus de l'empreinte ; #340 les y garde, et pnpm kappa:jeu-or refuse donc d'écrire après pnpm analyze.",
+      "options": [
+        "Les garder dans l'empreinte (code actuel, lettre du §9) : le kappa s'inscrit avant l'analyse.",
+        "Les sortir de l'empreinte comme les champs du go/no-go ; amendement du §9."
+      ],
+      "recommandation": "Option 1 : lettre du §9 et ordre naturel (calibration avant analyse) ; aucun code à changer."
     }
   ],
   "lots": [
@@ -1480,9 +1528,13 @@
         "D33",
         "D34",
         "D89",
-        "D90"
+        "D90",
+        "D93",
+        "D94",
+        "D95",
+        "D96"
       ],
-      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens. Le 2026-10-09 : D27 tranchée (charge-juge-v3 : fraîcheur calculée, noms cités rattachés par le code, texte de la page citée, prémisse et réponse attendue transmises) ; à coder avant de finaliser prompts/judge-*. Le 2026-10-09 : PR #106 (brouillon) livre charge-juge-v3 ; D29 tranchée sur ses points ouverts, à coder dans la même PR. Le 2026-10-09 : D29 codée dans la PR #106 ; D30 tranchée sur les points ouverts restants, à coder dans la même PR. Le 2026-10-10 : D30 codée dans la PR #106 ; D31 tranchée (renvoi écarté du contrefactuel et du kappa, nombres publiés), à coder dans la même PR. Le 2026-10-10 : D31 codée, PR #106 fusionnée (charge-juge-v3, D27 à D31). Un vrai run exige pnpm liens:textes après pnpm liens ; le prompt juge doit être livré avec la charge v3. Le 2026-10-10 : prompt juge final sur charge-juge-v3 proposé dans scratch/prompts/judge-1.0.0.md (relecture et inscription par l'auteur) ; D32 tranchée (refus de l'API noté non-réponse par le code, sans juge), à coder. Le 2026-10-10 : PR #108 (brouillon) livre D32 ; D33 tranchée (refus exempté d'extrait pour tout notateur, refus écartés du kappa de l'échantillon), à coder dans la même PR. Le 2026-10-10 : D33 codée, PR #108 fusionnée (marqueur sur_refus_api, contrôle croisé marqueur ⇔ refus ; pnpm notation:controle à exécuter avant toute publication). Le 2026-10-12 : D34 tranchée (sept choix de rédaction du prompt juge 1.0.0 validés). Le 2026-10-15 (PR #121) : prompt juge inscrit par l'auteur dans prompts/judge-1.0.0.md, avec le protocole 0.16. Le 2026-11-01 : juge limité aux items des candidats interrogés (#200, D56 (1)), noms des non-interrogés plus réécrits par le dérangement (#191), contrefactuel indéfini sous deux candidats interrogés (#203, #211). Le 2026-11-05 : la chaîne écrit les verdicts de lecture de comparateur (#329, D87) ; contrefactuel d'outil lu sur l'instantané du gel (#331, D84). Restent D89 (écriture du kappa) et D90 (test d'outil tiré)."
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens. Le 2026-10-09 : D27 tranchée (charge-juge-v3 : fraîcheur calculée, noms cités rattachés par le code, texte de la page citée, prémisse et réponse attendue transmises) ; à coder avant de finaliser prompts/judge-*. Le 2026-10-09 : PR #106 (brouillon) livre charge-juge-v3 ; D29 tranchée sur ses points ouverts, à coder dans la même PR. Le 2026-10-09 : D29 codée dans la PR #106 ; D30 tranchée sur les points ouverts restants, à coder dans la même PR. Le 2026-10-10 : D30 codée dans la PR #106 ; D31 tranchée (renvoi écarté du contrefactuel et du kappa, nombres publiés), à coder dans la même PR. Le 2026-10-10 : D31 codée, PR #106 fusionnée (charge-juge-v3, D27 à D31). Un vrai run exige pnpm liens:textes après pnpm liens ; le prompt juge doit être livré avec la charge v3. Le 2026-10-10 : prompt juge final sur charge-juge-v3 proposé dans scratch/prompts/judge-1.0.0.md (relecture et inscription par l'auteur) ; D32 tranchée (refus de l'API noté non-réponse par le code, sans juge), à coder. Le 2026-10-10 : PR #108 (brouillon) livre D32 ; D33 tranchée (refus exempté d'extrait pour tout notateur, refus écartés du kappa de l'échantillon), à coder dans la même PR. Le 2026-10-10 : D33 codée, PR #108 fusionnée (marqueur sur_refus_api, contrôle croisé marqueur ⇔ refus ; pnpm notation:controle à exécuter avant toute publication). Le 2026-10-12 : D34 tranchée (sept choix de rédaction du prompt juge 1.0.0 validés). Le 2026-10-15 (PR #121) : prompt juge inscrit par l'auteur dans prompts/judge-1.0.0.md, avec le protocole 0.16. Le 2026-11-01 : juge limité aux items des candidats interrogés (#200, D56 (1)), noms des non-interrogés plus réécrits par le dérangement (#191), contrefactuel indéfini sous deux candidats interrogés (#203, #211). Le 2026-11-05 : la chaîne écrit les verdicts de lecture de comparateur (#329, D87) ; contrefactuel d'outil lu sur l'instantané du gel (#331, D84). Restent D89 (écriture du kappa) et D90 (test d'outil tiré). Le 2026-11-06 : D89 codée (#340, pnpm kappa:jeu-or, pilote seulement) ; D93 tranchée (motif arbitrage_jeu_or du troisième humain, kappa_paire_juges inscrit par la même commande), lot lancé ; D94, D95, D96 attendent l'auteur."
     },
     {
       "id": "notation-humaine",
@@ -1690,7 +1742,7 @@
         "D91",
         "D92"
       ],
-      "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel. PR 4 livrée le 2026-10-16 (D51 (1)) : pnpm run:dry --run <répertoire gelé> lit périmètre, fenêtre, identifiant et questions tirées du gel, vérifie les empreintes de tirage.json et questions.json (vérification partagée avec le précédent), écrit en_cours avant la première tentative et reprend un run en_cours sans réécrire run.json ; le mode fixtures est inchangé. Le 2026-11-05 : nombre d'échantillons, libellé et éditeur des outils inscrits au gel, désignation héritée par une réexécution (#331, D75 (14), (20), (21), (27), D84) ; pnpm geler --simule et chaîne gel → run:dry → notation:dry → analyze en commandes, sans clé ni réseau (#336, D80)."
+      "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel. PR 4 livrée le 2026-10-16 (D51 (1)) : pnpm run:dry --run <répertoire gelé> lit périmètre, fenêtre, identifiant et questions tirées du gel, vérifie les empreintes de tirage.json et questions.json (vérification partagée avec le précédent), écrit en_cours avant la première tentative et reprend un run en_cours sans réécrire run.json ; le mode fixtures est inchangé. Le 2026-11-05 : nombre d'échantillons, libellé et éditeur des outils inscrits au gel, désignation héritée par une réexécution (#331, D75 (14), (20), (21), (27), D84) ; pnpm geler --simule et chaîne gel → run:dry → notation:dry → analyze en commandes, sans clé ni réseau (#336, D80). Le 2026-11-06 : D92 (c) codée (#339, run:dry --run exige simule: true)."
     },
     {
       "id": "mesures-validees",
