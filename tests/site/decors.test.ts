@@ -210,45 +210,52 @@ describe("décors : SVG sources", () => {
   });
 });
 
-describe("décors : atténuation sous le texte", () => {
+describe("décors : passage sous le texte", () => {
   const css = (): string => fichiersCss().find((f) => f.nom === "decors.css")?.css ?? "";
   const jetons = (): string => fichiersCss().find((f) => f.nom === "jetons.css")?.css ?? "";
+  const miseEnPage = (): string => fichiersCss().find((f) => f.nom === "mise-en-page.css")?.css ?? "";
+  const SECTIONS = ["section--questions", "section--limites", "section--preenregistrement", "section--contester"];
+  const regleVoile = (): string => {
+    const m = /:is\(([^)]*)\)\s*>\s*:not\(\.decor\)::before\s*\{([^}]*)\}/.exec(css());
+    expect(m, "règle du voile sous le texte").not.toBeNull();
+    return m?.[0] ?? "";
+  };
 
-  it("grise et estompe chaque décor par défaut (filter et opacity sur le svg des décors)", () => {
-    expect(css()).toMatch(/\.decor svg\s*\{[^}]*filter:\s*grayscale\(var\(--decor-gris\)\)[^}]*opacity:\s*var\(--decor-opacite\)/);
+  it("pose un voile sous chaque bloc de texte de chaque section décorée hors accroche", () => {
+    const regle = regleVoile();
+    for (const section of SECTIONS) expect(regle, section).toContain(`.${section}`);
   });
 
-  it("estompe par un masque chaque rail ou colonne de décor, côté texte", () => {
-    for (const rail of ["decor-accroche__colonne", "decor-limites__rail", "decor-questions__rail", "decor-preenregistrement__rail", "decor-contester__rail"]) {
-      expect(css(), rail).toMatch(new RegExp(`\\.${rail}[^{]*\\{[^}]*mask-image:\\s*linear-gradient`));
-    }
+  it("tire le voile du fond réel de la section, jamais d'une couleur fixe", () => {
+    expect(regleVoile()).toMatch(/background:\s*color-mix\(in srgb, var\(--fond-courant\) var\(--decor-voile-densite\), transparent\)/);
+    expect(miseEnPage()).toMatch(/\.section\s*\{[^}]*--fond-courant:\s*var\(--fond\)/);
+    expect(miseEnPage()).toMatch(/\.section:nth-of-type\(even\)\s*\{[^}]*--fond-courant:\s*var\(--fond-section\)[^}]*background:\s*var\(--fond-section\)/);
   });
 
-  it("écrit les valeurs d'atténuation par des jetons non colorés", () => {
-    for (const jeton of ["--decor-gris", "--decor-opacite", "--decor-gris-debut", "--decor-opacite-debut"]) {
-      expect(jetons()).toMatch(new RegExp(`${jeton}:\\s*[0-9.]+;`));
-    }
+  it("place le voile derrière le texte et devant le décor, sans capter les clics", () => {
+    const regle = regleVoile();
+    expect(regle).toMatch(/z-index:\s*-1/);
+    expect(regle).toMatch(/pointer-events:\s*none/);
+    expect(regle).toMatch(/content:\s*""/);
   });
 
-  it("ne progresse au défilement que sous @supports et prefers-reduced-motion: no-preference", () => {
-    const source = css();
-    const i = source.indexOf("animation-name: decor-attenue");
-    expect(i).toBeGreaterThan(0);
-    const preludes = preludesEnglobants(source, i);
-    expect(preludes.some((p) => /^@supports\s*\(\s*animation-timeline\s*:/.test(p))).toBe(true);
-    expect(preludes.some((p) => /prefers-reduced-motion:\s*no-preference/.test(p))).toBe(true);
+  it("fond les bords du voile par un masque, préfixé et non préfixé", () => {
+    const regle = regleVoile();
+    expect(regle).toMatch(/-webkit-mask-image:/);
+    expect(regle).toMatch(/[^-]mask-image:/);
+    expect(regle).toMatch(/mask-composite:\s*intersect/);
   });
 
-  it("garde l'état atténué statique sous reduced-motion (animation coupée, filtre jamais retiré)", () => {
-    const source = css();
-    expect(source).toMatch(/prefers-reduced-motion:\s*reduce\)[^{]*\{[\s\S]*animation:\s*none/);
-    expect(preludesEnglobants(source, source.indexOf(".decor svg {"))).toEqual([]);
+  it("écrit la marge et la densité du voile par des jetons non colorés", () => {
+    expect(jetons()).toMatch(/--decor-voile-marge:\s*[0-9.]+rem;/);
+    expect(jetons()).toMatch(/--decor-voile-densite:\s*[0-9]+%;/);
   });
 
-  it("n'emploie backdrop-filter que sous @supports, avec repli (aujourd'hui : aucun)", () => {
-    const source = css();
-    for (const m of source.matchAll(/backdrop-filter\s*:/g)) {
-      expect(preludesEnglobants(source, m.index).some((p) => /^@supports/.test(p))).toBe(true);
-    }
+  it("n'emploie aucun backdrop-filter (un gris filtré teinterait le fond de la section)", () => {
+    expect(css()).not.toMatch(/backdrop-filter\s*:/);
+  });
+
+  it("ne grise ni n'estompe plus le décor en entier : seul le texte le recouvre", () => {
+    expect(css()).not.toMatch(/\.decor svg\s*\{[^}]*(filter|opacity):/);
   });
 });
