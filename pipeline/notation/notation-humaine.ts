@@ -78,6 +78,7 @@ export const MOTIFS_HUMAINS = [
   "attribution_indecidable",
   "juge_defaillant",
   "calibration_jeu_or",
+  "arbitrage_jeu_or",
 ] as const satisfies readonly MotifNotation[];
 export type MotifHumain = (typeof MOTIFS_HUMAINS)[number];
 

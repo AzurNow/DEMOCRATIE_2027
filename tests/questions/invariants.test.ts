@@ -404,7 +404,9 @@ describe("exemples de schema/exemples/", () => {
     // contexte run ; leur contexte suit toujours l'objet noté.
     // 49 → 51 : D73 (13), deux verdicts d'une lecture de comparateur (valide-06, invalide-10), de
     // contexte run, sur lecture-comparateur/valide-01 ; leur contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(51);
+    // 51 → 53 : D93, deux notations arbitrage_jeu_or (valide-13, d'un humain ; invalide-24, d'un juge),
+    // copies de valide-03 et d'invalide-04, de contexte run ; leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(53);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 
