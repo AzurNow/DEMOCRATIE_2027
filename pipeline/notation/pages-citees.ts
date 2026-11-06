@@ -57,7 +57,7 @@ export type PageCitee =
       readonly texte_disponible: true;
       readonly origine: OrigineTexte;
       readonly texte: string;
-      /** Empreinte du texte extrait entier (avant troncature) : le fichier de `volume/liens/textes/`. */
+      /** Empreinte du texte extrait entier (avant troncature) : le fichier de `pages-citees/textes/` (hors de `volume/`, D83). */
       readonly texte_sha256: string;
       readonly tronque: boolean;
       /** Longueur du texte entier, en points de code. */

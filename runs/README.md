@@ -43,6 +43,10 @@ runs/<date>/
   pages-citees/<sha256><ext>  hors Git (ligne /runs/*/pages-citees/ de .gitignore) et hors du volume :
                               la page d'un lien qui existe ou la version brute d'un instantané,
                               octets reçus tels quels (JAMAIS dans l'archive Zenodo : voir ci-dessous)
+  pages-citees/textes/<texte_sha256>.txt
+                              le texte intégral extrait de chaque page (pnpm liens:textes), même régime
+                              (D83) ; la fiche volume/liens/extractions/<sha256_contenu>.json (empreinte,
+                              longueur, extracteur) reste dans le volume
 ```
 
 **Ce qui ne part pas dans l'archive Zenodo (§9, §10 ; conformité 2026-11-03 n° 10 ; D75 (4)).** Le
@@ -368,8 +372,9 @@ latin-1 réussit.
 - **Lecture.** `pnpm notation:humaine` lit ce répertoire s'il existe
   (`pipeline/notation/fournisseur-fichiers.ts`) ; un fichier invalide, mal nommé ou dont la copie
   conservée (page ou version brute de l'instantané) manque sous `pages-citees/` empêche le démarrage.
-  Les résultats et les dossiers `extractions/` et `textes/` sont les seules entrées admises de
-  `volume/liens/` : un ancien dossier `volume/liens/pages/` est refusé.
+  Les résultats et le dossier `extractions/` sont les seules entrées admises de `volume/liens/` : un
+  ancien dossier `volume/liens/pages/` ou `volume/liens/textes/` est refusé. Le texte extrait d'une
+  fiche se lit sous `pages-citees/textes/<texte_sha256>.txt` (D83) ; absent, c'est une erreur nommée.
 
 ## Ce que l'analyse lira
 

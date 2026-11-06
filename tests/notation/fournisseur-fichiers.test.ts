@@ -228,9 +228,9 @@ describe("texte des copies conservées (D27 (E))", () => {
 
   function poserExtraction(run: string, sha_copie: string, fiche: Record<string, unknown>, texte: string | null = TEXTE): void {
     mkdirSync(join(repertoireLiens(run), "extractions"), { recursive: true });
-    mkdirSync(join(repertoireLiens(run), "textes"), { recursive: true });
+    mkdirSync(join(repertoirePages(run), "textes"), { recursive: true });
     writeFileSync(join(repertoireLiens(run), "extractions", `${sha_copie}.json`), `${JSON.stringify(fiche, null, 2)}\n`, "utf8");
-    if (texte !== null) writeFileSync(join(repertoireLiens(run), "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
+    if (texte !== null) writeFileSync(join(repertoirePages(run), "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
   }
 
   function ficheExtraite(sha_copie: string): Record<string, unknown> {
@@ -270,7 +270,7 @@ describe("texte des copies conservées (D27 (E))", () => {
   it("un texte altéré est refusé à la lecture, jamais transmis", () => {
     const run = runTeste();
     poserExtraction(run, empreinte(PAGE), ficheExtraite(empreinte(PAGE)));
-    writeFileSync(join(repertoireLiens(run), "textes", `${SHA_TEXTE}.txt`), `${TEXTE}!`, "utf8");
+    writeFileSync(join(repertoirePages(run), "textes", `${SHA_TEXTE}.txt`), `${TEXTE}!`, "utf8");
     expect(() => fournisseurFichiers(run).texteDeCopie(empreinte(PAGE))).toThrow(/empreinte de sa fiche/);
   });
 
@@ -295,14 +295,29 @@ describe("D75 (4) : pages citées hors de volume/", () => {
     const texte = "Programme — « éducation »";
     const fiche = JSON.parse(readFileSync(resolve(import.meta.dirname, "../liens/dore-textes/extraction-html.json"), "utf8")) as Record<string, unknown>;
     mkdirSync(join(repertoireLiens(run), "extractions"));
-    mkdirSync(join(repertoireLiens(run), "textes"));
+    mkdirSync(join(repertoirePages(run), "textes"));
     writeFileSync(join(repertoireLiens(run), "extractions", `${empreinte(PAGE)}.json`), JSON.stringify({ ...fiche, sha256_contenu: empreinte(PAGE), texte_sha256: empreinte(Buffer.from(texte, "utf8")), longueur: Array.from(texte).length }), "utf8");
-    writeFileSync(join(repertoireLiens(run), "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
+    writeFileSync(join(repertoirePages(run), "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
 
     expect(fournisseurFichiers(run).texteDeCopie(empreinte(PAGE))).toMatchObject({ issue: "extrait", texte });
     expect(lireDore("existe.json")["page"]).toMatchObject({ chemin: `pages-citees/${empreinte(PAGE)}.html` });
-    expect(fichiersSous(repertoirePages(run))).toEqual([empreinte(PAGE), empreinte(COPIE)].map((sha) => `${sha}.html`).sort());
-    expect(fichiersSous(join(run, "volume")).every((chemin) => /^liens\/(?:[0-9a-f]{64}\.json|extractions\/[0-9a-f]{64}\.json|textes\/[0-9a-f]{64}\.txt)$/u.test(chemin))).toBe(true);
+    expect(fichiersSous(repertoirePages(run))).toEqual([...[empreinte(PAGE), empreinte(COPIE)].map((sha) => `${sha}.html`), `textes/${empreinte(Buffer.from(texte, "utf8"))}.txt`].sort());
+    expect(fichiersSous(join(run, "volume")).every((chemin) => /^liens\/(?:[0-9a-f]{64}\.json|extractions\/[0-9a-f]{64}\.json)$/u.test(chemin))).toBe(true);
+  });
+
+  it("D83 : un ancien dossier volume/liens/textes/ est refusé, le texte ne s'y lit plus", () => {
+    const run = runTeste();
+    mkdirSync(join(repertoireLiens(run), "textes"));
+    expect(() => fournisseurFichiers(run)).toThrow(/entrées qui ne sont pas des résultats, ni lues ni ignorées : textes\./);
+  });
+
+  it("D83 : texte de la fiche absent de pages-citees/textes/ : erreur nommée qui cite le nouvel emplacement", () => {
+    const run = runTeste();
+    const texte = "Programme — « éducation »";
+    const fiche = JSON.parse(readFileSync(resolve(import.meta.dirname, "../liens/dore-textes/extraction-html.json"), "utf8")) as Record<string, unknown>;
+    mkdirSync(join(repertoireLiens(run), "extractions"));
+    writeFileSync(join(repertoireLiens(run), "extractions", `${empreinte(PAGE)}.json`), JSON.stringify({ ...fiche, sha256_contenu: empreinte(PAGE), texte_sha256: empreinte(Buffer.from(texte, "utf8")), longueur: Array.from(texte).length }), "utf8");
+    expect(() => fournisseurFichiers(run)).toThrow(`le texte pages-citees/textes/${empreinte(Buffer.from(texte, "utf8"))}.txt est absent.`);
   });
 
   it("D75 (4) cas 4 : page déclarée absente de pages-citees/ : erreur nommée, jamais un texte vide", () => {
@@ -359,13 +374,13 @@ describe("18. branchement dans l'écran de notation humaine", () => {
     const liens = repertoireLiens(monde.repertoire_run);
     mkdirSync(repertoirePages(monde.repertoire_run), { recursive: true });
     mkdirSync(join(liens, "extractions"), { recursive: true });
-    mkdirSync(join(liens, "textes"), { recursive: true });
+    mkdirSync(join(repertoirePages(monde.repertoire_run), "textes"), { recursive: true });
     writeFileSync(join(repertoirePages(monde.repertoire_run), `${empreinte(PAGE)}.html`), PAGE);
     poser(monde.repertoire_run, LIEN, { ...lireDore("existe.json"), url_citee: LIEN, url_finale: LIEN });
     const texte = "Programme — « éducation »";
     const fiche = JSON.parse(readFileSync(resolve(import.meta.dirname, "../liens/dore-textes/extraction-html.json"), "utf8")) as Record<string, unknown>;
     writeFileSync(join(liens, "extractions", `${empreinte(PAGE)}.json`), JSON.stringify({ ...fiche, sha256_contenu: empreinte(PAGE), texte_sha256: empreinte(Buffer.from(texte, "utf8")), longueur: Array.from(texte).length }), "utf8");
-    writeFileSync(join(liens, "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
+    writeFileSync(join(repertoirePages(monde.repertoire_run), "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
 
     const etat = etatDesTaches(monde.contexte("a1", fournisseurDuRun(monde.repertoire_run)));
 

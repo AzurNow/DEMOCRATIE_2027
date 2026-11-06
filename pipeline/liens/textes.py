@@ -16,8 +16,10 @@ vidéo, texte brut…), un encodage non déclaré ou un PDF illisible donnent un
 refus est une donnée de la page : il est consigné, et la charge le dit (`extraction_refusee`).
 
 Écrit, une fois, jamais réécrit :
-- `volume/liens/textes/<texte_sha256>.txt` : le texte canonique (LF, NFC), UTF-8 sans BOM ;
-- `volume/liens/extractions/<sha256_contenu>.json` (`schema/extraction-page-lien.schema.json`) : la
+- `pages-citees/textes/<texte_sha256>.txt`, hors de `volume/` (D83 : le texte intégral d'une page d'autrui
+  ne part pas sur Zenodo, l'empreinte publiée dans la fiche suffit à le vérifier) : le texte canonique
+  (LF, NFC), UTF-8 sans BOM ;
+- `volume/liens/extractions/<sha256_contenu>.json`, dans le volume (`schema/extraction-page-lien.schema.json`) : la
   fiche de la copie, qui dit par quel extracteur, dans quelle version et avec quelles options le
   texte a été tiré, ou pourquoi il ne l'a pas été.
 
@@ -45,7 +47,7 @@ from pipeline.collecte.manifeste import serialiser
 from pipeline.collecte.textes.extraction import GENRE_PDF, GENRES
 from pipeline.collecte.textes.fiche import Extraction, bloc_specifique as _bloc_specifique
 from pipeline.collecte.textes.refus import ExtractionRefusee
-from pipeline.liens.sortie import repertoire_liens
+from pipeline.liens.sortie import REPERTOIRE_PAGES, repertoire_liens
 
 REPERTOIRE_EXTRACTIONS = "extractions"
 REPERTOIRE_TEXTES = "textes"
@@ -113,7 +115,13 @@ def chemin_fiche(sha256_contenu: str) -> PurePosixPath:
 
 
 def chemin_texte(texte_sha256: str) -> PurePosixPath:
+    """Relatif à `pages-citees/` (D83), hors de `volume/`."""
     return PurePosixPath(REPERTOIRE_TEXTES, f"{texte_sha256}.txt")
+
+
+def repertoire_textes_run(repertoire_run: Path) -> Path:
+    """`<repertoire_run>/pages-citees`, où vont les textes extraits (D83)."""
+    return repertoire_run / REPERTOIRE_PAGES
 
 
 # ----------------------------------------------------------------- copies
@@ -203,8 +211,8 @@ def _octets_verifies(copie: Copie, repertoire_run: Path) -> bytes | EnErreur:
     return octets
 
 
-def _ecrire_texte(sha256_contenu: str, extraction: Extraction, repertoire_liens: Path) -> EnErreur | None:
-    chemin = repertoire_liens / chemin_texte(extraction.texte.sha256)
+def _ecrire_texte(sha256_contenu: str, extraction: Extraction, repertoire_pages: Path) -> EnErreur | None:
+    chemin = repertoire_pages / chemin_texte(extraction.texte.sha256)
     if not chemin.exists():
         ecrire_atomiquement(chemin, extraction.texte.octets)
         return None
@@ -229,7 +237,7 @@ def extraire_copie(copie: Copie, repertoire_run: Path, deps: Dependances) -> Res
         ecrire_atomiquement(fiche, serialiser(fiche_refusee(copie.sha256, refus.motif, date)))
         return Refuse(copie.sha256, refus.motif)
     contenu_fiche = serialiser(fiche_extraite(copie.sha256, extraction, date))
-    erreur = _ecrire_texte(copie.sha256, extraction, liens)
+    erreur = _ecrire_texte(copie.sha256, extraction, repertoire_textes_run(repertoire_run))
     if erreur is not None:
         return erreur
     ecrire_atomiquement(fiche, contenu_fiche)
