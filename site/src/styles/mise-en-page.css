@@ -173,10 +173,12 @@
 /* ---- Sections ---- */
 
 .section {
+  --fond-courant: var(--fond); /* fond réel de la section, repris par le voile des décors */
   padding: 2.5rem max(var(--gouttiere), calc((100% - var(--largeur-page)) / 2));
 }
 
 .section:nth-of-type(even) {
+  --fond-courant: var(--fond-section);
   background: var(--fond-section);
 }
 

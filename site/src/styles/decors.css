@@ -34,15 +34,11 @@
 }
 
 /*
- * Atténuation : un décor qui passe sous du texte ne doit jamais le gêner. L'état écrit ici (gris et
- * pâle, sans animation) est l'état par défaut et celui du mouvement réduit ; au défilement, le décor
- * part moins grisé quand sa section entre, et se grise à mesure que le texte le recouvre. Les valeurs
- * sont des jetons non colorés (jetons.css).
+ * Passage sous le texte : le décor reste plein là où il est seul ; là où un bloc de texte le recouvre,
+ * un voile tiré du fond de la section (--fond-courant, mise-en-page.css) l'estompe, avec des bords
+ * fondus. Le lecteur voit le décor glisser sous le texte, jamais le texte sur un dessin. Pas de
+ * backdrop-filter : un gris filtré teinterait aussi le fond de la section, en rectangles visibles.
  */
-.decor svg {
-  filter: grayscale(var(--decor-gris));
-  opacity: var(--decor-opacite);
-}
 
 /* ---- États fixes (repli sans animation-timeline, et mouvement réduit) ---- */
 
@@ -93,14 +89,26 @@
     width: 18rem;
   }
 
-  /* Fondu vers le bas et vers la gauche, côté texte : le décor reste plein dans la marge haute droite. */
-  .decor-accroche__colonne,
-  .decor-limites__rail,
-  .decor-questions__rail,
-  .decor-preenregistrement__rail,
-  .decor-contester__rail {
-    -webkit-mask-image: linear-gradient(to bottom left, black 35%, transparent 110%);
-    mask-image: linear-gradient(to bottom left, black 35%, transparent 110%);
+  /* Voile sous chaque bloc de texte des sections décorées (un pseudo-élément par bloc). */
+  :is(.section--questions, .section--limites, .section--preenregistrement, .section--contester) > :not(.decor) {
+    position: relative;
+  }
+
+  :is(.section--questions, .section--limites, .section--preenregistrement, .section--contester) > :not(.decor)::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--decor-voile-marge));
+    z-index: -1;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--fond-courant) var(--decor-voile-densite), transparent);
+    -webkit-mask-image:
+      linear-gradient(to right, transparent, black var(--decor-voile-marge), black calc(100% - var(--decor-voile-marge)), transparent),
+      linear-gradient(to bottom, transparent, black var(--decor-voile-marge), black calc(100% - var(--decor-voile-marge)), transparent);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to right, transparent, black var(--decor-voile-marge), black calc(100% - var(--decor-voile-marge)), transparent),
+      linear-gradient(to bottom, transparent, black var(--decor-voile-marge), black calc(100% - var(--decor-voile-marge)), transparent);
+    mask-composite: intersect;
   }
 
   /* Accroche : la colonne de droite de la grille, au-dessus et au-dessous de l'illustration. */
@@ -161,14 +169,6 @@
         view-timeline: --decor block;
       }
 
-      /* Atténuation progressive : de l'état d'entrée (peu grisé) à l'état couvert par le texte. */
-      .decor svg {
-        animation-name: decor-attenue;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: --decor;
-        animation-range: cover 0% cover 70%;
-      }
 
       /* Réglages communs, de spécificité nulle : seuls les groupes qui ont un animation-name bougent. */
       :where(.decor svg g) {
@@ -215,10 +215,6 @@
       .decor-contester-nouvelle { animation-name: decor-contester-nouvelle; }
     }
 
-    @keyframes decor-attenue {
-      from { filter: grayscale(var(--decor-gris-debut)); opacity: var(--decor-opacite-debut); }
-      to { filter: grayscale(var(--decor-gris)); opacity: var(--decor-opacite); }
-    }
 
     @keyframes decor-accroche-monte-1 { from { transform: translateY(12px); } to { transform: translateY(-8px); } }
     @keyframes decor-accroche-monte-2 { from { transform: translateY(20px); } to { transform: translateY(-14px); } }
