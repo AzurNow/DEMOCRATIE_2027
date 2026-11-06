@@ -6,7 +6,7 @@
  * `schema/exemples/`.
  */
 
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -100,25 +100,15 @@ describe("schémas réels : manifeste et méta-schéma", () => {
     expect(rapport.fichiersOrphelins).toEqual([]);
   });
 
-  // 22 → 23 : perimetre (config/perimetre.yaml), conformité 2026-09-29, n° 23 et 25.
-  // 23 → 24 : existence-lien (résultat du test HTTP d'un lien), décision D20 de l'auteur.
-  // 24 → 25 : checklist (checklist de run de l'annexe F), décision D24 de l'auteur.
-  // 25 → 26 : extraction-page-lien (texte d'une copie de page citée), décision D27 de l'auteur.
-  // 26 → 27 : renvoi-humain (renvoi d'une Q-ATT indécidable vers l'humain), décision D30 (2) de l'auteur.
-  // 27 → 28 : proposition-formulation (staging de la reformulation), décisions D39 et D42 de l'auteur.
-  // 28 → 30 : formulations-validees (data/formulations/) et refus-formulation (validation/formulations/refus.jsonl), décisions D39 et D42 de l'auteur.
-  // 30 → 31 : config-gel (config/gel.json), décision D41 de l'auteur.
-  // 31 → 32 : sortie-extraction (sortie brute d'un modèle extracteur), décision D52 de l'auteur.
-  // 32 → 35 : entree-extraction, reponse-extraction et journal-extraction (pnpm extraire), décisions D52 et D53 de l'auteur.
-  // 35 → 36 : relecture-mesure (registre des relectures de mesure, verrou de promotion), décision D53 (1) de l'auteur.
-  // 36 → 37 : rattachement-item (registre des rattachements d'item, pnpm mesures --rattacher), décision D53 (1) de l'auteur.
-  // 37 → 38 : lot (manifeste de lot de validation), revue du 2026-10-12, constat 4 (D55 (3)).
-  // 38 → 40 : sous-echantillon-application et depot-application (§6, D59 (12), protocole 0.24).
-  // 40 → 41 : metriques (runs/<date>/metriques/metriques.json, pnpm analyze, sous-lot A).
-  // 41 → 42 : recalcul-b (runs/<date>/metriques/recalcul-b-<AAAA-MM-JJ>.json, pnpm recalcul-b, D70 (13)).
-  it("2. les quarante-deux schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  it("2. les schémas réels de schema/ sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(42);
+    // Le compte vient du répertoire : chaque *.schema.json présent est vérifié, et réciproquement.
+    const surDisque = readdirSync(racineSchema)
+      .filter((fichier) => fichier.endsWith(".schema.json"))
+      .map((fichier) => fichier.slice(0, -".schema.json".length))
+      .sort();
+    expect(surDisque.length).toBeGreaterThan(0);
+    expect(conformites.map((conformite) => conformite.nom).sort()).toEqual(surDisque);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
