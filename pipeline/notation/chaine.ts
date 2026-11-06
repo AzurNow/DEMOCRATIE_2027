@@ -95,7 +95,10 @@
  *
  * **Humains.** La chaîne n'en simule aucun. Elle lit les notations humaines déjà écrites (écran
  * `pnpm notation:humaine`) et les passe à `decider` : une relance après la saisie humaine résout les
- * attentes qui peuvent l'être, celles des lectures de comparateur comprises.
+ * attentes qui peuvent l'être, celles des lectures de comparateur comprises. Les notations du jeu
+ * d'or d'un run pilote (`calibration_jeu_or`, `arbitrage_jeu_or`) n'y entrent pas
+ * (`file-humaine.ts:separerCalibration`) : elles mesurent les juges (§7 « Calibration et fiabilité
+ * publiée »), et le verdict d'une réponse du jeu d'or est celui qu'elle aurait sans elles.
  */
 
 import { createHash } from "node:crypto";
@@ -121,6 +124,7 @@ import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";
 import { inscrireReponsesObtenuesDuRun } from "./inscription-reponses.ts";
 import { exigerFamillesDistinctes } from "./familles-juges.ts";
+import { separerCalibration } from "./file-humaine.ts";
 import { noterOuRenvoyer, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
 import { pagesCitees, type PageCitee } from "./pages-citees.ts";
 import { nommeUnInterroge } from "./permutation.ts";
@@ -702,6 +706,15 @@ async function noterEnMasse(etat: Etat, run: RunDeNotation): Promise<Pick<Result
   return { verdicts, attentes };
 }
 
+/**
+ * Les notations de contexte `run` d'une réponse que lit la règle de décision du §7 : celles du jeu
+ * d'or (`calibration_jeu_or`, `arbitrage_jeu_or`, D93), de même contexte, servent au seul kappa
+ * juge-humain et sont écartées (`separerCalibration`), sans quoi `decider` les refuserait.
+ */
+function notationsDeDecision(etat: Etat, reponse_id: Ulid): readonly NotationIndividuelle[] {
+  return separerCalibration(etat.notations.filter((n) => n.contexte === "run" && n.objet_note.id === reponse_id)).decision;
+}
+
 /** `null` : la réponse a son verdict. */
 async function noterReponse(etat: Etat, run: RunDeNotation, actifs: readonly Juge[], r: Preparee, dans: boolean): Promise<Attente | null> {
   if (r.reponse.normalise.refus_api) noterParRegle(etat, r);
@@ -711,7 +724,7 @@ async function noterReponse(etat: Etat, run: RunDeNotation, actifs: readonly Jug
   const decision = decider({
     run,
     objet_note: { type: "reponse", id: r.reponse.id },
-    notations: etat.notations.filter((n) => n.contexte === "run" && n.objet_note.id === r.reponse.id),
+    notations: notationsDeDecision(etat, r.reponse.id),
     renvois: etat.renvois.filter((n) => n.contexte === "run" && n.objet_note.id === r.reponse.id),
     dans_echantillon_humain: dans,
     textes: r.textes,
