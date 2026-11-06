@@ -1,6 +1,8 @@
 ---
 import Renvoi from "../composants/Renvoi.astro";
+import Deplier from "../composants/Deplier.astro";
 import DecorLimites from "../composants/decors/DecorLimites.astro";
+import "../styles/sections.css";
 ---
 <section class="section section--limites" id="limites" aria-labelledby="titre-limites">
   <DecorLimites />
@@ -11,52 +13,59 @@ import DecorLimites from "../composants/decors/DecorLimites.astro";
   </p>
   <ul class="limites">
     <li class="limite">
-      <h3 class="limite__titre">L'API n'est pas l'application</h3>
-      <p>
-        La mesure principale passe par l'API des outils, sans instruction ajoutée. Ce que voient les
-        électeurs dans l'application grand public passe en plus par des instructions de l'éditeur,
-        une mémoire et des outils que le projet ne reproduit pas. L'écart est mesuré, mais sur un
-        petit échantillon saisi à la main.
-      </p>
-      <Renvoi section="11" />
+      <Deplier resume="L'API n'est pas l'application" classe="deplier--limite">
+        <p>
+          La mesure principale passe par l'API des outils, sans instruction ajoutée. Ce que voient les
+          électeurs dans l'application grand public passe en plus par des instructions de l'éditeur,
+          une mémoire et des outils que le projet ne reproduit pas. L'écart est mesuré, mais sur un
+          petit échantillon saisi à la main.
+        </p>
+        <Renvoi section="11" />
+      </Deplier>
     </li>
     <li class="limite">
-      <h3 class="limite__titre">La référence, c'est ce qui est public et explicite</h3>
-      <p>
-        Une position formulée en creux, une évolution non documentée ou un désaccord entre un
-        candidat et son parti échappent à la mesure. Le projet mesure la conformité à ce qui a été
-        dit, pas la vérité politique.
-      </p>
-      <Renvoi section="11" />
+      <Deplier resume="La référence, c'est ce qui est public et explicite" classe="deplier--limite">
+        <p>
+          Une position formulée en creux, une évolution non documentée ou un désaccord entre un
+          candidat et son parti échappent à la mesure. Le projet mesure la conformité à ce qui a été
+          dit, pas la vérité politique.
+        </p>
+        <Renvoi section="11" />
+      </Deplier>
     </li>
     <li class="limite">
-      <h3 class="limite__titre">Le juge est un modèle, avec ses biais</h3>
-      <p>
-        Sa fiabilité est mesurée contre des humains, mais ceux-ci sont peu nombreux et l'accord n'est
-        jamais parfait. Le lecteur dispose de la marge d'erreur de la mesure, pas d'une mesure sans
-        marge.
-      </p>
-      <Renvoi section="11" />
+      <Deplier resume="Le juge est un modèle, avec ses biais" classe="deplier--limite">
+        <p>
+          Sa fiabilité est mesurée contre des humains, mais ceux-ci sont peu nombreux et l'accord n'est
+          jamais parfait. Le lecteur dispose de la marge d'erreur de la mesure, pas d'une mesure sans
+          marge.
+        </p>
+        <Renvoi section="11" />
+      </Deplier>
     </li>
     <li class="limite">
-      <h3 class="limite__titre">Le français seul</h3>
-      <p>Un électeur qui interroge un outil dans une autre langue n'est pas couvert.</p>
-      <Renvoi section="11" />
+      <Deplier resume="Le français seul" classe="deplier--limite">
+        <p>Un électeur qui interroge un outil dans une autre langue n'est pas couvert.</p>
+        <Renvoi section="11" />
+      </Deplier>
     </li>
     <li class="limite">
-      <h3 class="limite__titre">Un projet porté par une seule personne</h3>
-      <p>
-        L'auteur écrit le code, choisit les annotateurs et publie. Le panel d'arbitrage, la
-        publication intégrale et la possibilité de tout refaire sont des contrepoids, pas des
-        garanties absolues.
-      </p>
-      <Renvoi section="11" />
+      <Deplier resume="Un projet porté par une seule personne" classe="deplier--limite">
+        <p>
+          L'auteur écrit le code, choisit les annotateurs et publie. Le panel d'arbitrage, la
+          publication intégrale et la possibilité de tout refaire sont des contrepoids, pas des
+          garanties absolues.
+        </p>
+        <Renvoi section="11" />
+      </Deplier>
     </li>
   </ul>
-  <p>
-    Les autres limites reconnues portent notamment sur la fragilité des items d'absence, le
-    classement des magasins d'applications qui décide de la liste des outils, la réaction possible des
-    éditeurs aux questions publiées et la précision des fourchettes pour un candidat peu couvert.
-  </p>
+  <Deplier resume="Les autres limites reconnues" classe="deplier--limite deplier--seul">
+    <p>
+      Les autres limites reconnues portent notamment sur la fragilité des items d'absence, le
+      classement des magasins d'applications qui décide de la liste des outils, la réaction possible des
+      éditeurs aux questions publiées et la précision des fourchettes pour un candidat peu couvert.
+    </p>
+  </Deplier>
   <Renvoi section="11" libelle="§11, liste complète des limites" />
 </section>
