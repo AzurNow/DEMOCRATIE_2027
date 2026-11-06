@@ -151,9 +151,17 @@ function blocsPages(vue: Vue): readonly Bloc[] {
   return [borne, ...vue.pages_citees.map((page) => blocPage(page, vue.longueur_max_texte_page))];
 }
 
+/** D82 : une troncature absente (saisie de l'application) est dite telle, comme le juge la reçoit (ABSENT), jamais rendue par « pas d'alerte ». */
+export const LIBELLE_TRONCATURE_ABSENTE = "troncature : non renseignée (saisie de l'application)";
+
+function blocTroncature(troncature: boolean | undefined): readonly Bloc[] {
+  if (troncature === undefined) return [paragraphe("note", LIBELLE_TRONCATURE_ABSENTE)];
+  return troncature ? [paragraphe("alerte", "Réponse tronquée par l'outil.")] : [];
+}
+
 function blocsAvertissements(vue: Vue): readonly Bloc[] {
   return [
-    ...(vue.reponse.troncature ? [paragraphe("alerte", "Réponse tronquée par l'outil.")] : []),
+    ...blocTroncature(vue.reponse.troncature),
     ...(vue.reponse.refus_api ? [paragraphe("alerte", "Refus de modération de l'API.")] : []),
   ];
 }
