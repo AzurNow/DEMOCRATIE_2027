@@ -70,6 +70,9 @@ const COPIES: readonly { readonly nom: string; readonly motif: RegExp }[] = [
   { nom: "ternaire à trois issues", motif: /\?\s*-1\s*:[^;]*?\?\s*1\s*:\s*0\b/ },
   { nom: "if (a < b) return -1", motif: /if\s*\(\s*[\w.[\]]+\s*<\s*[\w.[\]]+\s*\)\s*return\s+-1\b/ },
   { nom: "définition concurrente", motif: /function\s+comparerChaines\b/ },
+  { nom: "Intl.Collator", motif: /\bIntl\.Collator\b/ },
+  // Sans argument, la locale vient de l'environnement ; `("fr")` explicite est déterministe et permis.
+  { nom: "toLocaleLowerCase/UpperCase sans locale", motif: /\.toLocale(?:Lower|Upper)Case\(\s*\)/ },
 ];
 
 function fichiersTs(repertoire: string): string[] {
@@ -97,6 +100,17 @@ describe("une seule définition de l'ordre des chaînes", () => {
       "f.ts:1 (définition concurrente)",
     ]);
     expect(copiesDansCode("f.ts", "xs.sort(comparerChaines);\n// jamais `localeCompare`, qui dépend de la locale")).toEqual([]);
+  });
+
+  it("le détecteur reconnaît Intl.Collator et toLocale*Case sans locale, et laisse passer la locale explicite", () => {
+    expect(copiesDansCode("f.ts", "const c = new Intl.Collator('fr');")).toEqual(["f.ts:1 (Intl.Collator)"]);
+    expect(copiesDansCode("f.ts", "const s = t.toLocaleLowerCase();")).toEqual([
+      "f.ts:1 (toLocaleLowerCase/UpperCase sans locale)",
+    ]);
+    expect(copiesDansCode("f.ts", "const s = t.toLocaleUpperCase( );")).toEqual([
+      "f.ts:1 (toLocaleLowerCase/UpperCase sans locale)",
+    ]);
+    expect(copiesDansCode("f.ts", 'const s = t.toLocaleLowerCase("fr");')).toEqual([]);
   });
 
   it(`aucune copie hors de ${DEFINITION} dans ${PERIMETRE.join(", ")}`, () => {
