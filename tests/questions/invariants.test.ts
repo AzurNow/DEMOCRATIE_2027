@@ -22,9 +22,11 @@ import {
 import type { PorteurDePremisse } from "../../pipeline/questions/invariants.ts";
 import type { CodeGabarit, Item, Mesure, Position } from "../../pipeline/questions/types.ts";
 import { listerFichiersExemplesSurDisque } from "../../outils/schemas/disque.ts";
+import { chargerManifeste } from "../../outils/schemas/manifeste.ts";
 import { itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
 const RACINE_EXEMPLES = resolve(import.meta.dirname, "../../schema/exemples");
+const MANIFESTE_EXEMPLES = resolve(RACINE_EXEMPLES, "manifeste.json");
 
 interface Exemple {
   readonly objet: string;
@@ -376,37 +378,13 @@ describe("exemples de schema/exemples/", () => {
       contexte: contenu["contexte"] as string,
       objet_note: contenu["objet_note"] as { type: string; id: string },
     }));
-    // 16 → 18 : une notation et un verdict invalides ajoutés (conformité n° 64), copies d'exemples
-    // valides dont seul le sourçage change ; leur contexte suit toujours l'objet noté.
-    // 18 → 20 : une notation valide et une invalide ajoutées (conformité 2026-09-29, n° 29), copies
-    // de valide-01 dont seul le sourçage change ; leur contexte suit toujours l'objet noté.
-    // 20 → 22 : une notation valide et une invalide ajoutées (décision D15, motif extrait_invalide) ;
-    // leur contexte suit toujours l'objet noté.
-    // 22 → 24 : une notation et un verdict invalides ajoutés (décision D17, fraîcheur sans drapeau
-    // obsolescence), copies de valide-01 ; leur contexte suit toujours l'objet noté.
-    // 24 → 26 : une notation valide et une invalide ajoutées (décision D15, motif accord_partiel_juges) ;
-    // leur contexte suit toujours l'objet noté.
-    // 26 → 27 : une notation valide ajoutée (décision D27, Q-ATT à nom ambigu), copie de valide-01 ;
-    // son contexte suit toujours l'objet noté.
-    // 27 → 28 : une notation invalide ajoutée (décision D29 (4), sans version_charge), copie de valide-01.
-    // 28 → 30 : une notation valide et une invalide sur une lecture de comparateur (décision D30 (4)) ;
-    // leur contexte suit toujours l'objet noté.
-    // 30 → 38 : décision D32, cinq notations (une valide par règle, quatre invalides) et trois verdicts
-    // (un valide en regle_refus_api, deux invalides), tous de contexte run ; leur contexte suit
-    // toujours l'objet noté.
-    // 38 → 41 : décision D33, trois notations (marqueur sur_refus_api), de contexte run.
-    // 41 → 43 : D59 (15), deux notations invalides (juge sur une lecture, motif de lecture sur une
-    // réponse), de contexte run ; leur contexte suit toujours l'objet noté.
-    // 43 → 47 : D64, trois notations (une valide, deux invalides) et un verdict valide « non classée »,
-    // copies de notation/valide-07 et de verdict/valide-01 ; leur contexte suit toujours l'objet noté.
-    // 47 → 49 : annexe C (C.04, constat 11), deux notations (une valide, une invalide) sur une réponse
-    // au texte vide (valide-12, de juge ; invalide-23, copie de valide-09 aux deux marqueurs), de
-    // contexte run ; leur contexte suit toujours l'objet noté.
-    // 49 → 51 : D73 (13), deux verdicts d'une lecture de comparateur (valide-06, invalide-10), de
-    // contexte run, sur lecture-comparateur/valide-01 ; leur contexte suit toujours l'objet noté.
-    // 51 → 53 : D93, deux notations arbitrage_jeu_or (valide-13, d'un humain ; invalide-24, d'un juge),
-    // copies de valide-03 et d'invalide-04, de contexte run ; leur contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(53);
+    // Le compte vient du manifeste des exemples (table de vérité), pas d'un nombre écrit ici ;
+    // tests/schemas.test.ts garantit que le manifeste et le disque listent les mêmes fichiers.
+    const attendus = chargerManifeste(MANIFESTE_EXEMPLES).exemples.filter(
+      (entree) => entree.objet === "notation" || entree.objet === "verdict",
+    );
+    expect(attendus.length).toBeGreaterThan(0);
+    expect(notants).toHaveLength(attendus.length);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 
