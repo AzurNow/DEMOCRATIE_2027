@@ -21,7 +21,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { etatsDesLectures, MOTIF_DOUBLE_NOTATION_COMPARATEUR, NotationLectureRefusee, verdictDeLecture } from "../../pipeline/notation/lectures-comparateur.ts";
 import type { NotationIndividuelle } from "../../analysis/types-notation.ts";
 import { notationHumaine } from "../notation/fabriques.ts";
-import { empreinte, outil, ulid, verdict } from "./fabriques.ts";
+import { outil, trierParItem, ulid, verdict } from "./fabriques.ts";
 import { entreesDuRunAnalysable, SPEC_REFERENCE, type SpecRun } from "./run-analysable.ts";
 
 const PARAMETRES = { reechantillonnages: 40, permutations: 40 };
@@ -88,17 +88,18 @@ interface LecturesPosees {
 }
 
 function poserLectures(entrees: EntreesDuRun, spec: SpecComparateurs): LecturesPosees {
-  const reference = entrees.run.perimetre.candidats.flatMap((c) => c.items_p_au_gel).sort();
+  const reference = trierParItem(entrees.run.perimetre.candidats.flatMap((c) => c.items_p_au_gel));
   const posees: LecturesPosees = { lectures: [], notations: [] };
   for (const [outil_id, lecteur] of Object.entries(spec.comparateurs)) {
-    reference.forEach((item_id, rang) => {
+    reference.forEach((reference_item, rang) => {
+      const item_id = reference_item.item_id;
       const lu = lecteur(rang, item_id);
       const lecture: LectureComparateur = {
         id: ulid(`lecture-${outil_id}-${item_id}`),
         run_id: entrees.run.id,
         contexte: "run",
         outil_id,
-        reference_item: { item_id, item_version: 1, item_empreinte: empreinte(item_id) },
+        reference_item,
         affiche: lu.affiche,
       };
       posees.lectures.push(lecture);
@@ -252,7 +253,7 @@ describe("items P de référence par candidat", () => {
     const bas = entreesDuRunAnalysable(SPEC_REFERENCE).run.perimetre.candidats.find((c) => c.sous_seuil);
     if (bas === undefined) throw new Error("aucun candidat sous le seuil");
     expect(bas.items_p_au_gel).toHaveLength(2);
-    const sesItems = new Set(bas.items_p_au_gel);
+    const sesItems = new Set(bas.items_p_au_gel.map((r) => r.item_id));
     const lecteur: Lecteur = (_rang, item_id) => (sesItems.has(item_id) ? { affiche: true, categorie: "exacte" } : { affiche: false });
     const section = sectionDe(avecComparateurs({ comparateurs: { "comparateur-un": lecteur } }));
     expect(section["items_p_de_reference"]).toBe(REFERENCE);

@@ -483,9 +483,9 @@
                 "type": "array",
                 "uniqueItems": true,
                 "items": {
-                  "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid"
+                  "$ref": "urn:banc-essai-2027:schema:commun#/$defs/reference_item"
                 },
-                "description": "Identifiants, triés, des items P comptés au gel (pipeline/questions/couverture.ts:itemsPAuGel) : items_p_verifies en est la longueur. Décision de l'auteur du 2026-10-02 (conformité n° 11, texte à écrire au §8 en 0.15) : pour un candidat interrogé, ce sont les « items P de référence » de la couverture des comparateurs, et chaque comparateur inclus porte une lecture par item. Le JSON Schema ne sait ni comparer la longueur à items_p_verifies ni exiger le tri : analysis/reference-comparateurs.ts:itemsPDeReference le contrôle et lève."
+                "description": "Les items P comptés au gel (pipeline/questions/couverture.ts:referencesPAuGel), chacun épinglé à sa version et à son empreinte au gel, triés par identifiant : items_p_verifies en est la longueur. Décision de l'auteur du 2026-10-02 (conformité n° 11, texte à écrire au §8 en 0.15) : pour un candidat interrogé, ce sont les « items P de référence » de la couverture des comparateurs, et chaque comparateur inclus porte une lecture par item, à la version et à l'empreinte épinglées ici (DETTE 2026-10-02, constats soldés, n° 2 : une lecture d'une autre version lève analysis/reference-comparateurs.ts:LecturesComparateurIncoherentes). Le JSON Schema ne sait ni comparer la longueur à items_p_verifies, ni exiger le tri, ni refuser deux épingles d'un même identifiant : analysis/reference-comparateurs.ts:itemsPDeReference le contrôle et lève."
               },
               "sous_seuil": {
                 "type": "boolean",

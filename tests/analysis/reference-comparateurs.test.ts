@@ -8,8 +8,8 @@
 
 import { describe, expect, it } from "vitest";
 import { ItemsPDeReferenceIncoherents, itemsPDeReference } from "../../analysis/reference-comparateurs.ts";
-import type { Run } from "../../analysis/types.ts";
-import { candidat, itemsPAuGel, run, ulid } from "./fabriques.ts";
+import type { ReferenceItem, Run } from "../../analysis/types.ts";
+import { candidat, itemsPAuGel, referenceP, run, ulid } from "./fabriques.ts";
 
 function fautes(appel: () => unknown): readonly string[] {
   try {
@@ -45,7 +45,13 @@ describe("itemsPDeReference : la réunion des listes figées des candidats inter
         },
       ),
     );
-    expect([...reference].sort()).toEqual([...a, ...b].sort());
+    expect([...reference.keys()].sort()).toEqual([...a, ...b].map((r) => r.item_id).sort());
+  });
+
+  it("rend chaque item avec son épingle au gel : version et empreinte, telles que le run les a figées", () => {
+    const corrige: ReferenceItem = { ...referenceP("corrige"), item_version: 4 };
+    const reference = itemsPDeReference(runDe({ items_p_verifies: 1, items_p_au_gel: [corrige], sous_seuil: true }));
+    expect(reference.get(corrige.item_id)).toEqual(corrige);
   });
 
   it("garde un candidat sous le seuil de couverture : il est interrogé, ses items P sont lus", () => {
@@ -69,7 +75,7 @@ describe("itemsPDeReference : la réunion des listes figées des candidats inter
     const constats = fautes(() =>
       itemsPDeReference(
         runDe(
-          { items_p_verifies: 1, items_p_au_gel: [ulid("seul")], sous_seuil: true },
+          { items_p_verifies: 1, items_p_au_gel: [referenceP("seul")], sous_seuil: true },
           {
             candidat_id: "candidat-retire",
             statut_au_gel: "retire",
@@ -87,16 +93,23 @@ describe("itemsPDeReference : la réunion des listes figées des candidats inter
 
   it("lève sur une liste non triée ou portant un doublon", () => {
     const [premier, second] = itemsPAuGel("ordre", 2);
-    const desordre = [second, premier] as string[];
-    const doublon = [premier, premier] as string[];
+    const desordre = [second, premier] as ReferenceItem[];
+    const doublon = [premier, premier] as ReferenceItem[];
     expect(fautes(() => itemsPDeReference(runDe({ items_p_verifies: 2, items_p_au_gel: desordre, sous_seuil: true }))))
       .toHaveLength(1);
     expect(fautes(() => itemsPDeReference(runDe({ items_p_verifies: 2, items_p_au_gel: doublon, sous_seuil: true }))))
       .toHaveLength(1);
   });
 
+  it("lève sur un même item épinglé à deux versions dans la liste d'un candidat", () => {
+    const v1 = referenceP("deux-versions");
+    const v2: ReferenceItem = { ...v1, item_version: 2 };
+    expect(fautes(() => itemsPDeReference(runDe({ items_p_verifies: 2, items_p_au_gel: [v1, v2], sous_seuil: true }))))
+      .toEqual([expect.stringMatching(/triée sans doublon/)]);
+  });
+
   it("lève sur un même item listé pour deux candidats interrogés", () => {
-    const partage = [ulid("partage")];
+    const partage = [referenceP("partage")];
     const constats = fautes(() =>
       itemsPDeReference(
         runDe(

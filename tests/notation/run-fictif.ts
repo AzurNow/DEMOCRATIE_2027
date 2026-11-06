@@ -29,7 +29,7 @@ import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { entreesPour } from "../../pipeline/questions/entrees-tirage.ts";
-import type { CandidatNomme, Item, Question, RunAuGel } from "../../pipeline/questions/types.ts";
+import type { CandidatNomme, Item, Question, ReferenceItem, RunAuGel } from "../../pipeline/questions/types.ts";
 import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { GRILLE_TOUT_VRAI } from "../aides/fabriques.ts";
@@ -238,14 +238,15 @@ export function poserRunNote(): RunFictif {
  */
 export function poserLecturesNonAffichees(fictif: Pick<RunFictif, "repertoire_run" | "run">): void {
   const exemple = lireExemple("lecture-comparateur/valide-02-position-absente.json");
-  const perimetre = fictif.run["perimetre"] as { candidats: { interroge: boolean; items_p_au_gel: string[] }[]; outils: { outil_id: string; famille: string; inclus: boolean }[] };
+  const perimetre = fictif.run["perimetre"] as { candidats: { interroge: boolean; items_p_au_gel: ReferenceItem[] }[]; outils: { outil_id: string; famille: string; inclus: boolean }[] };
   const items = perimetre.candidats.filter((c) => c.interroge).flatMap((c) => c.items_p_au_gel);
   const comparateurs = perimetre.outils.filter((o) => o.famille === "comparateur" && o.inclus).map((o) => o.outil_id);
   const dossier = join(fictif.repertoire_run, "volume", "lectures-comparateur");
   mkdirSync(dossier, { recursive: true });
   for (const outil_id of comparateurs) {
-    for (const item_id of items) {
-      const reference_item = { item_id, item_version: 1, item_empreinte: createHash("sha256").update(item_id).digest("hex") };
+    // Chaque lecture porte l'épingle de son item au gel : une autre version serait refusée à l'analyse.
+    for (const reference_item of items) {
+      const item_id = reference_item.item_id;
       const lecture = valider<{ id: string }>("lecture-comparateur", { ...exemple, id: ulid(`es-lecture-${outil_id}-${item_id}`), run_id: RUN_ID, outil_id, reference_item }, `lecture fictive ${item_id}`);
       ecrireJson(join(dossier, `${lecture.id}.json`), lecture);
     }

@@ -147,7 +147,7 @@ describe("conformité n° 19 : sous_seuil lié à items_p_verifies dans les deux
 });
 
 describe("conformité n° 11 : la liste des items P au gel est figée dans le run", () => {
-  it("l'exemple réel porte, pour chaque candidat, autant d'identifiants que items_p_verifies", () => {
+  it("l'exemple réel porte, pour chaque candidat, autant d'épingles que items_p_verifies", () => {
     for (const c of perimetre(runValide())["candidats"] as Objet[]) {
       expect((c["items_p_au_gel"] as unknown[]).length).toBe(c["items_p_verifies"]);
     }
@@ -159,16 +159,39 @@ describe("conformité n° 11 : la liste des items P au gel est figée dans le ru
     expect(chemins(run)).toSatisfy(toutesSous("/perimetre/candidats/0"));
   });
 
-  it("refuse un identifiant listé deux fois", () => {
+  it("refuse une épingle listée deux fois", () => {
     const run = runValide();
-    const liste = candidat(run, 1)["items_p_au_gel"] as string[];
-    liste.push(liste[0] as string);
+    const liste = candidat(run, 1)["items_p_au_gel"] as Objet[];
+    liste.push(structuredClone(liste[0] as Objet));
     expect(chemins(run)).toSatisfy(toutesSous("/perimetre/candidats/1/items_p_au_gel"));
   });
 
   it("refuse un identifiant qui n'est pas un ULID", () => {
     const run = runValide();
-    (candidat(run, 1)["items_p_au_gel"] as string[])[0] = "item-lisible";
+    ((candidat(run, 1)["items_p_au_gel"] as Objet[])[0] as Objet)["item_id"] = "item-lisible";
+    expect(chemins(run)).toSatisfy(toutesSous("/perimetre/candidats/1/items_p_au_gel/0"));
+  });
+
+  it("refuse un identifiant nu, sans version ni empreinte de l'item au gel", () => {
+    const run = runValide();
+    const liste = candidat(run, 1)["items_p_au_gel"] as unknown[];
+    liste[0] = ((liste[0] as Objet)["item_id"]);
+    expect(chemins(run)).toSatisfy(toutesSous("/perimetre/candidats/1/items_p_au_gel/0"));
+  });
+
+  it("refuse une épingle sans empreinte, ou d'empreinte qui n'est pas un SHA-256", () => {
+    const sansEmpreinte = runValide();
+    delete ((candidat(sansEmpreinte, 1)["items_p_au_gel"] as Objet[])[0] as Objet)["item_empreinte"];
+    expect(chemins(sansEmpreinte)).toSatisfy(toutesSous("/perimetre/candidats/1/items_p_au_gel/0"));
+
+    const empreinteCourte = runValide();
+    ((candidat(empreinteCourte, 1)["items_p_au_gel"] as Objet[])[0] as Objet)["item_empreinte"] = "abc";
+    expect(chemins(empreinteCourte)).toSatisfy(toutesSous("/perimetre/candidats/1/items_p_au_gel/0"));
+  });
+
+  it("refuse une épingle à la version 0", () => {
+    const run = runValide();
+    ((candidat(run, 1)["items_p_au_gel"] as Objet[])[0] as Objet)["item_version"] = 0;
     expect(chemins(run)).toSatisfy(toutesSous("/perimetre/candidats/1/items_p_au_gel/0"));
   });
 });
