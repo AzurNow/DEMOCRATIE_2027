@@ -13,8 +13,8 @@
  * (`calibration_jeu_or`, `pipeline/notation/file-humaine.ts`), mais aucun motif ni aucune tâche pour
  * le troisième humain du jeu d'or, et aucun fichier qui assemble les réponses du jeu d'or. L'appelant
  * fournit donc, par réponse, les deux notations de calibration, le troisième humain s'il existe, et
- * les notations de juge de la réponse ; aucune commande n'écrit encore `kappa_juge_humain` ni
- * `kappa_paire_juges`. `inscriptionsJeuOr` rend ce que `run.json#/juges[]` recevra : le kappa ou son
+ * les notations de juge de la réponse : c'est `pipeline/notation/inscription-jeu-or.ts` (`pnpm kappa:jeu-or`,
+ * D89), qui écrit `kappa_juge_humain` ; aucune commande n'écrit encore `kappa_paire_juges`. `inscriptionsJeuOr` rend ce que `run.json#/juges[]` recevra : le kappa ou son
  * motif, et les comptes du jeu d'or qui le fondent (D73 (8)), d'un seul calcul.
  *
  * **Juge retiré** (§7 : « Les notations déjà rendues par le juge retiré sont écartées de tout le run,
