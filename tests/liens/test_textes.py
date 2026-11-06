@@ -125,7 +125,7 @@ def test_page_html_existante_texte_et_fiche(run: Path, liens: Path, deps: Depend
     assert fiche["issue"] == "extrait"
     assert fiche["extracteur"]["outil"] == "html.parser"  # type: ignore[index]
     assert fiche["encodage"] == {"nom": "utf-8", "origine": "content-type"}
-    texte = (liens / chemin_texte(str(fiche["texte_sha256"]))).read_text(encoding="utf-8")
+    texte = (run / REPERTOIRE_PAGES / chemin_texte(str(fiche["texte_sha256"]))).read_text(encoding="utf-8")
     assert texte == "Programme\nLe candidat propose la mesure."
     assert fiche["longueur"] == len(texte)
 
@@ -136,7 +136,7 @@ def test_page_pdf_existante(run: Path, liens: Path, deps: Dependances) -> None:
     assert isinstance(resultat, Extrait) and resultat.outil == "pymupdf"
     fiche = _fiche(liens, sha)
     assert "pages" in fiche
-    assert "Programme commun" in (liens / chemin_texte(str(fiche["texte_sha256"]))).read_text(encoding="utf-8")
+    assert "Programme commun" in (run / REPERTOIRE_PAGES / chemin_texte(str(fiche["texte_sha256"]))).read_text(encoding="utf-8")
 
 
 def test_copie_archivee_d21(run: Path, liens: Path, deps: Dependances) -> None:
@@ -197,7 +197,7 @@ def test_d75_4_cas_3_texte_tire_de_la_copie_sous_pages_citees(run: Path, liens: 
     assert (run / "pages-citees" / f"{sha}.html").is_file()
     [resultat] = extraire_tout(run, deps)
     assert isinstance(resultat, Extrait)
-    assert sorted(p.name for p in liens.iterdir()) == ["a.json", "extractions", "textes"]
+    assert sorted(p.name for p in liens.iterdir()) == ["a.json", "extractions"]
 
 
 def test_d75_4_cas_4_copie_absente_de_pages_citees_erreur_nommee(run: Path, liens: Path, deps: Dependances) -> None:
@@ -210,7 +210,7 @@ def test_d75_4_cas_4_copie_absente_de_pages_citees_erreur_nommee(run: Path, lien
     (run / f"pages-citees/{sha}.html").rename(ancien)
     [resultat] = extraire_tout(run, deps)
     assert resultat == EnErreur(sha, f"copie absente : pages-citees/{sha}.html")
-    assert not (liens / "extractions").exists() and not (liens / "textes").exists()
+    assert not (liens / "extractions").exists() and not (run / REPERTOIRE_PAGES / "textes").exists()
     assert code_de_sortie([resultat]) == 1
 
 
@@ -220,7 +220,7 @@ def test_texte_existant_altere_empreinte_de_la_copie_et_motif_nomme_le_texte(run
     sha = _existe(run, "a", HTML, ".html", "text/html; charset=utf-8")
     texte_attendu = "Programme\nLe candidat propose la mesure."
     texte_sha = _sha(texte_attendu.encode())
-    chemin = liens / chemin_texte(texte_sha)
+    chemin = run / REPERTOIRE_PAGES / chemin_texte(texte_sha)
     chemin.parent.mkdir(parents=True, exist_ok=True)
     chemin.write_bytes(b"texte altere, different de l'extraction")
     [resultat] = extraire_tout(run, deps)
@@ -228,6 +228,37 @@ def test_texte_existant_altere_empreinte_de_la_copie_et_motif_nomme_le_texte(run
     assert resultat.sha256_contenu == sha
     assert str(chemin_texte(texte_sha)) in resultat.motif
     assert not (liens / chemin_fiche(sha)).exists()
+
+
+def test_d83_texte_sous_pages_citees_plus_rien_sous_volume_liens_textes(run: Path, liens: Path, deps: Dependances) -> None:
+    """D83 : le texte intégral va sous `pages-citees/textes/`, hors du volume ; la fiche (empreinte,
+    longueur, extracteur) reste sous `volume/liens/extractions/` avec la même empreinte."""
+    sha = _existe(run, "a", HTML, ".html", "text/html; charset=utf-8")
+    [resultat] = extraire_tout(run, deps)
+    assert isinstance(resultat, Extrait)
+    fiche = _fiche(liens, sha)
+    texte_sha = str(fiche["texte_sha256"])
+    assert texte_sha == resultat.texte_sha256
+    texte = run / REPERTOIRE_PAGES / "textes" / f"{texte_sha}.txt"
+    assert _sha(texte.read_bytes()) == texte_sha
+    assert not (liens / "textes").exists()
+    assert not list((run / "volume").rglob("*.txt"))
+
+
+def test_d83_relance_idempotente_texte_memes_octets(run: Path, deps: Dependances) -> None:
+    """D83 : une relance ne réécrit ni la fiche ni le texte ; et une fiche perdue refait l'extraction
+    sur un texte déjà présent aux mêmes octets sans erreur."""
+    sha = _existe(run, "a", HTML, ".html", "text/html; charset=utf-8")
+    [premier] = extraire_tout(run, deps)
+    assert isinstance(premier, Extrait)
+    texte = run / REPERTOIRE_PAGES / "textes" / f"{premier.texte_sha256}.txt"
+    avant = texte.read_bytes()
+    [relance] = extraire_tout(run, deps)
+    assert isinstance(relance, DejaExtrait)
+    (repertoire_liens(run) / chemin_fiche(sha)).unlink()
+    [reprise] = extraire_tout(run, deps)
+    assert isinstance(reprise, Extrait)
+    assert texte.read_bytes() == avant
 
 
 def test_relance_ne_reecrit_rien(run: Path, liens: Path, deps: Dependances) -> None:
@@ -266,7 +297,7 @@ def test_extraction_avec_vtt_sha256_refusee_rien_ecrit(run: Path, liens: Path) -
     with pytest.raises(ValueError, match="vtt_sha256"):
         extraire_tout(run, deps_vtt)
     assert not (liens / chemin_fiche(sha)).exists()
-    assert not (liens / "textes").exists()
+    assert not (run / REPERTOIRE_PAGES / "textes").exists()
 
 
 def test_resultat_avec_empreinte_sans_copie_refuse_le_passage(run: Path, deps: Dependances) -> None:

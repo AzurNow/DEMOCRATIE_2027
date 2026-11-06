@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:extraction-page-lien",
   "title": "Extraction du texte d'une copie de page citée",
-  "description": "Décision D27 (E) de l'auteur (2026-10-09, charge-juge-v3) : la charge du juge transmet le texte de chaque page citée. runs/<date>/volume/liens/extractions/<sha256_contenu>.json, écrit une fois par pipeline/liens/textes.py (pnpm liens:textes) et lu par la notation (pipeline/notation/fournisseur-fichiers.ts). Une fiche par copie conservée par le test des liens (page d'un lien qui existe, D20 ; version brute d'un instantané téléchargé, D21), désignée par son empreinte. Extraite : le texte est rangé sous volume/liens/textes/<texte_sha256>.txt, par les extracteurs de la collecte (mêmes outils, versions et options que schema/extraction-texte.schema.json, sauf webvtt). Refusée : le motif est consigné, et la charge dit « extraction_refusee » ; aucun texte n'est jamais supposé.",
+  "description": "Décision D27 (E) de l'auteur (2026-10-09, charge-juge-v3) : la charge du juge transmet le texte de chaque page citée. runs/<date>/volume/liens/extractions/<sha256_contenu>.json, écrit une fois par pipeline/liens/textes.py (pnpm liens:textes) et lu par la notation (pipeline/notation/fournisseur-fichiers.ts). Une fiche par copie conservée par le test des liens (page d'un lien qui existe, D20 ; version brute d'un instantané téléchargé, D21), désignée par son empreinte. Extraite : le texte est rangé sous pages-citees/textes/<texte_sha256>.txt, hors de volume/ (D83 : droits d'autrui, l'empreinte de cette fiche suffit à le vérifier), par les extracteurs de la collecte (mêmes outils, versions et options que schema/extraction-texte.schema.json, sauf webvtt). Refusée : le motif est consigné, et la charge dit « extraction_refusee » ; aucun texte n'est jamais supposé.",
   "type": "object",
   "additionalProperties": false,
   "required": ["sha256_contenu", "issue", "date_extraction"],
@@ -14,7 +14,7 @@
     "issue": { "enum": ["extrait", "refuse"] },
     "texte_sha256": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
-      "description": "Empreinte des octets UTF-8 du texte volume/liens/textes/<texte_sha256>.txt, entier, avant toute borne de la charge."
+      "description": "Empreinte des octets UTF-8 du texte pages-citees/textes/<texte_sha256>.txt (hors de volume/, D83), entier, avant toute borne de la charge."
     },
     "longueur": {
       "type": "integer",

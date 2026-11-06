@@ -19,7 +19,7 @@
  *   chemin relatif au run que déclare le résultat, nommée par son empreinte (`sha256_contenu`), de
  *   la taille annoncée (l'empreinte elle-même n'est pas recalculée à chaque ouverture de l'écran).
  * Une entrée de `volume/liens/` qui n'est ni un résultat `.json` ni l'un des dossiers
- * `extractions/` et `textes/` est refusée : un ancien dossier `pages/` sous `volume/liens/` aussi.
+ * `extractions/` est refusée : un ancien dossier `pages/` ou `textes/` sous `volume/liens/` aussi (D75 (4), D83).
  *
  * Contrat de `FournisseurExistences` inchangé : `existencesDe` rend un verdict par lien distinct
  * demandé qui en a un, ni plus ni moins. Un lien sans fichier n'a pas de verdict : la réponse reste
@@ -28,7 +28,8 @@
  *
  * **Texte des copies (D27 (E)).** `pnpm liens:textes` (`pipeline/liens/textes.py`) écrit une fiche
  * par copie, `extractions/<sha256_contenu>.json` (`schema/extraction-page-lien.schema.json`), et le
- * texte extrait, `textes/<texte_sha256>.txt`. Les fiches sont lues et validées à la construction :
+ * texte extrait, `pages-citees/textes/<texte_sha256>.txt`, hors de `volume/` (D83 : le texte intégral d'une
+ * page d'autrui ne part pas sur Zenodo, l'empreinte de la fiche suffit à le vérifier). Les fiches sont lues et validées à la construction :
  * le nom est l'empreinte de la copie, et le texte d'une fiche « extrait » est présent. Le texte
  * lui-même n'est lu qu'à la demande (`texteDeCopie`), et refusé si ses octets n'ont plus l'empreinte
  * ou la longueur de sa fiche (`FichierExistenceRefuse`). Une copie sans fiche n'a pas encore de
@@ -46,8 +47,9 @@ import type { ExistenceEtablie } from "./vue-annotateur.ts";
 /** Relatif au répertoire du run, hors de `volume/` (D75 (4)) ; même valeur que `pipeline/liens/sortie.py`. */
 export const REPERTOIRE_PAGES = "pages-citees";
 export const REPERTOIRE_EXTRACTIONS = "extractions";
+/** Sous `pages-citees/`, hors de `volume/` (D83) ; même valeur que `pipeline/liens/textes.py`. */
 export const REPERTOIRE_TEXTES = "textes";
-const DOSSIERS_ADMIS: ReadonlySet<string> = new Set([REPERTOIRE_EXTRACTIONS, REPERTOIRE_TEXTES]);
+const DOSSIERS_ADMIS: ReadonlySet<string> = new Set([REPERTOIRE_EXTRACTIONS]);
 
 /** Une fiche de `extractions/`, telle que la décrit `schema/extraction-page-lien.schema.json`. */
 type FicheExtraction =
@@ -215,30 +217,34 @@ export function lireExistences(repertoire_run: string): ReadonlyMap<string, Exis
 
 const NOM_FICHE = /^[0-9a-f]{64}\.json$/u;
 
-function lireFiche(repertoire: string, nom: string): FicheExtraction {
-  const chemin = join(repertoire, REPERTOIRE_EXTRACTIONS, nom);
+function cheminTexte(repertoire_run: string, texte_sha256: string): string {
+  return join(repertoirePages(repertoire_run), REPERTOIRE_TEXTES, `${texte_sha256}.txt`);
+}
+
+function lireFiche(repertoire_run: string, nom: string): FicheExtraction {
+  const chemin = join(repertoireLiens(repertoire_run), REPERTOIRE_EXTRACTIONS, nom);
   if (!NOM_FICHE.test(nom)) throw new FichierExistenceRefuse(chemin, "entrée de extractions/ qui n'est pas une fiche <sha256_contenu>.json.");
   const fiche = valider<FicheExtraction>("extraction-page-lien", lireJson(chemin), chemin);
   if (nom !== `${fiche.sha256_contenu}.json`) throw new FichierExistenceRefuse(chemin, `le nom n'est pas l'empreinte de la copie (${fiche.sha256_contenu}.json attendu).`);
-  if (fiche.issue === "extrait" && !existsSync(join(repertoire, REPERTOIRE_TEXTES, `${fiche.texte_sha256}.txt`))) {
-    throw new FichierExistenceRefuse(chemin, `le texte ${REPERTOIRE_TEXTES}/${fiche.texte_sha256}.txt est absent.`);
+  if (fiche.issue === "extrait" && !existsSync(cheminTexte(repertoire_run, fiche.texte_sha256))) {
+    throw new FichierExistenceRefuse(chemin, `le texte ${REPERTOIRE_PAGES}/${REPERTOIRE_TEXTES}/${fiche.texte_sha256}.txt est absent.`);
   }
   return fiche;
 }
 
 /** Toutes les fiches d'extraction, indexées par empreinte de copie ; aucune si le dossier n'existe pas encore. */
-export function lireExtractions(repertoire: string): ReadonlyMap<string, FicheExtraction> {
-  const dossier = join(repertoire, REPERTOIRE_EXTRACTIONS);
+export function lireExtractions(repertoire_run: string): ReadonlyMap<string, FicheExtraction> {
+  const dossier = join(repertoireLiens(repertoire_run), REPERTOIRE_EXTRACTIONS);
   if (!existsSync(dossier)) return new Map();
   return new Map(readdirSync(dossier).sort().map((nom) => {
-    const fiche = lireFiche(repertoire, nom);
+    const fiche = lireFiche(repertoire_run, nom);
     return [fiche.sha256_contenu, fiche] as const;
   }));
 }
 
 /** Le texte d'une fiche « extrait », relu et revérifié : empreinte et longueur de la fiche. */
-function texteVerifie(repertoire: string, fiche: Extract<FicheExtraction, { issue: "extrait" }>): string {
-  const chemin = join(repertoire, REPERTOIRE_TEXTES, `${fiche.texte_sha256}.txt`);
+function texteVerifie(repertoire_run: string, fiche: Extract<FicheExtraction, { issue: "extrait" }>): string {
+  const chemin = cheminTexte(repertoire_run, fiche.texte_sha256);
   const octets = readFileSync(chemin);
   const empreinte = createHash("sha256").update(octets).digest("hex");
   if (empreinte !== fiche.texte_sha256) throw new FichierExistenceRefuse(chemin, `le texte n'a plus l'empreinte de sa fiche (${empreinte} calculée).`);
@@ -248,24 +254,23 @@ function texteVerifie(repertoire: string, fiche: Extract<FicheExtraction, { issu
   return texte;
 }
 
-function texteDeCopie(repertoire: string, fiches: ReadonlyMap<string, FicheExtraction>, sha256_contenu: string): TexteDeCopie | undefined {
+function texteDeCopie(repertoire_run: string, fiches: ReadonlyMap<string, FicheExtraction>, sha256_contenu: string): TexteDeCopie | undefined {
   const fiche = fiches.get(sha256_contenu);
   if (fiche === undefined) return undefined;
   if (fiche.issue === "refuse") return { issue: "refuse", motif: fiche.motif };
-  return { issue: "extrait", texte: texteVerifie(repertoire, fiche), texte_sha256: fiche.texte_sha256 };
+  return { issue: "extrait", texte: texteVerifie(repertoire_run, fiche), texte_sha256: fiche.texte_sha256 };
 }
 
 /** Le fournisseur de `volume/liens/` du run. Le répertoire doit exister : l'appelant choisit. */
 export function fournisseurFichiers(repertoire_run: string): FournisseurExistences {
-  const repertoire = repertoireLiens(repertoire_run);
   const index = lireExistences(repertoire_run);
-  const fiches = lireExtractions(repertoire);
+  const fiches = lireExtractions(repertoire_run);
   return {
     existencesDe: (_reponse_id, liens) =>
       [...new Set(liens)].flatMap((lien) => {
         const existence = index.get(lien);
         return existence === undefined ? [] : [existence];
       }),
-    texteDeCopie: (sha256_contenu) => texteDeCopie(repertoire, fiches, sha256_contenu),
+    texteDeCopie: (sha256_contenu) => texteDeCopie(repertoire_run, fiches, sha256_contenu),
   };
 }
