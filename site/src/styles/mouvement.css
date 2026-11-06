@@ -27,6 +27,14 @@
 
     .section:not(.section--accroche) {
       animation: apparition linear both;
+    }
+
+    /*
+     * La timeline vit dans une règle à part, d'un autre sélecteur : le minificateur de la
+     * construction la fusionnerait sinon dans le raccourci `animation`, que les navigateurs
+     * refusent alors en entier (tests/site/cadre.test.ts le vérifie sur le site construit).
+     */
+    main > .section:not(.section--accroche) {
       animation-timeline: view();
       animation-range: entry 0% entry 30%;
     }
@@ -86,6 +94,10 @@
       font-weight: 700;
       text-decoration: none;
       animation: haut-de-page-paraitre linear both;
+    }
+
+    /* Timeline à part, pour la même raison que l'apparition des sections ci-dessus. */
+    body > .haut-de-page {
       animation-timeline: scroll(root block);
       animation-range: 0 40rem;
     }
