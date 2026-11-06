@@ -449,35 +449,46 @@ pnpm contestations-posterieures /chemin/archive/runs --depot-des-items=/chemin/c
 pnpm analyze /chemin/archive/runs/2026-12-01 --depot-des-items=/chemin/clone
 ```
 
-## `pnpm kappa:jeu-or <repertoire_run>` (D89)
+## `pnpm kappa:jeu-or <repertoire_run>` (D89, D93)
 
 Inscrit dans `run.json` du **run pilote**, pour chaque juge retenu, le kappa juge-humain du jeu d'or
 (`kappa_juge_humain`, ou `motif_indefini_kappa_juge_humain` quand il n'est pas défini) et les comptes
-qui le fondent (`comptes_jeu_or`), ensemble, d'un seul appel à
-`analysis/kappa-jeu-or.ts:inscriptionsJeuOr` (§7 ; D73 (8), D75 (27)). Lit `run.json`,
+qui le fondent (`comptes_jeu_or`), et à la racine le kappa de la paire de juges (`kappa_paire_juges`,
+ou `motif_indefini_kappa_paire_juges`), ensemble, d'un seul appel à
+`analysis/kappa-jeu-or.ts:inscriptionsJeuOr` (§7 ; D73 (8), D75 (27), D93). Lit `run.json`,
 `volume/reponses/`, `volume/notations/`, `volume/renvois/` (et `volume/reponses-contrefactuelles/`) ;
 rejoue le jeu d'or (`tirerJeuOr`, graine de l'échantillon humain, clé `jeu_or`) sur les réponses
-obtenues de contexte `run` ; n'écrit que ces trois champs, validés avec tout le run contre
+obtenues de contexte `run` ; n'écrit que ces champs, validés avec tout le run contre
 `schema/run.schema.json`, par un temporaire renommé (`run.json.kappa-jeu-or`). Code :
 `pipeline/notation/inscription-jeu-or.ts`.
 
-- **Quand.** Après la notation par les juges et la double notation humaine du jeu d'or
-  (`pnpm notation:humaine`), **avant `pnpm analyze`** : les trois champs sont dans l'empreinte
-  `entrees.run_json_sha256` de `metriques.json` (§9 ne les exclut pas ;
+- **Quand.** Après la notation par les juges, la double notation humaine du jeu d'or
+  (`calibration_jeu_or`) et l'arbitrage de chaque divergence par un troisième humain
+  (`arbitrage_jeu_or`), tous deux servis par `pnpm notation:humaine` ; **avant `pnpm analyze`** : ces
+  champs sont dans l'empreinte `entrees.run_json_sha256` de `metriques.json` (§9 ne les exclut pas ;
   `analysis/champs-posterieurs-au-gel.ts:CHAMPS_DU_JEU_D_OR`).
-- **Juge retiré** (§7, D13) : ses notations sont écartées du kappa ; il ne reçoit rien, et ses champs
-  ne sont pas touchés. Le juge restant porte seul le kappa.
+- **Troisième humain** (§7, D93). Deux humains divergent au sens du §7 (catégorie, drapeaux,
+  fraîcheur de l'obsolescence, sourçage valide : `analysis/kappa-jeu-or.ts:calibrationsDivergent`) :
+  la file humaine ouvre une tâche `arbitrage_jeu_or`, fermée aux deux premiers, et la note du
+  troisième est la référence du kappa. Sur un refus de l'API, la référence humaine n'est pas lue.
+- **Kappa de la paire.** Le plus faible des kappas des juges retenus ; absent avec le motif du
+  premier kappa absent dès que l'un l'est. **Juge retiré** (§7, D13) : ses notations sont écartées du
+  kappa ; il ne reçoit rien, et ses champs ne sont pas touchés. Le juge restant porte seul le kappa,
+  et la paire est son kappa (le §7 : « ne portent plus que sur le juge restant »).
 - **Refus, rien n'étant écrit** (sortie 2) : run qui n'est pas le pilote, statut autre que `en_cours`,
   `invalidation` inscrite, test contrefactuel non inscrit, `metriques/metriques.json` déjà écrit
   (`InscriptionJeuOrRefusee`) ; une réponse du jeu d'or sans ses deux notations humaines
-  `calibration_jeu_or` (`CalibrationJeuOrIncomplete`) ; une notation de calibration hors du jeu d'or
-  rejoué ; des notations incohérentes (`JeuOrIncoherent`), dont deux humains qui divergent : aucun
-  motif de notation ne désigne encore le troisième humain du jeu d'or ; un kappa déjà inscrit et
-  différent du recalcul (`KappaJeuOrDejaInscrit`). Déjà inscrit à l'identique : rien n'est écrit, et
-  la commande le dit (sortie 0).
+  `calibration_jeu_or` (`CalibrationJeuOrIncomplete`) ; une notation de calibration ou d'arbitrage du
+  jeu d'or hors du jeu d'or rejoué, ou deux arbitrages sur une réponse ; deux humains qui divergent
+  sans arbitrage rendu (`ArbitrageJeuOrEnAttente`, qui nomme les réponses en attente) ; des notations
+  incohérentes (`JeuOrIncoherent`), dont un arbitrage là où les deux humains s'accordent ; un champ du
+  jeu d'or déjà inscrit que le recalcul modifierait ou retirerait (`KappaJeuOrDejaInscrit`, qui nomme
+  les champs). Déjà inscrit à l'identique : rien n'est écrit, et la commande le dit (sortie 0).
+- **Run inscrit par la version de D89** (sans `kappa_paire_juges`) : si les champs de ses juges
+  retenus sont identiques au recalcul, la paire est ajoutée et rien d'autre ne change (issue
+  `completee`, sortie 0) ; sinon `KappaJeuOrDejaInscrit`.
 - Un run simulé (`simule: true`) est traité comme un autre ; il vit hors de `runs/`, où son gel l'a
   écrit.
-- `kappa_paire_juges` n'est pas écrit par cette commande.
 
 ## `pnpm analyze <repertoire_run> [--premier=<repertoire_run>] [--depot-des-items=<clone>]`
 

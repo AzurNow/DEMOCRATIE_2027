@@ -402,6 +402,65 @@ describe("jeu d'or", () => {
   });
 });
 
+describe("D93 : arbitrage du jeu d'or (arbitrage_jeu_or)", () => {
+  const PILOTE = reponseIds(12);
+  const run = runDeNotation();
+  const JEU: JeuOr = tirerJeuOr(PILOTE, run.graines.echantillon_humain);
+  const [OR] = JEU.reponse_ids as [string];
+  const duJeu = (file: FileHumaine) => tachesDe(file, OR).filter((t) => t.motif_notation === "calibration_jeu_or" || t.motif_notation === "arbitrage_jeu_or");
+  const accordees = () => ["a1", "a2"].map((a) => notationHumaine(a, "calibration_jeu_or", sur(OR)));
+  const divergentes = () => [notationHumaine("a1", "calibration_jeu_or", sur(OR)), notationHumaine("a2", "calibration_jeu_or", { ...sur(OR), ...inexacte() })];
+  const arbitre = (a = "a3") => notationHumaine(a, "arbitrage_jeu_or", sur(OR));
+  const file = (notations: readonly NotationIndividuelle[]) => construireFile(entree(PILOTE, [...jugesDAccord(PILOTE), ...notations], { jeu_or: JEU }));
+
+  it("deux calibrations d'accord : aucune tâche d'arbitrage", () => {
+    expect(duJeu(file(accordees()))).toEqual([]);
+  });
+
+  it("deux calibrations qui divergent : une place d'arbitrage, fermée aux deux premiers, ouverte à un troisième", () => {
+    const f = file(divergentes());
+    expect(duJeu(f)).toEqual([{ reponse_id: OR, motif_notation: "arbitrage_jeu_or", places_restantes: 1, deja_notee_par: ["a1", "a2"] }]);
+    expect(f.tachesPour("a1")).not.toContainEqual({ reponse_id: OR, motif_notation: "arbitrage_jeu_or" });
+    expect(f.tachesPour("a2")).not.toContainEqual({ reponse_id: OR, motif_notation: "arbitrage_jeu_or" });
+    expect(f.tachesPour("a3")).toContainEqual({ reponse_id: OR, motif_notation: "arbitrage_jeu_or" });
+    expect(f.comptes.arbitrage_jeu_or).toEqual({ taches: 1, places: 1 });
+  });
+
+  it("une seule calibration : pas encore d'arbitrage, la place de calibration reste ouverte", () => {
+    expect(duJeu(file([notationHumaine("a1", "calibration_jeu_or", { ...sur(OR), ...inexacte() })])).map((t) => t.motif_notation)).toEqual(["calibration_jeu_or"]);
+  });
+
+  it("la divergence est celle du kappa du jeu d'or : même note, motifs d'inexactitude différents, aucun arbitrage", () => {
+    const motifs = [notationHumaine("a1", "calibration_jeu_or", { ...sur(OR), ...inexacte(), motif_inexactitude: "omission" }), notationHumaine("a2", "calibration_jeu_or", { ...sur(OR), ...inexacte(), motif_inexactitude: "position_opposee" })];
+    expect(duJeu(file(motifs))).toEqual([]);
+  });
+
+  it("arbitrage rendu : plus aucune tâche du jeu d'or ; il n'entre pas dans decider", () => {
+    expect(duJeu(file([...divergentes(), arbitre()]))).toEqual([]);
+    expect(separerCalibration([arbitre()]).calibration).toEqual([arbitre()]);
+  });
+
+  it("arbitrage sur une réponse où les deux calibrations s'accordent : incohérence", () => {
+    expect(() => file([...accordees(), arbitre()])).toThrow(/sans deux calibrations divergentes/);
+  });
+
+  it("arbitrage avant les deux calibrations : incohérence", () => {
+    expect(() => file([notationHumaine("a1", "calibration_jeu_or", sur(OR)), arbitre()])).toThrow(FileIncoherente);
+  });
+
+  it("arbitre qui est l'un des deux premiers : incohérence", () => {
+    expect(() => file([...divergentes(), arbitre("a2")])).toThrow(/pas un troisième humain/);
+  });
+
+  it("deux arbitrages : incohérence", () => {
+    expect(() => file([...divergentes(), arbitre("a3"), arbitre("a4")])).toThrow(/2 arbitrages du jeu d'or/);
+  });
+
+  it("arbitrage_jeu_or hors du jeu d'or : incohérence", () => {
+    expect(() => construireFile(entree(PILOTE, [...jugesDAccord(PILOTE), arbitre()]))).toThrow(/arbitrage_jeu_or sur une réponse hors du jeu d'or/);
+  });
+});
+
 describe("ordre des tâches (D79 : tiré, indépendant du motif)", () => {
   const PILOTE = reponseIds(40);
   const run = runDeNotation();

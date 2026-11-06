@@ -197,6 +197,26 @@ describe("9. le jeu d'or du run pilote", () => {
     expect(dans).toContain("echantillon_aleatoire_10");
   });
 
+  it("D93 : deux calibrations qui divergent → l'arbitre du jeu d'or note à l'aveugle, sa notation arbitrage_jeu_or est écrite", () => {
+    const m = poser({ type_run: "pilote" });
+    const r = m.hors[0];
+    if (r === undefined) throw new Error("réponse attendue");
+    const inexacte = { categorie: "inexacte" as const, drapeaux: [], motif_inexactitude: "omission" as const, extrait_justificatif: { provenance: "reponse" as const, texte: "ramener la TVA", verifie_deterministe: true } };
+    const premiers = ["sentinelle-calibration-1", "sentinelle-calibration-2"] as const;
+    m.ecrire(humain(m, premiers[0], "calibration_jeu_or", r), humain(m, premiers[1], "calibration_jeu_or", r, inexacte));
+    const duJeu = (c: Contexte) => etatDesTaches(c).notables.filter((n) => n.tache.reponse_id === r.id).map((n) => n.tache.motif_notation);
+    for (const premier of premiers) expect(duJeu(m.contexte(premier))).toEqual([]);
+    const arbitre = m.contexte("a3");
+    expect(duJeu(arbitre)).toEqual(["arbitrage_jeu_or"]);
+    const serialise = JSON.stringify([appeler(arbitre, "vue", [r.id]), appeler(arbitre, "file")]);
+    for (const interdit of [...premiers, "omission", "arbitrage", "calibration"]) expect(serialise).not.toContain(interdit);
+    expect(noter(arbitre, r.id).statut).toBe(201);
+    const ecrites = m.contexte("a4").notations().filter((n) => n.motif_notation === "arbitrage_jeu_or");
+    expect(ecrites.map((n) => [n.notateur.id, n.objet_note.id])).toEqual([["a3", r.id]]);
+    expect(duJeu(m.contexte("a3"))).toEqual([]);
+    expect(duJeu(m.contexte("a4"))).toEqual([]);
+  });
+
   it("run non pilote : aucune tâche de calibration", () => {
     const m = poser();
     expect(motifs(m.contexte("a1"))).toEqual(["echantillon_aleatoire_10"]);

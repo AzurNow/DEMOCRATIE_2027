@@ -9,13 +9,24 @@
  * `kappa-categorie-primaire.ts` ; ce module ne fait que les appliquer au jeu d'or.
  *
  * **Fonction pure, sans format de fichier.** Le dépôt connaît le tirage du jeu d'or
- * (`pipeline/notation/echantillons.ts:tirerJeuOr`) et ses deux notations humaines
- * (`calibration_jeu_or`, `pipeline/notation/file-humaine.ts`), mais aucun motif ni aucune tâche pour
- * le troisième humain du jeu d'or, et aucun fichier qui assemble les réponses du jeu d'or. L'appelant
- * fournit donc, par réponse, les deux notations de calibration, le troisième humain s'il existe, et
- * les notations de juge de la réponse : c'est `pipeline/notation/inscription-jeu-or.ts` (`pnpm kappa:jeu-or`,
- * D89), qui écrit `kappa_juge_humain` ; aucune commande n'écrit encore `kappa_paire_juges`. `inscriptionsJeuOr` rend ce que `run.json#/juges[]` recevra : le kappa ou son
- * motif, et les comptes du jeu d'or qui le fondent (D73 (8)), d'un seul calcul.
+ * (`pipeline/notation/echantillons.ts:tirerJeuOr`), ses deux notations humaines (`calibration_jeu_or`)
+ * et le troisième humain qui arbitre leur divergence (`arbitrage_jeu_or`, D93), dont
+ * `pipeline/notation/file-humaine.ts` ouvre les tâches. L'appelant fournit, par réponse, les deux
+ * notations de calibration, le troisième humain s'il a noté, et les notations de juge de la réponse :
+ * c'est `pipeline/notation/inscription-jeu-or.ts` (`pnpm kappa:jeu-or`, D89, D93). `inscriptionsJeuOr`
+ * rend, d'un seul calcul, ce que `run.json#/juges[]` recevra (le kappa ou son motif, et les comptes du
+ * jeu d'or qui le fondent, D73 (8)) et ce que la racine de `run.json` recevra (`kappa_paire_juges` ou
+ * son motif, D93).
+ *
+ * **Divergence des deux humains** (`calibrationsDivergent`, seule définition du jeu d'or, lue aussi
+ * par la file humaine) : celle du §7, « deux humains s'accordent lorsque leurs notations sont
+ * identiques sur la catégorie, sur tous les drapeaux, sur la fraîcheur de l'obsolescence et, pour le
+ * sourçage, sur le seul sourçage valide » (`note-lue.ts:notationsConcordent`, par
+ * `categorieHumaineRetenue`). L'arbitrage supplémentaire sur le motif, la citation d'une source ou
+ * l'existence d'un lien ne vaut que pour « la note retenue » de l'échantillon (D75 (15),
+ * `humainsAArbitrer`) ; le jeu d'or ne retient aucune note, seulement la référence du kappa.
+ * Un désaccord qui attend encore son troisième humain lève `ArbitrageJeuOrEnAttente`, qui nomme les
+ * réponses en attente.
  *
  * **Juge retiré** (§7 : « Les notations déjà rendues par le juge retiré sont écartées de tout le run,
  * y compris de l'accord juges-humains et du kappa des juges publiés avec lui, qui ne portent plus que
@@ -40,10 +51,12 @@
  *
  * **Refusé, jamais deviné** (`JeuOrIncoherent`) : un run qui ne déclare pas exactement deux juges ;
  * deux juges retirés ; une réponse sans exactement deux notations `calibration_jeu_or` d'humains
- * distincts ; deux humains qui divergent sans troisième, ou un troisième là où ils s'accordent, ou un
- * troisième qui est l'un des deux ; une note de juge retenu absente sans renvoi, ou double ; un juge
- * qui note et renvoie la même réponse ; une note ou un renvoi d'un juge non déclaré ; un refus qui
- * n'est pas une notation par règle, ou qu'un juge a noté ou renvoyé.
+ * distincts ; un troisième là où les deux humains s'accordent, un troisième qui est l'un des deux, ou
+ * qui ne note pas sous `arbitrage_jeu_or` ; une note de juge retenu absente sans renvoi, ou double ; un
+ * juge qui note et renvoie la même réponse ; une note ou un renvoi d'un juge non déclaré ; un refus
+ * qui n'est pas une notation par règle, ou qu'un juge a noté ou renvoyé. Deux humains qui divergent
+ * sans troisième ne sont pas une incohérence mais une attente (`ArbitrageJeuOrEnAttente`). Sur un
+ * refus de l'API, la référence humaine n'est pas lue : ni les calibrations ni un troisième humain.
  */
 
 import {
@@ -57,7 +70,12 @@ import {
   type KappaCategorie,
   type KappaDeLaPaire,
 } from "./kappa-categorie-primaire.ts";
-import type { CategorieRetenue, Notation, Ulid } from "./types.ts";
+import type { CategorieRetenue, MotifNotation, Notation, Ulid } from "./types.ts";
+
+/** Les deux notations humaines de chaque réponse du jeu d'or (§7). */
+export const MOTIF_CALIBRATION_JEU_OR = "calibration_jeu_or" satisfies MotifNotation;
+/** Le troisième humain du jeu d'or, quand les deux premiers divergent (§7, D93). */
+export const MOTIF_ARBITRAGE_JEU_OR = "arbitrage_jeu_or" satisfies MotifNotation;
 
 /** Ce que le kappa lit d'un juge déclaré au run (`run.json#/juges[]`). */
 export interface JugeDeclare {
@@ -69,7 +87,10 @@ export interface ReponseDuJeuOr {
   readonly reponse_id: Ulid;
   /** Les deux notations humaines `calibration_jeu_or`, de deux annotateurs distincts. */
   readonly calibration: readonly Notation[];
-  /** Le troisième humain, quand les deux premiers divergent ; `null` sinon. */
+  /**
+   * Le troisième humain (`arbitrage_jeu_or`), quand les deux premiers divergent (`calibrationsDivergent`)
+   * et qu'il a noté ; `null` sinon.
+   */
   readonly troisieme: Notation | null;
   /**
    * Les notations de juge de la réponse, une par juge déclaré qui ne l'a pas renvoyée (celles d'un
@@ -117,6 +138,33 @@ export class JeuOrIncoherent extends Error {
   }
 }
 
+/**
+ * D93 : deux humains du jeu d'or divergent et leur troisième n'a pas encore noté. Ce n'est pas une
+ * incohérence mais une attente : la référence du kappa n'existe pas encore (§7). Toutes les réponses
+ * en attente sont nommées.
+ */
+export class ArbitrageJeuOrEnAttente extends Error {
+  readonly reponse_ids: readonly Ulid[];
+
+  constructor(reponse_ids: readonly Ulid[]) {
+    super(
+      `Jeu d'or : ${reponse_ids.length} réponse(s) dont les deux notations calibration_jeu_or divergent attendent la note du ` +
+        `troisième humain (arbitrage_jeu_or, §7) : ${reponse_ids.join(", ")}. Le kappa juge-humain n'est pas calculé ; rien n'est deviné.`,
+    );
+    this.name = "ArbitrageJeuOrEnAttente";
+    this.reponse_ids = reponse_ids;
+  }
+}
+
+/**
+ * Les deux humains du jeu d'or divergent (§7) : leurs notations ne s'accordent pas au sens de
+ * `note-lue.ts:notationsConcordent`, et la référence du kappa est alors la note d'un troisième humain.
+ * Seule définition de la divergence du jeu d'or : `referenceDe` et la file humaine la lisent ici.
+ */
+export function calibrationsDivergent(premiere: Notation, seconde: Notation): boolean {
+  return categorieHumaineRetenue(premiere, seconde, null) === null;
+}
+
 interface Reference {
   readonly reponse: ReponseDuJeuOr;
   readonly categorie: CategorieDeJuge;
@@ -125,14 +173,21 @@ interface Reference {
 export function kappasJeuOr(juges: readonly JugeDeclare[], reponses: readonly ReponseDuJeuOr[]): ResultatJeuOr {
   const retenus = jugesRetenus(juges);
   for (const reponse of reponses) exigerJugesDeclares(reponse, juges);
-  const refus = reponses.filter(estUnRefus);
-  const toutes = reponses.filter((reponse) => !estUnRefus(reponse)).map((reponse) => ({ reponse, categorie: referenceDe(reponse) }));
+  const hors_refus = reponses.filter((reponse) => !estUnRefus(reponse));
+  exigerArbitragesRendus(hors_refus);
+  const toutes = hors_refus.map((reponse) => ({ reponse, categorie: referenceDe(reponse) }));
   // D64, D70 : une réponse dont la référence humaine ou un juge retenu est non classée sort de tout kappa, comptée à part.
   const ids = new Set(retenus.map((juge) => juge.juge_id));
   const { gardes, non_classees } = ecarterNonClassees(toutes, (r) => [r.categorie, ...r.reponse.juges.filter((n) => ids.has(n.notateur.id)).map((n) => n.categorie)]);
   const references = gardes.filter((r): r is Reference => categoriePourKappa(r.categorie, `Réponse ${r.reponse.reponse_id} du jeu d'or`) !== "indeterminee");
   const kappas = retenus.map((juge) => kappaDuJuge(juge.juge_id, references));
-  return { kappas, paire: kappaDeLaPaire(kappas), indeterminees: gardes.length - references.length, non_classees, refus_api: refus.length };
+  return { kappas, paire: kappaDeLaPaire(kappas), indeterminees: gardes.length - references.length, non_classees, refus_api: reponses.length - hors_refus.length };
+}
+
+/** D93 : aucune référence n'est lue tant qu'un désaccord des deux humains attend son troisième. */
+function exigerArbitragesRendus(hors_refus: readonly ReponseDuJeuOr[]): void {
+  const en_attente = hors_refus.filter((reponse) => reponse.troisieme === null && calibrationsDivergent(...deuxCalibrations(reponse)));
+  if (en_attente.length > 0) throw new ArbitrageJeuOrEnAttente(en_attente.map((reponse) => reponse.reponse_id));
 }
 
 /**
@@ -157,16 +212,46 @@ export type InscriptionJeuOr = { readonly juge_id: string; readonly comptes_jeu_
 );
 
 /**
- * Le kappa de chaque juge retenu et ses comptes, d'un seul appel à `kappasJeuOr` sur `reponses` : les
- * comptes ne sont jamais recalculés sur une autre population. Un juge retiré n'en reçoit aucune : hors
- * de l'accord (§7, D13), il garde ce qu'une calibration antérieure lui a donné, que ce calcul n'invente
- * pas. Lève `JeuOrIncoherent` si les comptes ne rendent pas toutes les réponses lues (invariant).
+ * Ce que la racine de `run.json` reçoit (D93) : le kappa de la paire de juges, ou le motif de son
+ * indéfinition (§7 : « Un kappa indéfini [...] est publié absent avec son motif, jamais comme une
+ * valeur »).
  */
-export function inscriptionsJeuOr(juges: readonly JugeDeclare[], reponses: readonly ReponseDuJeuOr[]): readonly InscriptionJeuOr[] {
+export type InscriptionPaire =
+  | { readonly kappa_paire_juges: number }
+  | { readonly motif_indefini_kappa_paire_juges: NonNullable<KappaDeLaPaire["motif_indefini"]> };
+
+export interface InscriptionsJeuOr {
+  /** Une par juge retenu, dans l'ordre de `juges`. */
+  readonly juges: readonly InscriptionJeuOr[];
+  /**
+   * Le plus faible des kappas des juges retenus (§7) ; avec un juge retiré, le kappa du juge restant
+   * (§7 : le kappa des juges « ne porte plus que sur le juge restant », `kappaDeLaPaire`).
+   */
+  readonly paire: InscriptionPaire;
+}
+
+/**
+ * Le kappa de chaque juge retenu et ses comptes, et le kappa de la paire, d'un seul appel à
+ * `kappasJeuOr` sur `reponses` : les comptes ne sont jamais recalculés sur une autre population, et la
+ * paire est lue des mêmes kappas. Un juge retiré n'en reçoit aucune : hors de l'accord (§7, D13), il
+ * garde ce qu'une calibration antérieure lui a donné, que ce calcul n'invente pas. Lève
+ * `JeuOrIncoherent` si les comptes ne rendent pas toutes les réponses lues (invariant).
+ */
+export function inscriptionsJeuOr(juges: readonly JugeDeclare[], reponses: readonly ReponseDuJeuOr[]): InscriptionsJeuOr {
   const resultat = kappasJeuOr(juges, reponses);
+  return { juges: inscriptionsDesJuges(resultat, reponses.length), paire: paireOuMotif(resultat.paire) };
+}
+
+function paireOuMotif(paire: KappaDeLaPaire): InscriptionPaire {
+  if (paire.kappa !== null) return { kappa_paire_juges: paire.kappa };
+  if (paire.motif_indefini === null) throw new JeuOrIncoherent("kappa de la paire absent sans motif.");
+  return { motif_indefini_kappa_paire_juges: paire.motif_indefini };
+}
+
+function inscriptionsDesJuges(resultat: ResultatJeuOr, lues: number): readonly InscriptionJeuOr[] {
   return resultat.kappas.map((kappa) => {
     const comptes: ComptesJeuOr = {
-      reponses: reponses.length,
+      reponses: lues,
       comparees: kappa.n,
       renvois_ecartes: kappa.renvois_ecartes,
       indeterminees: resultat.indeterminees,
@@ -216,13 +301,13 @@ function exigerJugesDeclares(reponse: ReponseDuJeuOr, juges: readonly JugeDeclar
 /** La note humaine retenue de la réponse, après contrôle des deux calibrations et du troisième. */
 function referenceDe(reponse: ReponseDuJeuOr): CategorieRetenue {
   const [premiere, seconde] = deuxCalibrations(reponse);
-  const concordent = categorieHumaineRetenue(premiere, seconde, null) !== null;
-  if (concordent && reponse.troisieme !== null) {
-    throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : troisième humain alors que les deux premiers s'accordent.`);
+  if (!calibrationsDivergent(premiere, seconde) && reponse.troisieme !== null) {
+    throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : troisième humain (${reponse.troisieme.id}) alors que les deux premiers s'accordent.`);
   }
   exigerTroisiemeDistinct(reponse, premiere, seconde);
   const categorie = categorieHumaineRetenue(premiere, seconde, reponse.troisieme);
-  if (categorie === null) throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : les deux humains divergent et aucun troisième humain n'a noté.`);
+  // Invariant : `exigerArbitragesRendus` a déjà nommé toute divergence sans troisième.
+  if (categorie === null) throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : les deux humains divergent et aucun troisième humain n'a noté (invariant).`);
   return categorie;
 }
 
@@ -232,17 +317,21 @@ function deuxCalibrations(reponse: ReponseDuJeuOr): readonly [Notation, Notation
   if (premiere === undefined || seconde === undefined || calibration.length !== 2) {
     throw new JeuOrIncoherent(`réponse ${reponse_id} : ${calibration.length} notation(s) de calibration au lieu de deux.`);
   }
-  const fautive = calibration.find((n) => n.notateur.type !== "humain" || n.motif_notation !== "calibration_jeu_or");
+  const fautive = calibration.find((n) => n.notateur.type !== "humain" || n.motif_notation !== MOTIF_CALIBRATION_JEU_OR);
   if (fautive !== undefined) throw new JeuOrIncoherent(`réponse ${reponse_id} : la notation ${fautive.id} n'est pas une calibration humaine (calibration_jeu_or).`);
   if (premiere.notateur.id === seconde.notateur.id) throw new JeuOrIncoherent(`réponse ${reponse_id} : deux calibrations du même annotateur ${premiere.notateur.id}.`);
   return [premiere, seconde];
 }
 
+/** Le troisième est un humain distinct des deux premiers, qui note sous `arbitrage_jeu_or` (D93). */
 function exigerTroisiemeDistinct(reponse: ReponseDuJeuOr, premiere: Notation, seconde: Notation): void {
   const troisieme = reponse.troisieme;
   if (troisieme === null) return;
   if (troisieme.notateur.type !== "humain" || [premiere, seconde].some((n) => n.notateur.id === troisieme.notateur.id)) {
     throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : le troisième (${troisieme.notateur.id}) n'est pas un troisième humain.`);
+  }
+  if (troisieme.motif_notation !== MOTIF_ARBITRAGE_JEU_OR) {
+    throw new JeuOrIncoherent(`réponse ${reponse.reponse_id} : le troisième humain note sous le motif ${String(troisieme.motif_notation)}, pas arbitrage_jeu_or (D93).`);
   }
 }
 

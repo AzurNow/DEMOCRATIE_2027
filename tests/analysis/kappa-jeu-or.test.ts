@@ -7,6 +7,8 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  ArbitrageJeuOrEnAttente,
+  calibrationsDivergent,
   inscriptionsJeuOr,
   JeuOrIncoherent,
   kappasJeuOr,
@@ -46,7 +48,7 @@ function reponse(rang: number, ligne: Ligne): ReponseDuJeuOr {
       notationHumaine("annotateur-1", "calibration_jeu_or", { ...objet, ...surcharges(h1) }),
       notationHumaine("annotateur-2", "calibration_jeu_or", { ...objet, ...surcharges(h2) }),
     ],
-    troisieme: ligne.troisieme === undefined ? null : notationHumaine("annotateur-3", "calibration_jeu_or", { ...objet, ...surcharges(ligne.troisieme) }),
+    troisieme: ligne.troisieme === undefined ? null : notationHumaine("annotateur-3", "arbitrage_jeu_or", { ...objet, ...surcharges(ligne.troisieme) }),
     juges: Object.entries(ligne.juges).map(([juge, categorie]) => notationJuge(juge, { ...objet, ...surcharges(categorie) })),
     refus_api: null,
     renvois: [],
@@ -315,12 +317,15 @@ describe("entrées incohérentes : erreur visible, aucune référence ni note in
     expect(() => kappasJeuOr([...JUGES, { juge_id: "j3", retire: false }], [])).toThrow(JeuOrIncoherent);
   });
 
-  it("désaccord des deux humains sans troisième humain", () => {
-    expect(() => kappasJeuOr(JUGES, jeu([{ humains: ["exacte", "inexacte"], juges: { j1: "exacte", j2: "exacte" } }]))).toThrow(/troisième humain/);
+  it("D93 : troisième humain alors que les deux s'accordent (arbitrage sur une réponse sans désaccord)", () => {
+    expect(() => kappasJeuOr(JUGES, jeu([{ humains: ["exacte", "exacte"], troisieme: "exacte", juges: { j1: "exacte", j2: "exacte" } }]))).toThrow(JeuOrIncoherent);
+    expect(() => kappasJeuOr(JUGES, jeu([{ humains: ["exacte", "exacte"], troisieme: "exacte", juges: { j1: "exacte", j2: "exacte" } }]))).toThrow(/s'accordent/);
   });
 
-  it("troisième humain alors que les deux s'accordent", () => {
-    expect(() => kappasJeuOr(JUGES, jeu([{ humains: ["exacte", "exacte"], troisieme: "exacte", juges: { j1: "exacte", j2: "exacte" } }]))).toThrow(JeuOrIncoherent);
+  it("D93 : un troisième humain qui ne note pas sous arbitrage_jeu_or (ici, une troisième calibration)", () => {
+    const [r] = jeu([{ humains: ["exacte", "inexacte"], troisieme: "exacte", juges: { j1: "exacte", j2: "exacte" } }]) as [ReponseDuJeuOr];
+    const troisieme = { ...(r.troisieme as Notation), motif_notation: "calibration_jeu_or" as const };
+    expect(() => kappasJeuOr(JUGES, [{ ...r, troisieme }])).toThrow(/pas arbitrage_jeu_or/);
   });
 
   it("troisième humain qui est l'un des deux premiers", () => {
@@ -450,7 +455,7 @@ describe("D73 (8) : comptes du jeu d'or inscrits à côté du kappa de chaque ju
   it("comptes et kappa d'un seul calcul : comparees = n du kappa, et la somme rend toutes les réponses lues", () => {
     const reponses = jeuMele();
     const calcul = kappasJeuOr(JUGES, reponses);
-    const inscriptions = inscriptionsJeuOr(JUGES, reponses);
+    const inscriptions = inscriptionsJeuOr(JUGES, reponses).juges;
     expect(inscriptions.map((i) => i.comptes_jeu_or)).toEqual([
       { reponses: 6, comparees: 3, renvois_ecartes: 0, indeterminees: 1, non_classees: 1, refus_api: 1 },
       { reponses: 6, comparees: 2, renvois_ecartes: 1, indeterminees: 1, non_classees: 1, refus_api: 1 },
@@ -466,13 +471,13 @@ describe("D73 (8) : comptes du jeu d'or inscrits à côté du kappa de chaque ju
   });
 
   it("kappa défini : kappa_juge_humain sans motif ; indéfini : le motif sans kappa, jamais 0, 1 ni null", () => {
-    const [defini] = inscriptionsJeuOr(JUGES, jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "inexacte")]));
+    const [defini] = inscriptionsJeuOr(JUGES, jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "inexacte")])).juges;
     expect(defini).toEqual({
       juge_id: "j1",
       kappa_juge_humain: 1,
       comptes_jeu_or: { reponses: 2, comparees: 2, renvois_ecartes: 0, indeterminees: 0, non_classees: 0, refus_api: 0 },
     });
-    const [indefini] = inscriptionsJeuOr(JUGES, [refusApi(0), refusApi(1)]);
+    const [indefini] = inscriptionsJeuOr(JUGES, [refusApi(0), refusApi(1)]).juges;
     expect(indefini).toEqual({
       juge_id: "j1",
       motif_indefini_kappa_juge_humain: "aucune_reponse_comparable",
@@ -482,7 +487,7 @@ describe("D73 (8) : comptes du jeu d'or inscrits à côté du kappa de chaque ju
   });
 
   it("chaque inscription passe le schéma de run.json#/juges[] une fois jointe aux champs du gel", () => {
-    for (const inscription of [...inscriptionsJeuOr(JUGES, jeuMele()), ...inscriptionsJeuOr(JUGES, [refusApi(0)])]) {
+    for (const inscription of [...inscriptionsJeuOr(JUGES, jeuMele()).juges, ...inscriptionsJeuOr(JUGES, [refusApi(0)]).juges]) {
       const juge = { famille_modele: "famille-x", modele: "famille-x/m", version_prompt: "prompts/judge-1.0.0", retire: false, ...inscription };
       expect(() => validerFragment("run", "#/properties/juges/items", juge, `juge ${inscription.juge_id}`)).not.toThrow();
     }
@@ -493,8 +498,128 @@ describe("D73 (8) : comptes du jeu d'or inscrits à côté du kappa de chaque ju
       { juge_id: "j1", retire: false },
       { juge_id: "j2", retire: true },
     ];
-    const inscriptions = inscriptionsJeuOr(retire, jeu([accord("exacte", "exacte", "inexacte"), accord("inexacte", "inexacte", "exacte")]));
+    const inscriptions = inscriptionsJeuOr(retire, jeu([accord("exacte", "exacte", "inexacte"), accord("inexacte", "inexacte", "exacte")])).juges;
     expect(inscriptions.map((i) => i.juge_id)).toEqual(["j1"]);
     expect(inscriptions[0]?.comptes_jeu_or).toEqual({ reponses: 2, comparees: 2, renvois_ecartes: 0, indeterminees: 0, non_classees: 0, refus_api: 0 });
+  });
+});
+
+/** Une réponse du jeu d'or refusée par l'API (D32) : notée par la règle, par aucun juge. */
+function refusDuJeu(rang: number): ReponseDuJeuOr {
+  const id = ulid(`reponse-jeu-or-d93-refus-${rang}`);
+  const objet = { objet_note: { type: "reponse" as const, id } };
+  return {
+    reponse_id: id,
+    calibration: [
+      notationHumaine("annotateur-1", "calibration_jeu_or", { ...objet, categorie: "non_reponse" }),
+      notationHumaine("annotateur-2", "calibration_jeu_or", { ...objet, categorie: "non_reponse" }),
+    ],
+    troisieme: null,
+    juges: [],
+    refus_api: notationRegle(objet),
+    renvois: [],
+  };
+}
+
+describe("D93 : troisième humain du jeu d'or (arbitrage_jeu_or)", () => {
+  it("deux humains d'accord : aucune divergence, aucun troisième attendu, kappa comme avant", () => {
+    const reponses = jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "exacte")]);
+    for (const r of reponses) expect(calibrationsDivergent(r.calibration[0] as Notation, r.calibration[1] as Notation)).toBe(false);
+    expect(kappasJeuOr(JUGES, reponses).kappas.map((k) => k.kappa)).toEqual([1, 0]);
+  });
+
+  it("deux humains en désaccord, arbitrage présent : la note du troisième est retenue, le kappa est calculé", () => {
+    // Référence retenue « inexacte » (le troisième), pas « exacte » (le premier humain) : j1 a un kappa de 1.
+    const resultat = kappasJeuOr(JUGES, jeu([
+      { humains: ["exacte", "inexacte"], troisieme: "inexacte", juges: { j1: "inexacte", j2: "inexacte" } },
+      accord("exacte", "exacte", "exacte"),
+    ]));
+    expect(resultat.kappas.map((k) => [k.juge_id, k.kappa, k.n])).toEqual([["j1", 1, 2], ["j2", 1, 2]]);
+  });
+
+  it("désaccord sans arbitrage rendu : ArbitrageJeuOrEnAttente nomme chaque réponse en attente, pas JeuOrIncoherent", () => {
+    const reponses = jeu([
+      { humains: ["exacte", "inexacte"], juges: { j1: "exacte", j2: "exacte" } },
+      accord("exacte", "exacte", "exacte"),
+      { humains: ["non_reponse", "exacte"], juges: { j1: "exacte", j2: "exacte" } },
+      { humains: ["exacte", "inexacte"], troisieme: "exacte", juges: { j1: "exacte", j2: "exacte" } },
+    ]);
+    const [premiere, , troisieme] = reponses.map((r) => r.reponse_id);
+    const erreur = (() => {
+      try {
+        kappasJeuOr(JUGES, reponses);
+      } catch (e) {
+        return e;
+      }
+      throw new Error("ArbitrageJeuOrEnAttente attendue");
+    })();
+    expect(erreur).toBeInstanceOf(ArbitrageJeuOrEnAttente);
+    expect(erreur).not.toBeInstanceOf(JeuOrIncoherent);
+    expect((erreur as ArbitrageJeuOrEnAttente).reponse_ids).toEqual([premiere, troisieme]);
+    expect((erreur as Error).message).toContain(`${String(premiere)}, ${String(troisieme)}`);
+    expect(() => inscriptionsJeuOr(JUGES, reponses)).toThrow(ArbitrageJeuOrEnAttente);
+  });
+
+  it("divergence au sens du §7 : même catégorie, drapeaux différents, le troisième est attendu", () => {
+    const [r] = jeu([accord("inexacte", "inexacte", "inexacte")]) as [ReponseDuJeuOr];
+    const a = { ...(r.calibration[0] as Notation), ...inexacte(["fabrication"]) };
+    const b = { ...(r.calibration[1] as Notation), ...inexacte(["mauvaise_attribution"]) };
+    expect(calibrationsDivergent(a, b)).toBe(true);
+    expect(() => kappasJeuOr(JUGES, [{ ...r, calibration: [a, b] }])).toThrow(ArbitrageJeuOrEnAttente);
+  });
+
+  it("le jeu d'or ne retient aucune note : deux humains qui ne diffèrent que par le motif d'inexactitude s'accordent (pas d'arbitrage, contrairement à l'échantillon)", () => {
+    const [r] = jeu([accord("inexacte", "inexacte", "inexacte")]) as [ReponseDuJeuOr];
+    const a = { ...(r.calibration[0] as Notation), motif_inexactitude: "omission" as const };
+    const b = { ...(r.calibration[1] as Notation), motif_inexactitude: "position_opposee" as const };
+    expect(calibrationsDivergent(a, b)).toBe(false);
+    expect(() => kappasJeuOr(JUGES, [{ ...r, calibration: [a, b] }])).not.toThrow();
+  });
+
+  it("refus de l'API : la divergence des deux humains n'attend aucun arbitrage (référence non lue)", () => {
+    const r = refusDuJeu(0);
+    const divergent = { ...r, calibration: [r.calibration[0] as Notation, { ...(r.calibration[1] as Notation), categorie: "exacte" as const }] };
+    expect(kappasJeuOr(JUGES, [divergent]).refus_api).toBe(1);
+  });
+});
+
+describe("D93 : kappa de la paire, inscrit à la racine de run.json", () => {
+  it("défini : le plus faible des deux kappas, sans motif", () => {
+    const { paire } = inscriptionsJeuOr(JUGES, jeu([
+      accord("exacte", "exacte", "exacte"),
+      accord("exacte", "exacte", "inexacte"),
+      accord("inexacte", "inexacte", "exacte"),
+      accord("inexacte", "inexacte", "inexacte"),
+    ]));
+    expect(paire).toEqual({ kappa_paire_juges: 0 });
+  });
+
+  it("indéfini : le motif sans valeur, jamais 0, 1 ni null", () => {
+    const { paire } = inscriptionsJeuOr(JUGES, jeu([accord("exacte", "exacte", "exacte"), accord("exacte", "inexacte", "exacte")]));
+    expect(paire).toEqual({ motif_indefini_kappa_paire_juges: "accord_attendu_maximal" });
+    expect(Object.keys(paire)).not.toContain("kappa_paire_juges");
+  });
+
+  it("aucune réponse comparable : motif aucune_reponse_comparable", () => {
+    expect(inscriptionsJeuOr(JUGES, [refusDuJeu(0)]).paire).toEqual({ motif_indefini_kappa_paire_juges: "aucune_reponse_comparable" });
+  });
+
+  it("juge retiré : la paire est le kappa du juge restant, même si le retiré était faible (§7, D13)", () => {
+    const retire: readonly JugeDeclare[] = [
+      { juge_id: "j1", retire: false },
+      { juge_id: "j2", retire: true },
+    ];
+    const { juges, paire } = inscriptionsJeuOr(retire, jeu([accord("exacte", "exacte", "inexacte"), accord("inexacte", "inexacte", "exacte")]));
+    expect(juges.map((i) => i.juge_id)).toEqual(["j1"]);
+    expect(paire).toEqual({ kappa_paire_juges: 1 });
+  });
+
+  it("la paire passe le schéma de run.json à la racine", () => {
+    const paires = [inscriptionsJeuOr(JUGES, jeu([accord("exacte", "exacte", "exacte"), accord("inexacte", "inexacte", "exacte")])).paire, inscriptionsJeuOr(JUGES, [refusDuJeu(0)]).paire];
+    for (const paire of paires) {
+      for (const [champ, valeur] of Object.entries(paire)) {
+        expect(() => validerFragment("run", `#/properties/${champ}`, valeur, champ)).not.toThrow();
+      }
+    }
   });
 });

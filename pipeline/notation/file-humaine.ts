@@ -18,8 +18,9 @@
  *
  * **Dérivation, réponse par réponse.**
  *
- * - Les notations de calibration (`calibration_jeu_or`) sont séparées des notations de décision
- *   (`separerCalibration`) : elles n'entrent jamais dans `decision.ts:decider`, qui les refuserait.
+ * - Les notations du jeu d'or (`calibration_jeu_or` et `arbitrage_jeu_or`) sont séparées des
+ *   notations de décision (`separerCalibration`) : elles n'entrent jamais dans `decision.ts:decider`,
+ *   qui les refuserait.
  * - **Échantillon** : les places restantes parmi les deux notations `echantillon_aleatoire_10`,
  *   ouvertes à tout annotateur qui n'en a pas déjà rendu une ; puis, si les deux sont faites et ne
  *   concordent pas (`analysis/note-lue.ts:notationsConcordent`), ou concordent mais divergent sur le
@@ -31,7 +32,11 @@
  * - **Hors échantillon** : `decider` ; « en attente » d'un humain donne une tâche à une place, sous
  *   le motif que `decider` admet dans ce cas (`MOTIF_HUMAIN_DE_L_ATTENTE`, testé contre `decider`).
  * - **Jeu d'or** : deux places `calibration_jeu_or` par réponse tirée, par deux annotateurs
- *   distincts. Une réponse tirée aussi dans l'échantillon est notée deux fois, sous deux motifs.
+ *   distincts. Une réponse tirée aussi dans l'échantillon est notée deux fois, sous deux motifs. Puis,
+ *   si les deux calibrations divergent (`analysis/kappa-jeu-or.ts:calibrationsDivergent`, la
+ *   définition que lit le kappa du jeu d'or), une place d'arbitrage (`arbitrage_jeu_or`, §7, D93),
+ *   fermée aux deux premiers : sa note est la référence du kappa juge-humain. Comme celles de
+ *   l'échantillon, ces tâches ne dépendent pas des juges.
  * - **Attend un juge** : `decider` rend « en attente » d'un juge. Ce n'est pas une tâche humaine ;
  *   l'état est rendu à part (`attend_juge`).
  *   Hors échantillon, le même cas entre deux juges est un accord partiel (D15), tâche
@@ -40,6 +45,7 @@
  * **Contraintes tenues.** Deux notations d'échantillon par deux annotateurs distincts ; l'arbitre
  * distinct des deux premiers ; deux notations de calibration par deux annotateurs distincts ; un seul
  * humain appelé hors échantillon (la tâche se ferme dès qu'il a noté, `decider` rendant un verdict) ;
+ * l'arbitre du jeu d'or distinct des deux calibrations, et seulement là où elles divergent ;
  * jamais deux notations d'un annotateur sur la même réponse sous le même motif. Une entrée qui viole
  * l'une d'elles lève `FileIncoherente` (ou `NotationsIncoherentes`, levée par `decider`) : rien n'est
  * ignoré en silence.
@@ -53,6 +59,7 @@
  * note de juge ou d'humain (D18).
  */
 
+import { calibrationsDivergent, MOTIF_ARBITRAGE_JEU_OR, MOTIF_CALIBRATION_JEU_OR } from "../../analysis/kappa-jeu-or.ts";
 import type { Ulid } from "../../analysis/types.ts";
 import { decider, type Decision, type MotifAttente } from "./decision.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
@@ -119,14 +126,24 @@ export class FileIncoherente extends Error {
   }
 }
 
-/** Les notations de calibration d'un côté, toutes les autres de l'autre, dans l'ordre reçu. */
+/** Les deux motifs du jeu d'or, que la règle de décision du §7 ne lit pas. */
+const MOTIFS_DU_JEU_D_OR: ReadonlySet<string> = new Set([MOTIF_CALIBRATION_JEU_OR, MOTIF_ARBITRAGE_JEU_OR]);
+
+function estDuJeuDOr(notation: NotationIndividuelle): boolean {
+  return notation.motif_notation !== undefined && MOTIFS_DU_JEU_D_OR.has(notation.motif_notation);
+}
+
+/**
+ * Les notations du jeu d'or (calibration et son arbitrage, D93) d'un côté, toutes les autres de
+ * l'autre, dans l'ordre reçu.
+ */
 export function separerCalibration(notations: readonly NotationIndividuelle[]): {
   readonly decision: readonly NotationIndividuelle[];
   readonly calibration: readonly NotationIndividuelle[];
 } {
   return {
-    decision: notations.filter((n) => n.motif_notation !== "calibration_jeu_or"),
-    calibration: notations.filter((n) => n.motif_notation === "calibration_jeu_or"),
+    decision: notations.filter((n) => !estDuJeuDOr(n)),
+    calibration: notations.filter(estDuJeuDOr),
   };
 }
 
@@ -311,14 +328,41 @@ function tachesHorsEchantillon(id: Ulid, resultat: Decision): readonly Tache[] {
 
 /* ------------------------------------------------------------------ jeu d'or */
 
-function tachesJeuOr(ctx: Contexte, id: Ulid, calibration: readonly NotationIndividuelle[]): readonly Tache[] {
-  if (!ctx.jeu_or.has(id)) {
-    if (calibration.length > 0) throw new FileIncoherente(`réponse ${id} : notation de calibration sur une réponse hors du jeu d'or.`);
-    return [];
+/** `jeu` : les notations de la réponse sous les deux motifs du jeu d'or (calibration et arbitrage). */
+function tachesJeuOr(ctx: Contexte, id: Ulid, jeu: readonly NotationIndividuelle[]): readonly Tache[] {
+  if (!ctx.jeu_or.has(id)) return exigerHorsDuJeuSansNotation(id, jeu);
+  if (jeu.some((n) => n.notateur.type !== "humain")) throw new FileIncoherente(`réponse ${id} : notation du jeu d'or par un juge.`);
+  const calibrations = humainsSous(jeu, MOTIF_CALIBRATION_JEU_OR);
+  const arbitres = humainsSous(jeu, MOTIF_ARBITRAGE_JEU_OR);
+  verifierJeuOr(id, calibrations, arbitres);
+  const [a, b] = calibrations;
+  if (a === undefined || b === undefined) return [tache(id, MOTIF_CALIBRATION_JEU_OR, 2 - calibrations.length, calibrations)];
+  if (arbitres.length > 0 || !calibrationsDivergent(a, b)) return [];
+  return [tache(id, MOTIF_ARBITRAGE_JEU_OR, 1, calibrations)];
+}
+
+function exigerHorsDuJeuSansNotation(id: Ulid, jeu: readonly NotationIndividuelle[]): readonly Tache[] {
+  const [notation] = jeu;
+  if (notation !== undefined) throw new FileIncoherente(`réponse ${id} : notation ${String(notation.motif_notation)} sur une réponse hors du jeu d'or.`);
+  return [];
+}
+
+/**
+ * D93, comme `verifierEchantillon` : au plus deux calibrations, au plus un arbitre, et l'arbitre
+ * seulement après deux calibrations divergentes, distinct de leurs deux auteurs.
+ */
+function verifierJeuOr(id: Ulid, calibrations: readonly NotationIndividuelle[], arbitres: readonly NotationIndividuelle[]): void {
+  if (calibrations.length > 2) throw new FileIncoherente(`réponse ${id} : ${calibrations.length} notations de calibration au lieu de deux.`);
+  if (arbitres.length > 1) throw new FileIncoherente(`réponse ${id} : ${arbitres.length} arbitrages du jeu d'or au lieu d'un.`);
+  const [arbitre] = arbitres;
+  if (arbitre === undefined) return;
+  const [a, b] = calibrations;
+  if (a === undefined || b === undefined || !calibrationsDivergent(a, b)) {
+    throw new FileIncoherente(`réponse ${id} : arbitrage du jeu d'or de ${arbitre.notateur.id} sans deux calibrations divergentes.`);
   }
-  if (calibration.some((n) => n.notateur.type !== "humain")) throw new FileIncoherente(`réponse ${id} : notation de calibration par un juge.`);
-  if (calibration.length > 2) throw new FileIncoherente(`réponse ${id} : ${calibration.length} notations de calibration au lieu de deux.`);
-  return calibration.length === 2 ? [] : [tache(id, "calibration_jeu_or", 2 - calibration.length, calibration)];
+  if (calibrations.some((n) => n.notateur.id === arbitre.notateur.id)) {
+    throw new FileIncoherente(`réponse ${id} : l'arbitre du jeu d'or ${arbitre.notateur.id} n'est pas un troisième humain.`);
+  }
 }
 
 /* ------------------------------------------------------------------ ordre, comptes, vue d'un annotateur */
