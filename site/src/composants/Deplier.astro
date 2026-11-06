@@ -1,0 +1,14 @@
+---
+// Détail explorable : <details> natif (clavier, toucher et lecteurs d'écran sans JavaScript).
+// Le résumé est toujours visible et dit de quoi il s'agit ; le contenu reste dans le HTML.
+interface Props {
+  resume: string;
+  classe?: string;
+}
+
+const { resume, classe } = Astro.props;
+---
+<details class:list={["deplier", classe]}>
+  <summary class="deplier__resume">{resume}</summary>
+  <div class="deplier__contenu"><slot /></div>
+</details>

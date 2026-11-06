@@ -1,7 +1,9 @@
 ---
 import Illustration from "../composants/Illustration.astro";
 import Renvoi from "../composants/Renvoi.astro";
+import Deplier from "../composants/Deplier.astro";
 import DecorAccroche from "../composants/decors/DecorAccroche.astro";
+import "../styles/sections.css";
 ---
 <section class="section section--accroche" id="accroche" aria-labelledby="titre-accroche">
   <DecorAccroche />
@@ -12,23 +14,56 @@ import DecorAccroche from "../composants/decors/DecorAccroche.astro";
       d'intelligence artificielle, lit ce qu'affichent des comparateurs citoyens, et confronte le tout
       à ce que chaque candidat à l'élection présidentielle a publiquement dit.
     </p>
+    <section class="enbref" aria-labelledby="titre-enbref">
+      <h2 class="enbref__titre" id="titre-enbref">En bref</h2>
+      <ul class="enbref__liste">
+        <li class="enbref__idee">
+          <strong class="enbref__fort">Les mêmes questions pour tous</strong>
+          <span class="enbref__detail">posées dans les mêmes conditions.</span>
+        </li>
+        <li class="enbref__idee">
+          <strong class="enbref__fort">Tout est sourcé et vérifié par des humains</strong>
+          <span class="enbref__detail">sources archivées, deux humains par position.</span>
+        </li>
+        <li class="enbref__idee">
+          <strong class="enbref__fort">Les outils sont notés, jamais les candidats</strong>
+          <span class="enbref__detail">aucune note n'est donnée à un candidat.</span>
+        </li>
+        <li class="enbref__idee">
+          <strong class="enbref__fort">Tout est publié</strong>
+          <span class="enbref__detail">ce qui produit un chiffre l'est en même temps que lui.</span>
+        </li>
+      </ul>
+    </section>
     <p>
       Il mesure si ces réponses sont exactes, complètes, et équilibrées d'un candidat à l'autre. Ce
       sont les outils qui sont notés ; les candidats ne le sont jamais.
     </p>
     <Renvoi section="2" />
-    <div class="encadre">
-      <p><strong>Ce que le projet n'est pas.</strong></p>
-      <ul>
-        <li>
-          Pas un comparateur de programmes : il vérifie ce que des outils disent des candidats, il ne
-          présente pas les programmes pour aider à choisir.
+    <div class="encadre pastilles">
+      <p class="pastilles__titre"><strong>Ce que le projet n'est pas.</strong></p>
+      <ul class="pastilles__liste">
+        <li class="pastille">
+          <Deplier resume="Pas un comparateur de programmes" classe="deplier--pastille">
+            <p>
+              Il vérifie ce que des outils disent des candidats, il ne présente pas les programmes
+              pour aider à choisir.
+            </p>
+          </Deplier>
         </li>
-        <li>
-          Pas un avis sur les candidats : il ne juge ni la faisabilité, ni le coût, ni la qualité
-          d'une proposition, et ne donne aucune note à un candidat.
+        <li class="pastille">
+          <Deplier resume="Pas un avis sur les candidats" classe="deplier--pastille">
+            <p>
+              Il ne juge ni la faisabilité, ni le coût, ni la qualité d'une proposition, et ne donne
+              aucune note à un candidat.
+            </p>
+          </Deplier>
         </li>
-        <li>Pas un classement des candidats, ni une recommandation de vote.</li>
+        <li class="pastille">
+          <Deplier resume="Pas un classement des candidats" classe="deplier--pastille">
+            <p>Ni une recommandation de vote.</p>
+          </Deplier>
+        </li>
       </ul>
       <Renvoi section="10" />
     </div>
