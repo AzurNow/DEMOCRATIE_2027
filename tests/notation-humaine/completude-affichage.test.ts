@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { aplatir, CHAMPS_NON_AFFICHES, contenuVue, type Bloc } from "../../notation-humaine/client/contenu-vue.ts";
+import { aplatir, CHAMPS_NON_AFFICHES, contenuVue, LIBELLE_TRONCATURE_ABSENTE, type Bloc } from "../../notation-humaine/client/contenu-vue.ts";
 import type { Vue } from "../../notation-humaine/client/types.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { tableAliasCandidats } from "../../analysis/alias-candidats.ts";
@@ -307,5 +307,19 @@ describe("cas limites du contenu", () => {
     expect(avec("refus_api", true)).not.toBe(avec("refus_api", false));
     expect(avec("troncature", true)).toContain("Réponse tronquée par l'outil.");
     expect(avec("refus_api", true)).toContain("Refus de modération de l'API.");
+  });
+
+  it("8. troncature absente (saisie de l'application) : libellé exact ; true et false inchangés", () => {
+    const vue = commeVueDuClient(vueComplete());
+    const { troncature: _t, ...sansTroncature } = vue.reponse;
+    const absente = texteDe({ ...vue, reponse: sansTroncature });
+    expect(LIBELLE_TRONCATURE_ABSENTE).toBe("troncature : non renseignée (saisie de l'application)");
+    expect(absente).toContain("troncature : non renseignée (saisie de l'application)");
+    expect(absente).not.toContain("Réponse tronquée par l'outil.");
+    const avec = (valeur: boolean): string => texteDe({ ...vue, reponse: { ...vue.reponse, troncature: valeur } });
+    expect(avec(true)).toContain("Réponse tronquée par l'outil.");
+    expect(avec(true)).not.toContain("non renseignée");
+    expect(avec(false)).not.toContain("non renseignée");
+    expect(avec(false)).not.toContain("tronquée");
   });
 });
