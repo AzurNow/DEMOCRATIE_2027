@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-05.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-06.
 
 ## Décisions en attente
 
@@ -98,6 +98,47 @@ Options :
 **Recommandation :** Option 3 si l'auteur veut une chaîne entièrement en commandes, sinon option 1 : c'est une décision métier, elle fait entrer des notations humaines simulées dans le code de production.
 
 Lots portant cette décision : gel
+
+### D94 — Comment le kappa juge-humain mesuré au pilote se reporte-t-il dans le run.json des runs mensuels et hebdomadaires qui suivent ?
+
+Question Q3 du lot D89. Les exemples valide-01/02/03 du schéma montrent des runs non pilotes porteurs du kappa ; le §7 dit qu'un juge est mesuré « avant son premier run », sans dire comment la mesure est recopiée, comment vérifier que c'est le même juge (modèle, réglages, absents de run.json), ni ce que devient un juge retiré qui « garde sa calibration antérieure ». pnpm kappa:jeu-or refuse aujourd'hui tout run non pilote.
+
+Options :
+
+1. Recopie depuis le pilote : pnpm kappa:jeu-or --jeu-or=<pilote> avec contrôle d'identité du juge (modèle et réglages inscrits au gel) ; amendement du §7 qui le dit.
+2. Chaque run recalcule sur son propre jeu d'or (coût humain à chaque run) ; amendement du §7.
+3. Le kappa n'est publié qu'au pilote, les runs suivants y renvoient ; amendement du schéma et du §7.
+
+**Recommandation :** Option 1 : lecture la plus proche de « avant son premier run », sans notation humaine de plus ; décision métier qui modifie le §7.
+
+Lots portant cette décision : notation
+
+### D95 — Un juge retiré au pilote lui-même n'a aucune calibration antérieure : quel motif publier pour son kappa juge-humain ?
+
+Question Q4 du lot D89. Le schéma exige un kappa ou un motif pour chaque juge d'un run publié ; aucun motif du §7 ne couvre « juge retiré sans calibration ». Ne joue que si le pilote est publié.
+
+Options :
+
+1. Nouveau motif juge_retire_sans_calibration (§7 et schéma).
+2. Un pilote avec juge retiré n'est jamais publié : il est rejoué.
+3. Le juge retiré disparaît des juges publiés du pilote.
+
+**Recommandation :** Option 1 : publication intégrale, l'absence de mesure reste visible et nommée ; décision métier qui modifie le §7.
+
+Lots portant cette décision : notation
+
+### D96 — Les champs du jeu d'or (kappa_juge_humain, son motif, comptes_jeu_or, kappa_paire_juges) restent-ils dans l'empreinte du run.json (§9) ?
+
+Question Q5 du lot D89 (DETTE 2026-11-04 après-midi n° 4). Le §9 ne les nomme pas parmi les champs exclus de l'empreinte ; #340 les y garde, et pnpm kappa:jeu-or refuse donc d'écrire après pnpm analyze.
+
+Options :
+
+1. Les garder dans l'empreinte (code actuel, lettre du §9) : le kappa s'inscrit avant l'analyse.
+2. Les sortir de l'empreinte comme les champs du go/no-go ; amendement du §9.
+
+**Recommandation :** Option 1 : lettre du §9 et ordre naturel (calibration avant analyse) ; aucun code à changer.
+
+Lots portant cette décision : notation
 
 ## Décisions tranchées
 
@@ -441,6 +482,10 @@ Lots portant cette décision : gel
 
 **Décision du 2026-11-05 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). (c) au prochain lot d'outillage.
 
+### D93 — Après D89 (#340), deux trous de code dans pnpm kappa:jeu-or : (1) aucun motif de notation ne désigne le troisième humain du jeu d'or que le §7 retient en cas de désaccord, si bien que tout désaccord humain fait lever JeuOrIncoherent et que la commande refuserait tout vrai pilote ; (2) kappa_paire_juges, exigé par le schéma de tout run publié, n'est inscrit par aucune commande.
+
+**Décision du 2026-11-06 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision de code hors zone d'arrêt). Lot de notation lancé le 2026-11-06.
+
 ## Arbre
 
 Légende : couleur par niveau de preuve — T0 gris, T1 ambre, T2 bleu, T3 vert, T4 bleu foncé ; une décision en attente est un hexagone rouge. Arête pleine (`-->`) = dépendance bloquante ; arête pointillée (`-.->`) = dépendance informative seulement.
@@ -491,6 +536,9 @@ flowchart LR
   dec_D86{{"D86<br/>Deux comparateurs du même éditeur, qu'aucun outil permuté ne…"}}:::decision
   dec_D88{{"D88<br/>Le contrefactuel d'outil compte-t-il parmi les « comparateur…"}}:::decision
   dec_D91{{"D91<br/>La chaîne simulée de D80 (#336) passe par une aide de test (…"}}:::decision
+  dec_D94{{"D94<br/>Comment le kappa juge-humain mesuré au pilote se reporte-t-i…"}}:::decision
+  dec_D95{{"D95<br/>Un juge retiré au pilote lui-même n'a aucune calibration ant…"}}:::decision
+  dec_D96{{"D96<br/>Les champs du jeu d'or (kappa_juge_humain, son motif, compte…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
@@ -519,6 +567,9 @@ flowchart LR
   lot_interrogation -.-> lot_test_liens
   dec_D88 --> lot_gel
   dec_D91 --> lot_gel
+  dec_D94 --> lot_notation
+  dec_D95 --> lot_notation
+  dec_D96 --> lot_notation
   classDef T0 fill:#78716c,color:#ffffff,stroke:#44403c
   classDef T1 fill:#b45309,color:#ffffff,stroke:#78350f
   classDef T2 fill:#0369a1,color:#ffffff,stroke:#0c4a6e
