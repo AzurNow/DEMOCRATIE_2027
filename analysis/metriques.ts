@@ -319,6 +319,29 @@ function grouper(
   return groupes;
 }
 
+/**
+ * §8 : les métriques secondaires sont des affirmations chiffrées du projet, sur le canal API ; §6,
+ * QR8 : le canal application est exploratoire. Une unité de ce canal reçue par une métrique
+ * secondaire mêlerait API et application dans un chiffre publié sans la marque « exploratoire »
+ * (docs/DETTE.md, 2026-10-02, n° 1). Elle lève, comme dans `parOutilEtMode`, et n'est jamais
+ * retirée en silence : filtrer le canal est l'affaire de l'appelant (`analyse-du-run.ts:contexteDuRun`).
+ */
+export class CanalHorsMetriquesSecondaires extends Error {
+  constructor(unite: UniteAnalyse, metrique: string) {
+    super(
+      `Réponse ${unite.reponse_id} du canal ${unite.canal} reçue par ${metrique} : exploratoire (QR8), hors des ` +
+        `métriques secondaires du §8, qui ne portent que sur le canal API.`,
+    );
+    this.name = "CanalHorsMetriquesSecondaires";
+  }
+}
+
+/** Lève `CanalHorsMetriquesSecondaires` sur la première unité qui n'est pas du canal API. */
+function exigerCanalApi(unites: readonly UniteAnalyse[], metrique: string): void {
+  const horsApi = unites.find((u) => u.canal !== "api");
+  if (horsApi !== undefined) throw new CanalHorsMetriquesSecondaires(horsApi, metrique);
+}
+
 export interface RepartitionDrapeaux {
   /** Réponses inexactes du jeu. Les drapeaux ne vivent que sur elles (§7). */
   readonly denominateur: number;
@@ -326,7 +349,9 @@ export interface RepartitionDrapeaux {
   readonly parts: Readonly<Record<Drapeau, Taux>>;
 }
 
+/** Une unité hors du canal API lève (`CanalHorsMetriquesSecondaires`). */
 export function repartitionDrapeaux(unites: readonly UniteAnalyse[]): RepartitionDrapeaux {
+  exigerCanalApi(unites, "repartitionDrapeaux");
   const inexactes: Predicat = (u) => u.categorie === "inexacte";
   const parts = Object.fromEntries(
     DRAPEAUX.map((drapeau) => [drapeau, tauxSur(unites, inexactes, porte(drapeau))]),
@@ -337,8 +362,18 @@ export function repartitionDrapeaux(unites: readonly UniteAnalyse[]): Repartitio
 /**
  * Exactitude ventilée par une clé. Une unité dont la clé est absente — Q-ATT sans candidat (§5),
  * thème non renseigné au tirage — est exclue de la ventilation, jamais rangée sous « inconnu ».
+ * Une unité hors du canal API lève (`CanalHorsMetriquesSecondaires`), même sans clé.
  */
 export function exactitudeParCle(
+  unites: readonly UniteAnalyse[],
+  cle: (unite: UniteAnalyse) => string | null,
+): Map<string, Taux> {
+  exigerCanalApi(unites, "exactitudeParCle");
+  return exactitudeVentilee(unites, cle);
+}
+
+/** La ventilation de `exactitudeParCle`, sur des unités dont le canal a déjà été contrôlé. */
+function exactitudeVentilee(
   unites: readonly UniteAnalyse[],
   cle: (unite: UniteAnalyse) => string | null,
 ): Map<string, Taux> {
@@ -366,29 +401,37 @@ export interface ExactitudesParCandidat {
 
 /**
  * Le partage vient de `candidatsComparables(run)` (`seuils.ts`), qui lit le seuil au gel ; il
- * n'est jamais recalculé ici (conformité n° 30).
+ * n'est jamais recalculé ici (conformité n° 30). Une unité hors du canal API lève
+ * (`CanalHorsMetriquesSecondaires`) avant le partage, y compris celle d'un candidat rapporté à part.
  */
 export function exactitudeParCandidat(
   unites: readonly UniteAnalyse[],
   partage: PartageCandidats,
 ): ExactitudesParCandidat {
+  exigerCanalApi(unites, "exactitudeParCandidat");
   const { comparees, candidats_a_part } = repartirParCandidat(unites, partage);
   return {
-    compares: exactitudeParCle(comparees, (u) => u.candidat_id),
+    compares: exactitudeVentilee(comparees, (u) => u.candidat_id),
     rapportes_a_part: candidats_a_part,
   };
 }
 
+/** Une unité hors du canal API lève (`CanalHorsMetriquesSecondaires`). */
 export function exactitudeParTheme(unites: readonly UniteAnalyse[]): Map<Theme, Taux> {
-  return exactitudeParCle(unites, (u) => u.theme) as Map<Theme, Taux>;
+  exigerCanalApi(unites, "exactitudeParTheme");
+  return exactitudeVentilee(unites, (u) => u.theme) as Map<Theme, Taux>;
 }
 
+/** Une unité hors du canal API lève (`CanalHorsMetriquesSecondaires`). */
 export function exactitudeParGabarit(unites: readonly UniteAnalyse[]): Map<Gabarit, Taux> {
-  return exactitudeParCle(unites, (u) => u.gabarit) as Map<Gabarit, Taux>;
+  exigerCanalApi(unites, "exactitudeParGabarit");
+  return exactitudeVentilee(unites, (u) => u.gabarit) as Map<Gabarit, Taux>;
 }
 
+/** Une unité hors du canal API lève (`CanalHorsMetriquesSecondaires`). */
 export function exactitudeParFormulation(unites: readonly UniteAnalyse[]): Map<Registre, Taux> {
-  return exactitudeParCle(unites, (u) => u.registre) as Map<Registre, Taux>;
+  exigerCanalApi(unites, "exactitudeParFormulation");
+  return exactitudeVentilee(unites, (u) => u.registre) as Map<Registre, Taux>;
 }
 
 export interface MetriquesComparateur {
