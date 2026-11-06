@@ -121,6 +121,55 @@ export const CHAMPS_DU_STATUT_ET_DE_LA_PUBLICATION: ChampsDeRunJson = {
   racine: ["statut", "publication", "depot"],
 };
 
+/**
+ * Le complément des groupes ci-dessus : ce que le gel écrit dans `run.json`
+ * (`pipeline/gel/assemblage.ts:runDuGel`) et que rien ne réécrit ensuite, dans l'empreinte du run
+ * (§9). `simule` et `run_remplace_id` sont écrits au gel ou jamais. À la racine, `perimetre`, `juges`
+ * et `reponses` sont des conteneurs écrits au gel ; leurs champs sont classés à leur propre
+ * emplacement. `tests/run/classement-des-champs-du-run.test.ts` exige que chaque propriété de
+ * `schema/run.schema.json`, à chacun des quatre emplacements, soit ici ou dans un seul groupe.
+ */
+export const CHAMPS_FIGES_AU_GEL: ChampsDeRunJson = {
+  racine: [
+    "id",
+    "date_gel",
+    "fenetre",
+    "type_run",
+    "simule",
+    "run_remplace_id",
+    "versions",
+    "graines",
+    "alias_candidats",
+    "balise",
+    "engagement",
+    "run_precedent",
+    "application_testee",
+    "perimetre",
+    "juges",
+    "symetrie",
+    "tirage",
+    "questions",
+    "reponses",
+  ],
+  juges: ["juge_id", "famille_modele", "modele", "version_prompt", "outils_de_son_editeur"],
+  outils: [
+    "outil_id",
+    "libelle",
+    "editeur",
+    "famille",
+    "inclus",
+    "motif_exclusion",
+    "modele_demande",
+    "modes",
+    "mode_de_tete",
+    "alias_aveugle",
+    "cgu_relues_le",
+    "clause_restrictive_signalee",
+    "preuve_inclusion",
+  ],
+  reponses: ["echantillons_par_question", "prevues"],
+};
+
 /* ------------------------------------------------------------------ par rôle */
 
 function reunir(...groupes: readonly ChampsDeRunJson[]): ChampsDeRunJson {
