@@ -1,0 +1,399 @@
+/*
+ * Section « Le parcours d'une question » : vue d'ensemble, étapes en trois niveaux de lecture
+ * (l'essentiel, le cas suivi, le détail replié) et interactions en CSS seul.
+ *
+ * Importée par site/src/sections/Parcours.astro. Surcharge base.css, mise-en-page.css et fil.css
+ * pour cette section seulement, par des sélecteurs préfixés .parcours / .vue-ensemble.
+ * Couleurs : uniquement les var(--…) de jetons.css. Mouvement seulement sous
+ * prefers-reduced-motion: no-preference ; effets de survol seulement sous hover: hover ; rien n'est
+ * lisible au seul survol. Cibles tactiles d'au moins 2,75 rem (44 px).
+ * Paliers : mobile (< 40 rem), tablette (40 à 64 rem), bureau (≥ 64 rem).
+ */
+
+.parcours__mode-emploi {
+  color: var(--texte-doux);
+}
+
+/* ---- Vue d'ensemble : sept pastilles, une ligne chacune ---- */
+
+.vue-ensemble {
+  margin: 1.5rem 0 0;
+}
+
+.vue-ensemble__liste {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vue-ensemble__item {
+  margin: 0;
+  min-width: 0;
+}
+
+.vue-ensemble__lien {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--fond);
+  color: var(--texte);
+  text-decoration: none;
+  border: var(--trait) solid var(--bordure);
+  box-shadow: 3px 3px 0 var(--bordure);
+}
+
+.vue-ensemble__numero {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  background: var(--accent-1);
+  color: var(--fond);
+  font-family: var(--police-titre);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.vue-ensemble__texte {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.vue-ensemble__nom {
+  font-family: var(--police-titre);
+  font-size: 0.875rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.vue-ensemble__ligne {
+  color: var(--texte-doux);
+  font-size: 0.875rem;
+}
+
+@media (min-width: 30rem) {
+  .vue-ensemble__liste {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 48rem) {
+  .vue-ensemble__liste {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 72rem) {
+  .vue-ensemble__liste {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .vue-ensemble__lien {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+/* ---- Une étape : l'essentiel d'abord ---- */
+
+.parcours .etape__texte {
+  min-width: 0;
+  padding-left: 0.75rem;
+  border-left: 0.25rem solid transparent;
+}
+
+.parcours .etape__cle {
+  margin-bottom: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.parcours .etape__points {
+  display: grid;
+  gap: 0.35rem;
+  max-width: var(--largeur-texte);
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+/* Pas de flex ici : le texte et ses <strong> deviendraient des colonnes séparées. */
+.parcours .etape__points > li {
+  position: relative;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+/* Puce pixel : un carré plein, décor pur (la liste reste une liste pour les lecteurs d'écran). */
+.parcours .etape__points > li::before {
+  content: "";
+  position: absolute;
+  top: 0.6em;
+  left: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--accent-2);
+}
+
+/* ---- Le cas suivi ---- */
+
+.parcours .etape__exemple {
+  margin: 1.5rem 0 1rem;
+  font-size: 0.96875rem;
+}
+
+.parcours .etape__exemple p {
+  margin-bottom: 0.6rem;
+}
+
+.parcours .etape__exemple > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---- Le détail, replié par défaut ---- */
+
+.parcours .etape__plus {
+  max-width: var(--largeur-texte);
+  margin: 0 0 0.75rem;
+  background: var(--fond);
+  border: var(--trait) solid var(--bordure);
+}
+
+.parcours .etape__plus--pourquoi {
+  border-left: 0.5rem solid var(--accent-2);
+}
+
+.parcours .etape__bascule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.parcours .etape__bascule::-webkit-details-marker {
+  display: none;
+}
+
+.parcours .etape__bascule::before {
+  content: "+";
+  flex: none;
+  width: 1.25rem;
+  color: var(--accent-1);
+  font-family: var(--police-titre);
+  text-align: center;
+}
+
+.parcours .etape__plus[open] > .etape__bascule {
+  border-bottom: var(--trait) solid var(--bordure);
+}
+
+.parcours .etape__plus[open] > .etape__bascule::before {
+  content: "\2212";
+}
+
+.parcours .etape__deplie {
+  padding: 0.75rem 1rem 0.25rem;
+}
+
+.parcours .etape__deplie ul {
+  max-width: var(--largeur-texte);
+}
+
+.parcours .etape__deplie > :last-child {
+  margin-bottom: 0.75rem;
+}
+
+/* ---- Étape visée par une ancre (#etape-…) ---- */
+
+.parcours .etape:target .etape__texte {
+  border-left-color: var(--accent-1);
+}
+
+.parcours .etape:target .etape__numero {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  background: var(--accent-1);
+  color: var(--fond);
+}
+
+/* ---- Paliers : tablette et bureau ---- */
+
+/* Tablette en une colonne : l'illustration ne prend pas toute la largeur. */
+@media (min-width: 40rem) {
+  .parcours .etape .illustration {
+    max-width: 26rem;
+  }
+}
+
+/*
+ * Deux colonnes dès 48 rem : texte plus large que l'image, image collée en haut de l'étape pendant
+ * la lecture du détail déplié. La station du fil garde sa ligne entière, sans chevaucher l'image.
+ */
+@media (min-width: 48rem) {
+  .parcours .etape {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 1rem 2rem;
+    align-items: start;
+  }
+
+  .parcours .etape:nth-child(even) {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+
+  .parcours .etape .illustration {
+    position: sticky;
+    top: 5rem;
+    max-width: none;
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  .parcours .fil-station {
+    margin-bottom: 0;
+  }
+}
+
+@media (min-width: 64rem) {
+  .parcours .etape {
+    gap: 1rem 3rem;
+  }
+}
+
+/* ---- Survol (pointeur fin seulement) : accent de couleur, sans mouvement ---- */
+
+@media (hover: hover) {
+  .vue-ensemble__lien:hover {
+    border-color: var(--accent-1);
+    box-shadow: 3px 3px 0 var(--accent-1);
+  }
+
+  .parcours .etape__bascule:hover {
+    color: var(--accent-1);
+    background: var(--fond-section);
+  }
+
+  .parcours .etape__exemple:hover {
+    border-style: solid;
+  }
+
+  .parcours .etape:hover .etape__texte {
+    border-left-color: var(--bordure);
+  }
+
+  .parcours .etape:target:hover .etape__texte {
+    border-left-color: var(--accent-1);
+  }
+}
+
+.vue-ensemble__lien:focus-visible {
+  border-color: var(--accent-1);
+  box-shadow: 3px 3px 0 var(--accent-1);
+}
+
+/* ---- Mouvement : seulement si le visiteur ne demande pas moins de mouvement ---- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .vue-ensemble__lien,
+  .parcours .illustration__cadre,
+  .parcours .etape__exemple,
+  .parcours .etape__bascule {
+    transition:
+      transform 0.15s ease-out,
+      box-shadow 0.15s ease-out,
+      border-color 0.15s ease-out,
+      background-color 0.15s ease-out,
+      color 0.15s ease-out;
+  }
+
+  .parcours .etape__texte {
+    transition: border-color 0.2s ease-out;
+  }
+
+  .vue-ensemble__lien:focus-visible {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--accent-1);
+  }
+
+  /* Le contenu déplié glisse et apparaît. */
+  @keyframes parcours-deplier {
+    from {
+      opacity: 0;
+      transform: translateY(-0.4rem);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .parcours .etape__plus[open] > .etape__deplie {
+    animation: parcours-deplier 0.25s ease-out;
+  }
+
+  /* Où le navigateur sait animer vers « auto », la hauteur s'ouvre et se ferme en douceur. */
+  @supports (interpolate-size: allow-keywords) {
+    .parcours .etape__plus {
+      interpolate-size: allow-keywords;
+    }
+
+    .parcours .etape__plus::details-content {
+      block-size: 0;
+      overflow: hidden;
+      transition:
+        block-size 0.25s ease-out,
+        content-visibility 0.25s allow-discrete;
+    }
+
+    .parcours .etape__plus[open]::details-content {
+      block-size: auto;
+    }
+  }
+
+  /* L'étape visée par une ancre s'annonce par un bref éclat de son liseré. */
+  @keyframes parcours-cible {
+    from {
+      border-left-color: var(--accent-3);
+    }
+
+    to {
+      border-left-color: var(--accent-1);
+    }
+  }
+
+  .parcours .etape:target .etape__texte {
+    animation: parcours-cible 1.2s ease-out;
+  }
+
+  @media (hover: hover) {
+    .vue-ensemble__lien:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0 var(--accent-1);
+    }
+
+    .parcours .etape:hover .illustration__cadre {
+      transform: translate(-2px, -2px);
+      box-shadow: calc(var(--ombre-dure) + 2px) calc(var(--ombre-dure) + 2px) 0 var(--accent-2);
+    }
+
+    .parcours .etape__exemple:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--accent-3);
+    }
+  }
+}
