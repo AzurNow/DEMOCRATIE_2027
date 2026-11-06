@@ -3,7 +3,12 @@
  *
  *   pnpm run:dry                    fixtures, écrit dans un répertoire temporaire neuf
  *   pnpm run:dry --sortie=<chemin>  fixtures, écrit sous <chemin> (relancer sur le même chemin reprend le run)
- *   pnpm run:dry --run=<répertoire> interroge le run gelé par `pnpm geler --sortie` (lot gel, PR 4)
+ *   pnpm run:dry --run=<répertoire> interroge le run gelé par `pnpm geler --simule` (lot gel, PR 4 ; D92 (c))
+ *
+ * `--run` exige `simule: true` dans le `run.json` du gel (D92 (c), `pipeline/run/simulation.ts:exigerGelSimule`,
+ * la garde de `pnpm notation:dry --run`) : un `run.json` sans `simule`, avec `simule: false`, illisible ou non
+ * conforme au schéma est refusé (`GelNonSimule`, `FichierDeRunRefuse`) avant toute écriture. Un vrai gel
+ * ne s'interroge pas ici.
  *
  * `--run` : périmètre, fenêtre, identifiant et questions tirées sont lus du gel, `tirage.json` et
  * `questions.json` vérifiés sur les empreintes que `run.json` déclare ; `statut: en_cours` est écrit
@@ -27,13 +32,14 @@
  *   renvoyée : la question attend l'opérateur.
  */
 
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { LigneBilan } from "../pipeline/interrogation/bilan.ts";
 import { CODE_RECUE_NON_STOCKEE, messageAttenteOperateur } from "../pipeline/interrogation/operateur.ts";
 import { lancerRunGeleSimule, lancerRunSimule, type ResultatRunSimule } from "../pipeline/interrogation/run-simule.ts";
 import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
+import { exigerGelSimule } from "../pipeline/run/simulation.ts";
 import { analyserArguments, type Arguments } from "./arguments.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
@@ -120,6 +126,9 @@ async function principal(): Promise<void> {
     finirRun(await lancerRunSimule({ sortie: sortieDemandee(sortie), fixtures: FIXTURES }), "");
     return;
   }
+  exigerHorsDeRuns(run);
+  // Sans run.json, `lancerRunGeleSimule` refuse en le nommant (`run_json_illisible`) ; la garde lit un run.json présent.
+  if (existsSync(join(run, "run.json"))) exigerGelSimule(run, "pnpm run:dry --run");
   const resultat = await lancerRunGeleSimule({ repertoire: run, profils: PROFILS_RUN_GELE, runs: RUNS_DU_DEPOT });
   finirRun(resultat, STATUT_DU_DEMARRAGE[resultat.demarrage]);
 }

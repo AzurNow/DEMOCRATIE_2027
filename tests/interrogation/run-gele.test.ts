@@ -87,6 +87,16 @@ function copie(): string {
   return repertoire;
 }
 
+/** Une copie dont `run.json` porte `simule: valeur` (ou n'en porte pas, si `undefined`) : la garde de D92 (c) de `pnpm run:dry --run`. */
+function copieMarquee(simule: unknown): string {
+  const repertoire = copie();
+  const run = JSON.parse(readFileSync(join(repertoire, "run.json"), "utf8")) as Record<string, unknown>;
+  if (simule === undefined) delete run["simule"];
+  else run["simule"] = simule;
+  writeFileSync(join(repertoire, "run.json"), `${JSON.stringify(run, null, 2)}\n`, "utf8");
+  return repertoire;
+}
+
 function texte(repertoire: string, fichier: string): string {
   return readFileSync(join(repertoire, fichier), "utf8");
 }
@@ -360,8 +370,8 @@ describe("run gelé, cas 7 : reprise d'un run en_cours", () => {
 });
 
 describe("run gelé, cas 8 : la ligne de commande", () => {
-  it("run gelé, cas 8 : --run=<répertoire> nominal ⇒ code 0, bilan imprimé, run.json en_cours", () => {
-    const repertoire = copie();
+  it("run gelé, cas 8 : --run=<répertoire> nominal (simule: true) ⇒ code 0, bilan imprimé, run.json en_cours", () => {
+    const repertoire = copieMarquee(true);
     const resultat = executerCommande(`--run=${repertoire}`);
     expect(resultat.stderr).toBe("");
     expect(resultat.status).toBe(0);
@@ -402,6 +412,43 @@ describe("run gelé, cas 8 : la ligne de commande", () => {
     expect(resultat.stderr).toContain("RunGeleRefuse");
     expect(resultat.stderr).toContain("run_json_illisible");
     expect(readdirSync(repertoire)).toEqual([]);
+  });
+
+  it("run gelé, cas 8 : D92 (c), run.json sans simule ⇒ refus GelNonSimule, ni run.json réécrit ni volume/ (aucune valeur par défaut)", () => {
+    const repertoire = copieMarquee(undefined);
+    const avant = texte(repertoire, "run.json");
+    const resultat = executerCommande(`--run=${repertoire}`);
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.stderr).toContain("GelNonSimule");
+    expect(resultat.stderr).toContain("simule: true");
+    expect(resultat.stdout).toBe("");
+    expect(texte(repertoire, "run.json")).toBe(avant);
+    expect(existsSync(join(repertoire, "volume"))).toBe(false);
+  });
+
+  it("run gelé, cas 8 : D92 (c), run.json avec simule: false (le schéma ne l'admet pas) ⇒ refus explicite, rien d'écrit", () => {
+    const repertoire = copieMarquee(false);
+    const avant = texte(repertoire, "run.json");
+    const resultat = executerCommande(`--run=${repertoire}`);
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.stderr).toContain("simule");
+    expect(resultat.stdout).toBe("");
+    expect(texte(repertoire, "run.json")).toBe(avant);
+    expect(existsSync(join(repertoire, "volume"))).toBe(false);
+  });
+
+  it("run gelé, cas 8 : D92 (c), run.json invalide au schéma ⇒ refus explicite, rien d'écrit", () => {
+    const repertoire = copieMarquee(true);
+    const run = json<Objet>(repertoire, "run.json");
+    delete run["perimetre"];
+    ecrireJson(repertoire, "run.json", run);
+    const avant = texte(repertoire, "run.json");
+    const resultat = executerCommande(`--run=${repertoire}`);
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.stderr).toContain("perimetre");
+    expect(resultat.stdout).toBe("");
+    expect(texte(repertoire, "run.json")).toBe(avant);
+    expect(existsSync(join(repertoire, "volume"))).toBe(false);
   });
 
   it("run gelé, cas 8 : --run et --sortie ensemble ⇒ refus nommé, rien d'écrit", () => {
