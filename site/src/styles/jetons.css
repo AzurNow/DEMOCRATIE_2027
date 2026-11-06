@@ -27,10 +27,8 @@
   --duree: 180ms;
   --courbe: cubic-bezier(0.2, 0.7, 0.2, 1);
   /* Décors d'arrière-plan : état atténué (sous le texte) et état d'entrée, jamais un décor plein. */
-  --decor-gris: 0.55;
-  --decor-opacite: 0.7;
-  --decor-gris-debut: 0.3;
-  --decor-opacite-debut: 0.9;
+  --decor-voile-marge: 1.5rem; /* largeur du fondu du voile posé sous le texte, sur les décors */
+  --decor-voile-densite: 85%; /* part du fond de section dans ce voile */
   --decalage-ancre: 0.5rem; /* marge au-dessus d'une cible d'ancre ; plus grande quand l'en-tête est collant */
 
   /* Thème clair. */
