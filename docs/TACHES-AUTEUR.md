@@ -11,6 +11,11 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ## 0. Fusions en attente
 
+- [ ] (2026-11-06) Trancher **D94**, **D95**, **D96** (jeu d'or : report du kappa, motif d'un juge
+      retiré au pilote, empreinte) et **D97** (clés de graine à écrire aux §7 et §8 ; la PR brouillon
+      **#359** reste rouge jusqu'à l'amendement).
+- [ ] (2026-11-06) Relire le texte nouveau du site (phrases-clés, « En bref », page `/exemple/`) et
+      le vérifier sur un vrai téléphone et une vraie tablette avant tout déploiement.
 - [ ] (2026-11-05) Trancher dans `docs/feuille-de-route.json` les décisions en attente : **D81**
       (§6, arbitrage des lectures de comparateur), **D82** (ABSENT dans le prompt de juge et l'écran
       humain, zone d'arrêt), **D83** (textes intégraux des pages citées hors du volume), **D85** et

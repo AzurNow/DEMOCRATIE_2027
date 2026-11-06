@@ -263,6 +263,12 @@ plutôt que supprimer.
 demandée, pas celle du disque. #189 compare après NFC et sans casse ; la règle n'est sûre que pour
 refuser, jamais pour admettre.
 
+**Vérifier le CSS construit, pas le CSS écrit.** Le 2026-11-06, le minificateur de la construction
+fusionnait `animation-timeline` dans le raccourci `animation:` ; le navigateur rejetait la déclaration
+entière, et l'apparition des sections et le bouton « Haut de page » ne tournaient plus depuis leur
+écriture, sources et tests verts. Trouvé par hasard par l'agent de la page `/exemple/` (#354) ;
+`tests/site/timeline-construite.test.ts` lit désormais `site/dist/`.
+
 ## Méthode
 
 **Quand un filet textuel se tait après une retouche, demander pourquoi.** Le 2026-11-05 (#336), le
@@ -552,3 +558,8 @@ le brief de la dette n° 1 demandait de refuser « une contestation présente au
 absente de `run.json` », soit l'inverse de D73 (2), pour qui une contestation portée par le commit
 gelé n'est jamais postérieure. L'agent a relu la décision, gardé le bon comportement et testé les
 deux sens ; un agent moins prudent aurait codé le refus et rendu le contrôle faux en vert.
+
+**Dans un brief d'agent lancé en parallèle, demander les tests ciblés et laisser la suite complète à
+la CI.** Le 2026-11-06, quatre agents ont lancé chacun `pnpm test` (~6 400 tests) en même temps : charge
+~40, aucune suite allée au bout, deux agents restés en attente de leur vitest d'arrière-plan à
+arrêter à la main. `pnpm check` et les fichiers touchés en local, la suite complète sous Node 22 en CI.
