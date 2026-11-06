@@ -4,7 +4,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -49,11 +49,16 @@ afterAll(() => {
   rmSync(resolve(gabarit, ".."), { recursive: true, force: true });
 });
 
+/** Une copie du gel dont `run.json` porte `simule: true` (D92 (c)) : `geler` sans `--simule` ne l'écrit pas. */
 function copie(): string {
   const parent = mkdtempSync(join(tmpdir(), "banc-stocker-"));
   temporaires.push(parent);
   const repertoire = join(parent, basename(gabarit));
   cpSync(gabarit, repertoire, { recursive: true });
+  const chemin = join(repertoire, "run.json");
+  const run = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown>;
+  run["simule"] = true;
+  writeFileSync(chemin, `${JSON.stringify(run, null, 2)}\n`, "utf8");
   return repertoire;
 }
 
@@ -157,5 +162,65 @@ describe("pnpm interrogation:stocker", () => {
     const resultat = commande();
     expect(resultat.status).toBe(2);
     expect(resultat.stderr).toContain("ArgumentsStockageRefuses");
+  });
+
+  describe("D92 (c) : le run.json du gel doit porter simule: true", () => {
+    type Objet = Record<string, unknown>;
+
+    function copieModifiee(modifier: (run: Objet) => void): { readonly repertoire: string; readonly avant: string } {
+      const repertoire = copie();
+      const chemin = join(repertoire, "run.json");
+      const run = JSON.parse(readFileSync(chemin, "utf8")) as Objet;
+      modifier(run);
+      writeFileSync(chemin, `${JSON.stringify(run, null, 2)}\n`, "utf8");
+      return { repertoire, avant: readFileSync(chemin, "utf8") };
+    }
+
+    function exigerRefusSansEcriture(repertoire: string, avant: string, ...attendus: readonly string[]): void {
+      const resultat = commande(`--run=${repertoire}`);
+      expect(resultat.status).toBe(2);
+      expect(resultat.stdout).toBe("");
+      for (const attendu of attendus) expect(resultat.stderr).toContain(attendu);
+      expect(readFileSync(join(repertoire, "run.json"), "utf8")).toBe(avant);
+      expect(existsSync(join(repertoire, "volume", "reponses"))).toBe(false);
+    }
+
+    it("gel simule: true : chemin inchangé, rien à faire, code 0", () => {
+      const repertoire = copie();
+      expect(JSON.parse(readFileSync(join(repertoire, "run.json"), "utf8")).simule).toBe(true);
+      const resultat = commande(`--run=${repertoire}`);
+      expect(resultat.status).toBe(0);
+      expect(resultat.stdout).toContain("Rien à faire");
+    });
+
+    it("simule absent : refus GelNonSimule, code 2, rien d'écrit", () => {
+      const { repertoire, avant } = copieModifiee((run) => {
+        delete run["simule"];
+      });
+      exigerRefusSansEcriture(repertoire, avant, "GelNonSimule", "simule: true");
+    });
+
+    it("simule: false (le schéma l'interdit) : refus, code 2, rien d'écrit", () => {
+      const { repertoire, avant } = copieModifiee((run) => {
+        run["simule"] = false;
+      });
+      exigerRefusSansEcriture(repertoire, avant, "simule");
+    });
+
+    it("run.json invalide au schéma : refus, code 2, rien d'écrit", () => {
+      const { repertoire, avant } = copieModifiee((run) => {
+        delete run["perimetre"];
+      });
+      exigerRefusSansEcriture(repertoire, avant, "perimetre");
+    });
+
+    it("run.json absent : refus nommé run_json_illisible conservé, rien d'écrit", () => {
+      const repertoire = copie();
+      rmSync(join(repertoire, "run.json"));
+      const resultat = commande(`--run=${repertoire}`);
+      expect(resultat.status).toBe(2);
+      expect(resultat.stderr).toContain("run_json_illisible");
+      expect(existsSync(join(repertoire, "volume", "reponses"))).toBe(false);
+    });
   });
 });

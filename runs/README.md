@@ -323,7 +323,8 @@ C'est ce journal qui fait tenir le plafond de trois tentatives du §6 après un 
   réception sans octets, relue comme une tentative interrompue ; des octets sans réception (volume
   plus ancien) sont refusés à l'opérateur sous `sans_metadonnees`. Une fois la cause corrigée,
   `pnpm interrogation:stocker --run=<répertoire> [--requete=<empreinte>]` relit octets et réception
-  et passe par le chemin de stockage du run : réponse obtenue à l'instant de réception d'origine,
+  et passe par le chemin de stockage du run (le `run.json` doit porter `simule: true`, D92 (c),
+  `exigerGelSimule` : sinon refus `GelNonSimule`, rien d'écrit) : réponse obtenue à l'instant de réception d'origine,
   ou, si l'adaptateur la classe en échec (503…), une ligne `echec` de la même tentative après
   `recue_non_stockee` — seul événement admis à cette place —, et la relance ordinaire la retente si
   le §6 le permet. Code 2 tant qu'une requête reste en attente (`outils/interrogation-stocker.ts`).
