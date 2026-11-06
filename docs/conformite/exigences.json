@@ -4443,7 +4443,7 @@
       "section": "7",
       "citation": "le test contrefactuel s'applique aussi à la comparaison entre outils, en renotant un sous-ensemble après permutation des noms d'outils dans le texte des réponses, principale trace de leur identité que voit le juge (section 11)",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "pipeline/notation/derangement-outils.ts:tirerDerangementOutils",
         "pipeline/notation/derangement-outils.ts:permuterNomsOutils",
@@ -4452,18 +4452,22 @@
         "pipeline/notation/reponse-contrefactuelle-outil.ts:reponseContrefactuelleOutil",
         "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils",
         "pipeline/notation/contrefactuel.ts:compterChangements",
-        "pipeline/notation/chaine.ts (contrefactuel d'outil : absence inscrite, ou non_joue derangement_tire_test_non_branche)"
+        "pipeline/notation/chaine.ts:jouerContrefactuelOutils",
+        "pipeline/notation/publication-contrefactuel-outils.ts:publierTermineOutils"
       ],
       "tests": [
         "tests/notation/derangement-outils.test.ts « un seul outil au run : dérangement impossible, refus nommé (jamais une identité) »",
         "tests/notation/derangement-outils.test.ts « une réponse qui nomme deux outils : les deux remplacés en une passe, jamais relus (A↔B donne B…A) »",
         "tests/notation/derangement-outils.test.ts « un libellé en sous-chaîne d'un autre mot n'est pas remplacé (mot entier) »",
         "tests/notation/derangement-outils.test.ts « moins de 200 réponses nommant un outil : toutes, et le sous-effectif est dit (comme pour les candidats) »",
-        "tests/notation/contrefactuel-outils.test.ts « 50 changements sur 200 (25 %) : taux publié, aucun champ de retrait ni d'échantillon »"
+        "tests/notation/contrefactuel-outils.test.ts « 50 changements sur 200 (25 %) : taux publié, aucun champ de retrait ni d'échantillon »",
+        "tests/notation/chaine-contrefactuel-outils-joue.test.ts « dérangement tiré avec au moins une réponse éligible ⇒ test joué : copies permutées, paires des deux juges, taux de chacun inscrit, valide au schéma ; le juge ne reçoit jamais l'identité de l'outil »",
+        "tests/notation/chaine-contrefactuel-outils-joue.test.ts « refus de l'API (D32, D33) : jamais au sous-ensemble, aucune copie permutée n'en dérive »",
+        "tests/notation/publication-contrefactuel-outils.test.ts « deux juges mesurés : taux, effectifs et paires écartées de chacun, tirage rejouable ; valide au schéma »"
       ],
-      "lot": "notation",
+      "lot": null,
       "constat": null,
-      "note": "Domaine fait et testé ; depuis D75 (7) et D84 la chaîne lit libellés et éditeurs du gel et inscrit l'absence du test (outils_du_meme_editeur, comparateur_du_meme_editeur, moins_de_deux_outils). Quand le dérangement est tiré, le test n'est pas joué : la chaîne rend non_joue, motif derangement_tire_test_non_branche, et rien n'est écrit (D90, en cours hors de main)."
+      "note": "Domaine fait et testé ; la chaîne lit libellés et éditeurs du gel (D84), inscrit l'absence du test, et depuis D90 (#342) joue le test quand le dérangement est tiré : copies permutées notées par les juges non retirés, bloc terminé dans run.json#/contrefactuel_outils. Recoupé par le contrôle croisé n° 18 (controle-croise-outils.ts)."
     },
     {
       "id": "§7.28",
@@ -9972,35 +9976,41 @@
       "section": "7",
       "citation": "Comme pour l'échantillon, un refus de l'API, noté sans juge, n'entre pas dans l'accord juge-humain du jeu d'or, et une question d'attribution qu'un juge renvoie à un humain, faute que la règle en détermine la note, n'entre pas dans le kappa de ce juge ; leur nombre est publié.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "analysis/kappa-jeu-or.ts:kappasJeuOr"
+        "analysis/kappa-jeu-or.ts:kappasJeuOr",
+        "analysis/kappa-jeu-or.ts:inscriptionsJeuOr",
+        "pipeline/notation/inscription-jeu-or.ts:inscrireJeuOr"
       ],
       "tests": [
         "tests/analysis/kappa-jeu-or.test.ts « refus de l'API : hors du kappa de chaque juge, compté une fois pour le jeu d'or »",
-        "tests/analysis/kappa-jeu-or.test.ts « Q-ATT renvoyée par un juge : hors du kappa de CE juge seulement, comptée pour lui »"
+        "tests/analysis/kappa-jeu-or.test.ts « Q-ATT renvoyée par un juge : hors du kappa de CE juge seulement, comptée pour lui »",
+        "tests/notation/inscription-jeu-or.test.ts « refus de l'API et renvoi d'un juge : écartés du kappa et comptés (§7, D59 (20)) »"
       ],
-      "lot": "notation",
+      "lot": null,
       "constat": null,
-      "note": "0.24 (D59 (20)). Calcul testé ; publication absente (§7.22 ; D89, en cours)."
+      "note": "0.24 (D59 (20)). Calcul testé ; depuis D89 (#340), pnpm kappa:jeu-or publie refus_api et renvois_ecartes dans comptes_jeu_or de chaque juge retenu (run.json)."
     },
     {
       "id": "§7.66",
       "section": "7",
       "citation": "Un kappa du jeu d'or qui ne porte sur aucune réponse comparable est publié absent, avec ce motif.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "analysis/kappa-jeu-or.ts:kappasJeuOr",
-        "analysis/kappa-categorie-primaire.ts:kappaCategoriePrimaire"
+        "analysis/kappa-categorie-primaire.ts:kappaCategoriePrimaire",
+        "analysis/kappa-jeu-or.ts:inscriptionsJeuOr",
+        "pipeline/notation/inscription-jeu-or.ts:inscrireJeuOr"
       ],
       "tests": [
         "tests/analysis/kappa-jeu-or.test.ts « aucune réponse commune (jeu d'or vide) : aucune_reponse_comparable, jamais 0 ni 1 »",
-        "tests/analysis/kappa-jeu-or.test.ts « jeu d'or composé uniquement de refus : aucune réponse comparable, chaque kappa et la paire absents avec ce motif »"
+        "tests/analysis/kappa-jeu-or.test.ts « jeu d'or composé uniquement de refus : aucune réponse comparable, chaque kappa et la paire absents avec ce motif »",
+        "tests/notation/inscription-jeu-or.test.ts « jeu d'or sans réponse comparable (tout refus de l'API) : motif aucune_reponse_comparable, comparees = 0 »"
       ],
-      "lot": "notation",
+      "lot": null,
       "constat": null,
-      "note": "0.24 (D59 (20)). Calcul testé ; publication absente (§7.22 ; D89, en cours)."
+      "note": "0.24 (D59 (20)). Calcul testé ; depuis D89 (#340), pnpm kappa:jeu-or publie le kappa absent avec motif_indefini_kappa_juge_humain dans run.json."
     },
     {
       "id": "§7.67",
@@ -10155,18 +10165,25 @@
       "section": "7",
       "citation": "Seuls les juges non retirés au test des candidats sont mesurés. […] Le taux de changement est publié ; c'est un diagnostic, qui ne retire aucun juge.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils"
+        "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils",
+        "pipeline/notation/chaine.ts:jouerContrefactuelOutils",
+        "pipeline/notation/publication-contrefactuel-outils.ts:publierTermineOutils",
+        "pipeline/notation/controle-croise-outils.ts:violationsContrefactuelOutils"
       ],
       "tests": [
         "tests/notation/contrefactuel-outils.test.ts « un juge déjà retiré au test des candidats : seul le juge restant est mesuré ; une notation du retiré est refusée »",
         "tests/notation/contrefactuel-outils.test.ts « 50 changements sur 200 (25 %) : taux publié, aucun champ de retrait ni d'échantillon »",
-        "tests/notation/contrefactuel-outils.test.ts « les deux juges au-delà de 3 % : le run reste valide, le test est terminé »"
+        "tests/notation/contrefactuel-outils.test.ts « les deux juges au-delà de 3 % : le run reste valide, le test est terminé »",
+        "tests/notation/chaine-contrefactuel-outils-joue.test.ts « juge retiré au test des candidats ⇒ seul le juge restant est appelé et mesuré ; le retiré est publié non mesuré, sans taux »",
+        "tests/notation/chaine-contrefactuel-outils-joue.test.ts « le test d'outil ne change rien à la masse : mêmes verdicts, octet pour octet, que sur le même run au test d'outil absent »",
+        "tests/notation/publication-contrefactuel-outils.test.ts « juge retiré au test des candidats : publié non mesuré, sans taux ni effectifs ; l'autre mesuré ; valide au schéma »",
+        "tests/notation/controle-croise-contrefactuel-outils.test.ts « juge retiré au test des candidats mais mesuré au test d'outil ⇒ mesure_contrefactuel_outils_incoherente »"
       ],
-      "lot": "notation",
+      "lot": null,
       "constat": null,
-      "note": "Citation recoupée autour de la phrase insérée en 0.33 (§7.86). Juges mesurés et absence de retrait testés au domaine ; le taux n'est publié par aucune chaîne (D90, en cours)."
+      "note": "Citation recoupée autour de la phrase insérée en 0.33 (§7.86). Depuis D90 (#342), le taux de chaque juge mesuré est publié dans run.json#/contrefactuel_outils, le juge retiré y figure avec motif_non_mesure ; aucun retrait, la masse est inchangée. Le contrôle croisé n° 18 recoupe retire ⇔ motif_non_mesure."
     },
     {
       "id": "§7.76",
@@ -11608,18 +11625,23 @@
       "section": "7",
       "citation": "Comme au test des candidats, une paire dont un côté au moins est renvoyé à un humain par un juge, quel que soit le motif du renvoi, est écartée du numérateur et du dénominateur du taux de ce juge, et leur nombre est publié.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils"
+        "pipeline/notation/contrefactuel-outils.ts:testerContrefactuelOutils",
+        "pipeline/notation/publication-contrefactuel-outils.ts:publierTermineOutils",
+        "pipeline/notation/controle-croise-outils.ts:violationsContrefactuelOutils"
       ],
       "tests": [
         "tests/notation/contrefactuel-outils.test.ts « D75 (2) cas 1 : renvoi d'un seul juge sur la réponse d'origine : hors numérateur et dénominateur de ce juge, l'autre juge garde la paire »",
         "tests/notation/contrefactuel-outils.test.ts « D75 (2) cas 1 bis : renvoi d'un juge défaillant sur la copie permutée, quel que soit le motif : même règle »",
-        "tests/notation/contrefactuel-outils.test.ts « D75 (2) cas 2 : renvoi des deux juges sur la même réponse : la paire sort du taux de chacun, comptée écartée chez chacun »"
+        "tests/notation/contrefactuel-outils.test.ts « D75 (2) cas 2 : renvoi des deux juges sur la même réponse : la paire sort du taux de chacun, comptée écartée chez chacun »",
+        "tests/notation/chaine-contrefactuel-outils-joue.test.ts « renvoi à un humain (D31) sur un côté ⇒ paire écartée du taux de ce juge seul, et comptée ; l'autre juge la garde »",
+        "tests/notation/chaine-contrefactuel-outils-joue.test.ts « renvois sur toutes les paires d'un juge ⇒ son taux est absent avec toutes_paires_ecartees, jamais 0 % »",
+        "tests/notation/controle-croise-contrefactuel-outils.test.ts « dénominateur + paires écartées ≠ taille du sous-ensemble ⇒ denominateur_contrefactuel_outils_incoherent, nommé par juge »"
       ],
-      "lot": "notation",
+      "lot": null,
       "constat": null,
-      "note": "Ajoutée en 0.33 (D75 (2)). Règle de calcul testée ; « leur nombre est publié » attend le branchement du test joué (D90, en cours)."
+      "note": "Ajoutée en 0.33 (D75 (2)). Règle de calcul testée ; depuis D90 (#342), paires_ecartees de chaque juge mesuré publié dans run.json#/contrefactuel_outils, 0 compris ; le contrôle croisé n° 18 recoupe dénominateur + écartées = taille."
     },
     {
       "id": "§7.87",

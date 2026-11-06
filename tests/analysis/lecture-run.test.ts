@@ -31,6 +31,7 @@ import { GitInaccessible } from "../../outils/executer-git.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
 import { requetesDuPlanDuRun } from "../../pipeline/interrogation/plan-du-run.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
+import { contrefactuelOutilsDuRun } from "../../pipeline/notation/controle-croise-outils.ts";
 import { echantillonHumainDuRun, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import { commiterTout } from "../aides/depot.ts";
 import { ecrireJson, ITEM_P, poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
@@ -445,6 +446,7 @@ describe("9. aller-retour : écrire, relire, assembler", () => {
       textes: new Map(entrees.reponses.flatMap((r) => (r.normalise === undefined ? [] : [[r.id, r.normalise.texte] as const]))),
       notations,
       verdicts: lireVerdicts(run.repertoire_run, runLu.id),
+      contrefactuel_outils: contrefactuelOutilsDuRun(runLu, reponses_contrefactuelles),
     });
     expect(violations).toEqual([]);
   });

@@ -31,7 +31,10 @@ export interface JugeAuBilan {
   /** Absent tant que le test n'est pas inscrit, ou s'il est indéfini. */
   readonly changements_contrefactuel?: ChangementsContrefactuel;
   readonly notations_run: number;
+  /** Notations de contexte `contrefactuel_candidat` (test des candidats). */
   readonly notations_contrefactuel: number;
+  /** D90 : notations de contexte `contrefactuel_outil` (test d'outil) ; 0 pour un juge non mesuré. */
+  readonly notations_contrefactuel_outil: number;
 }
 
 export interface BilanNotation {
@@ -131,6 +134,7 @@ export function bilanNotation(repertoire_run: string, resultat: ResultatChaine, 
       ...(juge.changements_contrefactuel === undefined ? {} : { changements_contrefactuel: juge.changements_contrefactuel }),
       notations_run: notations.filter((n) => n.notateur.id === juge.juge_id && n.contexte === "run").length,
       notations_contrefactuel: notations.filter((n) => n.notateur.id === juge.juge_id && n.contexte === "contrefactuel_candidat").length,
+      notations_contrefactuel_outil: notations.filter((n) => n.notateur.id === juge.juge_id && n.contexte === "contrefactuel_outil").length,
     })),
     reponses_obtenues: reponses_obtenues.length,
     verdicts: verdicts.length,

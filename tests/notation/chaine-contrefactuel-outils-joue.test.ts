@@ -14,12 +14,14 @@ import { cpSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { dispositionRunNote, lireRunJson } from "../../analysis/lecture-run.ts";
+import { bilanNotation } from "../../pipeline/notation/bilan-notation.ts";
 import { noterRun, type ReponseANoter, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
 import type { ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
 import { JugeDefaillant, type Juge } from "../../pipeline/notation/juge.ts";
 import { environnementSimule, preparerNotationSimulee, type ParametresNotationSimulee, type RunSimulePrepare } from "../../pipeline/notation/notation-simulee.ts";
 import type { BlocContrefactuelOutilsTermine } from "../../pipeline/notation/publication-contrefactuel-outils.ts";
+import { executerOutil } from "../aides/depot.ts";
 import { ecrireJson } from "./run-fictif.ts";
 import { avecBiais, contenus, enregistreurs, instantane, nettoyerSorties, nouvelleSortie, options, parametresDeReference, type Appel } from "./simulation.ts";
 
@@ -84,8 +86,12 @@ function objetsDu(dossier: string): readonly Objet[] {
   return readdirSync(dossier).sort().map((fichier) => JSON.parse(readFileSync(join(dossier, fichier), "utf8")) as Objet);
 }
 
+function sousContexte(dossier: string, contexte: string): readonly Objet[] {
+  return objetsDu(dossier).filter((objet) => objet["contexte"] === contexte);
+}
+
 function sousContexteOutil(dossier: string): readonly Objet[] {
-  return objetsDu(dossier).filter((objet) => objet["contexte"] === "contrefactuel_outil");
+  return sousContexte(dossier, "contrefactuel_outil");
 }
 
 function termine(resultat: ResultatChaine): BlocContrefactuelOutilsTermine {
@@ -229,6 +235,40 @@ describe("D90 : le contrefactuel d'outil joué par la chaîne", () => {
     expect(notations).toHaveLength(taille);
     expect(notations.every((notation) => (notation["notateur"] as { id: string }).id === "juge-simule-a")).toBe(true);
     expect(appels.filter((appel) => appel.juge_id === "juge-simule-b" && appel.charge.reponse.texte.includes(LIBELLE_BETA))).toEqual([]);
+  });
+
+  it("bilan : les notations contrefactuel_outil sont comptées par juge, la taille pour le juge mesuré, 0 pour le juge retiré au test des candidats", async () => {
+    const prepare = await preparer();
+    const taille = eligibles(prepare.reponses).length;
+    const resultat = await noter(prepare, avecBiais({ "juge-simule-b": BIAIS_BETA }));
+    const bilan = bilanNotation(prepare.repertoire_run, resultat, prepare.reponses.map((r) => r.reponse.id));
+
+    const [a, b] = bilan.juges;
+    expect(a).toMatchObject({ juge_id: "juge-simule-a", retire: false, notations_contrefactuel_outil: taille });
+    expect(b).toMatchObject({ juge_id: "juge-simule-b", retire: true, notations_contrefactuel_outil: 0 });
+    // Le compte des candidats reste séparé : aucune notation d'outil n'y entre.
+    const candidats = sousContexte(dispositionRunNote(prepare.repertoire_run).notations, "contrefactuel_candidat");
+    for (const juge of bilan.juges) {
+      expect(juge.notations_contrefactuel).toBe(candidats.filter((notation) => (notation["notateur"] as { id: string }).id === juge.juge_id).length);
+    }
+  });
+
+  it("contrôle croisé n° 18 : le test d'outil terminé passe pnpm notation:controle ; un bloc retouché y est vu", async () => {
+    const prepare = await preparer();
+    termine(await noter(prepare));
+    const propre = executerOutil("notation-controle.ts", [prepare.repertoire_run]);
+    expect(propre.sortie).toContain("aucune violation");
+    expect(propre.status).toBe(0);
+
+    // Une paire écartée de plus au premier juge : le schéma l'accepte, le contrôle croisé non.
+    const chemin = dispositionRunNote(prepare.repertoire_run).run_json;
+    const run = JSON.parse(readFileSync(chemin, "utf8")) as Objet & { contrefactuel_outils: { juges: { paires_ecartees: number }[] } };
+    const [premier, ...autres] = run.contrefactuel_outils.juges;
+    if (premier === undefined) throw new Error("juge attendu au bloc");
+    ecrireJson(chemin, { ...run, contrefactuel_outils: { ...run.contrefactuel_outils, juges: [{ ...premier, paires_ecartees: premier.paires_ecartees + 1 }, ...autres] } });
+    const retouche = executerOutil("notation-controle.ts", [prepare.repertoire_run]);
+    expect(retouche.status).toBe(1);
+    expect(retouche.erreur).toContain("denominateur_contrefactuel_outils_incoherent");
   });
 
   it("déterminisme : même graine ⇒ même sous-ensemble, mêmes copies permutées, même bloc", async () => {

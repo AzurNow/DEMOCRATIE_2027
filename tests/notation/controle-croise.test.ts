@@ -46,7 +46,7 @@ function runPropre(run: RunDeNotation): EntreeControleCroise {
     if (decision.statut !== "verdict") throw new Error(`réponse ${id} en attente`);
     verdicts.push(valider<VerdictProduit>("verdict", decision.verdict, `verdict ${id}`));
   }
-  return { run, reponses_obtenues: REPONSES, refus_api: [], textes: new Map(REPONSES.map((id) => [id, REPONSE_PROJETEE])), notations, verdicts };
+  return { run, reponses_obtenues: REPONSES, refus_api: [], textes: new Map(REPONSES.map((id) => [id, REPONSE_PROJETEE])), notations, verdicts, contrefactuel_outils: null };
 }
 
 function codes(entree: EntreeControleCroise): readonly string[] {
