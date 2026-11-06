@@ -40,6 +40,7 @@
     "diagnostics": "node --experimental-strip-types outils/diagnostics.ts",
     "notation:controle": "node --experimental-strip-types outils/notation-controle.ts",
     "notation:dry": "node --experimental-strip-types outils/notation-dry.ts",
+    "kappa:jeu-or": "node --experimental-strip-types outils/kappa-jeu-or.ts",
     "analyze": "node --experimental-strip-types outils/analyze.ts",
     "recalcul-b": "node --experimental-strip-types outils/recalcul-b.ts",
     "contestations-posterieures": "node --experimental-strip-types outils/contestations-posterieures.ts",
