@@ -1,3 +1,4 @@
+import type { BilanAvertissements } from "./avertissements.ts";
 import { formaterErreur } from "./erreurs.ts";
 import type { ConformiteSchema } from "./meta.ts";
 import type { RapportValidation, ResultatExemple } from "./validation.ts";
@@ -40,12 +41,19 @@ function imprimerConformiteMetaSchema(conformites: readonly ConformiteSchema[]):
   return toutesConformes;
 }
 
-function imprimerAvertissementsStrict(avertissementsStrict: readonly string[]): void {
-  if (avertissementsStrict.length === 0) return;
+/** Imprime le bilan par catégorie ; retourne `false` si une catégorie admise n'a plus d'occurrence. */
+function imprimerAvertissementsStrict(bilan: BilanAvertissements): boolean {
+  const detail = [...bilan.comptes].map(([code, compte]) => `${code} ${compte}`).join(", ");
   process.stdout.write(
-    `ajv strict: "log" — ${avertissementsStrict.length} avertissements de style ignorés ` +
-      `(docs/DETTE.md, décision du 2026-09-18 sur strict: "log") ; sans effet sur le résultat ci-dessus.\n`,
+    `ajv strict: "log" — ${bilan.total} avertissements, tous dans les catégories admises ` +
+      `(${detail}) ; sans effet sur le résultat ci-dessus.\n`,
   );
+  for (const code of bilan.sansOccurrence) {
+    process.stdout.write(
+      `[ECHEC] catégorie d'avertissement admise sans occurrence : ${code} (à retirer de outils/schemas/avertissements.ts)\n`,
+    );
+  }
+  return bilan.sansOccurrence.length === 0;
 }
 
 /**
@@ -55,7 +63,7 @@ function imprimerAvertissementsStrict(avertissementsStrict: readonly string[]): 
 export function imprimerRapport(
   rapport: RapportValidation,
   conformites: readonly ConformiteSchema[],
-  avertissementsStrict: readonly string[],
+  bilanStrict: BilanAvertissements,
 ): boolean {
   const metaConforme = imprimerConformiteMetaSchema(conformites);
   for (const resultat of rapport.resultats) imprimerLigneResultat(resultat);
@@ -64,7 +72,7 @@ export function imprimerRapport(
   const reussis = rapport.resultats.filter((resultat) => resultat.reussi).length;
   const total = rapport.resultats.length;
   process.stdout.write(`\n${reussis}/${total} exemples conformes à l'attendu du manifeste.\n`);
-  imprimerAvertissementsStrict(avertissementsStrict);
+  const avertissementsConformes = imprimerAvertissementsStrict(bilanStrict);
 
-  return metaConforme && reussis === total && rapport.fichiersOrphelins.length === 0;
+  return metaConforme && avertissementsConformes && reussis === total && rapport.fichiersOrphelins.length === 0;
 }
