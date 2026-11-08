@@ -14,6 +14,19 @@ import type { Decision, DecisionTranchee, FeuilleDeRoute, Jalon, Lot, Niveau } f
 
 const NIVEAUX: readonly Niveau[] = ["T0", "T1", "T2", "T3", "T4"];
 
+/**
+ * Cellule unique de tous les tableaux : une barre verticale scinderait la ligne en colonnes
+ * supplémentaires, on l'échappe en `\|`. Une barre déjà précédée d'une barre oblique inverse
+ * (`\|`) reste `\|` : la barre oblique n'est pas ré-échappée, l'opération est idempotente.
+ */
+export function cellule(texte: string): string {
+  return texte.replace(/\\?\|/g, "\\|");
+}
+
+function ligneTableau(colonnes: readonly string[]): string {
+  return `| ${colonnes.map(cellule).join(" | ")} |`;
+}
+
 function genererEntete(feuille: FeuilleDeRoute): string {
   return [
     "# Feuille de route — Banc d'essai 2027",
@@ -127,7 +140,7 @@ function genererLigneLot(lot: Lot, etats: ReadonlyMap<string, EtatLot>): string 
     String(lot.temps_auteur_h),
     texteDependances(lot),
   ];
-  return `| ${colonnes.join(" | ")} |`;
+  return ligneTableau(colonnes);
 }
 
 function genererTableauLots(feuille: FeuilleDeRoute, etats: ReadonlyMap<string, EtatLot>): string {
@@ -151,7 +164,7 @@ function genererTableauJalons(feuille: FeuilleDeRoute): string {
   const lignes = [
     "| Jalon | Date | Titre | Critère |",
     "| --- | --- | --- | --- |",
-    ...trierJalons(feuille.jalons).map((jalon) => `| ${jalon.id} | ${jalon.date} | ${jalon.titre} | ${jalon.critere} |`),
+    ...trierJalons(feuille.jalons).map((jalon) => ligneTableau([jalon.id, jalon.date, jalon.titre, jalon.critere])),
   ];
   return lignes.join("\n");
 }
@@ -173,7 +186,7 @@ function genererEchelle(feuille: FeuilleDeRoute): string {
     "",
     "| Niveau | Définition |",
     "| --- | --- |",
-    ...NIVEAUX.map((niveau) => `| ${niveau} | ${feuille.echelle[niveau]} |`),
+    ...NIVEAUX.map((niveau) => ligneTableau([niveau, feuille.echelle[niveau]])),
   ];
   return lignes.join("\n");
 }
