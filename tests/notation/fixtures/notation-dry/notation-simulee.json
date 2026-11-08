@@ -1,5 +1,5 @@
 {
-  "$comment": "Notation simulée de `pnpm notation:dry` (pipeline/notation/notation-simulee.ts). Les juges sont ceux que déclare run.json, à l'identité près ; leur prompt est simule://juge-simule@1.0.0, aucun fichier de prompts/. La répartition donne le poids entier de chaque scénario de juge-simule.ts:REGLES_JUGE_SIMULE ; le scénario d'une réponse est tiré avec la graine. Aucun biais : le test contrefactuel ne retire aucun juge sur le run de référence. La table des existences donne le verdict du test HTTP de chaque lien que l'éditeur simulé cite ; un lien absent de la table laisse sa réponse en attente du test des liens. Le seul lien que cite l'éditeur simulé est déclaré mort : le scénario « exacte » du juge simulé le dit soutenant, et la chaîne note ce soutien non_applicable (D19, §7 : un lien mort ne soutient jamais rien) ; pnpm notation:dry exerce ainsi le forçage de bout en bout. run.json porte des commits à zéro : un run simulé ne lit ni le code ni data/ à un commit (ses items sont dans items/, épinglés par empreinte). Modifié ouvertement (lot charge-juge-v3, D27) : textes_copies, la table des textes extraits des copies conservées, par empreinte de copie, est ajoutée ; elle est vide, le seul lien cité étant mort (aucune copie, la charge dit lien_mort). Le tirage.json posé à côté (réponse attendue et prémisse résolues au gel par pipeline/questions/reponse-attendue.ts) donne à ses trois entrées le thème fiscalite_pouvoir_achat, faute de mesure dans les fixtures : le thème n'est pas lu par la notation ; run.json porte son empreinte. Modifié ouvertement (D32) : un refus de l'API n'est plus soumis aux juges, la chaîne le note par règle ; la table des refus (accord 1, extrait_invalide 1) est retirée, et la table ordinaire devient la répartition commune, inchangée. Le scénario extrait_invalide, que seule la table des refus portait, passe dans repartition_par_item, la table propre à l'item 1G4D9N2P3Q5R6S7T8V9W0X1Y2Z (la question simulée 2, dont l'item ne nomme aucun candidat) : un extrait invalide est un changement au test contrefactuel (D16 (2)), et ces réponses n'entrent jamais dans son sous-ensemble (D14 (2)), comme les refus avant elles. pnpm notation:dry exerce ainsi encore l'extrait invalide.",
+  "$comment": "Notation simulée de `pnpm notation:dry` (pipeline/notation/notation-simulee.ts). Les juges sont ceux que déclare run.json, à l'identité près ; leur prompt est simule://juge-simule@1.0.0, aucun fichier de prompts/. La répartition donne le poids entier de chaque scénario de juge-simule.ts:REGLES_JUGE_SIMULE ; le scénario d'une réponse est tiré avec la graine. Aucun biais : le test contrefactuel ne retire aucun juge sur le run de référence. La table des existences donne le verdict du test HTTP de chaque lien que l'éditeur simulé cite ; un lien absent de la table laisse sa réponse en attente du test des liens. L'éditeur simulé cite deux liens (editeur-simule.ts:LIEN_SIMULE_MORT, LIEN_SIMULE_EXISTANT) : le premier est déclaré mort : le scénario « exacte » du juge simulé le dit soutenant, et la chaîne note ce soutien non_applicable (D19, §7 : un lien mort ne soutient jamais rien) ; pnpm notation:dry exerce ainsi le forçage de bout en bout ; le second existe (copie conservée, texte extrait ci-dessous) : le scénario « exacte » le dit soutenant, et la chaîne le retient (sourcage_retenu vrai, DETTE 2026-10-06 n° 3, réglé le 2026-11-08). run.json porte des commits à zéro : un run simulé ne lit ni le code ni data/ à un commit (ses items sont dans items/, épinglés par empreinte). Modifié ouvertement (lot charge-juge-v3, D27) : textes_copies, la table des textes extraits des copies conservées, par empreinte de copie, est ajoutée ; elle ne porte que la copie du lien existant (le lien mort n'a aucune copie, la charge dit lien_mort). Le tirage.json posé à côté (réponse attendue et prémisse résolues au gel par pipeline/questions/reponse-attendue.ts) donne à ses trois entrées le thème fiscalite_pouvoir_achat, faute de mesure dans les fixtures : le thème n'est pas lu par la notation ; run.json porte son empreinte. Modifié ouvertement (D32) : un refus de l'API n'est plus soumis aux juges, la chaîne le note par règle ; la table des refus (accord 1, extrait_invalide 1) est retirée, et la table ordinaire devient la répartition commune, inchangée. Le scénario extrait_invalide, que seule la table des refus portait, passe dans repartition_par_item, la table propre à l'item 1G4D9N2P3Q5R6S7T8V9W0X1Y2Z (la question simulée 2, dont l'item ne nomme aucun candidat) : un extrait invalide est un changement au test contrefactuel (D16 (2)), et ces réponses n'entrent jamais dans son sous-ensemble (D14 (2)), comme les refus avant elles. pnpm notation:dry exerce ainsi encore l'extrait invalide.",
   "date_notation": "2026-12-04T10:00:00+01:00",
   "juge_simule": {
     "graine": 20261204,
@@ -18,7 +18,20 @@
       "verdict_existence": "mort",
       "code_http": 404,
       "date_test": "2026-12-04T09:00:00+01:00"
+    },
+    {
+      "url_citee": "https://source-simulee.invalid/page-existante",
+      "verdict_existence": "existe",
+      "code_http": 200,
+      "date_test": "2026-12-04T09:00:00+01:00",
+      "sha256_contenu": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
     }
   ],
-  "textes_copies": []
+  "textes_copies": [
+    {
+      "sha256_contenu": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "issue": "extrait",
+      "texte": "Texte simulé de la page conservée : aucun contenu réel."
+    }
+  ]
 }

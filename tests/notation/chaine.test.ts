@@ -17,6 +17,7 @@ import { identifiantDerive, JugesNonConformes, noterRun, RunInvalideRefuse, type
 import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import { renvoiJuge } from "./fabriques.ts";
+import { LIEN_SIMULE_EXISTANT } from "../../pipeline/interrogation/editeur-simule.ts";
 import { SEUIL_RETRAIT } from "../../analysis/parametres-protocole.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { contrefactuelOutilsDuRun } from "../../pipeline/notation/controle-croise-outils.ts";
@@ -558,21 +559,40 @@ describe("D27 : la charge v3 reçue par le juge dans la chaîne", () => {
     }
   });
 
-  it("le lien mort du run de référence arrive sans texte, raison lien_mort", async () => {
+  const PAGE_EXISTANTE = expect.objectContaining({ url_citee: LIEN_SIMULE_EXISTANT, texte_disponible: true, origine: "page_conservee", tronque: false });
+
+  it("le lien mort du run de référence arrive sans texte, raison lien_mort (D19) ; le lien existant arrive avec sa page conservée", async () => {
     const appels: Appel[] = [];
     await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
     const avecLien = appels.filter((a) => a.charge.reponse.liens.length > 0);
     expect(avecLien.length).toBeGreaterThan(0);
-    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([{ url_citee: LIEN_SIMULE, texte_disponible: false, raison: "lien_mort" }]);
+    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([{ url_citee: LIEN_SIMULE, texte_disponible: false, raison: "lien_mort" }, PAGE_EXISTANTE]);
+  });
+
+  it("DETTE n° 3 : un lien existant et soutenant est parcouru de bout en bout, sourcage_retenu vrai ; le lien mort ne soutient jamais (D19)", async () => {
+    const execution = await noter(nouvelleSortie(), parametresDeReference());
+    const { repertoire_run } = execution.prepare;
+    const notations = lireNotationsDuRun(repertoire_run, execution.resultat.run_id).notations;
+    const liens = notations.flatMap((n) => n.sourcage.liens);
+    const soutenantsVivants = liens.filter((l) => l.url_citee === LIEN_SIMULE_EXISTANT && l.verdict_existence === "existe" && l.verdict_soutien === "soutient");
+    // Si plus aucun lien existant et soutenant n'est parcouru, ce test échoue : le chemin n'est plus exercé.
+    expect(soutenantsVivants.length).toBeGreaterThan(0);
+    expect(liens.filter((l) => l.url_citee === LIEN_SIMULE && l.verdict_existence === "mort").length).toBeGreaterThan(0);
+    const morts = liens.filter((l) => l.verdict_existence === "mort");
+    expect(morts.some((l) => l.verdict_soutien === "non_applicable")).toBe(true);
+    for (const lien of morts) expect(lien.verdict_soutien).not.toBe("soutient");
+    const verdicts = lireVerdicts(repertoire_run, execution.resultat.run_id);
+    expect(verdicts.filter((v) => v.sourcage_retenu.au_moins_un_lien_soutenant).length).toBeGreaterThan(0);
+    for (const v of verdicts.filter((v) => v.sourcage_retenu.au_moins_un_lien_soutenant)) expect(v.sourcage_retenu).toEqual({ cite: true, au_moins_un_lien_existant: true, au_moins_un_lien_soutenant: true });
   });
 
   it("une page conservée dont le texte est extrait arrive dans la charge, avec son empreinte", async () => {
     const appels: Appel[] = [];
-    const parametres = { ...existeAvecCopie(parametresDeReference()), textes_copies: [{ sha256_contenu: SHA_COPIE, issue: "extrait" as const, texte: "Texte simulé de la page citée." }] };
+    const parametres = { ...existeAvecCopie(parametresDeReference()), textes_copies: [...parametresDeReference().textes_copies, { sha256_contenu: SHA_COPIE, issue: "extrait" as const, texte: "Texte simulé de la page citée." }] };
     await noter(nouvelleSortie(), parametres, (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
     const avecLien = appels.filter((a) => a.charge.reponse.liens.length > 0);
     expect(avecLien.length).toBeGreaterThan(0);
-    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([expect.objectContaining({ url_citee: LIEN_SIMULE, texte_disponible: true, origine: "page_conservee", texte: "Texte simulé de la page citée.", tronque: false })]);
+    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([expect.objectContaining({ url_citee: LIEN_SIMULE, texte_disponible: true, origine: "page_conservee", texte: "Texte simulé de la page citée.", tronque: false }), PAGE_EXISTANTE]);
   });
 
   it("une page conservée sans texte extrait : la réponse attend le test des liens, jamais notée sur un texte vide", async () => {
