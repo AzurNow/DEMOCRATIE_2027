@@ -1362,7 +1362,7 @@ ajouter un test d'accord entre `config/perimetre.yaml` et `ParametresTirage`.
 
 ## 2026-09-25 — Protocole 0.8 et conformité n° 9 : le kappa lit la contestation au calcul (`validation/domaine/analyse-lot.ts`, `docs/PROTOCOLE.md` 0.8)
 
-### 1. Un item du lot absent du staging sort du kappa sans signal — *moyenne*
+### ~~1. Un item du lot absent du staging sort du kappa sans signal~~ — réglé le 2026-11-08 par `absents_du_staging` (`analyse-lot.ts:diagnostiquerLot`, repris dans le diagnostic publié et `diagnostic-lot.schema.json`), kappa et dénominateur inchangés ; la lecture de `data/` était déjà faite par les appelants (`itemsEffectifs`)
 
 `analyse-lot.ts:apparier` écarte sans bruit un item du lot qu'il ne trouve plus dans `staging/`
 (promu puis retiré, renommé). Son statut de contestation n'est alors pas lisible, et il sort du
@@ -1566,7 +1566,7 @@ qui vérifie (§9) obtient un autre résultat que l'auteur, sans qu'aucun chiffr
 **Ce qu'il faut faire.** Au lot qui introduira une deuxième version des gabarits : charger la table
 par `version_gabarits` de la question, et refuser une version inconnue. Rien avant.
 
-### 2. Trois copies de listes fermées restent privées, donc hors du test d'accord — *basse*
+### ~~2. Trois copies de listes fermées restent privées, donc hors du test d'accord~~ — réglé le 2026-11-08 par la reprise des constantes exportées (`MODES`, `NATURES_LOT`), l'export de `REINTEGRATION_PAR_DECISION` et la confrontation des clés de grille aux propriétés de `decision.schema.json` (`tests/enumerations-schemas.test.ts`)
 
 `analysis/conditions.ts:39` (`MODES`, typée `readonly Mode[]`, peut être un sous-ensemble sans que
 rien ne le voie), `validation/io/lots-fichier.ts:13` (`NATURES_CONNUES`),
@@ -2049,7 +2049,7 @@ dans un diff ordinaire. Visible à la relecture, mais après coup.
 **Ce qu'il faut faire.** Déplacer la table vers `prompts/gabarits-1.0.0.json` dans le lot
 `perimetre-prompts`, que seul l'auteur écrit ; `gabarits.ts` devient une lecture de fichier.
 
-### 7. Deux gardes pour le même invariant, et un test qui recopie sa configuration — *basse* — garde unique memeVersionJugee le 2026-11-08
+### ~~7. Deux gardes pour le même invariant, et un test qui recopie sa configuration~~ — réglé le 2026-11-08 : garde unique `memeVersionJugee` (#375) et configuration ESLint importée par le test de lint (#373)
 
 `validation/domaine/promotion.ts:memeVersionJugee()` (privée) et
 `pipeline/questions/invariants.ts` gardent la même règle « deux validations concordantes, même

@@ -22,7 +22,7 @@ import { apparier } from "./appariement.ts";
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import { cleCouple, etatDesCouples, type EtatCouple, type PartageCouples } from "./seuils.ts";
-import type { CoupleOutilMode, Mode, Registre, TypeItem, Ulid } from "./types.ts";
+import { MODES, type CoupleOutilMode, type Mode, type Registre, type TypeItem, type Ulid } from "./types.ts";
 
 export interface PaireCondition {
   readonly cle: string;
@@ -37,8 +37,6 @@ export interface ComparaisonCondition {
   /** Items présents dans un seul bras : nommés, jamais complétés. */
   readonly grappes_exclues: readonly Ulid[];
 }
-
-const MODES: readonly Mode[] = ["web_activee", "web_desactivee"];
 
 /** Ordre figé des comparaisons de formulation : les trois paires des trois registres du §5. */
 const PAIRES_REGISTRES: readonly (readonly [Registre, Registre])[] = [
@@ -96,14 +94,14 @@ export interface PairesDeCondition {
  */
 /** Clé de la comparaison des deux modes d'un outil (§8, « Graines de l'analyse ») : `<outil>:web_activee-web_desactivee`. */
 export function cleComparaisonModes(outil_id: string): string {
-  const [premier, second] = MODES as readonly [Mode, Mode];
+  const [premier, second] = MODES;
   return `${outil_id}:${premier}-${second}`;
 }
 
 export function pairesParMode(unites: readonly UniteAnalyse[], couples: PartageCouples): PairesDeCondition {
   const etat = etatDesUnites(unites, couples);
   const formees: PaireFormee[] = [];
-  const [premier, second] = MODES as readonly [Mode, Mode];
+  const [premier, second] = MODES;
   for (const [outil_id, membres] of grouperPar(avecMode(unites), (u) => u.outil_id)) {
     const a = membres.filter((u) => u.mode === premier);
     const b = membres.filter((u) => u.mode === second);

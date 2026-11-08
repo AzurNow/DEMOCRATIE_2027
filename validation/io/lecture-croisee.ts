@@ -7,8 +7,9 @@
  *
  * 1. Elle vit ici, et non dans `JournalAnnotateur`, qui n'a aucun moyen de sortir du répertoire
  *    de son annotateur. Une relecture du code voit immédiatement qui lit quoi.
- * 2. Ses deux appelants légitimes sont `diagnostiquerLot`, dont le type de retour ne contient ni
- *    identifiant d'item ni décision, et le verrou d'un lot terminé (`verrou-lot.ts`, conformité
+ * 2. Ses deux appelants légitimes sont `diagnostiquerLot`, dont le type de retour ne contient
+ *    aucune décision ni rien qui relie l'accord à un item (seule exception : `absents_du_staging`,
+ *    items du manifeste introuvables, un fait du staging et non d'un journal), et le verrou d'un lot terminé (`verrou-lot.ts`, conformité
  *    n° 16), qui n'en tire qu'un booléen : « les deux ont fini », déjà rendu par le diagnostic.
  * 3. Le test d'aveuglement exécute toutes les routes du serveur et vérifie qu'aucune valeur du
  *    journal de l'autre annotateur n'apparaît dans une réponse.
