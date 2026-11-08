@@ -62,9 +62,12 @@ export class EntreeRegistreInvalide extends Error {
 }
 
 /**
- * Chaque entrée est d'abord confrontée à `schema/decision-mesure.schema.json`
- * (`validation/io/mesures-fichier.ts`), puis à cette fonction, qui en construit la valeur typée,
- * en lecture comme avant l'écriture : une entrée malformée arrête, elle n'est jamais complétée.
+ * Le registre a un JSON Schema, `schema/decision-mesure.schema.json` : chaque entrée y est d'abord
+ * confrontée par `valider()` (`validation/io/registre-ajout-seul.ts`, définition dans
+ * `validation/io/mesures-fichier.ts`), puis passe par cette fonction, qui en construit la valeur
+ * typée et dit ses erreurs en français. Les deux gardes jouent en lecture comme avant l'écriture,
+ * et un test d'accord les relie (`tests/corrections-mesure.test.ts`) : une entrée malformée arrête,
+ * elle n'est jamais complétée. Ne retirer ni l'une ni l'autre comme redondante.
  */
 export function validerEntreeRegistre(valeur: unknown, provenance: string): DecisionCorrectionMesure {
   const brute = objetOuLeve(valeur, provenance);
