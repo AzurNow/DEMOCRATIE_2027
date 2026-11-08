@@ -11,16 +11,12 @@ naïve entre en collision avec deux règles déjà posées dans ce dépôt.
 
 ## Mesurer avant de découper
 
-Ne pas estimer à l'œil. La complexité cyclomatique compte les chemins : `+1` de base, `+1` par `if`,
-`else if`, `for`, `while`, `case`, `catch`, `&&`, `||`, `??`, ternaire, et par garde d'un
-`match`/pattern. Un `else` seul ne compte pas.
-
-Outillage prévu, à brancher sur `pnpm check` quand la chaîne existera — voir
-`references/outillage.md` pour les extraits de configuration prêts à coller (règle `complexity`
-d'ESLint côté TypeScript, `C901` de Ruff côté Python). Aucun n'est installé aujourd'hui : c'est un
-ajout de dépendance, donc une décision de l'auteur, pas un raccourci à prendre seul.
-
-En attendant, mesurer à la main sur les fonctions de calcul avant de les proposer.
+Ne pas estimer à l'œil : `pnpm lint` (règles `complexity` et `sonarjs/cognitive-complexity`
+d'ESLint) et `pnpm check:py` (`C901` de Ruff) mesurent, et `pnpm check` bloque. Les deux outils ne
+comptent pas les mêmes formes : côté TypeScript, `&&`, `||`, `??`, le ternaire, `?.` et un paramètre
+par défaut comptent chacun ; côté Python, `and`, `or`, l'expression conditionnelle et les
+compréhensions ne comptent pas. Le détail, vérifié sur des cas témoins, est dans
+`references/outillage.md`, « Mesurer à la main ».
 
 ## Les quatre découpes admises, dans cet ordre de préférence
 
@@ -71,5 +67,5 @@ règle du protocole mal modélisée — un cas particulier qui devrait être une
 responsabilité qui appartient à un autre étage du flux. Le dire plutôt que de contourner, comme pour
 un trou du protocole.
 
-`references/outillage.md` — configurations de linters prêtes à coller, et comment mesurer à la main
-en attendant.
+`references/outillage.md` — réglage des deux linters, et comment mesurer à la main ce que chacun
+compte.
