@@ -9,9 +9,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { ErreurSchema, jsonDe, valider } from "../../outils/schemas/valider.ts";
-import type { Lot, NatureLot } from "../domaine/types.ts";
-
-const NATURES_CONNUES: readonly NatureLot[] = ["entrainement", "reel", "reannotation"];
+import { NATURES_LOT, type Lot, type NatureLot } from "../domaine/types.ts";
 
 /**
  * Un manifeste de lot non conforme à `schema/lot.schema.json` (champ manquant ou inconnu, type
@@ -30,7 +28,7 @@ export class ManifesteLotInvalide extends Error {
 }
 
 function estNatureConnue(valeur: unknown): valeur is NatureLot {
-  return typeof valeur === "string" && (NATURES_CONNUES as readonly string[]).includes(valeur);
+  return typeof valeur === "string" && (NATURES_LOT as readonly string[]).includes(valeur);
 }
 
 /**
@@ -42,7 +40,7 @@ function estNatureConnue(valeur: unknown): valeur is NatureLot {
 function detailDuRefus(valeurBrute: unknown, erreur: ErreurSchema, chemin: string): string {
   const nature = estObjet(valeurBrute) ? valeurBrute["nature"] : undefined;
   if (nature !== undefined && !estNatureConnue(nature)) {
-    return `nature "${String(nature)}" inconnue (attendu : ${NATURES_CONNUES.join(", ")}).`;
+    return `nature "${String(nature)}" inconnue (attendu : ${NATURES_LOT.join(", ")}).`;
   }
   const prefixe = `${chemin} : `;
   return erreur.message.startsWith(prefixe) ? erreur.message.slice(prefixe.length) : erreur.message;

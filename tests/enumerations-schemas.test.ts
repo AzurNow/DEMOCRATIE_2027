@@ -15,6 +15,10 @@
  * - les unions écrites en ligne dans une interface (`Source["tier"]`…) : le test en porte une
  *   liste de pont, dont `expectTypeOf` vérifie à la compilation (`pnpm check`) qu'elle est
  *   exactement l'union, avant de la comparer au schéma à l'exécution.
+ *
+ * Les clés de la grille (`CleGrille`, `CleSpecifique`) ne sont pas des `enum` mais des noms de
+ * propriétés de `decision.schema.json` : elles sont confrontées de la même façon aux clés de
+ * `properties` de l'objet qui les porte (DETTE 2026-09-24, lot 4, n° 2).
  */
 
 import { readFileSync } from "node:fs";
@@ -27,24 +31,43 @@ import * as client from "../validation/client/types.ts";
 import * as domaine from "../validation/domaine/types.ts";
 import * as promotion from "../validation/domaine/promotion.ts";
 import * as contestation from "../validation/domaine/contestation-item.ts";
+import * as grille from "../validation/domaine/grille.ts";
+import * as tirageContestation from "../pipeline/questions/contestation.ts";
 import * as dues from "../validation/io/notifications-dues.ts";
 
 const RACINE_SCHEMAS = join(import.meta.dirname, "..", "schema");
 
 /* ---------------------------------------------------------- comparaison */
 
-/** Lit l'`enum` au pointeur JSON donné (`#/$defs/theme`). Un pointeur qui ne mène à rien échoue. */
-function enumDuSchema(fichier: string, pointeur: string): readonly string[] {
+/** Le nœud au pointeur JSON donné (`#/$defs/theme`). Un pointeur qui ne mène à rien échoue. */
+function noeudDuSchema(fichier: string, pointeur: string): unknown {
   const racine: unknown = JSON.parse(readFileSync(join(RACINE_SCHEMAS, fichier), "utf8"));
-  const noeud = pointeur
+  return pointeur
     .replace(/^#\//, "")
     .split("/")
     .reduce<unknown>((courant, segment) => enfant(courant, segment, `${fichier}${pointeur}`), racine);
+}
+
+/** Lit l'`enum` au pointeur JSON donné (`#/$defs/theme`). Un pointeur qui ne mène à rien échoue. */
+function enumDuSchema(fichier: string, pointeur: string): readonly string[] {
+  const noeud = noeudDuSchema(fichier, pointeur);
   const valeurs = enfant(noeud, "enum", `${fichier}${pointeur}`);
   if (!Array.isArray(valeurs) || !valeurs.every((valeur) => typeof valeur === "string")) {
     throw new Error(`${fichier}${pointeur} ne porte pas un enum de chaînes.`);
   }
   return valeurs;
+}
+
+/**
+ * Les noms des `properties` de l'objet au pointeur donné (`#/$defs/grille`). Un pointeur qui ne
+ * mène à rien, ou à un objet sans `properties`, échoue plutôt que de comparer à une liste vide.
+ */
+function proprietesDuSchema(fichier: string, pointeur: string): readonly string[] {
+  const proprietes = enfant(noeudDuSchema(fichier, pointeur), "properties", `${fichier}${pointeur}`);
+  if (typeof proprietes !== "object" || proprietes === null || Array.isArray(proprietes)) {
+    throw new Error(`${fichier}${pointeur}/properties n'est pas un objet.`);
+  }
+  return Object.keys(proprietes);
 }
 
 function enfant(noeud: unknown, cle: string, contexte: string): unknown {
@@ -97,6 +120,13 @@ function confronter(confrontation: Confrontation): readonly string[] {
   return divergences(confrontation.liste, confrontation.valeurs, schema, attendues);
 }
 
+/** Même confrontation, mais aux noms des `properties` de l'objet pointé, pas à un `enum`. */
+function confronterAuxProprietes(confrontation: Confrontation): readonly string[] {
+  const schema = `schema/${confrontation.fichier}${confrontation.pointeur}/properties`;
+  const attendues = proprietesDuSchema(confrontation.fichier, confrontation.pointeur);
+  return divergences(confrontation.liste, confrontation.valeurs, schema, attendues);
+}
+
 /* --------------------------------------------------------- listes de pont */
 
 /*
@@ -113,6 +143,22 @@ const PONT_TIER = ["T1", "T2", "T3"] as const;
 const PONT_PUBLICATION = ["publique", "interne"] as const;
 const PONT_STATUT_CONTESTATION = ["aucune", "contestee", "arbitree"] as const;
 const PONT_NATURE_LOT_CLIENT = ["entrainement", "reel", "reannotation"] as const;
+const PONT_CLE_GRILLE = [
+  "citation_fidele",
+  "paraphrase_exacte",
+  "position_univoque",
+  "theme_correct",
+  "quantification_correcte",
+] as const;
+const PONT_CLE_SPECIFIQUE = [
+  "couverture_theme_verifiee",
+  "corpus_complet",
+  "confirmation_absence",
+  "changement_explicite",
+  "fictivite_verifiee",
+  "plausibilite",
+  "transcription_ecoutee",
+] as const;
 
 type Element<T extends readonly unknown[]> = T[number];
 
@@ -141,6 +187,10 @@ const FAMILLE = "#/properties/perimetre/properties/outils/items/properties/famil
 const ITEMS_AU_GEL = "#/$defs/entree_tirage/properties/items_au_gel/items/properties";
 const CONDITIONS = "#/properties/symetrie/properties/conditions/items/properties";
 const LIENS_NOTATION = "#/properties/sourcage/properties/liens/items/properties";
+const DECISION_PANEL = "#/properties/contestations/items/properties/decision_panel/properties/decision";
+const TIRAGE_CONTESTATION = "pipeline/questions/contestation.ts";
+const GRILLE = "validation/domaine/grille.ts";
+const CLES_REINTEGRATION: readonly string[] = [...tirageContestation.REINTEGRATION_PAR_DECISION.keys()];
 
 function en(fichierTs: string, nom: string): string {
   return `${nom} (${fichierTs})`;
@@ -205,6 +255,8 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(DOMAINE, "DECISIONS"), valeurs: domaine.DECISIONS, fichier: ITEM, pointeur: "#/properties/validations/items/properties/decision" },
   { liste: en(DOMAINE, "MOTIFS_REJET"), valeurs: domaine.MOTIFS_REJET, fichier: DECISION, pointeur: "#/properties/motif_rejet" },
   { liste: en(DOMAINE, "NATURES_LOT"), valeurs: domaine.NATURES_LOT, fichier: DECISION, pointeur: "#/properties/lot_nature" },
+  // DETTE 2026-09-24, lot 4, n° 2 : `validation/io/lots-fichier.ts` lit désormais cette liste pour le manifeste.
+  { liste: en(DOMAINE, "NATURES_LOT"), valeurs: domaine.NATURES_LOT, fichier: "lot.schema.json", pointeur: "#/properties/nature" },
   { liste: en(DOMAINE, "EntreeJournal.type_entree"), valeurs: PONT_TYPE_ENTREE, fichier: DECISION, pointeur: "#/properties/type_entree" },
   { liste: en(DOMAINE, "Correction.cible"), valeurs: PONT_CIBLE_CORRECTION, fichier: DECISION, pointeur: "#/$defs/correction/properties/cible" },
   { liste: en(DOMAINE, "Source.tier"), valeurs: PONT_TIER, fichier: COMMUN, pointeur: "#/$defs/tier" },
@@ -223,7 +275,9 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   // Lot contestation-notification (protocole 0.10, §4 et annexe E) : contestation et panel.
   { liste: en("validation/domaine/contestation-item.ts", "TYPES_CONTESTATAIRE"), valeurs: contestation.TYPES_CONTESTATAIRE, fichier: ITEM, pointeur: "#/properties/contestations/items/properties/contestataire_type" },
   { liste: en("validation/io/notifications-dues.ts", "EVENEMENTS_NOTIFICATION"), valeurs: dues.EVENEMENTS_NOTIFICATION, fichier: "notification-due.schema.json", pointeur: "#/properties/evenement" },
-  { liste: en("validation/domaine/contestation-item.ts", "DECISIONS_PANEL"), valeurs: contestation.DECISIONS_PANEL, fichier: ITEM, pointeur: "#/properties/contestations/items/properties/decision_panel/properties/decision" },
+  { liste: en("validation/domaine/contestation-item.ts", "DECISIONS_PANEL"), valeurs: contestation.DECISIONS_PANEL, fichier: ITEM, pointeur: DECISION_PANEL },
+  // DETTE 2026-09-24, lot 4, n° 2 : la table fermée de réintégration au tirage (§5, annexe E).
+  { liste: en(TIRAGE_CONTESTATION, "REINTEGRATION_PAR_DECISION"), valeurs: CLES_REINTEGRATION, fichier: ITEM, pointeur: DECISION_PANEL },
 
   // validation/client/types.ts
   { liste: en(CLIENT, "TYPES_ITEM"), valeurs: client.TYPES_ITEM, fichier: COMMUN, pointeur: "#/$defs/type_item" },
@@ -233,12 +287,31 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(CLIENT, "Correction.cible"), valeurs: PONT_CIBLE_CORRECTION, fichier: DECISION, pointeur: "#/$defs/correction/properties/cible" },
 ];
 
+/*
+ * Clés de la grille : noms de propriétés de `decision.schema.json`. `CLES_GRILLE`, typée
+ * `readonly CleGrille[]`, pourrait n'être qu'un sous-ensemble sans que le compilateur le voie ;
+ * elle est donc confrontée en plus de la liste de pont de l'union.
+ */
+const CONFRONTATIONS_PROPRIETES: readonly Confrontation[] = [
+  { liste: en(DOMAINE, "CleGrille"), valeurs: PONT_CLE_GRILLE, fichier: DECISION, pointeur: "#/$defs/grille" },
+  { liste: en(GRILLE, "CLES_GRILLE"), valeurs: grille.CLES_GRILLE, fichier: DECISION, pointeur: "#/$defs/grille" },
+  { liste: en(DOMAINE, "CleSpecifique"), valeurs: PONT_CLE_SPECIFIQUE, fichier: DECISION, pointeur: "#/properties/questions_specifiques" },
+];
+
 /* ------------------------------------------------------------------ tests */
 
 describe("constat 5 : chaque liste recopiée est égale à l'enum de son schéma", () => {
   for (const confrontation of CONFRONTATIONS) {
     it(`${confrontation.liste} = schema/${confrontation.fichier}${confrontation.pointeur}`, () => {
       expect(confronter(confrontation)).toEqual([]);
+    });
+  }
+});
+
+describe("DETTE 2026-09-24 lot 4 n° 2 : chaque clé de la grille est une propriété de son schéma", () => {
+  for (const confrontation of CONFRONTATIONS_PROPRIETES) {
+    it(`${confrontation.liste} = schema/${confrontation.fichier}${confrontation.pointeur}/properties`, () => {
+      expect(confronterAuxProprietes(confrontation)).toEqual([]);
     });
   }
 });
@@ -261,6 +334,8 @@ describe("constat 5 : les listes de pont sont exactement les unions en ligne", (
     expectTypeOf<Element<typeof PONT_PUBLICATION>>().toEqualTypeOf<domaine.Source["publication"]>();
     expectTypeOf<Element<typeof PONT_STATUT_CONTESTATION>>().toEqualTypeOf<domaine.Item["statut_contestation"]>();
     expectTypeOf<Element<typeof PONT_NATURE_LOT_CLIENT>>().toEqualTypeOf<client.LotResume["nature"]>();
+    expectTypeOf<Element<typeof PONT_CLE_GRILLE>>().toEqualTypeOf<domaine.CleGrille>();
+    expectTypeOf<Element<typeof PONT_CLE_SPECIFIQUE>>().toEqualTypeOf<domaine.CleSpecifique>();
   });
 
   it("vérifie à la compilation que les unions exportées sont dérivées de leur constante", () => {
@@ -307,5 +382,60 @@ describe("constat 5 : la comparaison échoue réellement quand une liste diverge
   it("refuse un pointeur qui ne mène à aucun enum, plutôt que de comparer à une liste vide", () => {
     expect(() => enumDuSchema(COMMUN, "#/$defs/theme_inexistant")).toThrow(/introuvable/);
     expect(() => enumDuSchema(COMMUN, "#/$defs")).toThrow(/introuvable/);
+  });
+});
+
+describe("DETTE 2026-09-24 lot 4 n° 2 : la comparaison échoue sur la table de réintégration et la grille", () => {
+  const PANEL = `schema/${ITEM}${DECISION_PANEL}`;
+  const decisionsPanel = enumDuSchema(ITEM, DECISION_PANEL);
+
+  it("échoue si la table de réintégration manque une décision du panel", () => {
+    const amputee = CLES_REINTEGRATION.filter((decision) => decision !== "retrait");
+    expect(divergences("REINTEGRATION (amputée)", amputee, PANEL, decisionsPanel)).toEqual([
+      `REINTEGRATION (amputée) : « retrait » de ${PANEL} manquante`,
+      `REINTEGRATION (amputée) : 3 valeurs, ${PANEL} en porte 4`,
+    ]);
+  });
+
+  it("échoue si la table de réintégration porte une décision de trop", () => {
+    const enTrop = [...CLES_REINTEGRATION, "suspension"];
+    expect(divergences("REINTEGRATION (en trop)", enTrop, PANEL, decisionsPanel)).toEqual([
+      `REINTEGRATION (en trop) : « suspension » absente de ${PANEL}`,
+      `REINTEGRATION (en trop) : 5 valeurs, ${PANEL} en porte 4`,
+    ]);
+  });
+
+  const SCHEMA_GRILLE = `schema/${DECISION}#/$defs/grille/properties`;
+  const proprietesGrille = proprietesDuSchema(DECISION, "#/$defs/grille");
+
+  it("échoue si une clé de grille n'est pas une propriété du schéma", () => {
+    const enTrop = [...PONT_CLE_GRILLE, "source_archivee"];
+    expect(divergences("CleGrille (en trop)", enTrop, SCHEMA_GRILLE, proprietesGrille)).toEqual([
+      `CleGrille (en trop) : « source_archivee » absente de ${SCHEMA_GRILLE}`,
+      `CleGrille (en trop) : 6 valeurs, ${SCHEMA_GRILLE} en porte 5`,
+    ]);
+  });
+
+  it("échoue si une propriété du schéma n'est pas une clé de grille", () => {
+    const amputee = PONT_CLE_GRILLE.filter((cle) => cle !== "theme_correct");
+    expect(divergences("CleGrille (amputée)", amputee, SCHEMA_GRILLE, proprietesGrille)).toEqual([
+      `CleGrille (amputée) : « theme_correct » de ${SCHEMA_GRILLE} manquante`,
+      `CleGrille (amputée) : 4 valeurs, ${SCHEMA_GRILLE} en porte 5`,
+    ]);
+  });
+
+  it("échoue de même pour une question spécifique absente du schéma ou manquante", () => {
+    const schema = `schema/${DECISION}#/properties/questions_specifiques/properties`;
+    const attendues = proprietesDuSchema(DECISION, "#/properties/questions_specifiques");
+    const remplacee = [...PONT_CLE_SPECIFIQUE.filter((cle) => cle !== "plausibilite"), "vraisemblance"];
+    expect(divergences("CleSpecifique (remplacée)", remplacee, schema, attendues)).toEqual([
+      `CleSpecifique (remplacée) : « vraisemblance » absente de ${schema}`,
+      `CleSpecifique (remplacée) : « plausibilite » de ${schema} manquante`,
+    ]);
+  });
+
+  it("refuse un pointeur qui ne mène à aucun objet à propriétés, plutôt que de comparer à une liste vide", () => {
+    expect(() => proprietesDuSchema(DECISION, "#/$defs/grille_inexistante")).toThrow(/introuvable/);
+    expect(() => proprietesDuSchema(DECISION, "#/properties/decision")).toThrow(/introuvable/);
   });
 });

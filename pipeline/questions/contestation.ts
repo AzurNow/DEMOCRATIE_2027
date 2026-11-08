@@ -55,9 +55,10 @@ export class DecisionPanelPosterieureAuGel extends Error {
 /**
  * §5 et annexe E, point 6 : un item arbitré « revient au tirage au run suivant si la décision vaut
  * maintien ou correction ; un retrait ou une non-évaluabilité l'en sort ». Table fermée sur
- * l'énumération de `item.schema.json` (`contestations[].decision_panel.decision`).
+ * l'énumération de `item.schema.json` (`contestations[].decision_panel.decision`), confrontée à
+ * elle par `tests/enumerations-schemas.test.ts`.
  */
-const REINTEGRATION_PAR_DECISION: ReadonlyMap<string, boolean> = new Map([
+export const REINTEGRATION_PAR_DECISION: ReadonlyMap<string, boolean> = new Map([
   ["maintien", true],
   ["correction", true],
   ["retrait", false],
