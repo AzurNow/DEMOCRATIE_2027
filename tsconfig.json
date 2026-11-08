@@ -24,6 +24,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["analysis", "pipeline", "validation/domaine", "validation/io", "validation/serveur", "validation/fixtures", "notation-humaine/serveur", "outils", "tests"],
+  "include": ["analysis", "pipeline", "validation/domaine", "validation/io", "validation/serveur", "validation/fixtures", "notation-humaine/serveur", "outils", "tests", "eslint.config.d.ts"],
   "exclude": ["node_modules", "validation/client", "notation-humaine/client"]
 }

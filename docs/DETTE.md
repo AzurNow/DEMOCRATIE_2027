@@ -1566,7 +1566,7 @@ qui vérifie (§9) obtient un autre résultat que l'auteur, sans qu'aucun chiffr
 **Ce qu'il faut faire.** Au lot qui introduira une deuxième version des gabarits : charger la table
 par `version_gabarits` de la question, et refuser une version inconnue. Rien avant.
 
-### 2. Trois copies de listes fermées restent privées, donc hors du test d'accord — *basse*
+### ~~2. Trois copies de listes fermées restent privées, donc hors du test d'accord~~ — réglé le 2026-11-08 par la reprise des constantes exportées (`MODES`, `NATURES_LOT`), l'export de `REINTEGRATION_PAR_DECISION` et la confrontation des clés de grille aux propriétés de `decision.schema.json` (`tests/enumerations-schemas.test.ts`)
 
 `analysis/conditions.ts:39` (`MODES`, typée `readonly Mode[]`, peut être un sous-ensemble sans que
 rien ne le voie), `validation/io/lots-fichier.ts:13` (`NATURES_CONNUES`),
@@ -2049,7 +2049,7 @@ dans un diff ordinaire. Visible à la relecture, mais après coup.
 **Ce qu'il faut faire.** Déplacer la table vers `prompts/gabarits-1.0.0.json` dans le lot
 `perimetre-prompts`, que seul l'auteur écrit ; `gabarits.ts` devient une lecture de fichier.
 
-### 7. Deux gardes pour le même invariant, et un test qui recopie sa configuration — *basse*
+### 7. Deux gardes pour le même invariant, et un test qui recopie sa configuration — *basse* — test de lint réglé le 2026-11-08 (configuration importée)
 
 `validation/domaine/promotion.ts:memeVersionJugee()` (privée) et
 `pipeline/questions/invariants.ts` gardent la même règle « deux validations concordantes, même
