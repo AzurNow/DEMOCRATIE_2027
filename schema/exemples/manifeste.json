@@ -1514,6 +1514,22 @@
       }
     },
     {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/valide-05-absent-du-staging.json",
+      "attendu": "valide",
+      "motif": "Lot réel de 50 items dont un est introuvable dans staging/ et data/ au calcul : nommé dans absents_du_staging, sorti du dénominateur (n = 49) sans être compté parmi les exclus pour contestation (docs/DETTE.md, 2026-09-25, n° 1)."
+    },
+    {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/invalide-07-sans-absents-du-staging.json",
+      "attendu": "invalide",
+      "motif": "Diagnostic sans absents_du_staging. Le champ est toujours présent, vide quand aucun item ne manque : omis, la baisse de n sous la taille du lot ne s'expliquerait plus (décision d'implémentation, docs/DETTE.md, 2026-09-25, n° 1).",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": ""
+      }
+    },
+    {
       "objet": "gabarits",
       "fichier": "gabarits/valide-01-six-gabarits.json",
       "attendu": "valide",

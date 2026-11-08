@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:diagnostic-lot",
   "title": "Diagnostic de lot publié",
-  "description": "Un calcul du kappa d'un lot de validation, tel qu'écrit par `pnpm diagnostics` dans `validation/diagnostics/<lot_id>/<instant>.json` (§4, accord inter-annotateurs ; §9, « diagnostics de lot (kappa, accord observé, effectif, lien de réannotation) », JSON, ajout seul). Un fichier par calcul, jamais réécrit : un calcul qui diffère du précédent en produit un nouveau, daté. Les valeurs viennent toutes de `validation/domaine/analyse-lot.ts:diagnostiquerLot`, seul endroit où le kappa est calculé. Aucun identifiant d'item, aucune décision, aucun annotateur : des agrégats.",
+  "description": "Un calcul du kappa d'un lot de validation, tel qu'écrit par `pnpm diagnostics` dans `validation/diagnostics/<lot_id>/<instant>.json` (§4, accord inter-annotateurs ; §9, « diagnostics de lot (kappa, accord observé, effectif, lien de réannotation) », JSON, ajout seul). Un fichier par calcul, jamais réécrit : un calcul qui diffère du précédent en produit un nouveau, daté. Les valeurs viennent toutes de `validation/domaine/analyse-lot.ts:diagnostiquerLot`, seul endroit où le kappa est calculé. Aucune décision, aucun annotateur : des agrégats ; seul `absents_du_staging` nomme des items, ceux du manifeste introuvables au calcul, un fait du staging et non d'un journal.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -14,6 +14,7 @@
     "accord_suffisant",
     "kappa_par_question",
     "exclus_contestation",
+    "absents_du_staging",
     "taille_lot",
     "taille_attendue",
     "taille_conforme",
@@ -121,6 +122,13 @@
       "type": "integer",
       "minimum": 0,
       "description": "Items du lot sortis du dénominateur parce qu'une contestation les visait au calcul (§4, 0.8). Un décompte : le diagnostic ne nomme aucun item."
+    },
+
+    "absents_du_staging": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+      "description": "Items du manifeste introuvables parmi les items chargés au calcul (`staging/` et `data/`) : promus puis retirés, renommés. Ils sortent du dénominateur sans être des exclus pour contestation, leur statut n'étant pas lisible ; ils sont nommés, dans l'ordre du manifeste, pour que la baisse de `n` s'explique. Toujours présent, vide quand aucun ne manque. Décision d'implémentation (docs/DETTE.md, 2026-09-25, n° 1), pas de protocole."
     },
 
     "taille_lot": { "type": "integer", "minimum": 1, "description": "Items du manifeste, contestations comprises." },

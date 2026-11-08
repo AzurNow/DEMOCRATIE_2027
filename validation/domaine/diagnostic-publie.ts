@@ -53,6 +53,8 @@ export interface DiagnosticPublie {
    */
   readonly kappa_par_question: Readonly<Record<CleGrille, KappaPublie>>;
   readonly exclus_contestation: number;
+  /** Items du manifeste introuvables au calcul, nommés (`DiagnosticLot.absents_du_staging`). */
+  readonly absents_du_staging: readonly string[];
   readonly taille_lot: number;
   readonly taille_attendue: number;
   readonly taille_conforme: boolean;
@@ -137,6 +139,7 @@ export function projeterDiagnostic(
     accord_suffisant: diagnostic.accord_suffisant,
     kappa_par_question: kappaParQuestionPublie(diagnostic),
     exclus_contestation: diagnostic.exclus_contestation,
+    absents_du_staging: diagnostic.absents_du_staging,
     taille_lot: diagnostic.taille_lot,
     taille_attendue: diagnostic.taille_attendue,
     taille_conforme: diagnostic.taille_conforme,

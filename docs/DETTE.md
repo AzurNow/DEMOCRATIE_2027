@@ -1362,7 +1362,7 @@ ajouter un test d'accord entre `config/perimetre.yaml` et `ParametresTirage`.
 
 ## 2026-09-25 — Protocole 0.8 et conformité n° 9 : le kappa lit la contestation au calcul (`validation/domaine/analyse-lot.ts`, `docs/PROTOCOLE.md` 0.8)
 
-### 1. Un item du lot absent du staging sort du kappa sans signal — *moyenne*
+### ~~1. Un item du lot absent du staging sort du kappa sans signal~~ — réglé le 2026-11-08 par `absents_du_staging` (`analyse-lot.ts:diagnostiquerLot`, repris dans le diagnostic publié et `diagnostic-lot.schema.json`), kappa et dénominateur inchangés ; la lecture de `data/` était déjà faite par les appelants (`itemsEffectifs`)
 
 `analyse-lot.ts:apparier` écarte sans bruit un item du lot qu'il ne trouve plus dans `staging/`
 (promu puis retiré, renommé). Son statut de contestation n'est alors pas lisible, et il sort du

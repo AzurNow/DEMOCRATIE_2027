@@ -1,0 +1,43 @@
+{
+  "lot_id": "lot-006",
+  "nature": "reel",
+  "date_calcul": "2026-10-20T11:30:00+02:00",
+  "kappa": 0.84,
+  "accord_observe": 0.918,
+  "n": 49,
+  "accord_suffisant": true,
+  "kappa_par_question": {
+    "citation_fidele": {
+      "kappa": 0.7,
+      "accord_observe": 0.86,
+      "n": 49
+    },
+    "paraphrase_exacte": {
+      "kappa": 0.65,
+      "accord_observe": 0.84,
+      "n": 49
+    },
+    "position_univoque": {
+      "kappa": 0.55,
+      "accord_observe": 0.8,
+      "n": 49
+    },
+    "theme_correct": {
+      "motif_indefini": "accord_attendu_maximal",
+      "accord_observe": 1,
+      "n": 49
+    },
+    "quantification_correcte": {
+      "motif_indefini": "aucun_item_commun",
+      "accord_observe": null,
+      "n": 0
+    }
+  },
+  "exclus_contestation": 0,
+  "taille_lot": 50,
+  "taille_attendue": 50,
+  "taille_conforme": true,
+  "reannote": null,
+  "date_calibration": null,
+  "supersede_par": null
+}
