@@ -69,3 +69,34 @@ et deux propositions acceptées sous `staging/formulations/<question_id>/` (l'un
       qu'une ligne s'est ajoutée à la fin de `refus.jsonl` et que la question quitte la liste.
 - [ ] **Focus du commentaire.** Taper un commentaire de plusieurs mots : vérifier que le curseur ne
       quitte pas la zone de texte à chaque frappe.
+
+## Après un arrêt brutal (processus tué, coupure de courant)
+
+Rien n'est supprimé automatiquement : une commande qui trouve ce qu'un arrêt a laissé s'arrête sur
+une erreur nommée, parce que le fichier peut aussi signaler un écrivain concurrent (docs/DETTE.md,
+2026-09-24 n° 5). Avant de supprimer quoi que ce soit : vérifier qu'aucune commande du banc ne
+tourne (`ps aux | grep -E "pnpm|tsx|node"`, puis l'identifiant noté dans le verrou), et qu'aucun
+autre terminal ni aucune autre machine n'écrit le même dépôt. Un fichier supprimé pendant qu'un
+écrivain vivant le tient fait perdre ou doubler une écriture.
+
+- [ ] **Verrou d'un registre à ajout seul** (corrections de thème, relectures, rattachements :
+      `validation/mesures/<registre>.json`). Fichier `<registre>.json.verrou`, à côté du registre.
+      Reconnu à l'erreur `RegistreVerrouille`, qui nomme le fichier ; il contient une ligne
+      `pid <n>, posé le <date>` : vérifier que ce processus n'existe plus (`ps -p <n>`), puis
+      supprimer le `.verrou` seul. Le registre lui-même n'est jamais touché (le renommage atomique
+      ne le tronque pas) ; relancer la commande, qui relit l'état courant.
+- [ ] **Temporaire d'une écriture par renommage** (`run.json`, `checklist.json`…). Fichier
+      `<fichier>.<suffixe>` à côté de la cible, le suffixe disant quelle écriture s'est interrompue
+      (`demarrage`, `inscription`, `inscription-outils`, `reponses-obtenues`, `invalidation`,
+      `contestations-posterieures`, `go-no-go`…). Reconnu à l'erreur `TemporaireOrphelin`, qui
+      nomme le temporaire et la cible. La cible est restée intacte : supprimer le temporaire seul,
+      relancer. Les réponses brutes de l'interrogation ont leur propre temporaire,
+      `<id>.json.partiel` : `DepotReponses.ouvrir` le refuse de la même façon ; même geste, après
+      la même vérification.
+- [ ] **Réponse 5xx gardée** (staging de l'extraction, `reponses-extraction/<source>/<sha256>/`).
+      Fichier `<modèle>.<empreinte du prompt>.echec-transport-<hex>.json`. Ce n'est pas un résidu
+      d'arrêt : c'est une réponse brute (statut 408, 429 ou 5xx) gardée sous un nom distinct
+      (règle 7), que la relance ne relit jamais comme réponse utilisable et refait donc l'appel. Ne
+      pas la supprimer ni la modifier : elle fait partie de ce que l'outil a répondu. Si une
+      relance semble attendre ou s'arrêter, c'est un verrou ou un temporaire ci-dessus, pas ce
+      fichier.

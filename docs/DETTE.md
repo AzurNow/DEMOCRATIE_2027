@@ -241,7 +241,7 @@ n'obtient plus les intervalles publiés.
 **Ce qu'il faut faire.** Un test qui relève chaque clé écrite au §7 et au §8 et la retrouve dans le
 code, à ajouter à la prochaine passe de conformité.
 
-### 4. Le retour en attente après un texte extrait erroné se recalcule à chaque `pnpm promote` — *moyenne*
+### 4. Le retour en attente après un texte extrait erroné se recalcule à chaque `pnpm promote` — *moyenne* — libellé gardé par un test le 2026-11-08 (`tests/libelle-texte-errone.test.ts`) ; la journalisation du renvoi attend toujours un consommateur (D62)
 
 `validation/domaine/renvoi-texte-errone.ts` (#239) dérive les renvois des journaux à chaque appel.
 Il reconnaît un retour déjà fait au libellé exact de l'entrée d'historique (`CHANGEMENT_TEXTE_ERRONE`).
@@ -331,7 +331,7 @@ publique ne retrouverait pas les mêmes empreintes. On le verrait à la réexéc
 
 **Ce qu'il faut faire.** Étendre le test au premier contournement rencontré ; rien d'autre.
 
-### 5. Un arrêt brutal laisse un verrou ou un temporaire à supprimer à la main — *basse*
+### ~~5. Un arrêt brutal laisse un verrou ou un temporaire à supprimer à la main~~ — réglé le 2026-11-08 par la procédure « Après un arrêt brutal » de `docs/CONTROLE-MANUEL.md`
 
 Le registre à ajout seul (#197, verrou exclusif) et l'écriture par renommage (#181,
 `TemporaireOrphelin`) s'arrêtent sur ce qu'un arrêt brutal a laissé, par choix : rien n'est supprimé
@@ -1628,7 +1628,7 @@ un champ sans rapport avec ce qu'il vise, et son auteur croira la règle fausse.
 **Ce qu'il faut faire.** Les rendre conformes dans le lot qui les fera passer par une frontière,
 avec un test « la fabrique produit un objet conforme » comme celui de `tests/symmetry-cli.test.ts`.
 
-### 4. Deux textes affirment que le registre des mesures n'a pas de validation de schéma — *basse*
+### ~~4. Deux textes affirment que le registre des mesures n'a pas de validation de schéma~~ — réglé le 2026-11-08 par la `description` de `schema/decision-mesure.schema.json` et la docstring de `validerEntreeRegistre()`, qui disent que `valider()` puis `validerEntreeRegistre()` jouent à chaque lecture et écriture — *basse*
 
 La `description` de `schema/decision-mesure.schema.json` dit que `validerEntreeRegistre()`
 « reste la frontière d'exécution », la docstring de `validation/domaine/corrections-mesure.ts`
