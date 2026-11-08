@@ -2082,7 +2082,7 @@ lots touchés et de régénérer le Markdown (`.claude/skills/cloture-de-session
 Aller plus loin — dériver T2 de l'existence d'un fichier de test nommé — est une décision à
 prendre quand le pipeline existera, pas avant.
 
-### 2. Un Markdown périmé peut être commité — *basse*
+### ~~2. Un Markdown périmé peut être commité~~ — réglé le 2026-11-08 par `--verifier` branché sur `pnpm check`
 
 `pnpm feuille-de-route --verifier` existe mais n'est branché ni sur `pnpm check` ni sur une CI.
 Éditer le JSON sans relancer le générateur laisse `docs/FEUILLE-DE-ROUTE.md` en retard d'une
@@ -2094,7 +2094,7 @@ l'agent lit. Les deux « sources » divergent, exactement ce que le générateur
 **Ce qu'il faut faire.** Brancher `--verifier` sur `pnpm check` dans le lot `outillage`, en même
 temps qu'ajv. Le script tourne en moins d'une seconde et ne dépend de rien.
 
-### 3. Une barre verticale dans un titre de lot casse le tableau — *basse*
+### ~~3. Une barre verticale dans un titre de lot casse le tableau~~ — réglé le 2026-11-08 par `cellule()` dans `markdown.ts`
 
 `markdown.ts` assemble les lignes du tableau des lots par jointure sur ` | ` sans échapper le
 caractère `|` dans les titres, notes et agents. Aucun titre actuel n'en contient.
