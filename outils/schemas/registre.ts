@@ -30,7 +30,7 @@ export interface Registre {
  * sont collectés, jamais imprimés ligne à ligne (plusieurs centaines par run) : seul leur nombre
  * apparaît dans le rapport.
  */
-function creerAjv(avertissements: string[]): InstanceAjv {
+export function creerAjv(avertissements: string[]): InstanceAjv {
   const ajv = new Ajv2020({
     allErrors: true,
     strict: "log",

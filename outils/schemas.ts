@@ -9,6 +9,7 @@
  *   pnpm schemas
  */
 import { resolve } from "node:path";
+import { bilanDesAvertissements } from "./schemas/avertissements.ts";
 import { chargerManifeste } from "./schemas/manifeste.ts";
 import { verifierConformiteMetaSchema } from "./schemas/meta.ts";
 import { construireRegistre } from "./schemas/registre.ts";
@@ -38,7 +39,7 @@ function principal(): void {
   const manifeste = chargerManifeste(chemins.manifeste);
   const { ajv, avertissementsStrict } = construireRegistre(chemins.racineSchema);
   const rapport = validerContreManifeste(ajv, chemins.racineExemples, manifeste);
-  const succes = imprimerRapport(rapport, conformites, avertissementsStrict);
+  const succes = imprimerRapport(rapport, conformites, bilanDesAvertissements(avertissementsStrict));
   if (!succes) process.exitCode = 1;
 }
 
