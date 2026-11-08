@@ -2,10 +2,13 @@
  * Diagnostic d'un lot : la **seule** lecture croisée entre deux annotateurs de tout le projet.
  *
  * Elle existe parce que le kappa n'a pas d'autre moyen d'exister. Elle est donc isolée dans ce
- * module, et son type de retour ne contient ni identifiant d'item, ni décision, ni rien qui
- * permette de remonter à un item précis : des agrégats, et le seul bit inévitable — « l'autre
- * a fini ce lot ». Ce bit est le prix du kappa, il est documenté comme tel, et il ne dit rien
- * d'un item.
+ * module, et son type de retour ne contient ni décision, ni rien qui permette de remonter de
+ * l'accord à un item précis : des agrégats, et le seul bit inévitable — « l'autre a fini ce
+ * lot ». Ce bit est le prix du kappa, il est documenté comme tel, et il ne dit rien d'un item.
+ *
+ * Une seule exception, qui ne porte sur aucune décision : `absents_du_staging` nomme les items
+ * du manifeste introuvables parmi les items chargés. Leur absence est un fait du staging, pas
+ * du journal de l'un ou l'autre annotateur, et ils sont déjà nommés par le manifeste du lot.
  */
 
 import { empreinteContenuNotant } from "./empreinte.ts";
@@ -48,6 +51,14 @@ export interface DiagnosticLot {
    * `kappa.n` est l'effectif publié avec le kappa, contestations déduites.
    */
   readonly exclus_contestation: number;
+  /**
+   * Items du manifeste introuvables parmi les items chargés (`staging/`, et `data/` que les
+   * appelants fusionnent par `itemsEffectifs`) : promus puis retirés, renommés. Ils sortent du
+   * dénominateur comme avant (docs/DETTE.md, 2026-09-25, n° 1), mais nommés, dans l'ordre du
+   * manifeste ; vide quand aucun ne manque, jamais omis. Leur statut de contestation n'est pas
+   * lisible : ils ne comptent pas dans `exclus_contestation`.
+   */
+  readonly absents_du_staging: readonly string[];
   /** Nombre d'items du manifeste, contestations comprises : distinct de `kappa.n`. */
   readonly taille_lot: number;
   /** Taille fixée par le §4 pour ce lot : 50 (réel), 30 (entraînement), celle de l'origine. */
@@ -144,6 +155,7 @@ export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
     accord_suffisant: accordSuffisant(comptes),
     alerte_reannotation: alerteReannotation(comptes),
     exclus_contestation: exclus.size,
+    absents_du_staging: absentsDesItemsCharges(entree),
     taille_lot: entree.lot.items.length,
     taille_attendue: entree.taille_attendue,
     taille_conforme: entree.lot.items.length === entree.taille_attendue,
@@ -195,8 +207,19 @@ export class ItemEnDoubleDansLeLot extends Error {
 }
 
 /**
+ * Les items du manifeste que `entree.items` ne porte pas, dans l'ordre du manifeste. Appelée
+ * après `apparier`, qui a déjà refusé un manifeste portant un item deux fois.
+ */
+function absentsDesItemsCharges(entree: Pick<EntreeDiagnostic, "lot" | "items">): readonly string[] {
+  return entree.lot.items
+    .map((reference) => reference.item_id)
+    .filter((item_id) => !entree.items.has(item_id));
+}
+
+/**
  * Un item qu'une contestation vise au calcul sort du dénominateur. Le §4 parle de lots de 50 ;
- * quand une contestation en retire un, le kappa porte sur ce qui reste, et `n` le dit.
+ * quand une contestation en retire un, le kappa porte sur ce qui reste, et `n` le dit. Un item
+ * introuvable parmi les items chargés en sort aussi, et `absentsDesItemsCharges` le nomme.
  */
 function apparier(
   entree: EntreeDiagnostic,

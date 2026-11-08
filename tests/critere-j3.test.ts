@@ -48,6 +48,7 @@ function diagnostic(lot_id: string, surcharges: Partial<DiagnosticPublie> = {}):
       quantification_correcte: KAPPA_QUESTION,
     },
     exclus_contestation: 0,
+    absents_du_staging: [],
     taille_lot: 50,
     taille_attendue: 50,
     taille_conforme: true,
