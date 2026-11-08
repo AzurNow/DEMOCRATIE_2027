@@ -241,7 +241,7 @@ n'obtient plus les intervalles publiés.
 **Ce qu'il faut faire.** Un test qui relève chaque clé écrite au §7 et au §8 et la retrouve dans le
 code, à ajouter à la prochaine passe de conformité.
 
-### 4. Le retour en attente après un texte extrait erroné se recalcule à chaque `pnpm promote` — *moyenne*
+### 4. Le retour en attente après un texte extrait erroné se recalcule à chaque `pnpm promote` — *moyenne* — libellé gardé par un test le 2026-11-08 (`tests/libelle-texte-errone.test.ts`) ; la journalisation du renvoi attend toujours un consommateur (D62)
 
 `validation/domaine/renvoi-texte-errone.ts` (#239) dérive les renvois des journaux à chaque appel.
 Il reconnaît un retour déjà fait au libellé exact de l'entrée d'historique (`CHANGEMENT_TEXTE_ERRONE`).
@@ -331,7 +331,7 @@ publique ne retrouverait pas les mêmes empreintes. On le verrait à la réexéc
 
 **Ce qu'il faut faire.** Étendre le test au premier contournement rencontré ; rien d'autre.
 
-### 5. Un arrêt brutal laisse un verrou ou un temporaire à supprimer à la main — *basse*
+### ~~5. Un arrêt brutal laisse un verrou ou un temporaire à supprimer à la main~~ — réglé le 2026-11-08 par la procédure « Après un arrêt brutal » de `docs/CONTROLE-MANUEL.md`
 
 Le registre à ajout seul (#197, verrou exclusif) et l'écriture par renommage (#181,
 `TemporaireOrphelin`) s'arrêtent sur ce qu'un arrêt brutal a laissé, par choix : rien n'est supprimé
@@ -1204,7 +1204,7 @@ tourné. Le lecteur du fichier s'en aperçoit, mais aucun contrôle ne l'arrête
 
 **Ce qu'il faut faire.** Une contrainte `if` sur le statut, avec un exemple invalide.
 
-### 4. `pnpm validate` montre un item renvoyé dans son ancien lot sans le signaler — *basse*
+### ~~4. `pnpm validate` montre un item renvoyé dans son ancien lot sans le signaler~~ — réglé le 2026-11-08 par `renvoye` dans la vue d'item (`lotJugeEncore`) et `mentionItemRenvoye`
 
 Depuis #50, un item renvoyé reste listé par son ancien lot dans l'interface de validation. Une
 décision prise là est enregistrée au journal, mais la promotion ne la lit plus.
@@ -1391,7 +1391,7 @@ le diagnostic, `exclus_contestation`) dans le fichier publié du constat 16.
 
 ## 2026-09-25 — Conformité, lot validation : lots pleins seulement, numérotation continue (`validation/domaine/lot.ts`, `validation/io/lots-fichier.ts`, `outils/lots.ts`, `validation/domaine/analyse-lot.ts`)
 
-### 1. Un lot de taille non conforme n'est signalé que dans la réponse de la route — *moyenne*
+### 1. Un lot de taille non conforme n'est signalé que dans la réponse de la route — *moyenne* — mention client affichée le 2026-11-08
 
 `diagnostiquerLot` porte désormais `taille_lot`, `taille_attendue` et `taille_conforme`, mais le
 client (`validation/client/app.ts:bilanKappa`) ne les lit pas, et aucun fichier publié ne porte le
@@ -1628,7 +1628,7 @@ un champ sans rapport avec ce qu'il vise, et son auteur croira la règle fausse.
 **Ce qu'il faut faire.** Les rendre conformes dans le lot qui les fera passer par une frontière,
 avec un test « la fabrique produit un objet conforme » comme celui de `tests/symmetry-cli.test.ts`.
 
-### 4. Deux textes affirment que le registre des mesures n'a pas de validation de schéma — *basse*
+### ~~4. Deux textes affirment que le registre des mesures n'a pas de validation de schéma~~ — réglé le 2026-11-08 par la `description` de `schema/decision-mesure.schema.json` et la docstring de `validerEntreeRegistre()`, qui disent que `valider()` puis `validerEntreeRegistre()` jouent à chaque lecture et écriture — *basse*
 
 La `description` de `schema/decision-mesure.schema.json` dit que `validerEntreeRegistre()`
 « reste la frontière d'exécution », la docstring de `validation/domaine/corrections-mesure.ts`
@@ -2008,7 +2008,7 @@ les chiffres.
 **Ce qu'il faut faire.** Écrire `runs/README.md` avec la disposition des fichiers dans le lot
 interrogation, et faire lire ces fichiers par `assembler()` sans couche intermédiaire.
 
-### 4. ajv tourne en `strict: "log"` et compte ses avertissements sans les lire — *moyenne*
+### ~~4. ajv tourne en `strict: "log"` et compte ses avertissements sans les lire~~ — réglé le 2026-11-08 par `outils/schemas/avertissements.ts` (quatre catégories admises en table, toute autre en erreur)
 
 `outils/schemas/registre.ts` passe ajv en `strict: "log"` parce que le mode strict refuse des
 combinaisons `if`/`then`/`not`/`contains` légitimes du draft 2020-12 utilisées par six schémas. Les
@@ -2082,7 +2082,7 @@ lots touchés et de régénérer le Markdown (`.claude/skills/cloture-de-session
 Aller plus loin — dériver T2 de l'existence d'un fichier de test nommé — est une décision à
 prendre quand le pipeline existera, pas avant.
 
-### 2. Un Markdown périmé peut être commité — *basse*
+### ~~2. Un Markdown périmé peut être commité~~ — réglé le 2026-11-08 par `--verifier` branché sur `pnpm check`
 
 `pnpm feuille-de-route --verifier` existe mais n'est branché ni sur `pnpm check` ni sur une CI.
 Éditer le JSON sans relancer le générateur laisse `docs/FEUILLE-DE-ROUTE.md` en retard d'une
@@ -2094,7 +2094,7 @@ l'agent lit. Les deux « sources » divergent, exactement ce que le générateur
 **Ce qu'il faut faire.** Brancher `--verifier` sur `pnpm check` dans le lot `outillage`, en même
 temps qu'ajv. Le script tourne en moins d'une seconde et ne dépend de rien.
 
-### 3. Une barre verticale dans un titre de lot casse le tableau — *basse*
+### ~~3. Une barre verticale dans un titre de lot casse le tableau~~ — réglé le 2026-11-08 par `cellule()` dans `markdown.ts`
 
 `markdown.ts` assemble les lignes du tableau des lots par jointure sur ` | ` sans échapper le
 caractère `|` dans les titres, notes et agents. Aucun titre actuel n'en contient.
