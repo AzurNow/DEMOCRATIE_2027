@@ -110,6 +110,8 @@ export interface VueItem {
   lot_id: string;
   brouillon: Brouillon | null;
   annulable: { id: string; item_id: string } | null;
+  /** Vrai quand le lot ne juge plus cet item (renvoyé en attente depuis sa composition). */
+  renvoye: boolean;
 }
 
 export interface Progression {
@@ -160,6 +162,10 @@ export interface ResultatKappa {
 export interface Diagnostic {
   lot_id: string;
   les_deux_ont_fini: boolean;
+  /** Absents tant que les deux annotateurs n'ont pas fini : `bilanKappa` n'est appelé qu'ensuite. */
+  taille_lot: number;
+  taille_attendue: number;
+  taille_conforme: boolean;
   kappa: ResultatKappa | null;
   kappa_par_question?: Record<string, ResultatKappa>;
   taux_double_correction_divergente?: number | null;

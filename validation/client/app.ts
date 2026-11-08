@@ -11,6 +11,7 @@ import { api, urlSource, type RequeteDecision } from "./api.ts";
 import { elementFacultatif, elementParId } from "./dom-type.ts";
 import { champsEditables, corrections, type ChampEditable } from "./edition.ts";
 import { CLES_GRILLE } from "../domaine/grille.ts";
+import { mentionItemRenvoye, mentionTailleLot } from "../domaine/mentions-lot.ts";
 import { ouvrirRelectureFormulations } from "./formulations.ts";
 import { brancherAlerte, lancer } from "./signalement.ts";
 import { messagesDErreur } from "./erreurs.ts";
@@ -293,6 +294,8 @@ function ongletsSource(vue: VueItem): HTMLElement {
 function voletItem(vue: VueItem): HTMLElement {
   const volet = element("div", "volet");
   volet.append(enteteItem(vue));
+  const renvoi = mentionItemRenvoye(vue.renvoye);
+  if (renvoi !== null) volet.append(alerte(renvoi));
   if (etat.message !== null) {
     volet.append(avis(etat.message));
     etat.message = null;
@@ -698,6 +701,8 @@ async function rendreFinDeLot(lot_id: string): Promise<void> {
 function bilanKappa(diagnostic: Diagnostic): readonly HTMLElement[] {
   const blocs: HTMLElement[] = [];
   const kappa = diagnostic.kappa as ResultatKappa;
+  const tailleNonConforme = mentionTailleLot(diagnostic);
+  if (tailleNonConforme !== null) blocs.push(alerte(tailleNonConforme));
   blocs.push(champ("Kappa de Cohen (retenu / rejeté / non évaluable)", formaterKappa(kappa)));
   blocs.push(champ("Accord observé", formaterTaux(kappa.accord_observe)));
   blocs.push(champ("Items comparés", String(kappa.n)));
