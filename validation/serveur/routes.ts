@@ -25,6 +25,7 @@ import {
   type EtatAnnotateur,
 } from "../domaine/journal.ts";
 import { ordreAffichage, tailleAttendue } from "../domaine/lot.ts";
+import { lotJugeEncore } from "../domaine/renvoi-mesure.ts";
 import { refusSurLotTermine } from "../domaine/verrou-lot.ts";
 import { ulid } from "../domaine/ulid.ts";
 import type { Item, ItemDuLot, Lot } from "../domaine/types.ts";
@@ -194,8 +195,15 @@ function vueItem(contexte: Contexte, params: readonly string[]): Reponse {
       lot_id,
       brouillon: brouillonDe(contexte, lot_id, item_id),
       annulable: annulable(contexte, lot_id),
+      renvoye: itemRenvoye(item, ordre[index]),
     },
   };
+}
+
+/** Le lot épingle une version de l'item ; s'il a été renvoyé en attente depuis, le lot ne le juge plus. */
+function itemRenvoye(item: Item, reference: ItemDuLot | undefined): boolean {
+  if (reference === undefined) throw new Error(`Item ${item.id} absent de l'ordre du lot, après vérification`);
+  return !lotJugeEncore(item, reference);
 }
 
 function accesTextes(contexte: Contexte) {

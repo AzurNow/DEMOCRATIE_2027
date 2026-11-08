@@ -1204,7 +1204,7 @@ tourné. Le lecteur du fichier s'en aperçoit, mais aucun contrôle ne l'arrête
 
 **Ce qu'il faut faire.** Une contrainte `if` sur le statut, avec un exemple invalide.
 
-### 4. `pnpm validate` montre un item renvoyé dans son ancien lot sans le signaler — *basse*
+### ~~4. `pnpm validate` montre un item renvoyé dans son ancien lot sans le signaler~~ — réglé le 2026-11-08 par `renvoye` dans la vue d'item (`lotJugeEncore`) et `mentionItemRenvoye`
 
 Depuis #50, un item renvoyé reste listé par son ancien lot dans l'interface de validation. Une
 décision prise là est enregistrée au journal, mais la promotion ne la lit plus.
@@ -1391,7 +1391,7 @@ le diagnostic, `exclus_contestation`) dans le fichier publié du constat 16.
 
 ## 2026-09-25 — Conformité, lot validation : lots pleins seulement, numérotation continue (`validation/domaine/lot.ts`, `validation/io/lots-fichier.ts`, `outils/lots.ts`, `validation/domaine/analyse-lot.ts`)
 
-### 1. Un lot de taille non conforme n'est signalé que dans la réponse de la route — *moyenne*
+### 1. Un lot de taille non conforme n'est signalé que dans la réponse de la route — *moyenne* — mention client affichée le 2026-11-08
 
 `diagnostiquerLot` porte désormais `taille_lot`, `taille_attendue` et `taille_conforme`, mais le
 client (`validation/client/app.ts:bilanKappa`) ne les lit pas, et aucun fichier publié ne porte le
