@@ -2008,7 +2008,7 @@ les chiffres.
 **Ce qu'il faut faire.** Écrire `runs/README.md` avec la disposition des fichiers dans le lot
 interrogation, et faire lire ces fichiers par `assembler()` sans couche intermédiaire.
 
-### 4. ajv tourne en `strict: "log"` et compte ses avertissements sans les lire — *moyenne*
+### ~~4. ajv tourne en `strict: "log"` et compte ses avertissements sans les lire~~ — réglé le 2026-11-08 par `outils/schemas/avertissements.ts` (quatre catégories admises en table, toute autre en erreur)
 
 `outils/schemas/registre.ts` passe ajv en `strict: "log"` parce que le mode strict refuse des
 combinaisons `if`/`then`/`not`/`contains` légitimes du draft 2020-12 utilisées par six schémas. Les
