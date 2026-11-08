@@ -41,6 +41,16 @@ geste à faire et une observation à constater, pas une intention.
       relancer `pnpm validate` et rouvrir la même session annotateur : vérifier que l'item suivant
       proposé est bien celui qui suit la dernière décision enregistrée, jamais le premier du lot ni
       celui déjà décidé.
+- [ ] **Item renvoyé dans son ancien lot.** Sur un bac jetable (`pnpm dev`, jamais `pnpm validate`),
+      renvoyer en attente un item d'un lot déjà composé (ou le rattacher à une autre mesure), puis
+      ouvrir cet item depuis son ancien lot : vérifier qu'une alerte au-dessus du volet de droite dit
+      que le lot ne le juge plus, que la décision reste possible, et que l'alerte n'apparaît ni sur
+      les autres items ni sur l'item rejugé par un nouveau lot (testé sans DOM dans
+      `tests/mentions-lot.test.ts`).
+- [ ] **Lot de taille non conforme.** Composer à la main un lot réel de 49 items (ou d'entraînement
+      d'un effectif autre que celui attendu), le faire terminer par les deux annotateurs : vérifier
+      que l'écran de bilan affiche, au-dessus du kappa, une alerte « Lot de taille non conforme » avec
+      les deux effectifs, et qu'un lot de 50 n'en affiche aucune.
 
 ## Relecture des formulations (décisions D39 et D42)
 
