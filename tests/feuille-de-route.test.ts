@@ -4,12 +4,13 @@
  * `mermaid.ts` sur des valeurs déjà typées (on ne repasse pas par la validation structurelle).
  */
 
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { calculerEtats, CycleDetecte, verifierAcyclique } from "../outils/feuille-de-route/graphe.ts";
 import { ErreurFeuilleDeRoute, validerFeuilleDeRoute } from "../outils/feuille-de-route/lecture.ts";
-import { genererMarkdown } from "../outils/feuille-de-route/markdown.ts";
+import { cellule, genererMarkdown } from "../outils/feuille-de-route/markdown.ts";
 import {
   areteDependance,
   echapperTexte,
@@ -339,6 +340,45 @@ describe("mermaid : rendu", () => {
     const rendu = noeudDecision({ ...decision, question });
     expect(rendu).toContain("x".repeat(60) + "…");
     expect(rendu).not.toContain("x".repeat(61));
+  });
+});
+
+describe("markdown : échappement des cellules", () => {
+  const f: FeuilleDeRoute = {
+    date_maj: "2026-09-18",
+    echelle: { T0: "a | b", T1: "b", T2: "c", T3: "d", T4: "e" },
+    jalons: [{ id: "J1", date: "2026-10-15", titre: "Jalon | un", critere: "Critère" }],
+    decisions: [],
+    lots: [{ ...fabriquerLot({ id: "lot-a", niveau: "T0" }), titre: "Avant | après" }],
+    anomalies: [],
+  };
+
+  it("29. un titre contenant | reste une seule cellule, rendue \\|", () => {
+    const markdown = genererMarkdown(f, calculerEtats(f.lots, f.decisions));
+    const ligne = markdown.split("\n").find((l) => l.startsWith("| lot-a |"));
+    expect(ligne).toContain("| Avant \\| après |");
+    expect(ligne?.split(/(?<!\\)\|/).length).toBe(11);
+    expect(markdown).toContain("| Jalon \\| un |");
+    expect(markdown).toContain("| T0 | a \\| b |");
+  });
+
+  it("30. plusieurs | et un \\| déjà échappé : une cellule chacun, sans ré-échapper la barre oblique", () => {
+    expect(cellule("a | b | c")).toBe("a \\| b \\| c");
+    expect(cellule("a \\| b")).toBe("a \\| b");
+    expect(cellule("x | y \\| z | w")).toBe("x \\| y \\| z \\| w");
+    expect(cellule(cellule("a | b"))).toBe("a \\| b");
+  });
+});
+
+describe("outil --verifier", () => {
+  it("31. sur le dépôt, --verifier sort en 0 avec son message quand le Markdown est à jour", () => {
+    const racine = resolve(import.meta.dirname, "..");
+    const r = spawnSync("node", ["--experimental-strip-types", "outils/feuille-de-route.ts", "--verifier"], {
+      cwd: racine,
+      encoding: "utf8",
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("est à jour");
   });
 });
 

@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "BANC_DEMO=1 pnpm run validate",
     "build": "pnpm run build:client && pnpm run build:client:notation",
-    "check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p validation/client/tsconfig.json && tsc --noEmit -p notation-humaine/client/tsconfig.json && eslint . && node --experimental-strip-types outils/schemas.ts",
+    "check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p validation/client/tsconfig.json && tsc --noEmit -p notation-humaine/client/tsconfig.json && eslint . && node --experimental-strip-types outils/schemas.ts && node --experimental-strip-types outils/feuille-de-route.ts --verifier",
     "check:client": "tsc --noEmit -p validation/client/tsconfig.json",
     "lint": "eslint .",
     "schemas": "node --experimental-strip-types outils/schemas.ts",
