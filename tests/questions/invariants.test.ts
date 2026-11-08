@@ -9,9 +9,15 @@
  * réels de `schema/exemples/`.
  */
 
-import { readdirSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { assembler } from "../../analysis/filtre.ts";
+import { dispositionRunNote, FichierDeRunRefuse, lireReponses, lireVerdicts } from "../../analysis/lecture-run.ts";
+import { ErreurSchema, valider } from "../../outils/schemas/valider.ts";
+import { memeVersionJugee } from "../../validation/domaine/promotion.ts";
+import * as analyse from "../analysis/fabriques.ts";
+import { poserRunNote, type RunFictif } from "../notation/run-fictif.ts";
 import {
   contexteSuitObjetNote,
   grappeSuitItemPrincipal,
@@ -162,6 +168,68 @@ describe("invariant : le contexte d'une notation suit celui de l'objet noté", (
     expect(violations).toHaveLength(1);
     expect(violations[0]?.detail).toMatch(/introuvable/i);
   });
+
+  it("corpus vide : aucune violation, pas de faux positif", () => {
+    expect(contexteSuitObjetNote([], [])).toEqual([]);
+  });
+});
+
+/*
+ * docs/DETTE.md, 2026-09-17, point 1 : sur les verdicts de réponse, `contexteSuitObjetNote` est
+ * redondant avec le chemin de production de `pnpm analyze`, et n'y est donc pas branché (il ne
+ * pourrait d'ailleurs pas l'être depuis `analysis/`, qui n'importe rien de `pipeline/`). Les deux
+ * contextes d'un verdict et de sa réponse ne diffèrent que de deux façons, et chacune est refusée :
+ * - le verdict n'est pas de contexte run : `lireVerdicts` le refuse à la lecture ;
+ * - le verdict est de contexte run et sa réponse ne l'est pas : `assembler` le refuse.
+ * La redondance ne vaut ni pour les notations individuelles ni pour les verdicts de lecture de
+ * comparateur : voir le rapport de la dette.
+ */
+describe("contexteSuitObjetNote sur les verdicts de réponse : redondant avec lireVerdicts et assembler", () => {
+  let fictif: RunFictif | null = null;
+
+  afterEach(() => {
+    fictif?.nettoyer();
+    fictif = null;
+  });
+
+  it("un verdict d'un autre contexte que run est refusé à la lecture, motif contexte_hors_dossier", () => {
+    fictif = poserRunNote();
+    const verdict = fictif.verdicts[0];
+    if (verdict === undefined) throw new Error("run fictif sans verdict");
+    const chemin = join(dispositionRunNote(fictif.repertoire_run).verdicts, `${verdict.id}.json`);
+    writeFileSync(chemin, `${JSON.stringify({ ...verdict, contexte: "contrefactuel_candidat" }, null, 2)}\n`, "utf8");
+    let erreur: unknown = null;
+    try {
+      lireVerdicts(fictif.repertoire_run, String(fictif.run["id"]));
+    } catch (levee) {
+      erreur = levee;
+    }
+    expect(erreur).toBeInstanceOf(FichierDeRunRefuse);
+    expect((erreur as FichierDeRunRefuse).motif).toBe("contexte_hors_dossier");
+  });
+
+  it("un verdict run sur une réponse d'un autre contexte : assembler refuse ce que l'invariant nommerait", () => {
+    const reponse = analyse.reponse({ id: analyse.ulid("r-cf"), contexte: "contrefactuel_candidat" });
+    const verdict = analyse.verdict({ objet_note: { type: "reponse", id: reponse.id } });
+    expect(contexteSuitObjetNote([verdict], [reponse])).toHaveLength(1);
+    const entrees = {
+      run: analyse.run(),
+      entrees_tirage: [analyse.entreeTirage()],
+      questions: [analyse.question()],
+      items: [analyse.item()],
+      reponses: [reponse],
+      verdicts: [verdict],
+    };
+    expect(() => assembler(entrees)).toThrow(/contexte contrefactuel_candidat : incohérence/);
+  });
+
+  it("sur un run noté, tout verdict que lireVerdicts laisse passer suit le contexte de sa réponse", () => {
+    fictif = poserRunNote();
+    const run_id = String(fictif.run["id"]);
+    const verdicts = lireVerdicts(fictif.repertoire_run, run_id);
+    expect(verdicts.length).toBeGreaterThan(0);
+    expect(contexteSuitObjetNote(verdicts, lireReponses(fictif.repertoire_run, run_id))).toEqual([]);
+  });
 });
 
 /* ------------------------------------------------------- item F et mesure */
@@ -231,6 +299,62 @@ describe("invariant : les deux validations concordantes portent la même version
       { ...(concordantes[1] as (typeof concordantes)[number]), decision: "rejeter", item_version: 9 },
     ];
     expect(validationsConcordantesMemeVersion(rejet)).toEqual([]);
+  });
+
+  it("une seule validation retenue : aucune violation, rien à confronter", () => {
+    expect(validationsConcordantesMemeVersion([concordantes[0] as (typeof concordantes)[number]])).toEqual([]);
+  });
+
+  it("validations discordantes (accepter contre non évaluable, versions différentes) : aucune violation, la non-évaluabilité ne vérifie rien", () => {
+    const discordantes = [
+      concordantes[0] as (typeof concordantes)[number],
+      { ...(concordantes[1] as (typeof concordantes)[number]), decision: "non_evaluable", item_version: 9 },
+    ];
+    expect(validationsConcordantesMemeVersion(discordantes)).toEqual([]);
+  });
+
+  it("corpus vide : aucune violation, pas de faux positif", () => {
+    expect(validationsConcordantesMemeVersion([])).toEqual([]);
+  });
+
+  it("trois décisions retenues sur deux versions : une violation qui nomme les deux versions, une fois chacune", () => {
+    const base = concordantes[0] as (typeof concordantes)[number];
+    const trois = [base, { ...base, id: "d2", annotateur_id: "a2" }, { ...base, id: "d3", annotateur_id: "a3", item_version: 3 }];
+    const violations = validationsConcordantesMemeVersion(trois);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.detail).toBe(`décisions retenues portant 2 versions différentes : 2|${empreinte}, 3|${empreinte}.`);
+  });
+
+  it("garde unique : l'invariant a posteriori et la promotion (memeVersionJugee) rendent le même jugement sur chaque paire", () => {
+    const base = concordantes[0] as (typeof concordantes)[number];
+    const secondes = [
+      { ...base, id: "d2", annotateur_id: "a2" },
+      { ...base, id: "d2", annotateur_id: "a2", item_version: 3 },
+      { ...base, id: "d2", annotateur_id: "a2", item_empreinte: "8".repeat(64) },
+      { ...base, id: "d2", annotateur_id: "a2", item_version: 3, item_empreinte: "8".repeat(64) },
+    ];
+    const jugements = secondes.map((seconde) => ({
+      promotion: memeVersionJugee(base, seconde),
+      invariant: validationsConcordantesMemeVersion([base, seconde]).length === 0,
+    }));
+    expect(jugements.map((jugement) => jugement.promotion)).toEqual([true, false, false, false]);
+    for (const jugement of jugements) expect(jugement.invariant).toBe(jugement.promotion);
+  });
+
+  /*
+   * Pourquoi la barrière du gel ne peut pas brancher cet invariant (docs/DETTE.md, 2026-09-17,
+   * point 1) : le corpus qu'elle lit, `data/items/`, ne porte des validations que leur projection
+   * appauvrie (`promotion.ts:projeterValidation`), sans version ni empreinte jugées. Les versions ne
+   * vivent que dans les journaux de validation. Si ce test échoue, `item.validations[]` porte
+   * désormais la version jugée, et la barrière peut juger la concordance sur ses propres entrées.
+   */
+  it("item.validations[] ne porte pas la version jugée : la barrière du gel n'a pas le corpus de cet invariant", () => {
+    const item = contenus("item", "valide-01")[0] as Record<string, unknown>;
+    const validations = item["validations"] as readonly Record<string, unknown>[];
+    expect(validations.length).toBeGreaterThan(1);
+    expect(() => valider("item", item, "item/valide-01")).not.toThrow();
+    const avecVersion = { ...item, validations: validations.map((v) => ({ ...v, item_version: 1, item_empreinte: empreinte })) };
+    expect(() => valider("item", avecVersion, "item/valide-01 + version jugée")).toThrow(ErreurSchema);
   });
 });
 

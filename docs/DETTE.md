@@ -2049,7 +2049,7 @@ dans un diff ordinaire. Visible à la relecture, mais après coup.
 **Ce qu'il faut faire.** Déplacer la table vers `prompts/gabarits-1.0.0.json` dans le lot
 `perimetre-prompts`, que seul l'auteur écrit ; `gabarits.ts` devient une lecture de fichier.
 
-### 7. Deux gardes pour le même invariant, et un test qui recopie sa configuration — *basse*
+### 7. Deux gardes pour le même invariant, et un test qui recopie sa configuration — *basse* — garde unique memeVersionJugee le 2026-11-08
 
 `validation/domaine/promotion.ts:memeVersionJugee()` (privée) et
 `pipeline/questions/invariants.ts` gardent la même règle « deux validations concordantes, même
@@ -2306,7 +2306,7 @@ pas à prendre seul : un contrôle trop strict pousse à écrire des entrées vi
 
 ## 2026-09-17 — JSON Schema des objets du projet (`schema/`)
 
-### 1. Deux des quatre invariants inter-fichiers ne sont vérifiés par aucun code de production — *haute*
+### 1. Deux des quatre invariants inter-fichiers ne sont vérifiés par aucun code de production — *haute* — avancé le 2026-11-08, deux points restent à décider
 
 JSON Schema valide un fichier à la fois. Quatre cohérences essentielles échappent donc aux schémas :
 
@@ -2338,6 +2338,33 @@ donnée incohérente dans une métrique publiée sans qu'aucune validation n'éc
 sur un contrôle a posteriori du corpus (à la manière de `pipeline/gel/barriere.ts` pour les deux
 premiers), ou documenter explicitement qu'ils sont redondants avec les gardes existantes si une
 revue le confirme.
+
+*État au 2026-11-08.* La règle « même version » n'a plus qu'une définition :
+`validation/domaine/promotion.ts:memeVersionJugee`, exportée et appelée par
+`validationsConcordantesMemeVersion`. Le reste se répartit ainsi, chaque point prouvé par un test de
+`tests/questions/invariants.test.ts` :
+
+- *contexte des verdicts de réponse : redondant, non branché.* Un verdict hors contexte run est
+  refusé par `analysis/lecture-run.ts:lireVerdicts` (`contexte_hors_dossier`), un verdict run sur une
+  réponse d'un autre contexte par `analysis/filtre.ts:assembler`. Il n'existe pas d'autre façon de
+  diverger. `analysis/` ne peut d'ailleurs pas appeler `pipeline/questions/invariants.ts`.
+- *contexte des notations individuelles : non redondant, non branché.* Le test contrefactuel
+  contrôle le contexte des seules notations des paires (`contrefactuel.ts:verifierNotation`). La
+  règle de décision et les lectures de comparateur filtrent sur `contexte === "run"`. Une notation
+  de contexte permuté qui porte sur une réponse run hors des paires est donc ignorée sans bruit. Elle
+  ne change aucun chiffre, mais elle est publiée incohérente. L'emplacement en amont est l'ouverture
+  de la notation (`pipeline/notation/chaine.ts:ouvrir`), qui lit déjà notations, réponses et
+  réponses contrefactuelles. Même cas pour un verdict run qui porte sur une lecture de comparateur
+  d'un autre contexte : la lecture est filtrée avant d'être notée, et le verdict n'est jamais lu.
+- *versions des validations : non branché, le gel n'a pas ce corpus.* `item.validations[]` ne porte
+  ni version ni empreinte jugées : le schéma les refuse. La barrière ne peut donc pas juger la
+  concordance sur ce qu'elle lit. Les versions ne vivent que dans les journaux de validation, que
+  `pnpm promote` lit et que le gel ne lit pas. Les y brancher ajouterait au gel une entrée et une
+  condition de blocage que le §5 n'écrit pas : c'est un amendement (§9), à décider par l'auteur.
+  L'autre emplacement possible est `pnpm promote`, sur tout `data/items/` rapproché des journaux.
+  Le rapprochement se ferait par item, annotateur et date. Deux exclusions s'imposeraient : les
+  items vérifiés par arbitrage, dont les deux validations peuvent légitimement porter deux
+  versions, et les décisions annulées ou antérieures à un retour en attente.
 
 ### ~~2. L'épinglage `version` + `empreinte` durcit toute correction d'item~~ — réglé le 2026-09-18 par la définition du contenu notant au §4 du protocole
 
