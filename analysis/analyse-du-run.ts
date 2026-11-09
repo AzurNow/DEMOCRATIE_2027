@@ -15,7 +15,8 @@
  * 3. `contexteDuRun` calcule **une seule fois** le partage des couples (`seuils.ts:couplesComparables`),
  *    celui des candidats (`candidatsComparables`), les strates (`incertitude.ts:stratesDuCalculPrincipal`),
  *    les modes de tête, la strate de moins de 60 jours (`strate-recente.ts:unitesDeLaStrateRecente`)
- *    et les graines du run. Le résultat est figé (`Object.freeze`, en profondeur) et il est le seul
+ *    et les graines du run, vérifiées d'abord contre le générateur de l'analyse (`grainesDeLAnalyse`,
+ *    refus `GrainesDeLAnalyseNonConformes` avant tout partage). Le résultat est figé (`Object.freeze`, en profondeur) et il est le seul
  *    porteur du partage : chaque section le reçoit, aucune ne le recalcule. §8, robustesse :
  *    « Chaque recalcul garde le partage des couples outil × mode et des candidats du calcul
  *    principal : les seuils de non-publication ne sont pas réappliqués à la population restreinte ».
@@ -72,6 +73,7 @@ import { unitesParCoupleCompare } from "./couples-compares.ts";
 import { ecartsApiApplication, type EcartsApiApplication } from "./ecart-api-application.ts";
 import { ecartsJugesEditeurs, type EcartsJugesEditeurs, type JugeEtSonEditeur } from "./ecart-juge-editeur.ts";
 import { ecrireUneFoisOuComparer } from "./ecriture-une-fois.ts";
+import { champsNonConformes, GENERATEUR_DU_TIRAGE, type ChampNonConforme, type GraineTirage } from "./graine-tirage.ts";
 import { assembler, estDuRun, type EntreesAnalyse, type UniteAnalyse } from "./filtre.ts";
 import { decisionH1, decisionH2, decisionH3, decisionH4, decisionH5, STRATE_H3, type FabricationDuCouple } from "./hypotheses.ts";
 import {
@@ -119,7 +121,8 @@ export interface RunAnalyse extends Run {
    * go/no-go y écrit.
    */
   readonly juges: readonly JugeLuParAnalyse[];
-  readonly graines: { readonly bootstrap: { readonly valeur: number }; readonly permutation: { readonly valeur: number } };
+  /** Vérifiées contre le générateur de l'analyse avant tout calcul (`grainesDeLAnalyse`). */
+  readonly graines: { readonly bootstrap: GraineTirage; readonly permutation: GraineTirage };
 }
 
 /** Un juge de `run.json#/juges[]`, tel que l'analyse le lit. */
@@ -298,8 +301,63 @@ function figer<T>(valeur: T): T {
   return Object.freeze(valeur);
 }
 
-/** 3. Le partage de la population, calculé une fois, figé. */
+/** Les deux graines du run que lit l'analyse du §8 (`run.json#/graines`). */
+const GRAINES_DE_L_ANALYSE = ["bootstrap", "permutation"] as const;
+
+export type NomGraineDeLAnalyse = (typeof GRAINES_DE_L_ANALYSE)[number];
+
+/** Une graine de l'analyse et ses champs qui ne désignent pas le générateur employé. */
+export interface GraineDeLAnalyseFautive {
+  readonly graine: NomGraineDeLAnalyse;
+  readonly champs: readonly ChampNonConforme[];
+}
+
+function decrireChamp({ champ, declare, attendu }: ChampNonConforme): string {
+  return declare === undefined ? `${champ} absent (attendu « ${attendu} »)` : `${champ} « ${declare} » au lieu de « ${attendu} »`;
+}
+
+/**
+ * §8, « Graines de l'analyse » : chaque graine dérivée amorce SplitMix64 (`splitmix64-sha256-v1`, le
+ * même générateur que le tirage). Une graine `bootstrap` ou `permutation` qui en déclare un autre, ou
+ * n'en déclare aucun, promet des intervalles et des valeurs p qu'un tiers ne pourrait pas rejouer
+ * avec le générateur déclaré (§9). Le refus nomme chaque graine fautive, et rien n'est calculé.
+ */
+export class GrainesDeLAnalyseNonConformes extends Error {
+  readonly fautives: readonly GraineDeLAnalyseFautive[];
+
+  constructor(run_id: Ulid, fautives: readonly GraineDeLAnalyseFautive[]) {
+    const detail = fautives.map(({ graine, champs }) => `graines.${graine} : ${champs.map(decrireChamp).join(", ")}`).join(" ; ");
+    super(
+      `Run ${run_id} : ${detail}. L'analyse du §8 tire avec ${GENERATEUR_DU_TIRAGE.algorithme} ` +
+        `(${GENERATEUR_DU_TIRAGE.bibliotheque}, version ${GENERATEUR_DU_TIRAGE.version}) ; un tiers qui rejouerait ` +
+        `avec le générateur déclaré obtiendrait d'autres intervalles et d'autres valeurs p (§8, « Graines de ` +
+        `l'analyse » ; §9). Rien n'est calculé.`,
+    );
+    this.name = "GrainesDeLAnalyseNonConformes";
+    this.fautives = fautives;
+  }
+}
+
+/**
+ * Les deux entiers que l'analyse dérive (`graines.ts`), lus seulement si chaque graine déclare le
+ * générateur de l'analyse (`graine-tirage.ts:champsNonConformes`, la règle de `verifierGraine`).
+ * Sinon `GrainesDeLAnalyseNonConformes`, qui nomme toutes les graines fautives.
+ */
+export function grainesDeLAnalyse(run: RunAnalyse): { readonly bootstrap: number; readonly permutation: number } {
+  const fautives = GRAINES_DE_L_ANALYSE.flatMap((graine) => {
+    const champs = champsNonConformes(run.graines[graine]);
+    return champs.length === 0 ? [] : [{ graine, champs }];
+  });
+  if (fautives.length > 0) throw new GrainesDeLAnalyseNonConformes(run.id, fautives);
+  return { bootstrap: run.graines.bootstrap.valeur, permutation: run.graines.permutation.valeur };
+}
+
+/**
+ * 3. Le partage de la population, calculé une fois, figé. Les graines de l'analyse sont vérifiées
+ * d'abord (`grainesDeLAnalyse`) : un run qui en déclare un autre générateur n'a aucun partage calculé.
+ */
 export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnalyse[], parametres: ParametresAnalyse): ContexteDuRun {
+  const graines = grainesDeLAnalyse(entrees.run);
   const api = unites.filter((u) => u.canal === "api");
   const candidats = candidatsComparables(entrees.run);
   const assistants = entrees.run.perimetre.outils.filter(estAssistantInclus);
@@ -318,7 +376,7 @@ export function contexteDuRun(entrees: EntreesDuRun, unites: readonly UniteAnaly
     outils: figer(assistants.map((outil) => outil.outil_id)),
     modeles: figer(modelesDuRun(entrees.run.perimetre.outils, entrees.reponses)),
     sources_robustesse: Object.freeze({ run: entrees.run, notations: entrees.notations }),
-    graines: figer({ bootstrap: entrees.run.graines.bootstrap.valeur, permutation: entrees.run.graines.permutation.valeur }),
+    graines: figer({ ...graines }),
     parametres: figer({ ...parametres }),
   });
 }
