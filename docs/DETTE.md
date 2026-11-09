@@ -13,7 +13,7 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
-## 2026-11-09 — Population de notation factorisée, revue du 2026-11-09 n° 1 (`analysis/population-notation.ts` et ses six appelants)
+## 2026-11-09 — Juges réels sur doubles, D98 à D101, revue et conformité du jour, population de notation, kappa de la paire, archive D100 (PR #385 à #397 : `pipeline/notation/`, `pipeline/go-no-go/`, `pipeline/run/`, `analysis/`, `schema/`)
 
 ### 1. La population humaine, du jeu d'or et des kappas inclut les saisies de l'application — *haute*
 
@@ -36,6 +36,62 @@ notation, liste servie par l'écran), celle de l'échantillon humain, du jeu d'o
 (tirages de l'écran, du jeu d'or, du go/no-go, de la lecture du run, de la chaîne et du contrôle
 croisé) ne la garde pas. Avec le test du run désigné. **À régler avant le premier run mensuel avec
 application.**
+
+Depuis #395, `analysis/filtre.ts:assembler` et `analysis/analyse-du-run.ts:entreesPubliees` lisent
+aussi `reponsesObtenuesDuRun`. Eux doivent **garder** l'application à la séparation : l'écart
+API/application lit ces unités, et les basculer avec les tirages humains viderait cette métrique sans
+erreur. L'en-tête de `population-notation.ts` le dit.
+
+### 2. Tant que D94 n'est pas codé, tout run après le pilote sort `publie_provisoire` — *moyenne*
+
+#394 ajoute le critère go/no-go `kappa_paire_jeu_or`, lu sur `run.json#/kappa_paire_juges` : une
+paire non inscrite le met au rouge. Seul `pnpm kappa:jeu-or` l'inscrit, sur le pilote ; la recopie
+dans les runs suivants (D94) n'existe pas, et `kappa:jeu-or` refuse de tourner une fois
+`metriques.json` écrit.
+
+**Pourquoi ça casse.** Un run mensuel parfaitement sain est publié avec la mention « provisoire » ;
+un pilote où l'on a oublié `kappa:jeu-or` avant l'analyse reste provisoire sans retour possible. Ça
+se voit (critère rouge nommé), mais il faut alors réécrire un run.
+
+**Ce qu'il faut faire.** Coder D94 avant le premier run mensuel ; faire écrire le §7/§12 (items 17
+et 18 de `docs/TACHES-AUTEUR.md`) par l'auteur dans la 0.35.
+
+### 3. Un écrivain de `run.json` qui n'utilise pas `ecrireParRenommageSiInchange` écrase en silence — *moyenne*
+
+#393 fait relire `run.json` juste avant le renommage par ses huit écrivains (`pipeline/run/ecriture.ts`,
+`RunModifieEntreTemps`). Rien n'oblige un neuvième à faire de même, et la fenêtre entre la relecture
+et le renommage reste ouverte.
+
+**Pourquoi ça casse.** Deux commandes lancées ensemble (par exemple `kappa:jeu-or` et une
+inscription de notation) : celle qui écrit en dernier efface le champ inscrit par l'autre, et le
+go/no-go lit ensuite une paire « non inscrite » ou un contrefactuel absent.
+
+**Ce qu'il faut faire.** À la revue suivante, vérifier que tout écrivain de `run.json` passe par
+cette fonction ; une garde textuelle dans `tests/` le ferait d'office.
+
+### 4. `analysis/` n'a aucune garde contre les cycles d'import — *basse*
+
+#395 a déplacé `estDuRun` et `filtrerContexteRun` dans `analysis/contexte-run.ts` pour éviter le
+cycle `filtre.ts` ↔ `population-notation.ts`. Le test de cycles existant ne couvre que
+`pipeline/questions/`.
+
+**Pourquoi ça casse.** Un import de `filtre.ts` depuis `contexte-run.ts` ou `population-notation.ts`
+recrée le cycle ; selon l'ordre de chargement, une constante lue au chargement vaut `undefined`.
+
+**Ce qu'il faut faire.** Étendre le test de cycles à `analysis/`.
+
+### 5. L'archive D100 arrête la notation sur une collision de nom — *basse*
+
+#397 écrit chaque tentative d'un juge réel une fois sous `volume/appels-juges/` ; un nom déjà pris
+lève `AppelJugeDejaArchive`. Les en-têtes HTTP ne sont pas gardés (option recommandée : données du
+compte), seule l'empreinte du corps de requête l'est.
+
+**Pourquoi ça casse.** Une archive restaurée à moitié, ou un volume copié d'un autre run, bloque la
+relance de la notation avec un message que l'opérateur doit comprendre ; et si l'auteur veut
+rattacher un appel aux journaux de l'éditeur, le `request-id` manque.
+
+**Ce qu'il faut faire.** Documenter le cas dans `runs/README.md` au premier incident ; liste déclarée
+d'en-têtes si l'auteur la demande.
 
 ---
 
@@ -203,7 +259,7 @@ reprise, go/no-go) et n'ignore pas ce champ refusera un run noté, bruyamment.
 **Ce qu'il faut faire.** Tenir la liste des champs écrits après le gel en un seul endroit, lue par
 toutes les comparaisons, à la prochaine retouche de l'une d'elles.
 
-### 3. Un adaptateur de juge réel doit lever `JugeDefaillant`, et rien d'autre — *moyenne*
+### ~~3. Un adaptateur de juge réel doit lever `JugeDefaillant`, et rien d'autre~~ — réglé le 2026-11-09 par #387 (`jugeReel` traduit les échecs de transport et les sorties invalides en `JugeDefaillant` ; 401/403 arrêtent la notation, D99)
 
 #281 renvoie à un humain la réponse d'un juge qui lève `JugeDefaillant` ou rend une sortie
 incohérente ; toute autre erreur reste un défaut du banc et arrête la notation.

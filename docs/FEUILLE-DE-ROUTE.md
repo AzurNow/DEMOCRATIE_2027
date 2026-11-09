@@ -18,7 +18,7 @@ Aucune décision en attente.
 
 ### D100 — Les réponses HTTP brutes des appels de juge sont-elles archivées et publiées ?
 
-**Décision du 2026-11-09 :** Option 1. Amendement du §7 (et mention au §9) proposé dans docs/TACHES-AUTEUR.md ; le code d'archivage attend l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).
+**Décision du 2026-11-09 :** Option 1. Amendement du §7 (et mention au §9) proposé dans docs/TACHES-AUTEUR.md ; code d'archivage livré le 2026-11-09 (#397, volume/appels-juges/, en-têtes HTTP non gardés) en anticipant l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).
 
 ### D101 — Comment se fait la revérification des items d'absence (§4, annexe F case 2) : quels items, quand, et quelle issue ?
 

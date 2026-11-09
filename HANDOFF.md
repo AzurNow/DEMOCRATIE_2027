@@ -41,42 +41,39 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-06 (nuit)
+## État au 2026-11-09
 
-- Protocole **0.34** dans le dépôt. **La 0.35 est tranchée mais pas écrite** : l'auteur a dit « prends
-  les décisions recommandées » ; D81 à D97 sont tranchées dans `docs/feuille-de-route.json` (#361), et
-  les dix remplacements exacts de la 0.35 sont dans `docs/TACHES-AUTEUR.md` (section 1, Protocole).
-  Le classifieur du mode auto refuse à l'agent l'écriture dans `docs/PROTOCOLE.md` (zone d'arrêt de
-  CLAUDE.md) : l'auteur l'écrit, ou autorise l'agent explicitement.
-- Fusionnées le 2026-11-06 : #338 à #358, #360 (clôture), #361 (décisions). Lancées en fusion
-  automatique (CI verte puis `gh pr merge --merge`) : #362 (canal application refusé par les
-  métriques secondaires), #363 (test du partage unique de `pnpm analyze`), #364 (D82, troncature
-  « non renseignée »), #365 (D83, textes des pages citées hors du volume). Vérifier qu'elles sont
-  fusionnées.
-- Encore en cours à l'écriture de cet état, dans des worktrees d'agents (`.claude/worktrees/agent-*`) :
-  lecture de comparateur confrontée à la version de l'item au gel (DETTE 2026-10-02 n° 2) et D86
-  (`verifierOutils` relâché). S'ils ont rendu sans PR : relire leur diff, commiter, PR, fusionner.
+- Protocole **0.34** dans le dépôt. **La 0.35 est tranchée mais pas écrite** : textes exacts dans
+  `docs/TACHES-AUTEUR.md` (section 1, Protocole), items 1 à 18 : D81 à D97 du 2026-11-06, D98 à D101
+  du 2026-11-09 (items 11 à 16), kappa de la paire au §7 et au §12 (items 17 et 18). L'auteur
+  l'écrit ; le classifieur refuse cette écriture à l'agent.
+- Fusionnées le 2026-11-09 : #375 à #397 (sauf #359). Juges réels Anthropic et Mistral sur API
+  doublée (#387, `pnpm notation:reelle`), revérification des items d'absence (#385, D101, lancée par
+  l'auteur), revue et conformité datées du jour (#388, #389), critère go/no-go `kappa_paire_jeu_or`
+  (#394), garde de concurrence sur `run.json` (#393), archive D100 des réponses des juges (#397).
+  Vérifier que #395 à #397 sont bien fusionnées (fusion automatique lancée à la clôture).
 - **#359 en brouillon, rouge volontairement** jusqu'à la 0.35 (D97) ; ensuite fusionner `main` dedans.
-- Après la 0.35 : coder D85 (contrefactuel d'outil absent pour tout outil hors dérangement du même
-  éditeur), D94 (recopie du kappa avec contrôle d'identité du juge), D95 (motif
-  `juge_retire_sans_calibration`, schéma compris).
-- Le texte nouveau du site attend la relecture de l'auteur ; aucun rendu vérifié sur un vrai appareil.
-- `site/site/` (cache `.astro` non suivi) fait échouer `pnpm check` en local, pas en CI : à supprimer
-  avec l'accord de l'auteur. Worktree `agent-a0e98d279de57a40f` gardé (`scratch/maquette-habillage.html`).
-- Rien n'a jamais tourné sur un appel réel. Avant le prochain gel, l'auteur renseigne
-  `juges[].outils_de_son_editeur` dans `config/gel.json`.
+- Après la 0.35 : coder D85, **D94 (sinon tout run après le pilote sort provisoire, DETTE
+  2026-11-09 n° 2)**, D95 ; séparer la population API seul / avec application (DETTE 2026-11-09
+  n° 1, avant le premier run mensuel avec application) ; réglages des juges au gel (Q1, D98).
+- Restent de la revue du 2026-11-09 : constats 8, 10, 18 et 25 (codables), 14 (après l'amendement
+  `charge-juge-v7`) ; de la conformité du même jour, les écarts autres que le n° 1
+  (`docs/conformite/2026-11-09.md`).
+- Node local 22.23.3 sous le minimum d'Astro (22.23.4) : `pnpm test` ne démarre pas en local (projet
+  site) ; mettre Node à jour. La CI fait foi.
+- Rien n'a jamais tourné sur un appel réel. Interrogation réelle et `pnpm run:live` attendent
+  `config/perimetre.yaml` (auteur).
 
 ## Ce qui était en cours
 
-Voir l'État : deux agents, quatre PR en fusion automatique.
+Rien hors des trois PR en fusion automatique (#395 à #397).
 
 ## Prochaines tâches, par priorité
 
-1. Décisions de l'auteur (D94 à D97 d'abord : jeu d'or et graines), puis leur code.
-2. Relecture du texte du site par l'auteur ; vérification sur un vrai téléphone et une vraie tablette.
-3. Suite des lots de notation et des décisions en attente, d'après `docs/feuille-de-route.json`.
-4. **Site** généré depuis `runs/` : seulement après la passe d'optimisation et la revue de code
-   (`docs/PLAN-PAGE-PEDAGOGIQUE.md`).
+1. Protocole 0.35 par l'auteur, puis D94, D85, D95 et la séparation des populations.
+2. `config/perimetre.yaml` par l'auteur, puis adaptateurs d'interrogation réels et `pnpm run:live`.
+3. Relecture du texte du site par l'auteur ; vérification sur un vrai téléphone et une vraie tablette.
+4. **Site** de résultats généré depuis `runs/` (`docs/PLAN-PAGE-PEDAGOGIQUE.md`).
 5. Agents en parallèle : tests ciblés en local, suite complète en CI (`LESSONS.md`, Méthode).
 
 Hors mission sans accord explicite de l'auteur : appels d'API réels, collecte réelle, écriture dans
