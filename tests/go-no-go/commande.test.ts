@@ -13,6 +13,7 @@ import type { Mode, Reponse } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ReponsesEnAttenteOperateur } from "../../pipeline/interrogation/attente-operateur.ts";
 import type { Checklist } from "../../pipeline/go-no-go/checklist.ts";
+import { KAPPA_PAIRE_NON_INSCRIT } from "../../pipeline/go-no-go/criteres-juges.ts";
 import { GoNoGoDivergent, GoNoGoRefuse, goNoGo } from "../../pipeline/go-no-go/go-no-go.ts";
 import { MetriquesSansFichier } from "../../pipeline/go-no-go/metriques.ts";
 import { PlanNonReconstructible } from "../../pipeline/interrogation/plan-du-run.ts";
@@ -100,6 +101,28 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
       expect(checklist.cases.find((c) => c.rang === 4)?.appuis).toContain("interrogation_dans_la_fenetre");
       expect([checklist.cases.find((c) => c.rang === 4)?.motif]).not.toContainEqual(expect.stringContaining("fenêtre"));
       expect(checklist.cases.find((c) => c.rang === 2)).toMatchObject({ etat: "non_faite" });
+    },
+    TEMPS,
+  );
+
+  it(
+    "§7 : le critère kappa_paire_jeu_or lit le kappa de la paire de run.json — non inscrit, rouge ; exactement 0,75, vert ; indéfini, rouge",
+    async () => {
+      const critereDe = (run: string): unknown => goNoGo(run).go_no_go.criteres.find((c) => c.code === "kappa_paire_jeu_or");
+
+      const nonInscrit = await runSimuleNote();
+      expect(lireObjet(join(nonInscrit, "run.json"))).not.toHaveProperty("kappa_paire_juges");
+      expect(critereDe(nonInscrit)).toEqual({ code: "kappa_paire_jeu_or", statut: "rouge", valeur: KAPPA_PAIRE_NON_INSCRIT, seuil: 0.75 });
+      expect(lireObjet(join(nonInscrit, "run.json"))["motif_provisoire"]).toContain("kappa_paire_jeu_or");
+
+      const auSeuil = await runSimuleNote();
+      modifierRun(auSeuil, (r) => ({ ...r, kappa_paire_juges: 0.75 }));
+      expect(critereDe(auSeuil)).toEqual({ code: "kappa_paire_jeu_or", statut: "vert", valeur: 0.75, seuil: 0.75 });
+      expect(lireObjet(join(auSeuil, "run.json"))["motif_provisoire"]).not.toContain("kappa_paire_jeu_or");
+
+      const indefini = await runSimuleNote();
+      modifierRun(indefini, (r) => ({ ...r, motif_indefini_kappa_paire_juges: "accord_attendu_maximal" }));
+      expect(critereDe(indefini)).toMatchObject({ statut: "rouge", valeur: "kappa de la paire indéfini : accord_attendu_maximal" });
     },
     TEMPS,
   );

@@ -31,7 +31,7 @@ import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
 import type { EchantillonsParQuestion } from "./conditions.ts";
 import type { Question } from "../questions/types.ts";
-import { ecrireParRenommage } from "../run/ecriture.ts";
+import { ecrireParRenommageSiInchange } from "../run/ecriture.ts";
 import { demarrerOuReprendre } from "../run/statut.ts";
 import type { IssueDemarrage, RunAvecStatut } from "../run/statut.ts";
 import { ouvrirFenetre } from "./fenetre.ts";
@@ -66,6 +66,8 @@ export interface RunJsonGele extends RunAvecStatut {
 export interface RunGele {
   readonly repertoire: string;
   readonly chemin_run_json: string;
+  /** Le texte exact de `run.json` lu par `lireRunGele` : `inscrireDemarrage` refuse si le fichier a changé depuis. */
+  readonly texte_run_json: string;
   readonly run_id: string;
   readonly fenetre: Fenetre;
   readonly outils: readonly OutilDeRun[];
@@ -140,6 +142,7 @@ export function lireRunGele(repertoire: string, runs_du_depot: RunsDuDepot): Run
   return {
     repertoire,
     chemin_run_json,
+    texte_run_json: texte,
     run_id: run.id,
     fenetre: fenetreDuGel(repertoire, run, runs_du_depot),
     outils: run.perimetre.outils,
@@ -157,5 +160,5 @@ export function lireRunGele(repertoire: string, runs_du_depot: RunsDuDepot): Run
 export function inscrireDemarrage(gele: RunGele): void {
   if (gele.demarrage.issue === "reprend") return;
   const chemin = gele.chemin_run_json;
-  ecrireParRenommage(chemin, valider<RunJsonGele>("run", gele.demarrage.run, `${chemin} au démarrage`), "demarrage");
+  ecrireParRenommageSiInchange(chemin, valider<RunJsonGele>("run", gele.demarrage.run, `${chemin} au démarrage`), "demarrage", gele.texte_run_json);
 }

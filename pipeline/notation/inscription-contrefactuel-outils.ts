@@ -17,7 +17,7 @@ import { readFileSync } from "node:fs";
 import { dispositionRunNote } from "../../analysis/lecture-run.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
-import { ecrireParRenommage } from "../run/ecriture.ts";
+import { ecrireParRenommageSiInchange } from "../run/ecriture.ts";
 import type { IssueInscription } from "./inscription-contrefactuel.ts";
 import type { BlocContrefactuelOutils } from "./publication-contrefactuel-outils.ts";
 
@@ -30,7 +30,8 @@ export class ContrefactuelOutilsDejaInscrit extends Error {
 
 export function inscrireContrefactuelOutils(repertoire_run: string, bloc: BlocContrefactuelOutils): IssueInscription {
   const chemin = dispositionRunNote(repertoire_run).run_json;
-  const actuel = JSON.parse(readFileSync(chemin, "utf8")) as Readonly<Record<string, unknown>>;
+  const texte_lu = readFileSync(chemin, "utf8");
+  const actuel = JSON.parse(texte_lu) as Readonly<Record<string, unknown>>;
   const deja = actuel["contrefactuel_outils"];
   if (deja !== undefined) {
     if (canoniser(deja) !== canoniser(bloc)) throw new ContrefactuelOutilsDejaInscrit(chemin);
@@ -38,6 +39,6 @@ export function inscrireContrefactuelOutils(repertoire_run: string, bloc: BlocCo
   }
   const fusionne = { ...actuel, contrefactuel_outils: bloc };
   valider("run", fusionne, `${chemin} après inscription du contrefactuel d'outil`);
-  ecrireParRenommage(chemin, fusionne, "inscription-outils");
+  ecrireParRenommageSiInchange(chemin, fusionne, "inscription-outils", texte_lu);
   return "inscrit";
 }
