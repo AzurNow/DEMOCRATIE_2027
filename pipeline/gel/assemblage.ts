@@ -55,6 +55,7 @@ import { grainesDuRun } from "./graines.ts";
 import type { GrainesDuRun, ValeursDesGraines } from "./graines.ts";
 import { exigerFenetreApresDateGel } from "./instants.ts";
 import type { PrecedentDuGel } from "./precedent.ts";
+import { exigerRaisonDuChangementDeQuota } from "./raison-quota.ts";
 import { ECHANTILLONS } from "../interrogation/conditions.ts";
 import { reponsesPrevues } from "../run/reponses.ts";
 import { STATUT_PLANIFIE } from "../../analysis/types-run.ts";
@@ -148,6 +149,7 @@ export function tirerAuGel(
   valeurs: ValeursDesGraines,
   precedent: PrecedentDuGel,
 ): GelTire {
+  exigerRaisonDuChangementDeQuota(prepare.perimetre.parametres_tirage, precedent.quotas_precedents);
   const graines = grainesDuRun(valeurs);
   const reprise = precedent.tirage_precedent === undefined ? {} : { tirage_precedent: precedent.tirage_precedent };
   const resultat = tirer({

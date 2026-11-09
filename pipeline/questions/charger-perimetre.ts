@@ -125,6 +125,8 @@ interface PerimetreSaisi {
   readonly tirage: {
     readonly questions_par_strate: number | null;
     readonly questions_attribution_par_theme: number | null;
+    /** §5 : la raison d'un changement de quota, facultative ; le gel l'exige ou la refuse (`raison-quota.ts`). */
+    readonly raison_changement_quota?: string;
   };
   readonly candidats: readonly CandidatSaisi[];
   readonly outils: readonly OutilSaisi[];
@@ -227,10 +229,11 @@ function clesManquantes(saisi: PerimetreSaisi): readonly string[] {
 
 function sansNull(saisi: PerimetreSaisi): PerimetrePourRun | null {
   const { date_gel, regime_inclusion } = saisi;
-  const { questions_par_strate, questions_attribution_par_theme } = saisi.tirage;
+  const { questions_par_strate, questions_attribution_par_theme, raison_changement_quota } = saisi.tirage;
   if (date_gel === null || regime_inclusion === null) return null;
   if (questions_par_strate === null || questions_attribution_par_theme === null) return null;
-  return { ...saisi, date_gel, regime_inclusion, tirage: { questions_par_strate, questions_attribution_par_theme } };
+  const raison = raison_changement_quota === undefined ? {} : { raison_changement_quota };
+  return { ...saisi, date_gel, regime_inclusion, tirage: { questions_par_strate, questions_attribution_par_theme, ...raison } };
 }
 
 function exigerPourUnRun(saisi: PerimetreSaisi, provenance: string): PerimetrePourRun {
@@ -620,6 +623,9 @@ export function construirePerimetre(brut: unknown, contexte: ContexteDuGel, prov
     parametres_tirage: {
       questions_par_strate: perimetre.tirage.questions_par_strate,
       questions_attribution_par_theme: perimetre.tirage.questions_attribution_par_theme,
+      ...(perimetre.tirage.raison_changement_quota === undefined
+        ? {}
+        : { raison_changement_quota: perimetre.tirage.raison_changement_quota }),
     },
   };
 }
