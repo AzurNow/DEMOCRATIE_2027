@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-11-06",
+  "date_maj": "2026-11-09",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -1332,6 +1332,58 @@
       "recommandation": "Option 1 : le texte rejoint le code, aucune graine ne bouge, et le test garde ensuite toute dérive.",
       "retenu": "Option 1. Texte proposé pour la 0.35 dans docs/TACHES-AUTEUR.md (§7, §8) ; la PR #359 passe au vert une fois l'amendement écrit. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).",
       "date_decision": "2026-11-06"
+    },
+    {
+      "id": "D98",
+      "statut": "tranchee",
+      "question": "Où sont déclarés les réglages des juges (température, max_tokens, délai d'abandon, politique de tentatives, éditeur) que le §7 dit « fixés et publiés » ?",
+      "contexte": "Revue de la PR #385, case 2. Le §7 exige que les réglages d'échantillonnage des juges soient fixés et publiés, et l'expression « erreur persistante de son API » n'a de sens que par une politique de tentatives ; aucun endroit ne porte ces réglages, ni l'éditeur de chaque juge.",
+      "options": [
+        "Bloc `appel` par juge dans `config/gel.json`, recopié par le gel dans `run.json#/juges[]` (schéma modifié).",
+        "Fichier `config/juges.json` versionné, dont l'empreinte est inscrite dans `run.json`."
+      ],
+      "recommandation": "Option 1 : les réglages sont publiés avec le run lui-même (règle 8) et figés au gel comme le reste.",
+      "retenu": "Option 1. Amendement du §7 proposé dans docs/TACHES-AUTEUR.md : les réglages, l'éditeur et la politique de tentatives de chaque juge sont déclarés au gel et publiés dans `run.json`. Les valeurs restent à fixer par l'auteur ; aucune n'est proposée ici. Schéma et code après l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).",
+      "date_decision": "2026-11-09"
+    },
+    {
+      "id": "D99",
+      "statut": "tranchee",
+      "question": "Une clé invalide ou un accès refusé (401, 403) pendant la notation est-il une « erreur persistante de son API » du juge ?",
+      "contexte": "Revue de la PR #385. Le §7 renvoie à un humain la réponse qu'un juge ne peut pas noter pour « erreur persistante de son API ». Un refus d'authentification ou d'autorisation tient à la clé du banc, pas au juge.",
+      "options": [
+        "C'est un défaut du banc : la chaîne s'arrête au premier refus, sans écrire de renvoi, comme la fraîcheur non définie.",
+        "C'est une erreur persistante du juge : renvoi de la réponse à un humain."
+      ],
+      "recommandation": "Option 1 : renvoyer des centaines de réponses à des humains pour une clé périmée fausserait le kappa et noierait la file.",
+      "retenu": "Option 1 : arrêt au premier refus 401 ou 403, sans renvoi et sans invalidation du run ; la notation reprend la clé corrigée. Amendement du §7 proposé dans docs/TACHES-AUTEUR.md. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).",
+      "date_decision": "2026-11-09"
+    },
+    {
+      "id": "D100",
+      "statut": "tranchee",
+      "question": "Les réponses HTTP brutes des appels de juge sont-elles archivées et publiées ?",
+      "contexte": "Revue de la PR #385. Le protocole est muet sur ce point ; la règle 7 (réponses brutes immuables) et la règle 8 (publication intégrale) visent l'interrogation, pas expressément la notation.",
+      "options": [
+        "Les archiver telles quelles et les publier dans le volume du run, comme les réponses brutes de l'interrogation.",
+        "Ne publier que la sortie structurée du juge."
+      ],
+      "recommandation": "Option 1 : un tiers peut refaire l'analyse d'une sortie refusée ou illisible depuis ce que le juge a réellement répondu.",
+      "retenu": "Option 1. Amendement du §7 (et mention au §9) proposé dans docs/TACHES-AUTEUR.md ; le code d'archivage attend l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).",
+      "date_decision": "2026-11-09"
+    },
+    {
+      "id": "D101",
+      "statut": "tranchee",
+      "question": "Comment se fait la revérification des items d'absence (§4, annexe F case 2) : quels items, quand, et quelle issue ?",
+      "contexte": "Revue de la PR #385, section « Trous du protocole », six points. Codé avec l'option recommandée pour (1), (2), (4) ; l'issue (3) n'est pas encore enregistrée par le code.",
+      "options": [
+        "(1) items du tirage du run ; (2) après le gel, avant l'ouverture de la fenêtre ; (3) nouvelle source T1 montrant une position : item suspendu pour ce run comme une contestation ; (4) confirmation valable pour la version épinglée par le tirage ; (5) notification de campagne seulement si l'issue (3) change l'item ; (6) retirer « sur le thème » du §4.",
+        "Idem, mais (6) garder « sur le thème » et ajouter le thème aux fiches de source."
+      ],
+      "recommandation": "Option 1 : le §4 rejoint le code, et chaque point suit l'épinglage et la suspension déjà en usage ; les fiches de source ne portent pas de thème, en ajouter un serait un changement de schéma sans besoin établi.",
+      "retenu": "Option 1 pour les six points : « sur le thème » est retiré du §4. Amendement du §4 et de l'annexe F proposé dans docs/TACHES-AUTEUR.md ; le code de l'issue (3) attend l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).",
+      "date_decision": "2026-11-09"
     }
   ],
   "lots": [
