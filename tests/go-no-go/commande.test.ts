@@ -271,7 +271,14 @@ describe("pnpm go-no-go, refus", () => {
     "run invalide : refusé, rien n'est écrit",
     async () => {
       const run = await runSimuleNote();
-      modifierRun(run, (r) => ({ ...r, statut: "invalide", invalidation: { motif: "Incident technique.", date: "2026-12-02T10:00:00+01:00" }, ...PUBLICATION_ET_DEPOT }));
+      // Un run invalide porte l'empreinte du protocole (§9, run.schema.json) : sans elle, le schéma refuserait avant le go/no-go.
+      modifierRun(run, (r) => ({
+        ...r,
+        statut: "invalide",
+        invalidation: { motif: "Incident technique.", date: "2026-12-02T10:00:00+01:00" },
+        versions: { ...(r["versions"] as object), protocole_sha256: "b".repeat(64) },
+        ...PUBLICATION_ET_DEPOT,
+      }));
       const avant = octets(run, "run.json");
       expect(() => goNoGo(run)).toThrow(/run invalide/);
       expect(octets(run, "run.json")).toEqual(avant);
