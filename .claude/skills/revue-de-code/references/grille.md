@@ -19,7 +19,9 @@ candidat, à trier ensuite (`tri.md`). Les exemples sont tirés de ce dépôt.
 - **Le code est-il indépendant de la plateforme ?** Séparateurs de chemin (`\` sous Windows), fins
   de ligne, encodage par défaut (`open()` sans `encoding=`), fuseau horaire, locale de tri
   (`localeCompare` vs comparaison de code). Un test qui passe en CI Linux et échoue sous Windows est
-  un constat.
+  un constat. Les scripts de `package.json` passent par `cmd.exe` sous Windows : une variable posée
+  en préfixe (`VAR=1 commande`) y échoue, comme un `execFileSync("pnpm", …)` sans shell (revue du
+  2026-11-09, constat 3).
 - **Le résultat est-il déterministe ?** Horloge injectée, ordre de parcours de répertoire trié, pas
   d'itération sur un `Set`/`dict` dont l'ordre dépendrait d'autre chose que de l'insertion.
 - **Les écritures sont-elles atomiques et non destructives** là où le protocole exige l'immuabilité ?
@@ -33,7 +35,10 @@ candidat, à trier ensuite (`tri.md`). Les exemples sont tirés de ce dépôt.
 
 - **Chaque règle, constante ou calcul vit-il à un seul endroit ?** Une métrique calculée deux fois,
   une énumération recopiée au lieu d'être lue dans `schema/commun.schema.json`, une configuration
-  redéclarée « à l'identique » dans un test.
+  redéclarée « à l'identique » dans un test. Un filtre recopié en ligne est une règle aussi : une
+  population (« les réponses obtenues du run ») écrite six fois sans fonction qui la nomme a laissé
+  passer un canal que le protocole excluait ailleurs (revue du 2026-11-09, constat 1). Chercher
+  les conditions de `filter` identiques d'un module à l'autre.
 - **Le flux reste-t-il à sens unique ?** `collecte → staging → validation → data → runs → analysis →
   site`. Un import de `analysis/` depuis `pipeline/`, ou du site vers `staging/`, est un constat.
 - **Y a-t-il du code mort ?** Export jamais importé, branche inatteignable, paramètre toujours passé
