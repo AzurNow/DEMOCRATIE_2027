@@ -11,6 +11,14 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ## 0. Fusions en attente
 
+- [ ] (2026-11-09) Trancher **D103** puis passer **#406** de brouillon à prête (l'auteur ne peut pas
+      arbitrer, conformité n° 13) : le pseudonyme d'annotateur de l'auteur est-il publié dans
+      `run.json` ? Après fusion, ajouter `annotateur_auteur` (ton pseudonyme) à `config/gel.json` :
+      sans lui, `pnpm geler` s'arrête sur `AnnotateurAuteurNonDeclare`.
+- [ ] (2026-11-09) Trancher **D102** (#405 fusionnée) : raison de quota saisie sans changement,
+      refusée au gel (option codée) ou acceptée sans publication.
+- [ ] (2026-11-09) Vérifier les valeurs proposées pour le lot `creation-items-f` (#402) : agent
+      « auteur », jalon J3, 3 h, après `mesures-validees`. Un item F porte désormais `redige_par`.
 - [ ] (2026-11-06) **Écrire la 0.35** (texte ci-dessous, section 1, « Protocole ») : D81, D85, D88,
       D94, D95 et D97 sont tranchées mais l'agent n'écrit pas dans `docs/PROTOCOLE.md`. La PR
       brouillon **#359** passe au vert après l'amendement ; le code de D85, D94 et D95 attend aussi.

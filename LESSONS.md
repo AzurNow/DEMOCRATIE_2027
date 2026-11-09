@@ -171,6 +171,10 @@ synchronisés par envoi avec l'archive D100) ont dépassé les 5 s par défaut c
 trois, et jusqu'à 18 s sous charge : verts seuls, rouges dans la suite. Un `describe(…, { timeout })`
 commenté, jamais une assertion allégée (#397).
 
+**Avant de resserrer une règle de `run.schema.json` sur un statut, chercher les tests qui fabriquent un run de ce statut.** #403 exigeait `protocole_sha256` d'un run invalide : les exemples de schéma passaient, mais `tests/go-no-go/commande.test.ts` bâtit un run invalide à la volée, sans empreinte, et la CI a échoué sur une assertion de message (le schéma refusait avant le go/no-go). `grep -rn 'statut: "invalide"' tests/` l'aurait montré avant la PR.
+
+**Normaliser les chemins en `/` avant tout filtre `startsWith` dans un test de structure.** La garde des cycles d'import de `pipeline/questions/` comparait des chemins relatifs à `"pipeline/questions/"` : sous Windows, `relative()` rend des `\`, aucun fichier ne correspondait, et la garde passait en ne vérifiant rien (constaté par #404). Un test vert qui ne voit aucun fichier doit échouer : vérifier qu'il a lu au moins un fichier.
+
 ## Outillage
 
 **Ne pas importer dans le site un module qui lit un fichier au chargement.** Le 2026-11-05 (#333), le
@@ -586,3 +590,5 @@ arrêter à la main. `pnpm check` et les fichiers touchés en local, la suite co
 (test des liens) et #387 (juges réels) passaient chacune leur CI ; fusionnées, la notation réelle
 exigeait le test des liens que la fixture de #387 ne posait pas, et `notation-reelle.test.ts` a cassé
 sur main. Chaque PR était verte contre un main qui ne contenait pas l'autre.
+
+**Marquer « réglé » dans le rapport daté de revue ou de conformité dès la fusion qui règle un constat.** Le constat 8 de la revue du 2026-11-09 était corrigé sur `main` (8678b9b) mais restait « ouvert » : un agent a été briefé dessus et l'a redécouvert. La clôture du 2026-11-09 après-midi a mis à jour les statuts des deux rapports du jour.

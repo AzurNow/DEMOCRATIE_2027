@@ -1384,6 +1384,28 @@
       "recommandation": "Option 1 : le §4 rejoint le code, et chaque point suit l'épinglage et la suspension déjà en usage ; les fiches de source ne portent pas de thème, en ajouter un serait un changement de schéma sans besoin établi.",
       "retenu": "Option 1 pour les six points : « sur le thème » est retiré du §4. Amendement du §4 et de l'annexe F proposé dans docs/TACHES-AUTEUR.md ; le code de l'issue (3) attend l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).",
       "date_decision": "2026-11-09"
+    },
+    {
+      "id": "D102",
+      "statut": "en_attente",
+      "question": "Une raison de changement de quota saisie au périmètre alors qu'aucun quota ne change : refusée au gel ou acceptée sans être publiée ?",
+      "contexte": "PR #405 (conformité n° 12). Le §5 dit seulement « son changement est publié avec le run, avec sa raison » et ne traite pas ce cas. Codé avec l'option 1 (raison_sans_changement).",
+      "options": [
+        "La refuser au gel (raison_sans_changement) : l'auteur retire la raison de config/perimetre.yaml au run qui suit un changement.",
+        "L'accepter et ne pas la publier : retirer une branche de pipeline/gel/raison-quota.ts et deux tests."
+      ],
+      "recommandation": "Option 1 : une raison publiée sans changement serait trompeuse, et le refus est visible et nommé."
+    },
+    {
+      "id": "D103",
+      "statut": "en_attente",
+      "question": "Le pseudonyme d'annotateur de l'auteur (annotateur_auteur) est-il publié dans run.json ?",
+      "contexte": "PR #406 en brouillon (conformité n° 13, §7 0.27 : le troisième humain n'est jamais l'auteur). Le refus d'arbitrage exige de connaître ce pseudonyme ; le recopier dans run.json le publie et révèle lequel des pseudonymes est l'auteur. Traitement de données personnelles : zone d'arrêt.",
+      "options": [
+        "Le publier tel quel : un lecteur peut vérifier qu'aucun arbitrage ne le porte.",
+        "Publier seulement son empreinte SHA-256 : le refus marche pareil, la vérification par un tiers exige le pseudonyme."
+      ],
+      "recommandation": "Option 1 : le §7 annonce déjà la règle, la vérifier doit être possible, et un pseudonyme ne donne pas d'identité civile."
     }
   ],
   "lots": [

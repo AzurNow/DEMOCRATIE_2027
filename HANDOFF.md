@@ -41,32 +41,37 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-09
+## État au 2026-11-09 (après-midi)
 
 - Protocole **0.34** dans le dépôt. **La 0.35 est tranchée mais pas écrite** : textes exacts dans
-  `docs/TACHES-AUTEUR.md` (section 1, Protocole), items 1 à 18 : D81 à D97 du 2026-11-06, D98 à D101
-  du 2026-11-09 (items 11 à 16), kappa de la paire au §7 et au §12 (items 17 et 18). L'auteur
-  l'écrit ; le classifieur refuse cette écriture à l'agent.
-- Fusionnées le 2026-11-09 : #375 à #397 (sauf #359). Juges réels Anthropic et Mistral sur API
-  doublée (#387, `pnpm notation:reelle`), revérification des items d'absence (#385, D101, lancée par
-  l'auteur), revue et conformité datées du jour (#388, #389), critère go/no-go `kappa_paire_jeu_or`
-  (#394), garde de concurrence sur `run.json` (#393), archive D100 des réponses des juges (#397).
-  Vérifier que #395 à #397 sont bien fusionnées (fusion automatique lancée à la clôture).
-- **#359 en brouillon, rouge volontairement** jusqu'à la 0.35 (D97) ; ensuite fusionner `main` dedans.
-- Après la 0.35 : coder D85, **D94 (sinon tout run après le pilote sort provisoire, DETTE
-  2026-11-09 n° 2)**, D95 ; séparer la population API seul / avec application (DETTE 2026-11-09
-  n° 1, avant le premier run mensuel avec application) ; réglages des juges au gel (Q1, D98).
-- Restent de la revue du 2026-11-09 : constats 8, 10, 18 et 25 (codables), 14 (après l'amendement
-  `charge-juge-v7`) ; de la conformité du même jour, les écarts autres que le n° 1
-  (`docs/conformite/2026-11-09.md`).
-- Node local 22.23.3 sous le minimum d'Astro (22.23.4) : `pnpm test` ne démarre pas en local (projet
-  site) ; mettre Node à jour. La CI fait foi.
+  `docs/TACHES-AUTEUR.md` (section 1, Protocole), items 1 à 18. L'auteur l'écrit ; le classifieur
+  refuse cette écriture à l'agent.
+- Fusionnées l'après-midi du 2026-11-09 : #399 à #405 (constats bas de la revue et de la conformité
+  du jour : item principal à l'écran des formulations, constats 8/10/18/25 de la revue, niveaux
+  balayés d'une mesure fictive, `redige_par` d'un item F, empreinte du protocole d'un run publié,
+  garde des cycles étendue à `analysis/`, raison d'un changement de quota). Statuts mis à jour dans
+  `docs/revues/2026-11-09.md` et `docs/conformite/2026-11-09.md` (pas dans `exigences.json` : à la
+  prochaine passe de conformité).
+- **#406 en brouillon** : l'auteur ne peut pas arbitrer (conformité n° 13) ; attend **D103**
+  (publication du pseudonyme de l'auteur). **D102** (raison de quota sans changement) attend aussi
+  l'auteur, l'option 1 est codée.
+- **#359 en brouillon, rouge volontairement** jusqu'à la 0.35 (D97).
+- Après la 0.35 : coder D85, **D94 (sinon tout run après le pilote sort provisoire)**, D95 ;
+  séparer la population API seul / avec application (DETTE 2026-11-09 n° 1) ; réglages des juges au
+  gel (Q1, D98) ; constat 14 de la revue (`charge-juge-v7`).
+- Restent de la conformité du 2026-11-09 : les écarts « amendement requis » (n° 2 à 8, 14, 15, 18 à
+  24), tous à l'auteur. Plus aucun écart « code à aligner » hors #406.
+- Node local 22.23.3 sous le minimum d'Astro (22.23.4) : `pnpm test` complet ne démarre pas en
+  local ; les agents lancent `pnpm check` et Vitest ciblé, la CI fait foi.
+- Ménage : branches fusionnées supprimées ; restent sous `.claude/worktrees/` des répertoires que Git
+  n'a pas pu effacer (chemins trop longs sous Windows) et cinq worktrees verrouillés par une session
+  morte, déjà fusionnés.
 - Rien n'a jamais tourné sur un appel réel. Interrogation réelle et `pnpm run:live` attendent
   `config/perimetre.yaml` (auteur).
 
 ## Ce qui était en cours
 
-Rien hors des trois PR en fusion automatique (#395 à #397).
+Rien hors #406 (brouillon, décision D103) et #359 (brouillon, 0.35).
 
 ## Prochaines tâches, par priorité
 

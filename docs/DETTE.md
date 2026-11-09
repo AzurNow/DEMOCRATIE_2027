@@ -13,6 +13,34 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-09 (après-midi) — Constats bas de la revue et de la conformité du jour (PR #399 à #405 : `validation/`, `schema/`, `pipeline/gel/`, `pipeline/notation/`, `tests/`)
+
+### 1. Le gel refuse un périmètre qui garde la raison d'un changement de quota d'un run à l'autre — *basse*
+
+#405 exige `tirage.raison_changement_quota` quand un quota diffère du run précédent, et la refuse
+quand rien ne change (`raison_sans_changement`, D102 en attente). La clé vit dans
+`config/perimetre.yaml`, que l'auteur réécrit à la main.
+
+**Pourquoi ça casse.** Au run qui suit un changement, le périmètre recopié tel quel fait échouer
+`pnpm geler` le jour du gel ; le refus est nommé, mais il tombe au pire moment de la journée.
+
+**Ce qu'il faut faire.** Trancher D102 ; si l'option 1 reste, l'écrire dans la procédure de gel de
+`runs/README.md`.
+
+### 2. `niveaux_balayes` atteste un balayage que rien ne vérifie — *basse*
+
+#401 exige qu'une mesure fictive déclare T1, T2 et items T3 balayés. Le schéma contrôle la
+déclaration, pas le balayage : aucun code ne rejoue la recherche dans les corpus.
+
+**Pourquoi ça casse.** Une fixture ou un outil qui recopie `["T1","T2","items_T3"]` sans balayer
+produit une mesure « vérifiée fictive » qui ne l'est pas ; une question fictive dont la mesure existe
+en vrai fausse le taux de refus sur fictif (§8), sans signal.
+
+**Ce qu'il faut faire.** Au lot de création des items F (`creation-items-f`), faire écrire la trace
+par l'outil qui balaie, jamais à la main.
+
+---
+
 ## 2026-11-09 — Juges réels sur doubles, D98 à D101, revue et conformité du jour, population de notation, kappa de la paire, archive D100 (PR #385 à #397 : `pipeline/notation/`, `pipeline/go-no-go/`, `pipeline/run/`, `analysis/`, `schema/`)
 
 ### 1. La population humaine, du jeu d'or et des kappas inclut les saisies de l'application — *haute*
