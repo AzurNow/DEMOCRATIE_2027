@@ -98,6 +98,34 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
          « contrefactuel / noms_outils / derangement », qui n'est pas défini sous deux outils. »
       10. §8 (D97) : « `sourcage_valide`, ou `repartition_drapeaux:<drapeau>` » → « `sourcage_valide`,
           `couverture` pour la couverture d'un comparateur, ou `repartition_drapeaux:<drapeau>` ».
+      Décisions du 2026-11-09 (D98 à D101, option recommandée de chacune), à joindre à la 0.35 :
+      11. §7 (D98) : « Leurs réglages d'échantillonnage sont fixés et publiés ; » → « Leurs réglages
+          d'échantillonnage, leur éditeur et la politique de tentatives qui définit une « erreur
+          persistante de son API » sont déclarés au gel pour chaque juge, fixés, et publiés dans le
+          `run.json` ; ». Les valeurs ne sont pas dans le texte : l'auteur les fixe au gel.
+      12. §7 (D99), après « avec leur motif. » : « Un refus d'authentification ou d'autorisation
+          (401, 403) de la clé du banc n'est pas une erreur persistante de son API : c'est un défaut
+          du banc, qui arrête la notation au premier refus, sans renvoi à un humain et sans
+          invalidation du run ; la clé corrigée, la notation reprend. »
+      13. §7 (D100), à la suite de la phrase de l'item 12 : « La réponse HTTP brute de chaque appel
+          de juge est stockée telle quelle et publiée dans le volume du run, comme les réponses
+          brutes de l'interrogation. » Mentionner ces réponses au §9 dans la liste de ce qui est
+          publié avec le run, à l'endroit où les réponses brutes y sont nommées.
+      14. §4 (D101) : « Les items A sont revérifiés à chaque run par recherche automatique de
+          nouvelles sources T1 sur le thème, puis confirmation humaine. » → « Les items A du tirage
+          du run sont revérifiés, après le gel et avant l'ouverture de la fenêtre, par recherche
+          automatique de nouvelles sources T1 du candidat, puis confirmation humaine. Une nouvelle
+          source T1 qui montre une position du candidat sur la mesure suspend l'item pour ce run,
+          comme une contestation. Une confirmation ne vaut que pour la version de l'item épinglée par
+          le tirage. Une campagne de notification n'est envoyée que si cette suspension change
+          l'item. »
+      15. Annexe F (D101) : « Items d'absence revérifiés ; aucun item contesté ou en attente dans le
+          tirage » → « Items d'absence du tirage revérifiés après le gel ; aucun item contesté,
+          suspendu ou en attente dans le tirage ».
+      16. Révisions de la 0.35 : ajouter à la ligne du point 2 « Décisions du 2026-11-09, D98 à D101 :
+          section 7, réglages, éditeur et politique de tentatives des juges déclarés au gel et
+          publiés, refus d'authentification hors des erreurs persistantes, réponses HTTP brutes des
+          juges publiées ; section 4 et annexe F, revérification des items d'absence. »
 - [ ] **Trancher D62** (`docs/feuille-de-route.json`) : vingt et une questions laissées par les lots
       D59 (#230, #232 à #235). Commencer par #233 (3), la fausse absence de `rechercheAbsence`
       (DETTE 2026-11-02, point 2), et #233 (2), le renvoi à la réextraction qu'aucun mécanisme ne
