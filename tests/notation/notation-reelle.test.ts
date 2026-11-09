@@ -9,6 +9,7 @@
  * qui rendent la sortie du juge simulé donne le même bilan que la chaîne simulée.
  */
 
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -22,7 +23,8 @@ import { bilanNotation, type BilanNotation } from "../../pipeline/notation/bilan
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { construireCharge, type ChargeJuge, type PromptDeJuge } from "../../pipeline/notation/charge-juge.ts";
 import { noterRun } from "../../pipeline/notation/chaine.ts";
-import { nomResultat, repertoireLiens } from "../../pipeline/notation/fournisseur-fichiers.ts";
+import { nomResultat, REPERTOIRE_EXTRACTIONS, REPERTOIRE_PAGES, repertoireLiens, repertoirePages } from "../../pipeline/notation/fournisseur-fichiers.ts";
+import type { ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
 import { JugeDefaillant, type Juge, type SortieJuge } from "../../pipeline/notation/juge.ts";
 import { JugesReelsRefuses, jugesReelsDuRun, type DeclarationAppelJuge, type JugeDeclareAuRun, type MoyensDesJuges } from "../../pipeline/notation/juges-reels.ts";
 import { declarationsNonDeclarees, notationReelle, ReglagesDesJugesNonDeclares, type DependancesNotationReelle } from "../../pipeline/notation/notation-reelle.ts";
@@ -133,10 +135,17 @@ async function runPrepare(options_: { readonly test_des_liens: boolean } = { tes
   return prepare;
 }
 
-/** `volume/liens/` : le verdict que la table simulée de référence donne à chacun de ses liens. */
+/**
+ * `volume/liens/` : le verdict que la table simulée de référence donne à chacun de ses liens, sous la
+ * forme qu'écrit `pnpm liens`. Un lien qui existe porte sa copie conservée (`pages-citees/`), sa fiche
+ * d'extraction et son texte, repris de `textes_copies` : sans eux, le fichier serait refusé par
+ * `schema/existence-lien.schema.json` ou le lien jugé sans texte, et le bilan ne serait plus celui de
+ * la chaîne simulée.
+ */
 function poserTestDesLiens(repertoire_run: string): void {
   mkdirSync(repertoireLiens(repertoire_run), { recursive: true });
-  for (const existence of parametresDeReference().existences) {
+  const { existences, textes_copies } = parametresDeReference();
+  for (const existence of existences) {
     const resultat = {
       url_citee: existence.url_citee,
       verdict_existence: existence.verdict_existence,
@@ -145,10 +154,38 @@ function poserTestDesLiens(repertoire_run: string): void {
       code_http: existence.code_http,
       version_table: "table-liens-v3",
       tentatives: [{ numero: 1, horodatage: existence.date_test, issue: "reponse_http", code_http: existence.code_http }],
-      wayback: { operation: "aucune" },
+      ...(existence.verdict_existence === "existe" ? copieConserveeDe(repertoire_run, existence, textes_copies) : { wayback: { operation: "aucune" } }),
     };
-    writeFileSync(join(repertoireLiens(repertoire_run), nomResultat(existence.url_citee)), `${JSON.stringify(resultat, null, 2)}\n`, "utf8");
+    writeFileSync(join(repertoireLiens(repertoire_run), nomResultat(existence.url_citee)), `${JSON.stringify(resultat, null, 2)}
+`, "utf8");
   }
+}
+
+function empreinte(texte: string): string {
+  return createHash("sha256").update(texte, "utf8").digest("hex");
+}
+
+/** La page conservée d'un lien qui existe, sa fiche d'extraction et son texte ; les champs qu'ils ajoutent au résultat. */
+function copieConserveeDe(repertoire_run: string, existence: ExistenceEtablie, textes: ReturnType<typeof parametresDeReference>["textes_copies"]): Record<string, unknown> {
+  const sha = existence.sha256_contenu;
+  const texte = textes.find((t) => t.sha256_contenu === sha);
+  if (sha === undefined || texte?.issue !== "extrait") throw new Error(`table de référence : ${existence.url_citee} existe sans copie extraite (${String(sha)}).`);
+  const page = "<html><body>Page simulée.</body></html>";
+  mkdirSync(join(repertoirePages(repertoire_run), "textes"), { recursive: true });
+  writeFileSync(join(repertoirePages(repertoire_run), `${sha}.html`), page, "utf8");
+  writeFileSync(join(repertoirePages(repertoire_run), "textes", `${empreinte(texte.texte)}.txt`), texte.texte, "utf8");
+  const doree = JSON.parse(readFileSync(join(RACINE_PROJET, "tests/liens/dore-textes/extraction-html.json"), "utf8")) as Record<string, unknown>;
+  const fiche = { ...doree, sha256_contenu: sha, texte_sha256: empreinte(texte.texte), longueur: Array.from(texte.texte).length };
+  mkdirSync(join(repertoireLiens(repertoire_run), REPERTOIRE_EXTRACTIONS), { recursive: true });
+  writeFileSync(join(repertoireLiens(repertoire_run), REPERTOIRE_EXTRACTIONS, `${sha}.json`), `${JSON.stringify(fiche, null, 2)}
+`, "utf8");
+  const archive_url = `https://web.archive.org/web/20261204080000/${existence.url_citee}`;
+  return {
+    sha256_contenu: sha,
+    archive_url,
+    page: { chemin: `${REPERTOIRE_PAGES}/${sha}.html`, type_contenu_recu: "text/html; charset=utf-8", taille_octets: Buffer.byteLength(page, "utf8") },
+    wayback: { operation: "wayback_save_page_now", issue: "reussi", archive_url },
+  };
 }
 
 const ENV_COMPLET = { ANTHROPIC_API_KEY: CLE_DE_TEST, MISTRAL_API_KEY: CLE_DE_TEST };
