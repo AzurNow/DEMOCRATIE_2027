@@ -42,7 +42,7 @@
  *   items sont ceux du projet, à cet instant ou après ; et ce dépôt porte des items.
  */
 
-import { existsSync, readdirSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { dispositionRunNote, lireItemAuCommit, lireRunJson, ouvrirDepotDesItems, type RunLu } from "../../analysis/lecture-run.ts";
 import type { ContestationPosterieure } from "../../analysis/types.ts";
@@ -53,7 +53,7 @@ import { contestationsDe } from "../../validation/domaine/contestation-item.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { lireItemsData } from "../../validation/io/data-items.ts";
 import { lireInstant } from "../../analysis/heure-paris.ts";
-import { ecrireParRenommage } from "./ecriture.ts";
+import { ecrireParRenommageSiInchange } from "./ecriture.ts";
 import { STATUT_INVALIDE, type StatutRun } from "../../analysis/types-run.ts";
 
 /** La part d'un run que ce module lit. */
@@ -159,6 +159,8 @@ export interface AjoutAuRun {
 
 interface AjoutPrepare extends AjoutAuRun {
   readonly run_json: string;
+  /** Le texte de `run.json` lu avant tout calcul : l'écriture refuse si le fichier a changé depuis. */
+  readonly texte_lu: string;
   readonly apres: unknown;
 }
 
@@ -204,13 +206,14 @@ function recuesDe(data: string, lues: Map<string, readonly ContestationPosterieu
 }
 
 function preparer(repertoire: string, depot_designe: string | null, lues: Map<string, readonly ContestationPosterieure[]>): AjoutPrepare | null {
+  const texte_lu = readFileSync(dispositionRunNote(repertoire).run_json, "utf8");
   const run: RunLu = lireRunJson(repertoire);
   const data = itemsDuRunLu(repertoire, run, depot_designe);
   const ajoutees = aAjouterAuRun(run, data, recuesDe(data, lues));
   if (ajoutees.length === 0) return null;
   const run_json = dispositionRunNote(repertoire).run_json;
   const apres = valider<unknown>("run", { ...run, contestations_posterieures: [...presentes(run), ...ajoutees] }, `${run_json} après ajout de contestations postérieures`);
-  return { repertoire, run_id: run.id, ajoutees, run_json, apres };
+  return { repertoire, run_id: run.id, ajoutees, run_json, texte_lu, apres };
 }
 
 /**
@@ -226,7 +229,7 @@ export function synchroniserContestationsPosterieures(runs: string, depot_design
     .map((repertoire) => preparer(repertoire, depot_designe, lues))
     .filter((ajout): ajout is AjoutPrepare => ajout !== null);
   if (ecrire) {
-    for (const ajout of ajouts) ecrireParRenommage(ajout.run_json, ajout.apres, "contestations-posterieures");
+    for (const ajout of ajouts) ecrireParRenommageSiInchange(ajout.run_json, ajout.apres, "contestations-posterieures", ajout.texte_lu);
   }
   return ajouts.map(({ repertoire, run_id, ajoutees }) => ({ repertoire, run_id, ajoutees }));
 }

@@ -21,20 +21,21 @@ import { readFileSync } from "node:fs";
 import { dispositionRunNote, lireReponses, lireRunJson } from "../../analysis/lecture-run.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { requetesDuPlanDuRun } from "../interrogation/plan-du-run.ts";
-import { ecrireParRenommage } from "../run/ecriture.ts";
+import { ecrireParRenommageSiInchange } from "../run/ecriture.ts";
 import { inscrireReponsesObtenues, reponsesObtenues, type RunAvecReponses } from "../run/reponses.ts";
 
 export type IssueReponsesObtenues = { readonly issue: "inscrite" | "deja_inscrite"; readonly obtenues: number };
 
 /** Compte, puis inscrit une fois, les réponses obtenues du run dans `run.json#/reponses/obtenues`. */
 export function inscrireReponsesObtenuesDuRun(repertoire_run: string): IssueReponsesObtenues {
+  const chemin = dispositionRunNote(repertoire_run).run_json;
+  const texte_lu = readFileSync(chemin, "utf8");
   const run = lireRunJson(repertoire_run);
   const obtenues = reponsesObtenues(lireReponses(repertoire_run, run.id), requetesDuPlanDuRun(repertoire_run, run));
-  const chemin = dispositionRunNote(repertoire_run).run_json;
-  const actuel = JSON.parse(readFileSync(chemin, "utf8")) as RunAvecReponses;
+  const actuel = JSON.parse(texte_lu) as RunAvecReponses;
   const issue = inscrireReponsesObtenues(actuel, obtenues);
   if (issue.issue === "deja_inscrite") return { issue: "deja_inscrite", obtenues };
   valider("run", issue.run, `${chemin} après inscription des réponses obtenues`);
-  ecrireParRenommage(chemin, issue.run, "reponses-obtenues");
+  ecrireParRenommageSiInchange(chemin, issue.run, "reponses-obtenues", texte_lu);
   return { issue: "inscrite", obtenues };
 }
