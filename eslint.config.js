@@ -79,4 +79,35 @@ export default [
       ],
     },
   },
+  {
+    // docs/PLAN-PAGE-PEDAGOGIQUE.md, « Aucune logique métier » (revue du 2026-11-09, constat 6) : le
+    // site importe des constantes, types et fonctions pures d'`analysis/` (#335), jamais `pipeline/`,
+    // `validation/` ni `staging/`. Imports dynamiques et de type compris. Les fichiers `.astro` ne
+    // sont pas lus par le lint : la garde réseau de `tests/site/` les couvre.
+    files: ["site/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "(^|/)(pipeline|validation|staging)(/|$)",
+              message: "site/ n'importe que des constantes, types et fonctions pures d'analysis/ (docs/PLAN-PAGE-PEDAGOGIQUE.md), jamais pipeline/, validation/ ni staging/.",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ImportExpression[source.value=/(^|\\u002F)(pipeline|validation|staging)(\\u002F|$)/]",
+          message: "site/ n'importe ni pipeline/, ni validation/, ni staging/, pas même dynamiquement.",
+        },
+        {
+          selector: "TSImportType[argument.literal.value=/(^|\\u002F)(pipeline|validation|staging)(\\u002F|$)/]",
+          message: "site/ n'importe ni pipeline/, ni validation/, ni staging/, pas même un type.",
+        },
+      ],
+    },
+  },
 ];

@@ -2009,7 +2009,7 @@
       "code": [
         "schema/run.schema.json:perimetre.candidats[].allOf:seuil dans les deux sens",
         "analysis/seuils.ts:candidatsComparables",
-        "pipeline/questions/couverture.ts:itemsPComptesAuGel"
+        "pipeline/questions/couverture.ts:referencesPAuGel"
       ],
       "tests": [
         "tests/run-schema-perimetre.test.ts « refuse 10 items P et sous_seuil vrai »",
@@ -2018,7 +2018,7 @@
       ],
       "lot": null,
       "constat": null,
-      "note": "Constat n° 19 corrigé en #39. itemsPComptesAuGel n'a encore aucun appelant de production (constat n° 23). Libellé de la mention allongé en 0.27 ; le texte affiché appartient au lot site."
+      "note": "Constat n° 19 corrigé en #39. itemsPComptesAuGel, sans appelant de production (constat n° 23), a été retirée le 2026-11-09 (revue n° 19) : le total se lit sur referencesPAuGel. Libellé de la mention allongé en 0.27 ; le texte affiché appartient au lot site."
     },
     {
       "id": "§4.80",
@@ -11297,7 +11297,7 @@
       "nature": "code",
       "statut": "testee",
       "code": [
-        "pipeline/questions/couverture.ts:itemsPAuGel",
+        "pipeline/questions/couverture.ts:referencesPAuGel",
         "pipeline/questions/tirabilite.ts:itemsAuxPositionsIncompatibles"
       ],
       "tests": [

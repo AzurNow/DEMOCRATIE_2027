@@ -32,6 +32,7 @@ import type { GraineTirage } from "../../analysis/graine-tirage.ts";
 import type { QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { REGISTRES } from "../../pipeline/questions/types.ts";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
+import { referencesPAuGel } from "../../pipeline/questions/couverture.ts";
 import { source } from "../aides/fabriques.ts";
 
 const ALPHABET_CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
@@ -466,4 +467,18 @@ export function jeu(options: OptionsJeu): Jeu {
 function themeManquant(options: OptionsJeu, candidat_id: string, theme: string): boolean {
   const manquants = options.themes_manquants?.[candidat_id];
   return manquants !== undefined && (manquants as readonly string[]).includes(theme);
+}
+
+/**
+ * Les identifiants, triés, des items P d'un candidat qui comptent au gel : ceux de `referencesPAuGel`,
+ * la seule définition de production. Leur nombre est la longueur de la liste.
+ */
+export function idsPAuGel(
+  items: readonly Item[],
+  candidat_id: string,
+  date_gel: string,
+  mesures: readonly Mesure[],
+  interroges: ReadonlySet<string>,
+): readonly string[] {
+  return referencesPAuGel(items, candidat_id, date_gel, mesures, interroges).map((reference) => reference.item_id);
 }

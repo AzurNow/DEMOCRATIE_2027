@@ -235,7 +235,7 @@ function versionDepassee(gardes: readonly ItemDeQuestion[], index: Index): Motif
  * que le tirage exclut déjà (`mesure_version_depassee`), n'entre pas dans la comparaison et ne fait
  * exclure aucun autre item (protocole 0.32, D74 (18)).
  *
- * Ces items ne comptent pas au seuil de couverture du §4 (`couverture.ts:itemsPAuGel`, D74 (16)) et
+ * Ces items ne comptent pas au seuil de couverture du §4 (`couverture.ts:referencesPAuGel`, D74 (16)) et
  * sont publiés un à un avec le tirage (`tirage.incompatibles_au_gel`, D74 (17)), tous deux lus par
  * `itemsAuxPositionsIncompatibles`, seule définition de la liste par candidat.
  */

@@ -1,10 +1,10 @@
 /**
- * L'absence du contrefactuel d'outil, publiée avec le run (§7 ; D75 (7)) : le bloc
+ * Le contrefactuel d'outil, publié avec le run (§7 ; D75 (7), D90) : le bloc
  * `contrefactuel_outils` de `schema/run.schema.json`, sur le modèle de `contrefactuel_candidats`
  * (`publication-contrefactuel.ts`). Fonction pure : elle rend le bloc, l'appelant l'écrit dans le
  * run (`inscription-contrefactuel-outils.ts`).
  *
- * Deux formes, comme au test des candidats :
+ * Trois formes :
  *
  * - **Test non joué** (`publierAbsenceContrefactuelOutils`) : le dérangement des outils n'est pas
  *   tiré (`derangement-outils.ts:derangementOutilsOuAbsence`) — moins de deux outils au dérangement
@@ -18,7 +18,7 @@
  *   éligibles (zéro), le sous-effectif, les correspondances du dérangement et les deux clés de graine,
  *   pour que le tirage se rejoue.
  *
- * Jamais 0 %, jamais de taux de juge : un test absent n'en a pas.
+ * Les deux formes ci-dessus n'ont ni 0 %, ni taux de juge : un test absent ou vide n'en a pas.
  *
  * - **Test joué et terminé** (`publierTermineOutils`, D90) : le sous-ensemble est non vide, chaque
  *   paire est notée ou renvoyée par chaque juge mesuré. Le bloc porte, en plus de ce qui rejoue le
@@ -28,7 +28,7 @@
  *   retiré au test des candidats n'est pas mesuré (§7) : il figure avec `motif_non_mesure`, sans
  *   taux, pour que son absence de taux soit visible et motivée. Aucun seuil, aucun retrait.
  *
- * `publierContrefactuelOutilsJoue` aiguille un test joué vers l'une des deux formes ; un test en
+ * `publierContrefactuelOutilsJoue` aiguille un test joué vers l'une de ses deux formes ; un test en
  * attente (paire incomplète) ne se publie pas, comme au test des candidats. Ce module ne recalcule
  * rien : il recoupe le résultat avec le tirage et les juges du run, et refuse ce qui ne concorde pas
  * (`ContrefactuelOutilsNonPubliable`) plutôt que de le compléter.
