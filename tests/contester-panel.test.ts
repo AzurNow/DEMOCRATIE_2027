@@ -212,6 +212,9 @@ describe("état effectif : un item contesté après sa promotion", () => {
   bac.ecrireLot(lotDe("lot-073", [{ ...item, statut_validation: "en_attente" }]));
   for (const annotateur_id of ["a1", "a2"]) {
     bac.journal(annotateur_id).ajouter("lot-073", decision({ annotateur_id, item, decision: "accepter", lot_id: "lot-073" }));
+    // Les décisions que projette `item.validations[]` (lot-001, `itemPromu`) : `pnpm promote` relit
+    // le corpus promu contre le journal (DETTE 2026-09-17, n° 1).
+    bac.journal(annotateur_id).ajouter("lot-001", decision({ annotateur_id, item, decision: "accepter" }));
   }
   commiterTout(bac.racine, "lot");
   const texte = banc.fichier("contestation.txt", "Contestée après promotion.\n");

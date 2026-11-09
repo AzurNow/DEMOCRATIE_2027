@@ -47,6 +47,12 @@
  * candidat, « à confirmer », porte sur sa mesure (`validation/domaine/absence.ts`). Le refus est
  * nommé avec son motif, et rien n'est écrit.
  *
+ * Contrôle a posteriori (§4, règle de concordance ; docs/DETTE.md, 2026-09-17, point 1) : chaque
+ * item déjà dans `data/items/`, hors arbitrage, a ses deux validations concordantes sur la même
+ * version, lue dans le journal de validation (`validation/domaine/versions-promues.ts`). Un item qui
+ * la viole, ou dont une validation est introuvable au journal, arrête la commande
+ * (`ValidationsPromuesIncoherentes`), en simulation comme à l'écriture, et rien n'est écrit.
+ *
  *   pnpm promote
  *   pnpm promote --ecrire
  */
@@ -73,7 +79,7 @@ import {
   type PlanTexteErrone,
   type RetourEnAttente,
 } from "../validation/domaine/renvoi-texte-errone.ts";
-import type { Item, Lot } from "../validation/domaine/types.ts";
+import type { EntreeJournal, Item, Lot } from "../validation/domaine/types.ts";
 import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
 import {
@@ -92,6 +98,8 @@ import { lireRattachements } from "../validation/io/rattachements-fichier.ts";
 import { lireRelectures } from "../validation/io/relectures-fichier.ts";
 import { chargerStaging, type Staging } from "../validation/io/staging.ts";
 import { reecrireItemStaging } from "../validation/io/staging-renvoi.ts";
+import { JournalAnnotateur } from "../validation/io/journal-fichier.ts";
+import { ValidationsPromuesIncoherentes, verifierVersionsPromues, type LireJournal } from "../validation/domaine/versions-promues.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { evaluerLots, type Introuvable, type RenvoyeDuLot, type Verdict } from "./evaluation-lots.ts";
 import { erreurDeSchema } from "./schemas/valider.ts";
@@ -344,6 +352,26 @@ function itemsAEcrire(verdicts: readonly Verdict[], options: Options): readonly 
   return verdicts
     .filter((verdict) => verdict.issue.sort === "promouvoir" && !dejaDansData(verdict, options))
     .map((verdict) => (verdict.issue as Extract<Issue, { sort: "promouvoir" }>).item);
+}
+
+/**
+ * Contrôle a posteriori : le corpus déjà promu tient la règle « même version jugée ». Les journaux
+ * sont lus un par annotateur et par lot, une seule fois, jamais écrits.
+ */
+function controlerVersionsDejaPromues(data: ReadonlyMap<string, Item>, options: Options): void {
+  verifierVersionsPromues([...data.values()], lecteurDeJournaux(options.decisions));
+}
+
+function lecteurDeJournaux(repertoire: string): LireJournal {
+  const lus = new Map<string, readonly EntreeJournal[]>();
+  return (annotateur_id, lot_id) => {
+    const cle = `${annotateur_id}/${lot_id}`;
+    const deja = lus.get(cle);
+    if (deja !== undefined) return deja;
+    const entrees = new JournalAnnotateur(repertoire, annotateur_id).lire(lot_id);
+    lus.set(cle, entrees);
+    return entrees;
+  };
 }
 
 /**
@@ -640,6 +668,7 @@ function principal(): void {
   imprimerAbsencesRefusees(absences);
   imprimerPlanMesures(plan);
   controlerFictifUnique(verdicts, options);
+  controlerVersionsDejaPromues(data, options);
 
   if (introuvables.length > 0) {
     process.stderr.write(
@@ -695,7 +724,14 @@ try {
   // arrête la commande plutôt que de promouvoir un item validé contre un thème inexistant.
   // §5 (protocole 0.9) : un second item F vérifié sur une mesure fictive déjà portée, de même.
   // Conformité n° 69 : un item vérifié qui épinglerait une version dépassée de sa mesure, de même.
-  const attendues = [CorrectionMesureIncoherente, ItemFictifEnDouble, DecisionArbitrageRefusee, VersionMesureEcart];
+  // §4 (DETTE 2026-09-17, n° 1) : un item déjà promu sur deux versions jugées, de même.
+  const attendues = [
+    CorrectionMesureIncoherente,
+    ItemFictifEnDouble,
+    DecisionArbitrageRefusee,
+    VersionMesureEcart,
+    ValidationsPromuesIncoherentes,
+  ];
   if (!attendues.some((classe) => erreur instanceof classe)) throw erreur;
   process.stderr.write(`\n${(erreur as Error).message}\n`);
   process.exitCode = 1;

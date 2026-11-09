@@ -232,9 +232,10 @@ const INVARIANT_VERSION = "les deux validations concordantes portent la même ve
  *
  * Le contrôle est ici post-hoc, sur le journal d'un corpus déjà promu. La règle elle-même est
  * `validation/domaine/promotion.ts:memeVersionJugee`, celle qui garde l'entrée de `data/` au moment
- * de la promotion : elle n'est pas réécrite ici. Aucun code de production n'appelle encore ce
- * contrôle : les versions jugées vivent dans les journaux de validation, que la barrière du gel ne
- * lit pas (`item.validations[]` n'en porte aucune ; docs/DETTE.md, 2026-09-17, point 1).
+ * de la promotion : elle n'est pas réécrite ici. Les versions jugées vivent dans les journaux de
+ * validation (`item.validations[]` n'en porte aucune ; docs/DETTE.md, 2026-09-17, point 1) : le
+ * contrôle est appelé par `pnpm promote`, qui les lit, sur tout `data/items/`
+ * (`validation/domaine/versions-promues.ts`), et non par la barrière du gel, qui ne les lit pas.
  */
 export function validationsConcordantesMemeVersion(
   decisions: readonly DecisionValidation[],
