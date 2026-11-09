@@ -13,6 +13,7 @@
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { fictifsEnDouble, type ItemFictifCandidat } from "../../validation/domaine/fictif-unique.ts";
+import { memeVersionJugee } from "../../validation/domaine/promotion.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import {
   PremisseHorsEnsemble,
@@ -229,8 +230,11 @@ const INVARIANT_VERSION = "les deux validations concordantes portent la même ve
  * arbitrage ». Seules les décisions qui peuvent vérifier un item — accepter et corriger —
  * entrent dans le contrôle : un rejet ne promeut rien.
  *
- * Le contrôle est ici post-hoc, sur le journal d'un corpus déjà promu. La même règle garde
- * l'entrée du pipeline dans `validation/domaine/promotion.ts`, au moment de la promotion.
+ * Le contrôle est ici post-hoc, sur le journal d'un corpus déjà promu. La règle elle-même est
+ * `validation/domaine/promotion.ts:memeVersionJugee`, celle qui garde l'entrée de `data/` au moment
+ * de la promotion : elle n'est pas réécrite ici. Aucun code de production n'appelle encore ce
+ * contrôle : les versions jugées vivent dans les journaux de validation, que la barrière du gel ne
+ * lit pas (`item.validations[]` n'en porte aucune ; docs/DETTE.md, 2026-09-17, point 1).
  */
 export function validationsConcordantesMemeVersion(
   decisions: readonly DecisionValidation[],
@@ -249,21 +253,33 @@ export function validationsConcordantesMemeVersion(
     .flatMap(([item_id, groupe]) => violationDeVersion(item_id, groupe));
 }
 
+/**
+ * L'égalité de deux versions jugées n'est pas réécrite ici : c'est `memeVersionJugee`, la règle de
+ * la promotion, appelée sur chaque décision retenue contre les versions déjà vues.
+ */
 function violationDeVersion(
   item_id: string,
   groupe: readonly DecisionValidation[],
 ): readonly Violation[] {
-  const empreintes = new Set(
-    groupe.map((decision) => `${decision.item_version}|${decision.item_empreinte}`),
-  );
-  if (groupe.length < 2 || empreintes.size === 1) return [];
+  const versions = versionsDistinctes(groupe);
+  if (versions.length < 2) return [];
+  const liste = versions.map((decision) => `${decision.item_version}|${decision.item_empreinte}`).join(", ");
   return [
     {
       invariant: INVARIANT_VERSION,
       objet: item_id,
-      detail: `décisions retenues portant ${empreintes.size} versions différentes : ${[...empreintes].join(", ")}.`,
+      detail: `décisions retenues portant ${versions.length} versions différentes : ${liste}.`,
     },
   ];
+}
+
+/** Une décision par version jugée, dans l'ordre de première apparition. */
+function versionsDistinctes(groupe: readonly DecisionValidation[]): readonly DecisionValidation[] {
+  const vues: DecisionValidation[] = [];
+  for (const decision of groupe) {
+    if (!vues.some((vue) => memeVersionJugee(vue, decision))) vues.push(decision);
+  }
+  return vues;
 }
 
 /* ---------------------------------------- 5. prémisse fausse sur F ou O */
