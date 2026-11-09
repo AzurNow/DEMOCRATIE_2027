@@ -23,6 +23,10 @@
  * (trou du §7, exigence §7.57) : `declarationsDesJuges` les fournit ; `outils/notation-reelle.ts`
  * refuse tant que l'auteur n'a pas décidé où ils se déclarent et se publient.
  *
+ * **Réponses brutes des juges (§7, D100).** Chaque tentative d'appel d'un juge est gardée sous
+ * `volume/appels-juges/`, avant toute lecture (`archive-appels-juge.ts`) : réponses en erreur et
+ * appels rejoués compris. Rien n'y est écrit tant que la commande refuse de partir.
+ *
  * **Accès refusé.** Un 401 ou un 403 d'un juge (`appel-juge.ts:AccesApiRefuse`) arrête la notation
  * au premier rencontré, sans renvoi écrit pour la réponse en cours ; la relance après correction de
  * la clé reprend sans rien réécrire.
@@ -45,6 +49,7 @@ import type { Horloge } from "../interrogation/horloge.ts";
 import { RefusDePartir } from "../reformulation/commande.ts";
 import { transportFetch, type Envoi } from "../reformulation/transport-fetch.ts";
 import { estRunSimule } from "../run/simulation.ts";
+import { archiveAppelsJuge } from "./archive-appels-juge.ts";
 import { bilanNotation, type BilanNotation } from "./bilan-notation.ts";
 import { noterRun, type ReponseANoter, type ResultatChaine } from "./chaine.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
@@ -59,6 +64,8 @@ export interface DependancesNotationReelle {
   /** `fetch` en réel ; un double dans les tests, qui n'ouvre aucune socket. */
   readonly envoi: Envoi;
   readonly attendre: Horloge["attendre"];
+  /** L'horloge du run, en ms : départ et fin de chaque tentative archivée (D100). */
+  readonly maintenant_ms: Horloge["maintenant"];
   /** L'instant posé sur chaque notation et chaque verdict. */
   readonly maintenant: () => Instant;
   /** La racine du dépôt : `prompts/` et `data/items` par défaut. */
@@ -147,6 +154,7 @@ export async function notationReelle(argv: readonly string[], dependances: Depen
     cle,
     transport: transportFetch(dependances.envoi),
     attendre: dependances.attendre,
+    archive: archiveAppelsJuge(demande.repertoire_run, dependances.maintenant_ms),
   });
   const existences = existencesDuTestDesLiens(demande.repertoire_run);
   const reponses = dependances.chargerReponses(demande.repertoire_run, demande.repertoire_items);

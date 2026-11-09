@@ -27,6 +27,7 @@ async function principal(): Promise<void> {
       env: process.env,
       envoi: (url, init) => fetch(url, init),
       attendre: (ms, signal) => horlogeSysteme.attendre(ms, signal),
+      maintenant_ms: () => horlogeSysteme.maintenant(),
       maintenant: () => instantParis(Date.now()),
       depot,
       chargerReponses: (repertoire_run, repertoire_items) => chargerRun(repertoire_run, repertoire_items).reponses,

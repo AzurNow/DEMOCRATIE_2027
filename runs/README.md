@@ -42,6 +42,11 @@ runs/<date>/
     notations/<id>.json             une notation individuelle par fichier (schema/notation.schema.json)
     reponses-contrefactuelles/<id>.json
                                     les réponses permutées du test contrefactuel (§7), contexte ≠ run
+    appels-juges/<empreinte>.<appel>.<tentative>.json
+                                    une tentative d'appel d'un juge réel (§7, D100 ;
+                                    schema/appel-juge.schema.json), gardée avant toute lecture
+    appels-juges/<empreinte>.<appel>.<tentative>.octets
+                                    les octets du corps de sa réponse HTTP, tels que reçus
     liens/<sha256 de l'URL>.json    le test HTTP d'un lien cité (schema/existence-lien.schema.json)
   pages-citees/<sha256><ext>  hors Git (ligne /runs/*/pages-citees/ de .gitignore) et hors du volume :
                               la page d'un lien qui existe ou la version brute d'un instantané,
@@ -74,7 +79,8 @@ arrête la barrière.
 suivante).
 L'interrogation (`pipeline/interrogation/stockage.ts`) écrit `volume/reponses/` et
 `volume/tentatives/`. La notation (`pipeline/notation/stockage.ts:DepotNotation`) écrit
-`verdicts/`, `volume/notations/` et `volume/reponses-contrefactuelles/`. `run.json`, `tirage.json`
+`verdicts/`, `volume/notations/` et `volume/reponses-contrefactuelles/` ; les juges réels de
+`pnpm notation:reelle` (`pipeline/notation/archive-appels-juge.ts`) écrivent `volume/appels-juges/`. `run.json`, `tirage.json`
 et `questions.json` suivent l'usage déjà documenté de `pnpm symmetry` (`outils/symmetry.ts`). `pnpm analyze`
 écrit `metriques/metriques.json` (section « `pnpm analyze` » ci-dessous).
 
@@ -335,6 +341,36 @@ C'est ce journal qui fait tenir le plafond de trois tentatives du §6 après un 
   ou, si l'adaptateur la classe en échec (503…), une ligne `echec` de la même tentative après
   `recue_non_stockee` — seul événement admis à cette place —, et la relance ordinaire la retente si
   le §6 le permet. Code 2 tant qu'une requête reste en attente (`outils/interrogation-stocker.ts`).
+
+## `volume/appels-juges/` — les réponses brutes des juges réels
+
+§7, décision D100 de l'auteur du 2026-11-09 : la réponse HTTP brute de chaque appel de juge est
+stockée telle quelle et publiée dans le volume du run, comme les réponses brutes de l'interrogation
+(règle 7). Seuls les juges réels (`pnpm notation:reelle`) écrivent ici ; les juges simulés n'ont pas
+de réponse HTTP. Le détail des appels est dans `docs/APPELS-NOTATION.md`.
+
+- **Une tentative, un ou deux fichiers.** `<empreinte>.<appel>.<tentative>.json`
+  (`schema/appel-juge.schema.json`) porte les identifiants de l'appel (juge, objet noté
+  `reponse_id`, modèle épinglé, versions du prompt et de la charge), le rang de l'appel et de la
+  tentative, le point d'accès, l'empreinte canonique du corps envoyé, les instants de départ et de fin
+  (ms, horloge du run), puis le statut HTTP, l'empreinte et la taille des octets reçus — ou, quand
+  aucune réponse HTTP n'est arrivée (connexion refusée, délai d'abandon), la raison du transport.
+  `<empreinte>.<appel>.<tentative>.octets` porte le corps reçu, octet pour octet, pour toute réponse
+  HTTP, quel que soit son statut (200 comme 401, 429, 500) et son contenu (non UTF-8, non JSON).
+- **Avant toute lecture.** Les deux sont écrits dès l'issue de la tentative, avant que le statut ou
+  le corps ne soient lus (`pipeline/notation/appel-juge.ts:tenter`) : les métadonnées d'abord, puis
+  les octets. Un arrêt entre les deux laisse des métadonnées sans octets, jamais l'inverse.
+- **Écrits une fois.** Écriture atomique et exclusive (`pipeline/run/ecriture.ts:ecrireUneFois`) :
+  un nom déjà pris lève `AppelJugeDejaArchive` sans rien écrire et arrête la notation (défaut du
+  banc, pas un renvoi). Aucune note ne naît d'une réponse qui n'a pas pu être gardée.
+- **Nommage.** `<empreinte>` est le SHA-256 de la forme canonique de `{juge_id, reponse_id}`
+  (`validation/domaine/empreinte.ts:canoniser`) ; un tiers la recalcule depuis une notation ou un
+  renvoi (`notateur.id`, `objet_note.id`). `<appel>` numérote les appels de ce juge sur cet objet :
+  une relance après un arrêt (401 ou 403, processus interrompu) prend le premier numéro libre, et
+  l'appel précédent reste tel quel. `<tentative>` est le rang dans l'appel.
+- **Ce qui n'y est pas.** Ni la requête (son corps porte le texte des pages citées, qui ne sont pas
+  republiées, voir plus haut ; seule son empreinte canonique y est), ni ses en-têtes (la clé
+  d'API), ni les en-têtes de la réponse, que le transport ne rend pas, comme pour l'interrogation.
 
 ## `volume/liens/` — `pnpm liens <repertoire_run>`
 

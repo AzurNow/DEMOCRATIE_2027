@@ -24,6 +24,15 @@ Statuts `401`, `403` (clé invalide, accès refusé) : défaut du banc, pas du j
 
 Le texte du modèle doit être un seul objet JSON de la forme que lit `pipeline/notation/juge.ts` ; rien n'est réparé ni complété.
 
+## Réponses brutes gardées (`pipeline/notation/archive-appels-juge.ts`)
+
+§7, décision D100 : la réponse HTTP brute de chaque appel de juge est stockée telle quelle et publiée dans le volume du run, comme les réponses brutes de l'interrogation (règle 7). Chaque tentative laisse, sous `runs/<date>/volume/appels-juges/`, dès son issue et avant toute lecture du statut ou du corps :
+
+- `<empreinte>.<appel>.<tentative>.json` (`schema/appel-juge.schema.json`) : juge, objet noté (`reponse_id`), modèle épinglé, versions du prompt et de la charge, rang de l'appel et de la tentative, point d'accès, empreinte canonique du corps envoyé, instants de départ et de fin ; puis le statut HTTP, l'empreinte et la taille des octets reçus, ou la raison d'un échec de transport (réseau, délai d'abandon) ;
+- `<empreinte>.<appel>.<tentative>.octets` : les octets du corps, tels que reçus, pour toute réponse HTTP, quel que soit son statut.
+
+`<empreinte>` est le SHA-256 de la forme canonique de `{juge_id, reponse_id}`. Réponses en erreur (401, 403, 429, 5xx…) et tentatives rejouées comprises ; une relance après un arrêt prend le numéro d'appel suivant, sans rien réécrire. Chaque fichier est écrit une fois et jamais remplacé : une archive qui ne peut pas s'écrire arrête la notation. Ni la requête ni ses en-têtes (la clé) ne sont gardés, ni les en-têtes de la réponse, que le transport ne rend pas.
+
 ## Appels, par adaptateur
 
 Requêtes construites par l'adaptateur lui-même, avec `<CLE_API_DE_L_EDITEUR>` à la place de la clé, `<modele de run.json#/juges[]>` à la place du modèle et `<texte du prompt de prompts/judge-*.md, variables remplacées par la charge>` à la place du prompt rendu. Le prompt rendu est le seul message, sans instruction système.

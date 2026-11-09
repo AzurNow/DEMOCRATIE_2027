@@ -4137,6 +4137,40 @@
         "keyword": "required",
         "instance_path": ""
       }
+    },
+    {
+      "objet": "appel-juge",
+      "fichier": "appel-juge/valide-01-reponse-http.json",
+      "attendu": "valide",
+      "motif": "Deuxième tentative d'un appel de juge, réponse 529 reçue : gardée avec son statut, l'empreinte et la taille de ses octets, comme une réponse 200 (§7, D100 : réponses en erreur et tentatives rejouées comprises)."
+    },
+    {
+      "objet": "appel-juge",
+      "fichier": "appel-juge/valide-02-sans-reponse.json",
+      "attendu": "valide",
+      "motif": "Tentative d'un appel rejoué (appel 2) sans réponse HTTP, délai d'abandon écoulé : gardée avec la raison du transport, sans statut ni octets."
+    },
+    {
+      "objet": "appel-juge",
+      "fichier": "appel-juge/invalide-01-sans-reponse-avec-statut.json",
+      "attendu": "invalide",
+      "motif": "Tentative sans réponse HTTP qui porte un statut : un statut sans octets gardés serait une réponse inventée.",
+      "regle_protocole": "Règle 7 de CLAUDE.md, réponses brutes immuables ; §7, D100",
+      "erreur_visee": {
+        "keyword": "not",
+        "instance_path": ""
+      }
+    },
+    {
+      "objet": "appel-juge",
+      "fichier": "appel-juge/invalide-02-reponse-sans-empreinte.json",
+      "attendu": "invalide",
+      "motif": "Réponse HTTP reçue sans l'empreinte de ses octets : rien ne permettrait de vérifier que les octets publiés sont ceux reçus.",
+      "regle_protocole": "Règle 7 de CLAUDE.md, réponses brutes immuables ; §7, D100",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": ""
+      }
     }
   ]
 }

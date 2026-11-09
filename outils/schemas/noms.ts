@@ -122,6 +122,11 @@
  * items A du tirage d'un run (§4, D59 (11)), écrite par `pnpm reverifier-absence` et lue par
  * `pnpm go-no-go` pour la case 2 de l'annexe F (`pipeline/go-no-go/reverification-absence.ts`). Le
  * quarante-troisième.
+ *
+ * `appel-juge` décrit les métadonnées d'une tentative d'appel d'un juge réel,
+ * `runs/<date>/volume/appels-juges/<empreinte>.<appel>.<tentative>.json`, écrites une fois avant toute
+ * lecture de la réponse, à côté des octets reçus (§7, décision D100 ;
+ * `pipeline/notation/archive-appels-juge.ts`). Le quarante-quatrième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -167,6 +172,7 @@ export const NOMS_SCHEMAS = [
   "metriques",
   "recalcul-b",
   "reverification-absence",
+  "appel-juge",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

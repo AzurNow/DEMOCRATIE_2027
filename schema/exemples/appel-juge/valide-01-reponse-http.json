@@ -1,0 +1,17 @@
+{
+  "juge_id": "juge-1",
+  "reponse_id": "01KBCS0G00SM0R0N0S1M01E002",
+  "modele": "modele-exemple-a",
+  "version_prompt": "prompts/judge-1.0.0@1.0.0",
+  "version_charge": "charge-juge-v6",
+  "appel": 1,
+  "tentative": 2,
+  "endpoint": "https://api.exemple.invalid/v1/messages",
+  "requete_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "debut_ms": 1765000000000,
+  "fin_ms": 1765000004210,
+  "issue": "reponse_http",
+  "statut_http": 529,
+  "octets_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "taille_octets": 83
+}
