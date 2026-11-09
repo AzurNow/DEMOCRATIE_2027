@@ -126,6 +126,15 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
           section 7, réglages, éditeur et politique de tentatives des juges déclarés au gel et
           publiés, refus d'authentification hors des erreurs persistantes, réponses HTTP brutes des
           juges publiées ; section 4 et annexe F, revérification des items d'absence. »
+      17. §7 (conformité du 2026-11-09, constat 1 ; codé : critère go/no-go `kappa_paire_jeu_or`),
+          après « …jamais leur prompt, dont le changement est un amendement. » : « Un kappa de la
+          paire indéfini ne satisfait pas ce seuil, comme en section 12. »
+      18. §12 (même constat ; le §12 énumère sept critères et dit qu'un run tout vert est publié sans
+          la mention, alors que le §7 l'impose sous 0,75 de paire), après « …un kappa indéfini ne
+          satisfait pas ce critère ; » : « le kappa de la paire de juges sur le jeu d'or est ≥ 0,75
+          (section 7), un kappa de la paire indéfini ne le satisfaisant pas ; ». Le code range déjà
+          ce critère en huitième ; une paire non inscrite dans `run.json` le met au rouge (choix
+          recommandé : une absence de mesure n'est jamais un succès, D24 (2)).
 - [ ] **Trancher D62** (`docs/feuille-de-route.json`) : vingt et une questions laissées par les lots
       D59 (#230, #232 à #235). Commencer par #233 (3), la fausse absence de `rechercheAbsence`
       (DETTE 2026-11-02, point 2), et #233 (2), le renvoi à la réextraction qu'aucun mécanisme ne

@@ -1,6 +1,7 @@
 /**
- * `pnpm go-no-go <repertoire_run>` — les sept critères go/no-go du §12, la décision de publication
- * qui en découle (D24), et la checklist de l'annexe F (`pipeline/go-no-go/go-no-go.ts`).
+ * `pnpm go-no-go <repertoire_run>` — les sept critères go/no-go du §12 et celui du kappa de la paire
+ * de juges sur le jeu d'or (§7), la décision de publication qui en découle (D24), et la checklist de
+ * l'annexe F (`pipeline/go-no-go/go-no-go.ts`).
  *
  *   pnpm go-no-go runs/2026-12-01
  *

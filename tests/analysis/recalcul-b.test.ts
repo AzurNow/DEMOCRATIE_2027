@@ -160,6 +160,15 @@ describe("recalculerEtEcrireB et pnpm recalcul-b, sur un run écrit sur disque",
     expect((document["entrees"] as Json)["contestations_lues"]).toHaveLength(1);
   });
 
+  it("date civile impossible (2026-02-30) : DateCivileInvalide, aucun fichier daté n'est nommé ni publié", () => {
+    expect(() => recalculerEtEcrireB(fictif.repertoire_run, options(), "2026-02-30")).toThrow(expect.objectContaining({ name: "DateCivileInvalide" }));
+    expect(existsSync(cheminRecalculB(fictif.repertoire_run, "2026-02-30"))).toBe(false);
+  });
+
+  it("date non canonique (2026-2-3) : refusée de même", () => {
+    expect(() => recalculerEtEcrireB(fictif.repertoire_run, options(), "2026-2-3")).toThrow(expect.objectContaining({ name: "DateCivileInvalide" }));
+  });
+
   it("recalcul daté déjà présent pour ce jour : refus, code 2, le fichier existant reste tel quel", () => {
     const chemin = cheminRecalculB(fictif.repertoire_run, dateParis(Date.now()));
     const octets = readFileSync(chemin, "utf8");

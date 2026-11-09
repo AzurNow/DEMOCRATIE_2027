@@ -99,9 +99,20 @@ describe("kappa de la paire de juges (conformité n° 80, §7 protocole 0.11)", 
   });
 
   it("accepte un kappa indéfini publié absent avec son motif", () => {
+    // Conformité du 2026-11-09, n° 1 : un kappa de la paire indéfini ne satisfait pas le seuil de
+    // publication (§7, comme au §12) ; le run qui le porte est donc publié provisoire, critère
+    // kappa_paire_jeu_or au rouge. Le point vérifié ici reste la forme : absent, avec son motif.
     const run = runValide();
     delete run["kappa_paire_juges"];
     run["motif_indefini_kappa_paire_juges"] = "accord_attendu_maximal";
+    const motif = "Critère(s) go/no-go du §12 au rouge : kappa_paire_jeu_or.";
+    const go = run["go_no_go"] as { criteres: Objet[] };
+    const criteres = go.criteres.map((c) =>
+      c["code"] === "kappa_paire_jeu_or" ? { ...c, statut: "rouge", valeur: "kappa de la paire indéfini : accord_attendu_maximal" } : c,
+    );
+    run["statut"] = "publie_provisoire";
+    run["motif_provisoire"] = motif;
+    run["go_no_go"] = { criteres, decision: "publie_provisoire", motif };
 
     expect(chemins(run)).toEqual([]);
   });

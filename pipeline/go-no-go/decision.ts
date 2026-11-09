@@ -1,7 +1,7 @@
 /**
- * La décision de publication, dérivée des sept critères (D24 (3)) : sept verts ⇒ `publie` ; au
- * moins un rouge ⇒ `publie_provisoire`, avec un motif qui énumère les codes rouges dans l'ordre fixe
- * des critères. Le code ne laisse aucun choix à l'humain, et le schéma du run impose la même règle
+ * La décision de publication, dérivée des huit critères (D24 (3) ; les sept du §12 et le kappa de la
+ * paire du §7) : tous verts ⇒ `publie` ; au moins un rouge ⇒ `publie_provisoire`, avec un motif qui
+ * énumère les codes rouges dans l'ordre fixe des critères. Le code ne laisse aucun choix à l'humain, et le schéma du run impose la même règle
  * dans les deux sens.
  */
 
@@ -9,7 +9,7 @@ import { CODES_CRITERES, type CodeCritere, type Critere, type GoNoGo } from "./t
 
 export class CriteresIncomplets extends Error {
   constructor(detail: string) {
-    super(`Go/no-go non décidable : ${detail} (§12 : sept critères, chacun une fois).`);
+    super(`Go/no-go non décidable : ${detail} (§12 et §7 : huit critères, chacun une fois).`);
     this.name = "CriteresIncomplets";
   }
 }

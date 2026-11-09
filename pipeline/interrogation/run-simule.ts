@@ -26,6 +26,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
 import { lireRunsDuDepot } from "../gel/precedent.ts";
+import { exigerGelSimule } from "../run/simulation.ts";
 import { chargerPerimetre } from "../questions/charger-perimetre.ts";
 import type { Question } from "../questions/types.ts";
 import { bilanParCouple, type LigneBilan } from "./bilan.ts";
@@ -210,6 +211,7 @@ export interface ResultatRunGeleSimule extends ResultatRunSimule {
 
 export async function lancerRunGeleSimule(options: OptionsRunGeleSimule): Promise<ResultatRunGeleSimule> {
   const gele = lireRunGele(options.repertoire, () => lireRunsDuDepot(options.runs));
+  exigerGelSimule(options.repertoire, "pnpm run:dry --run");
   const simulation = simulationDe(lireObjet(options.profils), options.profils);
   const resultat = await executerSimulation({
     plan: planifier(gele.outils, gele.questions_tirees, gele.echantillons),
@@ -242,6 +244,7 @@ export interface ResultatStockageGeleSimule {
  */
 export function stockerRunGeleSimule(options: OptionsStockageGeleSimule): ResultatStockageGeleSimule {
   const gele = lireRunGele(options.repertoire, () => lireRunsDuDepot(options.runs));
+  exigerGelSimule(options.repertoire, "pnpm interrogation:stocker");
   const simulation = simulationDe(lireObjet(options.profils), options.profils);
   const plan = planifier(gele.outils, gele.questions_tirees, gele.echantillons);
   const adaptateurs = new Map(

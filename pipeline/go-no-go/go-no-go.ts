@@ -1,7 +1,8 @@
 /**
  * `pnpm go-no-go <repertoire_run>` : les sept critères du §12 calculés depuis les fichiers du run,
- * la décision qui en découle (D24), le kappa de l'échantillon humain de chaque juge retenu, et la
- * checklist de l'annexe F.
+ * celui du kappa de la paire de juges sur le jeu d'or (§7, lu dans `run.json` tel que
+ * `pnpm kappa:jeu-or` l'a inscrit), la décision qui en découle (D24), le kappa de l'échantillon
+ * humain de chaque juge retenu, et la checklist de l'annexe F.
  *
  * Ce qui est lu : `run.json`, `volume/reponses/`, `volume/notations/` (et les réponses
  * contrefactuelles, validées au passage), `verdicts/`, `tirage.json` et `questions.json` (le plan
@@ -38,7 +39,7 @@
  * identique (`analysis/analyse-du-run.ts:empreinteDuRun`).
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsEchantillon } from "../../analysis/accord-humains.ts";
 import { reponsesObtenuesDuRun } from "../../analysis/population-notation.ts";
@@ -74,7 +75,7 @@ import {
 } from "./checklist.ts";
 import { exigerAucuneAttenteSurPlan } from "../interrogation/attente-operateur.ts";
 import { lireRunsDuDepot } from "../gel/precedent.ts";
-import { critereKappaJugesHumains, critereTestContrefactuel } from "./criteres-juges.ts";
+import { critereKappaJugesHumains, critereKappaPaireJeuOr, critereTestContrefactuel, type PaireDuJeuOr } from "./criteres-juges.ts";
 import {
   critereAnalysesExecutees,
   critereAucunItemConteste,
@@ -84,15 +85,18 @@ import {
   type OutilDeclare,
 } from "./criteres-run.ts";
 import { deciderPublication } from "./decision.ts";
-import { cheminChecklist, ecrireParRenommage, lireJson } from "./fichiers.ts";
+import { cheminChecklist, ecrireParRenommage, ecrireRunSiInchange, lireJson } from "./fichiers.ts";
 import { kappasEchantillon, type KappaDeJuge } from "./kappa-echantillon.ts";
 import { lireMetriques } from "./metriques.ts";
 import { requetesDuPlanDuRun } from "../interrogation/plan-du-run.ts";
 import { lireReverificationAbsence } from "./reverification-absence.ts";
 import type { GoNoGo } from "./types.ts";
 
-/** La part de `run.json` que lit le go/no-go, en plus de `RunLu`. */
-interface VueGoNoGo {
+/**
+ * La part de `run.json` que lit le go/no-go, en plus de `RunLu` ; dont le kappa de la paire de juges
+ * sur le jeu d'or ou son motif (`PaireDuJeuOr`, §7), inscrits par `pnpm kappa:jeu-or`.
+ */
+interface VueGoNoGo extends PaireDuJeuOr {
   /** Typé par le schéma (`analysis/types-run.ts`) : un statut mal écrit ou renommé ne compile plus. */
   readonly statut: StatutRun;
   readonly invalidation?: { readonly motif: string };
@@ -197,6 +201,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     critereReponsesManquantes(vue.perimetre.outils, reponses, plan),
     critereErreursGravesRevues({ juges: run.juges, reponses_obtenues: obtenues, notations, verdicts }),
     critereAnalysesExecutees(metriques === null ? null : metriques.graines, { bootstrap: vue.graines.bootstrap.valeur, permutation: vue.graines.permutation.valeur }),
+    critereKappaPaireJeuOr(vue),
   ]);
   const constats = [
     constatItemsAbsenceReverifies(lireReverificationAbsence(repertoire_run), run.id),
@@ -295,8 +300,9 @@ function issueChecklist(chemin: string, nouvelle: Checklist): IssueEcriture | nu
 /* ------------------------------------------------------------------ commande */
 
 export function goNoGo(repertoire_run: string): ResultatGoNoGo {
-  const run = lireRunJson(repertoire_run);
   const chemin_run = dispositionRunNote(repertoire_run).run_json;
+  const texte_lu = readFileSync(chemin_run, "utf8");
+  const run = lireRunJson(repertoire_run);
   const brut = valider<Objet>("run", lireJson(chemin_run), chemin_run);
   const vue = valider<VueGoNoGo>("run", brut, chemin_run);
   refuser(vue);
@@ -306,7 +312,7 @@ export function goNoGo(repertoire_run: string): ResultatGoNoGo {
   const chemin_checklist = cheminChecklist(repertoire_run);
   const issue_run = issueRun(chemin_run, brut, fusionne);
   const issue_checklist = issueChecklist(chemin_checklist, checklist);
-  if (issue_run === null) ecrireParRenommage(chemin_run, fusionne);
+  if (issue_run === null) ecrireRunSiInchange(chemin_run, fusionne, texte_lu);
   if (issue_checklist === null) ecrireParRenommage(chemin_checklist, checklist);
   return {
     ...calcul,
