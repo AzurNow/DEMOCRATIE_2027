@@ -210,6 +210,8 @@ export interface Item {
   readonly candidat_id: string;
   readonly mesure_id: string;
   readonly mesure_version: number;
+  /** §4 : auteur publié d'un item F (pseudonyme, comme `annotateur_id`) ; absent des autres types. */
+  readonly redige_par?: string;
   readonly statut_validation: string;
   readonly statut_contestation: "aucune" | "contestee" | "arbitree";
   readonly valide_du: string;

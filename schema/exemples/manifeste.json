@@ -1953,6 +1953,23 @@
       }
     },
     {
+      "objet": "item",
+      "fichier": "item/valide-08-fictif-avec-redacteur.json",
+      "attendu": "valide",
+      "motif": "Item F en attente qui publie son auteur (redige_par, pseudonyme de la même forme que annotateur_id). §4 : « un item F n'est pas extrait : il est rédigé par l'auteur, et son auteur est publié avec lui » (conformité du 2026-11-09, n° 9)."
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-27-fictif-sans-redacteur.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-08 sans redige_par. §4 : l'auteur d'un item F est publié avec lui ; sans lui, rien ne dit qui a rédigé la mesure fictive soumise à l'outil. Erreur : racine (required, redige_par), exigé du seul type F (conformité du 2026-11-09, n° 9).",
+      "regle_protocole": "§4, items fictifs",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": ""
+      }
+    },
+    {
       "objet": "decision-arbitrage",
       "fichier": "decision-arbitrage/valide-01-auteur-contenu-original.json",
       "attendu": "valide",

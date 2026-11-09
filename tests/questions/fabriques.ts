@@ -161,7 +161,7 @@ export function itemO(options: OptionsItem): Item {
 }
 
 export function itemF(options: OptionsItem): Item {
-  return sceller({ ...socle(options), type: "F" });
+  return sceller({ ...socle(options), type: "F", redige_par: "a1" });
 }
 
 /* ------------------------------------------------------------ contestations */

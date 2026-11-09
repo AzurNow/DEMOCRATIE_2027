@@ -441,7 +441,7 @@ function ajouterItemsF(atelier: Fabrique, depart: number): number {
         resultat: "aucune_occurrence",
       },
     });
-    atelier.ajouter({ ...atelier.socle(indice, "F", mesure_id) });
+    atelier.ajouter({ ...atelier.socle(indice, "F", mesure_id), redige_par: "a1" });
   });
   return indice;
 }

@@ -52,6 +52,11 @@
     "mesure_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
     "mesure_version": { "type": "integer", "minimum": 1 },
 
+    "redige_par": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "§4, items fictifs : « un item F n'est pas extrait : il est rédigé par l'auteur, et son auteur est publié avec lui ». Identifiant pseudonymisé de la personne qui a rédigé l'item, de la même forme que annotateur_id et operateur (référentiel config/, jamais un nom réel). Exigé d'un item F, sans objet pour les autres types."
+    },
+
     "statut_validation": {
       "type": "string",
       "enum": ["en_attente", "a_confirmer", "verifie", "rejete", "non_evaluable", "retire_par_panel"],
@@ -391,6 +396,7 @@
     {
       "if": { "properties": { "type": { "const": "F" } }, "required": ["type"] },
       "then": {
+        "required": ["redige_par"],
         "allOf": [
           { "not": { "required": ["assertion"] } },
           { "not": { "required": ["absence"] } },
