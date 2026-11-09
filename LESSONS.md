@@ -271,6 +271,13 @@ entière, et l'apparition des sections et le bouton « Haut de page » ne tourna
 
 ## Méthode
 
+**Une population de réponses se nomme par une fonction, pas par un filtre en ligne.** La revue du
+2026-11-09 a trouvé `estDuRun(r) && r.statut_reponse === "obtenue"` recopié dans six modules (jeu
+d'or, contrôle, simulation, lecture du run, go/no-go, écran humain). Le §5 compte le canal API seul,
+mais ce filtre laisse entrer les saisies de l'application : l'échantillon humain d'un run désigné
+pour l'application les aurait mêlées aux réponses API sans qu'aucun test ne le voie. Aucun signal de
+`pnpm proprete` ne le relève ; il a fallu comparer les filtres d'un module à l'autre.
+
 **Quand un filet textuel se tait après une retouche, demander pourquoi.** Le 2026-11-05 (#336), le
 filet de la règle 3 signalait le gel simulé, qui écrit un `data/` fictif dans un dépôt jetable ;
 l'agent a remplacé la table qui nommait `data/items` par un `cpSync` de tout l'arbre, et le filet s'est

@@ -10,7 +10,7 @@
  * tirage (`epingleLaVersionCourante`), il ne compte donc pas non plus. Protocole 0.32 (§4, D74 (16)) :
  * un item que le tirage exclut parce que sa position est incompatible avec celle d'un autre item du
  * même candidat sur la même mesure ne compte pas non plus. Cette règle se juge sur l'ensemble des
- * items, pas sur un item seul : `itemsPAuGel` l'applique, avec la détection du tirage
+ * items, pas sur un item seul : `referencesPAuGel` l'applique, avec la détection du tirage
  * (`tirabilite.ts:positionsIncompatiblesAuGel`, lue par `itemsAuxPositionsIncompatibles`), jamais
  * recopiée ; `itemPCompteAuGel` ne juge que l'item.
  *
@@ -42,7 +42,7 @@ function estItemPDuCandidat(item: Item, candidat_id: string): boolean {
 
 /**
  * Vrai si l'item, jugé seul, compte pour le seuil de couverture de ce candidat au gel : la règle des
- * positions incompatibles, qui se juge sur l'ensemble des items, est appliquée par `itemsPAuGel`. Pour un item arbitré,
+ * positions incompatibles, qui se juge sur l'ensemble des items, est appliquée par `referencesPAuGel`. Pour un item arbitré,
  * la décision est lue au gel : une décision postérieure lève `DecisionPanelPosterieureAuGel`,
  * comme au tirage, plutôt que de compter un item sur un état que le gel ne connaissait pas.
  * `referentiel` : les mesures au gel, par identifiant ; une mesure absente lève `MesureIntrouvable`.
@@ -105,28 +105,6 @@ export function referencesPAuGel(
     throw new Error(`Item ${doublon.item_id} compté deux fois au gel pour ${candidat_id} : identifiant en double dans les items lus.`);
   }
   return references;
-}
-
-/** Les identifiants, triés, des items P de ce candidat qui comptent au gel : ceux de `referencesPAuGel`, seule définition. */
-export function itemsPAuGel(
-  items: readonly Item[],
-  candidat_id: string,
-  date_gel: string,
-  mesures: readonly Mesure[],
-  interroges: ReadonlySet<string>,
-): readonly string[] {
-  return referencesPAuGel(items, candidat_id, date_gel, mesures, interroges).map((reference) => reference.item_id);
-}
-
-/** Le nombre d'items P de ce candidat qui comptent au gel : la longueur de `itemsPAuGel`, seule définition. */
-export function itemsPComptesAuGel(
-  items: readonly Item[],
-  candidat_id: string,
-  date_gel: string,
-  mesures: readonly Mesure[],
-  interroges: ReadonlySet<string>,
-): number {
-  return itemsPAuGel(items, candidat_id, date_gel, mesures, interroges).length;
 }
 
 /**

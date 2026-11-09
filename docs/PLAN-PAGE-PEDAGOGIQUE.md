@@ -106,7 +106,9 @@ protocole.
   cherche `http` hors liens documentaires) ; aucun nom de candidat ni d'outil du périmètre dans
   la page (test lu sur `config/perimetre.yaml`) ; chaque renvoi « §n » pointe vers une section qui
   existe dans `docs/PROTOCOLE.md`.
-- **Aucune logique métier** dans `site/` ; aucun import depuis `pipeline/` ni `analysis/`.
+- **Aucune logique métier** dans `site/`. Il n'importe que des constantes, types et fonctions pures
+  d'`analysis/` (une règle de calcul ne vit qu'à un endroit) ; jamais `pipeline/`, `validation/` ni
+  `staging/`. Une règle `no-restricted-imports` de `eslint.config.js` l'impose sur `site/**/*.ts`.
 - **Déploiement** : aucun. La page n'est publiée que par l'auteur, à la main, quand il le décide.
 
 ## Découpage en PR (quand l'auteur dira de commencer)

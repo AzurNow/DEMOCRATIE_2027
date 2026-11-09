@@ -35,8 +35,10 @@
  *   distincts. Une réponse tirée aussi dans l'échantillon est notée deux fois, sous deux motifs. Puis,
  *   si les deux calibrations divergent (`analysis/kappa-jeu-or.ts:calibrationsDivergent`, la
  *   définition que lit le kappa du jeu d'or), une place d'arbitrage (`arbitrage_jeu_or`, §7, D93),
- *   fermée aux deux premiers : sa note est la référence du kappa juge-humain. Comme celles de
- *   l'échantillon, ces tâches ne dépendent pas des juges.
+ *   fermée aux deux premiers : sa note est la référence du kappa juge-humain. Sur un refus de l'API
+ *   (notation par règle, D32), les deux calibrations restent dues mais aucun arbitrage n'est ouvert :
+ *   le kappa du jeu d'or écarte le refus avant de lire sa référence. Comme celles de l'échantillon,
+ *   ces tâches ne dépendent pas des juges.
  * - **Attend un juge** : `decider` rend « en attente » d'un juge. Ce n'est pas une tâche humaine ;
  *   l'état est rendu à part (`attend_juge`).
  *   Hors échantillon, le même cas entre deux juges est un accord partiel (D15), tâche
@@ -67,6 +69,7 @@ import { ordreFileHumaine, tirerEchantillonHumain, tirerJeuOr, type JeuOr } from
 import type { TextesDeVerification } from "./extrait.ts";
 import { exigerPseudonyme, MOTIFS_HUMAINS, type MotifHumain } from "./notation-humaine.ts";
 import { humainsAArbitrer } from "./note-retenue.ts";
+import { estNotationParRegle } from "./regle-refus.ts";
 import type { NotationIndividuelle, RenvoiHumain, RunDeNotation } from "../../analysis/types-notation.ts";
 
 export interface ReponseDeLaFile {
@@ -259,8 +262,9 @@ function bilanDeReponse(ctx: Contexte, reponse: ReponseDeLaFile, notations: read
   const { decision, calibration } = separerCalibration(notations);
   const dans = ctx.echantillon.has(id);
   const resultat = decider({ run: ctx.run, objet_note: { type: "reponse", id }, notations: decision, renvois, dans_echantillon_humain: dans, textes: reponse.textes, ...VERDICT_JETABLE });
+  const refus_api = decision.some(estNotationParRegle);
   return {
-    taches: [...(dans ? tachesEchantillon(id, decision) : tachesHorsEchantillon(id, resultat)), ...tachesJeuOr(ctx, id, calibration)],
+    taches: [...(dans ? tachesEchantillon(id, decision) : tachesHorsEchantillon(id, resultat)), ...tachesJeuOr(ctx, id, calibration, refus_api)],
     attend_juge: resultat.statut === "en_attente" && resultat.attend === "juge" ? [{ reponse_id: id, motifs: resultat.motifs }] : [],
   };
 }
@@ -328,8 +332,13 @@ function tachesHorsEchantillon(id: Ulid, resultat: Decision): readonly Tache[] {
 
 /* ------------------------------------------------------------------ jeu d'or */
 
-/** `jeu` : les notations de la réponse sous les deux motifs du jeu d'or (calibration et arbitrage). */
-function tachesJeuOr(ctx: Contexte, id: Ulid, jeu: readonly NotationIndividuelle[]): readonly Tache[] {
+/**
+ * `jeu` : les notations de la réponse sous les deux motifs du jeu d'or (calibration et arbitrage).
+ * `refus_api` : la réponse porte la notation par règle d'un refus de l'API (D32), le critère même
+ * qu'applique `analysis/kappa-jeu-or.ts` ; ses deux calibrations restent dues, mais aucun arbitrage
+ * n'est ouvert, le kappa n'en lisant jamais la référence (revue du 2026-11-09, constat 8).
+ */
+function tachesJeuOr(ctx: Contexte, id: Ulid, jeu: readonly NotationIndividuelle[], refus_api: boolean): readonly Tache[] {
   if (!ctx.jeu_or.has(id)) return exigerHorsDuJeuSansNotation(id, jeu);
   if (jeu.some((n) => n.notateur.type !== "humain")) throw new FileIncoherente(`réponse ${id} : notation du jeu d'or par un juge.`);
   const calibrations = humainsSous(jeu, MOTIF_CALIBRATION_JEU_OR);
@@ -337,7 +346,7 @@ function tachesJeuOr(ctx: Contexte, id: Ulid, jeu: readonly NotationIndividuelle
   verifierJeuOr(id, calibrations, arbitres);
   const [a, b] = calibrations;
   if (a === undefined || b === undefined) return [tache(id, MOTIF_CALIBRATION_JEU_OR, 2 - calibrations.length, calibrations)];
-  if (arbitres.length > 0 || !calibrationsDivergent(a, b)) return [];
+  if (refus_api || arbitres.length > 0 || !calibrationsDivergent(a, b)) return [];
   return [tache(id, MOTIF_ARBITRAGE_JEU_OR, 1, calibrations)];
 }
 

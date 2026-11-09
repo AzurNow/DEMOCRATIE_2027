@@ -34,9 +34,12 @@ export const TOKENS_SORTIE_MAX = 2048;
 export type EchantillonsParQuestion = 1 | 2;
 
 /**
- * §6 : « Échantillons : 2 par question et par mode », pour chaque formulation (§2). Lu au gel seul
+ * §6 : « Échantillons : 2 par question et par mode », pour chaque formulation (§2). Lu au gel
  * (`pipeline/gel/assemblage.ts`), qui l'inscrit dans `run.json#/reponses/echantillons_par_question`
  * (D75 (14)) ; un run gelé est ensuite planifié sur ce qu'il porte, jamais sur cette constante.
+ * Les seuls autres lecteurs sont le run simulé sur fixtures, qui n'a pas de gel
+ * (`pipeline/interrogation/run-simule.ts`), et le rendu du mode d'emploi
+ * (`outils/appels-interrogation/rendu.ts`).
  */
 export const ECHANTILLONS: EchantillonsParQuestion = 2;
 

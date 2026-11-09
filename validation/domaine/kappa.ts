@@ -12,19 +12,19 @@
  *    astronomique là où il n'en existe aucun.
  */
 
-import type { CategorieKappa, Decision } from "./types.ts";
+import { DECISIONS_VERIFIANTES, type CategorieKappa, type Decision } from "./types.ts";
 
 /** Ordre figé : il fixe l'indexation de la matrice de confusion. */
 export const CATEGORIES_KAPPA: readonly CategorieKappa[] = ["retenu", "rejete", "non_evaluable"];
 
 /**
- * §4, lecture retenue : c'est le devenir de l'item qui compte. « accepter » et « corriger »
- * mènent tous deux à un item vérifié ; les distinguer pénaliserait une coquille repérée par un
- * seul des deux annotateurs. « rejeté » et « non évaluable » ne fusionnent pas : l'un dit que
- * l'extraction est fausse, l'autre que le candidat est flou.
+ * §4, lecture retenue : c'est le devenir de l'item qui compte. Les décisions qui vérifient un item
+ * (`DECISIONS_VERIFIANTES` : « accepter » et « corriger ») mènent toutes à un item vérifié ; les
+ * distinguer pénaliserait une coquille repérée par un seul des deux annotateurs. « rejeté » et « non
+ * évaluable » ne fusionnent pas : l'un dit que l'extraction est fausse, l'autre que le candidat est flou.
  */
 export function categorieDe(decision: Decision): CategorieKappa {
-  if (decision === "accepter" || decision === "corriger") return "retenu";
+  if (DECISIONS_VERIFIANTES.has(decision)) return "retenu";
   if (decision === "rejeter") return "rejete";
   return "non_evaluable";
 }

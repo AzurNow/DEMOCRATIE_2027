@@ -25,7 +25,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { MOTIFS_DU_BILAN, texteContrefactuelInscrit, type BilanNotation } from "../pipeline/notation/bilan-notation.ts";
+import type { BilanNotation } from "../pipeline/notation/bilan-notation.ts";
 import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
 import {
   lancerNotationDuGelSimule,
@@ -34,26 +34,11 @@ import {
   type NotationSimuleeFaite,
   type ParametresNotationSimulee,
 } from "../pipeline/notation/notation-simulee.ts";
-import type { EtatLecturesDuRun } from "../pipeline/notation/verdicts-de-lecture.ts";
+import { lignesBilanNotation, texteLectures } from "./notation-bilan.ts";
 import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const FIXTURES_INTERROGATION = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
 const FIXTURES_NOTATION = resolve(import.meta.dirname, "../tests/notation/fixtures/notation-dry");
-
-const LIBELLES_MOTIFS: Readonly<Record<(typeof MOTIFS_DU_BILAN)[number], string>> = {
-  notation_juge_manquante: "notation de juge manquante",
-  desaccord_juges: "désaccord des juges",
-  extrait_invalide: "extrait invalide",
-  drapeau_grave: "erreur grave à revoir",
-  double_notation_humaine_incomplete: "échantillon humain (double notation)",
-  arbitrage_echantillon_manquant: "arbitrage de l'échantillon",
-  accord_sans_note_commune: "accord partiel des juges",
-  attribution_indecidable: "attribution indécidable (renvoi d'un juge)",
-  juge_defaillant: "juge défaillant (renvoi d'un juge)",
-  test_liens: "en attente du test des liens",
-  contrefactuel_en_attente: "test contrefactuel en attente",
-  run_invalide: "run invalide (deux juges retirés)",
-};
 
 /** `--<nom> <chemin>` ou `--<nom>=<chemin>`, résolu ; `undefined` sans l'option ; refus si le chemin manque. */
 function cheminOption(argv: readonly string[], nom: string): string | undefined {
@@ -95,39 +80,7 @@ async function noter(demandee: Demande, parametres: ParametresNotationSimulee): 
 }
 
 function imprimerBilan(repertoire_run: string, bilan: BilanNotation): void {
-  const ecrire = (ligne: string): void => {
-    process.stdout.write(`${ligne}\n`);
-  };
-  ecrire(`Notation simulée (aucun modèle, aucun appel réseau) — ${repertoire_run}`);
-  ecrire(`Test contrefactuel : ${bilan.statut_contrefactuel}${contrefactuelInscrit(bilan)}`);
-  for (const juge of bilan.juges) {
-    const taux = juge.changements_contrefactuel === undefined ? "sans taux" : `${juge.changements_contrefactuel.numerateur}/${juge.changements_contrefactuel.denominateur} changements`;
-    ecrire(`  ${juge.juge_id.padEnd(16)} ${juge.retire ? "RETIRÉ" : "retenu"}  ${taux}  notations : run ${juge.notations_run}, contrefactuel ${juge.notations_contrefactuel}, contrefactuel d'outil ${juge.notations_contrefactuel_outil}`);
-  }
-  ecrire(`  règle d12-refus-api (D32)  notations : run ${bilan.notations_par_regle}, sans juge`);
-  ecrire(`Échantillon humain : ${bilan.taux_echantillon_humain * 100} %`);
-  ecrire(`Réponses obtenues : ${bilan.reponses_obtenues} = ${bilan.verdicts} verdict(s) + ${bilan.reponses_en_attente} en attente`);
-  for (const [mode, nombre] of Object.entries(bilan.verdicts_par_mode)) ecrire(`  verdict ${mode.padEnd(28)} ${nombre}`);
-  ecrire("Attentes par motif (une réponse peut en porter plusieurs) :");
-  for (const motif of MOTIFS_DU_BILAN) {
-    const nombre = bilan.attentes_par_motif[motif];
-    if (nombre !== undefined) ecrire(`  ${LIBELLES_MOTIFS[motif].padEnd(40)} ${nombre}`);
-  }
-  ecrire(`Réponses contrefactuelles écrites : ${bilan.reponses_contrefactuelles} ; notations humaines lues : ${bilan.notations_humaines}`);
-}
-
-/** Étape 5 de la chaîne (D87) : les verdicts de lecture écrits, les lectures qui attendent un humain, ou pourquoi rien n'a été joué. */
-function texteLectures(lectures: EtatLecturesDuRun): string {
-  if (lectures.statut === "non_jouees") return `Lectures de comparateur : non jouées (${lectures.motif})`;
-  const aNoter = lectures.attentes.filter((a) => a.statut === "a_noter").length;
-  const aArbitrer = lectures.attentes.length - aNoter;
-  return `Lectures de comparateur : ${lectures.verdicts.length} verdict(s) ; ${aNoter} à noter, ${aArbitrer} à arbitrer`;
-}
-
-function contrefactuelInscrit(bilan: BilanNotation): string {
-  const inscrit = bilan.contrefactuel_inscrit;
-  if (inscrit === undefined) return "";
-  return texteContrefactuelInscrit(inscrit);
+  for (const ligne of lignesBilanNotation("Notation simulée (aucun modèle, aucun appel réseau)", repertoire_run, bilan)) process.stdout.write(`${ligne}\n`);
 }
 
 async function principal(): Promise<void> {
