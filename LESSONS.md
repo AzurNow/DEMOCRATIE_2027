@@ -165,6 +165,12 @@ Chaque branche était verte seule ; seul `pnpm check` lancé après la fusion de
 apparaître l'exemple devenu invalide. Une propriété requise ajoutée par un lot casse les exemples
 neufs des lots voisins, jamais les siens.
 
+**Donner un délai explicite aux tests de bout en bout qui écrivent sur disque.** Le 2026-11-09, les
+tests de bout en bout de `tests/notation/notation-reelle.test.ts` (gel, chaîne, puis deux fichiers
+synchronisés par envoi avec l'archive D100) ont dépassé les 5 s par défaut chez trois agents sur
+trois, et jusqu'à 18 s sous charge : verts seuls, rouges dans la suite. Un `describe(…, { timeout })`
+commenté, jamais une assertion allégée (#397).
+
 ## Outillage
 
 **Ne pas importer dans le site un module qui lit un fichier au chargement.** Le 2026-11-05 (#333), le
@@ -268,6 +274,11 @@ fusionnait `animation-timeline` dans le raccourci `animation:` ; le navigateur r
 entière, et l'apparition des sections et le bouton « Haut de page » ne tournaient plus depuis leur
 écriture, sources et tests verts. Trouvé par hasard par l'agent de la page `/exemple/` (#354) ;
 `tests/site/timeline-construite.test.ts` lit désormais `site/dist/`.
+
+**Entre plusieurs worktrees, mettre un `cd` absolu dans chaque commande Git.** Le 2026-11-09, un
+`cd ../agent-…` laissé dans une commande précédente n'a pas suivi : la commande suivante a créé la
+branche de D100 et tenté son commit dans le worktree des constats de la revue (« nothing to
+commit »). Rattrapé avant le push ; un `git add -A` réussi aurait mêlé deux PR.
 
 ## Méthode
 
@@ -570,3 +581,8 @@ deux sens ; un agent moins prudent aurait codé le refus et rendu le contrôle f
 la CI.** Le 2026-11-06, quatre agents ont lancé chacun `pnpm test` (~6 400 tests) en même temps : charge
 ~40, aucune suite allée au bout, deux agents restés en attente de leur vitest d'arrière-plan à
 arrêter à la main. `pnpm check` et les fichiers touchés en local, la suite complète sous Node 22 en CI.
+
+**Après la fusion de PR écrites en parallèle, relancer les tests sur main.** Le 2026-11-09, #377
+(test des liens) et #387 (juges réels) passaient chacune leur CI ; fusionnées, la notation réelle
+exigeait le test des liens que la fixture de #387 ne posait pas, et `notation-reelle.test.ts` a cassé
+sur main. Chaque PR était verte contre un main qui ne contenait pas l'autre.
