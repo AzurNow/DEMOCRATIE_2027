@@ -16,8 +16,16 @@ import {
   VerdictEnDouble,
 } from "../../analysis/filtre.ts";
 import { confirmationPremisse, exactitude, sourcageValide, tauxNonReponse } from "../../analysis/metriques.ts";
+import { reponsesObtenuesDuRun } from "../../analysis/population-notation.ts";
 import { partReponsesManquantesDuPlan } from "../../analysis/seuils.ts";
 import { entreeTirage, idQuestion, item, planCouvrant, question, reponse, run, ulid, verdict } from "./fabriques.ts";
+
+/**
+ * Projection fixée d'un refus de modération de l'API (schema/reponse.schema.json) : texte vide,
+ * aucun lien, troncature false. L'analyse ne lit pas `refus_api` : le refus est une réponse obtenue
+ * comme une autre, que la notation classe en non-réponse (§7).
+ */
+const PROJECTION_REFUS_API = { texte: "", liens: [], troncature: false, refus_api: true };
 
 /** Jeu commun : une question, un item P, et ce que l'appelant veut y mettre. */
 function entrees(reponses: ReturnType<typeof reponse>[], verdicts: ReturnType<typeof verdict>[]) {
@@ -304,6 +312,41 @@ describe("une unité par réponse obtenue, un verdict par réponse (constat n° 
 
     expect(unites.map((u) => u.reponse_id)).toEqual([ulid("r-ok")]);
     expect(tauxNonReponse(unites)).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+  });
+
+  it("un refus de l'API est une réponse obtenue : il forme une unité (schéma reponse, refus_api)", () => {
+    const reponses = [reponse({ id: ulid("r-refus"), normalise: PROJECTION_REFUS_API })];
+    const verdicts = [verdict({ id: ulid("v-refus"), objet_note: { type: "reponse", id: ulid("r-refus") }, categorie_retenue: "non_reponse" })];
+
+    const unites = assembler(entrees(reponses, verdicts));
+
+    expect(unites.map((u) => [u.reponse_id, u.categorie, u.tronquee])).toEqual([[ulid("r-refus"), "non_reponse", false]]);
+  });
+
+  it("une réponse obtenue hors run, sans verdict, n'est pas réclamée : elle n'est pas du dénominateur", () => {
+    const reponses = [reponse({ id: ulid("r-run") }), reponse({ id: ulid("r-cf"), contexte: "contrefactuel_candidat" })];
+    const verdicts = [verdict({ id: ulid("v-run"), objet_note: { type: "reponse", id: ulid("r-run") } })];
+
+    expect(assembler(entrees(reponses, verdicts)).map((u) => u.reponse_id)).toEqual([ulid("r-run")]);
+  });
+
+  it("les unités sont exactement la population `reponsesObtenuesDuRun`, dans son ordre (DETTE 2026-11-09)", () => {
+    // Réponse entière, tronquée, refus de l'API, saisie de l'application, manquante, contrefactuelle.
+    const reponses = [
+      reponse({ id: ulid("r-tronquee"), normalise: { texte: "coupé", liens: [], troncature: true } }),
+      reponse({ id: ulid("r-manq"), statut_reponse: "manquante", normalise: undefined }),
+      reponse({ id: ulid("r-app"), canal: "application", mode: undefined, normalise: { texte: "copié", liens: [] } }),
+      reponse({ id: ulid("r-cf"), contexte: "contrefactuel_outil" }),
+      reponse({ id: ulid("r-refus"), normalise: PROJECTION_REFUS_API }),
+      reponse({ id: ulid("r-entiere") }),
+    ];
+    const notees = [ulid("r-tronquee"), ulid("r-app"), ulid("r-refus"), ulid("r-entiere")];
+    const verdicts = [...notees].reverse().map((id) => verdict({ id: ulid(`v-${id}`), objet_note: { type: "reponse", id } }));
+
+    const unites = assembler(entrees(reponses, verdicts));
+
+    expect(unites.map((u) => u.reponse_id)).toEqual(notees);
+    expect(unites.map((u) => u.reponse_id)).toEqual(reponsesObtenuesDuRun(reponses).map((r) => r.id));
   });
 
   it("cas nominal : une unité par réponse obtenue, dans l'ordre des réponses", () => {

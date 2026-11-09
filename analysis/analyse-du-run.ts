@@ -98,6 +98,7 @@ import { exactitude, indexVerdictsDeLecture, lecturesDesComparateurs, noterLectu
 import { renvoisParJuge, type RenvoisDUnJuge } from "./renvois-humains.ts";
 import { modelesDuRun, type ModeleDUnOutil } from "./modeles-du-run.ts";
 import { corrigerFamilleAsymetrie, PERMUTATIONS_PRODUCTION, testHomogeneiteCandidats, type FamilleAsymetrie, type ResultatCouple } from "./permutation.ts";
+import { reponsesObtenuesDuRun } from "./population-notation.ts";
 import { tauxRecalcules } from "./robustesse-taux.ts";
 import { fragiliteDesDifferences, restrictionDe, type FamilleDeDifferences, type FamilleDeResultats, type Recalcul, type SourcesRobustesse } from "./robustesse.ts";
 import { itemsPDeReference } from "./reference-comparateurs.ts";
@@ -978,7 +979,7 @@ export function entreesPubliees(entrees: EntreesDuRun): object {
     tirage_sha256: entrees.run.tirage.sha256,
     donnees_commit: entrees.run.versions.donnees_commit,
     reponses_lues: entrees.reponses.length,
-    reponses_obtenues: duRun.filter((r) => r.statut_reponse === "obtenue").length,
+    reponses_obtenues: reponsesObtenuesDuRun(entrees.reponses).length,
     reponses_manquantes: duRun.filter((r) => r.statut_reponse === "manquante").length,
     verdicts_lus: entrees.verdicts.length,
     notations_lues: entrees.notations.length,
