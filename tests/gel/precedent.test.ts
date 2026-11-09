@@ -230,6 +230,24 @@ describe("lireRunsDuDepot, constat 21 : ordre de lecture par code-unit", () => {
   it("runs/ absent ⇒ liste vide", () => {
     expect(lireRunsDuDepot(join(temporaire("banc-lire-runs-vide-"), "runs"))).toEqual([]);
   });
+
+  it("un run simulé posé sous runs/ ⇒ refus nommé run_simule_sous_runs, pas un précédent", () => {
+    const racine = temporaire("banc-lire-runs-simule-");
+    const dossier = join(racine, "runs", "2026-12-01");
+    mkdirSync(dossier, { recursive: true });
+    const brut = JSON.parse(minimalRunJson("2026-12-01")) as Record<string, unknown>;
+    writeFileSync(join(dossier, "run.json"), JSON.stringify({ ...brut, simule: true }), "utf8");
+    const erreur = (() => {
+      try {
+        lireRunsDuDepot(join(racine, "runs"));
+      } catch (refus) {
+        return refus;
+      }
+      throw new Error("aucun refus");
+    })();
+    expect(erreur).toBeInstanceOf(PrecedentRefuse);
+    expect((erreur as PrecedentRefuse).motif).toBe("run_simule_sous_runs");
+  });
 });
 
 describe("précédent, cas 2 : le plus récent strictement avant", () => {

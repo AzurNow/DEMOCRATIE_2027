@@ -36,7 +36,8 @@
 
 import { CLE_DERANGEMENT_OUTILS, correspondancesOutils, type AbsenceContrefactuelOutils, type DerangementOutils, type EditeurPartage, type MotifAbsenceContrefactuelOutils } from "./derangement-outils.ts";
 import type { ResultatContrefactuelOutils, ResultatJugeOutils } from "./contrefactuel-outils.ts";
-import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS, type SousEnsembleContrefactuel } from "./echantillons.ts";
+import { TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS } from "../../analysis/parametres-protocole.ts";
+import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS, type SousEnsembleContrefactuel } from "./echantillons.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import type { RunDeNotation } from "../../analysis/types-notation.ts";
 

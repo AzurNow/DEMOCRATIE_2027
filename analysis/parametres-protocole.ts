@@ -19,6 +19,12 @@ export const SEUIL_RETRAIT = { numerateur: 3, denominateur: 100 } as const;
 /** §7 : « un sous-ensemble de 200 réponses est renoté ». */
 export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL = 200;
 
+/** §7 0.24 : « Ce sous-ensemble compte 200 réponses dont le texte nomme au moins un outil ». */
+export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS = 200;
+
+/** §4 : « dans la limite de 1 000 caractères » pour le texte d'une contestation. */
+export const LONGUEUR_MAX_CONTESTATION = 1000;
+
 /** §7 : « 300 réponses issues d'un run pilote sont doublement notées par des humains ». */
 export const TAILLE_JEU_OR = 300;
 

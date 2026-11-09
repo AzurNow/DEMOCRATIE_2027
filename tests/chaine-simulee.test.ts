@@ -11,13 +11,13 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { geler } from "../pipeline/gel/geler.ts";
-import { gelerSimule, lireParametresGelSimule, NOM_DEPOT_SIMULE } from "../pipeline/gel/gel-simule.ts";
+import { GelSimuleRefuse, gelerSimule, lireParametresGelSimule, NOM_DEPOT_SIMULE } from "../pipeline/gel/gel-simule.ts";
 import { ecrireExclusif } from "../pipeline/gel/ecriture.ts";
 import { RACINE_PROJET } from "./aides/depot.ts";
 import { jouerLesHumains } from "./aides/humains-simules.ts";
@@ -220,5 +220,20 @@ describe("D80, gel simulé", () => {
     const parametres = { ...lireParametresGelSimule(PARAMETRES_SIMULES), maintenant_ms: Date.parse("2026-11-30T00:00:00Z") };
     await expect(gelerSimule({ sortie, type_run: "mensuel", remplace: undefined, source: SOURCE_SIMULEE, parametres, ecrire: ecrireExclusif })).rejects.toThrow(/date_gel|OrdreDesInstants/);
     expect(readdirSync(sortie)).toEqual([]);
+  });
+
+  it("un fichier de paramètres mal formé ⇒ refus nommé parametres_invalides, pas une SyntaxError", () => {
+    const fichier = join(temporaire("banc-gel-simule-params-"), "gel-simule.json");
+    writeFileSync(fichier, "{ pas du json", "utf8");
+    const refus = (() => {
+      try {
+        lireParametresGelSimule(fichier);
+      } catch (erreur) {
+        return erreur;
+      }
+      throw new Error("aucun refus");
+    })();
+    expect(refus).toBeInstanceOf(GelSimuleRefuse);
+    expect((refus as GelSimuleRefuse).motif).toBe("parametres_invalides");
   });
 });

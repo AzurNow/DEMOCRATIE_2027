@@ -579,7 +579,7 @@ function cibleOrigine(etat: Etat, r: Preparee, liens: LiensEtablis): Cible {
 /** D14 (1) : le test précède tout retrait, donc il se joue sur le run tel qu'il était au gel. */
 function runAvantLeTest(run: RunDeNotation): RunDeNotation {
   const { contrefactuel_candidats: _publie, ...gel } = run;
-  return { ...gel, juges: run.juges.map((juge) => ({ juge_id: juge.juge_id, retire: false })), taux_echantillon_humain: 0.1 };
+  return { ...gel, juges: run.juges.map((juge) => ({ juge_id: juge.juge_id, retire: false })), taux_echantillon_humain: TAUX_ECHANTILLON_SANS_RETRAIT };
 }
 
 /**

@@ -3,7 +3,7 @@ import Etape from "../composants/Etape.astro";
 import FilParcours from "../composants/FilParcours.astro";
 import VueEnsemble from "../composants/VueEnsemble.astro";
 import { lienExemple } from "../lib/liens.ts";
-import { PARAMETRES as P, PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
+import { PARAMETRES as P } from "../lib/parametres.ts";
 import "../styles/parcours.css";
 ---
 <section class="section section--parcours" id="parcours" aria-labelledby="titre-parcours">
@@ -354,7 +354,7 @@ import "../styles/parcours.css";
           taux de non-réponse.
         </p>
         <p>
-          Chaque taux est publié avec son intervalle de confiance à {S.niveauConfiance.affiche} % : une <strong>fourchette</strong> qui
+          Chaque taux est publié avec son intervalle de confiance à {P.niveauConfiance} % : une <strong>fourchette</strong> qui
           dit avec quelle précision le chiffre est connu, plus large
           quand les données sont peu nombreuses. Elle est obtenue en refaisant le calcul
           sur {P.reechantillonnages} tirages au hasard dans les données observées. Une différence entre deux

@@ -1,5 +1,5 @@
 {
-  "$comment": "pnpm geler --simule (décision D80, pipeline/gel/gel-simule.ts) : ce qu'un gel simulé fige et qu'un gel réel lit dans le monde. maintenant : l'horloge figée du gel, après date_gel (2026-12-01T00:00:00Z, tests/gel/depot-simule/perimetre.yaml) et avant l'ouverture de la fenêtre (05:00Z), le tour drand de date_gel émis. horodatage_engagement : la capture Wayback simulée du commit du dépôt simulé, antérieure à date_gel (14 chiffres UTC). date_commit : la date d'auteur et de commit du dépôt simulé, fixée pour que deux gels simulés donnent le même commit, donc le même run.json octet pour octet.",
+  "$comment": "pnpm geler --simule (décision D80, pipeline/gel/gel-simule.ts) : ce qu'un gel simulé fige et qu'un gel réel lit dans le monde. maintenant : l'horloge figée du gel, après date_gel (2026-12-01T00:00:00Z, tests/gel/depot-simule/config/perimetre.yaml) et avant l'ouverture de la fenêtre (05:00Z), le tour drand de date_gel émis. horodatage_engagement : la capture Wayback simulée du commit du dépôt simulé, antérieure à date_gel (14 chiffres UTC). date_commit : la date d'auteur et de commit du dépôt simulé, fixée pour que deux gels simulés donnent le même commit, donc le même run.json octet pour octet.",
   "maintenant": "2026-12-01T04:00:00Z",
   "horodatage_engagement": "20261130120000",
   "date_commit": "2026-11-30T11:00:00Z"
