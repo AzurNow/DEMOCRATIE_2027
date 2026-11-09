@@ -11,6 +11,7 @@ import { THEMES } from "../pipeline/questions/types.ts";
 import type { PropositionFormulation } from "../pipeline/reformulation/staging.ts";
 import { tachesDe } from "../pipeline/reformulation/entrees.ts";
 import type { Reponse } from "../validation/serveur/routes.ts";
+import { ItemPrincipalIntrouvable, vueItemPrincipal } from "../validation/serveur/item-principal-formulations.ts";
 import { ROUTES } from "../validation/serveur/routes.ts";
 import { lireFormulationsData } from "../validation/io/data-formulations.ts";
 import { lireRefusFormulations } from "../validation/io/refus-formulations.ts";
@@ -294,5 +295,60 @@ describe("cas limite 11 : journal des refus illisible", () => {
     expect(corps(liste)).toMatchObject({ nature: "JournalRefusIllisible" });
     expect(appeler("formulation-promotion", [], requete(acceptee)).statut).toBe(409);
     expect(existsSync(join(bac.racine, "data/formulations"))).toBe(false);
+  });
+});
+
+describe("conformité n° 10 : l'item principal est montré au relecteur (§5)", () => {
+  it("le détail renvoie l'identifiant, le type et le contenu notant de l'item principal, avec sa source et son statut", () => {
+    poserProposition(proposition(FER(), { cle: "item-principal" }));
+    const vue = corps(appeler("formulation", [FER().question.id]));
+    const principal = vue["item_principal"] as { item: Record<string, unknown>; statut_validation: string };
+    const assertion = donnees.item.assertion;
+    if (assertion === undefined) throw new Error("item P sans assertion");
+    expect(principal.item).toMatchObject({
+      id: donnees.item.id,
+      type: "P",
+      assertion: {
+        position: assertion.position,
+        citation_verbatim: assertion.citation_verbatim,
+        source: { url: assertion.source.url, sha256: assertion.source.sha256, archive_url: assertion.source.archive_url },
+      },
+    });
+    expect(principal.statut_validation).toBe(donnees.item.statut_validation);
+  });
+
+  it("une question d'attribution n'a pas d'item principal : null, dit comme tel", () => {
+    const att = questionDe(donnees.taches, "Q-ATT");
+    poserProposition(proposition(att, { cle: "att-sans-item" }));
+    expect(corps(appeler("formulation", [att.question.id]))["item_principal"]).toBeNull();
+  });
+
+  it("item principal absent du jeu chargé ⇒ refus nommé, jamais un champ vide", () => {
+    const mesures = new Map([[donnees.mesure.id, donnees.mesure]]);
+    expect(() => vueItemPrincipal(FER().question, new Map(), mesures)).toThrow(ItemPrincipalIntrouvable);
+    expect(() => vueItemPrincipal(FER().question, new Map([[donnees.item.id, donnees.item]]), new Map())).toThrow(
+      ItemPrincipalIntrouvable,
+    );
+  });
+
+  it("item principal disparu de data/ ⇒ 409 nommé, aucun écran vide", () => {
+    poserProposition(proposition(FER(), { cle: "item-disparu" }));
+    rmSync(join(bac.racine, `data/items/${donnees.item.id}.json`));
+    const reponse = appeler("formulation", [FER().question.id]);
+    expect(reponse.statut).toBe(409);
+    expect(corps(reponse)).toMatchObject({ disponible: false });
+    expect(corps(reponse)["item_principal"]).toBeUndefined();
+  });
+
+  it("guillemets typographiques et caractères HTML de la citation : renvoyés intacts (le client les pose par textContent)", () => {
+    const citation = "« Nous <b>baisserons</b> l’impôt & rien d’autre » — \"vrai\"";
+    const assertion = donnees.item.assertion;
+    if (assertion === undefined) throw new Error("item P sans assertion");
+    const modifie = { ...donnees.item, assertion: { ...assertion, citation_verbatim: citation } };
+    ecrireJson(`data/items/${modifie.id}.json`, modifie);
+    poserProposition(proposition(FER(), { cle: "citation-html" }));
+    const vue = corps(appeler("formulation", [FER().question.id]));
+    const principal = vue["item_principal"] as { item: { assertion: { citation_verbatim: string } } };
+    expect(principal.item.assertion.citation_verbatim).toBe(citation);
   });
 });
