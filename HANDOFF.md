@@ -41,7 +41,7 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-09 (après-midi)
+## État au 2026-11-09 (soir)
 
 - Protocole **0.34** dans le dépôt. **La 0.35 est tranchée mais pas écrite** : textes exacts dans
   `docs/TACHES-AUTEUR.md` (section 1, Protocole), items 1 à 18. L'auteur l'écrit ; le classifieur
@@ -52,26 +52,29 @@ Décision de l'auteur du 2026-11-01 :
   garde des cycles étendue à `analysis/`, raison d'un changement de quota). Statuts mis à jour dans
   `docs/revues/2026-11-09.md` et `docs/conformite/2026-11-09.md` (pas dans `exigences.json` : à la
   prochaine passe de conformité).
-- **#406 en brouillon** : l'auteur ne peut pas arbitrer (conformité n° 13) ; attend **D103**
-  (publication du pseudonyme de l'auteur). **D102** (raison de quota sans changement) attend aussi
-  l'auteur, l'option 1 est codée.
+- **#406 fusionnée** : l'auteur ne peut pas arbitrer (conformité n° 13). **D102** et **D103**
+  tranchées par l'auteur (option recommandée). **À faire par l'auteur avant le prochain gel** :
+  `annotateur_auteur` (son pseudonyme) dans `config/gel.json`, sinon `pnpm geler` refuse.
+  Possible lot suivant (codeur-opus) : faire revérifier ce pseudonyme par les lecteurs d'arbitrage
+  (`analysis/robustesse.ts`, `lectures-comparateur.ts`, `file-humaine.ts`).
 - **#359 en brouillon, rouge volontairement** jusqu'à la 0.35 (D97).
 - Après la 0.35 : coder D85, **D94 (sinon tout run après le pilote sort provisoire)**, D95 ;
   séparer la population API seul / avec application (DETTE 2026-11-09 n° 1) ; réglages des juges au
   gel (Q1, D98) ; constat 14 de la revue (`charge-juge-v7`).
 - Restent de la conformité du 2026-11-09 : les écarts « amendement requis » (n° 2 à 8, 14, 15, 18 à
-  24), tous à l'auteur. Plus aucun écart « code à aligner » hors #406.
+  24), tous à l'auteur. Plus aucun écart « code à aligner ».
 - Node local 22.23.3 sous le minimum d'Astro (22.23.4) : `pnpm test` complet ne démarre pas en
   local ; les agents lancent `pnpm check` et Vitest ciblé, la CI fait foi.
-- Ménage : branches fusionnées supprimées ; restent sous `.claude/worktrees/` des répertoires que Git
-  n'a pas pu effacer (chemins trop longs sous Windows) et cinq worktrees verrouillés par une session
-  morte, déjà fusionnés.
+- Ménage fait : worktrees et branches fusionnés supprimés (`core.longpaths` activé). Avant de
+  supprimer un worktree d'agent, retirer d'abord sa jonction `node_modules` (`cmd /c rmdir`, sans
+  `/s`) : elle pointe sur celui du dépôt principal. Reste `.claude/worktrees/cloture/`, non
+  enregistré et d'origine inconnue, laissé tel quel.
 - Rien n'a jamais tourné sur un appel réel. Interrogation réelle et `pnpm run:live` attendent
   `config/perimetre.yaml` (auteur).
 
 ## Ce qui était en cours
 
-Rien hors #406 (brouillon, décision D103) et #359 (brouillon, 0.35).
+Rien hors #359 (brouillon, 0.35).
 
 ## Prochaines tâches, par priorité
 
