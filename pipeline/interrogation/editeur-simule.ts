@@ -18,6 +18,7 @@ import {
   lireJson,
   texteIndicatif,
   type Adaptateur,
+  type CitationNormalisee,
   type Classement,
   type Contenu,
   type EntreeRequete,
@@ -94,6 +95,12 @@ function urlDe(citation: ObjetJson): readonly string[] {
   return typeof url === "string" ? [url] : [];
 }
 
+/** D15 : la citation de l'éditeur simulé ramenée à la forme commune ; il ne porte que `url`. */
+function citationNormalisee(citation: ObjetJson): CitationNormalisee {
+  const url = citation["url"];
+  return typeof url === "string" ? { url } : {};
+}
+
 /* --------------------------------------------------------------- adaptateur */
 
 function construireRequete(cle_api: string, entree: EntreeRequete): RequeteHttp {
@@ -142,7 +149,7 @@ function normaliserObjet(brut: ObjetJson): Projection {
   return {
     texte: textes.map((bloc) => texteOuNull(bloc["text"])).filter((t) => t !== null).join(""),
     liens: citations.flatMap(urlDe),
-    citations,
+    citations: citations.map(citationNormalisee),
     troncature: troncatureDe(brut),
   };
 }

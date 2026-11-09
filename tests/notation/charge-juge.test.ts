@@ -6,8 +6,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { construireCharge, TroncatureContraireAuCanal, VERSION_CHARGE_JUGE, type ChargeJuge, type DemandeCharge, type ReponseSoumissible } from "../../pipeline/notation/charge-juge.ts";
-import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
+import { CitationSansUrlNiTexte, construireCharge, TroncatureContraireAuCanal, VERSION_CHARGE_JUGE, type ChargeJuge, type DemandeCharge, type ReponseSoumissible } from "../../pipeline/notation/charge-juge.ts";
+import type { ObjetJson, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import { itemA, itemO, itemP } from "../aides/fabriques.ts";
@@ -109,9 +109,9 @@ describe("aveuglement", () => {
 
   it("D15 : un champ absent ou non textuel de la citation reste absent, jamais remplacé", () => {
     const r = reponse();
-    const citations = [{ url: "https://exemple.invalid/a", type: "x" }, { texte: "seul" }, { url: 12, texte: null }, {}];
+    const citations = [{ url: "https://exemple.invalid/a", type: "x" }, { texte: "seul" }, { url: 12, texte: "porte" }, { url: "https://exemple.invalid/b", texte: null }];
     const charge = construireCharge(demande({ ...r, normalise: { ...r.normalise, citations } }));
-    expect(charge.reponse.citations).toEqual([{ url: "https://exemple.invalid/a" }, { texte: "seul" }, {}, {}]);
+    expect(charge.reponse.citations).toEqual([{ url: "https://exemple.invalid/a" }, { texte: "seul" }, { texte: "porte" }, { url: "https://exemple.invalid/b" }]);
   });
 
   it("le brut n'y figure pas : ni son contenu propre, ni ses empreintes", () => {
@@ -351,6 +351,80 @@ describe("alias aveugle de candidat (D55 (9))", () => {
   it("un candidat sans alias (hors des candidats interrogés de la table) est refusé, jamais transmis en clair", () => {
     const references = [{ item: itemP({ candidat_id: "candidat-fantome" }), role: "principal" as const }];
     expect(() => construireCharge({ ...demande(), references })).toThrow(/candidat-fantome/);
+  });
+});
+
+/**
+ * DETTE 2026-10-05 : une citation que l'adaptateur n'a pas ramenée à `{ url, texte }` arrivait vide
+ * au juge, qui aurait jugé le soutien sans texte. Elle fait désormais refuser la charge, par un
+ * refus nommé qui désigne la réponse et le rang de la citation.
+ */
+describe("citation sans url ni texte", () => {
+  function avecCitations(citations: readonly ObjetJson[] | undefined): ReponseObtenue {
+    const r = reponse();
+    const { citations: _c, ...sansCitations } = r.normalise;
+    return { ...r, normalise: citations === undefined ? sansCitations : { ...sansCitations, citations } };
+  }
+
+  function refusDe(construire: () => unknown): CitationSansUrlNiTexte {
+    try {
+      construire();
+    } catch (erreur) {
+      if (erreur instanceof CitationSansUrlNiTexte) return erreur;
+      throw erreur;
+    }
+    throw new Error("la charge aurait dû être refusée");
+  }
+
+  it("cas 1 : citation { url } seule acceptée, charge identique à celle d'avant le contrôle", () => {
+    const charge = construireCharge(demande(avecCitations([{ url: "https://exemple.invalid/source" }])));
+    expect(charge.reponse.citations).toEqual([{ url: "https://exemple.invalid/source" }]);
+    expect(JSON.stringify(charge.reponse.citations)).toBe('[{"url":"https://exemple.invalid/source"}]');
+  });
+
+  it("cas 2 : citation { texte } seule acceptée", () => {
+    const charge = construireCharge(demande(avecCitations([{ texte: "un extrait" }])));
+    expect(charge.reponse.citations).toEqual([{ texte: "un extrait" }]);
+  });
+
+  it("cas 3 : citation { url, texte } acceptée", () => {
+    const charge = construireCharge(demande(avecCitations([CITATION_NUE])));
+    expect(charge.reponse.citations).toEqual([CITATION_NUE]);
+  });
+
+  it("cas 4 : citation {} refusée, la réponse et le rang de la citation nommés", () => {
+    const r = avecCitations([CITATION_NUE, {}]);
+    const leve = refusDe(() => construireCharge(demande(r)));
+    expect(leve.name).toBe("CitationSansUrlNiTexte");
+    expect(leve.reponse_id).toBe(r.id);
+    expect(leve.index).toBe(1);
+    expect(leve.message).toContain(r.id);
+    expect(leve.message).toContain("index 1");
+  });
+
+  it("cas 5 : citation aux seules clés d'éditeur (uri, title, cited_text) refusée de même", () => {
+    const r = avecCitations([{ uri: "https://exemple.invalid/source", title: "Titre", cited_text: "texte cité" }]);
+    const leve = refusDe(() => construireCharge(demande(r)));
+    expect(leve.name).toBe("CitationSansUrlNiTexte");
+    expect(leve.reponse_id).toBe(r.id);
+    expect(leve.index).toBe(0);
+  });
+
+  it("cas 5 bis : url et texte présents mais non textuels, refusée de même", () => {
+    const leve = refusDe(() => construireCharge(demande(avecCitations([{ url: 12, texte: null }]))));
+    expect(leve.index).toBe(0);
+  });
+
+  it("cas 6 : une chaîne vide vaut absence ; url \"\" seule refusée, url \"\" avec un texte réduite au texte", () => {
+    expect(refusDe(() => construireCharge(demande(avecCitations([{ url: "" }])))).index).toBe(0);
+    expect(refusDe(() => construireCharge(demande(avecCitations([{ url: "", texte: "" }])))).index).toBe(0);
+    const charge = construireCharge(demande(avecCitations([{ url: "", texte: "un extrait" }, { url: "https://exemple.invalid/source", texte: "" }])));
+    expect(charge.reponse.citations).toEqual([{ texte: "un extrait" }, { url: "https://exemple.invalid/source" }]);
+  });
+
+  it("cas 7 : réponse sans citations, inchangée ; liste vide, inchangée", () => {
+    expect("citations" in construireCharge(demande(avecCitations(undefined))).reponse).toBe(false);
+    expect(construireCharge(demande(avecCitations([]))).reponse.citations).toEqual([]);
   });
 });
 
