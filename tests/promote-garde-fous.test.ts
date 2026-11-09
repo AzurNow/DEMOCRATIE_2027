@@ -109,6 +109,7 @@ describe("second item F vérifié sur une mesure fictive déjà portée", () => 
     verification_fictivite: {
       date: "2026-09-10T11:00:00+02:00",
       corpus_verifies: ["demo-91", "demo-92"],
+      niveaux_balayes: ["T1", "T2", "items_T3"],
       operateur: "a2",
       resultat: "aucune_occurrence",
     },

@@ -159,6 +159,50 @@
     },
     {
       "objet": "mesure",
+      "fichier": "mesure/invalide-03-fictive-sans-niveau-t2.json",
+      "attendu": "invalide",
+      "motif": "Mesure fictive dont la trace de vérification porte les niveaux balayés sans le niveau T2. Le §5 exige les trois niveaux : corpus T1, corpus T2 et items T3.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1 et T2 et les items T3",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/verification_fictivite/niveaux_balayes"
+      }
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-04-fictive-sans-niveau-items-t3.json",
+      "attendu": "invalide",
+      "motif": "Mesure fictive dont la trace de vérification porte les niveaux balayés sans le niveau items T3. Le §5 exige les trois niveaux : corpus T1, corpus T2 et items T3.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1 et T2 et les items T3",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/verification_fictivite/niveaux_balayes"
+      }
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-05-fictive-niveau-en-double.json",
+      "attendu": "invalide",
+      "motif": "Mesure fictive dont la trace de vérification porte les niveaux balayés avec le niveau T1 en double (et T3 absent). Le §5 exige les trois niveaux : corpus T1, corpus T2 et items T3.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1 et T2 et les items T3",
+      "erreur_visee": {
+        "keyword": "uniqueItems",
+        "instance_path": "/verification_fictivite/niveaux_balayes"
+      }
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-06-fictive-niveau-inconnu.json",
+      "attendu": "invalide",
+      "motif": "Mesure fictive dont la trace de vérification porte les niveaux balayés avec un niveau inconnu (T4). Le §5 exige les trois niveaux : corpus T1, corpus T2 et items T3.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1 et T2 et les items T3",
+      "erreur_visee": {
+        "keyword": "enum",
+        "instance_path": "/verification_fictivite/niveaux_balayes/2"
+      }
+    },
+    {
+      "objet": "mesure",
       "fichier": "mesure/invalide-02-theme-hors-liste.json",
       "attendu": "invalide",
       "motif": "Thème absent des dix thèmes fixes du §3. Une position hors thème est enregistrée mais n'entre pas dans le tirage ; elle ne peut pas inventer un onzième thème.",

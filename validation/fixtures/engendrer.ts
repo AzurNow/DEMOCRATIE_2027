@@ -437,6 +437,7 @@ function ajouterItemsF(atelier: Fabrique, depart: number): number {
       verification_fictivite: {
         date: DATE,
         corpus_verifies: CANDIDATS,
+        niveaux_balayes: ["T1", "T2", "items_T3"],
         operateur: "a1",
         resultat: "aucune_occurrence",
       },

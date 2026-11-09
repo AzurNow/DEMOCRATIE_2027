@@ -51,15 +51,23 @@
     "verification_fictivite": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["date", "corpus_verifies", "operateur", "resultat"],
-      "description": "§5 : les items fictifs sont \"vérifiés contre l'ensemble des corpus T1 du périmètre\". Sans trace de cette vérification, la fictivité est une affirmation invérifiable — et une mesure faussement fictive transforme une réponse correcte de l'outil en fabrication comptabilisée.",
+      "required": ["date", "corpus_verifies", "niveaux_balayes", "operateur", "resultat"],
+      "description": "§5 : les items fictifs sont \"vérifiés contre l'ensemble des corpus T1 et T2 du périmètre et contre ses items T3\". Sans trace de cette vérification, la fictivité est une affirmation invérifiable — et une mesure faussement fictive transforme une réponse correcte de l'outil en fabrication comptabilisée.",
       "properties": {
         "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
         "corpus_verifies": {
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
-          "description": "Identifiants des candidats dont le corpus T1 a été balayé."
+          "description": "Identifiants des candidats dont les corpus T1 et T2 et les items T3 ont été balayés."
+        },
+        "niveaux_balayes": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["T1", "T2", "items_T3"] },
+          "description": "§5 : les trois niveaux balayés, tous exigés — les corpus T1, les corpus T2 et les items T3 du périmètre. Trois valeurs distinctes parmi trois permises : un niveau manquant, en double ou inconnu est invalide."
         },
         "operateur": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
         "resultat": {

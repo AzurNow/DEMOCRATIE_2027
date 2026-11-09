@@ -20,6 +20,7 @@
     "corpus_verifies": [
       "demo-alpha"
     ],
+    "niveaux_balayes": ["T1", "T2", "items_T3"],
     "operateur": "a2",
     "resultat": "aucune_occurrence"
   }
