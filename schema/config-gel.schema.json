@@ -23,6 +23,10 @@
       "description": "Recopiés dans run.juges, chacun avec retire: false : aucun juge n'est retiré au gel, le retrait suit le test contrefactuel (§7). Exactement deux (§7, protocole 0.23, D58 : « Un run déclare exactement deux juges, ni plus ni moins ») : le gel refuse un ou trois juges à la lecture de ce fichier, avant toute écriture.",
       "anyOf": [{ "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/juge" } }, { "type": "null" }]
     },
+    "annotateur_auteur": {
+      "description": "Le pseudonyme d'annotateur de l'auteur du projet (§7, protocole 0.27, D67 : « Le troisième humain n'est jamais l'auteur, qui connaît la table des alias d'outils »). Facultatif dans le schéma, pour que le brouillon livré reste conforme ; pnpm geler le refuse absent (pipeline/gel/configuration.ts : AnnotateurAuteurNonDeclare), sans valeur par défaut. Recopié dans run.annotateur_auteur, que lit l'écran de notation humaine pour refuser toute notation d'arbitrage portant ce pseudonyme. Un pseudonyme, jamais un nom : même forme que notation.notateur.id.",
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+    },
     "alias_aveugles": {
       "description": "outil_id → alias aveugle (§7), fourni à pipeline/questions/charger-perimetre.ts, qui exige un alias pour chaque assistant inclus, refuse un alias d'un outil absent du périmètre et un alias attribué à deux outils.",
       "anyOf": [

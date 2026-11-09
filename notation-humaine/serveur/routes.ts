@@ -96,6 +96,7 @@ function enregistrer(contexte: Contexte, notable: Notable, reponse_id: string, s
     objet_note: { type: "reponse", id: reponse_id },
     motif_notation: notable.tache.motif_notation,
     annotateur_id: contexte.annotateur_id,
+    ...(contexte.donnees.run.annotateur_auteur === undefined ? {} : { annotateur_auteur: contexte.donnees.run.annotateur_auteur }),
     date: contexte.maintenant(),
     vue: notable.vue,
     items: prep.items,

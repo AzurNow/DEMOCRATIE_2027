@@ -57,6 +57,7 @@ import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { citationsDeReference, controlerExtrait, reponseAuTexteVide, type MotifExtraitInvalide, type TextesDeVerification } from "./extrait.ts";
 import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "./charge-juge.ts";
+import { refusArbitreAuteur } from "./arbitre-non-auteur.ts";
 import { fraicheurDesItems } from "./fraicheur.ts";
 import { attributionRelevee, AttributionIncoherente, noterAttribution, type ContexteAttribution, type NoteAttribution } from "./note-attribution.ts";
 import { NomCiteSansMot } from "./rattachement.ts";
@@ -141,6 +142,11 @@ export interface ContexteNotationHumaine {
   readonly motif_notation: MotifHumain;
   /** Le pseudonyme de l'annotateur, et rien d'autre sur lui. */
   readonly annotateur_id: string;
+  /**
+   * `run.annotateur_auteur` (§7, D67) : le pseudonyme de l'auteur. Absent d'un run gelé avant ce
+   * champ ; une notation d'arbitrage est alors refusée (`auteur_non_declare`), jamais acceptée.
+   */
+  readonly annotateur_auteur?: string;
   readonly date: Instant;
   readonly vue: VueAnnotateur;
   /** Les items soumis, ceux dont la vue porte les références, dans le même ordre. */
@@ -158,6 +164,8 @@ export interface ContexteNotationHumaine {
 }
 
 export const CODES_REFUS = [
+  "arbitre_est_l_auteur",
+  "auteur_non_declare",
   "saisie_attribution_attendue",
   "saisie_attribution_hors_qatt",
   "attribution_incoherente",
@@ -207,6 +215,8 @@ export function exigerPseudonyme(annotateur_id: string): void {
 
 export function construireNotationHumaine(saisie: SaisieHumaine, contexte: ContexteNotationHumaine): ResultatNotationHumaine {
   verifierContexte(contexte);
+  const refus_auteur = refusArbitreAuteur(contexte.motif_notation, contexte.annotateur_id, contexte.annotateur_auteur);
+  if (refus_auteur !== undefined) return { statut: "refusee", motifs: [refus_auteur] };
   const note = noteDeSaisie(saisie, contexte);
   if ("motifs" in note) return { statut: "refusee", motifs: note.motifs };
   const liens = liensNotes(contexte.vue.reponse.liens, saisie.soutiens);

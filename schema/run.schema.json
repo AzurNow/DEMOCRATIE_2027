@@ -105,6 +105,10 @@
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
       "description": "D51 (3), §6 : l'identifiant du run invalidé qu'une réexécution remplace, écrit au gel par pnpm geler --remplace après vérification que runs/ porte ce run et son invalidation. Exigé d'un run de type_run reexecution, interdit pour tout autre type."
     },
+    "annotateur_auteur": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "§7 (protocole 0.27, D67) : le pseudonyme d'annotateur de l'auteur, recopié de config/gel.json au gel. L'écran de notation humaine refuse qu'une notation d'arbitrage (troisième humain) le porte. Facultatif : un run gelé avant ce champ n'en a pas, et la notation d'arbitrage y est alors refusée en le nommant (auteur_non_declare), jamais acceptée par défaut."
+    },
     "motif_provisoire": {
       "type": "string",
       "minLength": 1,

@@ -138,6 +138,7 @@ export const CHAMPS_FIGES_AU_GEL: ChampsDeRunJson = {
     "type_run",
     "simule",
     "run_remplace_id",
+    "annotateur_auteur",
     "versions",
     "graines",
     "alias_candidats",
