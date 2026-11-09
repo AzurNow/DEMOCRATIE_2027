@@ -69,6 +69,10 @@ beforeAll(async () => {
   const resultat = await geler(optionsGel(depot, sortie));
   rmSync(depot, { recursive: true, force: true });
   gabarit = resultat.repertoire;
+  // D92 (c) : les fonctions elles-mêmes exigent `simule: true` ; `geler` sans `--simule` ne l'écrit pas.
+  const chemin_run = join(gabarit, "run.json");
+  const run = JSON.parse(readFileSync(chemin_run, "utf8")) as Record<string, unknown>;
+  writeFileSync(chemin_run, `${JSON.stringify({ ...run, simule: true }, null, 2)}\n`, "utf8");
 }, 60_000);
 
 afterEach(() => {
@@ -435,6 +439,17 @@ describe("run gelé, cas 8 : la ligne de commande", () => {
     expect(resultat.stdout).toBe("");
     expect(texte(repertoire, "run.json")).toBe(avant);
     expect(existsSync(join(repertoire, "volume"))).toBe(false);
+  });
+
+  it("run gelé, cas 8 : D92 (c), un gel réel passé directement à lancerRunGeleSimule (sans la commande) est refusé GelNonSimule, rien d'écrit", async () => {
+    for (const [simule, refus_attendu] of [[undefined, "GelNonSimule"], [false, "ErreurSchema"]] as const) {
+      const repertoire = copieMarquee(simule);
+      const avant = texte(repertoire, "run.json");
+      const erreur = await refus(lancer(repertoire));
+      expect(erreur.name).toBe(refus_attendu);
+      expect(texte(repertoire, "run.json")).toBe(avant);
+      expect(existsSync(join(repertoire, "volume"))).toBe(false);
+    }
   });
 
   it("run gelé, cas 8 : D92 (c), run.json invalide au schéma ⇒ refus explicite, rien d'écrit", () => {

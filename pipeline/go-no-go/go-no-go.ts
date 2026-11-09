@@ -38,7 +38,7 @@
  * identique (`analysis/analyse-du-run.ts:empreinteDuRun`).
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsEchantillon } from "../../analysis/accord-humains.ts";
 import { estDuRun } from "../../analysis/filtre.ts";
@@ -84,7 +84,7 @@ import {
   type OutilDeclare,
 } from "./criteres-run.ts";
 import { deciderPublication } from "./decision.ts";
-import { cheminChecklist, ecrireParRenommage, lireJson } from "./fichiers.ts";
+import { cheminChecklist, ecrireParRenommage, ecrireRunSiInchange, lireJson } from "./fichiers.ts";
 import { kappasEchantillon, type KappaDeJuge } from "./kappa-echantillon.ts";
 import { lireMetriques } from "./metriques.ts";
 import { requetesDuPlanDuRun } from "../interrogation/plan-du-run.ts";
@@ -295,8 +295,9 @@ function issueChecklist(chemin: string, nouvelle: Checklist): IssueEcriture | nu
 /* ------------------------------------------------------------------ commande */
 
 export function goNoGo(repertoire_run: string): ResultatGoNoGo {
-  const run = lireRunJson(repertoire_run);
   const chemin_run = dispositionRunNote(repertoire_run).run_json;
+  const texte_lu = readFileSync(chemin_run, "utf8");
+  const run = lireRunJson(repertoire_run);
   const brut = valider<Objet>("run", lireJson(chemin_run), chemin_run);
   const vue = valider<VueGoNoGo>("run", brut, chemin_run);
   refuser(vue);
@@ -306,7 +307,7 @@ export function goNoGo(repertoire_run: string): ResultatGoNoGo {
   const chemin_checklist = cheminChecklist(repertoire_run);
   const issue_run = issueRun(chemin_run, brut, fusionne);
   const issue_checklist = issueChecklist(chemin_checklist, checklist);
-  if (issue_run === null) ecrireParRenommage(chemin_run, fusionne);
+  if (issue_run === null) ecrireRunSiInchange(chemin_run, fusionne, texte_lu);
   if (issue_checklist === null) ecrireParRenommage(chemin_checklist, checklist);
   return {
     ...calcul,

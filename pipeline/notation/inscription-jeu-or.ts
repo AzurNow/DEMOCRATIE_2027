@@ -79,7 +79,7 @@ import { STATUT_EN_COURS, TYPE_PILOTE } from "../../analysis/types-run.ts";
 import type { Ulid } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
-import { ecrireParRenommage, type EcritureTemporaire } from "../run/ecriture.ts";
+import { ecrireParRenommageSiInchange, type EcritureTemporaire } from "../run/ecriture.ts";
 import { tirerJeuOr, type JeuOr } from "./echantillons.ts";
 import { estNotationParRegle } from "./regle-refus.ts";
 
@@ -129,6 +129,8 @@ type Objet = Readonly<Record<string, unknown>>;
 
 /** `ecriture` : point d'injection des tests d'interruption, jamais fourni par un appelant de production. */
 export function inscrireJeuOr(repertoire_run: string, ecriture?: EcritureTemporaire): ResultatInscriptionJeuOr {
+  const chemin = dispositionRunNote(repertoire_run).run_json;
+  const texte_lu = readFileSync(chemin, "utf8");
   const run = lireRunJson(repertoire_run);
   exigerInscriptible(repertoire_run, run);
   const obtenues = lireReponses(repertoire_run, run.id).filter((r) => estDuRun(r) && r.statut_reponse === "obtenue");
@@ -136,15 +138,15 @@ export function inscrireJeuOr(repertoire_run: string, ecriture?: EcritureTempora
   const { notations, renvois } = lireNotationsDuRun(repertoire_run, run.id);
   const reponses = reponsesDuJeuOr(run.id, jeu_or.reponse_ids, notations, renvois);
   const { juges: inscriptions, paire } = inscriptionsJeuOr(run.juges, reponses);
-  const chemin = dispositionRunNote(repertoire_run).run_json;
-  const actuel = JSON.parse(readFileSync(chemin, "utf8")) as Objet;
+  const actuel = JSON.parse(texte_lu) as Objet;
   const fusionne = fusionner(run.id, actuel, inscriptions, paire);
   const resultat = { run_id: run.id, jeu_or, inscriptions, paire };
   if (canoniser(fusionne) === canoniser(actuel)) return { issue: "deja_inscrite", ...resultat };
   const modifies = champsModifies(actuel, fusionne);
   if (modifies.length > 0) throw new KappaJeuOrDejaInscrit(chemin, modifies);
   const issue = porteDejaLeJeuDOr(actuel, inscriptions) ? "completee" : "inscrite";
-  ecrireParRenommage(chemin, valider<unknown>("run", fusionne, `${chemin} après inscription du kappa du jeu d'or`), SUFFIXE_TEMPORAIRE, ecriture);
+  const valide = valider<unknown>("run", fusionne, `${chemin} après inscription du kappa du jeu d'or`);
+  ecrireParRenommageSiInchange(chemin, valide, SUFFIXE_TEMPORAIRE, texte_lu, ecriture);
   return { issue, ...resultat };
 }
 
