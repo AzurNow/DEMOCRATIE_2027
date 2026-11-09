@@ -10,6 +10,7 @@
  */
 
 import type { EntreesDuRun, RunAnalyse } from "../../analysis/analyse-du-run.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../analysis/graine-tirage.ts";
 import type { ItemDate } from "../../analysis/strate-recente.ts";
 import type { CategorieRetenue, Drapeau, EntreeTirage, Item, Mode, Notation, Question, Registre, Reponse, Verdict } from "../../analysis/types.ts";
 import { candidat, empreinte, idQuestion, itemsPAuGel, notation, outil, planCouvrant, reponse, run, ulid, verdict } from "./fabriques.ts";
@@ -296,7 +297,7 @@ export function entreesDuRunAnalysable(spec: SpecRun): EntreesDuRun {
     versions: { donnees_commit: "c".repeat(40) },
     tirage: { sha256: empreinte("tirage") },
     juges: [{ juge_id: "juge-1", retire: false }, { juge_id: "juge-2", retire: false }],
-    graines: { bootstrap: { valeur: 20261203 }, permutation: { valeur: 20261204 } },
+    graines: { bootstrap: { valeur: 20261203, ...GENERATEUR_DU_TIRAGE }, permutation: { valeur: 20261204, ...GENERATEUR_DU_TIRAGE } },
   };
   return {
     run: leRun,

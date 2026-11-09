@@ -9,7 +9,9 @@
  *
  * Seule définition, partagée par le tirage (`pipeline/questions/tirage.ts:tirer`) et les tirages de
  * notation (`pipeline/notation/echantillons.ts`, `derangement.ts`, `analysis/alias-candidats.ts`), qui vérifient
- * chacun leur propre graine contre le même générateur (constat n° 18 de la revue du 2026-10-12).
+ * chacun leur propre graine contre le même générateur (constat n° 18 de la revue du 2026-10-12),
+ * et par l'analyse du §8, qui vérifie ainsi les graines `bootstrap` et `permutation` du run avant
+ * tout calcul (`analysis/analyse-du-run.ts:grainesDeLAnalyse`).
  */
 
 import { ALGORITHME_ALEA } from "../validation/domaine/alea.ts";
@@ -47,6 +49,28 @@ export class GraineNonConforme extends Error {
   }
 }
 
+/** Un champ de la déclaration d'une graine qui ne désigne pas le générateur du tirage. */
+export interface ChampNonConforme {
+  readonly champ: keyof typeof GENERATEUR_DU_TIRAGE;
+  /** La valeur déclarée ; `undefined` : le champ manque, et aucune valeur n'est supposée à sa place. */
+  readonly declare: string | undefined;
+  readonly attendu: string;
+}
+
+const CHAMPS_DU_GENERATEUR = ["algorithme", "bibliotheque", "version"] as const;
+
+/**
+ * Les champs de `graine` qui ne désignent pas `GENERATEUR_DU_TIRAGE`, dans l'ordre algorithme,
+ * bibliothèque, version ; vide si la graine est conforme. La règle de `verifierGraine`, sans lever :
+ * l'analyse (`analyse-du-run.ts:grainesDeLAnalyse`) nomme toutes ses graines fautives à la fois.
+ */
+export function champsNonConformes(graine: Partial<GraineTirage>): readonly ChampNonConforme[] {
+  return CHAMPS_DU_GENERATEUR.flatMap((champ) => {
+    const attendu = GENERATEUR_DU_TIRAGE[champ];
+    return graine[champ] === attendu ? [] : [{ champ, declare: graine[champ], attendu }];
+  });
+}
+
 /**
  * Une graine qui déclare un autre générateur que celui du tirage promet un tirage non rejouable
  * (constat 18 de la revue du 2026-10-12 : seule définition, partagée par tous les tirages de
@@ -57,8 +81,6 @@ export class GraineNonConforme extends Error {
  * mauvais objet vérifié (relecture du 2026-10-21 du constat 18).
  */
 export function verifierGraine(graine: GraineTirage, objet: string): void {
-  for (const champ of ["algorithme", "bibliotheque", "version"] as const) {
-    const attendu = GENERATEUR_DU_TIRAGE[champ];
-    if (graine[champ] !== attendu) throw new GraineNonConforme(objet, champ, graine[champ], `« ${attendu} »`);
-  }
+  const [premier] = champsNonConformes(graine);
+  if (premier !== undefined) throw new GraineNonConforme(objet, premier.champ, graine[premier.champ], `« ${premier.attendu} »`);
 }
