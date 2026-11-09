@@ -13,7 +13,8 @@
  *
  * Codes de sortie : 0, aucune violation ; 1, au moins une violation ; 2, le run n'a pas pu être lu
  * ou contrôlé (répertoire illisible, volume non reconstitué, fichier non conforme, run incohérent),
- * ou la commande est mal appelée. Rien n'est écrit.
+ * ou la commande est mal appelée. Un bogue (`TypeError`…) n'est pas un refus : il remonte avec sa
+ * pile (`refus-attendu.ts`, revue du 2026-11-09, constat 10). Rien n'est écrit.
  */
 
 import { reponsesObtenuesDuRun } from "../analysis/population-notation.ts";
@@ -22,6 +23,7 @@ import { lireNotationsDuRun, lireReponses, lireRunJson, lireVerdicts, runDeNotat
 import { controleCroise, type EntreeControleCroise, type Violation } from "../pipeline/notation/controle-croise.ts";
 import { contrefactuelOutilsDuRun } from "../pipeline/notation/controle-croise-outils.ts";
 import { analyserArguments } from "./arguments.ts";
+import { estUnRefusAttendu } from "./refus-attendu.ts";
 
 const USAGE = "usage : pnpm notation:controle <repertoire_run>";
 
@@ -68,13 +70,14 @@ function ligne(violation: Violation): string {
   return `  ${violation.code} — ${verdict} : ${violation.detail}\n`;
 }
 
+/** Un refus attendu est rendu pour le code 2 ; un bogue (`TypeError`…) remonte avec sa pile (`refus-attendu.ts`). */
 function controler(bruts: readonly string[]): readonly Violation[] | Error {
   try {
     const repertoire = repertoireDemande(bruts);
     return controleCroise(lireEntree(repertoire));
   } catch (erreur) {
-    if (erreur instanceof Error) return erreur;
-    throw erreur;
+    if (!estUnRefusAttendu(erreur)) throw erreur;
+    return erreur;
   }
 }
 

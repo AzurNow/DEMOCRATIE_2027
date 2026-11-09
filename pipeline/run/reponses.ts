@@ -20,7 +20,7 @@
 
 import { reponsesApiDuRun, requetesSansReponse, type RequeteDuPlan } from "../../analysis/seuils.ts";
 import type { Reponse } from "../../analysis/types.ts";
-import type { EchantillonsParQuestion } from "../interrogation/conditions.ts";
+import type { EchantillonsParQuestion } from "../../analysis/types-run.ts";
 import { planifier, type QuestionAInterroger } from "../interrogation/plan.ts";
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
 

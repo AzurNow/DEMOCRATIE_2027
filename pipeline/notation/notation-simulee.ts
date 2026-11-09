@@ -34,7 +34,7 @@
  *
  * Les paramètres (`notation-simulee.json` des fixtures) sont lus et contrôlés à la frontière :
  * l'instant posé sur les notations et les verdicts, les juges simulés et leur répartition, la table
- * des existences.
+ * des existences (chacune contre le fragment d'un lien de `schema/notation.schema.json`).
  */
 
 import { constants, copyFileSync, existsSync, readFileSync } from "node:fs";
@@ -270,9 +270,25 @@ export function lireParametresNotationSimulee(chemin: string): ParametresNotatio
   return {
     date_notation,
     juge_simule: lireJugeSimule(exigerObjet(brut["juge_simule"], chemin, "juge_simule"), chemin),
-    existences: exigerListe(brut, "existences", chemin).map((e) => exigerObjet(e, chemin, "existences[]") as unknown as ExistenceEtablie),
+    existences: exigerListe(brut, "existences", chemin).map((e, rang) => lireExistence(e, chemin, rang)),
     textes_copies: exigerListe(brut, "textes_copies", chemin).map((t) => lireTexteSimule(exigerObjet(t, chemin, "textes_copies[]"), chemin)),
   };
+}
+
+/**
+ * Une existence établie est contrôlée comme un lien de `notation.schema.json`, le fragment que
+ * `fournisseur-simule.ts` applique aussi à sa table, avec l'avis de soutien `non_applicable` que seul
+ * le juge pose, puis retiré (revue du 2026-11-09, constat 25).
+ */
+function lireExistence(valeur: unknown, chemin: string, rang: number): ExistenceEtablie {
+  const lien = { ...exigerObjet(valeur, chemin, "existences[]"), verdict_soutien: "non_applicable" };
+  const { verdict_soutien: _soutien, ...existence } = validerFragment<ExistenceEtablie & { readonly verdict_soutien: string }>(
+    "notation",
+    "#/properties/sourcage/properties/liens/items",
+    lien,
+    `${chemin}#/existences/${rang}`,
+  );
+  return existence;
 }
 
 function lireTexteSimule(objet: Objet, chemin: string): TexteSimule {
