@@ -1,0 +1,27 @@
+{
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "items": [
+    {
+      "reference": {
+        "item_id": "01JBANCESSA1000000001TEM02",
+        "item_version": 1,
+        "item_empreinte": "9f0c1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7"
+      },
+      "confirmation": {
+        "date": "2026-12-01T09:30:00+01:00",
+        "resultat": "absence_confirmee",
+        "confirme_par": "a1",
+        "item_version": 1,
+        "item_empreinte": "9f0c1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7",
+        "nouvelles_sources_t1": []
+      }
+    },
+    {
+      "reference": {
+        "item_id": "01JBANCESSA1000000001TEM05",
+        "item_version": 2,
+        "item_empreinte": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      }
+    }
+  ]
+}

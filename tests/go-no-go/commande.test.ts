@@ -96,7 +96,7 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
       expect(resultat.refus_api).toBe(2);
       expect(ecrit["refus_api_echantillon_humain"]).toBe(resultat.refus_api);
       // D25 (3) : la fenêtre se lit sur les fichiers (réponses simulées dans la fenêtre du run),
-      // la revérification des items d'absence n'est portée par aucun fichier.
+      // le run simulé n'a pas de reverification-absence.json : la case 2 est non faite.
       expect(checklist.cases.find((c) => c.rang === 4)?.appuis).toContain("interrogation_dans_la_fenetre");
       expect([checklist.cases.find((c) => c.rang === 4)?.motif]).not.toContainEqual(expect.stringContaining("fenêtre"));
       expect(checklist.cases.find((c) => c.rang === 2)).toMatchObject({ etat: "non_faite" });

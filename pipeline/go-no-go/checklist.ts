@@ -10,16 +10,18 @@
  *
  * Une case calculée est `faite` si tous ses appuis le sont ; sinon `non_faite`, avec un motif qui
  * nomme chaque appui manquant. D25 (3) : chaque partie du texte d'une case calculée a son appui ;
- * celles qu'aucun fichier ne porte encore (« Items d'absence revérifiés ») ou qu'un fichier ne porte
- * qu'en partie (« robustesse calculée », dont la robustesse des différences est à venir) ont un
- * constat non fait qui le dit, jamais un constat fait par défaut.
+ * un appui dont le fichier manque ou ne dit pas tout (« Items d'absence revérifiés » sans
+ * `reverification-absence.json`, « robustesse calculée » sans section `calcule`) a un constat non
+ * fait qui le dit, jamais un constat fait par défaut.
  */
 
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import type { Ulid } from "../../analysis/types.ts";
 import { FenetreRefusee, ouvrirFenetre, tentativePeutDemarrer, type Fenetre, type RunDeLaFenetre, type RunsDuDepot } from "../interrogation/fenetre.ts";
 import { lireInstant } from "../../analysis/heure-paris.ts";
+import type { EntreeReverification } from "../../validation/domaine/reverification-absence.ts";
 import type { RobustesseLue } from "./metriques.ts";
+import type { LectureReverification } from "./reverification-absence.ts";
 import type { CodeCritere, Critere } from "./types.ts";
 
 export type NatureCase = "calculee" | "declaree";
@@ -110,15 +112,38 @@ export function constatGraineDuTirage(graine_du_run: unknown, graine_du_fichier:
 }
 
 /**
- * « Items d'absence revérifiés » (D25 (3)) : aucun fichier du run ne porte encore cette
- * revérification (lot extraction). Non faite, et dite comme telle, tant que rien ne la produit.
+ * « Items d'absence revérifiés » (§4, D59 (11) ; `reverification-absence.json`, écrit par
+ * `pnpm reverifier-absence`) : chaque item A du tirage porte une confirmation « absence confirmée »
+ * sur la version que le tirage épingle. Fichier absent, non conforme ou d'un autre run : non faite,
+ * et le motif le dit. Aucun item A au tirage, fichier présent : faite, la commande ayant constaté
+ * qu'il n'y avait rien à revérifier ; fichier absent : non faite, rien ne l'a constaté.
  */
-export function constatItemsAbsenceReverifies(): Constat {
-  return {
-    nom: "items_absence_reverifies",
-    fait: false,
-    detail: "revérification des items d'absence : aucun fichier du run ne la porte encore (lot extraction)",
-  };
+export function constatItemsAbsenceReverifies(lecture: LectureReverification, run_id: Ulid): Constat {
+  const nom = "items_absence_reverifies";
+  const prefixe = "revérification des items d'absence";
+  if (lecture.statut === "absent") return { nom, fait: false, detail: `${prefixe} : reverification-absence.json absent du répertoire du run (pnpm reverifier-absence)` };
+  if (lecture.statut === "non_conforme") return { nom, fait: false, detail: `${prefixe} : reverification-absence.json non conforme (${lecture.detail})` };
+  if (lecture.fichier.run_id !== run_id) return { nom, fait: false, detail: `${prefixe} : reverification-absence.json porte le run ${lecture.fichier.run_id}, et non ${run_id}` };
+  const manques = manquesDeReverification(lecture.fichier.items);
+  return { nom, fait: manques.length === 0, detail: manques.join(" ; ") };
+}
+
+function confirmeeSurUneAutreVersion({ reference, confirmation }: EntreeReverification): boolean {
+  if (confirmation === undefined) return false;
+  return confirmation.item_version !== reference.item_version || confirmation.item_empreinte !== reference.item_empreinte;
+}
+
+function manque(entrees: readonly EntreeReverification[], libelle: string): readonly string[] {
+  if (entrees.length === 0) return [];
+  return [`${entrees.length} item(s) d'absence ${libelle} (${entrees.map((entree) => entree.reference.item_id).join(", ")})`];
+}
+
+/** Les items sans confirmation, et ceux confirmés sur une autre version que celle que le tirage épingle. */
+function manquesDeReverification(items: readonly EntreeReverification[]): readonly string[] {
+  return [
+    ...manque(items.filter((entree) => entree.confirmation === undefined), "sans revérification confirmée"),
+    ...manque(items.filter(confirmeeSurUneAutreVersion), "revérifié(s) sur une autre version que celle du tirage"),
+  ];
 }
 
 /** Le libellé de chaque section de robustesse de `metriques.json` dans le motif de la case 7. */
