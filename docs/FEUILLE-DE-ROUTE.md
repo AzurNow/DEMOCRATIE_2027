@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-06.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-09.
 
 ## Décisions en attente
 
@@ -15,6 +15,14 @@ Aucune décision en attente.
 ### D10 — Valider chaque donnée contre son JSON Schema à l'exécution, ce qui fait passer ajv dans les dépendances d'exécution ?
 
 **Décision du 2026-09-24 :** ajv et ajv-formats en dependencies (8.20.0, 3.0.1), valider(nom, valeur, provenance) sur le registre existant à chaque frontière qui a un schéma. Manifestes de lot et brouillons, sans schéma, restent hors champ.
+
+### D100 — Les réponses HTTP brutes des appels de juge sont-elles archivées et publiées ?
+
+**Décision du 2026-11-09 :** Option 1. Amendement du §7 (et mention au §9) proposé dans docs/TACHES-AUTEUR.md ; le code d'archivage attend l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).
+
+### D101 — Comment se fait la revérification des items d'absence (§4, annexe F case 2) : quels items, quand, et quelle issue ?
+
+**Décision du 2026-11-09 :** Option 1 pour les six points : « sur le thème » est retiré du §4. Amendement du §4 et de l'annexe F proposé dans docs/TACHES-AUTEUR.md ; le code de l'issue (3) attend l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).
 
 ### D11 — pnpm symmetry peut-il sortir en succès sans avoir contrôlé l'invariant « item F ⇒ mesure fictive » ?
 
@@ -395,6 +403,14 @@ Aucune décision en attente.
 ### D97 — Les clés de graine que le code emploie et que les §7 et §8 n'écrivent pas : faut-il amender le protocole pour les nommer ?
 
 **Décision du 2026-11-06 :** Option 1. Texte proposé pour la 0.35 dans docs/TACHES-AUTEUR.md (§7, §8) ; la PR #359 passe au vert une fois l'amendement écrit. Décision de l'auteur du 2026-11-06 (« prends les décisions recommandées »).
+
+### D98 — Où sont déclarés les réglages des juges (température, max_tokens, délai d'abandon, politique de tentatives, éditeur) que le §7 dit « fixés et publiés » ?
+
+**Décision du 2026-11-09 :** Option 1. Amendement du §7 proposé dans docs/TACHES-AUTEUR.md : les réglages, l'éditeur et la politique de tentatives de chaque juge sont déclarés au gel et publiés dans `run.json`. Les valeurs restent à fixer par l'auteur ; aucune n'est proposée ici. Schéma et code après l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).
+
+### D99 — Une clé invalide ou un accès refusé (401, 403) pendant la notation est-il une « erreur persistante de son API » du juge ?
+
+**Décision du 2026-11-09 :** Option 1 : arrêt au premier refus 401 ou 403, sans renvoi et sans invalidation du run ; la notation reprend la clé corrigée. Amendement du §7 proposé dans docs/TACHES-AUTEUR.md. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).
 
 ## Arbre
 
