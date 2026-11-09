@@ -125,7 +125,7 @@
         "citations": {
           "type": "array",
           "items": { "type": "object" },
-          "description": "Objets de citation renvoyés par l'API quand elle en produit, forme propre à l'éditeur."
+          "description": "Citations renvoyées par l'API quand elle en produit, projetées par l'adaptateur dans la forme commune { url?, texte? } (type CitationNormalisee, D15) : le juge ne lit que ces deux clés. Le schéma reste permissif (tout objet est admis, d'autres clés aussi) pour que le stockage d'une réponse ne soit jamais refusé ; la garde vit à la construction de la charge du juge, qui refuse (CitationSansUrlNiTexte) une citation sans url ni texte textuels non vides."
         },
         "appels_outils": {
           "type": "array",
