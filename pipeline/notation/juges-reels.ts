@@ -27,6 +27,7 @@ import type { Horloge } from "../interrogation/horloge.ts";
 import type { NomEditeur } from "../extraction/editeur.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { jugeReel, type AdaptateurJuge, type PolitiqueTentatives } from "./appel-juge.ts";
+import type { ArchiveAppelsJuge } from "./archive-appels-juge.ts";
 import type { PromptDeJuge } from "./charge-juge.ts";
 import type { IdentiteJuge, Juge } from "./juge.ts";
 import { adaptateurJugeAnthropic, type ReglagesJugeAnthropic } from "./juge-anthropic.ts";
@@ -70,6 +71,8 @@ export interface MoyensDesJuges {
   readonly cle: (editeur: NomEditeur) => string;
   readonly transport: Transport;
   readonly attendre: Horloge["attendre"];
+  /** L'archive des appels du run (§7, D100), partagée par tous les juges. */
+  readonly archive: ArchiveAppelsJuge;
 }
 
 export class JugesReelsRefuses extends Error {
@@ -140,6 +143,7 @@ export function jugesReelsDuRun(juges: readonly JugeDeclareAuRun[], declarations
       politique: appel.tentatives,
       delai_abandon_ms: appel.reglages.delai_abandon_ms,
       attendre: moyens.attendre,
+      archive: moyens.archive,
     });
   });
 }

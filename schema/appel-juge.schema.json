@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:appel-juge",
+  "title": "Tentative d'appel d'un juge réel",
+  "description": "runs/<date>/volume/appels-juges/<empreinte>.<appel>.<tentative>.json, écrit une fois par un juge réel (pipeline/notation/archive-appels-juge.ts) dès l'issue de chaque tentative, avant toute lecture de la réponse, et jamais réécrit (règle 7 ; §7, décision D100 de l'auteur du 2026-11-09 : la réponse HTTP brute de chaque appel de juge est stockée telle quelle et publiée dans le volume du run, comme les réponses brutes de l'interrogation). Quand une réponse HTTP est arrivée, quel que soit son statut, ses octets exacts sont gardés à côté sous <empreinte>.<appel>.<tentative>.octets, écrits après ce fichier ; octets_sha256 et taille_octets les décrivent. <empreinte> est le SHA-256 de la forme canonique de {juge_id, reponse_id} ; <appel> numérote les appels de ce juge sur cet objet (une relance prend le premier numéro libre) ; <tentative> est le rang dans l'appel. Ni la requête (son corps porte le texte des pages citées, qui ne sont pas republiées) ni ses en-têtes (la clé d'API) ne sont gardés : seule l'empreinte canonique du corps envoyé. Le transport ne rend que le statut et le corps : aucun en-tête de réponse n'est gardé, comme pour l'interrogation. Les instants sont en millisecondes depuis l'époque Unix, ceux de l'horloge du run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["juge_id", "reponse_id", "modele", "version_prompt", "version_charge", "appel", "tentative", "endpoint", "requete_sha256", "debut_ms", "fin_ms", "issue"],
+  "properties": {
+    "juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+    "reponse_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "L'objet noté, tel que la charge du juge le porte (charge.reponse_id) : la réponse du run, ou la réponse permutée d'un test contrefactuel. Avec juge_id, il rattache la tentative à la notation ou au renvoi de ce juge sur cet objet."
+    },
+    "modele": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Le modèle épinglé appelé, run.json#/juges[].modele. Le modèle servi est dans les octets gardés."
+    },
+    "version_prompt": {
+      "type": "string",
+      "minLength": 1,
+      "description": "<chemin>@<version> du prompt rendu, comme run.json#/juges[].version_prompt."
+    },
+    "version_charge": { "type": "string", "minLength": 1 },
+    "appel": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Rang de l'appel de ce juge sur cet objet : 1, puis 2 pour une relance (après un accès refusé ou un arrêt), sans jamais réécrire l'appel précédent."
+    },
+    "tentative": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Rang de la tentative dans l'appel, au plus tentatives_max de la politique déclarée du juge."
+    },
+    "endpoint": { "type": "string", "minLength": 1 },
+    "requete_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "SHA-256 de la forme canonique (clés triées, aucune espace) du corps JSON envoyé, comme reponse.requete.sha256 : ni les en-têtes, ni les octets exacts envoyés."
+    },
+    "debut_ms": { "type": "integer", "minimum": 0, "description": "Instant du départ de la tentative." },
+    "fin_ms": { "type": "integer", "minimum": 0, "description": "Instant de la réception de la réponse HTTP, ou de l'échec de transport." },
+    "issue": {
+      "enum": ["reponse_http", "sans_reponse"],
+      "description": "reponse_http : une réponse HTTP est arrivée, ses octets sont gardés, quel que soit son statut. sans_reponse : aucune réponse HTTP (connexion refusée ou coupée, délai d'abandon écoulé), aucun octet."
+    },
+    "statut_http": { "type": "integer", "minimum": 100, "maximum": 599 },
+    "octets_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "SHA-256 des octets du corps, tels que reçus, pris avant toute lecture."
+    },
+    "taille_octets": { "type": "integer", "minimum": 0 },
+    "raison": {
+      "type": "string",
+      "minLength": 1,
+      "description": "La raison de l'échec de transport, telle que le transport l'a donnée ; jamais la requête ni ses en-têtes."
+    }
+  },
+  "if": { "properties": { "issue": { "const": "reponse_http" } }, "required": ["issue"] },
+  "then": {
+    "required": ["statut_http", "octets_sha256", "taille_octets"],
+    "not": { "required": ["raison"] }
+  },
+  "else": {
+    "required": ["raison"],
+    "not": {
+      "anyOf": [{ "required": ["statut_http"] }, { "required": ["octets_sha256"] }, { "required": ["taille_octets"] }]
+    }
+  }
+}

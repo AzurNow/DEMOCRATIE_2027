@@ -14,7 +14,11 @@
  * 2. L'appel part, sous le délai d'abandon des réglages ; un échec passager (rejet du transport,
  *    délai dépassé, statut 408, 429 ou 5xx : `extraction/editeur.ts:estEchecTransportHttp`) est
  *    retenté selon la politique de tentatives déclarée, jamais au-delà.
- * 3. La réponse est lue : statut, corps, `model` servi, refus du fournisseur, enveloppe, texte du
+ * 3. Chaque tentative est archivée dès son issue, avant toute lecture (§7, D100 ;
+ *    `archive-appels-juge.ts`) : la réponse HTTP brute, quel que soit son statut, octets du corps tels
+ *    que reçus, ou la raison d'un échec de transport. Une archive qui ne s'écrit pas arrête la
+ *    notation (défaut du banc) : aucune note ne naît d'une réponse non gardée.
+ * 4. La réponse est lue : statut, corps, `model` servi, refus du fournisseur, enveloppe, texte du
  *    modèle, puis la sortie (`lecture-sortie-juge.ts`).
  *
  * **Juge défaillant, et rien d'autre (§7, D67 ; DETTE 2026-11-03, « Un adaptateur de juge réel doit
@@ -47,8 +51,9 @@ import type { Horloge } from "../interrogation/horloge.ts";
 import type { MotifRenvoiDefaillance } from "../../analysis/types-notation.ts";
 import { transportSousDelai } from "../extraction/delai.ts";
 import { estEchecTransportHttp, type AdaptateurExtraction } from "../extraction/editeur.ts";
+import type { AppelOuvert, ArchiveAppelsJuge, TentativeEnVol } from "./archive-appels-juge.ts";
 import type { ChargeJuge } from "./charge-juge.ts";
-import { JugeDefaillant, type IdentiteJuge, type Juge, type SortieJuge } from "./juge.ts";
+import { JugeDefaillant, versionPromptDe, type IdentiteJuge, type Juge, type SortieJuge } from "./juge.ts";
 import { lireSortieJuge } from "./lecture-sortie-juge.ts";
 import { rendrePromptJuge } from "./rendu-prompt-juge.ts";
 
@@ -87,6 +92,8 @@ export interface DeclarationJugeReel {
   /** Délai au-delà duquel une tentative sans réponse est abandonnée (`delai_abandon_ms` des réglages) ; jamais envoyé. */
   readonly delai_abandon_ms: number;
   readonly attendre: Horloge["attendre"];
+  /** Où chaque tentative est gardée, avant toute lecture (§7, D100). Aucune valeur par défaut. */
+  readonly archive: ArchiveAppelsJuge;
 }
 
 export class PolitiqueTentativesInvalide extends Error {
@@ -146,7 +153,16 @@ export function jugeReel(declaration: DeclarationJugeReel): Juge {
     identite,
     noter: async (charge: ChargeJuge): Promise<SortieJuge> => {
       const prompt = rendrePromptJuge(declaration.source_prompt, charge);
-      const reponse = await envoyerAvecTentatives(declaration, transport, adaptateur.construireRequete(prompt));
+      const requete = adaptateur.construireRequete(prompt);
+      const appel = declaration.archive.ouvrir({
+        juge_id: identite.juge_id,
+        reponse_id: charge.reponse_id,
+        modele: identite.modele,
+        version_prompt: versionPromptDe(identite.prompt),
+        version_charge: charge.version_charge,
+        requete,
+      });
+      const reponse = await envoyerAvecTentatives(declaration, transport, requete, appel);
       return sortieDe(identite.juge_id, adaptateur, reponse);
     },
   };
@@ -156,24 +172,38 @@ export function jugeReel(declaration: DeclarationJugeReel): Juge {
 
 type Tentative = { readonly genre: "reponse"; readonly reponse: ReponseHttp } | { readonly genre: "passager"; readonly raison: string };
 
-async function tenter(transport: Transport, requete: RequeteHttp): Promise<Tentative> {
+/** La réponse HTTP reçue, ou la raison d'un échec de transport (`ErreurReseau`) ; toute autre erreur remonte. */
+async function envoyer(transport: Transport, requete: RequeteHttp): Promise<ReponseHttp | ErreurReseau> {
   try {
-    const reponse = await transport.envoyer(requete, new AbortController().signal);
-    if (estEchecTransportHttp(reponse.statut)) return { genre: "passager", raison: `réponse HTTP ${reponse.statut} (${resumeDuCorps(reponse)})` };
-    return { genre: "reponse", reponse };
+    return await transport.envoyer(requete, new AbortController().signal);
   } catch (erreur) {
-    if (erreur instanceof ErreurReseau) return { genre: "passager", raison: erreur.message };
+    if (erreur instanceof ErreurReseau) return erreur;
     throw erreur;
   }
 }
 
+/**
+ * Une tentative : l'envoi, puis l'archive de son issue (D100) **avant** toute lecture du statut ou
+ * du corps. Une erreur d'archive remonte telle quelle : ce n'est pas un échec passager.
+ */
+async function tenter(transport: Transport, requete: RequeteHttp, enVol: TentativeEnVol): Promise<Tentative> {
+  const issue = await envoyer(transport, requete);
+  if (issue instanceof ErreurReseau) {
+    enVol.sansReponse(issue.message);
+    return { genre: "passager", raison: issue.message };
+  }
+  enVol.recue(issue);
+  if (estEchecTransportHttp(issue.statut)) return { genre: "passager", raison: `réponse HTTP ${issue.statut} (${resumeDuCorps(issue)})` };
+  return { genre: "reponse", reponse: issue };
+}
+
 /** Tente jusqu'à `tentatives_max` fois ; un échec passager à chaque fois est une erreur persistante de l'API (§7). */
-async function envoyerAvecTentatives(declaration: DeclarationJugeReel, transport: Transport, requete: RequeteHttp): Promise<ReponseHttp> {
+async function envoyerAvecTentatives(declaration: DeclarationJugeReel, transport: Transport, requete: RequeteHttp, appel: AppelOuvert): Promise<ReponseHttp> {
   const { politique, identite } = declaration;
   const echecs: string[] = [];
   for (let rang = 0; rang < politique.tentatives_max; rang += 1) {
     if (rang > 0) await declaration.attendre(politique.attentes_avant_reprise_ms[rang - 1] as number, new AbortController().signal);
-    const tentative = await tenter(transport, requete);
+    const tentative = await tenter(transport, requete, appel.partir(rang + 1));
     if (tentative.genre === "reponse") return tentative.reponse;
     echecs.push(`tentative ${rang + 1} : ${tentative.raison}`);
   }

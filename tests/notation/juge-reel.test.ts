@@ -23,6 +23,7 @@ import type { MotifRenvoiDefaillance, RenvoiHumain } from "../../analysis/types-
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import type { NomEditeur } from "../../pipeline/extraction/editeur.ts";
 import { AccesApiRefuse, AdaptateurDeJugeDiscordant, jugeReel, PolitiqueTentativesInvalide, type AdaptateurJuge, type PolitiqueTentatives } from "../../pipeline/notation/appel-juge.ts";
+import { archiveAppelsJuge } from "../../pipeline/notation/archive-appels-juge.ts";
 import { construireCharge, type ChargeJuge, type PromptDeJuge } from "../../pipeline/notation/charge-juge.ts";
 import { citationsDeReference } from "../../pipeline/notation/extrait.ts";
 import { adaptateurJugeAnthropic, ARRET_REFUS_ANTHROPIC } from "../../pipeline/notation/juge-anthropic.ts";
@@ -156,6 +157,7 @@ function banc(editeur: NomEditeur, reponses: readonly ReponseDoublee[], options 
     politique: POLITIQUE,
     delai_abandon_ms: DELAI_ABANDON_MS,
     attendre,
+    archive: archiveAppelsJuge(temporaire(), () => 0),
   });
   return { juge, envois, reprises };
 }
@@ -379,6 +381,7 @@ describe("juge réel : ce qui n'est pas une défaillance du juge", () => {
       transport: transportFetch(envoiDouble([http(200, "")]).envoi),
       delai_abandon_ms: DELAI_ABANDON_MS,
       attendre: attenteDeTest().attendre,
+      archive: archiveAppelsJuge(temporaire(), () => 0),
     };
     for (const politique of [
       { tentatives_max: 0, attentes_avant_reprise_ms: [] },
@@ -401,6 +404,7 @@ describe("juge réel : ce qui n'est pas une défaillance du juge", () => {
         politique: POLITIQUE,
         delai_abandon_ms: DELAI_ABANDON_MS,
         attendre: attenteDeTest().attendre,
+        archive: archiveAppelsJuge(temporaire(), () => 0),
       }),
     ).toThrow(AdaptateurDeJugeDiscordant);
   });

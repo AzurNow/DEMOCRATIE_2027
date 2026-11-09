@@ -27,6 +27,7 @@ import { nomResultat, REPERTOIRE_EXTRACTIONS, REPERTOIRE_PAGES, repertoireLiens,
 import type { ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
 import { JugeDefaillant, type Juge, type SortieJuge } from "../../pipeline/notation/juge.ts";
 import { JugesReelsRefuses, jugesReelsDuRun, type DeclarationAppelJuge, type JugeDeclareAuRun, type MoyensDesJuges } from "../../pipeline/notation/juges-reels.ts";
+import { archiveAppelsJuge, repertoireAppelsJuges } from "../../pipeline/notation/archive-appels-juge.ts";
 import { declarationsNonDeclarees, notationReelle, ReglagesDesJugesNonDeclares, type DependancesNotationReelle } from "../../pipeline/notation/notation-reelle.ts";
 import { environnementSimule, preparerNotationSimulee, type RunSimulePrepare } from "../../pipeline/notation/notation-simulee.ts";
 import { lireSourcePromptJuge, rendrePromptJuge } from "../../pipeline/notation/rendu-prompt-juge.ts";
@@ -77,7 +78,7 @@ function chargeDeTest(): ChargeJuge {
 }
 
 function moyens(envoi: Envoi, cle: MoyensDesJuges["cle"] = () => CLE_DE_TEST): MoyensDesJuges {
-  return { racine: RACINE_PROJET, cle, transport: transportFetch(envoi), attendre: attenteDeTest().attendre };
+  return { racine: RACINE_PROJET, cle, transport: transportFetch(envoi), attendre: attenteDeTest().attendre, archive: archiveAppelsJuge(nouvelleSortie(), () => 0) };
 }
 
 describe("juges réels d'un run gelé", () => {
@@ -195,6 +196,7 @@ function dependances(prepare: RunSimulePrepare, envoi: Envoi, surcharges: Partia
     env: ENV_COMPLET,
     envoi,
     attendre: attenteDeTest().attendre,
+    maintenant_ms: () => 0,
     maintenant: () => parametresDeReference().date_notation,
     depot: RACINE_PROJET,
     chargerReponses: () => prepare.reponses,
@@ -232,6 +234,7 @@ describe("pnpm notation:reelle : refus de partir", () => {
     expect(leve.message).toContain("§7.57");
     expect(estUnRefusAttendu(leve)).toBe(true);
     expect(envois).toEqual([]);
+    expect(existsSync(repertoireAppelsJuges(prepare.repertoire_run))).toBe(false);
   });
 
   it("gel simulé (simule: true) : refusé, il se note avec pnpm notation:dry --run", async () => {
@@ -315,7 +318,9 @@ function apiDoublee(run: { juges: readonly { juge_id: string; modele: string }[]
   };
 }
 
-describe("pnpm notation:reelle de bout en bout, sur l'API doublée", () => {
+// Bout en bout : gel, chaîne et archive D100 (deux fichiers synchronisés par envoi) sur disque ;
+// 4,7 à 5,8 s sous Windows, au-dessus des 5 s par défaut quand la suite tourne en parallèle.
+describe("pnpm notation:reelle de bout en bout, sur l'API doublée", { timeout: 30_000 }, () => {
   it("juges réels doublés qui rendent la sortie du juge simulé : même bilan que la chaîne simulée, aucun renvoi de défaillance", async () => {
     const reference = await chaineSimulee();
     const prepare = await runPrepare();
@@ -328,6 +333,25 @@ describe("pnpm notation:reelle de bout en bout, sur l'API doublée", () => {
     expect(reference.enregistrement.sorties.size).toBeGreaterThan(0);
     expect(faite.bilan).toEqual(reference.bilan);
     expect(faite.bilan.verdicts).toBeGreaterThan(0);
+  });
+
+  it("D100 : chaque envoi aux juges laisse ses métadonnées et ses octets reçus sous volume/appels-juges, un couple par envoi", async () => {
+    const reference = await chaineSimulee();
+    const prepare = await runPrepare();
+    const run = JSON.parse(readFileSync(join(prepare.repertoire_run, "run.json"), "utf8")) as { juges: { juge_id: string; modele: string }[] };
+    const api = apiDoublee(run, reference.enregistrement, []);
+    let envois = 0;
+    const compte: Envoi = (url, init) => {
+      envois += 1;
+      return api(url, init);
+    };
+
+    await notationReelle([prepare.repertoire_run], dependances(prepare, compte));
+
+    const archive = fichiers(repertoireAppelsJuges(prepare.repertoire_run));
+    expect(envois).toBeGreaterThan(0);
+    expect(archive.filter((nom) => nom.endsWith(".json"))).toHaveLength(envois);
+    expect(archive.filter((nom) => nom.endsWith(".octets"))).toHaveLength(envois);
   });
 
   it.each([401, 403])("statut %i chez un juge : la notation s'arrête au premier, aucun renvoi écrit ; la relance après correction reprend sans doublon", async (statut) => {
@@ -348,6 +372,11 @@ describe("pnpm notation:reelle de bout en bout, sur l'API doublée", () => {
     expect(appelsRefuses).toHaveLength(1);
     expect(fichiers(disposition.renvois)).toEqual([]);
     const ecritesAvant = fichiers(disposition.notations);
+    // D100 : la réponse refusée est gardée, et la relance ne la remplace pas.
+    const archive = repertoireAppelsJuges(prepare.repertoire_run);
+    const refusees = fichiers(archive).filter((nom) => nom.endsWith(".json") && (JSON.parse(readFileSync(join(archive, nom), "utf8")) as { statut_http?: number }).statut_http === statut);
+    expect(refusees).toHaveLength(1);
+    const gardees = new Map(fichiers(archive).map((nom) => [nom, readFileSync(join(archive, nom)).toString("hex")]));
 
     const faite = await notationReelle([prepare.repertoire_run], dependances(prepare, corrigee));
     expect(inconnus).toEqual([]);
@@ -357,5 +386,9 @@ describe("pnpm notation:reelle de bout en bout, sur l'API doublée", () => {
     // Sans doublon : autant de notations et de renvois que la chaîne simulée en une seule exécution.
     expect(ecritesApres).toHaveLength(fichiers(dispositionRunNote(reference.repertoire_run).notations).length);
     expect(fichiers(disposition.renvois)).toHaveLength(fichiers(dispositionRunNote(reference.repertoire_run).renvois).length);
+    for (const [nom, hex] of gardees) expect(readFileSync(join(archive, nom)).toString("hex")).toBe(hex);
+    const [gardeeRefusee] = refusees;
+    expect(gardeeRefusee).toMatch(/\.1\.1\.json$/u);
+    expect(fichiers(archive)).toContain((gardeeRefusee as string).replace(/\.1\.1\.json$/u, ".2.1.json"));
   });
 });
