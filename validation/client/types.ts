@@ -207,11 +207,18 @@ export interface ListeFormulations {
   questions: ResumeFormulations[];
 }
 
+/** L'item principal de la question (§5), tel que `data/` le porte : `null` pour une question d'attribution. */
+export interface ItemPrincipalFormulations {
+  item: ItemProjete;
+  statut_validation: string;
+}
+
 /** La proposition à relire : textes tels quels, dans l'ordre du §5, sans le modèle qui les a écrits. */
 export interface VueFormulations extends ResumeFormulations {
   proposition_id: string;
   /** « pour », « contre », « conditionnel », ou « AUCUNE » quand la prémisse n'affirme rien (D42 (3)). */
   position_demandee: string;
+  item_principal: ItemPrincipalFormulations | null;
   textes: { registre: string; texte: string }[];
 }
 
