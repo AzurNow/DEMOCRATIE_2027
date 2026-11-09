@@ -2,15 +2,17 @@
  * Le filtre du §8, et l'assemblage des unités d'analyse.
  *
  * `contexte == "run"` est « la seule barrière » entre les réponses permutées du test
- * contrefactuel (§7) et un chiffre publié (schema/README.md). Elle vit ici, une fois.
+ * contrefactuel (§7) et un chiffre publié (schema/README.md). Elle vit dans `contexte-run.ts`, une
+ * fois ; ce module la réexporte.
  *
  * Aucune métrique ne lit un verdict ou une réponse : elles lisent des `UniteAnalyse`, et le seul
  * constructeur d'`UniteAnalyse` est `assembler`, qui applique le filtre. La barrière est donc
  * portée par le type, pas par la discipline de l'appelant.
  *
  * Les unités partent des **réponses obtenues** du run, pas des verdicts : c'est le dénominateur
- * « réponses obtenues » du §8. Chaque réponse obtenue doit porter exactement un verdict du run ;
- * une réponse obtenue sans verdict lève `ReponsesNonNotees` (qui les liste toutes), deux verdicts
+ * « réponses obtenues » du §8, lue dans `population-notation.ts:reponsesObtenuesDuRun` (DETTE
+ * 2026-11-09). Chaque réponse obtenue doit porter exactement un verdict du run ; une réponse
+ * obtenue sans verdict lève `ReponsesNonNotees` (qui les liste toutes), deux verdicts
  * sur un même objet lèvent `VerdictEnDouble`. Sans cela, une notation interrompue ou réécrite
  * sortirait des réponses du dénominateur, ou les y compterait deux fois, sans que rien ne le dise.
  * Une réponse manquante n'a pas de verdict et ne forme pas d'unité (§6).
@@ -24,7 +26,6 @@ import type {
   Canal,
   ObjetNote,
   CategorieRetenue,
-  ContexteMesure,
   Drapeau,
   EntreeTirage,
   Formulation,
@@ -43,6 +44,10 @@ import type {
   Ulid,
   Verdict,
 } from "./types.ts";
+import { estDuRun, filtrerContexteRun } from "./contexte-run.ts";
+import { reponsesObtenuesDuRun } from "./population-notation.ts";
+
+export { estDuRun, filtrerContexteRun } from "./contexte-run.ts";
 
 /**
  * Une réponse du run, notée, avec tout ce dont les métriques du §8 ont besoin — et rien d'autre.
@@ -183,16 +188,6 @@ export function indexerVerdictsDuRun(
   return index;
 }
 
-export function estDuRun(objet: { readonly contexte: ContexteMesure }): boolean {
-  return objet.contexte === "run";
-}
-
-export function filtrerContexteRun<T extends { readonly contexte: ContexteMesure }>(
-  objets: readonly T[],
-): T[] {
-  return objets.filter(estDuRun);
-}
-
 interface IndexEntrees {
   readonly reponses: ReadonlyMap<string, Reponse>;
   readonly questions: ReadonlyMap<string, Question>;
@@ -204,7 +199,7 @@ export function assembler(entrees: EntreesAnalyse): UniteAnalyse[] {
   const index = indexer(entrees);
   const verdicts = indexerVerdictsDuRun(entrees.verdicts, "reponse");
   for (const verdict of verdicts.values()) reponseNotee(verdict, index);
-  const obtenues = filtrerContexteRun(entrees.reponses).filter((r) => r.statut_reponse === "obtenue");
+  const obtenues = reponsesObtenuesDuRun(entrees.reponses);
   const nonNotees = obtenues.filter((r) => !verdicts.has(r.id)).map((r) => r.id);
   if (nonNotees.length > 0) throw new ReponsesNonNotees(nonNotees);
   return obtenues.map((reponse) => uniteDepuis(exiger(verdicts, reponse.id, "verdict"), reponse, index));

@@ -8,8 +8,11 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { entreesPubliees } from "../../analysis/analyse-du-run.ts";
 import { reponsesObtenuesDuRun } from "../../analysis/population-notation.ts";
 import { CONTEXTES_MESURE, type Canal, type ContexteMesure, type StatutReponse } from "../../analysis/types.ts";
+import { reponse as fabrique, ulid } from "./fabriques.ts";
+import { entreesDuRunAnalysable, SPEC_REFERENCE } from "./run-analysable.ts";
 
 interface ReponseMinimale {
   readonly id: string;
@@ -54,5 +57,33 @@ describe("reponsesObtenuesDuRun", () => {
     const a = reponse("a");
     const [rendue] = reponsesObtenuesDuRun([a]);
     expect(rendue).toBe(a);
+  });
+});
+
+/*
+ * `analyse-du-run.ts:entreesPubliees` publie `reponses_obtenues` dans `metriques.json` : le compte de
+ * la même population. Ce test fige son comportement, canal application compris.
+ */
+describe("le compte publié des réponses obtenues (analyse-du-run.ts:entreesPubliees)", () => {
+  // Projection fixée d'un refus de modération de l'API : texte vide, aucun lien, troncature false.
+  const refus = { texte: "", liens: [], troncature: false, refus_api: true };
+  const reponses = [
+    fabrique({ id: ulid("r-entiere") }),
+    fabrique({ id: ulid("r-tronquee"), normalise: { texte: "coupé", liens: [], troncature: true } }),
+    fabrique({ id: ulid("r-refus"), normalise: refus }),
+    fabrique({ id: ulid("r-app"), canal: "application", mode: undefined, normalise: { texte: "copié", liens: [] } }),
+    fabrique({ id: ulid("r-manq"), statut_reponse: "manquante", normalise: undefined }),
+    fabrique({ id: ulid("r-cf"), contexte: "contrefactuel_candidat" }),
+    fabrique({ id: ulid("r-cf-manq"), contexte: "contrefactuel_outil", statut_reponse: "manquante", normalise: undefined }),
+  ];
+  const publiees = (): Record<string, unknown> =>
+    entreesPubliees({ ...entreesDuRunAnalysable(SPEC_REFERENCE), reponses }) as Record<string, unknown>;
+
+  it("compte entière, tronquée, refus de l'API et saisie de l'application ; ni manquante ni hors run", () => {
+    expect(publiees()).toMatchObject({ reponses_lues: 7, reponses_obtenues: 4, reponses_manquantes: 1 });
+  });
+
+  it("vaut la taille de reponsesObtenuesDuRun", () => {
+    expect(publiees()["reponses_obtenues"]).toBe(reponsesObtenuesDuRun(reponses).length);
   });
 });
