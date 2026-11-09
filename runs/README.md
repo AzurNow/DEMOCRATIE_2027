@@ -130,7 +130,10 @@ statut `planifie` et tout ou rien (un temporaire voisin renommé d'un geste) :
 Refuse, sans rien écrire, code 1 : un dépôt sale (`git status --porcelain` non vide, fichiers non
 suivis compris), vérifié avant toute autre lecture ; un répertoire `<date>/` qui existe déjà, même
 vide (un gel s'invalide, il ne se refait pas) ; un champ de `config/gel.json` à `null` ou absent,
-nommé ; un alias aveugle que deux outils partagent, ou qui trahit le libellé, l'éditeur ou
+nommé, dont `annotateur_auteur`, le pseudonyme d'annotateur de l'auteur, recopié et publié dans
+`run.json` (`AnnotateurAuteurNonDeclare`, §7 0.27, D103) ; un quota qui diffère du run précédent sans
+`tirage.raison_changement_quota` dans `config/perimetre.yaml`, ou cette raison laissée alors qu'aucun
+quota ne change — à retirer au run qui suit un changement (`RaisonQuotaRefusee`, §5, D102) ; un alias aveugle que deux outils partagent, ou qui trahit le libellé, l'éditeur ou
 l'`outil_id` d'un outil du périmètre, après normalisation : il contient un de leurs mots
 significatifs (3 lettres au moins, mots découpés sur tout ce qui n'est ni lettre ni chiffre :
 « Mistral » contre « Mistral AI ») ou leur forme sans espaces ni séparateurs, de 3 lettres au moins aussi (« LeChat »

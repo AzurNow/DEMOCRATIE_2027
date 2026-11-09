@@ -18,14 +18,14 @@ visible, coûteuse à réparer · **basse** = friction.
 ### 1. Le gel refuse un périmètre qui garde la raison d'un changement de quota d'un run à l'autre — *basse*
 
 #405 exige `tirage.raison_changement_quota` quand un quota diffère du run précédent, et la refuse
-quand rien ne change (`raison_sans_changement`, D102 en attente). La clé vit dans
+quand rien ne change (`raison_sans_changement`, D102 tranchée : option 1). La clé vit dans
 `config/perimetre.yaml`, que l'auteur réécrit à la main.
 
 **Pourquoi ça casse.** Au run qui suit un changement, le périmètre recopié tel quel fait échouer
 `pnpm geler` le jour du gel ; le refus est nommé, mais il tombe au pire moment de la journée.
 
-**Ce qu'il faut faire.** Trancher D102 ; si l'option 1 reste, l'écrire dans la procédure de gel de
-`runs/README.md`.
+**Ce qu'il faut faire.** Fait : la procédure de gel de `runs/README.md` le dit (D102). Rien d'autre tant
+que le refus reste nommé.
 
 ### 2. `niveaux_balayes` atteste un balayage que rien ne vérifie — *basse*
 
