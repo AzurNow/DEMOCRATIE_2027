@@ -19,6 +19,15 @@ export const DECISIONS = ["accepter", "corriger", "rejeter", "non_evaluable"] as
 export type Decision = (typeof DECISIONS)[number];
 
 /**
+ * Les décisions qui vérifient un item (§4) : « accepter » et « corriger » mènent toutes deux à un item
+ * vérifié ; un rejet ou une non-évaluabilité ne vérifie rien. Seule définition, lue par le kappa de
+ * validation (`kappa.ts:categorieDe`), la règle de concordance post-hoc
+ * (`pipeline/questions/invariants.ts:validationsConcordantesMemeVersion`) et le contrôle a posteriori
+ * de `pnpm promote` (`versions-promues.ts`) ; `tests/decisions-verifiantes.test.ts` les confronte.
+ */
+export const DECISIONS_VERIFIANTES: ReadonlySet<string> = new Set<Decision>(["accepter", "corriger"]);
+
+/**
  * Motifs énumérés d'un rejet (§4, protocole 0.24, D59 (9)). « texte_extrait_errone » : le texte
  * canonique de la source est faux (OCR défaillant, transcription erronée) ; c'est ce motif qui
  * renvoie la source à la réextraction (`renvoi-reextraction.ts`). Facultatif : un rejet sans motif

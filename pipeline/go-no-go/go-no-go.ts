@@ -41,7 +41,7 @@
 import { existsSync } from "node:fs";
 import { dirname } from "node:path";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsEchantillon } from "../../analysis/accord-humains.ts";
-import { estDuRun } from "../../analysis/filtre.ts";
+import { reponsesObtenuesDuRun } from "../../analysis/population-notation.ts";
 import {
   cheminDuTirage,
   dispositionRunNote,
@@ -186,7 +186,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
   const { notations, renvois } = lireNotationsDuRun(repertoire_run, run.id);
   const verdicts = lireVerdicts(repertoire_run, run.id);
   const metriques = lireMetriques(repertoire_run, run.id);
-  const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
+  const obtenues = reponsesObtenuesDuRun(reponses).map((r) => r.id);
   const echantillon = tirerEchantillonHumain(obtenues, run.graines.echantillon_humain, run.taux_echantillon_humain);
   const { kappas, indeterminees, non_classees, refus_api } = kappasEchantillon({ juges: run.juges, echantillon, notations, renvois });
   const go_no_go = deciderPublication([

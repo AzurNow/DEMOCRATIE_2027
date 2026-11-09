@@ -17,7 +17,9 @@
  * - les décisions remplacées, annulées ou antérieures à un retour en attente : elles ne figurent pas
  *   dans `item.validations[]`, et le rapprochement exact ne les retient donc jamais.
  *
- * Seules les validations qui peuvent vérifier un item (accepter, corriger) sont rapprochées. Une
+ * Seules les validations qui peuvent vérifier un item (`types.ts:DECISIONS_VERIFIANTES`) sont
+ * rapprochées : ce premier filtre décide aussi quelles validations peuvent être introuvables, et
+ * `validationsConcordantesMemeVersion` refiltre sur la même constante. Une
  * validation retenue que le journal ne contient pas n'est pas ignorée : le contrôle ne peut pas
  * conclure, et il le dit (`introuvables`). Ce module n'écrit rien et ne lit pas le disque : le
  * journal lui est passé par l'appelant.
@@ -28,7 +30,7 @@ import {
   type DecisionValidation,
   type Violation,
 } from "../../pipeline/questions/invariants.ts";
-import type { EntreeDecision, EntreeJournal, Item } from "./types.ts";
+import { DECISIONS_VERIFIANTES, type EntreeDecision, type EntreeJournal, type Item } from "./types.ts";
 
 /** Ce que `item.schema.json` garantit d'une entrée de `validations[]`, déjà validée à la lecture. */
 interface ValidationPromue {
@@ -55,8 +57,6 @@ export interface ControleVersionsPromues {
   readonly introuvables: readonly ValidationIntrouvable[];
 }
 
-const RETENUES: ReadonlySet<string> = new Set(["accepter", "corriger"]);
-
 export function controlerVersionsPromues(items: readonly Item[], lire: LireJournal): ControleVersionsPromues {
   const decisions: DecisionValidation[] = [];
   const introuvables: ValidationIntrouvable[] = [];
@@ -73,7 +73,7 @@ export function controlerVersionsPromues(items: readonly Item[], lire: LireJourn
 
 function validationsRetenues(item: Item): readonly ValidationPromue[] {
   if (item.validations === undefined) throw new Error(`Item ${item.id} sans validations[] : item.schema.json l'exige.`);
-  return (item.validations as readonly ValidationPromue[]).filter((validation) => RETENUES.has(validation.decision));
+  return (item.validations as readonly ValidationPromue[]).filter((validation) => DECISIONS_VERIFIANTES.has(validation.decision));
 }
 
 /**

@@ -40,12 +40,12 @@
 import { constants, copyFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { dispositionRunNote, ItemEpingleIntrouvable, lireDossier, lireItemsEpingles, lireRunJson, lireTirage, type RunLu } from "../../analysis/lecture-run.ts";
-import { estDuRun } from "../../analysis/filtre.ts";
+import { reponsesObtenuesDuRun } from "../../analysis/population-notation.ts";
 import type { Instant } from "../../analysis/types.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { lancerRunSimule, type ResultatRunSimule } from "../interrogation/run-simule.ts";
-import type { ReponseEcrite, ReponseObtenue } from "../interrogation/types.ts";
+import type { ReponseEcrite } from "../interrogation/types.ts";
 import type { EntreeTirage, Question } from "../questions/types.ts";
 import { bilanNotation, type BilanNotation } from "./bilan-notation.ts";
 import { noterRun, type EnvironnementChaine, type ReponseANoter, type ResultatChaine } from "./chaine.ts";
@@ -197,11 +197,8 @@ function lireReponsesANoter(repertoire_run: string, lireItems: LireItems): reado
   // `lireTirage` a validé tirage.json contre son schéma, qui exige reponse_attendue et premisse_fausse de chaque entrée.
   const resolus = resolusAuGel(lireTirage(repertoire_run, run).entrees as unknown as readonly EntreeTirage[]);
   const gel: GelDeNotation = { questions: new Map(questions.map((q) => [q.id, q])), items, resolus, interroges: interrogesDuRun(run) };
-  const obtenue = (r: ReponseEcrite): r is ReponseObtenue => estDuRun(r) && r.statut_reponse === "obtenue";
   // La préparation partagée avec la notation humaine (constat 21, D18) : items des seuls interrogés (§7, D56 (1)).
-  return lireDossier<ReponseEcrite>(disposition.reponses, "reponse", run.id)
-    .filter(obtenue)
-    .map((reponse) => preparerANoter(reponse, gel));
+  return reponsesObtenuesDuRun(lireDossier<ReponseEcrite>(disposition.reponses, "reponse", run.id)).map((reponse) => preparerANoter(reponse, gel));
 }
 
 function lireQuestions(chemin: string): readonly Question[] {
