@@ -14,7 +14,7 @@ import { instantParis } from "../../analysis/heure-paris.ts";
 import { JournalRequete, nomOctets } from "../../pipeline/interrogation/journal.ts";
 import { planifier } from "../../pipeline/interrogation/plan.ts";
 import { lireRunGele } from "../../pipeline/interrogation/run-gele.ts";
-import { lancerRunGeleSimule } from "../../pipeline/interrogation/run-simule.ts";
+import { lancerRunGeleSimule, stockerRunGeleSimule } from "../../pipeline/interrogation/run-simule.ts";
 import { DepotReponses } from "../../pipeline/interrogation/stockage.ts";
 import { cleDeRequete } from "../../pipeline/interrogation/stocker.ts";
 import { empreinteOctets } from "../../pipeline/interrogation/tentatives.ts";
@@ -148,6 +148,20 @@ describe("pnpm interrogation:stocker", () => {
     expect(resultat.stdout).toContain("adaptateur_different");
     expect(resultat.stdout).toContain("normaliser_editeur_reel 1.0.0");
     expect(existsSync(join(repertoire, "volume", "reponses")) ? readdirSync(join(repertoire, "volume", "reponses")) : []).toEqual([]);
+  });
+
+  it("un gel réel passé directement à stockerRunGeleSimule (sans la commande) est refusé GelNonSimule, rien d'écrit", () => {
+    for (const [simule, refus_attendu] of [[undefined, "GelNonSimule"], [false, "ErreurSchema"]] as const) {
+      const repertoire = copie();
+      const chemin = join(repertoire, "run.json");
+      const run = JSON.parse(readFileSync(chemin, "utf8")) as Record<string, unknown>;
+      if (simule === undefined) delete run["simule"];
+      else run["simule"] = simule;
+      writeFileSync(chemin, `${JSON.stringify(run, null, 2)}\n`, "utf8");
+      const avant = readFileSync(chemin, "utf8");
+      expect(() => stockerRunGeleSimule({ repertoire, profils: PROFILS, runs: RUNS_DU_PROJET })).toThrow(expect.objectContaining({ name: refus_attendu }));
+      expect(readFileSync(chemin, "utf8")).toBe(avant);
+    }
   });
 
   it("requête inconnue : refus nommé RequeteInconnue, code 2, rien d'écrit", () => {

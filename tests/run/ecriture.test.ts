@@ -4,11 +4,11 @@
  * de l'écriture du temporaire (relecture de Lot 8) ne laisse aucun temporaire derrière elle.
  */
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, fsyncSync, mkdtempSync, readFileSync, rmSync, writeFileSync, writeSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ecrireParRenommage, type EcritureTemporaire, TemporaireOrphelin } from "../../pipeline/run/ecriture.ts";
+import { ecrireParRenommage, ecrireParRenommageSiInchange, type EcritureTemporaire, RunModifieEntreTemps, TemporaireOrphelin } from "../../pipeline/run/ecriture.ts";
 
 let repertoire: string | null = null;
 
@@ -102,5 +102,51 @@ describe("ecrireParRenommage, interruption rattrapée de l'écriture du temporai
     expect(() => ecrireParRenommage(chemin, { exemple: "apres" }, "invalidation", ecritureQuiEchoue)).toThrow(erreurDisque);
     expect(existsSync(temporaire)).toBe(false);
     expect(readFileSync(chemin, "utf8")).toBe(contenuInitial);
+  });
+});
+
+describe("ecrireParRenommageSiInchange, écriture concurrente entre la lecture et le renommage (revue du 2026-11-09, constat 2)", () => {
+  it("run.json inchangé depuis la lecture : écrit, aucun temporaire", () => {
+    const { chemin, temporaire, contenuInitial } = poserSansTemporaire();
+
+    ecrireParRenommageSiInchange(chemin, { exemple: "apres" }, "invalidation", contenuInitial);
+
+    expect(JSON.parse(readFileSync(chemin, "utf8")) as unknown).toEqual({ exemple: "apres" });
+    expect(existsSync(temporaire)).toBe(false);
+  });
+
+  it("une autre commande réécrit run.json pendant l'écriture du temporaire : RunModifieEntreTemps, ses champs ne sont pas perdus, aucun temporaire", () => {
+    const { chemin, temporaire, contenuInitial } = poserSansTemporaire();
+    const concurrent = `${JSON.stringify({ exemple: "avant", champ_de_l_autre_commande: 1 }, null, 2)}\n`;
+    const ecritureConcurrente: EcritureTemporaire = {
+      writeSync: (descripteur, contenu) => {
+        writeFileSync(chemin, concurrent, "utf8");
+        return writeSync(descripteur, contenu);
+      },
+      fsyncSync,
+    };
+
+    let erreur: unknown;
+    try {
+      ecrireParRenommageSiInchange(chemin, { exemple: "apres" }, "invalidation", contenuInitial, ecritureConcurrente);
+    } catch (e) {
+      erreur = e;
+    }
+
+    expect(erreur).toBeInstanceOf(RunModifieEntreTemps);
+    expect((erreur as Error).name).toBe("RunModifieEntreTemps");
+    expect((erreur as Error).message).toContain(chemin);
+    expect(readFileSync(chemin, "utf8")).toBe(concurrent);
+    expect(existsSync(temporaire)).toBe(false);
+  });
+
+  it("la relance après le refus relit le fichier à jour et écrit", () => {
+    const { chemin } = poserSansTemporaire();
+    const concurrent = `${JSON.stringify({ exemple: "avant", champ_de_l_autre_commande: 1 }, null, 2)}\n`;
+    writeFileSync(chemin, concurrent, "utf8");
+
+    ecrireParRenommageSiInchange(chemin, { exemple: "apres", champ_de_l_autre_commande: 1 }, "invalidation", readFileSync(chemin, "utf8"));
+
+    expect(JSON.parse(readFileSync(chemin, "utf8")) as unknown).toEqual({ exemple: "apres", champ_de_l_autre_commande: 1 });
   });
 });

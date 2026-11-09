@@ -28,7 +28,7 @@ import type { Instant } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { CHAMPS_DU_TEST } from "../../analysis/champs-posterieurs-au-gel.ts";
-import { ecrireParRenommage } from "../run/ecriture.ts";
+import { ecrireParRenommageSiInchange } from "../run/ecriture.ts";
 import { invalider } from "../run/statut.ts";
 import type { RunAvecStatut } from "../run/statut.ts";
 import type { JugePublie, PublicationContrefactuel } from "./publication-contrefactuel.ts";
@@ -60,11 +60,12 @@ type Objet = Readonly<Record<string, unknown>>;
  */
 export function inscrireContrefactuel(repertoire_run: string, publication: PublicationContrefactuel, maintenant: () => Instant): IssueInscription {
   const chemin = dispositionRunNote(repertoire_run).run_json;
-  const actuel = JSON.parse(readFileSync(chemin, "utf8")) as Objet;
+  const texte_lu = readFileSync(chemin, "utf8");
+  const actuel = JSON.parse(texte_lu) as Objet;
   if (actuel["contrefactuel_candidats"] !== undefined) return reprise(chemin, actuel, publication);
   const fusionne = avecInvalidation(fusionner(actuel, publication), publication, maintenant);
   valider("run", fusionne, `${chemin} après inscription du test contrefactuel`);
-  ecrireParRenommage(chemin, fusionne, "inscription");
+  ecrireParRenommageSiInchange(chemin, fusionne, "inscription", texte_lu);
   return "inscrit";
 }
 

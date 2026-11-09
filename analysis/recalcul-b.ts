@@ -54,6 +54,7 @@ import {
 } from "./analyse-du-run.ts";
 import { ecrireUneFois } from "./ecriture-une-fois.ts";
 import { assembler } from "./filtre.ts";
+import { instantDeDateCivile } from "./instants.ts";
 import type { Recalcul } from "./robustesse.ts";
 import { tauxRecalcule } from "./robustesse-taux.ts";
 import type { ContestationPosterieure } from "./types.ts";
@@ -180,9 +181,6 @@ export function recalculB(entrees: EntreesDuRun, reference: MetriquesDeReference
 
 /* ------------------------------------------------------------------ écriture */
 
-/** `commun.schema.json#/$defs/date_civile`, vérifiée avant de nommer un fichier. */
-const DATE_CIVILE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
-
 export function cheminRecalculB(repertoire_run: string, date: string): string {
   return join(dirname(cheminMetriques(repertoire_run)), `recalcul-b-${date}.json`);
 }
@@ -199,7 +197,7 @@ export interface ResultatRecalculB {
  * publié entre-temps par un autre recalcul lève `RecalculBDejaPublie` et reste intact.
  */
 export function recalculerEtEcrireB(repertoire_run: string, options: OptionsLectureAnalyse, date: string): ResultatRecalculB {
-  if (!DATE_CIVILE.test(date)) throw new Error(`Date du recalcul (b) mal formée : « ${date} » (AAAA-MM-JJ attendu).`);
+  instantDeDateCivile(date); // `DateCivileInvalide` : la date nomme le fichier publié, jamais `2026-02-30` (revue du 2026-11-09, constat 9).
   const chemin_reference = cheminMetriques(repertoire_run);
   if (!existsSync(chemin_reference)) throw new MetriquesDeReferenceAbsentes(chemin_reference);
   const chemin = cheminRecalculB(repertoire_run, date);

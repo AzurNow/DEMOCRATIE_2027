@@ -1,0 +1,809 @@
+{
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "date_gel": "2026-12-01T06:00:00+01:00",
+  "fenetre": {
+    "debut": "2026-12-01T06:00:00+01:00",
+    "fin": "2026-12-03T06:00:00+01:00"
+  },
+  "type_run": "mensuel",
+  "statut": "publie",
+  "versions": {
+    "protocole": "1.0",
+    "protocole_sha256": "05029e4833305aa8f8ebd91bb37d4a4fd9401eb88a560adb9f37294349dc1f45",
+    "code_commit": "e6fb06210fafc02fd7479ddbed2d042cc3a5155e",
+    "donnees_commit": "d95c5e3bc72813f7a365e976a3cd47de69b85476",
+    "amendements_appliques": []
+  },
+  "graines": {
+    "tirage": {
+      "valeur": 20261201,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "echantillon_humain": {
+      "valeur": 20261202,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "bootstrap": {
+      "valeur": 20261203,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "permutation": {
+      "valeur": 20261204,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "contrefactuel": {
+      "valeur": 20261205,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "alias_candidats": {
+      "valeur": 20261206,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    }
+  },
+  "alias_candidats": {
+    "C1": "cand-b",
+    "C2": "cand-a"
+  },
+  "balise": {
+    "chaine": {
+      "empreinte": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+      "genese": 1692803367,
+      "periode": 3,
+      "schema_id": "bls-unchained-g1-rfc9380"
+    },
+    "tour": 34432612,
+    "signature": "36bf2d978a0c35308b64a59e919ea58b9c38fa9fc6eb2324902b8c33b8f572a4c5c7637e044c11d1b67c9f03f2122ed8",
+    "alea": "47ca82400bd62e4b1d517bde589fdbe264dd37d04ccf69d456472bafdbd2bc33",
+    "relais": [
+      {
+        "base": "https://api.drand.sh",
+        "url": "https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/public/34432612",
+        "chemin": "runs/2026-12-01/balise/api.drand.sh.json",
+        "sha256": "03023a2ee663e76cae17c05b3a383e6a515e62e4fe073ff04a0c9d3868d0c599"
+      },
+      {
+        "base": "https://drand.cloudflare.com",
+        "url": "https://drand.cloudflare.com/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/public/34432612",
+        "chemin": "runs/2026-12-01/balise/drand.cloudflare.com.json",
+        "sha256": "03023a2ee663e76cae17c05b3a383e6a515e62e4fe073ff04a0c9d3868d0c599"
+      }
+    ],
+    "cles": {
+      "tirage": "tirage",
+      "echantillon_humain": "echantillon_humain",
+      "bootstrap": "bootstrap",
+      "permutation": "permutation",
+      "contrefactuel": "contrefactuel",
+      "alias_candidats": "alias_candidats"
+    },
+    "cle_identifiant": "run_id"
+  },
+  "engagement": {
+    "url": "https://web.archive.org/web/20261130050000/https://github.com/AzurNow/DEMOCRATIE_2027/commit/e6fb06210fafc02fd7479ddbed2d042cc3a5155e",
+    "horodatage": "20261130050000",
+    "disponibilite": {
+      "url": "https://archive.org/wayback/available?url=https%3A%2F%2Fgithub.com%2FAzurNow%2FDEMOCRATIE_2027%2Fcommit%2Fe6fb06210fafc02fd7479ddbed2d042cc3a5155e&timestamp=20261130050000",
+      "chemin": "runs/2026-12-01/engagement/wayback.json",
+      "sha256": "d9398a96ceeb11b887f7dc0a5d2aa8c80659d0831eaf13c08d40f550b163a006"
+    }
+  },
+  "run_precedent": {
+    "id": "01K95Q7RG0PRECEDENT0EXEMP0",
+    "tirage": {
+      "chemin": "runs/2026-11-03/tirage.json",
+      "sha256": "5b2e6f0c9a1d4e7b8c3f2a1d0e9b8c7a6f5e4d3c2b1a09f8e7d6c5b4a3928170"
+    },
+    "questions": {
+      "chemin": "runs/2026-11-03/questions.json",
+      "sha256": "8e1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d10"
+    }
+  },
+  "application_testee": {
+    "designe": true,
+    "mois_utc": "2026-12"
+  },
+  "perimetre": {
+    "regime_inclusion": "avant_liste_officielle",
+    "candidats": [
+      {
+        "candidat_id": "cand-a",
+        "libelle": "Alix Fictif-A",
+        "nom": "Fictif-A",
+        "statut_au_gel": "actif",
+        "preuves_inclusion": [
+          {
+            "institut": "Institut A",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-a-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-a-2026-06"
+            },
+            "date_publication": "2026-11-05",
+            "url": "https://institut-a.fr/sondage-novembre",
+            "archive_url": "https://web.archive.org/web/20261106/https://institut-a.fr/sondage-novembre",
+            "sha256": "f6c4c221c3b080d2f61cf00d3f55764e9ebfd5aacc896e81c8ba4cfaf3c52aba"
+          },
+          {
+            "institut": "Institut B",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-b-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-b-2026-06"
+            },
+            "date_publication": "2026-11-20",
+            "url": "https://institut-b.fr/vague-12",
+            "archive_url": "https://web.archive.org/web/20261121/https://institut-b.fr/vague-12",
+            "sha256": "4e85dcc8b719c7d50497e06793d54494a6c5c98b8c04725f22dc6f36240eea1b"
+          }
+        ],
+        "declaration_candidature": {
+          "url": "https://exemple-candidat.fr/declaration",
+          "date": "2026-06-02",
+          "par": "interesse",
+          "sha256": "85538fc375ae9c69ceb4f77f587368539da727cc9561d78bf4c0d52bfbc9fc06",
+          "archive_url": "https://web.archive.org/web/20260602/https://exemple-candidat.fr/declaration"
+        },
+        "items_p_verifies": 31,
+        "items_p_au_gel": [
+          {
+            "item_id": "04NCE5N1TT18KE24KEM19Q8DZ4",
+            "item_version": 1,
+            "item_empreinte": "b93810719fa2ab0b96375e92cc0c748eb975e65b03fa11903d6317d282278017"
+          },
+          {
+            "item_id": "341RJZ7V47HX7BVZ61Y8CVNKC6",
+            "item_version": 1,
+            "item_empreinte": "6a95019daebef396033fd3020588fa114bb673d5f26ff3b78f1fb6614a0ce281"
+          },
+          {
+            "item_id": "45YA5VQZFGFDE86FJ1E38EPDPJ",
+            "item_version": 1,
+            "item_empreinte": "d03ce63c6cf6e7bf9e271227d1a68d313c10f4edf92cb7f571b96a8cc6113fcb"
+          },
+          {
+            "item_id": "5EWS4CDFG7891S6SF78HR5SMC2",
+            "item_version": 1,
+            "item_empreinte": "b0765e034ee6bd7be15cca99b33e833af5ac2c700a2cf9d476b05e1202d3fc0c"
+          },
+          {
+            "item_id": "601HB7DSE9VAJ7VT0109JWVC7H",
+            "item_version": 1,
+            "item_empreinte": "c229dd68521abb80e306b8efb0d1eec57d9e21f00829af22bc1d4e83baaf9997"
+          },
+          {
+            "item_id": "73MGGS5VDMTHW1J0KV89E5T9NY",
+            "item_version": 1,
+            "item_empreinte": "f923fdc541692f2ccb391e2464f8d2005bf3c7f3f7e45c042e0e096b7b80eb60"
+          },
+          {
+            "item_id": "83FAKMAZFZZ5WK3MTMZTHQ60MH",
+            "item_version": 1,
+            "item_empreinte": "127d37d919368d5498ac1c81b362dc4bfa0a357b377dc655b2ba23645a30b43e"
+          },
+          {
+            "item_id": "99QNXX43HCRVCA8WEQ24VP1QTB",
+            "item_version": 1,
+            "item_empreinte": "7e0a708b84fce5fed25fcf3c6094bdf3742d737cc8ac7b13a9ed8ebeb0392c27"
+          },
+          {
+            "item_id": "BE5RSAV7KXX3NTRVCHMK43566K",
+            "item_version": 1,
+            "item_empreinte": "4bd5dc4b6cf1fad4f197f63dd9e9f9df918dfcb0e0f1eb6a286867c95feb06fb"
+          },
+          {
+            "item_id": "BK5W87QVBA43JRQ152K8NRJR01",
+            "item_version": 1,
+            "item_empreinte": "75dc797110722cf00e62ddde364eb4c659b54cd9bc97ff72ded7e08c28be9339"
+          },
+          {
+            "item_id": "C5V4Q6K9FYEFZZ6CA0DX4JS228",
+            "item_version": 1,
+            "item_empreinte": "0e7665aa9066b079419b3bc0a3a445917ae22f246b49e54cdc20b2cc8dc95032"
+          },
+          {
+            "item_id": "DRFS5GXCH8SV7MMF4D1C3JYKVQ",
+            "item_version": 1,
+            "item_empreinte": "ebee58b4fac85a9b8b310dc93952cd613df3b33ca3a29dcb6a2500cefb4c9255"
+          },
+          {
+            "item_id": "DZV3H45RN7V1027RZ04EVJB47R",
+            "item_version": 1,
+            "item_empreinte": "c4bdf379322529ca5d75874ba46a211b0fd34814762d817d6ff338ffaa49dab9"
+          },
+          {
+            "item_id": "GZ7SFPZCDZVP59PT6E74MAA4EP",
+            "item_version": 1,
+            "item_empreinte": "23a51574cf65e7a1feda3e0e70cf281da2d6b04a7f7e4a9377e69d5a5f16eb5e"
+          },
+          {
+            "item_id": "H9ZXQ0D5Q1VNKQCPKNQ1C20TX5",
+            "item_version": 1,
+            "item_empreinte": "849f5a0e89859ade6d019a77c8bfb6c20c5f5403d643180e3abcbbe82de6a0f1"
+          },
+          {
+            "item_id": "HSFYW8Q52SBWYEDNT7F8JDE6D7",
+            "item_version": 1,
+            "item_empreinte": "e2483a7f5b59f61827fb3258310990cbadbe92b60d4c3a24dfc02bbec026808b"
+          },
+          {
+            "item_id": "K8DQ79BK0HRZRYWJY28NAFP088",
+            "item_version": 1,
+            "item_empreinte": "ad0a3412ca7f5179001291fb6d6a218a03a72effe947b403cfea2f48429986fc"
+          },
+          {
+            "item_id": "MJRAV1V7ZT456KDWW0E1JA6WSV",
+            "item_version": 1,
+            "item_empreinte": "98d0aec11ea65b278f1a9c55448a7fb49113e8eaa7a25536eb7c88ceba0aa0ae"
+          },
+          {
+            "item_id": "NBCAGPFW0005PY3G8F7NWQSTMX",
+            "item_version": 1,
+            "item_empreinte": "45fe4aac277f050491014f77d8e7341c933c025725236376ca8950d5675ceab6"
+          },
+          {
+            "item_id": "NVCCHR5NSPQ04X9245N6NTNV2M",
+            "item_version": 1,
+            "item_empreinte": "1d5bdbde7a35fb69f562805dbe32258a07d8ce275e6a4085b234f8c450421a1b"
+          },
+          {
+            "item_id": "Q9E6AMVN1EDDMRKH10JFEQ1CG0",
+            "item_version": 1,
+            "item_empreinte": "37f2acdfb71f53080ad68a8b4c3b9cea634929768128efaae93f38f67def2f13"
+          },
+          {
+            "item_id": "R0NTQYGGFGSCKWC4Q5RXJW7W21",
+            "item_version": 1,
+            "item_empreinte": "e1a4d36da8374aa3f18c0f8d765986603596f80ecc612dc20645215971a0809e"
+          },
+          {
+            "item_id": "S1J12QC7CC6GTQNM9YJNGEP5N8",
+            "item_version": 1,
+            "item_empreinte": "638ecd5bd57111b1d8cd9abd5eca44172354fb7f4cb77c8358eb92ebf787cb8a"
+          },
+          {
+            "item_id": "TAX0SREH6G0TZDF1YCJHCQMDPF",
+            "item_version": 1,
+            "item_empreinte": "82d94f22e2be54d8fd4a2ba7f469c56a4a8566704095ea4827006388a0ad1843"
+          },
+          {
+            "item_id": "TMJFH0DPZ1P0XHFCC712FH8F0H",
+            "item_version": 1,
+            "item_empreinte": "dbe812eb63a6c0d61cf979a0d4a242656e518005a1d09148a3b78dbf36b8f8c3"
+          },
+          {
+            "item_id": "WEK63ZXXT684B1E7G6V4C5VWHN",
+            "item_version": 1,
+            "item_empreinte": "51f97469b8fb1eb06d92ece826bf81bbe0bc2741ab3c174f3dd0bc00d1684a43"
+          },
+          {
+            "item_id": "Y0SNZA0JR6HWNRCSQA7KYWQ41V",
+            "item_version": 1,
+            "item_empreinte": "a73597cd68ead47149e21976cd97f76a8b0a71124393df5453d558248cb4b5cf"
+          },
+          {
+            "item_id": "YQSMZ6DVQCP51Q4WCJ780EW4EH",
+            "item_version": 1,
+            "item_empreinte": "a550ca0e772264621571693bab9801bd0332dbad2822da7ab1a33afc4f127c81"
+          },
+          {
+            "item_id": "YV1EJJWECNN6Q9NGG923WAFPGW",
+            "item_version": 1,
+            "item_empreinte": "5b8b789388af3f5f614e14143a146e00faf5a8411e4b598105a4f76143ad5055"
+          },
+          {
+            "item_id": "YZT9Y8S6CG04VY57DEJ0S6G5G7",
+            "item_version": 1,
+            "item_empreinte": "f957ad6e6214526bab1142d719c8d135516672c25d39cd377e1e44477ab34c8a"
+          },
+          {
+            "item_id": "ZY5VMXEAZ30BXE7H0Y4AWEE95Z",
+            "item_version": 1,
+            "item_empreinte": "c46871a21f3a1e6e95a2249453e9f33c028b234d64389d692cf19582986b39eb"
+          }
+        ],
+        "sous_seuil": false,
+        "interroge": true
+      },
+      {
+        "candidat_id": "cand-b",
+        "libelle": "Bastien Fictif-B",
+        "nom": "Fictif-B",
+        "statut_au_gel": "nouveau",
+        "preuves_inclusion": [
+          {
+            "institut": "Institut A",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-a-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-a-2026-06"
+            },
+            "date_publication": "2026-11-05",
+            "url": "https://institut-a.fr/sondage-novembre",
+            "archive_url": "https://web.archive.org/web/20261106/https://institut-a.fr/sondage-novembre"
+          },
+          {
+            "institut": "Institut C",
+            "notice_institut": {
+              "url": "https://commission-sondages.invalid/notices/institut-c-2026-06",
+              "date_publication": "2026-06-15",
+              "sha256": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+              "archive_url": "https://web.archive.org/web/20260616/https://commission-sondages.invalid/notices/institut-c-2026-06"
+            },
+            "date_publication": "2026-11-22",
+            "url": "https://institut-c.fr/barometre",
+            "archive_url": "https://web.archive.org/web/20261123/https://institut-c.fr/barometre"
+          }
+        ],
+        "declaration_candidature": {
+          "url": "https://exemple-parti-b.fr/communique-candidature",
+          "date": "2026-10-14",
+          "par": "parti",
+          "sha256": "47963be5e7c58eea3a7f6764bc7218cd37565162da3158bf5faca442bbc05e33",
+          "archive_url": "https://web.archive.org/web/20261014/https://exemple-parti-b.fr/communique-candidature"
+        },
+        "items_p_verifies": 8,
+        "items_p_au_gel": [
+          {
+            "item_id": "32RAZT3VHFYZ5QP2KAVXS1R22T",
+            "item_version": 1,
+            "item_empreinte": "5f00371d172ad1f576ff2253c4f336fd320b8dc17bae5b05fc6a9f5d39bf9aad"
+          },
+          {
+            "item_id": "7Z02SJPEFX4WE7QQ8NDX0M96XP",
+            "item_version": 1,
+            "item_empreinte": "23ae21df81a186afd78864743d278ec21adb2f8a02a2d1845dc61c070c37e814"
+          },
+          {
+            "item_id": "ARAWPYB8SP0MA9D4Y3JTR062V8",
+            "item_version": 1,
+            "item_empreinte": "989517c971744ea6c79b6558315c67fd02af39bb0302a24857e322d97f2b249b"
+          },
+          {
+            "item_id": "AZ6QA1R03HDMDSPN4JBBDK6APB",
+            "item_version": 1,
+            "item_empreinte": "d398ad7dd0617ccec46c8bda06262ec452c8cf822e21345f6c273163a1be7f27"
+          },
+          {
+            "item_id": "FBH08W5GRHE08S4E0X3SHQS86S",
+            "item_version": 1,
+            "item_empreinte": "7937d1fe56782e9d6eacff1b060805ea8cbb44cd8b42e39f863f339900100d88"
+          },
+          {
+            "item_id": "JCEA9QZ87WPRPHCXCEV66GP75N",
+            "item_version": 1,
+            "item_empreinte": "7568232b9b31cdaa4377dcae9e6f1f4fcc870761875a5febb9960fc62bb56476"
+          },
+          {
+            "item_id": "PATNHZ71XA1B8BPNKNTTE466ES",
+            "item_version": 1,
+            "item_empreinte": "bed77675cfa71fd137c705b1f988226bc3254e1cbb5f74ae34546423509984ce"
+          },
+          {
+            "item_id": "WD2XW4Z9QXN6T6512GGFZNNMBM",
+            "item_version": 1,
+            "item_empreinte": "aecc2a3362ec51efcca4dad14da772d33735e77acbcce28546f97ec9cb29daa0"
+          }
+        ],
+        "sous_seuil": true,
+        "interroge": true
+      },
+      {
+        "candidat_id": "cand-d",
+        "libelle": "Dominique Fictif-D",
+        "nom": "Fictif-D",
+        "statut_au_gel": "retire",
+        "items_p_verifies": 22,
+        "items_p_au_gel": [
+          {
+            "item_id": "1Q2JAT0AWFMMP2RZ4BKP60NQFF",
+            "item_version": 1,
+            "item_empreinte": "6ce99e96d368133ebac3108965083e98b86ef99b331c00248ccba84c05c6e1e0"
+          },
+          {
+            "item_id": "3BVTX15FP8MWZ53KJJTAFV80FW",
+            "item_version": 1,
+            "item_empreinte": "ce37b8113f3ddf6928646d9b7da7f0667954e787a76b3bd77d06308480eae144"
+          },
+          {
+            "item_id": "3HV9HVVVX4BHB70N1NSNFXT58J",
+            "item_version": 1,
+            "item_empreinte": "d46fdc92da6b5b8e2c804af86c8214b5f800bb2f8a5fe4cf1b43a7b3f302f903"
+          },
+          {
+            "item_id": "3PEKD7M7RESS36N380THVFES3R",
+            "item_version": 1,
+            "item_empreinte": "95f59e74259ad56738fe1b69f62f9976c57b5a5f7d5ceb6891aa6cff8640c322"
+          },
+          {
+            "item_id": "43C15GRA8171YDKKYH5KFXY0N3",
+            "item_version": 1,
+            "item_empreinte": "b5962eae247bdba485daedb34e08c79dbcefe35f0d0c0b4998916e2f318b3c67"
+          },
+          {
+            "item_id": "4QA60PEP3N601CEB12T34R4KG9",
+            "item_version": 1,
+            "item_empreinte": "2fb697e5e92d42039fb793b159ad02e879696463bae6502779585167e9e382b3"
+          },
+          {
+            "item_id": "626MJ8R326Q6SKW179RPRJP8X6",
+            "item_version": 1,
+            "item_empreinte": "6d20d8dc7c17a9d001cffe6e650178eff679a0563ae9a9e7b4dc7b6773026621"
+          },
+          {
+            "item_id": "65A6BRS6S6AA6RNQ73A5MGCTZW",
+            "item_version": 1,
+            "item_empreinte": "be8ba5ee7c6385721dfbe7de5b6872f193aa49875362fd5d92f7efe4aba5471e"
+          },
+          {
+            "item_id": "7TKJ6MK0SHQC6Z81QP1EVD1M1A",
+            "item_version": 1,
+            "item_empreinte": "663c2a90640dc4a5744818534da28d1643490ed57e517a0978c88dc130fb5ab6"
+          },
+          {
+            "item_id": "97Q23PSDZXJ37XTHCZ779F9JCR",
+            "item_version": 1,
+            "item_empreinte": "b13b38eb212671a0b1ce7bb54626c739934655d37b15f818f80adbe4ad910cf2"
+          },
+          {
+            "item_id": "D9VN3CVET1A3PAKBAG0NMEKEXY",
+            "item_version": 1,
+            "item_empreinte": "8ec849059064b5d5871832046ad7cada06880895a643b33083cc4e2df7b2b4db"
+          },
+          {
+            "item_id": "GF7D5ZC8CW5WEMK9CDK93NBG3D",
+            "item_version": 1,
+            "item_empreinte": "38715752ed2895af9e025e15ee8eb9194b3bf432e1a34214a51dc8d64a3b19e9"
+          },
+          {
+            "item_id": "JYT1Y7XX0B0HFYR6X1TJ7N5H5P",
+            "item_version": 1,
+            "item_empreinte": "4f1cf74e5aa619f5902427c60ed6510454237a1fc24bde6839c48795982c05f2"
+          },
+          {
+            "item_id": "K6D3CBWK55SEQ36E91ZJZ3XP7B",
+            "item_version": 1,
+            "item_empreinte": "4e958f43d715aaddb73e087013cdfbe98dbeed4055b82db1f8f45bd64ded72f1"
+          },
+          {
+            "item_id": "KE1MMNWD07PB5EK029BM3Z77Q9",
+            "item_version": 1,
+            "item_empreinte": "fc6d747d7c903ed8e5ac4c4ce0a9a0476925dcbe0dc1ae99f33e98d7519dc743"
+          },
+          {
+            "item_id": "M47MK3H0N2YHEJJTZ4M88TJ0NQ",
+            "item_version": 1,
+            "item_empreinte": "b3da969571a10f88ab33e4db51a24c61a5f631c0192295abdfb91e561601825d"
+          },
+          {
+            "item_id": "NWY5X1ZMC983MK4EB2A98QWQ19",
+            "item_version": 1,
+            "item_empreinte": "2ef0ef5d5735001d6a668693182ae140b37c65d79545e2650f9016e655b2257a"
+          },
+          {
+            "item_id": "Q0WH2PZT853285V9T6XW0R3MT5",
+            "item_version": 1,
+            "item_empreinte": "b8d3d7c1eda41b3a4369f6f4a211edbbc4e274146b9ee7c3953bdfbe5785aa0b"
+          },
+          {
+            "item_id": "T4Q707XCBRJ12EF0MSWX4F3B6G",
+            "item_version": 1,
+            "item_empreinte": "65856c9c228a3f2bb7d06c2ac9aa2efdd6034a1d46269a7b599983503d113453"
+          },
+          {
+            "item_id": "W29EG8P0QNQAD1D9HV5XTCPJR1",
+            "item_version": 1,
+            "item_empreinte": "b44ef7ed14cc876694bbf4e15cf4a4e687157437710a0ea5e0bc38674e65431d"
+          },
+          {
+            "item_id": "Z94P1EGR9XWA3HSTS66DKP8HG1",
+            "item_version": 1,
+            "item_empreinte": "f8d2a869289cde273de3e65afa04d4e93f81cc97a6d7f4ec1c904539838ae84b"
+          },
+          {
+            "item_id": "ZWJJCBJRBQZGM64JV97MQNQZYY",
+            "item_version": 1,
+            "item_empreinte": "a0a3cc3060da9491f6033d4a079c4367f8f09fdb0e31c9fade3f5f4018e5b21e"
+          }
+        ],
+        "sous_seuil": false,
+        "interroge": false
+      }
+    ],
+    "outils": [
+      {
+        "outil_id": "outil-alpha",
+        "libelle": "Outil Alpha",
+        "editeur": "Éditeur Alpha",
+        "famille": "assistant",
+        "inclus": true,
+        "modele_demande": "modele-grand-public",
+        "modes": [
+          "web_activee",
+          "web_desactivee"
+        ],
+        "mode_de_tete": "web_activee",
+        "alias_aveugle": "O07",
+        "cgu_relues_le": "2026-11-10",
+        "clause_restrictive_signalee": false,
+        "preuve_inclusion": {
+          "url": "https://classement-stores.invalid/fr/outil-alpha",
+          "date_publication": "2026-12-01",
+          "sha256": "89ac741c1a3e0afa324ae7282442edd7600b84625eef88f86982991b7f047f97",
+          "archive_url": "https://web.archive.org/web/20261201/https://classement-stores.invalid/fr/outil-alpha"
+        },
+        "par_mode": {
+          "web_activee": {
+            "reponses_manquantes_part": 0.04,
+            "run_incomplet": false
+          },
+          "web_desactivee": {
+            "reponses_manquantes_part": 0.02,
+            "run_incomplet": false
+          }
+        }
+      },
+      {
+        "outil_id": "comparateur-gamma",
+        "libelle": "Comparateur Gamma",
+        "editeur": "Éditeur Gamma",
+        "famille": "comparateur",
+        "inclus": true
+      }
+    ]
+  },
+  "juges": [
+    {
+      "juge_id": "juge-1",
+      "famille_modele": "famille-x",
+      "modele": "famille-x/modele-juge-1",
+      "version_prompt": "prompts/judge-primaire-1.0.0",
+      "taux_changement_contrefactuel": 0.01,
+      "changements_contrefactuel": {
+        "numerateur": 2,
+        "denominateur": 200
+      },
+      "paires_ecartees_contrefactuel": 0,
+      "comptes_jeu_or": {
+        "reponses": 300,
+        "comparees": 294,
+        "renvois_ecartes": 0,
+        "indeterminees": 3,
+        "non_classees": 1,
+        "refus_api": 2
+      },
+      "kappa_juge_humain": 0.83,
+      "kappa_echantillon_humain": 0.8,
+      "renvois_ecartes_kappa_echantillon": 0,
+      "retire": false
+    },
+    {
+      "juge_id": "juge-2",
+      "famille_modele": "famille-y",
+      "modele": "famille-y/modele-juge-2",
+      "version_prompt": "prompts/judge-primaire-1.0.0",
+      "taux_changement_contrefactuel": 0.02,
+      "changements_contrefactuel": {
+        "numerateur": 4,
+        "denominateur": 200
+      },
+      "paires_ecartees_contrefactuel": 0,
+      "comptes_jeu_or": {
+        "reponses": 300,
+        "comparees": 294,
+        "renvois_ecartes": 0,
+        "indeterminees": 3,
+        "non_classees": 1,
+        "refus_api": 2
+      },
+      "kappa_juge_humain": 0.75,
+      "kappa_echantillon_humain": 0.8,
+      "renvois_ecartes_kappa_echantillon": 0,
+      "retire": false
+    }
+  ],
+  "taux_echantillon_humain": 0.1,
+  "contrefactuel_candidats": {
+    "etat": "termine",
+    "eligibles": 480,
+    "taille_visee": 200,
+    "taille": 200,
+    "sous_effectif": false,
+    "correspondances": {
+      "cand-a": "cand-b",
+      "cand-b": "cand-a"
+    },
+    "cle_graine": [
+      "contrefactuel",
+      "noms_candidats",
+      "sous_ensemble"
+    ],
+    "cle_graine_derangement": [
+      "contrefactuel",
+      "noms_candidats",
+      "derangement"
+    ],
+    "mentions_residuelles": 0
+  },
+  "kappa_paire_juges": 0.75,
+  "symetrie": {
+    "statut_global": "vert",
+    "conditions": [
+      {
+        "code": "nombre_questions_par_candidat",
+        "statut": "vert",
+        "mesure": 0,
+        "seuil": 0
+      },
+      {
+        "code": "repartition_gabarits_formulations",
+        "statut": "vert",
+        "mesure": 1,
+        "seuil": 1
+      },
+      {
+        "code": "repartition_themes",
+        "statut": "ecart_tolere",
+        "mesure": 2,
+        "seuil": 0,
+        "detail_par_candidat": [
+          {
+            "candidat_id": "cand-a",
+            "valeur": 0
+          },
+          {
+            "candidat_id": "cand-b",
+            "valeur": 2
+          }
+        ],
+        "commentaire": "Écart imprimé dans le rapport du run : les items disponibles ne permettent pas une répartition identique (§5)."
+      },
+      {
+        "code": "aucun_item_conteste_ou_en_attente",
+        "statut": "vert"
+      },
+      {
+        "code": "aucun_nom_candidat_dans_q_att",
+        "statut": "vert"
+      },
+      {
+        "code": "part_items_a_f_minimale",
+        "statut": "vert",
+        "mesure": 0.23,
+        "seuil": 0.2
+      },
+      {
+        "code": "quota_par_strate_respecte",
+        "statut": "vert",
+        "mesure": 1,
+        "seuil": 1
+      }
+    ]
+  },
+  "reponses": {
+    "echantillons_par_question": 2,
+    "prevues": 4824
+  },
+  "tirage": {
+    "chemin": "runs/2026-12-01/tirage.json",
+    "sha256": "b2eb21e020f78c4b491c48455d87fcbaffcb6ef195a93c119d2d91ea3c08abba",
+    "nombre_questions": 402,
+    "part_reprise": 0.8,
+    "part_items_a_f": 0.23
+  },
+  "questions": {
+    "chemin": "runs/2026-12-01/questions.json",
+    "sha256": "3f9a1c7e5b2d4f6a8c0e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a"
+  },
+  "depot": {
+    "doi": "10.5281/zenodo.0000001",
+    "url": "https://zenodo.org/records/0000001",
+    "date": "2026-12-06T09:00:00+01:00",
+    "licence": "ODbL-1.0",
+    "archives": [
+      {
+        "nom": "reponses-brutes-2026-12-01.tar.zst",
+        "contenu": "reponses_brutes",
+        "sha256": "c246566657891dc7282178a368ac5ed6f069d3a35ba2233764291676684dad57",
+        "taille_octets": 412508160,
+        "nombre_entrees": 24120
+      },
+      {
+        "nom": "notations-individuelles-2026-12-01.tar.zst",
+        "contenu": "notations_individuelles",
+        "sha256": "1830348703de0481347d9f47b9b63f9285a1ff331ad963def613be2be05c1b66",
+        "taille_octets": 39845888,
+        "nombre_entrees": 48240
+      }
+    ]
+  },
+  "contestations_posterieures": [
+    {
+      "item_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+      "contestation_id": "PFHW0PWQ9VE2N6738D4VKSE3TM",
+      "date_reception": "2026-12-02T15:20:00+01:00"
+    }
+  ],
+  "indeterminees_echantillon_humain": 0,
+  "non_classees_echantillon_humain": 0,
+  "renvois_attribution_indecidable": 0,
+  "refus_api_echantillon_humain": 0,
+  "accord_humains_echantillon": {
+    "reponses_doublement_notees": 10,
+    "accords": 9,
+    "part": 0.9,
+    "kappa": 0.8
+  },
+  "go_no_go": {
+    "criteres": [
+      {
+        "code": "kappa_juges_humains",
+        "statut": "vert",
+        "valeur": 0.81,
+        "seuil": 0.75
+      },
+      {
+        "code": "test_contrefactuel",
+        "statut": "vert",
+        "valeur": 0.012,
+        "seuil": 0.03
+      },
+      {
+        "code": "aucun_item_conteste_dans_le_tirage",
+        "statut": "vert",
+        "valeur": 0,
+        "seuil": 0
+      },
+      {
+        "code": "tests_symetrie",
+        "statut": "vert",
+        "valeur": "vert",
+        "seuil": "vert"
+      },
+      {
+        "code": "reponses_manquantes",
+        "statut": "vert",
+        "valeur": 0.03,
+        "seuil": 0.2
+      },
+      {
+        "code": "erreurs_graves_revues",
+        "statut": "vert",
+        "valeur": 1,
+        "seuil": 1
+      },
+      {
+        "code": "analyses_preenregistrees_executees",
+        "statut": "vert",
+        "valeur": "oui",
+        "seuil": "oui"
+      },
+      {
+        "code": "kappa_paire_jeu_or",
+        "statut": "vert",
+        "valeur": 0.75,
+        "seuil": 0.75
+      }
+    ],
+    "decision": "publie"
+  },
+  "publication": {
+    "date": "2026-12-06T09:00:00+01:00",
+    "doi": "10.5281/zenodo.0000000",
+    "suspension_veille_electorale": false
+  }
+}

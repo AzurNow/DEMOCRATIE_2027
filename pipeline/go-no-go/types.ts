@@ -1,9 +1,13 @@
 /**
- * Les critères go/no-go du §12 et la décision qui en découle (D24 de l'auteur, 2026-10-09).
+ * Les critères go/no-go du §12 et la décision qui en découle (D24 de l'auteur, 2026-10-09), plus le
+ * seuil de publication du kappa de la paire de juges sur le jeu d'or, que le §7 pose à part
+ * (« en dessous, les résultats sont publiés avec la mention « provisoire » » ; constat 1 de la
+ * conformité du 2026-11-09).
  *
  * Les codes et leur ordre sont ceux de `schema/run.schema.json#/properties/go_no_go` : l'ordre fixe
  * celui des critères écrits dans `run.json` et celui des codes énumérés dans le motif d'une
- * décision provisoire. Rien ne s'ajoute ici sans amendement du §12.
+ * décision provisoire. Les sept du §12 dans l'ordre du §12, puis celui du §7. Rien ne s'ajoute ici
+ * sans amendement du protocole.
  */
 
 export const CODES_CRITERES = [
@@ -14,6 +18,7 @@ export const CODES_CRITERES = [
   "reponses_manquantes",
   "erreurs_graves_revues",
   "analyses_preenregistrees_executees",
+  "kappa_paire_jeu_or",
 ] as const;
 export type CodeCritere = (typeof CODES_CRITERES)[number];
 

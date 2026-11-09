@@ -1,5 +1,6 @@
 /**
- * Décision dérivée des sept critères (D24 (3)), et la règle du schéma dans les deux sens.
+ * Décision dérivée des huit critères (D24 (3) ; les sept du §12 et le kappa de la paire du §7), et la
+ * règle du schéma dans les deux sens.
  */
 
 import { readFileSync } from "node:fs";
@@ -15,7 +16,7 @@ function verts(): Critere[] {
 }
 
 describe("décision de publication dérivée des critères", () => {
-  it("sept critères verts : publie, sans motif", () => {
+  it("tous les critères verts : publie, sans motif", () => {
     const decision = deciderPublication(verts());
     expect(decision.decision).toBe("publie");
     expect(decision.motif).toBeUndefined();
@@ -48,7 +49,7 @@ describe("schéma du run : la décision suit les critères dans les deux sens", 
   const exemple = (): Record<string, unknown> =>
     JSON.parse(readFileSync(join(RACINE_PROJET, "schema/exemples/run/valide-01-mensuel-publie.json"), "utf8")) as Record<string, unknown>;
 
-  it("publie_provisoire avec sept critères verts : invalide", () => {
+  it("publie_provisoire avec tous ses critères verts : invalide", () => {
     const run = exemple();
     const go = run["go_no_go"] as Record<string, unknown>;
     const provisoire = { ...run, statut: "publie_provisoire", motif_provisoire: "Sans raison.", go_no_go: { ...go, decision: "publie_provisoire", motif: "Sans raison." } };

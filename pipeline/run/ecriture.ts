@@ -23,7 +23,7 @@
  * nommé.
  */
 
-import { closeSync, fsyncSync, openSync, renameSync, unlinkSync, writeSync } from "node:fs";
+import { closeSync, fsyncSync, openSync, readFileSync, renameSync, unlinkSync, writeSync } from "node:fs";
 
 export { ecrireUneFois } from "../../analysis/ecriture-une-fois.ts";
 
@@ -69,7 +69,25 @@ export interface EcritureTemporaire {
 
 const ECRITURE_REELLE: EcritureTemporaire = { writeSync, fsyncSync };
 
-export function ecrireParRenommage(chemin: string, valeur: unknown, suffixe: string, ecriture: EcritureTemporaire = ECRITURE_REELLE): void {
+/**
+ * `cible` n'est plus celle que l'appelant a lue : une autre commande l'a réécrite entre la lecture et le
+ * renommage (revue du 2026-11-09, constat 2). Rien n'est publié, le temporaire est supprimé, `cible`
+ * reste telle que l'autre commande l'a laissée ; relancer la commande relit le fichier à jour.
+ */
+export class RunModifieEntreTemps extends Error {
+  readonly cible: string;
+
+  constructor(cible: string) {
+    super(
+      `${cible} a changé depuis que cette commande l'a lu : une autre commande l'a réécrit entre-temps. ` +
+        `Rien n'est écrit et le fichier est intact ; relancer la commande, qui relira la version à jour.`,
+    );
+    this.name = "RunModifieEntreTemps";
+    this.cible = cible;
+  }
+}
+
+function ecrireTemporaireAvantRenommage(chemin: string, valeur: unknown, suffixe: string, ecriture: EcritureTemporaire, avant_renommage: () => void): void {
   const temporaire = `${chemin}.${suffixe}`;
   const descripteur = ouvrirTemporaireExclusif(temporaire, chemin, suffixe);
   try {
@@ -81,5 +99,26 @@ export function ecrireParRenommage(chemin: string, valeur: unknown, suffixe: str
     throw erreur;
   }
   closeSync(descripteur);
+  try {
+    avant_renommage();
+  } catch (erreur) {
+    unlinkSync(temporaire);
+    throw erreur;
+  }
   renameSync(temporaire, chemin);
+}
+
+export function ecrireParRenommage(chemin: string, valeur: unknown, suffixe: string, ecriture: EcritureTemporaire = ECRITURE_REELLE): void {
+  ecrireTemporaireAvantRenommage(chemin, valeur, suffixe, ecriture, () => undefined);
+}
+
+/**
+ * `ecrireParRenommage` pour un fichier que l'appelant a lu, fusionné puis réécrit (`run.json`) :
+ * `texte_lu` est le texte exact lu au début ; il est relu juste avant le renommage et, s'il a changé,
+ * `RunModifieEntreTemps`. La fenêtre restante est celle de la relecture au renommage.
+ */
+export function ecrireParRenommageSiInchange(chemin: string, valeur: unknown, suffixe: string, texte_lu: string, ecriture: EcritureTemporaire = ECRITURE_REELLE): void {
+  ecrireTemporaireAvantRenommage(chemin, valeur, suffixe, ecriture, () => {
+    if (readFileSync(chemin, "utf8") !== texte_lu) throw new RunModifieEntreTemps(chemin);
+  });
 }

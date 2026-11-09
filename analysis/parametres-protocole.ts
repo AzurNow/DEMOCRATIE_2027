@@ -22,6 +22,15 @@ export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL = 200;
 /** §7 : « 300 réponses issues d'un run pilote sont doublement notées par des humains ». */
 export const TAILLE_JEU_OR = 300;
 
+/**
+ * §7 : « Seuil de publication : kappa de la paire ≥ 0,75 sur la catégorie primaire », en fraction
+ * exacte ; 0,75 exactement passe. Distinct du seuil du kappa de l'échantillon humain du §12
+ * (`pipeline/go-no-go/kappa-echantillon.ts:SEUIL_KAPPA_ECHANTILLON`) : deux phrases du protocole, qu'un
+ * amendement peut séparer. Aussi écrit dans `run.schema.json` (statut `publie` ⇒ `kappa_paire_juges`
+ * ≥ 0,75) ; `tests/go-no-go/kappa-paire-jeu-or.test.ts` confronte les deux.
+ */
+export const SEUIL_KAPPA_PAIRE_JEU_OR = { numerateur: 3, denominateur: 4 } as const;
+
 /** §5 : les items d'absence et fictifs constituent au moins 20 % des questions de chaque run. */
 export const PART_MINIMALE_ITEMS_A_F = 0.2;
 
