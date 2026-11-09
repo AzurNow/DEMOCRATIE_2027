@@ -42,7 +42,7 @@ export const CLE_ALIAS_CANDIDATS: readonly string[] = ["alias_candidats"];
 /** `run.json#/alias_candidats` : alias (« C1 » à « Cn ») → identifiant du candidat. */
 export type TableAliasCandidats = Readonly<Record<string, string>>;
 
-/** Un candidat retiré ou sous le seuil peut être nommé en clair dans une réponse sans être interrogé : erreur si en double. */
+/** Le même `candidat_id` figure deux fois parmi les candidats interrogés du run : l'alias ne serait plus unique, erreur. */
 export class CandidatEnDouble extends Error {
   constructor(candidat_id: string) {
     super(`Candidat en double parmi les candidats interrogés au run : ${candidat_id}.`);

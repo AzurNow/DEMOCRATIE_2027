@@ -9,9 +9,9 @@
 
 import { describe, expect, it } from "vitest";
 import { DecisionPanelPosterieureAuGel } from "../../pipeline/questions/contestation.ts";
-import { itemPCompteAuGel, itemsPAuGel, itemsPComptesAuGel } from "../../pipeline/questions/couverture.ts";
+import { itemPCompteAuGel } from "../../pipeline/questions/couverture.ts";
 import type { Item } from "../../pipeline/questions/types.ts";
-import { arbitre, contestation, decidePar, itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
+import { arbitre, contestation, decidePar, idsPAuGel, itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
 const GEL = "2026-11-20T10:00:00Z";
 const CANDIDAT = "demo-alpha";
@@ -115,13 +115,13 @@ describe("itemPCompteAuGel : un item, les cas limites du brief", () => {
   });
 });
 
-describe("itemsPComptesAuGel : le total d'un candidat", () => {
+describe("idsPAuGel : le total d'un candidat", () => {
   it("compte exactement 9 items", () => {
-    expect(itemsPComptesAuGel(nItems(9, "neuf"), CANDIDAT, GEL, [MESURE], INTERROGES)).toBe(9);
+    expect(idsPAuGel(nItems(9, "neuf"), CANDIDAT, GEL, [MESURE], INTERROGES).length).toBe(9);
   });
 
   it("compte exactement 10 items", () => {
-    expect(itemsPComptesAuGel(nItems(10, "dix"), CANDIDAT, GEL, [MESURE], INTERROGES)).toBe(10);
+    expect(idsPAuGel(nItems(10, "dix"), CANDIDAT, GEL, [MESURE], INTERROGES).length).toBe(10);
   });
 
   it("n'ajoute au total ni les items exclus ni ceux des autres candidats", () => {
@@ -136,22 +136,22 @@ describe("itemsPComptesAuGel : le total d'un candidat", () => {
       itemP({ cle: "m-autre", candidat_id: AUTRE, mesure: MESURE }),
       arbitre(p("m-maintien"), [contestation("m-maintien", "maintien", AVANT_GEL)]),
     ];
-    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [MESURE, MESURE_O], INTERROGES)).toBe(11);
+    expect(idsPAuGel(items, CANDIDAT, GEL, [MESURE, MESURE_O], INTERROGES).length).toBe(11);
   });
 
   it("n'ajoute pas au total un item P qui épingle une version dépassée de sa mesure (conformité n° 2)", () => {
     const courante = { ...MESURE, version: 2 };
     const items = [...nItems(9, "version"), itemP({ cle: "version-a-jour", candidat_id: CANDIDAT, mesure: courante })];
-    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [courante], INTERROGES)).toBe(1);
+    expect(idsPAuGel(items, CANDIDAT, GEL, [courante], INTERROGES).length).toBe(1);
   });
 
   it("rend 0 pour un candidat sans item, jamais une absence", () => {
-    expect(itemsPComptesAuGel([], CANDIDAT, GEL, [MESURE], INTERROGES)).toBe(0);
+    expect(idsPAuGel([], CANDIDAT, GEL, [MESURE], INTERROGES).length).toBe(0);
   });
 
   it("signale un arbitrage illisible d'un item du candidat au lieu de l'ignorer", () => {
     const illisible = { ...p("illisible"), statut_contestation: "arbitree" as const, contestations: [{}] };
-    expect(() => itemsPComptesAuGel([illisible], CANDIDAT, GEL, [MESURE], INTERROGES)).toThrow();
+    expect(() => idsPAuGel([illisible], CANDIDAT, GEL, [MESURE], INTERROGES)).toThrow();
   });
 });
 
@@ -160,30 +160,29 @@ describe("itemsPComptesAuGel : le total d'un candidat", () => {
  * de référence des comparateurs sont ceux que compte le seuil. Le run fige leur liste ; le compte
  * en est la longueur, pour qu'une seule définition serve aux deux.
  */
-describe("itemsPAuGel : la liste que le run fige, dont le compte est la longueur", () => {
+describe("idsPAuGel : la liste que le run fige, dont le compte est la longueur", () => {
   it("rend les identifiants triés des seuls items comptés, et le compte en est la longueur", () => {
     const items = [
       ...nItems(3, "liste"),
       p("l-conteste", { statut_contestation: "contestee" }),
       itemP({ cle: "l-autre", candidat_id: AUTRE, mesure: MESURE }),
     ];
-    const liste = itemsPAuGel(items, CANDIDAT, GEL, [MESURE], INTERROGES);
+    const liste = idsPAuGel(items, CANDIDAT, GEL, [MESURE], INTERROGES);
     const attendus = nItems(3, "liste").map((item) => item.id).sort();
     expect(liste).toEqual(attendus);
-    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [MESURE], INTERROGES)).toBe(liste.length);
   });
 
   it("exclut l'item obsolète exactement à l'instant du gel", () => {
     const obsolete = p("l-obsolete-au-gel", { valide_du: "2026-09-01", valide_au: "2026-11-20" });
-    expect(itemsPAuGel([obsolete], CANDIDAT, "2026-11-20T00:00:00Z", [MESURE], INTERROGES)).toEqual([]);
+    expect(idsPAuGel([obsolete], CANDIDAT, "2026-11-20T00:00:00Z", [MESURE], INTERROGES)).toEqual([]);
   });
 
   it("rend une liste vide pour un candidat sans item, jamais une absence", () => {
-    expect(itemsPAuGel([], CANDIDAT, GEL, [MESURE], INTERROGES)).toEqual([]);
+    expect(idsPAuGel([], CANDIDAT, GEL, [MESURE], INTERROGES)).toEqual([]);
   });
 
   it("lève sur deux items comptés de même identifiant, au lieu de les dédoublonner en silence", () => {
     const item = p("l-double");
-    expect(() => itemsPAuGel([item, { ...item }], CANDIDAT, GEL, [MESURE], INTERROGES)).toThrow(item.id);
+    expect(() => idsPAuGel([item, { ...item }], CANDIDAT, GEL, [MESURE], INTERROGES)).toThrow(item.id);
   });
 });
