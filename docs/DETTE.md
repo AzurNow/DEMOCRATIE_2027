@@ -69,7 +69,7 @@ go/no-go lit ensuite une paire « non inscrite » ou un contrefactuel absent.
 **Ce qu'il faut faire.** À la revue suivante, vérifier que tout écrivain de `run.json` passe par
 cette fonction ; une garde textuelle dans `tests/` le ferait d'office.
 
-### 4. `analysis/` n'a aucune garde contre les cycles d'import — *basse*
+### ~~4. `analysis/` n'a aucune garde contre les cycles d'import~~ — réglé le 2026-11-09 par `tests/questions/sans-cycle-import.test.ts` (périmètres `pipeline/questions/` et `analysis/` sur l'aide `tests/aides/cycles-import.ts`)
 
 #395 a déplacé `estDuRun` et `filtrerContexteRun` dans `analysis/contexte-run.ts` pour éviter le
 cycle `filtre.ts` ↔ `population-notation.ts`. Le test de cycles existant ne couvre que
