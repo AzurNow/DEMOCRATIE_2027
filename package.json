@@ -48,6 +48,7 @@
     "contestations-posterieures": "node --experimental-strip-types outils/contestations-posterieures.ts",
     "go-no-go": "node --experimental-strip-types outils/go-no-go.ts",
     "go-no-go:contresigner": "node --experimental-strip-types outils/go-no-go-contresigner.ts",
+    "reverifier-absence": "node --experimental-strip-types outils/reverifier-absence.ts",
     "proprete": "node --experimental-strip-types outils/proprete.ts",
     "fixtures": "node --experimental-strip-types validation/fixtures/engendrer.ts",
     "collecte": "uv run python -m pipeline.collecte",

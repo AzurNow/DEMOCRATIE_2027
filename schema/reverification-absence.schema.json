@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:reverification-absence",
+  "title": "Revérification des items d'absence d'un run",
+  "description": "§4 (« Les items A sont revérifiés à chaque run par recherche automatique de nouvelles sources T1 sur le thème, puis confirmation humaine », 0.24, D59 (11)) et annexe F, case 2 : runs/<date>/reverification-absence.json, écrit par pnpm reverifier-absence (outils/reverifier-absence.ts) et lu par pnpm go-no-go (pipeline/go-no-go/checklist.ts:constatItemsAbsenceReverifies). Une entrée par item A du tirage, épinglée comme le tirage l'épingle ; une entrée sans confirmation attend l'humain. La revérification elle-même est aussi ajoutée à absence.reverifications[] de l'item (item.schema.json), qui ne porte pas la version revérifiée : ce fichier la porte. L'unicité des item_id est un contrôle de code (pipeline/go-no-go/reverification-absence.ts).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "items"],
+  "properties": {
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "items": {
+      "type": "array",
+      "description": "Les items A du tirage du run (tirage.json, items_au_gel de toute entrée, tout rôle), un par item, triés par item_id. Vide si le tirage n'en porte aucun : la case 2 de l'annexe F est alors faite, la commande ayant constaté qu'il n'y avait rien à revérifier.",
+      "items": { "$ref": "#/$defs/entree" }
+    }
+  },
+  "$defs": {
+    "entree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference"],
+      "properties": {
+        "reference": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/reference_item",
+          "description": "L'item tel que le tirage l'épingle : la version que le run mesure."
+        },
+        "confirmation": { "$ref": "#/$defs/confirmation" }
+      }
+    },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "resultat", "confirme_par", "item_version", "item_empreinte", "nouvelles_sources_t1"],
+      "description": "La confirmation saisie par un annotateur (« la revérification est confirmée par un seul annotateur », §4). item_version et item_empreinte : la version de l'item que l'annotateur a revérifiée ; elle ne vaut pour le run que si elle est celle de reference.",
+      "properties": {
+        "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "resultat": {
+          "const": "absence_confirmee",
+          "description": "Seule issue que la commande enregistre : la conséquence d'une position trouvée sur un item déjà tiré n'est pas écrite au protocole (question ouverte), et l'item reste alors sans confirmation."
+        },
+        "confirme_par": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "item_version": { "type": "integer", "minimum": 1 },
+        "item_empreinte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "nouvelles_sources_t1": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "Les empreintes des nouvelles sources T1 (§4, D59 (11) ; validation/domaine/absence.ts:nouvellesSourcesT1) présentées à l'annotateur avant sa confirmation, triées. Vide quand la recherche n'en a trouvé aucune.",
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+        }
+      }
+    }
+  }
+}

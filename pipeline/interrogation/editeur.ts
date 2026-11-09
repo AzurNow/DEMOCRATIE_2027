@@ -52,11 +52,19 @@ export type Classement =
   | { readonly issue: "refus_api"; readonly contenu: Contenu }
   | { readonly issue: "echec"; readonly erreur: ErreurTentative };
 
+/**
+ * Une citation dans la forme commune à tous les éditeurs (D15), seule forme qu'un adaptateur peut
+ * projeter : ramener les champs propres à son éditeur (`uri`, `title`, `cited_text`…) vers `url` et
+ * `texte` est le travail de sa normalisation. Le juge ne lit que ces deux clés ; une citation qui ne
+ * porte ni l'une ni l'autre fait refuser la charge (`charge-juge.ts:CitationSansUrlNiTexte`).
+ */
+export type CitationNormalisee = { readonly url?: string; readonly texte?: string };
+
 /** La projection avec perte d'une réponse ordinaire ; `refus_api` est posé par l'exécution. */
 export interface Projection {
   readonly texte: string;
   readonly liens: readonly string[];
-  readonly citations?: readonly ObjetJson[];
+  readonly citations?: readonly CitationNormalisee[];
   readonly appels_outils?: readonly ObjetJson[];
   readonly troncature: boolean;
 }

@@ -165,10 +165,12 @@
           "$ref": "#/$defs/graine_generateur_du_tirage"
         },
         "bootstrap": {
-          "$ref": "#/$defs/graine"
+          "$ref": "#/$defs/graine_generateur_du_tirage",
+          "description": "§8, « Graines de l'analyse » : chaque graine dérivée amorce SplitMix64 (splitmix64-sha256-v1, le même que pour le tirage). analysis/analyse-du-run.ts:grainesDeLAnalyse refuse aussi une autre déclaration (GrainesDeLAnalyseNonConformes)."
         },
         "permutation": {
-          "$ref": "#/$defs/graine"
+          "$ref": "#/$defs/graine_generateur_du_tirage",
+          "description": "§8, « Graines de l'analyse » : chaque graine dérivée amorce SplitMix64 (splitmix64-sha256-v1, le même que pour le tirage). analysis/analyse-du-run.ts:grainesDeLAnalyse refuse aussi une autre déclaration (GrainesDeLAnalyseNonConformes)."
         },
         "contrefactuel": {
           "$ref": "#/$defs/graine_generateur_du_tirage"
@@ -3024,7 +3026,7 @@
       }
     },
     "graine_generateur_du_tirage": {
-      "$comment": "§7 (protocole 0.13) : « L'échantillon humain et ce sous-ensemble sont tirés avec le générateur du tirage (SplitMix64, splitmix64-sha256-v1), chacun avec sa graine dérivée de la graine publiée et d'une clé lisible, comme en section 8. » Les trois champs désignent le générateur que pipeline/questions/tirage.ts déclare (GENERATEUR_DU_TIRAGE) ; tests/run-schema-0-13.test.ts vérifie qu'ils ne divergent pas.",
+      "$comment": "§7 (protocole 0.13) : « L'échantillon humain et ce sous-ensemble sont tirés avec le générateur du tirage (SplitMix64, splitmix64-sha256-v1), chacun avec sa graine dérivée de la graine publiée et d'une clé lisible, comme en section 8. » Les trois champs désignent le générateur que pipeline/questions/tirage.ts déclare (GENERATEUR_DU_TIRAGE) ; tests/run-schema-0-13.test.ts vérifie qu'ils ne divergent pas. Les graines bootstrap et permutation le déclarent aussi (§8, « Graines de l'analyse » : « le même que pour le tirage »).",
       "type": "object",
       "$ref": "#/$defs/graine",
       "properties": {

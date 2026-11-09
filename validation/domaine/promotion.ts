@@ -151,7 +151,19 @@ function deuxAnnotateursDistincts(decisions: readonly EntreeDecision[]): boolean
   return premiere.annotateur_id !== seconde.annotateur_id;
 }
 
-function memeVersionJugee(premiere: EntreeDecision, seconde: EntreeDecision): boolean {
+/** Ce que la règle de concordance lit d'une décision : la version de l'item qu'elle a jugée. */
+export interface VersionJugee {
+  readonly item_version: number;
+  readonly item_empreinte: string;
+}
+
+/**
+ * §4, règle de concordance : deux décisions portent sur la « même version » de l'item quand elles
+ * épinglent la même version et la même empreinte. Seule définition de la règle (docs/DETTE.md,
+ * 2026-09-18, point 7) : `evaluerPromotion` l'appelle à l'entrée de `data/`, et
+ * `pipeline/questions/invariants.ts:validationsConcordantesMemeVersion` a posteriori.
+ */
+export function memeVersionJugee(premiere: VersionJugee, seconde: VersionJugee): boolean {
   return (
     premiere.item_version === seconde.item_version &&
     premiere.item_empreinte === seconde.item_empreinte
