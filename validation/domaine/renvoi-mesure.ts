@@ -21,7 +21,7 @@ import { CHEMIN_THEME, decisionApplicable, type DecisionCorrectionMesure, type R
 import { empreinteContenuNotant } from "./empreinte.ts";
 import type { EntreeDecision, Item, ItemDuLot, Mesure } from "./types.ts";
 
-/** Préfixe de l'entrée d'historique d'un renvoi : écrit par `repinglerSurMesure`, lu par `renvoyeDepuis`. */
+/** Préfixe de l'entrée d'historique d'un renvoi : écrit par `repinglerSurMesure`, lu par `renvoyeDepuis`. Format publié, figé par tests/libelle-renvoi.test.ts. */
 export const CHANGEMENT_RENVOI = "renvoi en attente";
 
 /**
