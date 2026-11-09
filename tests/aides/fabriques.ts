@@ -162,6 +162,7 @@ export function itemF(surcharges: Partial<Item> = {}): Item {
     ...sansAssertion,
     id: "01JBANCESSA1000000001TEM04",
     type: "F",
+    redige_par: "a1",
     mesure_id: "01JBANCESSA90000000MESVRE2",
     ...surcharges,
   };

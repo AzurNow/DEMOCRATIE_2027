@@ -1,0 +1,24 @@
+{
+  "id": "7FQ9X2M4KJ8H3N5T6V0W1Y2Z3A",
+  "version": 1,
+  "empreinte": "5cf60fa7d81ea0763f9d4b005c88ad2616bdf166f77d1092d4c8b25837f0ab29",
+  "type": "F",
+  "candidat_id": "cand-a",
+  "mesure_id": "0NNNQC220HTCHCKBSV2T06G28Y",
+  "mesure_version": 1,
+  "redige_par": "a1",
+  "statut_validation": "en_attente",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-20T10:05:00+02:00",
+      "changement": "création",
+      "commit": "2f22765d04931a078909145ca628d2264c852d7d",
+      "version_resultante": 1
+    }
+  ]
+}
