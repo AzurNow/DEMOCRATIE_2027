@@ -4,7 +4,7 @@
  * l'interrogation, qui documente exactement quels appels faire ».
  */
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -65,5 +65,30 @@ describe("docs/APPELS-INTERROGATION.md", () => {
     // Le jour où un adaptateur réel rejoint la liste, ce test change avec elle.
     expect(ADAPTATEURS_DOCUMENTES.map((a) => a.nature)).toEqual(["simule"]);
     expect(genererAppelsInterrogation()).toContain("Aucun adaptateur d'éditeur réel n'est encore écrit");
+  });
+});
+
+/**
+ * DETTE n° 5 (lot interrogation, #234) : le code n'a pas de registre des adaptateurs d'interrogation,
+ * seulement un module `pipeline/interrogation/editeur-<nom>.ts` par éditeur. La garde est donc
+ * textuelle : chaque module d'éditeur doit être importé par le rendu du document, où
+ * `ADAPTATEURS_DOCUMENTES` en tire sa fabrique. Un adaptateur ajouté sans documentation fait échouer
+ * ce test.
+ */
+const RENDU = readFileSync(resolve(import.meta.dirname, "../outils/appels-interrogation/rendu.ts"), "utf8");
+const MODULES_EDITEUR = readdirSync(resolve(import.meta.dirname, "../pipeline/interrogation")).filter((f) => /^editeur-.+\.ts$/u.test(f));
+
+function modulesNonDocumentes(modules: readonly string[], source: string): readonly string[] {
+  return modules.filter((m) => !source.includes(`pipeline/interrogation/${m}"`));
+}
+
+describe("docs/APPELS-INTERROGATION.md : aucun adaptateur d'éditeur oublié", () => {
+  it("chaque module pipeline/interrogation/editeur-*.ts est importé par le rendu du document", () => {
+    expect(MODULES_EDITEUR).toContain("editeur-simule.ts");
+    expect(modulesNonDocumentes(MODULES_EDITEUR, RENDU)).toEqual([]);
+  });
+
+  it("un module d'éditeur ajouté sans documentation est signalé (la garde n'est pas vide)", () => {
+    expect(modulesNonDocumentes([...MODULES_EDITEUR, "editeur-nouveau.ts"], RENDU)).toEqual(["editeur-nouveau.ts"]);
   });
 });

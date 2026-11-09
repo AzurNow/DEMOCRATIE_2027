@@ -321,6 +321,16 @@ export class TransportSimule implements Transport {
 
 const TEXTE_SIMULE = "Réponse simulée par l'éditeur simulé : aucun contenu réel, aucun candidat.";
 
+/**
+ * Les deux liens que cite l'éditeur simulé. Leur verdict d'existence est dans la table du fournisseur
+ * simulé (`tests/notation/fixtures/notation-dry/notation-simulee.json`) : le premier est mort (cas D19,
+ * un lien mort ne soutient jamais rien), le second existe, avec sa copie conservée et son texte extrait,
+ * pour que `pnpm notation:dry` parcoure aussi le chemin d'un lien existant et soutenant.
+ */
+export const LIEN_SIMULE_MORT = "https://source-simulee.invalid/page";
+export const LIEN_SIMULE_EXISTANT = "https://source-simulee.invalid/page-existante";
+const LIENS_DE_LA_REPONSE_SIMULEE: readonly string[] = [LIEN_SIMULE_MORT, LIEN_SIMULE_EXISTANT];
+
 /** Les issues nommées qu'un profil de fixture peut citer. */
 export const ISSUES_NOMMEES: Readonly<Record<string, IssueSimulee>> = {
   reponse: {
@@ -328,7 +338,7 @@ export const ISSUES_NOMMEES: Readonly<Record<string, IssueSimulee>> = {
     texte: TEXTE_SIMULE,
     stop_reason: "end_turn",
     modele: "modele-simule-2026-12",
-    liens: ["https://source-simulee.invalid/page"],
+    liens: LIENS_DE_LA_REPONSE_SIMULEE,
   },
   tronquee: { genre: "reponse", texte: TEXTE_SIMULE, stop_reason: "max_tokens", modele: "modele-simule-2026-12", liens: [] },
   sans_modele: { genre: "reponse", texte: TEXTE_SIMULE, stop_reason: "end_turn", modele: null, liens: [] },

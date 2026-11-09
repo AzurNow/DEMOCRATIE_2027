@@ -261,18 +261,26 @@ describe("réponse hors jeu d'or, notations de l'échantillon de 10 %", () => {
 
 /**
  * Empreinte des verdicts du run simulé de référence (`pnpm run:dry`), noté une fois sans aucune
- * notation humaine : 39 fichiers, figée le 2026-11-06 sur le code d'avant le correctif (main
- * f5022fd). L'écart des notations du jeu d'or ne doit rien changer à un run qui n'en porte pas.
+ * notation humaine, telle que la rend le code d'avant le correctif (main f5022fd). L'écart des
+ * notations du jeu d'or ne doit rien changer à un run qui n'en porte pas.
  * Elle ne bouge qu'avec un changement voulu de la simulation ou de la règle de décision.
+ *
+ * Figée le 2026-11-06 (39 fichiers, c6c0cbdd…). Refigée le 2026-11-09 sur la simulation qui cite un
+ * second lien, existant et soutenant (DETTE 2026-10-06 n° 3) : les liens de la réponse entrent dans
+ * la clé du scénario du juge simulé (`juge-simule.ts:cleDeContenu`), toute réponse qui cite des liens
+ * tire donc un nouveau scénario, et six verdicts passent en attente (drapeau_grave ou
+ * accord_sans_note_commune). Le code de f5022fd, sous cette même simulation, rend ces 33 fichiers et
+ * cette empreinte à l'octet près : la comparaison reste faite avec le code d'avant le correctif.
  */
-const EMPREINTE_VERDICTS_AVANT_CORRECTIF = "c6c0cbdd16c1b174b1e3343668c34cc9d8634d82f31fd9fe1e4598290ee9bc3e";
+const VERDICTS_AVANT_CORRECTIF = 33;
+const EMPREINTE_VERDICTS_AVANT_CORRECTIF = "37bf10662357f829cac345fcc106184cdb848bf7d68e2991546fa86a46916db2";
 
 describe("verdicts de la masse sur le run simulé sans calibration", () => {
   it("identiques octet pour octet à ceux du code d'avant le correctif", async () => {
     const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
     await noterUneFois(prepare);
     const verdicts = verdictsDe(prepare);
-    expect(verdicts.size).toBe(39);
+    expect(verdicts.size).toBe(VERDICTS_AVANT_CORRECTIF);
     const empreinte = createHash("sha256");
     for (const [nom, contenu] of verdicts) empreinte.update(`${nom}\u0000${contenu}\u0000`);
     expect(empreinte.digest("hex")).toBe(EMPREINTE_VERDICTS_AVANT_CORRECTIF);

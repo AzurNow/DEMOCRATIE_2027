@@ -253,7 +253,7 @@ sans trace écrite de la cause.
 **Ce qu'il faut faire.** Garder le libellé sous un test de non-régression ; journaliser le renvoi
 lui-même le jour où un consommateur de la liste des renvois existera (D62, #233 (2)).
 
-### 5. Un adaptateur d'éditeur réel peut manquer à `docs/APPELS-INTERROGATION.md` — *basse*
+### ~~5. Un adaptateur d'éditeur réel peut manquer à `docs/APPELS-INTERROGATION.md`~~ — réglé le 2026-11-08 : faute de registre des adaptateurs, garde textuelle dans `tests/appels-interrogation.test.ts` (tout `pipeline/interrogation/editeur-*.ts` doit être importé par le rendu)
 
 Le document engendré par `pnpm appels-interrogation` (#234) ne liste que les adaptateurs de
 `ADAPTATEURS_DOCUMENTES`. Un adaptateur réel oublié dans cette liste est omis sans échec de test.
@@ -891,7 +891,7 @@ nous ni par un tiers qui voudrait auditer les juges, alors que le §7 promet que
 `verdict_soutien_juge` présent seulement en cas de forçage, ou sortie brute des juges dans l'archive
 du run.
 
-### 3. `pnpm notation:dry` n'exerce plus de lien existant et soutenant — *basse*
+### ~~3. `pnpm notation:dry` n'exerce plus de lien existant et soutenant~~ — réglé le 2026-11-08 par un second lien simulé (`LIEN_SIMULE_EXISTANT`, `pipeline/interrogation/editeur-simule.ts`) et une assertion de bout en bout (`sourcage_retenu` vrai) dans `tests/notation/chaine.test.ts`
 
 L'éditeur simulé ne cite qu'un lien, devenu mort dans la table du fournisseur simulé (#91) pour
 atteindre le cas D19. Le chemin fournisseur → notation → `sourcage_retenu` vrai n'est plus parcouru
