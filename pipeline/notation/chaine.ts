@@ -69,6 +69,13 @@
  * exception, la reprise d'un D16 (3) : le test contrefactuel est inscrit et ses deux juges retirés ;
  * la relance recalcule le test sans rien réécrire et s'arrête au même point.
  *
+ * **Contexte des notations déjà écrites (DETTE 2026-09-17 n° 1).** Avant toute écriture, les notations
+ * déjà écrites du run et les renvois de juge (D30 (2)) sont relus, et chacun doit porter le contexte de l'objet qu'elle note : réponse
+ * d'outil, réponse permutée ou lecture de comparateur (`invariants.ts:contexteSuitObjetNote`). Une
+ * seule qui y manque, ou dont l'objet noté est introuvable, et la chaîne refuse
+ * (`ContexteDeNotationDivergent`) : sa clé de reprise (contexte, objet, juge) serait fausse, et une
+ * notation contrefactuelle pourrait entrer dans une métrique primaire.
+ *
  * **Réponse en attente de l'opérateur (§6, 0.22, D57 (2)).** Tant qu'une requête du plan attend
  * l'opérateur, la chaîne refuse de commencer (`ReponsesEnAttenteOperateur`), avant toute écriture :
  * la stocker après coup changerait l'échantillon humain et le sous-ensemble contrefactuel.
@@ -102,7 +109,17 @@
  */
 
 import { createHash } from "node:crypto";
-import { lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe, type RunLu } from "../../analysis/lecture-run.ts";
+import { existsSync } from "node:fs";
+import {
+  dispositionRunNote,
+  lireNotationsDuRun,
+  lireReponses,
+  lireRunJson,
+  lireVerdicts,
+  runDeNotationDe,
+  type NotationsDuRun,
+  type RunLu,
+} from "../../analysis/lecture-run.ts";
 import type { Instant, Ulid } from "../../analysis/types.ts";
 import { exigerAucuneAttenteDuRun } from "../interrogation/attente-operateur.ts";
 import type { ReponseObtenue } from "../interrogation/types.ts";
@@ -132,7 +149,8 @@ import { publierContrefactuel, publierFauteDInterroges } from "./publication-con
 import { notationParRegle, REGLE_REFUS_API } from "./regle-refus.ts";
 import { demandePermutee, type DemandePermutee, type ReponseContrefactuelle } from "./reponse-contrefactuelle.ts";
 import { DepotNotation } from "./stockage.ts";
-import { ecrireVerdictsDeLecture, type EtatLecturesDuRun } from "./verdicts-de-lecture.ts";
+import { ecrireVerdictsDeLecture, lecturesCollectees, type EtatLecturesDuRun } from "./verdicts-de-lecture.ts";
+import { contexteSuitObjetNote, type ObjetNote, type Violation } from "../questions/invariants.ts";
 import { TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "../../analysis/types-notation.ts";
 import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
@@ -206,6 +224,21 @@ export class ReponsesNonConformes extends Error {
   constructor(detail: string) {
     super(`Réponses à noter refusées : ${detail}`);
     this.name = "ReponsesNonConformes";
+  }
+}
+
+/**
+ * DETTE 2026-09-17 n° 1 : une notation ou un renvoi de juge déjà écrits dont le contexte n'est pas
+ * celui de l'objet noté, ou dont l'objet noté est introuvable (`invariants.ts:contexteSuitObjetNote`).
+ */
+export class ContexteDeNotationDivergent extends Error {
+  readonly violations: readonly Violation[];
+
+  constructor(run_id: Ulid, violations: readonly Violation[]) {
+    const liste = violations.map((violation) => `${violation.objet} : ${violation.detail}`).join(" ; ");
+    super(`Run ${run_id} refusé : ${violations.length} notation(s) ou renvoi(s) de juge déjà écrit(s) hors de l'invariant « le contexte suit celui de l'objet noté » (${liste}). Rien n'est écrit.`);
+    this.name = "ContexteDeNotationDivergent";
+    this.violations = violations;
   }
 }
 
@@ -310,10 +343,12 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
   exigerNotable(run);
   exigerAucuneAttenteDuRun(env.repertoire_run, "notation");
   verifierJuges(run, env.juges);
+  const relues = notationsControlees(env.repertoire_run, run);
   // §5 « Tailles » (0.27) : le nombre de réponses obtenues, canal API seul, est inscrit au début de la notation.
   inscrireReponsesObtenuesDuRun(env.repertoire_run);
   const depot = DepotNotation.ouvrir(env.repertoire_run);
-  const lues = lireNotationsDuRun(env.repertoire_run, run.id);
+  // Première ouverture : les dossiers que `DepotNotation.ouvrir` vient de créer sont lus, vides.
+  const lues = relues ?? lireNotationsDuRun(env.repertoire_run, run.id);
   const preparees = [...reponses].sort((a, b) => comparerChaines(a.reponse.id, b.reponse.id)).map((r) => preparer(r, env.existences));
   return {
     env,
@@ -330,6 +365,29 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
     contrefactuelles: new Map(lues.reponses_contrefactuelles.map((r) => [r.id, canoniser(r)])),
     verdicts: new Set(lireVerdicts(env.repertoire_run, run.id).map((v) => v.objet_note.id)),
   };
+}
+
+/**
+ * Les notations déjà écrites du run, relues avant toute écriture ; chacune, et chaque renvoi de juge,
+ * au contexte de l'objet noté, ou `ContexteDeNotationDivergent`. `null` à la première ouverture : les quatre
+ * dossiers du volume noté naissent ensemble de `DepotNotation.ouvrir`, et sans dossier des
+ * notations aucune n'est écrite.
+ */
+function notationsControlees(repertoire_run: string, run: RunLu): NotationsDuRun | null {
+  if (!existsSync(dispositionRunNote(repertoire_run).notations)) return null;
+  const lues = lireNotationsDuRun(repertoire_run, run.id);
+  // Un renvoi porte le contexte de la notation que le juge aurait rendue, et entre comme elle dans la clé de reprise.
+  const violations = contexteSuitObjetNote([...lues.notations, ...lues.renvois], objetsNotables(repertoire_run, run, lues));
+  if (violations.length > 0) throw new ContexteDeNotationDivergent(run.id, violations);
+  return lues;
+}
+
+/** Ce qu'une notation peut noter (`notation.schema.json#/properties/objet_note`), lu sur le disque du run. */
+function objetsNotables(repertoire_run: string, run: RunLu, lues: NotationsDuRun): readonly ObjetNote[] {
+  const lectures = lecturesCollectees(repertoire_run, run);
+  // Lectures pas encore collectées : aucune n'existe, et une notation qui en viserait une est introuvable.
+  const lectures_ecrites = lectures === null ? [] : lectures;
+  return [...lireReponses(repertoire_run, run.id), ...lues.reponses_contrefactuelles, ...lectures_ecrites];
 }
 
 /**
