@@ -23,7 +23,9 @@ import {
 } from "../../pipeline/go-no-go/checklist.ts";
 import { RemplacementIntrouvable, type MaillonDeRemplacement } from "../../pipeline/interrogation/fenetre.ts";
 import { ContreseingRefuse, contresigner, contresignerFichier, type Declaration } from "../../pipeline/go-no-go/contreseing.ts";
+import type { LectureReverification } from "../../pipeline/go-no-go/reverification-absence.ts";
 import { CODES_CRITERES, type Critere } from "../../pipeline/go-no-go/types.ts";
+import type { FichierReverification } from "../../validation/domaine/reverification-absence.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { ulid } from "../analysis/fabriques.ts";
 
@@ -117,11 +119,15 @@ describe("les dix cases de l'annexe F", () => {
   });
 
   it("sans fichier qui les porte, les cases 2 et 7 sont non faites (D25 (3)), et restent calculées", () => {
-    const constats = [...CONSTATS_FAITS.filter((c) => c.nom !== "items_absence_reverifies" && c.nom !== "robustesse_calculee"), constatItemsAbsenceReverifies(), constatRobustesseCalculee(null)];
+    const constats = [
+      ...CONSTATS_FAITS.filter((c) => c.nom !== "items_absence_reverifies" && c.nom !== "robustesse_calculee"),
+      constatItemsAbsenceReverifies({ statut: "absent" }, RUN_ID),
+      constatRobustesseCalculee(null),
+    ];
     const checklist = construireChecklist(RUN_ID, criteres(), constats);
     const parRang = new Map(checklist.cases.map((c) => [c.rang, c]));
     expect(parRang.get(2)).toMatchObject({ nature: "calculee", etat: "non_faite" });
-    expect(parRang.get(2)?.motif).toContain("lot extraction");
+    expect(parRang.get(2)?.motif).toContain("reverification-absence.json absent");
     expect(parRang.get(7)).toMatchObject({ nature: "calculee", etat: "non_faite" });
     expect(parRang.get(7)?.motif).toContain("metriques/");
     expect(() => valider("checklist", checklist, "test")).not.toThrow();
@@ -130,6 +136,53 @@ describe("les dix cases de l'annexe F", () => {
   it("graine du tirage : identique, faite ; différente, non faite", () => {
     expect(constatGraineDuTirage({ valeur: 1, algorithme: "a" }, { algorithme: "a", valeur: 1 }).fait).toBe(true);
     expect(constatGraineDuTirage({ valeur: 1 }, { valeur: 2 })).toMatchObject({ fait: false });
+  });
+});
+
+describe("items d'absence revérifiés (case 2 ; §4, D59 (11) ; reverification-absence.json)", () => {
+  const reference = { item_id: "01JBANCESSA1000000001TEM02", item_version: 1, item_empreinte: "9".repeat(64) };
+  const confirmation = {
+    date: "2026-12-01T09:30:00+01:00",
+    resultat: "absence_confirmee",
+    confirme_par: "a1",
+    item_version: 1,
+    item_empreinte: "9".repeat(64),
+    nouvelles_sources_t1: [],
+  } as const;
+  const lu = (items: FichierReverification["items"], run_id: string = RUN_ID): LectureReverification => ({ statut: "lu", fichier: { run_id, items } });
+  const case2 = (constat: Constat) => construireChecklist(RUN_ID, criteres(), [...CONSTATS_FAITS.filter((c) => c.nom !== constat.nom), constat]).cases[1];
+
+  it("cas limite 1 : aucun item A au tirage, fichier écrit par la commande : faite", () => {
+    expect(constatItemsAbsenceReverifies(lu([]), RUN_ID)).toEqual({ nom: "items_absence_reverifies", fait: true, detail: "" });
+    expect(case2(constatItemsAbsenceReverifies(lu([]), RUN_ID))).toMatchObject({ etat: "faite" });
+  });
+
+  it("cas limite 2 : chaque item A confirmé sur la version du tirage : faite", () => {
+    expect(constatItemsAbsenceReverifies(lu([{ reference, confirmation }]), RUN_ID).fait).toBe(true);
+  });
+
+  it("cas limite 3 : un item A sans confirmation (nouvelle source T1 non tranchée) : non faite, et le motif le nomme", () => {
+    const constat = constatItemsAbsenceReverifies(lu([{ reference, confirmation }, { reference: { ...reference, item_id: "01JBANCESSA1000000001TEM05" } }]), RUN_ID);
+    expect(constat.fait).toBe(false);
+    expect(constat.detail).toBe("1 item(s) d'absence sans revérification confirmée (01JBANCESSA1000000001TEM05)");
+    expect(case2(constat)).toMatchObject({ etat: "non_faite", motif: `${constat.detail}.` });
+  });
+
+  it("cas limite 5 : confirmation portée sur une autre version que celle du tirage : ne vaut pas, non faite", () => {
+    const autre = { ...confirmation, item_version: 2 };
+    const constat = constatItemsAbsenceReverifies(lu([{ reference, confirmation: autre }]), RUN_ID);
+    expect(constat).toMatchObject({ fait: false, detail: expect.stringContaining("autre version que celle du tirage") });
+    const autreEmpreinte = { ...confirmation, item_empreinte: "8".repeat(64) };
+    expect(constatItemsAbsenceReverifies(lu([{ reference, confirmation: autreEmpreinte }]), RUN_ID).fait).toBe(false);
+  });
+
+  it("cas limite 6 : fichier absent, non conforme ou d'un autre run : non faite, jamais faite par défaut, et le motif le dit", () => {
+    expect(constatItemsAbsenceReverifies({ statut: "absent" }, RUN_ID)).toMatchObject({ fait: false, detail: expect.stringContaining("absent") });
+    expect(constatItemsAbsenceReverifies({ statut: "non_conforme", detail: "JSON illisible" }, RUN_ID)).toMatchObject({
+      fait: false,
+      detail: expect.stringContaining("non conforme (JSON illisible)"),
+    });
+    expect(constatItemsAbsenceReverifies(lu([], ulid("autre-run")), RUN_ID)).toMatchObject({ fait: false, detail: expect.stringContaining("porte le run") });
   });
 });
 

@@ -117,6 +117,11 @@
  * `recalcul-b` décrit `runs/<date>/metriques/recalcul-b-<AAAA-MM-JJ>.json`, le recalcul (b) mis à jour
  * après une contestation postérieure, publié à côté de `metriques.json` sans le réécrire (§8 et §9,
  * protocole 0.28, D70 (13) ; `analysis/recalcul-b.ts`). Le quarante-deuxième.
+ *
+ * `reverification-absence` décrit `runs/<date>/reverification-absence.json`, la revérification des
+ * items A du tirage d'un run (§4, D59 (11)), écrite par `pnpm reverifier-absence` et lue par
+ * `pnpm go-no-go` pour la case 2 de l'annexe F (`pipeline/go-no-go/reverification-absence.ts`). Le
+ * quarante-troisième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -161,6 +166,7 @@ export const NOMS_SCHEMAS = [
   "depot-application",
   "metriques",
   "recalcul-b",
+  "reverification-absence",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

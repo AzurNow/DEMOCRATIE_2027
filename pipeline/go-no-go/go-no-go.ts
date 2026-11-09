@@ -7,9 +7,11 @@
  * contrefactuelles, validées au passage), `verdicts/`, `tirage.json` et `questions.json` (le plan
  * d'interrogation du run, `plan-du-run.ts` : les manquantes se comptent sur lui, §8 et §12,
  * protocole 0.21), le journal `volume/tentatives/` des seules requêtes du plan sans réponse
- * (`attente-operateur.ts`), et `metriques/metriques.json` s'il existe (`metriques.ts` : ses graines
- * pour le critère des analyses, ses sections de robustesse pour la case 7 de l'annexe F). Chaque
- * fichier est validé contre son schéma (`analysis/lecture-run.ts`, `metriques.ts`).
+ * (`attente-operateur.ts`), `metriques/metriques.json` s'il existe (`metriques.ts` : ses graines
+ * pour le critère des analyses, ses sections de robustesse pour la case 7 de l'annexe F), et
+ * `reverification-absence.json` s'il existe (`reverification-absence.ts`, case 2 ; absent ou non
+ * conforme, la case le dit). Chaque fichier est validé contre son schéma (`analysis/lecture-run.ts`,
+ * `metriques.ts`, `reverification-absence.ts`).
  *
  * Ce qui est écrit : dans `run.json`, `go_no_go`, `kappa_echantillon_humain` ou
  * `motif_indefini_kappa_echantillon_humain` de chaque juge retenu, `accord_humains_echantillon` (§7.30 :
@@ -86,6 +88,7 @@ import { cheminChecklist, ecrireParRenommage, lireJson } from "./fichiers.ts";
 import { kappasEchantillon, type KappaDeJuge } from "./kappa-echantillon.ts";
 import { lireMetriques } from "./metriques.ts";
 import { requetesDuPlanDuRun } from "../interrogation/plan-du-run.ts";
+import { lireReverificationAbsence } from "./reverification-absence.ts";
 import type { GoNoGo } from "./types.ts";
 
 /** La part de `run.json` que lit le go/no-go, en plus de `RunLu`. */
@@ -196,7 +199,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     critereAnalysesExecutees(metriques === null ? null : metriques.graines, { bootstrap: vue.graines.bootstrap.valeur, permutation: vue.graines.permutation.valeur }),
   ]);
   const constats = [
-    constatItemsAbsenceReverifies(),
+    constatItemsAbsenceReverifies(lireReverificationAbsence(repertoire_run), run.id),
     constatGraineDuTirage(vue.graines.tirage, graineDuFichierTirage(repertoire_run, run)),
     constatNotationComplete(obtenues, new Set<Ulid>(verdicts.map((v) => v.objet_note.id))),
     // D74 (19) : le run que remplace une réexécution est lu parmi ses voisins de `runs/`.

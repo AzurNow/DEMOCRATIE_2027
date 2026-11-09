@@ -27,6 +27,9 @@ runs/<date>/
                                     écrites par pnpm analyze, jamais réécrites
   checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
                                     par pnpm go-no-go, contresignée par pnpm go-no-go:contresigner
+  reverification-absence.json Git   la revérification des items A du tirage (§4 ;
+                                    schema/reverification-absence.schema.json), écrite par
+                                    pnpm reverifier-absence, lue par pnpm go-no-go (case 2)
   volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo,
                               en entier, sans exception
     reponses/<id>.json              une réponse par requête (schema/reponse.schema.json)
@@ -607,6 +610,35 @@ sont calculées — sans couple comparé, les deux sont `aucun_couple_compare` e
 `metriques/` absent : critère rouge, case non faite ; présent sans
 `metriques.json` (`MetriquesSansFichier`), non conforme (`ErreurSchema`) ou d'un autre run
 (`MetriquesDUnAutreRun`) : arrêt, rien n'est écrit. Sortie 0 ou 2.
+La case 2 (« Items d'absence revérifiés ») lit `reverification-absence.json` (section suivante) : elle
+n'est faite que si chaque item A du tirage y porte une confirmation sur la version que le tirage
+épingle ; un fichier absent, non conforme ou d'un autre run la laisse non faite, et le motif le dit.
+
+## `ANNOTATEUR_ID=<pseudonyme> pnpm reverifier-absence <repertoire_run>` — `reverification-absence.json`
+
+```
+ANNOTATEUR_ID=a1 pnpm reverifier-absence runs/<date>                                   # simulation
+ANNOTATEUR_ID=a1 pnpm reverifier-absence runs/<date> --confirmer-sans-nouvelle-source --ecrire
+ANNOTATEUR_ID=a1 pnpm reverifier-absence runs/<date> --confirmer=<item_id> --ecrire    # répétable
+```
+
+La revérification des items d'absence (§4 : « recherche automatique de nouvelles sources T1 […],
+puis confirmation humaine […] par un seul annotateur » ; `outils/reverifier-absence.ts`). Lancée par
+un humain après le gel (l'identifiant du run naît au gel), jamais par un agent. Lit `run.json`,
+`tirage.json`, `data/items/` et les fiches de `staging/sources/par-source/` (répertoire absent :
+refus). Pour chaque item A du tirage, imprime les nouvelles sources T1
+(`validation/domaine/absence.ts:nouvellesSourcesT1`). L'annotateur confirme l'absence d'un geste pour
+les items sans nouvelle source, et item par item pour les autres ; rien ne se confirme sans lui, et
+seule l'issue « absence confirmée » s'enregistre. Un item dont la version courante n'est pas celle
+que le tirage épingle n'est pas confirmable.
+
+Simulation par défaut. `--ecrire` exige un arbre Git propre, écrit `reverification-absence.json`
+(une entrée par item A du tirage, confirmée ou en attente), puis ajoute la revérification à
+`absence.reverifications[]` de chaque item confirmé, avec une entrée d'historique, par
+`validation/io/data-items.ts:reecrireItem` (règle 3, ajout seul). Relancée : aucune seconde
+revérification pour le même run ; un item que l'écriture interrompue n'a pas atteint est complété
+depuis le fichier. Un item qui porte déjà une revérification du run absente du fichier, ou un fichier
+qui ne porte plus les items A du tirage, arrête la commande. Rien n'est commité. Sortie 0 ou 1.
 
 `pnpm go-no-go:contresigner <repertoire_run> --nom="<nom>" --case=<rang>:faite --case=<rang>:non_faite:<motif>`
 déclare chaque case `declaree` de la checklist et ajoute `contreseing: { nom, date }`. Refuse une case

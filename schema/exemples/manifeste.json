@@ -4050,6 +4050,57 @@
         "keyword": "required",
         "instance_path": "/entrees"
       }
+    },
+    {
+      "objet": "reverification-absence",
+      "fichier": "reverification-absence/valide-01-un-confirme-un-en-attente.json",
+      "attendu": "valide",
+      "motif": "Deux items A au tirage : le premier confirmé par a1 sur la version que le tirage épingle, sans nouvelle source T1 ; le second sans confirmation, en attente de l'annotateur (la case 2 de l'annexe F reste non faite)."
+    },
+    {
+      "objet": "reverification-absence",
+      "fichier": "reverification-absence/valide-02-aucun-item-a.json",
+      "attendu": "valide",
+      "motif": "Aucun item A au tirage : la commande a constaté qu'il n'y avait rien à revérifier, et la case 2 est faite."
+    },
+    {
+      "objet": "reverification-absence",
+      "fichier": "reverification-absence/valide-03-confirme-avec-nouvelle-source.json",
+      "attendu": "valide",
+      "motif": "Absence confirmée après examen d'une nouvelle source T1 (§4, D59 (11)) : l'empreinte de la source présentée à l'annotateur est publiée avec sa confirmation."
+    },
+    {
+      "objet": "reverification-absence",
+      "fichier": "reverification-absence/invalide-01-position-trouvee.json",
+      "attendu": "invalide",
+      "motif": "Revérification « position trouvée » : la conséquence d'une position trouvée sur un item déjà tiré n'est pas écrite au protocole, et seule l'absence confirmée s'enregistre dans le fichier du run.",
+      "regle_protocole": "§4, items d'absence (revérification à chaque run, 0.24, D59 (11))",
+      "erreur_visee": {
+        "keyword": "const",
+        "instance_path": "/items/0/confirmation/resultat"
+      }
+    },
+    {
+      "objet": "reverification-absence",
+      "fichier": "reverification-absence/invalide-02-confirmation-sans-annotateur.json",
+      "attendu": "invalide",
+      "motif": "Confirmation sans annotateur : « la revérification est confirmée par un seul annotateur », qui est nommé.",
+      "regle_protocole": "§4, items d'absence (0.24, D59 (11))",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/items/0/confirmation"
+      }
+    },
+    {
+      "objet": "reverification-absence",
+      "fichier": "reverification-absence/invalide-03-confirmation-sans-version.json",
+      "attendu": "invalide",
+      "motif": "Confirmation sans la version ni l'empreinte de l'item revérifié : rien ne dirait si elle porte sur la version que le tirage épingle.",
+      "regle_protocole": "Versionnement et épinglage (schema/README.md) ; §4, items d'absence",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/items/0/confirmation"
+      }
     }
   ]
 }
