@@ -780,6 +780,23 @@
     },
     {
       "objet": "tirage",
+      "fichier": "tirage/valide-04-changement-de-quota-avec-raison.json",
+      "attendu": "valide",
+      "motif": "§5 (conformité du 2026-11-09, n° 12) : le quota par strate passe de 1 à 2 d'un run à l'autre et le tirage publie sa raison dans parametres.raison_changement_quota. Copie de valide-01, parametres seul changé. Que la raison soit exigée au gel quand un quota change, et refusée sinon, est vérifié par tests/gel/raison-quota.test.ts, pas par ce schéma."
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-14-raison-de-quota-blanche.json",
+      "attendu": "invalide",
+      "motif": "Raison de changement de quota blanche (copie de valide-04 dont la raison ne porte que des espaces). §5 : le changement est publié « avec sa raison » ; une raison vide ou blanche ne dit rien et est refusée par le motif \\S.",
+      "regle_protocole": "§5, tirage",
+      "erreur_visee": {
+        "keyword": "pattern",
+        "instance_path": "/parametres/raison_changement_quota"
+      }
+    },
+    {
+      "objet": "tirage",
       "fichier": "tirage/invalide-01-attribution-nommant-un-candidat.json",
       "attendu": "invalide",
       "motif": "Entrée Q-ATT portant un candidat_id. §5, garantie de symétrie bloquante : les questions d'attribution ne nomment que la mesure. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (D64, protocole 0.27) : la réponse attendue porte candidats_references, exigé de toute liste de candidats ; rien d'autre ne change. Modifié ouvertement (protocole 0.32, D74 (17)) : porte désormais incompatibles_au_gel, obligatoire, une entrée par candidat interrogé, vide ici ; rien d'autre ne change, et la règle testée reste la seule en défaut.",

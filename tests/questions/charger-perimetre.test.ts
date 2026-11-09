@@ -1157,3 +1157,23 @@ describe("D70 (6) : la notice de l'institut déclarée avec chaque preuve de son
     expect(refus(perimetre).motifs).toEqual([expect.stringMatching(/^demo-alpha : ne remplit pas.*1 sondage/)]);
   });
 });
+
+describe("conformité du 2026-11-09, n° 12 : tirage.raison_changement_quota", () => {
+  it("raison de quota, cas 1 : une raison saisie est recopiée dans les paramètres du tirage", () => {
+    const perimetre = perimetreComplet();
+    (perimetre["tirage"] as Objet)["raison_changement_quota"] = "Budget d'annotation revu.";
+    expect(charger(perimetre).parametres_tirage.raison_changement_quota).toBe("Budget d'annotation revu.");
+  });
+
+  it("raison de quota, cas 3 : sans raison saisie, les paramètres n'en portent pas la clé", () => {
+    expect(Object.keys(charger(perimetreComplet()).parametres_tirage)).not.toContain("raison_changement_quota");
+  });
+
+  it("raison de quota, cas 5 : une raison vide ou blanche est refusée par le schéma, jamais corrigée", () => {
+    for (const raison of ["", "  \n\t"]) {
+      const perimetre = perimetreComplet();
+      (perimetre["tirage"] as Objet)["raison_changement_quota"] = raison;
+      refusDeSchema(perimetre);
+    }
+  });
+});

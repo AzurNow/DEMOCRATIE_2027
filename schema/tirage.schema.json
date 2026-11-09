@@ -52,6 +52,12 @@
           "type": "integer",
           "minimum": 1,
           "description": "Nombre de questions d'attribution tirées par thème."
+        },
+        "raison_changement_quota": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "§5 : « Il peut changer d'un run à l'autre ; son changement est publié avec le run, avec sa raison. » Recopiée de config/perimetre.yaml (tirage.raison_changement_quota) quand un quota diffère de celui du run précédent ; absente sinon (le gel refuse une raison sans changement, pipeline/gel/raison-quota.ts). Conformité du 2026-11-09, n° 12."
         }
       }
     },

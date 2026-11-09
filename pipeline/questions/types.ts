@@ -300,6 +300,11 @@ export interface ParametresTirage {
   readonly questions_par_strate: number;
   /** §5 (protocole 0.9) : nombre de questions d'attribution tirées par thème. */
   readonly questions_attribution_par_theme: number;
+  /**
+   * §5 : « son changement est publié avec le run, avec sa raison ». Présente seulement quand un quota
+   * diffère de celui du run précédent (`gel/raison-quota.ts`) ; absente sinon, jamais vide.
+   */
+  readonly raison_changement_quota?: string;
 }
 
 /**

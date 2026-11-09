@@ -386,11 +386,12 @@ function verifierQuota(valeur: unknown, nom: keyof ParametresTirage, libelle: st
   );
 }
 
-/** Les deux quotas employés, et eux seuls : ce que `tirage.schema.json` publie (conformité n° 59). */
+/** Les deux quotas employés et, quand il y en a une, la raison de leur changement, et eux seuls : ce que `tirage.schema.json` publie (conformité n° 59). */
 function quotasPublies(parametres: ParametresTirage): ParametresTirage {
   return {
     questions_par_strate: parametres.questions_par_strate,
     questions_attribution_par_theme: parametres.questions_attribution_par_theme,
+    ...(parametres.raison_changement_quota === undefined ? {} : { raison_changement_quota: parametres.raison_changement_quota }),
   };
 }
 
