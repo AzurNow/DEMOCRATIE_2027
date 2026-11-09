@@ -29,7 +29,7 @@ import { lireFichiersDuRun, messageAttendu, PrecedentRefuse, runDeRuns } from ".
 import type { FichiersDuRun, MotifPrecedent } from "../gel/precedent.ts";
 import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
-import type { EchantillonsParQuestion } from "./conditions.ts";
+import type { EchantillonsParQuestion } from "../../analysis/types-run.ts";
 import type { Question } from "../questions/types.ts";
 import { ecrireParRenommageSiInchange } from "../run/ecriture.ts";
 import { demarrerOuReprendre } from "../run/statut.ts";

@@ -8,6 +8,8 @@
  * viennent du tableau du §6.
  */
 
+import type { EchantillonsParQuestion } from "../../analysis/types-run.ts";
+
 /** §6 : « Une requête est tentée au plus trois fois au total. » */
 export const TENTATIVES_MAX = 3;
 
@@ -26,12 +28,6 @@ export const HEURE_OUVERTURE_FENETRE = 6;
 
 /** §6 : « Longueur maximale : 2 048 tokens de sortie. » */
 export const TOKENS_SORTIE_MAX = 2048;
-
-/**
- * `run.schema.json#/properties/reponses/properties/echantillons_par_question` : 2 au §6, 1 sous le
- * levier préenregistré du §12 (« nombre d'échantillons par question (2 → 1) »).
- */
-export type EchantillonsParQuestion = 1 | 2;
 
 /**
  * §6 : « Échantillons : 2 par question et par mode », pour chaque formulation (§2). Lu au gel

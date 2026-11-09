@@ -4,7 +4,31 @@
 
 ## Décisions en attente
 
-Aucune décision en attente.
+### D102 — Une raison de changement de quota saisie au périmètre alors qu'aucun quota ne change : refusée au gel ou acceptée sans être publiée ?
+
+PR #405 (conformité n° 12). Le §5 dit seulement « son changement est publié avec le run, avec sa raison » et ne traite pas ce cas. Codé avec l'option 1 (raison_sans_changement).
+
+Options :
+
+1. La refuser au gel (raison_sans_changement) : l'auteur retire la raison de config/perimetre.yaml au run qui suit un changement.
+2. L'accepter et ne pas la publier : retirer une branche de pipeline/gel/raison-quota.ts et deux tests.
+
+**Recommandation :** Option 1 : une raison publiée sans changement serait trompeuse, et le refus est visible et nommé.
+
+Lots portant cette décision : aucun
+
+### D103 — Le pseudonyme d'annotateur de l'auteur (annotateur_auteur) est-il publié dans run.json ?
+
+PR #406 en brouillon (conformité n° 13, §7 0.27 : le troisième humain n'est jamais l'auteur). Le refus d'arbitrage exige de connaître ce pseudonyme ; le recopier dans run.json le publie et révèle lequel des pseudonymes est l'auteur. Traitement de données personnelles : zone d'arrêt.
+
+Options :
+
+1. Le publier tel quel : un lecteur peut vérifier qu'aucun arbitrage ne le porte.
+2. Publier seulement son empreinte SHA-256 : le refus marche pareil, la vérification par un tiers exige le pseudonyme.
+
+**Recommandation :** Option 1 : le §7 annonce déjà la règle, la vérifier doit être possible, et un pseudonyme ne donne pas d'identité civile.
+
+Lots portant cette décision : aucun
 
 ## Décisions tranchées
 
@@ -435,6 +459,7 @@ flowchart LR
   end
   subgraph jalon_J3["J3 · 15 nov. 2026"]
     lot_contestation_notification["contestation-notification<br/>Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18)<br/>T2"]:::T2
+    lot_creation_items_f["creation-items-f<br/>Création des items F : mesures fictives rédigées par l'auteur, auteur publié, vérification d'absence par deux annotateurs<br/>T0"]:::T0
     lot_dette_validation["dette-validation<br/>Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/<br/>T2"]:::T2
     lot_hors_code["hors-code<br/>Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9<br/>T0"]:::T0
     lot_reformulation["reformulation<br/>Formulations familière et orientée : staging, relecture humaine, data/formulations/<br/>T2"]:::T2
@@ -455,7 +480,10 @@ flowchart LR
   subgraph jalon_J6["J6 · 1 juin 2027"]
     lot_generalisation_politique_francaise["generalisation-politique-francaise<br/>Généralisation après 2027 : politique française hors présidentielle et présidentielles suivantes<br/>T0"]:::T0
   end
+  dec_D102{{"D102<br/>Une raison de changement de quota saisie au périmètre alors …"}}:::decision
+  dec_D103{{"D103<br/>Le pseudonyme d'annotateur de l'auteur (annotateur_auteur) e…"}}:::decision
   lot_validation_interface --> lot_contestation_notification
+  lot_mesures_validees --> lot_creation_items_f
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
   lot_mesures_validees --> lot_gel
@@ -505,6 +533,7 @@ flowchart LR
 | schemas | Schémas JSON et leurs exemples | J2 | T2 | débloqué | fait | S | 0 | — |
 | validation-interface | Interface de validation humaine, pnpm lots, pnpm promote | J2 | T3 | atteint | fait | L | 0 | — |
 | contestation-notification | Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18) | J3 | T2 | débloqué | opus | L | 2 | validation-interface |
+| creation-items-f | Création des items F : mesures fictives rédigées par l'auteur, auteur publié, vérification d'absence par deux annotateurs | J3 | T0 | bloqué par mesures-validees | auteur | S | 3 | mesures-validees |
 | dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T2 | débloqué | opus pour promote, sonnet pour le reste | M | 1 | — |
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
 | reformulation | Formulations familière et orientée : staging, relecture humaine, data/formulations/ | J3 | T2 | bloqué par mesures-validees, perimetre-prompts | opus | L | 2 | mesures-validees, perimetre-prompts |
@@ -550,6 +579,7 @@ flowchart LR
 ### J3
 
 - contestation-notification (T2)
+- creation-items-f (T0)
 - dette-validation (T2)
 - hors-code (T0)
 - reformulation (T2)

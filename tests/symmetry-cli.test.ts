@@ -36,6 +36,7 @@ const FICTIVITE = {
   verification_fictivite: {
     date: "2026-11-15T11:00:00+01:00",
     corpus_verifies: [CANDIDAT],
+    niveaux_balayes: ["T1", "T2", "items_T3"],
     operateur: "a2",
     resultat: "aucune_occurrence",
   },

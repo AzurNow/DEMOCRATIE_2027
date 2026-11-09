@@ -16,7 +16,7 @@
 
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
-import type { EchantillonsParQuestion } from "./conditions.ts";
+import type { EchantillonsParQuestion } from "../../analysis/types-run.ts";
 import type { Mode, RequetePlanifiee } from "./types.ts";
 
 /** Ce que le plan lit d'une question : son identifiant et le texte de ses formulations. */

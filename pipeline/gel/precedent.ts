@@ -50,6 +50,7 @@ import type { Question, Tirage } from "../questions/types.ts";
 import { STATUT_PUBLIE, STATUT_PUBLIE_PROVISOIRE, TYPE_PILOTE } from "../../analysis/types-run.ts";
 import type { StatutRun, TypeRun } from "../../analysis/types-run.ts";
 import type { ApplicationTestee } from "./application.ts";
+import type { QuotasPrecedents } from "./raison-quota.ts";
 
 export type MotifPrecedent =
   | "run_illisible"
@@ -121,6 +122,8 @@ export interface RunPrecedent {
 export interface PrecedentDuGel {
   readonly run_precedent: RunPrecedent | null;
   readonly tirage_precedent: TiragePrecedent | undefined;
+  /** Les quotas que le tirage précédent a publiés (`tirage.parametres`), pour la raison d'un changement (§5). */
+  readonly quotas_precedents?: QuotasPrecedents;
 }
 
 /** Aucun précédent : déclaré dans `run.json`, tirage sans reprise. */
@@ -397,5 +400,9 @@ export function lirePrecedent(racine: string, date_gel_ms: number): PrecedentDuG
       questions: { chemin: declarees.chemin, sha256: declarees.sha256 },
     },
     tirage_precedent: tiragePrecedentDepuis(tirage, questions),
+    quotas_precedents: {
+      questions_par_strate: tirage.parametres.questions_par_strate,
+      questions_attribution_par_theme: tirage.parametres.questions_attribution_par_theme,
+    },
   };
 }

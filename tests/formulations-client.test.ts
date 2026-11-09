@@ -11,6 +11,7 @@ import {
   relectureDe,
   type EtatCases,
 } from "../validation/client/cases-formulations.ts";
+import { lignesItemPrincipal } from "../validation/client/item-principal.ts";
 import type { VueFormulations } from "../validation/client/types.ts";
 
 const VUE: VueFormulations = {
@@ -20,6 +21,7 @@ const VUE: VueFormulations = {
   candidat: "Libellé demo-alpha",
   mesure: "la création d’un jardin",
   position_demandee: "pour",
+  item_principal: null,
   textes: [
     { registre: "neutre", texte: "Neutre ?" },
     { registre: "familier", texte: "Familier ?" },
@@ -65,5 +67,56 @@ describe("écran de relecture : cases et boutons", () => {
       premisse_conforme: false,
       commentaire: "x",
     });
+  });
+});
+
+describe("écran de relecture : l'item principal (§5)", () => {
+  const SOURCE = {
+    tier: "T1",
+    url: "https://exemple.test/programme.pdf",
+    type_document: "programme",
+    page: 3,
+    extrait: null,
+    date_source: "2026-05-01",
+    archive_url: "https://archive.test/abc",
+    sha256: "a".repeat(64),
+    texte_sha256: null,
+    publication: "publique",
+  };
+  const CITATION = "« Nous <b>baisserons</b> l’impôt & rien d’autre »";
+
+  function principal(): NonNullable<VueFormulations["item_principal"]> {
+    return {
+      statut_validation: "verifie",
+      item: {
+        id: "01JA00000000000000000000IT",
+        version: 1,
+        empreinte: "e".repeat(64),
+        type: "P",
+        candidat_id: "demo-alpha",
+        valide_du: "2026-01-01",
+        valide_au: null,
+        mesure: { libelle: "m", theme: "education", formulation_canonique: "f", fictive: false, origine_fictive: null, verification_fictivite: null },
+        assertion: { position: "pour", paraphrase: "hors contenu notant", citation_verbatim: CITATION, quantification: null, source: SOURCE, offsets: null },
+        absence: null,
+        obsolescence: null,
+      },
+    };
+  }
+
+  it("montre identifiant, type, statut, source et citation, sans la paraphrase", () => {
+    const lignes = lignesItemPrincipal(principal());
+    const valeurs = Object.fromEntries(lignes.map((ligne) => [ligne.libelle, ligne.valeur]));
+    expect(valeurs["Identifiant"]).toBe("01JA00000000000000000000IT");
+    expect(valeurs["Type"]).toBe("P");
+    expect(valeurs["Statut de validation"]).toBe("verifie");
+    expect(valeurs["Source"]).toContain("https://exemple.test/programme.pdf");
+    expect(valeurs["Archive"]).toContain("a".repeat(64));
+    expect(JSON.stringify(lignes)).not.toContain("hors contenu notant");
+  });
+
+  it("guillemets typographiques et HTML de la citation : valeur intacte, non interprétée", () => {
+    const lignes = lignesItemPrincipal(principal());
+    expect(lignes.find((ligne) => ligne.libelle === "Citation")?.valeur).toBe(CITATION);
   });
 });

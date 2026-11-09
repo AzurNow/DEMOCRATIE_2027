@@ -481,6 +481,18 @@ describe("D93 : arbitrage du jeu d'or (arbitrage_jeu_or)", () => {
     it("un arbitrage déjà rendu sur deux calibrations divergentes : toléré, aucune tâche", () => {
       expect(duJeu(surRefus([...divergentesSurRefus(), marquee("a3", "non_reponse", "arbitrage_jeu_or")]))).toEqual([]);
     });
+
+    it("deux calibrations concordantes sur un refus : rien ne change, aucune tâche du jeu d'or ni d'arbitrage", () => {
+      const f = surRefus([marquee("a1", "non_reponse"), marquee("a2", "non_reponse")]);
+      expect(duJeu(f)).toEqual([]);
+      expect(f.comptes.arbitrage_jeu_or).toEqual({ taches: 0, places: 0 });
+    });
+
+    it("non-régression : une réponse obtenue non refusée, deux calibrations divergentes, garde sa place d'arbitrage", () => {
+      const f = file(divergentes());
+      expect(f.comptes.arbitrage_jeu_or).toEqual({ taches: 1, places: 1 });
+      expect(duJeu(f)).toEqual([{ reponse_id: OR, motif_notation: "arbitrage_jeu_or", places_restantes: 1, deja_notee_par: ["a1", "a2"] }]);
+    });
   });
 });
 

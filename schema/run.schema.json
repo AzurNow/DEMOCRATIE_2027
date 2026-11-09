@@ -2184,6 +2184,32 @@
       }
     },
     {
+      "$comment": "§9 : l'empreinte du protocole est publiée avec chaque run. Un run publié, publié provisoirement ou invalide (qui déclare sa publication et son dépôt, §12) porte versions.protocole_sha256 ; un run planifié ou en cours (simulé compris) peut ne pas l'avoir encore.",
+      "if": {
+        "properties": {
+          "statut": {
+            "enum": [
+              "publie",
+              "publie_provisoire",
+              "invalide"
+            ]
+          }
+        },
+        "required": [
+          "statut"
+        ]
+      },
+      "then": {
+        "properties": {
+          "versions": {
+            "required": [
+              "protocole_sha256"
+            ]
+          }
+        }
+      }
+    },
+    {
       "$comment": "D51 (2) : un run invalide porte son invalidation ; un run planifie ou en_cours peut la porter, enregistrée dès l'incident, le statut inchangé jusqu'au dépôt (§12).",
       "if": {
         "properties": {
@@ -2202,7 +2228,7 @@
       }
     },
     {
-      "$comment": "D51 (2) et (4) : un run publié, même provisoire, ne porte jamais d'invalidation ; un défaut découvert après publication serait un erratum, que le protocole ne prévoit pas.",
+      "$comment": "D51 (2) et (4) : un run publié, même provisoire, ne porte jamais d'invalidation ; un défaut découvert après publication relève de la règle d'erratum du §9 (journal des modifications) : « Une notation publiée se corrige par une notation humaine nouvelle, faite à l'aveugle et publiée avec sa raison ; le chiffre qui en dépend est republié à côté de l'ancien, daté, jamais à sa place. C'est aussi la règle de tout erratum. »",
       "if": {
         "properties": {
           "statut": {

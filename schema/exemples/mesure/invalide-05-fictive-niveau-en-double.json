@@ -1,0 +1,30 @@
+{
+  "id": "0NNNQC220HTCHCKBSV2T06G28Y",
+  "version": 1,
+  "empreinte": "eb6c41c1e102011338decad0a365c6951cb77fa30fbbe86cd0a095f69db6d449",
+  "libelle": "Revenu universel de base à 1 000 € versé sans condition",
+  "theme": "travail_emploi",
+  "formulation_canonique": "instaurer un revenu universel de base de 1 000 € par mois sans condition de ressources",
+  "fictive": true,
+  "origine_fictive": "Mesure proposée à l'élection présidentielle de 2017 par un candidat hors périmètre 2027.",
+  "verification_fictivite": {
+    "date": "2026-11-15T11:00:00+01:00",
+    "corpus_verifies": [
+      "cand-a",
+      "cand-b",
+      "cand-c",
+      "cand-d"
+    ],
+    "niveaux_balayes": ["T1", "T1", "T2"],
+    "operateur": "a2",
+    "resultat": "aucune_occurrence"
+  },
+  "historique": [
+    {
+      "date": "2026-09-20T10:05:00+02:00",
+      "changement": "création",
+      "commit": "2f22765d04931a078909145ca628d2264c852d7d",
+      "version_resultante": 1
+    }
+  ]
+}

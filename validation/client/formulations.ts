@@ -10,9 +10,10 @@
 import { api } from "./api.ts";
 import { elementParId } from "./dom-type.ts";
 import { messagesDErreur } from "./erreurs.ts";
+import { lignesItemPrincipal, SANS_ITEM_PRINCIPAL } from "./item-principal.ts";
 import { lancer } from "./signalement.ts";
 import { actionsPermises, etatInitial, libellePremisse, relectureDe, type EtatCases } from "./cases-formulations.ts";
-import type { ResumeFormulations, VueFormulations } from "./types.ts";
+import type { ItemPrincipalFormulations, ResumeFormulations, VueFormulations } from "./types.ts";
 
 const LIBELLES_REGISTRE: Readonly<Record<string, string>> = {
   neutre: "Neutre",
@@ -85,6 +86,7 @@ function rendreQuestion(relecture: Relecture, message: string | null): void {
   bloc.append(
     texte("h1", `Relecture — ${vue.question_id}`),
     contexteDeLaQuestion(vue),
+    rendreItemPrincipal(vue.item_principal),
     colonnes(relecture),
     champCommentaire(relecture),
     actions(relecture),
@@ -101,6 +103,22 @@ function contexteDeLaQuestion(vue: VueFormulations): HTMLElement {
   lignes.push(["Mesure", vue.mesure], ["Position demandée", vue.position_demandee]);
   for (const [terme, definition] of lignes) liste.append(texte("dt", terme), texte("dd", definition));
   return liste;
+}
+
+/** L'item principal (§5) : une question d'attribution n'en a pas, et l'écran le dit. Texte posé par `textContent`. */
+function rendreItemPrincipal(principal: ItemPrincipalFormulations | null): HTMLElement {
+  const bloc = element("section", "item-principal-formulations");
+  bloc.append(texte("h2", "Item principal de la question"));
+  if (principal === null) {
+    bloc.append(texte("p", SANS_ITEM_PRINCIPAL, "avis"));
+    return bloc;
+  }
+  const liste = element("dl");
+  for (const ligne of lignesItemPrincipal(principal)) {
+    liste.append(texte("dt", ligne.libelle), texte("dd", ligne.valeur, ligne.citation === true ? "citation" : undefined));
+  }
+  bloc.append(liste);
+  return bloc;
 }
 
 /** Une case cochée ou décochée redessine l'écran : l'état des boutons en découle. */

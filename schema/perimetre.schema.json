@@ -61,7 +61,11 @@
       "description": "Les deux quotas du §5, aux noms de tirage.parametres (ParametresTirage). Le protocole ne fixe aucun nombre : null dans le brouillon, entier ≥ 1 pour un run, jamais de valeur par défaut. Les parts 80 % / 20 % du §5 sont des constantes du code (tirage.ts:PART_REPRISE, symetrie.ts:PART_MINIMALE_ITEMS_A_F), pas des clés de ce fichier.",
       "properties": {
         "questions_par_strate": { "$ref": "#/$defs/quota" },
-        "questions_attribution_par_theme": { "$ref": "#/$defs/quota" }
+        "questions_attribution_par_theme": { "$ref": "#/$defs/quota" },
+        "raison_changement_quota": {
+          "$ref": "#/$defs/texte",
+          "description": "Facultative. §5 : un changement de quota d'un run à l'autre est publié avec sa raison. Exigée au gel quand un des deux quotas diffère de celui du run précédent, refusée quand aucun ne change ou qu'aucun run ne précède ; recopiée dans tirage.parametres (conformité du 2026-11-09, n° 12)."
+        }
       }
     },
     "candidats": {

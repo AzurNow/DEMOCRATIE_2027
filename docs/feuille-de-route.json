@@ -1384,6 +1384,28 @@
       "recommandation": "Option 1 : le §4 rejoint le code, et chaque point suit l'épinglage et la suspension déjà en usage ; les fiches de source ne portent pas de thème, en ajouter un serait un changement de schéma sans besoin établi.",
       "retenu": "Option 1 pour les six points : « sur le thème » est retiré du §4. Amendement du §4 et de l'annexe F proposé dans docs/TACHES-AUTEUR.md ; le code de l'issue (3) attend l'amendement. Décision de l'auteur du 2026-11-09 (« option recommandée systématiquement »).",
       "date_decision": "2026-11-09"
+    },
+    {
+      "id": "D102",
+      "statut": "en_attente",
+      "question": "Une raison de changement de quota saisie au périmètre alors qu'aucun quota ne change : refusée au gel ou acceptée sans être publiée ?",
+      "contexte": "PR #405 (conformité n° 12). Le §5 dit seulement « son changement est publié avec le run, avec sa raison » et ne traite pas ce cas. Codé avec l'option 1 (raison_sans_changement).",
+      "options": [
+        "La refuser au gel (raison_sans_changement) : l'auteur retire la raison de config/perimetre.yaml au run qui suit un changement.",
+        "L'accepter et ne pas la publier : retirer une branche de pipeline/gel/raison-quota.ts et deux tests."
+      ],
+      "recommandation": "Option 1 : une raison publiée sans changement serait trompeuse, et le refus est visible et nommé."
+    },
+    {
+      "id": "D103",
+      "statut": "en_attente",
+      "question": "Le pseudonyme d'annotateur de l'auteur (annotateur_auteur) est-il publié dans run.json ?",
+      "contexte": "PR #406 en brouillon (conformité n° 13, §7 0.27 : le troisième humain n'est jamais l'auteur). Le refus d'arbitrage exige de connaître ce pseudonyme ; le recopier dans run.json le publie et révèle lequel des pseudonymes est l'auteur. Traitement de données personnelles : zone d'arrêt.",
+      "options": [
+        "Le publier tel quel : un lecteur peut vérifier qu'aucun arbitrage ne le porte.",
+        "Publier seulement son empreinte SHA-256 : le refus marche pareil, la vérification par un tiers exige le pseudonyme."
+      ],
+      "recommandation": "Option 1 : le §7 annonce déjà la règle, la vérifier doit être possible, et un pseudonyme ne donne pas d'identité civile."
     }
   ],
   "lots": [
@@ -1874,6 +1896,23 @@
         "D43"
       ],
       "note": "Livré le 2026-10-15 (PR #122 à #124) : règles et contrôles déterministes, pnpm reformuler (Mistral réel ou simulé), staging/formulations/, écran de relecture, data/formulations/, lecture au gel (D43). Inclut le contrôle sur la mesure contractée (D35 (4)). Prompt 1.0.1 aligné sur D42 le 2026-10-17 (Q-ATT sans position, mesure fictive comprise), à relire par l'auteur. Délai d'abandon et code de sortie réglés le 2026-10-16 par la PR #128 (docs/DETTE.md, 2026-10-15, point 2). Reste : jamais exercé sur un vrai appel."
+    },
+    {
+      "id": "creation-items-f",
+      "titre": "Création des items F : mesures fictives rédigées par l'auteur, auteur publié, vérification d'absence par deux annotateurs",
+      "jalon": "J3",
+      "niveau": "T0",
+      "agent": "auteur",
+      "taille": "S",
+      "temps_auteur_h": 3,
+      "depend_de": [
+        {
+          "lot": "mesures-validees",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [],
+      "note": "Conformité du 2026-11-09, n° 9 (§4, items fictifs : « rédigé par l'auteur, et son auteur est publié avec lui »). Le schéma exige redige_par (pseudonyme, même forme que annotateur_id) d'un item F ; aucun lot ne crée encore d'item F réel : les mesures fictives, leur rédaction par l'auteur (aucun agent n'en invente le contenu), la vérification de leur absence des corpus balayés par deux annotateurs, et un nombre d'items F égal par candidat (symétrie, §5). Seul le jeu de démonstration (validation/fixtures/) en porte aujourd'hui."
     },
     {
       "id": "generalisation-politique-francaise",

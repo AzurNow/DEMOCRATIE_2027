@@ -1,6 +1,8 @@
 /**
  * Routes de la relecture des formulations (décisions D39 et D42 de l'auteur du 2026-10-15).
  *
+ * Le détail montre aussi l'item principal de la question (§5), lu depuis les items déjà chargés.
+ *
  * Quatre routes, déclarées dans la table de `routes.ts` :
  *
  * - `GET /api/formulations` : les questions qui ont une proposition relisible ;
@@ -45,6 +47,7 @@ import {
   type RefusFormulation,
 } from "../../pipeline/reformulation/relecture.ts";
 import { lirePropositions, StagingFormulationsIllisible, type PropositionFormulation } from "../../pipeline/reformulation/staging.ts";
+import type { Item, Mesure } from "../domaine/types.ts";
 import { ulid } from "../domaine/ulid.ts";
 import { FichierModifieDepuisLecture } from "../io/data-items.ts";
 import {
@@ -57,6 +60,7 @@ import {
 } from "../io/data-formulations.ts";
 import { ajouterRefusFormulation, JournalRefusIllisible, lireRefusFormulations } from "../io/refus-formulations.ts";
 import type { Configuration, Contexte } from "./contexte.ts";
+import { ItemPrincipalIntrouvable, vueItemPrincipal } from "./item-principal-formulations.ts";
 import type { Reponse } from "./routes.ts";
 
 /* ------------------------------------------------------------- données */
@@ -67,22 +71,26 @@ interface Donnees {
   readonly propositions: readonly PropositionFormulation[];
   readonly refus: readonly RefusFormulation[];
   readonly data: ReadonlyMap<string, FormulationsLues>;
+  /** Les items et mesures de `data/` déjà lus pour engendrer les questions : l'écran n'en relit aucun. */
+  readonly items: ReadonlyMap<string, Item>;
+  readonly mesures: ReadonlyMap<string, Mesure>;
 }
 
 /** Tout est relu à chaque requête : un refus, une promotion ou une correction d'item se voient aussitôt. */
 function charger(configuration: Configuration): Donnees {
   const refus = lireRefusFormulations(configuration.journal_refus_formulations);
   const data = lireFormulationsData(configuration.repertoire_formulations_data);
-  const taches = tachesDe(
-    lireDonnees({
-      items: configuration.repertoire_data,
-      mesures: configuration.repertoire_mesures_data,
-      perimetre: configuration.fichier_perimetre,
-    }),
-  );
+  const lues = lireDonnees({
+    items: configuration.repertoire_data,
+    mesures: configuration.repertoire_mesures_data,
+    perimetre: configuration.fichier_perimetre,
+  });
+  const taches = tachesDe(lues);
   const staging = join(configuration.racine_staging, "formulations");
   const propositions = taches.flatMap((tache) => lirePropositions(staging, tache.question.id));
-  return { taches, propositions, refus, data };
+  const items = new Map(lues.items.map((item) => [item.id, item]));
+  const mesures = new Map(lues.mesures.map((mesure) => [mesure.id, mesure]));
+  return { taches, propositions, refus, data, items, mesures };
 }
 
 /**
@@ -94,6 +102,7 @@ function charger(configuration: Configuration): Donnees {
 const ERREURS_DE_DONNEES: readonly (abstract new (...args: never[]) => Error)[] = [
   EntreeAbsente,
   QuestionIncoherente,
+  ItemPrincipalIntrouvable,
   LibelleCandidatAbsent,
   MesureIntrouvable,
   JournalRefusIllisible,
@@ -189,13 +198,15 @@ function detail(contexte: Contexte, params: readonly string[]): Reponse {
   return avecDonnees(contexte, (donnees) => {
     const cible = cibleDe(donnees, question_id);
     if ("erreur" in cible) return cible.erreur;
-    const { proposition } = cible;
+    const { proposition, courante } = cible;
     return {
       statut: 200,
       corps: {
         ...resume(proposition),
         proposition_id: proposition.id,
         position_demandee: proposition.demande.position_affirmee,
+        // `null` pour une question d'attribution (§5 : pas d'item principal) ; erreur nommée si l'item manque.
+        item_principal: vueItemPrincipal(courante.question, donnees.items, donnees.mesures),
         // Dans l'ordre du §5 : le client n'a pas à connaître la liste des registres.
         textes: REGISTRES.map((registre) => ({ registre, texte: texteDe(proposition, registre) })),
       },

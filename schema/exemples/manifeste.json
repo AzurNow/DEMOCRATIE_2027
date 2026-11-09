@@ -159,6 +159,50 @@
     },
     {
       "objet": "mesure",
+      "fichier": "mesure/invalide-03-fictive-sans-niveau-t2.json",
+      "attendu": "invalide",
+      "motif": "Mesure fictive dont la trace de vérification porte les niveaux balayés sans le niveau T2. Le §5 exige les trois niveaux : corpus T1, corpus T2 et items T3.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1 et T2 et les items T3",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/verification_fictivite/niveaux_balayes"
+      }
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-04-fictive-sans-niveau-items-t3.json",
+      "attendu": "invalide",
+      "motif": "Mesure fictive dont la trace de vérification porte les niveaux balayés sans le niveau items T3. Le §5 exige les trois niveaux : corpus T1, corpus T2 et items T3.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1 et T2 et les items T3",
+      "erreur_visee": {
+        "keyword": "minItems",
+        "instance_path": "/verification_fictivite/niveaux_balayes"
+      }
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-05-fictive-niveau-en-double.json",
+      "attendu": "invalide",
+      "motif": "Mesure fictive dont la trace de vérification porte les niveaux balayés avec le niveau T1 en double (et T3 absent). Le §5 exige les trois niveaux : corpus T1, corpus T2 et items T3.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1 et T2 et les items T3",
+      "erreur_visee": {
+        "keyword": "uniqueItems",
+        "instance_path": "/verification_fictivite/niveaux_balayes"
+      }
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-06-fictive-niveau-inconnu.json",
+      "attendu": "invalide",
+      "motif": "Mesure fictive dont la trace de vérification porte les niveaux balayés avec un niveau inconnu (T4). Le §5 exige les trois niveaux : corpus T1, corpus T2 et items T3.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1 et T2 et les items T3",
+      "erreur_visee": {
+        "keyword": "enum",
+        "instance_path": "/verification_fictivite/niveaux_balayes/2"
+      }
+    },
+    {
+      "objet": "mesure",
       "fichier": "mesure/invalide-02-theme-hors-liste.json",
       "attendu": "invalide",
       "motif": "Thème absent des dix thèmes fixes du §3. Une position hors thème est enregistrée mais n'entre pas dans le tirage ; elle ne peut pas inventer un onzième thème.",
@@ -733,6 +777,23 @@
       "fichier": "tirage/valide-03-positions-incompatibles.json",
       "attendu": "valide",
       "motif": "§5 (protocole 0.27, D67 ; conformité du 2026-11-03, constat n° 3) : le candidat interrogé cand-b porte au gel, sur une même mesure, deux items en vigueur de positions différentes. La question fermée de l'un et la question d'attribution de la mesure sont exclues, motif positions_incompatibles, et comptées dans exclusions (la Q-ATT sans candidat_id) ; le tirage aboutit au lieu de s'arrêter. Le détail nomme les deux items, que l'auteur conteste dès le gel. Modifié ouvertement (protocole 0.32, D74 (17)) : porte désormais incompatibles_au_gel, obligatoire, une entrée par candidat interrogé : vide pour cand-a, et pour cand-b les deux items que le détail nomme, publiés un à un ; aucun verdict attendu ne change."
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/valide-04-changement-de-quota-avec-raison.json",
+      "attendu": "valide",
+      "motif": "§5 (conformité du 2026-11-09, n° 12) : le quota par strate passe de 1 à 2 d'un run à l'autre et le tirage publie sa raison dans parametres.raison_changement_quota. Copie de valide-01, parametres seul changé. Que la raison soit exigée au gel quand un quota change, et refusée sinon, est vérifié par tests/gel/raison-quota.test.ts, pas par ce schéma."
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-14-raison-de-quota-blanche.json",
+      "attendu": "invalide",
+      "motif": "Raison de changement de quota blanche (copie de valide-04 dont la raison ne porte que des espaces). §5 : le changement est publié « avec sa raison » ; une raison vide ou blanche ne dit rien et est refusée par le motif \\S.",
+      "regle_protocole": "§5, tirage",
+      "erreur_visee": {
+        "keyword": "pattern",
+        "instance_path": "/parametres/raison_changement_quota"
+      }
     },
     {
       "objet": "tirage",
@@ -1950,6 +2011,23 @@
       "erreur_visee": {
         "keyword": "required",
         "instance_path": "/contestations/0/deliberations_sans_majorite/0/opinions/2"
+      }
+    },
+    {
+      "objet": "item",
+      "fichier": "item/valide-08-fictif-avec-redacteur.json",
+      "attendu": "valide",
+      "motif": "Item F en attente qui publie son auteur (redige_par, pseudonyme de la même forme que annotateur_id). §4 : « un item F n'est pas extrait : il est rédigé par l'auteur, et son auteur est publié avec lui » (conformité du 2026-11-09, n° 9)."
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-27-fictif-sans-redacteur.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-08 sans redige_par. §4 : l'auteur d'un item F est publié avec lui ; sans lui, rien ne dit qui a rédigé la mesure fictive soumise à l'outil. Erreur : racine (required, redige_par), exigé du seul type F (conformité du 2026-11-09, n° 9).",
+      "regle_protocole": "§4, items fictifs",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": ""
       }
     },
     {
@@ -4137,6 +4215,35 @@
         "keyword": "required",
         "instance_path": ""
       }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-86-publie-sans-empreinte-du-protocole.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 (run publié) privée de versions.protocole_sha256, seule clé retirée.",
+      "regle_protocole": "§9, reproductibilité : l'empreinte du protocole est publiée avec chaque run.",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/versions"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-87-statut-invalide-sans-empreinte-du-protocole.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-06 (run de statut invalide) privée de versions.protocole_sha256, seule clé retirée.",
+      "regle_protocole": "§9, reproductibilité : l'empreinte du protocole est publiée avec chaque run.",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/versions"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-22-en-cours-sans-empreinte-du-protocole.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-18 (run simulé en_cours) privée de versions.protocole_sha256 : l'empreinte n'est exigée que d'un run publié, publié provisoirement ou invalide.",
+      "regle_protocole": "§9, reproductibilité : l'empreinte du protocole est publiée avec chaque run."
     },
     {
       "objet": "appel-juge",

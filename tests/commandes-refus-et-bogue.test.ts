@@ -4,6 +4,7 @@
  * plus toute erreur. Un refus attendu (classe nommée, ou `Error` nue) donne un message et le code 2 ;
  * un bogue (`TypeError`) remonte avec sa pile (`outils/refus-attendu.ts`). Chaque cas est un
  * lancement réel de la commande ; le bogue est injecté par `tests/aides/bogue-injectee.ts`.
+ * `outils/notation-controle.ts` les a rejoints (revue du 2026-11-09, constat 10).
  */
 
 import { spawnSync } from "node:child_process";
@@ -106,5 +107,20 @@ describe("outils/notation-dry.ts", () => {
     const resultat = lancerAvecBogue("notation-dry.ts", [`--sortie=${join(repertoire, "sortie")}`]);
     verifierBogueQuiRemonte(resultat);
     expect(resultat.erreur).not.toContain("Notation simulée non exécutée");
+  });
+});
+
+describe("outils/notation-controle.ts (revue du 2026-11-09, constat 10)", () => {
+  it("refus attendu : un répertoire de run illisible reste « non exécuté », code 2, sans pile", () => {
+    const resultat = executerOutil("notation-controle.ts", [join(repertoire, "run-absent")]);
+    expect(resultat.status).toBe(2);
+    expect(resultat.erreur).toContain("Contrôle croisé (n° 18) non exécuté");
+    expect(resultat.erreur).not.toMatch(/\n\s+at /);
+  });
+
+  it("bogue : une TypeError remonte avec sa pile, jamais maquillée en « non exécuté », code 2", () => {
+    const resultat = lancerAvecBogue("notation-controle.ts", [repertoire]);
+    verifierBogueQuiRemonte(resultat);
+    expect(resultat.erreur).not.toContain("non exécuté");
   });
 });
