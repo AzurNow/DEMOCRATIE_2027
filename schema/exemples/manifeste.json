@@ -4217,6 +4217,35 @@
       }
     },
     {
+      "objet": "run",
+      "fichier": "run/invalide-86-publie-sans-empreinte-du-protocole.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 (run publié) privée de versions.protocole_sha256, seule clé retirée.",
+      "regle_protocole": "§9, reproductibilité : l'empreinte du protocole est publiée avec chaque run.",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/versions"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-87-statut-invalide-sans-empreinte-du-protocole.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-06 (run de statut invalide) privée de versions.protocole_sha256, seule clé retirée.",
+      "regle_protocole": "§9, reproductibilité : l'empreinte du protocole est publiée avec chaque run.",
+      "erreur_visee": {
+        "keyword": "required",
+        "instance_path": "/versions"
+      }
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-22-en-cours-sans-empreinte-du-protocole.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-18 (run simulé en_cours) privée de versions.protocole_sha256 : l'empreinte n'est exigée que d'un run publié, publié provisoirement ou invalide.",
+      "regle_protocole": "§9, reproductibilité : l'empreinte du protocole est publiée avec chaque run."
+    },
+    {
       "objet": "appel-juge",
       "fichier": "appel-juge/valide-01-reponse-http.json",
       "attendu": "valide",

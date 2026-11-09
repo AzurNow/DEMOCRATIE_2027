@@ -10,7 +10,9 @@
  * - `invalider` (D51 (2), (4)) : pose `invalidation { motif, date }` et laisse le statut inchangé.
  *   Le passage au statut `invalide` se fait avec le dépôt (§12 : un run invalide déclare sa
  *   publication et son dépôt), hors d'ici. Admis depuis `planifie` ou `en_cours` seulement : après
- *   publication, un défaut serait un erratum, que le protocole ne prévoit pas.
+ *   publication, un défaut relève de la règle d'erratum du §9 (journal des modifications) : une
+ *   notation publiée se corrige par une notation humaine nouvelle, faite à l'aveugle et publiée avec
+ *   sa raison, le chiffre qui en dépend étant republié à côté de l'ancien, daté, jamais à sa place.
  *
  * **Règle 7.** Une `invalidation` déjà présente n'est jamais écrasée. D54 (5) : même `motif`, l'issue
  * est `deja_inscrite`, quelle que soit la date reçue (jamais comparée à `date_gel` dans ce cas) — la
