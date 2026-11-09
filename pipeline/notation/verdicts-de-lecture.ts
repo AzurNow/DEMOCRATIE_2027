@@ -78,7 +78,7 @@ export function ecrireVerdictsDeLecture(repertoire_run: string, depot: DepotNota
 }
 
 /** Les lectures du run ; `null` quand un comparateur est inclus et que son dossier n'existe pas encore. */
-function lecturesCollectees(repertoire_run: string, run: RunLu): readonly LectureComparateur[] | null {
+export function lecturesCollectees(repertoire_run: string, run: RunLu): readonly LectureComparateur[] | null {
   if (comparateursDuRun(run).length > 0 && !existsSync(dispositionRunNote(repertoire_run).lectures_comparateur)) return null;
   return lireLecturesDuRun(repertoire_run, run);
 }
