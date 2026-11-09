@@ -14,6 +14,7 @@ import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { fictifsEnDouble, type ItemFictifCandidat } from "../../validation/domaine/fictif-unique.ts";
 import { memeVersionJugee } from "../../validation/domaine/promotion.ts";
+import { DECISIONS_VERIFIANTES } from "../../validation/domaine/types.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import {
   PremisseHorsEnsemble,
@@ -227,8 +228,8 @@ const INVARIANT_VERSION = "les deux validations concordantes portent la même ve
 /**
  * §4, règle de concordance : « un item est vérifié seulement avec deux décisions concordantes
  * portant sur la même version de l'item ; deux décisions sur des versions différentes partent en
- * arbitrage ». Seules les décisions qui peuvent vérifier un item — accepter et corriger —
- * entrent dans le contrôle : un rejet ne promeut rien.
+ * arbitrage ». Seules les décisions qui peuvent vérifier un item (`DECISIONS_VERIFIANTES` : accepter
+ * et corriger) entrent dans le contrôle : un rejet ne promeut rien.
  *
  * Le contrôle est ici post-hoc, sur le journal d'un corpus déjà promu. La règle elle-même est
  * `validation/domaine/promotion.ts:memeVersionJugee`, celle qui garde l'entrée de `data/` au moment
@@ -240,9 +241,7 @@ const INVARIANT_VERSION = "les deux validations concordantes portent la même ve
 export function validationsConcordantesMemeVersion(
   decisions: readonly DecisionValidation[],
 ): readonly Violation[] {
-  const retenues = decisions.filter(
-    (decision) => decision.decision === "accepter" || decision.decision === "corriger",
-  );
+  const retenues = decisions.filter((decision) => DECISIONS_VERIFIANTES.has(decision.decision));
   const parItem = new Map<string, DecisionValidation[]>();
   for (const decision of retenues) {
     const groupe = parItem.get(decision.item_id);

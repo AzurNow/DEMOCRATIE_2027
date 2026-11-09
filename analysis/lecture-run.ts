@@ -43,7 +43,8 @@ import type { GraineTirage } from "./graine-tirage.ts";
 import type { RegimeInclusion, StatutRun, TypeRun } from "./types-run.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsPublie } from "./accord-humains.ts";
-import { estDuRun, type EntreesAnalyse } from "./filtre.ts";
+import type { EntreesAnalyse } from "./filtre.ts";
+import { reponsesObtenuesDuRun } from "./population-notation.ts";
 import { parModeDuRun, type RequeteDuPlan } from "./seuils.ts";
 import type { CandidatAuGel, EntreeTirage, Item, LectureComparateur, Mode, ParMode, Question, ReferenceItem, Reponse, Run, SeuilMode, Ulid } from "./types.ts";
 import { candidatsInterroges as candidatsInterrogesAuRun } from "./candidats-interroges.ts";
@@ -644,7 +645,7 @@ function verifierParMode(repertoire_run: string, run: RunLu, reponses: readonly 
 function verifierAccordHumains(repertoire_run: string, run: RunLu, reponses: readonly Reponse[], echantillon_humain: EchantillonHumainDuRun): void {
   const ecrit = run.accord_humains_echantillon;
   if (ecrit === undefined) return;
-  const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
+  const obtenues = reponsesObtenuesDuRun(reponses).map((r) => r.id);
   const { notations } = lireNotationsDuRun(repertoire_run, run.id);
   const recalcule = accordPublie(accordHumainsEchantillon(echantillon_humain(run, obtenues), notations));
   if (canoniser(ecrit) !== canoniser(recalcule)) throw new AccordHumainsDivergent(dispositionRunNote(repertoire_run).run_json, ecrit, recalcule);

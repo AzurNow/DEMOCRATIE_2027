@@ -13,6 +13,32 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-09 — Population de notation factorisée, revue du 2026-11-09 n° 1 (`analysis/population-notation.ts` et ses six appelants)
+
+### 1. La population humaine, du jeu d'or et des kappas inclut les saisies de l'application — *haute*
+
+`analysis/population-notation.ts:reponsesObtenuesDuRun` retient toute réponse de contexte `run` et de
+statut `obtenue`, quel que soit le canal. Ses six appelants (jeu d'or, contrôle de la notation,
+notation simulée, recoupement de l'accord humains, go/no-go, écran de notation humaine) y tirent
+l'échantillon humain de 10 % et le jeu d'or. Le §5 (« Tailles »), `pipeline/run/reponses.ts` et
+`exigerCanalApi` des métriques secondaires ne comptent que le canal API ; le §7 dit « parmi les
+réponses obtenues » sans dire le canal.
+
+**Pourquoi ça casse.** Sur un run mensuel désigné pour l'application (§6, QR8), des saisies
+exploratoires entrent dans l'échantillon humain, puis dans l'accord humains et le kappa de
+l'échantillon publiés, sans aucun message. Le run pilote n'est pas touché : il n'a pas d'application
+désignée.
+
+**Ce qu'il faut faire.** Canal API seul recommandé, par cohérence avec le §5 : amendement du §7 à
+écrire (zone d'arrêt). Puis séparer la fonction en deux : la population que les juges notent garde
+l'application (§6 : « les réponses notées comme celles de l'API » ; notation simulée, contrôle de la
+notation, liste servie par l'écran), celle de l'échantillon humain, du jeu d'or et des kappas
+(tirages de l'écran, du jeu d'or, du go/no-go, de la lecture du run, de la chaîne et du contrôle
+croisé) ne la garde pas. Avec le test du run désigné. **À régler avant le premier run mensuel avec
+application.**
+
+---
+
 ## 2026-11-06 — Page pédagogique du site, jeu d'or (D89, D93), contrefactuel d'outil joué (D90) et gardes de tests (PR #338 à #358 : `site/`, `pipeline/notation/`, `analysis/`, `tests/`)
 
 ### 1. Les gardes de structure de `tests/` sont textuelles et bornées à quatre répertoires — *basse*

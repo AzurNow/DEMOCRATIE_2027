@@ -459,6 +459,29 @@ describe("D93 : arbitrage du jeu d'or (arbitrage_jeu_or)", () => {
   it("arbitrage_jeu_or hors du jeu d'or : incohérence", () => {
     expect(() => construireFile(entree(PILOTE, [...jugesDAccord(PILOTE), arbitre()]))).toThrow(/arbitrage_jeu_or sur une réponse hors du jeu d'or/);
   });
+
+  describe("refus de l'API tiré au jeu d'or (revue du 2026-11-09, constat 8)", () => {
+    // D32 : aucun juge ne note un refus ; la règle le note. D33 : l'humain porte le marqueur du refus.
+    const surRefus = (notations: readonly NotationIndividuelle[]) =>
+      construireFile(entree(PILOTE, [...jugesDAccord(PILOTE.filter((id) => id !== OR)), notationRegle(sur(OR)), ...notations], { jeu_or: JEU }));
+    const marquee = (annotateur: string, categorie: "non_reponse" | "exacte", motif: "calibration_jeu_or" | "arbitrage_jeu_or" = "calibration_jeu_or") =>
+      notationHumaine(annotateur, motif, { ...sur(OR), categorie, sur_refus_api: true });
+    const divergentesSurRefus = () => [marquee("a1", "non_reponse"), marquee("a2", "exacte")];
+
+    it("les deux places de calibration restent ouvertes (§7 : le jeu d'or est doublement noté)", () => {
+      expect(duJeu(surRefus([]))).toEqual([{ reponse_id: OR, motif_notation: "calibration_jeu_or", places_restantes: 2, deja_notee_par: [] }]);
+    });
+
+    it("deux calibrations divergentes : aucune place d'arbitrage, le kappa du jeu d'or ne lit jamais la référence d'un refus", () => {
+      const f = surRefus(divergentesSurRefus());
+      expect(duJeu(f)).toEqual([]);
+      expect(f.comptes.arbitrage_jeu_or).toEqual({ taches: 0, places: 0 });
+    });
+
+    it("un arbitrage déjà rendu sur deux calibrations divergentes : toléré, aucune tâche", () => {
+      expect(duJeu(surRefus([...divergentesSurRefus(), marquee("a3", "non_reponse", "arbitrage_jeu_or")]))).toEqual([]);
+    });
+  });
 });
 
 describe("ordre des tâches (D79 : tiré, indépendant du motif)", () => {

@@ -14,7 +14,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { dispositionRunNote, lireDossier, lireItemsEpingles, lireRunJson, lireTirage, runDeNotationDe, VolumeAbsent, type RunLu } from "../../analysis/lecture-run.ts";
-import { estDuRun } from "../../analysis/filtre.ts";
+import { reponsesObtenuesDuRun } from "../../analysis/population-notation.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import type { ReponseEcrite, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { exigerNotable } from "../../pipeline/notation/chaine.ts";
@@ -95,8 +95,7 @@ export function preparerPourHumain(reponse: ReponseObtenue, gel: GelDeNotation):
 function lireReponsesObtenues(repertoire_run: string, run_id: string): readonly ReponseObtenue[] {
   const dossier = dispositionRunNote(repertoire_run).reponses;
   if (!existsSync(dossier)) throw new VolumeAbsent(dossier);
-  const obtenues = (r: ReponseEcrite): r is ReponseObtenue => estDuRun(r) && r.statut_reponse === "obtenue";
-  return lireDossier<ReponseEcrite>(dossier, "reponse", run_id).filter(obtenues);
+  return reponsesObtenuesDuRun(lireDossier<ReponseEcrite>(dossier, "reponse", run_id));
 }
 
 export function chargerRun(repertoire_run: string, repertoire_items: string): DonneesRun {
