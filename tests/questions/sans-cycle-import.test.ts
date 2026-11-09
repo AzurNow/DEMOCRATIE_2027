@@ -1,92 +1,28 @@
 /**
  * Lot 8c, constat 15 (relecture du 12/10) : le découpage de `tirage.ts` en `tirabilite.ts`,
  * `entrees-tirage.ts` et `graine.ts` a cassé un cycle d'import, mais rien ne le garantissait. Ce
- * test remplace le script jetable `scratch/verifier-cycles.mjs` : il refait le même parcours en
- * profondeur sur les imports relatifs (y compris `import type`) de tout le dépôt, et n'affirme
- * rien que sur les cycles qui traversent `pipeline/questions/`. Les trois cycles déjà présents
- * ailleurs (notation/charge-juge.ts, validation/serveur/routes.ts) sont hors périmètre.
+ * test remplace le script jetable `scratch/verifier-cycles.mjs`. docs/DETTE.md 2026-11-09 n° 4 :
+ * la même garde couvre désormais `analysis/` ; la détection vit dans `tests/aides/cycles-import.ts`.
+ * Chaque périmètre n'affirme rien que sur les cycles qui le traversent. Les imports de type
+ * (`import type`) comptent, comme dans le test d'origine : un cycle de types seul est signalé.
+ * Les cycles déjà présents ailleurs (notation/charge-juge.ts, validation/serveur/routes.ts) sont
+ * hors périmètre.
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, extname, join, relative, resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  construireGraphe,
+  decrireCycle,
+  fichiersTypescript,
+  specifiersRelatifs,
+  tousLesCycles,
+  traverse,
+} from "../aides/cycles-import.ts";
 
 const RACINE = resolve(import.meta.dirname, "../..");
-const DOSSIERS_IGNORES = new Set(["node_modules", ".git", "scratch", "archives", "modeles"]);
-/**
- * Lot 10 (d) : toutes les formes qui chargent un module relatif — `import … from "./x.ts"`,
- * `import type … from`, `export … from`, l'import pour effet `import "./x.ts"` et l'import dynamique
- * `import("./x.ts")`. L'ancienne expression ne lisait que `from "…"` et manquait les deux dernières.
- */
-const RE_IMPORT_RELATIF = /(?:\bfrom|\bimport)\s*\(?\s*["'](\.\.?\/[^"']+)["']/g;
-
-type Etat = "en_cours" | "fini";
-
-function fichiersTypescript(dossier: string, acc: string[] = []): string[] {
-  for (const nom of readdirSync(dossier)) {
-    if (DOSSIERS_IGNORES.has(nom)) continue;
-    const chemin = join(dossier, nom);
-    const info = statSync(chemin);
-    if (info.isDirectory()) fichiersTypescript(chemin, acc);
-    else if (extname(nom) === ".ts") acc.push(chemin);
-  }
-  return acc;
-}
-
-/** Les chemins relatifs que charge un texte TypeScript, dans l'ordre d'apparition. */
-function specifiersRelatifs(texte: string): string[] {
-  return [...texte.matchAll(RE_IMPORT_RELATIF)].map((correspondance) => correspondance[1] as string);
-}
-
-function importsRelatifsDe(chemin: string, fichiers: readonly string[]): string[] {
-  const texte = readFileSync(chemin, "utf8");
-  return specifiersRelatifs(texte)
-    .map((specifier) => resolve(dirname(chemin), specifier))
-    .filter((cible) => fichiers.includes(cible));
-}
-
-function construireGraphe(fichiers: readonly string[]): Map<string, string[]> {
-  return new Map(fichiers.map((fichier) => [fichier, importsRelatifsDe(fichier, fichiers)]));
-}
-
-function chercherCyclesDepuis(
-  noeud: string,
-  graphe: ReadonlyMap<string, readonly string[]>,
-  etat: Map<string, Etat>,
-  pile: string[],
-  cycles: string[][],
-): void {
-  etat.set(noeud, "en_cours");
-  pile.push(noeud);
-  for (const voisin of graphe.get(noeud) ?? []) {
-    if (etat.get(voisin) === "en_cours") {
-      const debut = pile.indexOf(voisin);
-      cycles.push([...pile.slice(debut), voisin]);
-    } else if (etat.get(voisin) !== "fini") {
-      chercherCyclesDepuis(voisin, graphe, etat, pile, cycles);
-    }
-  }
-  pile.pop();
-  etat.set(noeud, "fini");
-}
-
-function tousLesCycles(graphe: ReadonlyMap<string, readonly string[]>): string[][] {
-  const etat = new Map<string, Etat>();
-  const pile: string[] = [];
-  const cycles: string[][] = [];
-  for (const noeud of graphe.keys()) {
-    if (!etat.has(noeud)) chercherCyclesDepuis(noeud, graphe, etat, pile, cycles);
-  }
-  return cycles;
-}
-
-function traversePipelineQuestions(cycle: readonly string[]): boolean {
-  return cycle.some((chemin) => relative(RACINE, chemin).startsWith("pipeline/questions/"));
-}
-
-function decrireCycle(cycle: readonly string[]): string {
-  return cycle.map((chemin) => relative(RACINE, chemin)).join(" -> ");
-}
 
 describe("l'expression d'import relatif voit chaque forme (Lot 10 (d), test du test)", () => {
   it.each([
@@ -113,13 +49,106 @@ describe("l'expression d'import relatif voit chaque forme (Lot 10 (d), test du t
   });
 });
 
-describe("absence de cycle d'import", () => {
-  it("aucun cycle d'import ne passe par pipeline/questions/", () => {
-    const fichiers = fichiersTypescript(RACINE);
-    const graphe = construireGraphe(fichiers);
-    const cyclesTrouves = tousLesCycles(graphe).filter(traversePipelineQuestions);
+describe("tousLesCycles sur un graphe en mémoire", () => {
+  it("cycle direct A -> B -> A", () => {
+    const graphe = new Map([
+      ["a", ["b"]],
+      ["b", ["a"]],
+    ]);
+    expect(tousLesCycles(graphe)).toEqual([["a", "b", "a"]]);
+  });
 
-    const description = cyclesTrouves.map(decrireCycle).join("\n");
-    expect(cyclesTrouves, `cycle(s) d'import détecté(s) via pipeline/questions/ :\n${description}`).toEqual([]);
+  it("cycle à trois fichiers A -> B -> C -> A", () => {
+    const graphe = new Map([
+      ["a", ["b"]],
+      ["b", ["c"]],
+      ["c", ["a"]],
+    ]);
+    expect(tousLesCycles(graphe)).toEqual([["a", "b", "c", "a"]]);
+  });
+
+  it("un fichier qui s'importe lui-même est un cycle", () => {
+    expect(tousLesCycles(new Map([["a", ["a"]]]))).toEqual([["a", "a"]]);
+  });
+
+  it("un losange sans retour n'est pas un cycle", () => {
+    const graphe = new Map([
+      ["a", ["b", "c"]],
+      ["b", ["d"]],
+      ["c", ["d"]],
+      ["d", []],
+    ]);
+    expect(tousLesCycles(graphe)).toEqual([]);
+  });
+});
+
+describe("construireGraphe + tousLesCycles sur une arborescence temporaire", () => {
+  const dossiers: string[] = [];
+  afterEach(() => {
+    for (const dossier of dossiers.splice(0)) rmSync(dossier, { recursive: true, force: true });
+  });
+
+  function arborescence(fichiers: Record<string, string>): string {
+    const racine = mkdtempSync(join(tmpdir(), "cycles-"));
+    dossiers.push(racine);
+    for (const [nom, contenu] of Object.entries(fichiers)) {
+      mkdirSync(join(racine, nom, ".."), { recursive: true });
+      writeFileSync(join(racine, nom), contenu);
+    }
+    return racine;
+  }
+
+  const cyclesDe = (racine: string) => tousLesCycles(construireGraphe(fichiersTypescript(racine)));
+
+  it("trouve un cycle direct entre deux fichiers", () => {
+    const racine = arborescence({
+      "analysis/a.ts": `import { b } from "./b.ts";\nexport const a = b;`,
+      "analysis/b.ts": `import { a } from "./a.ts";\nexport const b = a;`,
+    });
+    const cycles = cyclesDe(racine);
+    expect(cycles.map((c) => decrireCycle(racine, c))).toEqual(["analysis/a.ts -> analysis/b.ts -> analysis/a.ts"]);
+    expect(cycles.every((c) => traverse(racine, c, "analysis/"))).toBe(true);
+  });
+
+  it("trouve un cycle à trois fichiers", () => {
+    const racine = arborescence({
+      "analysis/a.ts": `import { b } from "./b.ts";`,
+      "analysis/b.ts": `import { c } from "./c.ts";`,
+      "analysis/c.ts": `import { a } from "./a.ts";`,
+    });
+    const cycles = cyclesDe(racine);
+    expect(cycles).toHaveLength(1);
+    expect(decrireCycle(racine, cycles[0] as string[])).toBe(
+      "analysis/a.ts -> analysis/b.ts -> analysis/c.ts -> analysis/a.ts",
+    );
+  });
+
+  it("un cycle de types seul (`import type`) est signalé, comme dans le test d'origine", () => {
+    const racine = arborescence({
+      "analysis/a.ts": `import type { B } from "./b.ts";\nexport type A = B;`,
+      "analysis/b.ts": `import type { A } from "./a.ts";\nexport type B = A;`,
+    });
+    expect(cyclesDe(racine)).toHaveLength(1);
+  });
+
+  it("un cycle hors du périmètre demandé n'est pas attribué à ce périmètre", () => {
+    const racine = arborescence({
+      "outils/a.ts": `import "./b.ts";`,
+      "outils/b.ts": `import "./a.ts";`,
+      "analysis/c.ts": `export const c = 1;`,
+    });
+    const cycles = cyclesDe(racine);
+    expect(cycles).toHaveLength(1);
+    expect(cycles.filter((c) => traverse(racine, c, "analysis/"))).toEqual([]);
+  });
+});
+
+describe.each(["pipeline/questions/", "analysis/"])("absence de cycle d'import, périmètre %s", (perimetre) => {
+  it(`aucun cycle d'import ne passe par ${perimetre}`, () => {
+    const graphe = construireGraphe(fichiersTypescript(RACINE));
+    const cyclesTrouves = tousLesCycles(graphe).filter((cycle) => traverse(RACINE, cycle, perimetre));
+
+    const description = cyclesTrouves.map((cycle) => decrireCycle(RACINE, cycle)).join("\n");
+    expect(cyclesTrouves, `cycle(s) d'import détecté(s) via ${perimetre} :\n${description}`).toEqual([]);
   });
 });
