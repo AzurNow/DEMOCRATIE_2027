@@ -27,7 +27,8 @@ export const CHANGEMENT_RENVOI = "renvoi en attente";
 /**
  * Préfixe de l'entrée d'historique d'un rattachement à une autre mesure (décision D53 (1)) : écrit
  * par `rattachements-item.ts:rattacherItem`, lu par `renvoyeDepuis`. Défini ici, avec la liste qui
- * le lit, pour que ce module n'importe pas celui qui l'écrit.
+ * le lit, pour que ce module n'importe pas celui qui l'écrit. Format publié, figé par
+ * tests/libelle-rattachement.test.ts.
  */
 export const CHANGEMENT_RATTACHEMENT = "rattachement à une autre mesure";
 
