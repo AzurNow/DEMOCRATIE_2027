@@ -9,6 +9,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
 import {
+  AnnotateurAuteurNonDeclare,
   ConfigurationGelIncomplete,
   ConfigurationGelIllisible,
   validerConfigurationGel,
@@ -163,5 +164,25 @@ describe("D73 (7) : outils de l'éditeur de chaque juge, déclarés au gel", () 
     const erreur = erreurDe(() => validerConfigurationGel(avec([premier, { ...second, outils_de_son_editeur: ["outil-alpha", "outil-alpha"] }]), "essai"));
     expect(erreur).toBeInstanceOf(ErreurSchema);
     expect(erreur.message).toContain("/juges/1/outils_de_son_editeur");
+  });
+});
+
+describe("§7 (0.27, D67) : le pseudonyme de l'auteur au gel", () => {
+  it("annotateur_auteur est recopié dans la configuration lue", () => {
+    expect(validerConfigurationGel(texte(CONFIGURATION_GEL), "essai").annotateur_auteur).toBe(CONFIGURATION_GEL.annotateur_auteur);
+  });
+
+  it("gel réel : annotateur_auteur absent ⇒ AnnotateurAuteurNonDeclare, sans valeur par défaut", () => {
+    const { annotateur_auteur: _retire, ...sans } = CONFIGURATION_GEL;
+    const erreur = erreurDe(() => validerConfigurationGel(texte(sans), "essai"));
+    expect(erreur).toBeInstanceOf(AnnotateurAuteurNonDeclare);
+    expect(erreur.message).toContain("annotateur_auteur");
+    expect(erreur.message).toContain("essai");
+  });
+
+  it("annotateur_auteur n'a pas la forme d'un pseudonyme ⇒ refus du schéma", () => {
+    const erreur = erreurDe(() => validerConfigurationGel(texte({ ...CONFIGURATION_GEL, annotateur_auteur: "Prénom Nom" }), "essai"));
+    expect(erreur).toBeInstanceOf(ErreurSchema);
+    expect(erreur.message).toContain("annotateur_auteur");
   });
 });

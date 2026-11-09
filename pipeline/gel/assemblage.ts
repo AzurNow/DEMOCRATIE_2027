@@ -231,6 +231,7 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
     statut: STATUT_AU_GEL,
     ...(meta.simule ? { simule: true } : {}),
     ...(meta.run_remplace_id === undefined ? {} : { run_remplace_id: meta.run_remplace_id }),
+    annotateur_auteur: entrees.configuration.annotateur_auteur,
     versions: {
       protocole: entrees.configuration.version_protocole,
       protocole_sha256: meta.protocole_sha256,

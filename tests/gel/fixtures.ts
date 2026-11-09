@@ -46,6 +46,7 @@ export const CONFIGURATION_GEL = {
     { juge_id: "juge-2", famille_modele: "famille-y", modele: "famille-y/modele-juge-2", version_prompt: "prompts/judge-1.0.0", outils_de_son_editeur: [] as string[] },
   ],
   alias_aveugles: { "outil-alpha": "O07" },
+  annotateur_auteur: "auteur-essai",
 };
 
 /** La capture de l'engagement (D46) : 2026-11-30T12:00:00Z, avant les deux `date_gel` des jeux. */

@@ -8,7 +8,9 @@
  *      `ConfigurationGelIllisible` ;
  *   2. non conforme au schéma (clé inconnue ou absente, forme fausse) : `ErreurSchema`, qui nomme
  *      chaque chemin fautif ;
- *   3. un champ resté `null` : `ConfigurationGelIncomplete`, qui nomme chaque champ.
+ *   3. un champ resté `null` : `ConfigurationGelIncomplete`, qui nomme chaque champ ;
+ *   4. le pseudonyme de l'auteur absent (`annotateur_auteur`, §7, D67) : `AnnotateurAuteurNonDeclare`.
+ *      Facultatif au schéma pour que le brouillon livré reste conforme, exigé de tout gel.
  */
 
 import { readFileSync } from "node:fs";
@@ -35,6 +37,7 @@ interface ConfigurationSaisie {
   readonly fenetre_debut: string | null;
   readonly juges: readonly JugeAuGel[] | null;
   readonly alias_aveugles: Readonly<Record<string, string>> | null;
+  readonly annotateur_auteur?: string;
 }
 
 /** Le même, sans aucun `null` : ce que le gel lit. */
@@ -44,6 +47,8 @@ export interface ConfigurationGel {
   readonly juges: readonly JugeAuGel[];
   /** `outil_id` → alias aveugle (§7), tel que `charger-perimetre.ts:ContexteDuGel` le reçoit. */
   readonly alias_aveugles: ReadonlyMap<string, string>;
+  /** §7 (0.27, D67) : le pseudonyme d'annotateur de l'auteur, recopié dans `run.annotateur_auteur`. */
+  readonly annotateur_auteur: string;
 }
 
 export class ConfigurationGelIllisible extends Error {
@@ -67,6 +72,17 @@ export class ConfigurationGelIncomplete extends Error {
   }
 }
 
+/** §7 (0.27, D67) : sans le pseudonyme de l'auteur, la notation humaine ne peut pas écarter l'auteur de l'arbitrage. */
+export class AnnotateurAuteurNonDeclare extends Error {
+  constructor(provenance: string) {
+    super(
+      `${provenance} : paramètres du gel incomplets, « annotateur_auteur » absent. ` +
+        `L'auteur y déclare son pseudonyme d'annotateur (§7 : le troisième humain n'est jamais l'auteur) ; aucune valeur par défaut n'est appliquée.`,
+    );
+    this.name = "AnnotateurAuteurNonDeclare";
+  }
+}
+
 function lireTexte(texte: string, provenance: string): unknown {
   let valeur: unknown;
   try {
@@ -80,11 +96,11 @@ function lireTexte(texte: string, provenance: string): unknown {
   return valeur;
 }
 
-function sansNull(saisie: ConfigurationSaisie): ConfigurationGel | null {
+function sansNull(saisie: ConfigurationSaisie, annotateur_auteur: string): ConfigurationGel | null {
   const { version_protocole, fenetre_debut, juges, alias_aveugles } = saisie;
   if (version_protocole === null || fenetre_debut === null) return null;
   if (juges === null || alias_aveugles === null) return null;
-  return { version_protocole, fenetre_debut, juges, alias_aveugles: new Map(Object.entries(alias_aveugles)) };
+  return { version_protocole, fenetre_debut, juges, alias_aveugles: new Map(Object.entries(alias_aveugles)), annotateur_auteur };
 }
 
 /** Le texte du fichier, validé ; lève en nommant la provenance et chaque champ fautif. */
@@ -97,8 +113,10 @@ export function validerConfigurationGel(texte: string, provenance: string): Conf
     ["alias_aveugles", saisie.alias_aveugles],
   ];
   const nuls = champs.filter(([, valeur]) => valeur === null).map(([nom]) => nom);
-  const complete = sansNull(saisie);
-  if (nuls.length > 0 || complete === null) throw new ConfigurationGelIncomplete(provenance, nuls);
+  if (nuls.length > 0) throw new ConfigurationGelIncomplete(provenance, nuls);
+  if (saisie.annotateur_auteur === undefined) throw new AnnotateurAuteurNonDeclare(provenance);
+  const complete = sansNull(saisie, saisie.annotateur_auteur);
+  if (complete === null) throw new ConfigurationGelIncomplete(provenance, nuls);
   // §7.12 : la même règle que la notation (`chaine.ts:verifierJuges`), refusée ici avant tout gel.
   exigerFamillesDistinctes(complete.juges);
   return complete;

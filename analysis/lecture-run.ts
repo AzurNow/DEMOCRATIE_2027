@@ -249,6 +249,8 @@ export interface RunLu extends Run {
   readonly statut: StatutRun;
   /** D80 : présent (et vrai) seulement dans un gel de `pnpm geler --simule` ; absent d'un gel réel. */
   readonly simule?: true;
+  /** §7 (0.27, D67) : le pseudonyme de l'auteur, écrit au gel ; absent d'un run gelé avant ce champ. */
+  readonly annotateur_auteur?: string;
   /** `run.schema.json`, `type_run` : `pilote` désigne le run qui porte le jeu d'or (D18). */
   readonly type_run: TypeRun;
   readonly perimetre: {

@@ -1387,25 +1387,29 @@
     },
     {
       "id": "D102",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Une raison de changement de quota saisie au périmètre alors qu'aucun quota ne change : refusée au gel ou acceptée sans être publiée ?",
       "contexte": "PR #405 (conformité n° 12). Le §5 dit seulement « son changement est publié avec le run, avec sa raison » et ne traite pas ce cas. Codé avec l'option 1 (raison_sans_changement).",
       "options": [
         "La refuser au gel (raison_sans_changement) : l'auteur retire la raison de config/perimetre.yaml au run qui suit un changement.",
         "L'accepter et ne pas la publier : retirer une branche de pipeline/gel/raison-quota.ts et deux tests."
       ],
-      "recommandation": "Option 1 : une raison publiée sans changement serait trompeuse, et le refus est visible et nommé."
+      "recommandation": "Option 1 : une raison publiée sans changement serait trompeuse, et le refus est visible et nommé.",
+      "retenu": "Option 1 : la raison est refusée au gel quand aucun quota ne change (raison_sans_changement), comme codé par #405. Décision de l'auteur du 2026-11-09 (« décisions recommandées »).",
+      "date_decision": "2026-11-09"
     },
     {
       "id": "D103",
-      "statut": "en_attente",
+      "statut": "tranchee",
       "question": "Le pseudonyme d'annotateur de l'auteur (annotateur_auteur) est-il publié dans run.json ?",
       "contexte": "PR #406 en brouillon (conformité n° 13, §7 0.27 : le troisième humain n'est jamais l'auteur). Le refus d'arbitrage exige de connaître ce pseudonyme ; le recopier dans run.json le publie et révèle lequel des pseudonymes est l'auteur. Traitement de données personnelles : zone d'arrêt.",
       "options": [
         "Le publier tel quel : un lecteur peut vérifier qu'aucun arbitrage ne le porte.",
         "Publier seulement son empreinte SHA-256 : le refus marche pareil, la vérification par un tiers exige le pseudonyme."
       ],
-      "recommandation": "Option 1 : le §7 annonce déjà la règle, la vérifier doit être possible, et un pseudonyme ne donne pas d'identité civile."
+      "recommandation": "Option 1 : le §7 annonce déjà la règle, la vérifier doit être possible, et un pseudonyme ne donne pas d'identité civile.",
+      "retenu": "Option 1 : annotateur_auteur est publié tel quel dans run.json, figé au gel (#406). Décision de l'auteur du 2026-11-09 (« décisions recommandées »).",
+      "date_decision": "2026-11-09"
     }
   ],
   "lots": [

@@ -11,11 +11,12 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ## 0. Fusions en attente
 
-- [ ] (2026-11-09) Trancher **D103** puis passer **#406** de brouillon à prête (l'auteur ne peut pas
+- [x] (2026-11-09) Trancher **D103** (option 1, publié) puis passer **#406** de brouillon à prête (l'auteur ne peut pas
       arbitrer, conformité n° 13) : le pseudonyme d'annotateur de l'auteur est-il publié dans
-      `run.json` ? Après fusion, ajouter `annotateur_auteur` (ton pseudonyme) à `config/gel.json` :
-      sans lui, `pnpm geler` s'arrête sur `AnnotateurAuteurNonDeclare`.
-- [ ] (2026-11-09) Trancher **D102** (#405 fusionnée) : raison de quota saisie sans changement,
+      `run.json` ?
+- [ ] (2026-11-09) Ajouter `annotateur_auteur` (ton pseudonyme d'annotateur) à `config/gel.json` :
+      sans lui, `pnpm geler` s'arrête sur `AnnotateurAuteurNonDeclare` (#406).
+- [x] (2026-11-09) Trancher **D102** (option 1, refus) (#405 fusionnée) : raison de quota saisie sans changement,
       refusée au gel (option codée) ou acceptée sans publication.
 - [ ] (2026-11-09) Vérifier les valeurs proposées pour le lot `creation-items-f` (#402) : agent
       « auteur », jalon J3, 3 h, après `mesures-validees`. Un item F porte désormais `redige_par`.

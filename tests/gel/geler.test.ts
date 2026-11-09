@@ -21,7 +21,7 @@ import { STATUT_AU_GEL } from "../../pipeline/gel/assemblage.ts";
 import { BaliseRefusee, identifiantDuRun, QUICKNET, RELAIS, urlTour, valeursDesGraines } from "../../pipeline/gel/balise.ts";
 import { DepotSale } from "../../pipeline/gel/depot.ts";
 import { RunDejaGele, SortieSousRuns } from "../../pipeline/gel/destination.ts";
-import { ConfigurationGelIncomplete } from "../../pipeline/gel/configuration.ts";
+import { AnnotateurAuteurNonDeclare, ConfigurationGelIncomplete } from "../../pipeline/gel/configuration.ts";
 import { OutilDeSonEditeurHorsDuRun } from "../../pipeline/gel/editeurs.ts";
 import { DEPOT_PUBLIC, EngagementRefuse } from "../../pipeline/gel/engagement.ts";
 import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../../pipeline/gel/reseau.ts";
@@ -159,6 +159,11 @@ describe("gel nominal", () => {
     expect((objet["juges"] as Record<string, unknown>[]).map((juge) => juge["retire"])).toEqual([false, false]);
     expect((objet["symetrie"] as Record<string, unknown>)["statut_global"]).toBe("vert");
     expect(resultat.repertoire).toBe(run);
+  });
+
+  it("§7 (0.27, D67) : run.json inscrit au gel le pseudonyme de l'auteur de config/gel.json", async () => {
+    const { run } = await gelNominal();
+    expect(json(run, "run.json")["annotateur_auteur"]).toBe(CONFIGURATION_GEL.annotateur_auteur);
   });
 
   it("D44 : engendree_le de chaque question vaut date_gel", async () => {
@@ -547,6 +552,15 @@ describe("cas 8 : barrière de symétrie", () => {
 });
 
 describe("cas 9 : config/gel.json incomplet", () => {
+  it("§7 (0.27, D67) : annotateur_auteur absent ⇒ refus nommé, rien écrit", async () => {
+    const { annotateur_auteur: _retire, ...sans } = CONFIGURATION_GEL;
+    const racine = depot({ ...jeuNominal(), configuration: sans });
+    const sortie = temporaire("banc-gel-sortie-");
+    const erreur = await refusDe(optionsGel(racine, sortie));
+    expect(erreur).toBeInstanceOf(AnnotateurAuteurNonDeclare);
+    expect(arborescence(sortie)).toEqual([]);
+  });
+
   it("cas 9 : une valeur null ⇒ refus nommant le champ, rien écrit", async () => {
     const racine = depot({ ...jeuNominal(), configuration: { ...CONFIGURATION_GEL, juges: null } });
     const sortie = temporaire("banc-gel-sortie-");

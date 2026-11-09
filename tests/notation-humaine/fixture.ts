@@ -46,7 +46,12 @@ export interface Options {
   readonly type_run?: "pilote";
   /** Réponses (par rang, en ordre d'identifiant) qui citent le lien `LIEN`. */
   readonly avec_lien?: readonly number[];
+  /** §7, D67 : le pseudonyme de l'auteur écrit au gel (`AUTEUR` par défaut) ; `null` : un run gelé avant ce champ, qui ne le porte pas. */
+  readonly annotateur_auteur?: string | null;
 }
+
+/** Le pseudonyme de l'auteur dans le run fictif ; aucun test ne note sous un autre nom que le sien pour l'auteur. */
+export const AUTEUR = "auteur-essai";
 
 export interface Monde {
   readonly bac: string;
@@ -100,7 +105,9 @@ export function monter(options: Options = {}): Monde {
   const run_id = gele.run["id"] as string;
   // Un pilote n'est jamais désigné pour l'application (§6, run.schema.json) : sa désignation au gel le dit.
   const pilote = { type_run: options.type_run, application_testee: { designe: false, mois_utc: "2026-11", motif: "type_run_exclu" } };
-  if (options.type_run !== undefined) ecrireJson(dispositionRunNote(gele.repertoire_run).run_json, { ...gele.run, ...pilote });
+  const auteur = options.annotateur_auteur === undefined ? AUTEUR : options.annotateur_auteur;
+  const declaration = auteur === null ? {} : { annotateur_auteur: auteur };
+  ecrireJson(dispositionRunNote(gele.repertoire_run).run_json, { ...gele.run, ...(options.type_run === undefined ? {} : pilote), ...declaration });
   const depot = DepotReponses.ouvrir(dispositionRunNote(gele.repertoire_run).reponses);
   const brutes = Array.from({ length: NOMBRE_DE_REPONSES }, (_, rang) =>
     reponse(run_id, rang, gele.tirees[rang % gele.tirees.length] as (typeof gele.tirees)[number], (options.avec_lien ?? []).includes(rang)),
