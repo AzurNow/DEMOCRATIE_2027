@@ -5,7 +5,7 @@
  * branchent sous `runs/`.
  */
 
-import { mkdtempSync, readFileSync, rmSync, symlinkSync, existsSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, existsSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
@@ -15,9 +15,9 @@ import { fournisseurSimule, TableExistencesInvalide } from "../../pipeline/notat
 import { estSousRuns, RUNS_DU_DEPOT, SimuleSousRuns } from "../../pipeline/gardes-sortie.ts";
 import { notationDeJuge, type Juge, type SortieJuge } from "../../pipeline/notation/juge.ts";
 import { jugesSimules, JugeSimuleMalRegle, REGLES_JUGE_SIMULE, type ParametresJugeSimule } from "../../pipeline/notation/juge-simule.ts";
-import { preparerNotationSimulee } from "../../pipeline/notation/notation-simulee.ts";
+import { lireParametresNotationSimulee, preparerNotationSimulee } from "../../pipeline/notation/notation-simulee.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
-import { valider } from "../../outils/schemas/valider.ts";
+import { ErreurSchema, valider } from "../../outils/schemas/valider.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { ITEM_P } from "./run-fictif.ts";
 import { FIXTURES_INTERROGATION, FIXTURES_NOTATION, parametresDeReference } from "./simulation.ts";
@@ -179,6 +179,17 @@ describe("le fournisseur d'existences simulé", () => {
     if (existence === undefined) throw new Error("table de référence vide");
     expect(() => fournisseurSimule([existence, existence], [], temporaire())).toThrow(TableExistencesInvalide);
     expect(() => fournisseurSimule([{ ...existence, verdict_existence: "peut-etre" as never }], [], temporaire())).toThrow(/non conforme/);
+  });
+
+  it("constat 25 (revue du 2026-11-09) : une existence hors du schéma d'un lien est refusée dès la lecture des paramètres", () => {
+    const brut = JSON.parse(readFileSync(join(FIXTURES_NOTATION, "notation-simulee.json"), "utf8")) as { existences: Record<string, unknown>[] };
+    const [premiere] = brut.existences;
+    if (premiere === undefined) throw new Error("table de référence vide");
+    const chemin = join(temporaire(), "notation-simulee.json");
+    writeFileSync(chemin, JSON.stringify({ ...brut, existences: [{ ...premiere, verdict_existence: "peut-etre" }] }), "utf8");
+    expect(() => lireParametresNotationSimulee(chemin)).toThrow(ErreurSchema);
+    expect(parametresDeReference().existences.length).toBe(brut.existences.length);
+    expect(parametresDeReference().existences.every((e) => !("verdict_soutien" in e))).toBe(true);
   });
 
   it("D27 (E) : rend le texte d'une copie de sa table, son empreinte calculée ; rien pour une copie inconnue", () => {

@@ -40,7 +40,7 @@ import { dateParis, lireInstant } from "./heure-paris.ts";
 import { tableAliasCandidats, type TableAliasCandidats } from "./alias-candidats.ts";
 import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain, VerdictProduit } from "./types-notation.ts";
 import type { GraineTirage } from "./graine-tirage.ts";
-import type { RegimeInclusion, StatutRun, TypeRun } from "./types-run.ts";
+import type { EchantillonsParQuestion, RegimeInclusion, StatutRun, TypeRun } from "./types-run.ts";
 import { canoniser } from "../validation/domaine/empreinte.ts";
 import { accordHumainsEchantillon, accordPublie, type AccordHumainsPublie } from "./accord-humains.ts";
 import type { EntreesAnalyse } from "./filtre.ts";
@@ -263,7 +263,7 @@ export interface RunLu extends Run {
    * D75 (14) : le nombre d'échantillons du plan, inscrit au gel et exigé par le schéma ; le plan
    * d'interrogation du run se reconstruit sur lui (`pipeline/interrogation/plan-du-run.ts`).
    */
-  readonly reponses: { readonly echantillons_par_question: 1 | 2 };
+  readonly reponses: { readonly echantillons_par_question: EchantillonsParQuestion };
   readonly depot?: { readonly archives: readonly { readonly nom: string; readonly sha256: string }[] };
   readonly juges: readonly JugeDuRun[];
   readonly taux_echantillon_humain: TauxEchantillonHumain;

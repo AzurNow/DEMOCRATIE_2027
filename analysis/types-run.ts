@@ -36,3 +36,11 @@ export const TYPE_REEXECUTION = "reexecution" satisfies TypeRun;
  */
 export const REGIMES_INCLUSION = ["avant_liste_officielle", "liste_officielle", "entre_deux_tours"] as const;
 export type RegimeInclusion = (typeof REGIMES_INCLUSION)[number];
+
+/**
+ * `run.schema.json#/properties/reponses/properties/echantillons_par_question` : 2 au §6, 1 sous le
+ * levier préenregistré du §12 (« nombre d'échantillons par question (2 → 1) »). Écrit ici seul
+ * (revue du 2026-11-09, constat 18) : la lecture du run et l'interrogation (`pipeline/interrogation/`)
+ * le lisent.
+ */
+export type EchantillonsParQuestion = 1 | 2;
