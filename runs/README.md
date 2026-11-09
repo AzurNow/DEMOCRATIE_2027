@@ -591,7 +591,9 @@ les deux et ne réécrit rien. Sa réexécution se gèle avec `--remplace` (ci-d
 
 ## `pnpm go-no-go <repertoire_run>` et `pnpm go-no-go:contresigner`
 
-Les sept critères du §12 et la décision qui en découle (D24, `pipeline/go-no-go/`). Lit `run.json`,
+Les sept critères du §12, celui du kappa de la paire de juges sur le jeu d'or (§7,
+`kappa_paire_jeu_or` : rouge sous 0,75, indéfini, ou non inscrit par `pnpm kappa:jeu-or`) et la
+décision qui en découle (D24, `pipeline/go-no-go/`). Lit `run.json`,
 `volume/reponses/`, `volume/notations/`, `verdicts/`, `tirage.json` s'il est là, et
 `metriques/metriques.json` s'il est là, validé contre son schéma (`pipeline/go-no-go/metriques.ts`).
 Écrit dans `run.json` `go_no_go`, le kappa de l'échantillon humain de chaque juge

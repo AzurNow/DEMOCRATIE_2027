@@ -1674,7 +1674,7 @@
       "type": "number",
       "minimum": -1,
       "maximum": 1,
-      "description": "§7 : seuil de publication 0,75 sur la catégorie primaire ; en dessous, résultats publiés avec la mention provisoire. Absent quand il n'est pas défini, jamais remplacé par 0, par 1 ni par null : c'est alors `motif_indefini_kappa_paire_juges` qui est présent (protocole 0.11)."
+      "description": "§7 : seuil de publication 0,75 sur la catégorie primaire ; en dessous, résultats publiés avec la mention provisoire (critère kappa_paire_jeu_or du go/no-go, et règle « publie ⇒ kappa_paire_juges ≥ 0,75 » de allOf). Absent quand il n'est pas défini, jamais remplacé par 0, par 1 ni par null : c'est alors `motif_indefini_kappa_paire_juges` qui est présent (protocole 0.11)."
     },
     "motif_indefini_kappa_paire_juges": {
       "$ref": "#/$defs/motif_kappa_indefini"
@@ -1874,13 +1874,13 @@
         "criteres",
         "decision"
       ],
-      "description": "§12 : sept critères avant publication. Un run qui en rate un est publié en intégralité avec la mention provisoire et la raison, jamais retenu en privé.",
+      "description": "§12 : sept critères avant publication ; §7 : le seuil de publication du kappa de la paire de juges sur le jeu d'or (kappa_paire_jeu_or, constat 1 de la conformité du 2026-11-09). Un run qui en rate un est publié en intégralité avec la mention provisoire et la raison, jamais retenu en privé.",
       "properties": {
         "criteres": {
           "type": "array",
-          "minItems": 7,
-          "maxItems": 7,
-          "$comment": "§12 (conformité 2026-09-29, n° 15) : les sept critères, chacun une fois. minItems seul laissait passer sept fois le même code.",
+          "minItems": 8,
+          "maxItems": 8,
+          "$comment": "§12 (conformité 2026-09-29, n° 15) : les sept critères, chacun une fois. minItems seul laissait passer sept fois le même code. §7 (conformité 2026-11-09, n° 1) : le huitième, kappa_paire_jeu_or, une fois lui aussi.",
           "allOf": [
             {
               "contains": {
@@ -1979,6 +1979,20 @@
               },
               "minContains": 1,
               "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "code": {
+                    "const": "kappa_paire_jeu_or"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
             }
           ],
           "items": {
@@ -1998,7 +2012,8 @@
                   "tests_symetrie",
                   "reponses_manquantes",
                   "erreurs_graves_revues",
-                  "analyses_preenregistrees_executees"
+                  "analyses_preenregistrees_executees",
+                  "kappa_paire_jeu_or"
                 ]
               },
               "statut": {
@@ -2587,6 +2602,29 @@
                 }
               ]
             }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "§7 : « Seuil de publication : kappa de la paire ≥ 0,75 sur la catégorie primaire ; en dessous, les résultats sont publiés avec la mention « provisoire » ». Un run publié sans la mention porte donc un kappa de la paire défini et ≥ 0,75 ; un kappa indéfini ne satisfait pas ce seuil, comme au §12 (constat 1 de la conformité du 2026-11-09). Le go/no-go le décide (critère kappa_paire_jeu_or) ; cette règle refuse en plus un statut publie que le go/no-go dirait vert à tort. 0,75 est analysis/parametres-protocole.ts:SEUIL_KAPPA_PAIRE_JEU_OR, confronté à ce minimum par tests/go-no-go/kappa-paire-jeu-or.test.ts.",
+      "if": {
+        "properties": {
+          "statut": {
+            "const": "publie"
+          }
+        },
+        "required": [
+          "statut"
+        ]
+      },
+      "then": {
+        "required": [
+          "kappa_paire_juges"
+        ],
+        "properties": {
+          "kappa_paire_juges": {
+            "minimum": 0.75
           }
         }
       }
