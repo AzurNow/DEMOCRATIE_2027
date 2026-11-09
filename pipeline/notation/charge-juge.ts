@@ -315,7 +315,7 @@ export function reponseSoumise(reponse: ReponseSoumissible): ReponseSoumise {
   return {
     texte: projection.texte,
     liens: [...projection.liens],
-    ...(projection.citations === undefined ? {} : { citations: projection.citations.map(citationSoumise) }),
+    ...(projection.citations === undefined ? {} : { citations: projection.citations.map((citation, index) => citationSoumise(reponse.id, citation, index)) }),
     ...troncatureSoumise(reponse.id, reponse.canal, projection.troncature),
     refus_api: projection.refus_api,
   };
@@ -348,18 +348,45 @@ function troncatureSoumise(reponse_id: string, canal: ReponseSoumissible["canal"
 }
 
 /**
+ * Une citation qui ne porte ni `url` ni `texte` textuels et non vides (DETTE 2026-10-05) : soumise,
+ * elle arriverait vide au juge, qui jugerait le soutien sans texte. C'est le signe d'un adaptateur
+ * dont la normalisation n'a pas ramené les champs de son éditeur à `{ url, texte }` (D15) : la charge
+ * est refusée, jamais construite avec un objet vide.
+ */
+export class CitationSansUrlNiTexte extends Error {
+  readonly reponse_id: string;
+  /** Le rang de la citation dans `reponse.normalise.citations`, à partir de 0. */
+  readonly index: number;
+
+  constructor(reponse_id: string, index: number) {
+    super(`Réponse ${reponse_id} : la citation d'index ${index} de normalise.citations ne porte ni url ni texte ; la normalisation de l'adaptateur doit la ramener à { url, texte } (D15).`);
+    this.name = "CitationSansUrlNiTexte";
+    this.reponse_id = reponse_id;
+    this.index = index;
+  }
+}
+
+/**
  * Seules les clés `url` et `texte` de l'objet sont lues ; tout autre champ (type, indices, clés
  * propres à l'éditeur, en snake_case ou en camelCase) reste hors de la charge, car sa forme seule
  * peut désigner l'éditeur. Ramener les champs d'un éditeur vers `url` et `texte` est le travail de
- * la normalisation de son adaptateur (`reponse.normalisation`), pas de la notation.
+ * la normalisation de son adaptateur (`reponse.normalisation`), pas de la notation. Une valeur qui
+ * n'est pas une chaîne, ou une chaîne vide, est absente ; une citation où les deux le sont est
+ * refusée (`CitationSansUrlNiTexte`).
  */
-function citationSoumise(citation: ObjetJson): CitationSoumise {
-  const url = citation["url"];
-  const texte = citation["texte"];
+function citationSoumise(reponse_id: string, citation: ObjetJson, index: number): CitationSoumise {
+  const url = chaineNonVide(citation["url"]);
+  const texte = chaineNonVide(citation["texte"]);
+  if (url === undefined && texte === undefined) throw new CitationSansUrlNiTexte(reponse_id, index);
   return {
-    ...(typeof url === "string" ? { url } : {}),
-    ...(typeof texte === "string" ? { texte } : {}),
+    ...(url === undefined ? {} : { url }),
+    ...(texte === undefined ? {} : { texte }),
   };
+}
+
+/** Une chaîne non vide, ou rien : une chaîne vide ne porte ni lien ni texte. */
+function chaineNonVide(valeur: unknown): string | undefined {
+  return typeof valeur === "string" && valeur !== "" ? valeur : undefined;
 }
 
 /** D55 (9) : `candidat_id` porte l'alias aveugle du candidat (`alias`, candidat_id → alias), jamais son identifiant. */
