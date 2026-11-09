@@ -59,7 +59,7 @@ const MESURE_P = { ...mesure({ cle: "es-p", libelle: "tarif de base" }), histori
 const MESURE_F = {
   ...mesure({ cle: "es-f", libelle: "prime aux marcheurs", fictive: true }),
   origine_fictive: "Mesure inventée pour les tests, sans auteur réel.",
-  verification_fictivite: { date: "2026-11-15T11:00:00+01:00", corpus_verifies: [CANDIDAT], operateur: "a2", resultat: "aucune_occurrence" },
+  verification_fictivite: { date: "2026-11-15T11:00:00+01:00", corpus_verifies: [CANDIDAT], niveaux_balayes: ["T1", "T2", "items_T3"], operateur: "a2", resultat: "aucune_occurrence" },
   historique: HISTORIQUE,
 };
 export const ITEM_P = conforme(itemP({ cle: "es-p", candidat_id: CANDIDAT, mesure: MESURE_P }));

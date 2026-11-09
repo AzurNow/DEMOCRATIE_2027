@@ -24,6 +24,7 @@
       "demo-delta",
       "demo-epsilon"
     ],
+    "niveaux_balayes": ["T1", "T2", "items_T3"],
     "operateur": "a1",
     "resultat": "aucune_occurrence"
   }

@@ -259,6 +259,7 @@ export interface Mesure {
   readonly verification_fictivite?: {
     readonly date: string;
     readonly corpus_verifies: readonly string[];
+    readonly niveaux_balayes: readonly string[];
     readonly operateur: string;
     readonly resultat: string;
   };
