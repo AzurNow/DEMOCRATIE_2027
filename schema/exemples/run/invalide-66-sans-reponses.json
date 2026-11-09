@@ -521,6 +521,12 @@
         "statut": "vert",
         "valeur": "oui",
         "seuil": "oui"
+      },
+      {
+        "code": "kappa_paire_jeu_or",
+        "statut": "vert",
+        "valeur": 0.81,
+        "seuil": 0.75
       }
     ],
     "decision": "publie"
