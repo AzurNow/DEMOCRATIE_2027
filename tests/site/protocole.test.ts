@@ -5,7 +5,7 @@
  * autre chose que le texte qui fait foi. Les ancres sont lues comme GitHub les calcule.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   URL_PROTOCOLE,
@@ -90,7 +90,7 @@ describe("lienDeSection et texteDuRenvoi", () => {
 
 describe("cheminDuProtocole", () => {
   it("remonte jusqu'au dossier qui contient docs/PROTOCOLE.md", () => {
-    const attendu = join("/depot", "docs", "PROTOCOLE.md");
+    const attendu = resolve("/depot", "docs", "PROTOCOLE.md");
     expect(cheminDuProtocole("/depot/site/src", (chemin) => chemin === attendu)).toBe(attendu);
   });
 

@@ -16,7 +16,7 @@
  * ou la commande est mal appelée. Rien n'est écrit.
  */
 
-import { estDuRun } from "../analysis/filtre.ts";
+import { reponsesObtenuesDuRun } from "../analysis/population-notation.ts";
 import type { Reponse } from "../analysis/types.ts";
 import { lireNotationsDuRun, lireReponses, lireRunJson, lireVerdicts, runDeNotationDe } from "../analysis/lecture-run.ts";
 import { controleCroise, type EntreeControleCroise, type Violation } from "../pipeline/notation/controle-croise.ts";
@@ -51,7 +51,7 @@ function lireEntree(repertoire_run: string): EntreeControleCroise {
   // `lireReponses` valide chaque réponse contre son schéma, qui exige `normalise` d'une réponse obtenue.
   const reponses = lireReponses<ReponseLue>(repertoire_run, run.id);
   const { notations, reponses_contrefactuelles } = lireNotationsDuRun(repertoire_run, run.id);
-  const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue");
+  const obtenues = reponsesObtenuesDuRun(reponses);
   return {
     run: runDeNotationDe(run),
     reponses_obtenues: obtenues.map((r) => r.id),

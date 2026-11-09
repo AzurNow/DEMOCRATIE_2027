@@ -3,7 +3,7 @@
  *
  * Il valide le fichier contre `schema/perimetre.schema.json`, refuse un brouillon pour un run,
  * applique la règle d'inclusion du §3 (`inclusionAvantListe`), compte les items P au gel
- * (`itemsPAuGel`), puis rend l'instantané `run.perimetre`, validé contre `run.schema.json`, et les
+ * (`referencesPAuGel`), puis rend l'instantané `run.perimetre`, validé contre `run.schema.json`, et les
  * `ParametresTirage`. Chaque cas limite du brief a son test nommé « cas n ».
  *
  * Aucun candidat, outil, sondage ni URL réel : tout est ouvertement fictif (`*.invalid`, `demo-*`).
@@ -27,12 +27,12 @@ import {
 } from "../../pipeline/questions/charger-perimetre.ts";
 import type { ContexteDuGel } from "../../pipeline/questions/charger-perimetre.ts";
 import { idsInterroges } from "../../analysis/candidats-interroges.ts";
-import { itemsPAuGel } from "../../pipeline/questions/couverture.ts";
+
 import { AMORCE_GROUPE_ATTRIBUTION } from "../../pipeline/questions/tirage.ts";
 import { THEMES } from "../../pipeline/questions/types.ts";
 import type { Item } from "../../pipeline/questions/types.ts";
 import { ErreurSchema, erreurDeSchema, validerFragment } from "../../outils/schemas/valider.ts";
-import { itemP, mesure } from "./fabriques.ts";
+import { idsPAuGel, itemP, mesure } from "./fabriques.ts";
 
 type Objet = Record<string, unknown>;
 
@@ -429,10 +429,10 @@ describe("cas 10 : seuil de couverture du §4 et items P au gel", () => {
     expect(beta).toMatchObject({ candidat_id: "demo-beta", items_p_verifies: 9, sous_seuil: true });
   });
 
-  it("items_p_au_gel est trié et porte les items de itemsPAuGel, pour chaque candidat, retiré compris", () => {
+  it("items_p_au_gel est trié et porte les items de referencesPAuGel, pour chaque candidat, retiré compris", () => {
     const candidats = charger(perimetreComplet()).perimetre.candidats;
     for (const candidat of candidats) {
-      const attendus = itemsPAuGel(ITEMS, candidat.candidat_id, GEL, [MESURE], idsInterroges(candidats));
+      const attendus = idsPAuGel(ITEMS, candidat.candidat_id, GEL, [MESURE], idsInterroges(candidats));
       const ids = candidat.items_p_au_gel.map((reference) => reference.item_id);
       expect(ids).toEqual(attendus);
       expect(ids).toEqual([...attendus].sort());

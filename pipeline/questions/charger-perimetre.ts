@@ -28,7 +28,7 @@
  *      aveugle de candidat — la lettre « C » suivie uniquement de chiffres (§7, protocole 0.20) ;
  *   4. l'instantané est calculé — `items_p_au_gel` par `couverture.ts:referencesPAuGel`, chaque
  *      item épinglé à sa version et à son empreinte au gel,
- *      `items_p_verifies` en est la longueur (la définition de `itemsPComptesAuGel`), `sous_seuil`
+ *      `items_p_verifies` en est la longueur (la définition de `referencesPAuGel`), `sous_seuil`
  *      le seuil du §4 — puis validé contre `run.schema.json#/properties/perimetre`.
  *
  * Ce que le chargeur ne fait pas : lire les parts 80 % / 20 % du §5 (constantes de `tirage.ts` et

@@ -64,7 +64,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { cheminMetriques } from "../../analysis/analyse-du-run.ts";
 import { CHAMPS_DU_JEU_D_OR } from "../../analysis/champs-posterieurs-au-gel.ts";
-import { estDuRun } from "../../analysis/filtre.ts";
+import { reponsesObtenuesDuRun } from "../../analysis/population-notation.ts";
 import {
   inscriptionsJeuOr,
   MOTIF_ARBITRAGE_JEU_OR,
@@ -133,7 +133,7 @@ export function inscrireJeuOr(repertoire_run: string, ecriture?: EcritureTempora
   const texte_lu = readFileSync(chemin, "utf8");
   const run = lireRunJson(repertoire_run);
   exigerInscriptible(repertoire_run, run);
-  const obtenues = lireReponses(repertoire_run, run.id).filter((r) => estDuRun(r) && r.statut_reponse === "obtenue");
+  const obtenues = reponsesObtenuesDuRun(lireReponses(repertoire_run, run.id));
   const jeu_or = tirerJeuOr(obtenues.map((r) => r.id), run.graines.echantillon_humain);
   const { notations, renvois } = lireNotationsDuRun(repertoire_run, run.id);
   const reponses = reponsesDuJeuOr(run.id, jeu_or.reponse_ids, notations, renvois);

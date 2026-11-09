@@ -4,7 +4,7 @@
  *
  * - (16) §4 : « Un item que le tirage exclut parce que sa position est incompatible avec celle d'un
  *   autre item du même candidat sur la même mesure (section 5) ne compte pas non plus » au seuil de
- *   couverture (`couverture.ts:itemsPAuGel`).
+ *   couverture (`couverture.ts:referencesPAuGel`).
  * - (17) §5 : ces items sont « publiés un à un avec le tirage » : `tirage.incompatibles_au_gel`, sur le
  *   modèle de `contestes_au_gel` (une entrée par candidat interrogé, zéro compris, triée).
  * - (18) §5 : « Un item vérifié sur une version de sa mesure qui n'est pas la version en vigueur, que
@@ -17,7 +17,7 @@
 
 import { describe, expect, it } from "vitest";
 import { idsInterroges } from "../../analysis/candidats-interroges.ts";
-import { itemsPAuGel } from "../../pipeline/questions/couverture.ts";
+
 import { engendrer, MesureIntrouvable } from "../../pipeline/questions/engendrement.ts";
 import { tirer } from "../../pipeline/questions/tirage.ts";
 import {
@@ -26,7 +26,7 @@ import {
 } from "../../pipeline/questions/tirabilite.ts";
 import type { CandidatAuGel, Item, Mesure, Question } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
-import { candidat, completerSur, graine, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
+import { candidat, completerSur, graine, idsPAuGel, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 
@@ -84,7 +84,7 @@ describe("D74 (16) : un item exclu pour une position incompatible ne compte pas 
     const pour = p("c16-pour", "demo-alpha", M_CONFLIT, "pour");
     const contre = p("c16-contre", "demo-alpha", M_CONFLIT, "contre");
     const sauf = p("c16-sauf", "demo-alpha", M_SOCLE);
-    const liste = itemsPAuGel([pour, contre, sauf], "demo-alpha", GEL, MESURES, INTERROGES);
+    const liste = idsPAuGel([pour, contre, sauf], "demo-alpha", GEL, MESURES, INTERROGES);
     expect(liste).toEqual([sauf.id]);
   });
 
@@ -92,8 +92,8 @@ describe("D74 (16) : un item exclu pour une position incompatible ne compte pas 
     const neuf = Array.from({ length: 9 }, (_, rang) => p(`c16-seuil-${rang}`, "demo-alpha", M_SOCLE));
     const pour = p("c16-seuil-pour", "demo-alpha", M_CONFLIT, "pour");
     const contre = p("c16-seuil-contre", "demo-alpha", M_CONFLIT, "contre");
-    expect(itemsPAuGel([...neuf, pour], "demo-alpha", GEL, MESURES, INTERROGES)).toHaveLength(10);
-    const avecConflit = itemsPAuGel([...neuf, pour, contre], "demo-alpha", GEL, MESURES, INTERROGES);
+    expect(idsPAuGel([...neuf, pour], "demo-alpha", GEL, MESURES, INTERROGES)).toHaveLength(10);
+    const avecConflit = idsPAuGel([...neuf, pour, contre], "demo-alpha", GEL, MESURES, INTERROGES);
     expect(avecConflit).toEqual(ids(...neuf));
     expect(avecConflit).not.toContain(pour.id);
     expect(avecConflit).not.toContain(contre.id);
@@ -102,26 +102,26 @@ describe("D74 (16) : un item exclu pour une position incompatible ne compte pas 
   it("un item P incompatible avec un item O en vigueur ne compte pas ; l'item O n'est jamais compté (P seuls)", () => {
     const pour = p("c16-po-p", "demo-alpha", M_CONFLIT, "pour");
     const o = itemO({ cle: "iag-c16-po-o", candidat_id: "demo-alpha", mesure: M_CONFLIT, position: "pour", position_posterieure: "contre", date_changement: "2026-10-01" });
-    expect(itemsPAuGel([pour, o], "demo-alpha", GEL, MESURES, INTERROGES)).toEqual([]);
+    expect(idsPAuGel([pour, o], "demo-alpha", GEL, MESURES, INTERROGES)).toEqual([]);
   });
 
   it("D74 (14) : les items incompatibles d'un candidat non interrogé, hors de la détection, comptent", () => {
     const pour = p("c16-gamma-pour", "demo-gamma", M_CONFLIT, "pour");
     const contre = p("c16-gamma-contre", "demo-gamma", M_CONFLIT, "contre");
-    expect(itemsPAuGel([pour, contre], "demo-gamma", GEL, MESURES, INTERROGES)).toEqual(ids(pour, contre));
+    expect(idsPAuGel([pour, contre], "demo-gamma", GEL, MESURES, INTERROGES)).toEqual(ids(pour, contre));
   });
 
   it("le conflit d'un autre candidat ne retire rien au compte de celui-ci", () => {
     const alpha = p("c16-autre-alpha", "demo-alpha", M_CONFLIT, "pour");
     const betaPour = p("c16-autre-beta-pour", "demo-beta", M_CONFLIT, "pour");
     const betaContre = p("c16-autre-beta-contre", "demo-beta", M_CONFLIT, "contre");
-    expect(itemsPAuGel([alpha, betaPour, betaContre], "demo-alpha", GEL, MESURES, INTERROGES)).toEqual([alpha.id]);
+    expect(idsPAuGel([alpha, betaPour, betaContre], "demo-alpha", GEL, MESURES, INTERROGES)).toEqual([alpha.id]);
   });
 
   it("deux items de même position sur une mesure ne sont pas incompatibles : tous deux comptent", () => {
     const un = p("c16-accord-1", "demo-alpha", M_CONFLIT, "pour");
     const deux = p("c16-accord-2", "demo-alpha", M_CONFLIT, "pour");
-    expect(itemsPAuGel([un, deux], "demo-alpha", GEL, MESURES, INTERROGES)).toEqual(ids(un, deux));
+    expect(idsPAuGel([un, deux], "demo-alpha", GEL, MESURES, INTERROGES)).toEqual(ids(un, deux));
   });
 });
 
@@ -162,7 +162,7 @@ describe("D74 (18) : un item épinglé sur une version dépassée de sa mesure n
   });
 
   it("le seuil compte l'item en vigueur ; le périmé n'y compte pas, pour sa version seule", () => {
-    expect(itemsPAuGel([PERIME, COURANT], "demo-alpha", GEL, MESURES, INTERROGES)).toEqual([COURANT.id]);
+    expect(idsPAuGel([PERIME, COURANT], "demo-alpha", GEL, MESURES, INTERROGES)).toEqual([COURANT.id]);
   });
 
   it("deux items en vigueur incompatibles, sur la version courante : exclusion inchangée", () => {
