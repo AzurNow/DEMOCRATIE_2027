@@ -74,10 +74,20 @@ export function erreurDeLancement(repertoire: string, commit: string | undefined
   return new GitEchecLancement(repertoire, commit, erreur);
 }
 
-/** `commit`, s'il est connu, ne nomme que le message d'erreur : il n'est jamais passé à Git ici. */
-export function executerGit(repertoire: string, arguments_: readonly string[], commit?: string): SortieGit {
+/**
+ * `commit`, s'il est connu, ne nomme que le message d'erreur : il n'est jamais passé à Git ici.
+ * `environnement` s'ajoute à celui du processus (par exemple les dates de commit du gel simulé).
+ */
+export function executerGit(
+  repertoire: string,
+  arguments_: readonly string[],
+  commit?: string,
+  environnement?: Readonly<Record<string, string>>,
+): SortieGit {
   if (!existsSync(repertoire)) return { ok: false, sortie: "", erreur: `répertoire ${repertoire} inexistant` };
-  const resultat = spawnSync("git", arguments_, { cwd: repertoire, encoding: "utf8", maxBuffer: 1 << 26 });
+  const resultat = spawnSync("git", arguments_, { cwd: repertoire, encoding: "utf8", maxBuffer: 1 << 26,
+    ...(environnement === undefined ? {} : { env: { ...process.env, ...environnement } }),
+  });
   if (resultat.error !== undefined) throw erreurDeLancement(repertoire, commit, resultat.error);
   return { ok: resultat.status === 0, sortie: resultat.stdout, erreur: resultat.stderr.trim() };
 }

@@ -1,7 +1,7 @@
 ---
 import Renvoi from "../composants/Renvoi.astro";
 import Deplier from "../composants/Deplier.astro";
-import { PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
+import { PARAMETRES as P, PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
 import DecorContester from "../composants/decors/DecorContester.astro";
 import "../styles/sections.css";
 ---
@@ -66,8 +66,8 @@ import "../styles/sections.css";
   <Renvoi section="13" libelle="annexe E" />
   <Deplier resume="Votre texte et vos données" classe="deplier--bloc">
     <p>
-      Votre texte est publié tel quel, dans la limite de {S.longueurContestation.affiche} caractères. Un texte plus long n'est ni
-      tronqué ni résumé : il vous est demandé d'en envoyer une version de {S.longueurContestation.affiche} caractères au plus, et
+      Votre texte est publié tel quel, dans la limite de {P.longueurContestation} caractères. Un texte plus long n'est ni
+      tronqué ni résumé : il vous est demandé d'en envoyer une version de {P.longueurContestation} caractères au plus, et
       le texte intégral va au dossier du panel. Les coordonnées d'une personne physique qu'il
       contiendrait sont masquées, avec une marque visible. Une contestation qui répète une contestation
       déjà tranchée, sans élément nouveau, reçoit pour réponse la décision antérieure.

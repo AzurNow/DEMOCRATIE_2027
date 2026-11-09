@@ -27,7 +27,6 @@
  * refusé ensuite (barrière, instants…) retire le dépôt simulé qu'il vient de poser : rien ne reste.
  */
 
-import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { lireInstant } from "../../analysis/heure-paris.ts";
@@ -71,9 +70,20 @@ function texteDe(objet: Readonly<Record<string, unknown>>, cle: string, chemin: 
   return valeur;
 }
 
+/** Le JSON du fichier ; un fichier mal formé est un refus nommé, pas une pile d'erreur. */
+function jsonDe(chemin: string): unknown {
+  const texte = readFileSync(chemin, "utf8");
+  try {
+    return JSON.parse(texte);
+  } catch (erreur) {
+    if (erreur instanceof SyntaxError) throw new GelSimuleRefuse("parametres_invalides", `${chemin} : JSON mal formé (${erreur.message}).`);
+    throw erreur;
+  }
+}
+
 /** `tests/gel/gel-simule.json`, contrôlé à la frontière : aucun champ n'a de valeur par défaut. */
 export function lireParametresGelSimule(chemin: string): ParametresGelSimule {
-  const brut: unknown = JSON.parse(readFileSync(chemin, "utf8"));
+  const brut = jsonDe(chemin);
   if (typeof brut !== "object" || brut === null || Array.isArray(brut)) throw new GelSimuleRefuse("parametres_invalides", `${chemin} : un objet est attendu.`);
   const objet = brut as Readonly<Record<string, unknown>>;
   const horodatage_engagement = texteDe(objet, "horodatage_engagement", chemin);
@@ -113,12 +123,13 @@ export function exigerSortieSimulee(sortie: string | undefined): string {
 /* ------------------------------------------------------------------ dépôt simulé */
 
 function git(racine: string, arguments_: readonly string[], date: string): void {
-  const resultat = spawnSync(
-    "git",
+  const resultat = executerGit(
+    racine,
     ["-c", "user.name=Banc simule", "-c", "user.email=simule@banc.invalid", "-c", "commit.gpgsign=false", "-c", "gc.auto=0", "-c", "maintenance.auto=false", ...arguments_],
-    { cwd: racine, encoding: "utf8", env: { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date } },
+    undefined,
+    { GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date },
   );
-  if (resultat.status !== 0) throw new GelSimuleRefuse("depot_non_pose", `git ${arguments_.join(" ")} dans ${racine} : ${resultat.stderr}`);
+  if (!resultat.ok) throw new GelSimuleRefuse("depot_non_pose", `git ${arguments_.join(" ")} dans ${racine} : ${resultat.erreur}`);
 }
 
 /**

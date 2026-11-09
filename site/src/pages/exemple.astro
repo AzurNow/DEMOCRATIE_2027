@@ -16,7 +16,7 @@ import EtapeExemple from "../composants/EtapeExemple.astro";
 import Pixel from "../composants/Pixel.astro";
 import VueEnsemble from "../composants/VueEnsemble.astro";
 import { lienAccueil } from "../lib/liens.ts";
-import { PARAMETRES as P, PARAMETRES_SANS_CONSTANTE as S } from "../lib/parametres.ts";
+import { PARAMETRES as P } from "../lib/parametres.ts";
 import { URL_PROTOCOLE } from "../lib/protocole.ts";
 import "../styles/parcours.css";
 import "../styles/exemple.css";
@@ -325,7 +325,7 @@ const versParcours = lienAccueil("parcours", chemin, base);
             dans le taux de fabrication et dans la confirmation de prémisse de l'Outil X.
           </p>
           <p>
-            Chaque taux est publié avec sa <strong>fourchette</strong>, son intervalle de confiance à {S.niveauConfiance.affiche} %,
+            Chaque taux est publié avec sa <strong>fourchette</strong>, son intervalle de confiance à {P.niveauConfiance} %,
             et l'exactitude jamais sans le taux de non-réponse. Un écart entre l'Outil X et l'Outil Y
             n'est dit « établi » que si sa fourchette exclut zéro ; sinon, il est « non établi ». Le
             rapport ne dit jamais « meilleur » ni « pire ».

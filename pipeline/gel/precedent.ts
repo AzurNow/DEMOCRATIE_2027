@@ -27,7 +27,9 @@
  *   - `questions_empreinte` (D48 (4)) : son `run.json` ne déclare pas l'empreinte de `questions.json`,
  *     ou le SHA-256 de ses octets n'est pas celle qu'il déclare ;
  *   - `questions_illisibles` : `questions.json` absent, illisible, ou une question non conforme ;
- *   - `question_introuvable` : une question tirée absente de `questions.json`.
+ *   - `question_introuvable` : une question tirée absente de `questions.json` ;
+ *   - `run_simule_sous_runs` : un `run.json` de `runs/` porte `simule: true` (D80) : un run simulé
+ *     n'est jamais un run, il ne compterait ni comme précédent ni comme premier run du mois (§6).
  *
  * Seuls les champs que le choix lit sont validés dans chaque `run.json` (fragments de
  * `run.schema.json`) : un run gelé sous un schéma plus ancien reste lisible pour ce qu'on en lit.
@@ -58,7 +60,8 @@ export type MotifPrecedent =
   | "tirage_d_un_autre_run"
   | "questions_empreinte"
   | "questions_illisibles"
-  | "question_introuvable";
+  | "question_introuvable"
+  | "run_simule_sous_runs";
 
 export class PrecedentRefuse extends Error {
   readonly motif: MotifPrecedent;
@@ -103,6 +106,8 @@ export interface RunDeRuns {
    * cet héritage refuse.
    */
   readonly application_testee?: ApplicationTestee;
+  /** D80 : `true` seulement dans le `run.json` d'un gel simulé, qui ne se range jamais sous `runs/` ; absent sinon. */
+  readonly simule?: true;
 }
 
 /** `run.json#/run_precedent` quand un précédent existe. */
@@ -201,6 +206,7 @@ export function runDeRuns(repertoire: string, texte: string, provenance: string)
     const invalidation = fragmentSiPresent<NonNullable<RunDeRuns["invalidation"]>>(objet, "invalidation", provenance);
     const run_remplace_id = fragmentSiPresent<string>(objet, "run_remplace_id", provenance);
     const application_testee = fragmentSiPresent<ApplicationTestee>(objet, "application_testee", provenance);
+    const simule = fragmentSiPresent<true>(objet, "simule", provenance);
     return {
       repertoire,
       id: fragment<string>(objet, "id", provenance),
@@ -212,6 +218,7 @@ export function runDeRuns(repertoire: string, texte: string, provenance: string)
       ...(invalidation === undefined ? {} : { invalidation }),
       ...(run_remplace_id === undefined ? {} : { run_remplace_id }),
       ...(application_testee === undefined ? {} : { application_testee }),
+      ...(simule === undefined ? {} : { simule }),
     };
   });
 }
@@ -331,6 +338,14 @@ export function tiragePrecedentVerifie(run: RunDeRuns, octets_tirage: Uint8Array
 
 /* ---------------------------------------------------------------- lecture */
 
+/** Un run simulé posé sous `runs/` est refusé à la lecture : le schéma dit « jamais sous runs/ ». */
+function exigerRunReel(run: RunDeRuns): RunDeRuns {
+  if (run.simule === true) {
+    throw new PrecedentRefuse("run_simule_sous_runs", run.repertoire, "son run.json porte `simule: true` : un run simulé ne se range jamais sous runs/.");
+  }
+  return run;
+}
+
 /** Chaque run de `runs/` (le répertoire reçu), lu dans ses seuls champs utiles ; un seul illisible, refus. */
 export function lireRunsDuDepot(runs: string): readonly RunDeRuns[] {
   if (!existsSync(runs)) return [];
@@ -343,7 +358,7 @@ export function lireRunsDuDepot(runs: string): readonly RunDeRuns[] {
     .map((entree) => {
       const chemin = join(runs, entree.name, "run.json");
       const texte = ou("run_illisible", entree.name, () => readFileSync(chemin, "utf8"));
-      return runDeRuns(entree.name, texte, chemin);
+      return exigerRunReel(runDeRuns(entree.name, texte, chemin));
     });
 }
 

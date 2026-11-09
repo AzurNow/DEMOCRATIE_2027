@@ -14,7 +14,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { lirePageConstruite } from "../../outils/site-gardes.ts";
 import { estAccueil, estExemple, lienAccueil, lienExemple, racineDuSite } from "../../site/src/lib/liens.ts";
-import { PARAMETRES, PARAMETRES_SANS_CONSTANTE } from "../../site/src/lib/parametres.ts";
+import { PARAMETRES } from "../../site/src/lib/parametres.ts";
 import { COULEURS_PIXEL, dessinDeGrille, dessinDuSprite, SPRITES, type NomSprite } from "../../site/src/lib/pixels.ts";
 
 const RACINE = resolve(import.meta.dirname, "../..");
@@ -182,7 +182,7 @@ describe("page exemple : aucun chiffre de mesure", () => {
   it("n'écrit hors des blocs que des numéros d'étape et des paramètres du protocole", () => {
     const hors = principal(exemple()).replace(/<div class="exemple-fictif[^"]*"[^>]*>[\s\S]*?<\/div>/g, "");
     const nombres = [...texteAffiche(hors).replace(/§\s*\d+/g, "").matchAll(/\d[\d\s ]*/g)].map((m) => m[0].replace(/\s/g, ""));
-    const admis = new Set(["1", "2", "3", "4", "5", "6", "7", PARAMETRES.fenetreHeures, PARAMETRES_SANS_CONSTANTE.niveauConfiance.affiche]);
+    const admis = new Set(["1", "2", "3", "4", "5", "6", "7", PARAMETRES.fenetreHeures, PARAMETRES.niveauConfiance]);
     expect(nombres.length).toBeGreaterThan(0);
     expect(nombres.filter((n) => !admis.has(n))).toEqual([]);
   });

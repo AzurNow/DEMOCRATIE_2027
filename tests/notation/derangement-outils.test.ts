@@ -23,10 +23,10 @@ import {
 import {
   CLE_SOUS_ENSEMBLE_CONTREFACTUEL,
   CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS,
-  TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS,
   tirerSousEnsembleContrefactuel,
   tirerSousEnsembleContrefactuelOutils,
 } from "../../pipeline/notation/echantillons.ts";
+import { TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS } from "../../analysis/parametres-protocole.ts";
 import type { ReponseEcrite, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { GENERATEUR_DU_TIRAGE, GraineNonConforme } from "../../analysis/graine-tirage.ts";
 import type { GraineTirage } from "../../analysis/graine-tirage.ts";

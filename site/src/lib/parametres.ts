@@ -12,9 +12,10 @@
  * - aucune constante : `PARAMETRES_SANS_CONSTANTE`, avec la phrase de `docs/PROTOCOLE.md` qui
  *   porte la valeur ; le même test échoue si le protocole ne la contient plus.
  */
-import { REECHANTILLONNAGES_PRODUCTION } from "../../../analysis/bootstrap.ts";
+import { NIVEAU_CONFIANCE_POURCENT, REECHANTILLONNAGES_PRODUCTION } from "../../../analysis/bootstrap.ts";
 import {
   DUREE_FENETRE_MS,
+  LONGUEUR_MAX_CONTESTATION,
   PART_MINIMALE_ITEMS_A_F,
   PART_REPRISE,
   SEUIL_COUVERTURE_ITEMS_P,
@@ -74,6 +75,10 @@ export const PARAMETRES = {
   fenetreHeures: heures(DUREE_FENETRE_MS),
   /** §8, `analysis/bootstrap.ts` : rééchantillonnages du bootstrap de production. */
   reechantillonnages: entier(REECHANTILLONNAGES_PRODUCTION),
+  /** §8, `analysis/bootstrap.ts` : niveau de confiance des intervalles, en pourcentage. */
+  niveauConfiance: entier(NIVEAU_CONFIANCE_POURCENT),
+  /** §4, `analysis/parametres-protocole.ts` : longueur maximale du texte d'une contestation, en caractères. */
+  longueurContestation: entier(LONGUEUR_MAX_CONTESTATION),
   /** §8, `analysis/seuils.ts` : part de réponses manquantes au-delà de laquelle un couple est « run incomplet ». */
   reponsesManquantesMax: pourcent(SEUIL_RUN_INCOMPLET.numerateur / SEUIL_RUN_INCOMPLET.denominateur),
 } as const;
@@ -86,14 +91,12 @@ export interface ParametreSansConstante {
 }
 
 /**
- * Valeurs qu'aucune constante ne porte (délais de la procédure de contestation, niveau de
- * confiance, rang de la liste des magasins) : la page les affiche, un test les recoupe avec le
- * protocole. La citation est courte et exacte, copiée de `docs/PROTOCOLE.md`.
+ * Valeurs qu'aucune constante ne porte (délais de la procédure de contestation, rang de la liste
+ * des magasins) : la page les affiche, un test les recoupe avec le protocole. La citation est
+ * courte et exacte, copiée de `docs/PROTOCOLE.md`.
  */
 export const PARAMETRES_SANS_CONSTANTE = {
   delaiPanelJours: { affiche: "14", citation: "Le panel (section 10) statue sous 14 jours" },
-  longueurContestation: { affiche: "1 000", citation: "dans la limite de 1 000 caractères" },
   accuseReceptionHeures: { affiche: "24", citation: "accusé automatique sous 24 h" },
-  niveauConfiance: { affiche: "95", citation: "intervalle de confiance à 95 %" },
   rangMagasins: { affiche: "50", citation: "50 premières applications gratuites" },
 } as const satisfies Record<string, ParametreSansConstante>;

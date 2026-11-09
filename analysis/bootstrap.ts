@@ -42,6 +42,13 @@ import type { Intervalle95, Taux, Ulid } from "./types.ts";
 /** §8. Les tests en utilisent beaucoup moins, à graine fixe. */
 export const REECHANTILLONNAGES_PRODUCTION = 2000;
 
+/** §8 : « intervalle de confiance à 95 % », méthode des percentiles. */
+export const NIVEAU_CONFIANCE_POURCENT = 95;
+
+/** Les percentiles des bornes, en fractions : 2,5 % et 97,5 % pour 95 % (divisions correctement arrondies). */
+const PERCENTILE_BAS = (100 - NIVEAU_CONFIANCE_POURCENT) / 200;
+const PERCENTILE_HAUT = (100 + NIVEAU_CONFIANCE_POURCENT) / 200;
+
 export interface OptionsBootstrap {
   readonly reechantillonnages: number;
   /** `run.graines.bootstrap.valeur`, l'entier publié du run. */
@@ -264,8 +271,8 @@ export function intervalleDepuis(
 ): Intervalle95 | null {
   if (echantillon.nombre_grappes === 0 || echantillon.valeurs.length === 0) return null;
   return {
-    bas: percentile(echantillon.valeurs, 0.025),
-    haut: percentile(echantillon.valeurs, 0.975),
+    bas: percentile(echantillon.valeurs, PERCENTILE_BAS),
+    haut: percentile(echantillon.valeurs, PERCENTILE_HAUT),
     nombre_grappes: echantillon.nombre_grappes,
     reechantillonnages,
     reechantillonnages_indefinis: echantillon.indefinis,

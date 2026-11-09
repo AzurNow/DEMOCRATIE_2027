@@ -31,7 +31,9 @@ import { appliquerCorrections } from "./promotion.ts";
 import type { AutorisationReecriture } from "./ajout-seul.ts";
 import type { Correction, Item, Source } from "./types.ts";
 
-export const LONGUEUR_MAX_CONTESTATION = 1000;
+import { LONGUEUR_MAX_CONTESTATION } from "../../analysis/parametres-protocole.ts";
+
+export { LONGUEUR_MAX_CONTESTATION };
 
 export const TYPES_CONTESTATAIRE = ["campagne", "parti", "citoyen", "media", "autre"] as const;
 export type TypeContestataire = (typeof TYPES_CONTESTATAIRE)[number];

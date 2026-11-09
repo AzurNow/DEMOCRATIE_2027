@@ -47,7 +47,13 @@
  * commun à tous les annotateurs. Texte haché : `<valeur>␀ordre_file_humaine`.
  */
 
-import { TAILLE_JEU_OR, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL } from "../../analysis/parametres-protocole.ts";
+import {
+  TAILLE_JEU_OR,
+  TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL,
+  TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS,
+  TAUX_ECHANTILLON_APRES_RETRAIT,
+  TAUX_ECHANTILLON_SANS_RETRAIT,
+} from "../../analysis/parametres-protocole.ts";
 import { graineDerivee } from "../../analysis/graines.ts";
 import { comparerChaines } from "../../outils/ordre-chaines.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
@@ -80,9 +86,6 @@ export const CLE_SOUS_ENSEMBLE_CONTREFACTUEL: readonly string[] = ["contrefactue
  */
 export const CLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS: readonly string[] = ["contrefactuel_outil"];
 
-/** §7 0.24 : « Ce sous-ensemble compte 200 réponses dont le texte nomme au moins un outil ». */
-export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL_OUTILS = 200;
-
 /**
  * Clé lisible de la graine du jeu d'or, dérivée de `run.graines.echantillon_humain` (D18).
  * Texte haché : `<valeur>␀jeu_or`.
@@ -98,8 +101,8 @@ export const CLE_ORDRE_FILE_HUMAINE: readonly string[] = ["ordre_file_humaine"];
 
 /** Le taux publié, écrit en fraction exacte : la taille se calcule en entiers. */
 const FRACTION_DU_TAUX: ReadonlyMap<number, { readonly numerateur: number; readonly denominateur: number }> = new Map([
-  [0.1, { numerateur: 1, denominateur: 10 }],
-  [0.25, { numerateur: 1, denominateur: 4 }],
+  [TAUX_ECHANTILLON_SANS_RETRAIT, { numerateur: 1, denominateur: 10 }],
+  [TAUX_ECHANTILLON_APRES_RETRAIT, { numerateur: 1, denominateur: 4 }],
 ]);
 
 export interface SousEnsembleContrefactuel {

@@ -8,7 +8,8 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { lirePageConstruite, texteDePage } from "../../outils/site-gardes.ts";
-import { REECHANTILLONNAGES_PRODUCTION } from "../../analysis/bootstrap.ts";
+import { NIVEAU_CONFIANCE_POURCENT, REECHANTILLONNAGES_PRODUCTION } from "../../analysis/bootstrap.ts";
+import { LONGUEUR_MAX_CONTESTATION } from "../../analysis/parametres-protocole.ts";
 import { SEUIL_RUN_INCOMPLET } from "../../analysis/seuils.ts";
 import {
   PARAMETRES,
@@ -69,6 +70,18 @@ describe("paramètres sans constante et protocole", () => {
   }
 });
 
+describe("paramètres portés par une constante et protocole", () => {
+  it("retrouve la longueur de contestation et le niveau de confiance dans docs/PROTOCOLE.md", () => {
+    expect(espaces(protocole)).toContain(`dans la limite de ${PARAMETRES.longueurContestation} caractères`);
+    expect(espaces(protocole)).toContain(`intervalle de confiance à ${PARAMETRES.niveauConfiance} %`);
+  });
+
+  it("garde 1 000 caractères et 95 % de confiance", () => {
+    expect(PARAMETRES.longueurContestation).toBe(entier(LONGUEUR_MAX_CONTESTATION));
+    expect(PARAMETRES.niveauConfiance).toBe(entier(NIVEAU_CONFIANCE_POURCENT));
+  });
+});
+
 describe("la page construite affiche ces paramètres", () => {
   const page = () => espaces(texteDePage(lirePageConstruite(join(RACINE, "site/dist"), "index.html"))).replace(/\s+/g, " ");
 
@@ -85,9 +98,9 @@ describe("la page construite affiche ces paramètres", () => {
   it("porte chaque valeur sans constante, dans sa phrase", () => {
     const texte = page();
     expect(texte).toContain(`sous ${PARAMETRES_SANS_CONSTANTE.delaiPanelJours.affiche} jours`);
-    expect(texte).toContain(`limite de ${PARAMETRES_SANS_CONSTANTE.longueurContestation.affiche} caractères`);
+    expect(texte).toContain(`limite de ${PARAMETRES.longueurContestation} caractères`);
     expect(texte).toContain(`sous ${PARAMETRES_SANS_CONSTANTE.accuseReceptionHeures.affiche} heures`);
-    expect(texte).toContain(`confiance à ${PARAMETRES_SANS_CONSTANTE.niveauConfiance.affiche} %`);
+    expect(texte).toContain(`confiance à ${PARAMETRES.niveauConfiance} %`);
     expect(texte).toContain(`les ${PARAMETRES_SANS_CONSTANTE.rangMagasins.affiche} premières`);
   });
 });
