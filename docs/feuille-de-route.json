@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-11-09",
+  "date_maj": "2026-11-10",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -1410,6 +1410,20 @@
       "recommandation": "Option 1 : le §7 annonce déjà la règle, la vérifier doit être possible, et un pseudonyme ne donne pas d'identité civile.",
       "retenu": "Option 1 : annotateur_auteur est publié tel quel dans run.json, figé au gel (#406). Décision de l'auteur du 2026-11-09 (« décisions recommandées »).",
       "date_decision": "2026-11-09"
+    },
+    {
+      "id": "D104",
+      "statut": "tranchee",
+      "question": "Compétence hypotheses-structurantes (examen des paris de fond du protocole au critère de l'utilité réelle) : qu'est-ce qui reste hors de son champ, c'est-à-dire ne se négocie contre aucun gain d'utilité ?",
+      "contexte": "L'auteur a demandé le 2026-11-10 une passe non conservatrice, qui puisse remettre en cause des éléments structurants du protocole, la crédibilité étant un moyen de l'utilité et non une fin ; critique-protocole cherche les failles à cadre donné et propose le moins possible. Sans borne écrite, une telle passe pourrait proposer de gagner de l'audience en affaiblissant ce qui empêche le projet de nuire à l'élection. La compétence sœur du projet vigie écarte de même trois règles de son champ.",
+      "options": [
+        "Quatre hors-champ : (1) intégrité de la preuve (ne rien rédiger ni inventer, règles 2, 5 et 7) ; (2) neutralité entre candidats (§10, règle 4, candidats jamais notés) ; (3) honnêteté de la publication (méthode publique avant la mesure, résultats publiés quels qu'ils soient, aucun choix a posteriori, règle 8) ; (4) indépendance à l'égard des partis, candidats, campagnes et éditeurs évalués (§1). Restent dans le champ : quand et quoi geler, le refus d'affiner après le gel, les règles 1 et 3 pour leur étendue, la forme et le volume publiés, un partenariat avec un laboratoire, une rédaction ou une institution, toute décision D1 à Dn.",
+        "Les huit règles de CLAUDE.md hors champ en bloc : plus simple, mais la forme du site (règle 1) et l'étendue de la validation humaine (règle 3), qui pèsent le plus sur le calendrier et la portée, échappent à l'examen.",
+        "Aucun hors-champ : tout se discute, l'auteur filtre à la lecture ; chaque passe dépense alors du travail sur des propositions qu'il refusera."
+      ],
+      "recommandation": "Option 1 : elle protège ce dont la perte ferait du projet un risque pour l'élection, et laisse examinables les choix qui ne sont que des moyens.",
+      "retenu": "Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision d'outillage hors zone d'arrêt). Écrite dans .claude/skills/hypotheses-structurantes/SKILL.md, section « Hors champ » ; l'auteur peut rouvrir la liste, la passe jamais.",
+      "date_decision": "2026-11-10"
     }
   ],
   "lots": [

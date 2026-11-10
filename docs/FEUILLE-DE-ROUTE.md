@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-09.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-11-10.
 
 ## Décisions en attente
 
@@ -31,6 +31,10 @@ Aucune décision en attente.
 ### D103 — Le pseudonyme d'annotateur de l'auteur (annotateur_auteur) est-il publié dans run.json ?
 
 **Décision du 2026-11-09 :** Option 1 : annotateur_auteur est publié tel quel dans run.json, figé au gel (#406). Décision de l'auteur du 2026-11-09 (« décisions recommandées »).
+
+### D104 — Compétence hypotheses-structurantes (examen des paris de fond du protocole au critère de l'utilité réelle) : qu'est-ce qui reste hors de son champ, c'est-à-dire ne se négocie contre aucun gain d'utilité ?
+
+**Décision du 2026-11-10 :** Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision d'outillage hors zone d'arrêt). Écrite dans .claude/skills/hypotheses-structurantes/SKILL.md, section « Hors champ » ; l'auteur peut rouvrir la liste, la passe jamais.
 
 ### D11 — pnpm symmetry peut-il sortir en succès sans avoir contrôlé l'invariant « item F ⇒ mesure fictive » ?
 
