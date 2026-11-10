@@ -81,7 +81,25 @@ les citations du protocole 0.34 existent mot pour mot.
 - service-public.gouv.fr A15053 (2026-07-02) : 18 avril et 2 mai 2027. La page ne donne ni la clôture des parrainages ni la date de la liste officielle : ces deux dates de C1 restent non vérifiées par la session.
 - Tarifs confirmés sur les pages officielles : gpt-6-luna 0,10/0,50 ; gpt-6-sol 2/10 ; recherche OpenAI 10 $/1 000 ; Sonnet 5.5 2/10, Opus 5.5 4/20, recherche 10 $/1 000, +30 % de jetons, lot −50 %, lecture de cache 0,05× ; Gemini 3.6 Flash 0,75/3,75 puis 1,50/7,50 au 2027-01-01 ; 4 Argon 2/10 puis 4/20 au 2026-12-01 ; recherche Google 14 $/1 000 après 5 000 ; Mistral Large 0,5/1,5, Medium 3.5 sans tarif ; grok-4.7 2/6, recherche 5 $/1 000 ; deepseek-flash 0,3/1,2 en heures pleines ; `perplexity/sonar` 0,25/2,50 ; BCE 1,1193 le 2026-11-09.
 
-## Reste à faire de l'étape 4
+### Lot E (relancé) et PDF lus par la session sur leur texte extrait
 
-- Lot E interrompu (limite d'usage) : Viginum (Légifrance), dossier LINC, Commission des sondages, Badouard, procédure Arcom art. 40, NewsGuard (FAQ, méthode, un an), NPR 2026-08-30.
-- PDF que le lecteur n'a pas su extraire : Ipsos bva (IA et politique), rapport EBU.
+Les PDF ne sont pas lisibles par le lecteur de pages. La session a cherché elle-même les passages
+(`grep`) dans les textes extraits par le sous-agent du relevé (répertoire temporaire de la session
+précédente, hors dépôt).
+
+- Ipsos bva, « IA et politique », PDF (URL dans le relevé, Q2) : terrain « Du 10 au 12 décembre 2025 », 1 000 personnes ; 68 % ont déjà utilisé un outil d'IA générative ; ChatGPT 50 %, Gemini 42 %, Meta AI 37 %, Microsoft Copilot 28 % ; 25 % ont déjà interrogé un modèle d'IA sur une personnalité ou un parti, 23 % prêts à le faire ; ce qu'ils chercheraient : mesures d'un programme 39 %, prises de position 31 %, le candidat ou le parti qui correspond le plus à leurs idées (chiffre de 30 % non relu sur la ligne), comparatif 22 % ; 28 % ont l'intention de le faire pour la présidentielle de 2027. Commanditaire non trouvé dans le texte : retiré.
+- EBU/BBC, rapport PDF : 45 % des réponses avec au moins un problème significatif ; réponses de la BBC avec problème « improved from 51% to 37% » ; versions choisies « to replicate the default (and likely most common) » expérience ; collecte « between 24 May and 10 June 2025 » ; 1 053 réponses avec citation directe, 12 % avec problème significatif ; 271 journalistes ; « more quickly, more regularly and at greater scale ». Non relus : refus 13 → 1, anonymisation des assistants.
+- Badouard, La Vie des idées, « IA, dis-moi comment voter » : « les régulateurs déploient des méthodes d'audit « en boîte noire » » ; ECAT. La liste PEReN, Viginum, ANSSI n'a pas été relue sur la ligne : retirée.
+- LINC (CNIL), dossier IA et élections, CC BY 3.0 FR : cite NewsGuard sur les chatbots ; Arcom coordinateur national du DSA ; Viginum « détecter et caractériser les ingérences étrangères ».
+- Décret n° 2021-922 du 13 juillet 2021 (Légifrance) : art. 3, 1° : « Détecter et caractériser, en analysant les contenus accessibles publiquement sur les plateformes en ligne des opérateurs » de l'art. L. 111-7, I ; « notamment lorsque celles-ci sont de nature à altérer l'information des citoyens pendant les périodes électorales » ; ni IA ni agent conversationnel dans le texte.
+- Commission des sondages, communiqué du 2026-09-14 : « à compter du 15 septembre 2026, indépendamment des intentions de vote, les enquêtes d'opinion portant sur les propositions » de la campagne entrent dans le champ de la loi de 1977 ; aucune mention de l'IA sur la page.
+- Arcom, agrément des chercheurs (art. 40 DSA) : évaluation initiale, 80 jours ouvrés au plus, « Independence from commercial interests », en vigueur le 2025-10-29.
+- NewsGuard : FAQ « Attempting to replicate our audit weeks or months later will likely produce different outputs. » ; méthode : 30 prompts par chatbot, mode d'interrogation non dit ; 2025-09-04 : résultats anonymes un an « to encourage collaboration with the platforms », 35 % contre 18 % un an plus tôt.
+
+Retirés : NPR du 2026-08-30 (délai dépassé, page non lue) ; non-réponse NewsGuard « 31 % → 0 % » (déduction, pas sur la page).
+
+## État de l'étape 4
+
+Terminée pour les faits que le registre retiendra. Non vérifiées par la session et donc à ne pas
+citer comme faits : la clôture des parrainages (12 mars 2027) et la date limite de la liste officielle
+(26 mars 2027) de C1 ; tout ce qui figure au tableau des corrections ci-dessus.

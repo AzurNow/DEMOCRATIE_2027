@@ -52,13 +52,15 @@ Décision de l'auteur du 2026-11-01 :
   (rouvrir chaque URL du relevé, relancer chaque script), étape 5 (statuts, une alternative par
   hypothèse avec son prix), étape 7 (`docs/fondations/registre.md`, `docs/fondations/2026-11-10.md`,
   décisions `en_attente`, `pnpm feuille-de-route`, PR). Aucun fait du relevé n'est encore vérifié
-  par la session : ne rien en conclure avant l'étape 4. **Fait de l'étape 4 (reprise du
-  2026-11-10, partie mécanique seulement)** : les six scripts `c1` à `c5` relancés (Python 3.12.14)
-  rendent des sorties identiques aux `*_sortie.txt` versionnés ; toutes les citations du protocole
-  de `etape2-chaine-hypotheses.md`, de `essais.md` et de C5 de `calculs.md` existent mot pour mot
-  dans la 0.34. **Pas fait** : relecture des paramètres de chaque calcul, ouverture des 130 URL
-  distinctes de `releve-monde.md`. La reprise s'est arrêtée là parce que la session tournait hors
-  de l'en-tête de la compétence (`CLAUDE_EFFORT=medium`) : relancer par `/hypotheses-structurantes`.
+  par la session : ne rien en conclure avant l'étape 4. **Étape 4 terminée le 2026-11-10** :
+  scripts `c1` à `c5` rejoués à l'identique, citations du protocole exactes, sources rouvertes ;
+  le détail (faits confirmés avec leur passage, et dix-sept faits du relevé retirés ou corrigés) est
+  dans `scratch/fondations/2026-11-10/verification.md`, **seule base admise pour les étapes 5 et
+  7** : un fait de `releve-monde.md` absent de ce fichier ne se cite pas. Restent les étapes 5
+  (statuts H1 à H12, une alternative chiffrée par hypothèse infirmée ou à tester), 6 (relire
+  `essais.md`) et 7 (registre, passe datée, décisions `en_attente`, `pnpm feuille-de-route`, PR).
+  À lancer par `/hypotheses-structurantes` (effort maximal exigé par la compétence ; un simple
+  « reprends » tourne à l'effort de la session).
 - Protocole **0.34** dans le dépôt. **La 0.35 est tranchée mais pas écrite** : textes exacts dans
   `docs/TACHES-AUTEUR.md` (section 1, Protocole), items 1 à 18. L'auteur l'écrit ; le classifieur
   refuse cette écriture à l'agent.
