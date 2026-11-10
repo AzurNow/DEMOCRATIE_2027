@@ -1,0 +1,66 @@
+C1d. Réductions du premier run : gains et pertes (tarifs du 2026-11-10 ; modèle gratuit des outils)
+  | configuration | items | questions (quota 1) | couples | réponses/run | h annot. une fois (validation + relecture) | h annot. par run (échantillon + désaccords) | € API par run | jours annot. (16 h/sem) | gain vs complet |
+  |---|---|---|---|---|---|---|---|---|---|
+  | complet (30 P, 3 F, 2 E, 2 modes) | 448 | 490 | 11 | 32,340 | 269 | 1536 | 1,312 | 790 | −0 h, −0 €, −0 j |
+  | 10 items P par candidat | 208 | 490 | 11 | 32,340 | 125 | 1536 | 1,312 | 727 | −144 h, −0 €, −63 j |
+  | 1 formulation | 448 | 490 | 11 | 10,780 | 224 | 512 | 446 | 322 | −1069 h, −866 €, −468 j |
+  | 1 échantillon | 448 | 490 | 11 | 16,170 | 269 | 768 | 662 | 454 | −768 h, −649 €, −336 j |
+  | sans web seul (6 couples) | 448 | 490 | 6 | 17,640 | 269 | 838 | 392 | 484 | −698 h, −920 €, −305 j |
+  | web seul (5 couples) | 448 | 490 | 5 | 14,700 | 269 | 698 | 933 | 423 | −838 h, −379 €, −367 j |
+  | cumul : 10 P, 1 F, 1 E, sans web seul | 208 | 490 | 6 | 2,940 | 104 | 140 | 76 | 107 | −1561 h, −1235 €, −683 j |
+
+  Demi-largeurs d'IC à 95 % d'exactitude (points de pourcentage), approximation binomiale 1,96·√(p(1−p)/n)
+  n par couple = questions nommant un candidat (12 × 10 thèmes × 3 gabarits = 360 au quota 1, ou 12 × items P × 3 sous 10 thèmes) × F × E ; par candidat = n / 12
+  | configuration | n par couple | demi-largeur couple p=0,7 | p=0,85 | n par candidat | demi-largeur candidat p=0,7 | p=0,85 |
+  |---|---|---|---|---|---|---|
+  | complet (30 P, 3 F, 2 E, 2 modes) | 2,160 | 1.9 | 1.5 | 180 | 6.7 | 5.2 |
+  | 10 items P par candidat | 2,160 | 1.9 | 1.5 | 180 | 6.7 | 5.2 |
+  | 1 formulation | 720 | 3.3 | 2.6 | 60 | 11.6 | 9.0 |
+  | 1 échantillon | 1,080 | 2.7 | 2.1 | 90 | 9.5 | 7.4 |
+  | sans web seul (6 couples) | 2,160 | 1.9 | 1.5 | 180 | 6.7 | 5.2 |
+  | web seul (5 couples) | 2,160 | 1.9 | 1.5 | 180 | 6.7 | 5.2 |
+  | cumul : 10 P, 1 F, 1 E, sans web seul | 360 | 4.7 | 3.7 | 30 | 16.4 | 12.8 |
+
+  Même chose en grappes (grappe = item, §8) : bêta-binomiale, percentile en grappes, B = 1 000, 200 jeux ; m = réponses classées par item et par couple = 3 gabarits × F × E
+  | cas | items (grappes) | m | p | rho | demi-largeur médiane | couverture réelle (nominal 0,95) |
+  |---|---|---|---|---|---|---|
+  | candidat au seuil, complet | 10 | 18 | 0.7 | 0.3 | 15.6 pts | 0.91 |
+  | candidat au seuil, complet | 10 | 18 | 0.7 | 0.5 | 19.5 pts | 0.89 |
+  | candidat au seuil, complet | 10 | 18 | 0.85 | 0.3 | 11.9 pts | 0.91 |
+  | candidat au seuil, complet | 10 | 18 | 0.85 | 0.5 | 13.1 pts | 0.81 |
+  | candidat cible, complet | 30 | 18 | 0.7 | 0.3 | 9.2 pts | 0.91 |
+  | candidat cible, complet | 30 | 18 | 0.7 | 0.5 | 11.6 pts | 0.95 |
+  | candidat cible, complet | 30 | 18 | 0.85 | 0.3 | 7.2 pts | 0.92 |
+  | candidat cible, complet | 30 | 18 | 0.85 | 0.5 | 9.2 pts | 0.90 |
+  | candidat cible, 1 échantillon | 30 | 9 | 0.7 | 0.3 | 9.6 pts | 0.93 |
+  | candidat cible, 1 échantillon | 30 | 9 | 0.7 | 0.5 | 12.0 pts | 0.94 |
+  | candidat cible, 1 échantillon | 30 | 9 | 0.85 | 0.3 | 7.6 pts | 0.90 |
+  | candidat cible, 1 échantillon | 30 | 9 | 0.85 | 0.5 | 9.4 pts | 0.93 |
+  | candidat cible, 1 formulation | 30 | 6 | 0.7 | 0.3 | 10.3 pts | 0.94 |
+  | candidat cible, 1 formulation | 30 | 6 | 0.7 | 0.5 | 12.2 pts | 0.95 |
+  | candidat cible, 1 formulation | 30 | 6 | 0.85 | 0.3 | 7.8 pts | 0.94 |
+  | candidat cible, 1 formulation | 30 | 6 | 0.85 | 0.5 | 9.4 pts | 0.93 |
+  | candidat au seuil, 1 F et 1 E | 10 | 3 | 0.7 | 0.3 | 18.4 pts | 0.89 |
+  | candidat au seuil, 1 F et 1 E | 10 | 3 | 0.7 | 0.5 | 21.7 pts | 0.90 |
+  | candidat au seuil, 1 F et 1 E | 10 | 3 | 0.85 | 0.3 | 15.0 pts | 0.85 |
+  | candidat au seuil, 1 F et 1 E | 10 | 3 | 0.85 | 0.5 | 16.7 pts | 0.84 |
+  | candidat cible, 1 F et 1 E | 30 | 3 | 0.7 | 0.3 | 11.7 pts | 0.97 |
+  | candidat cible, 1 F et 1 E | 30 | 3 | 0.7 | 0.5 | 13.3 pts | 0.96 |
+  | candidat cible, 1 F et 1 E | 30 | 3 | 0.85 | 0.3 | 8.9 pts | 0.94 |
+  | candidat cible, 1 F et 1 E | 30 | 3 | 0.85 | 0.5 | 10.6 pts | 0.91 |
+  | couple, strate globale (12 × 10 items P) | 120 | 18 | 0.7 | 0.3 | 4.8 pts | 1.00 |
+  | couple, strate globale (12 × 10 items P) | 120 | 18 | 0.7 | 0.5 | 6.0 pts | 0.88 |
+  | couple, strate globale (12 × 10 items P) | 120 | 18 | 0.85 | 0.3 | 3.7 pts | 0.93 |
+  | couple, strate globale (12 × 10 items P) | 120 | 18 | 0.85 | 0.5 | 4.6 pts | 0.90 |
+  | couple, strate globale (12 × 30 items P) | 360 | 18 | 0.7 | 0.3 | 2.7 pts | 0.95 |
+  | couple, strate globale (12 × 30 items P) | 360 | 18 | 0.7 | 0.5 | 3.4 pts | 0.95 |
+  | couple, strate globale (12 × 30 items P) | 360 | 18 | 0.85 | 0.3 | 2.1 pts | 0.95 |
+  | couple, strate globale (12 × 30 items P) | 360 | 18 | 0.85 | 0.5 | 2.7 pts | 0.88 |
+
+  QR et H du §2 que chaque réduction rend sans objet (texte du protocole 0.34, lignes 70-86, 194, 231, 298, 307) :
+  - 1 formulation (neutre seule) : QR6 (part « formulation ») et H3 (neutre moins orientée) sans objet ; la métrique « confirmation de prémisse » (§8 ligne 298) n'a plus de dénominateur ; QR4 perd le drapeau « confirmation de prémisse ».
+  - 1 échantillon : « variabilité entre échantillons » publiée absente (§8 ligne 307, levier §12 prévu) ; QR1 à QR5 inchangées, intervalles plus larges.
+  - sans web seul : QR6 (part « mode ») et H2 sans objet pour tous les outils ; Perplexity (API web intrinsèque) sort du run ; QR5 (sourçage) mesurée sur des liens cités de mémoire seulement.
+  - web seul : H2 sans objet ; DeepSeek (pas de recherche web, D28-3) et Gemini (web suspendu, D28-4) sortent du run : 5 outils sur 7.
+  - 10 items P par candidat : aucune QR ne disparaît, mais tout candidat est exactement au seuil §4 : un seul item contesté, obsolète ou exclu du tirage le fait tomber sous le seuil et sortir des comparaisons (QR3, H4) ; la répartition sur dix thèmes est d'un item par thème, donc la compensation de symétrie §5 n'a aucune réserve.
+  - toutes cumulées : restent QR1, QR2, QR4 (sans prémisse), QR5, QR7 (dès le 2e run), QR9 ; H1, H4, H5 calculables ; H2, H3 sans objet ; QR8 inchangée (canal application, 1 formulation, 1 échantillon déjà).

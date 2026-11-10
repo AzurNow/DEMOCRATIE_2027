@@ -47,8 +47,8 @@ Décision de l'auteur du 2026-11-01 :
   rien de fusionné.** Compétence fusionnée par #409 (D104 : quatre hors-champ). Fait : étapes 1 et 2
   (chaîne d'utilité, H1 à H12), relevé du monde rendu, essais de terrain rédigés ; fichiers de
   travail dans `scratch/fondations/2026-11-10/` (`etape2-chaine-hypotheses.md`, `releve-monde.md`,
-  `essais.md`, scripts `c1` à `c5` du sous-agent calculs, dont le fichier de résultats `calculs.md`
-  est dans le répertoire temporaire de la session et doit y être recopié). **Reste** : étape 4
+  `essais.md`, `calculs.md`, scripts `c1` à `c5` et leurs sorties ; les deux sous-agents ont
+  rendu). **Reste** : étape 4
   (rouvrir chaque URL du relevé, relancer chaque script), étape 5 (statuts, une alternative par
   hypothèse avec son prix), étape 7 (`docs/fondations/registre.md`, `docs/fondations/2026-11-10.md`,
   décisions `en_attente`, `pnpm feuille-de-route`, PR). Aucun fait du relevé n'est encore vérifié

@@ -1,0 +1,64 @@
+C2. Périmètre : 7 outils, 11 couples (5 web), 12 candidats, 448 items (12×30 P + 40 A + 36 F + 12 O), 1502 questions engendrées, 490 questions tirées au quota 1, 32,340 réponses par run (14,700 en mode web). Taux : BCE, taux de référence du 9 novembre 2026 : 1 EUR = 1,1193 USD (ecb.europa.eu, eurofxref-graph-usd, lu le 2026-11-10).
+
+C2.1 Couches « une fois » (avant le premier run)
+  | couche | € API (bas) | € API (haut) | h annotateurs (bas) | h annot. (haut) | h auteur (bas) | h auteur (haut) | source des hypothèses |
+  |---|---|---|---|---|---|---|---|
+  | extraction double (Sonnet 5.5 + Mistral Large, 12 corpus, réextraction 25 %) | 5 | 12 | 0 | 0 | 0 | 0 | corpus (150000, 600000) car., (5, 15) sources/candidat (paramètres) |
+  | double validation humaine de 448 items (+ arbitrages de l'auteur) | 0 | 0 | 75 | 224 | 2.2 | 7.5 | (5, 15) min/item/annotateur ; désaccords (0.1, 0.2) ; (3, 5) min/arbitrage |
+  | relecture des mesures par l'auteur (§4) | 0 | 0 | 0 | 0 | 3.0 | 9.6 | (0.5, 0.8) mesure/item P, (1, 2) min/mesure |
+  | reformulations (API Mistral Large, 1502 questions × 2 formulations) | 2 | 2 | 0 | 0 | 0 | 0 | prompt 9,087 car. |
+  | relecture humaine des formulations (1502 questions, 3 formulations ensemble, 1 annotateur) | 0 | 0 | 25 | 50 | 0 | 0 | (1, 2) min/question |
+  | jeu d'or du pilote (300 réponses × 2 humains + 3e sur 20 %) | 0 | 0 | 22 | 55 | 0 | 0 | (2, 5) min/notation |
+
+C2.2 Interrogation par run, par couple outil × mode (USD → €), 3 formulations × 2 échantillons × quota 1
+  | outil | mode | modèle gratuit | € par run | modèle payant | € par run |
+  |---|---|---|---|---|---|
+  | ChatGPT | sans_web | gpt-6-luna | 1 | gpt-6-sol | 11 |
+  | ChatGPT | web | gpt-6-luna | 41 | gpt-6-sol | 66 |
+  | Claude | sans_web | claude-sonnet-5-5 | 14 | claude-opus-5-5 | 28 |
+  | Claude | web | claude-sonnet-5-5 | 74 | claude-opus-5-5 | 109 |
+  | Gemini | sans_web | gemini-3.6-flash | 4 | gemini-4-argon | 11 |
+  | Le Chat | sans_web | mistral-medium-3-5 | 2 | mistral-medium-3-5 | 2 |
+  | Le Chat | web | mistral-medium-3-5 | 25 | mistral-medium-3-5 | 25 |
+  | Grok | sans_web | grok-4.7 | 7 | grok-4.7 | 7 |
+  | Grok | web | grok-4.7 | 42 | grok-4.7 | 42 |
+  | Perplexity | web | sonar | 14 | sonar | 14 |
+  | DeepSeek | sans_web | deepseek-flash | 1 | deepseek-flash | 1 |
+  | **total** | | | **225** | | **316** |
+  Le Chat (Medium 3.5) et sa recherche web sont au milieu de leur fourchette de PARAMÈTRE (tarifs non affichés).
+
+C2.3 Juges par run (USD → €) : Sonnet 5.5 (tokeniseur +30 %) et Mistral Large ; contrefactuel = 2 × 200 renotations par juge
+  | tarification | juge Sonnet 5.5 | dont contrefactuel | juge Mistral Large | dont contrefactuel | total juges |
+  |---|---|---|---|---|---|
+  | standard | 904 | 12 | 174 | 2 | 1,092 |
+  | lot (-50 %) | 452 | 6 | 87 | 1 | 546 |
+  | lot + cache du prompt (0,05×) | 322 | 4 | 87 | 1 | 414 |
+  Jetons d'entrée par réponse : Sonnet web 22,469, sans web 8,540 ; Mistral web 17,514, sans web 6,800 (prompt juge 12,800 caractères).
+
+C2.4 Couches humaines par run (heures), puis par mois au rythme hebdomadaire (× 52/12)
+  | couche | h/run (bas) | h/run (haut) | h/mois (bas) | h/mois (haut) | hypothèses |
+  |---|---|---|---|---|---|
+  | échantillon 10 % (3,234 réponses × 2 humains + 3e humain sur 20 %) | 237 | 593 | 1028 | 2569 | (2, 5) min/notation |
+  | désaccords des juges, accords partiels, erreurs graves (22 à 37 % des réponses, 1 humain) | 238 | 1010 | 1030 | 4377 | taux de faisabilite.py |
+  | lectures des comparateurs (720 lectures, 2 humains + 3e, reprise (0.5, 0.8)) | 4.0 | 9.9 | 17 | 43 | 0.75 min/lecture |
+  | revérification des items A | 0.5 | 0.5 | 2.2 | 2.2 | 40 items, 0.25 avec source neuve |
+  | items nouveaux ou revalidés ((0.02, 0.05) des items) + relecture de leurs formulations | 1.9 | 13.4 | 8 | 58 | paramètre |
+  | auteur : audit, arbitrages, note éditoriale (cible §12) | 3 | 3 | 13 | 13 | §12 ligne 425 |
+  | **total annotateurs** | **481** | **1627** | **2086** | **7049** | capacité posée : 2 × (5, 10) h/sem = 10 à 20 h/sem |
+
+C2.5 Total API par run et par mois (hebdomadaire), contre la cible §12 de 600 €/mois
+  outils gratuits, juges standard : 225 € interrogation + 1,092 € juges = 1,317 €/run ; 5,707 €/mois ; ×9.5 la cible
+  outils payants, juges standard : 316 € interrogation + 1,092 € juges = 1,408 €/run ; 6,101 €/mois ; ×10.2 la cible
+  outils gratuits, juges en lot + cache : 225 € interrogation + 414 € juges = 639 €/run ; 2,768 €/mois ; ×4.6 la cible
+
+C2.6 Couches optionnelles : ce que chacune coûte, par run et par mois, et ce que la même dépense achèterait
+  | couche retirée | € API évités/run (bas–haut) | €/mois | h annot. évitées/run (bas–haut) | h/mois | = outils de plus (€) | = questions du canal application par mois (h, à 3–6 min, 7 assistants, 2 testeurs) | = runs de plus (€ API) |
+  |---|---|---|---|---|---|---|---|
+  | 3 formulations → 1 | 869–929 | 3,765–4,027 | 317–1069 | 1372–4631 | 3.4–3.7 | 980–6,615 questions/mois | 0.66–0.66 |
+  | 2 échantillons → 1 (levier §12) | 652–697 | 2,823–3,020 | 237–801 | 1029–3473 | 2.6–2.8 | 735–4,961 questions/mois | 0.49–0.50 |
+  | 2 modes → sans web seul | 924–984 | 4,006–4,265 | 216–729 | 935–3157 | 3.7–3.9 | 668–4,510 questions/mois | 0.70–0.70 |
+  | 2 juges → 1 juge (Sonnet) + humain | 176–176 | 763–763 | 238–1010 | 1030–4377 | 0.7–0.7 | 736–6,253 questions/mois | 0.13–0.13 |
+  | échantillon humain 10 % → 5 % | 0–0 | 0–0 | 119–296 | 514–1285 | 0.0–0.0 | 367–1,835 questions/mois | 0.00–0.00 |
+  Ligne « 2 juges → 1 juge + humain », autre lecture : si un humain remplace le second juge sur chaque réponse obtenue (32,340 notations à (2, 5) min), la couche humaine AUGMENTE de 1,078 à 2,695 h par run (4,671 à 11,678 h par mois) pour 176 €/run d'API évités.
+  Un outil de plus (2 modes, tarif grok-4.7 + recherche 5 $/1k, jugé par les deux juges) coûte 253 €/run d'API et 86 à 291 h d'annotateurs par run (échantillon + déclenchements). Un run complet coûte 1,317 à 1,408 € d'API et 481 à 1627 h d'annotateurs.
+  Le canal application actuel (60 questions × 7 assistants × 2 testeurs) vaut 42 à 84 h/mois, soit 630 à 2,520 €/mois à (15, 30) €/h (PARAMÈTRE).

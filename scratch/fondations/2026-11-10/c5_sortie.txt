@@ -1,0 +1,74 @@
+C5. Changements de modèle par défaut, fenêtre 2025-11-01 → 2026-11-01 ; campagne de 6 mois (déc. 2026 → mai 2027)
+  | éditeur / produit | changements documentés « par défaut » (bas) | sorties mises à disposition de tous (haut) | intervalle médian (j), haut | changements attendus sur 6 mois, bas–haut | P(≥ 1 changement) bas–haut | statut des dates |
+  |---|---|---|---|---|---|---|
+  | ChatGPT (OpenAI) | 7 | 7 | 56 | 3.5–3.5 | 0.97–0.97 | déduit, extrait, paramètre |
+  | Claude (Anthropic) — ligne Sonnet (offre gratuite : Sonnet et Haiku, claude.com/pricing en extrait) | 0 | 3 | 112 | 0.0–1.5 | 0.00–0.78 | déduit |
+  | Claude (Anthropic) — ligne Opus (offres payantes) | 0 | 6 | 60 | 0.0–3.0 | 0.00–0.95 | déduit |
+  | Gemini (Google), application | 1 | 6 | 64 | 0.5–3.0 | 0.39–0.95 | lu |
+  | Le Chat / Vibe (Mistral AI) | 1 | 2 | 171 | 0.5–1.0 | 0.39–0.63 | extrait, lu |
+  | Grok (xAI), application | 2 | 5 | 65 | 1.0–2.5 | 0.63–0.92 | extrait, lu |
+  | Perplexity, application (« Best », modèle par défaut non nommé) | 0 | 0 | — | 0.0–0.0 | 0.00–0.00 | lu |
+  | DeepSeek, application et site | 2 | 4 | 111 | 1.0–2.0 | 0.63–0.86 | lu |
+
+  Détail des événements (date, fait, statut de la date, compté dans « bas »)
+  ChatGPT (OpenAI)
+    2025-11-13  [défaut]  GPT-5.1 dans ChatGPT (instantané API gpt-5.1-2025-11-13 ; help center : nouveau défaut)  — déduit de l'instantané API (page des dépréciations, lue) ; défaut : extrait
+    2025-12-15  [défaut]  GPT-5.2 (« Introducing GPT-5.2 » ; retiré de ChatGPT le 2026-06-12 au profit de GPT-5.5)  — paramètre : mois déduit du nom gpt-5.2-chat-latest (déprécié le 2026-05-08, page lue), jour non lu
+    2026-03-05  [défaut]  GPT-5.4 (« Launched March 5, 2026 » ; GPT-5.4 Thinking remplace GPT-5.2 Thinking)  — extrait (help center, 403)
+    2026-05-01  [défaut]  GPT-5.5 Instant devient le modèle par défaut (openai.com/index/gpt-5-5-instant, 403)  — paramètre : entre mars et le 2026-06-12 (retrait de GPT-5.2), jour non lu
+    2026-07-09  [défaut]  GPT-5.6 : Sol nouveau modèle phare (payant), Terra, Luna  — extrait (help center / openai.com, 403)
+    2026-08-15  [défaut]  GPT-5.6 Luna devient le défaut des offres Free et Go (« in August »)  — paramètre : mois lu en extrait, jour non lu
+    2026-10-08  [défaut]  GPT-6 : Sol pour Plus, Pro, Business, Enterprise (7 oct.) ; Luna pour Free et Go (8 oct.)  — extrait (help center « GPT-6 and other models in ChatGPT », 403)
+  Claude (Anthropic) — ligne Sonnet (offre gratuite : Sonnet et Haiku, claude.com/pricing en extrait)
+    2026-02-17  [sortie]  Claude Sonnet 4.6  — déduit : retrait « not sooner than February 17, 2027 » = sortie + 12 mois (page des dépréciations, lue) ; Perplexity changelog : ajouté en mars 2026
+    2026-06-30  [sortie]  Claude Sonnet 5  — déduit : « not sooner than June 30, 2027 » ; Perplexity : juin 2026
+    2026-09-28  [sortie]  Claude Sonnet 5.5  — déduit : « not sooner than September 28, 2027 » ; Perplexity : septembre 2026
+  Claude (Anthropic) — ligne Opus (offres payantes)
+    2025-11-24  [sortie]  Claude Opus 4.5  — déduit : « not sooner than November 24, 2026 » (instantané 20251101)
+    2026-02-05  [sortie]  Claude Opus 4.6  — déduit : « not sooner than February 5, 2027 »
+    2026-04-16  [sortie]  Claude Opus 4.7 (nouveau tokeniseur, +30 % de jetons)  — déduit : « not sooner than April 16, 2027 » ; Perplexity : avril 2026
+    2026-05-28  [sortie]  Claude Opus 4.8  — déduit : « not sooner than May 28, 2027 » ; Perplexity : mai 2026
+    2026-07-24  [sortie]  Claude Opus 5  — déduit : « not sooner than July 24, 2027 » ; Perplexity : juillet 2026
+    2026-09-22  [sortie]  Claude Opus 5.5 (« start with Claude Opus 5.5 for most workloads », models/overview lu)  — déduit : « not sooner than September 22, 2027 » ; Perplexity : septembre 2026
+  Gemini (Google), application
+    2025-11-18  [sortie]  Gemini 3 Pro « déployé pour tous les utilisateurs de l'appli Gemini »  — lu (gemini.google/release-notes)
+    2025-12-17  [défaut]  Gemini 3 Flash « le nouveau modèle par défaut dans l'appli Gemini »  — lu
+    2026-02-19  [sortie]  Gemini 3.1 Pro « déployé dans le monde entier dans l'appli Gemini »  — lu
+    2026-05-19  [sortie]  Gemini 3.5 Flash, « déploiement en cours dans le monde entier », choisi dans le menu  — lu
+    2026-07-21  [sortie]  Gemini 3.6 Flash offert « à tous les utilisateurs »  — lu
+    2026-10-13  [sortie]  Gemini 4 Argon « pour les abonnés Google AI Pro et Ultra » (pas l'offre gratuite)  — lu
+  Le Chat / Vibe (Mistral AI)
+    2025-12-02  [sortie]  Mistral Large 3 publié (aucune phrase sur Le Chat dans l'annonce)  — lu (mistral.ai/news/mistral-3)
+    2026-05-22  [défaut]  Mistral Medium 3.5 « becomes the default model in Le Chat »  — lu (mistral.ai/news/vibe-remote-agents-mistral-medium-3-5)
+    2026-08-12  [hors compte]  Le Chat renommé Vibe (help center) — changement de nom, pas de modèle documenté  — extrait (help.mistral.ai, date du help center ; le changelog API place le lancement de Vibe au 26 mai)
+    2026-10-06  [hors compte]  Mistral Large 4 en préversion publique (API) ; rien sur Le Chat  — lu (docs.mistral.ai changelog)
+  Grok (xAI), application
+    2025-11-17  [défaut]  Grok 4.1 « à tous les utilisateurs sur grok.com, X et les applications » (mode Auto)  — extrait (x.ai/news/grok-4-1, 403 ; fiche modèle datée du 17 nov. 2025)
+    2026-04-07  [défaut]  Grok 4.20 « publicly available through the consumer web and mobile apps » (fiche système)  — extrait (data.x.ai, fiche système du 2026-04-07) ; API en mars 2026 (notes de version lues)
+    2026-07-15  [sortie]  Grok 4.5 sur l'API (consommateur non confirmé)  — lu (docs.x.ai release notes, mois seul) ; jour : paramètre
+    2026-08-15  [sortie]  Grok 4.6 sur l'API (consommateur non confirmé)  — lu (mois seul) ; jour : paramètre
+    2026-09-15  [sortie]  Grok 4.7 sur l'API, « flagship » (consommateur non confirmé)  — lu (mois seul) ; jour : paramètre
+  Perplexity, application (« Best », modèle par défaut non nommé)
+    2026-07-15  [hors compte]  Agent API : préréglage `low` passe à openai/gpt-5.6-luna ; Sonar Chat Completions devient l'Agent API  — lu (mois seul) ; jour : paramètre
+    2026-08-15  [hors compte]  Agent API : préréglage `fast` passe à openai/gpt-6-luna  — lu (mois seul) ; jour : paramètre
+    2026-09-15  [hors compte]  Agent API : `xhigh` passe à anthropic/claude-opus-5-5 ; `low`, `medium`, `high` passent à la famille GPT-6  — lu (mois seul) ; jour : paramètre
+    2026-10-28  [hors compte]  Agent API : `high@2026-10-28.0` passe à openai/gpt-6.1-terra (quatre réglages datés du 16 au 29 octobre)  — lu
+  DeepSeek, application et site
+    2025-12-01  [sortie]  DeepSeek-V3.2 (entrée du changelog : API ; deepseek-chat / deepseek-reasoner = modes de V3.2)  — lu (api-docs.deepseek.com/updates) ; application non mentionnée dans l'entrée
+    2026-04-24  [sortie]  DeepSeek-V4 (V4-Pro et V4-Flash) ; entrée du changelog : API  — lu ; application non mentionnée dans l'entrée (news « v4-preview » non lue)
+    2026-08-13  [défaut]  DeepSeek-V4-Pro GA « rolled out on the APP, Web, and API »  — lu
+    2026-10-17  [défaut]  DeepSeek-V4.1-Flash-1017 : « official web and APP models updated » ; deepseek-flash  — lu
+
+  Lecture : « bas » compte les seuls changements qu'une page officielle appelle « par défaut » du produit grand public ; « haut » compte toute sortie offerte à tous les utilisateurs de l'application. Pour Claude et Grok, aucune page lue ne nomme le modèle par défaut de l'application : les deux lignes Claude sont des bornes, pas des faits ; pour Perplexity, le défaut n'est pas nommé du tout, le churn mesuré est celui de l'API. Les dates « déduit » d'Anthropic reposent sur l'hypothèse « retrait au plus tôt = sortie + 12 mois » (non écrite sur la page ; cohérente avec l'instantané 20251101 d'Opus 4.5).
+
+  Ce que le protocole 0.34 prévoit, mot pour mot, quand le modèle par défaut change en cours de campagne :
+  - §6, tableau « Modèle » (ligne 227) : « L'identifiant de modèle par défaut du produit grand public de l'éditeur à la date du run, tel que documenté publiquement ; la page qui le documente est archivée avec le run | Mesurer ce que les gens utilisent, pas le meilleur modèle du catalogue »
+  - §6, « Enregistré » (ligne 235) : « Requête complète, réponse brute complète (texte, appels d'outils, citations, liens), identifiant de version renvoyé par l'API, horodatage, latence, erreurs »
+  - §8, « Tendance (QR7, H5) » (ligne 319) : « Le modèle de chaque outil à chaque run est publié avec la tendance. C'est le modèle demandé, inscrit au gel, avec les identifiants de modèle renvoyés par l'API et leurs effectifs, comptés par outil sur toutes les réponses obtenues du run sur le canal API, les deux modes confondus ; les réponses sans identifiant renvoyé sont comptées à part. Toute autre analyse temporelle est exploratoire. »
+  - §7, « Calibration et fiabilité publiée » (ligne 278), pour les juges seulement : « Tout juge dont le modèle ou les réglages changent, qu'il soit retravaillé ou que son éditeur retire son modèle, est mesuré à nouveau sur le jeu d'or, aux seuils de la section 12, avant son premier run ; la tendance (section 8) qui compare des runs notés par des juges différents porte la mention de ce changement. »
+  - §4, « Extraction double » (ligne 149), pour le modèle Mistral de l'extraction et du juge : « Le modèle Mistral de l'extraction et du juge (section 7) est figé à la version 1.0 : c'est Mistral Large 4 si, au gel de la version 1.0, il est en disponibilité générale et qu'aucun retrait n'en est annoncé avant le second tour ; sinon, c'est le plus récent des modèles Mistral en disponibilité générale qui remplit la même condition. »
+  - §9, « Procédure d'amendement du protocole » (ligne 351) : « Un amendement est nécessaire pour toute modification des sections 3 à 8 ou des prompts des juges. Il est numéroté, daté, motivé, publié avant d'être appliqué, et n'est jamais appliqué rétroactivement à un run déjà publié. Les résultats produits avant et après un amendement sont rapportés séparément et ne sont comparés qu'avec la mention de l'amendement. »
+  - §3, « Outils évalués » (ligne 103) : « La liste nominative des outils est fixée à la version 1.0, publiée, et ne bouge qu'en cas de disparition d'un outil ou de sortie d'un nouvel outil remplissant la règle (amendement, section 9). »
+  - §11 (ligne 404) : « La liste des outils est figée. Un outil apparu après la version 1.0 n'est pas mesuré, et un outil qui ne répond plus est marqué « run incomplet » (section 8) »
+
+  Ce que ces textes disent, sans interprétation : (1) le modèle interrogé suit le défaut de l'éditeur à chaque run, et la page qui le documente est archivée ; (2) la tendance publie le modèle de chaque run, mais aucun passage ne demande de rapporter séparément les résultats d'avant et d'après un changement de modèle d'un OUTIL ; (3) la séparation « avant et après » du §9 ne vaut que pour un amendement du protocole (sections 3 à 8, prompts des juges) ; (4) le changement du modèle d'un JUGE impose une nouvelle mesure sur le jeu d'or et une mention sur la tendance ; (5) pour Perplexity, et pour Claude et Grok tant qu'aucune page ne nomme le défaut de l'application, la case « tel que documenté publiquement » du §6 n'a pas de source à archiver.
