@@ -52,7 +52,13 @@ Décision de l'auteur du 2026-11-01 :
   (rouvrir chaque URL du relevé, relancer chaque script), étape 5 (statuts, une alternative par
   hypothèse avec son prix), étape 7 (`docs/fondations/registre.md`, `docs/fondations/2026-11-10.md`,
   décisions `en_attente`, `pnpm feuille-de-route`, PR). Aucun fait du relevé n'est encore vérifié
-  par la session : ne rien en conclure avant l'étape 4.
+  par la session : ne rien en conclure avant l'étape 4. **Fait de l'étape 4 (reprise du
+  2026-11-10, partie mécanique seulement)** : les six scripts `c1` à `c5` relancés (Python 3.12.14)
+  rendent des sorties identiques aux `*_sortie.txt` versionnés ; toutes les citations du protocole
+  de `etape2-chaine-hypotheses.md`, de `essais.md` et de C5 de `calculs.md` existent mot pour mot
+  dans la 0.34. **Pas fait** : relecture des paramètres de chaque calcul, ouverture des 130 URL
+  distinctes de `releve-monde.md`. La reprise s'est arrêtée là parce que la session tournait hors
+  de l'en-tête de la compétence (`CLAUDE_EFFORT=medium`) : relancer par `/hypotheses-structurantes`.
 - Protocole **0.34** dans le dépôt. **La 0.35 est tranchée mais pas écrite** : textes exacts dans
   `docs/TACHES-AUTEUR.md` (section 1, Protocole), items 1 à 18. L'auteur l'écrit ; le classifieur
   refuse cette écriture à l'agent.
