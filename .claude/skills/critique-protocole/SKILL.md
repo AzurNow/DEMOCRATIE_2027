@@ -25,7 +25,8 @@ Deux exigences tirent en sens contraire, et la passe tient les deux :
   formulation « plus élégante » n'est **pas** proposé.
 
 Ce que cette passe ne fait pas : vérifier que le code applique le protocole (`conformite-protocole`),
-juger le code (`revue-de-code`), écrire dans `docs/PROTOCOLE.md`, `docs/CONTRATS.md`, `prompts/`,
+juger le code (`revue-de-code`), demander si le cadre lui-même est le bon (objet, canal,
+destinataires, calendrier : `hypotheses-structurantes`), écrire dans `docs/PROTOCOLE.md`, `docs/CONTRATS.md`, `prompts/`,
 `config/` ou `data/`, trancher à la place de l'auteur.
 
 ## Quand la lancer, et quand jamais
