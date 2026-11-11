@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-11-10",
+  "date_maj": "2026-11-11",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -1424,6 +1424,102 @@
       "recommandation": "Option 1 : elle protège ce dont la perte ferait du projet un risque pour l'élection, et laisse examinables les choix qui ne sont que des moyens.",
       "retenu": "Option 1 (règle de l'auteur du 2026-11-01 : option recommandée sur une décision d'outillage hors zone d'arrêt). Écrite dans .claude/skills/hypotheses-structurantes/SKILL.md, section « Hors champ » ; l'auteur peut rouvrir la liste, la passe jamais.",
       "date_decision": "2026-11-10"
+    },
+    {
+      "id": "D105",
+      "statut": "en_attente",
+      "question": "Canal de la mesure (hypothèse H1 du registre docs/fondations/registre.md) : saisir l'application grand public dès le run pilote, et ne jamais citer en titre un taux d'API sans le taux de l'application à côté ?",
+      "contexte": "Le §11 dit que la mesure principale porte sur les API sans instruction système et que l'écart avec l'application est mesuré « sur un petit échantillon manuel » ; le §6 écarte de cette saisie « le run pilote » : l'écart ne sera donc connu qu'après le gel. Quatre audits passés en tout ou partie par l'API ont reçu d'un éditeur l'objection que l'API n'est pas le produit de l'électeur (2024 et 2026) ; un audit a trouvé des garde-fous du web absents de l'API d'un assistant ; un auditeur dit l'inverse d'après une étude interne. Aucune comparaison publiée ne porte sur des positions programmatiques. Sources et passages : docs/fondations/2026-11-10.md (S1 à S6) ; calcul : scratch/fondations/2026-11-10/c6_echelle_de_repli.py (C6.4).",
+      "options": [
+        "Saisie réduite de l'application au run pilote, par les deux testeurs et selon la procédure du §6 : 2 questions par candidat, 7 assistants, 336 saisies, soit 22 à 50 h de saisie et de notation humaine. Et règle d'affichage écrite avant le gel : le taux d'un outil sur l'API n'est jamais cité en titre sans son taux sur l'application à côté. Révision des §6, §8 (« Mode de tête ») et §11 avant gel ; lots gel (désignation au pilote) et site ; aucun run en moins.",
+        "Ne rien changer : l'écart reste exploratoire et se mesure à partir du premier run mensuel. Aucun coût avant le gel ; le premier chiffre de tête publié reste exposé à l'objection documentée, et un écart massif découvert après le gel ne se corrige que par amendement (§9), résultats rapportés séparément avant et après.",
+        "Faire de l'application le canal principal : saisir à la main toutes les questions neutres coûte 343 à 686 h de testeurs par mois (C3), et la mesure cesse d'être rejouable par un tiers."
+      ],
+      "recommandation": "Option 1 : pour 22 à 50 h au pilote, le projet sait avant de geler si son chiffre de tête dit ce que l'électeur lit, et il publie à côté le chiffre que l'objection des éditeurs ne touche pas. Les seuils de l'essai (l'application ne répond pas à plus de la moitié des questions auxquelles l'API répond, ou la catégorie de la note diffère sur plus du tiers des paires) sont proposés par la passe et restent à fixer par l'auteur."
+    },
+    {
+      "id": "D106",
+      "statut": "en_attente",
+      "question": "Lecture de la tendance (hypothèse H4 du registre) : publier, à côté de la tendance de l'exactitude, celle du taux de non-réponse et l'exactitude sur les questions neuves ?",
+      "contexte": "Le §5 fait de la correction par les éditeurs « l'effet recherché ». Les réactions vérifiées à des audits comparables sont une correction limitée aux réponses citées (2023 : un nouvel échantillon un mois après « showed that little had changed ») et le refus de répondre (2024 et 2025). Or la tendance du §8 se calcule « sur les questions communes aux deux runs », donc sur des questions déjà publiées, et sur l'exactitude seule (analysis/analyse-du-run.ts, calculerTendance), dont le dénominateur exclut les non-réponses : une correction par rustine ou une hausse des refus peut suffire à confirmer H5 du protocole. Sources : docs/fondations/2026-11-10.md (S3, S20, S21).",
+      "options": [
+        "Ajouter deux analyses exploratoires annoncées, sans toucher à H5 ni à ses règles (D63) : la tendance du taux de non-réponse, et l'exactitude du dernier run sur les seules questions absentes du premier. Révision du §8 (« Tendance ») et du §11 (« La mesure est réactive ») avant gel ; deux différences de plus au lot analyse, leur affichage au lot site ; aucun effet sur le calendrier.",
+        "Ne rien changer : H5 reste le seul indicateur de progrès ; une correction par rustine ou par refus se lit comme un progrès.",
+        "Redéfinir H5 sur les questions neuves : plus juste, mais rouvre une hypothèse préenregistrée et ses règles de décision (D63), et les questions neuves d'un run ne sont pas tirées pour être comparables à celles du premier."
+      ],
+      "recommandation": "Option 1 : deux chiffres de plus, annoncés comme exploratoires, suffisent pour qu'une rustine ou un refus se lise comme tel ; aucune lentille de critique-protocole n'est rouverte. L'essai E3 (la même question à chaque éditeur, environ 3 h, après relecture de l'avocat) dira en plus par quel canal un rapport serait traité."
+    },
+    {
+      "id": "D107",
+      "statut": "en_attente",
+      "question": "Diffusion et forme du rapport (hypothèses H5 et H10 du registre) : écrire un plan de diffusion et l'ordre des livrables du site, après l'essai E1 ?",
+      "contexte": "Le protocole ne dit ni qui reçoit un résultat ni ce qu'il en fait (les mots « diffusion », « presse » et « destinataire » n'y figurent pas) ; le §10 transmet le protocole à l'Arcom, à Viginum et à la CNIL « pour information ». Chaque suite vérifiée d'un audit comparable est passée par un porteur ou par la presse, et ce qu'un éditeur a corrigé, ce sont des réponses citées. Le décret de Viginum ne nomme ni l'IA ni les agents conversationnels ; l'Arcom est le coordinateur national du DSA ; ChatGPT est désigné très grand moteur de recherche, conformité attendue d'ici janvier 2027. Le site de résultats n'est pas écrit (lot site, T0) : choisir sa forme ne défait rien. Ce que feront des destinataires français ne se lit sur aucune page : l'essai E1 (un rapport d'exemple fictif remis à trois destinataires, environ 6 h, auteur) le teste. Sources : docs/fondations/2026-11-10.md (S18 à S27, S39 à S41).",
+      "options": [
+        "Faire E1 d'abord, puis écrire : au §10, un plan de diffusion (un destinataire nommé par type, une forme par destinataire, le même envoi à tous après publication, la liste des destinataires publiée) ; au lot site, l'ordre des livrables d'un run : les erreurs graves in extenso par outil, que le §8 exige déjà toutes, puis les taux avec leurs intervalles, une note d'une page, les données. Deux questions pour l'avocat : une réponse d'assistant entre-t-elle dans le champ du décret de Viginum ; par quelle voie un tiers porte-t-il un constat au coordinateur national ? Aucun run en moins ; temps d'auteur par run non mesuré.",
+        "Écrire le plan et l'ordre des livrables maintenant, sans E1 : six heures gagnées, sur la foi d'analogies étrangères.",
+        "Ne rien changer : un site de taux et une transmission pour information. Aucun coût ; la passe n'a trouvé aucune suite à un audit seulement mis en ligne."
+      ],
+      "recommandation": "Option 1 : six heures d'essai avant d'écrire une règle de diffusion et de bâtir le site évitent de choisir une forme sur des analogies. À écrire au §10 : un envoi à la presse n'est pas une affiliation (§1), et aucun destinataire n'a d'accès anticipé."
+    },
+    {
+      "id": "D108",
+      "statut": "en_attente",
+      "question": "Calendrier (hypothèse H6 du registre) : écrire au §12 une date butoir pour le premier run public et un rythme mensuel, le format du run étant subordonné à la capacité mesurée au pilote ?",
+      "contexte": "Le §12 vise le premier résultat public pour la première semaine de décembre 2026 et pose qu'un jalon non atteint décale la publication plutôt que d'en abaisser la qualité ; le §6 prévoit un rythme hebdomadaire dès février 2027. Le premier tour est le 18 avril 2027, à 159 jours du 10 novembre 2026, et le gel prévu le 15 octobre n'a pas eu lieu. Au format complet (32 340 réponses), un run demande 481 à 1 627 h d'annotateurs avant de pouvoir être publié : aucun n'est publié avant le premier tour avec 10 à 40 h d'annotateurs par semaine, et la première publication tombe au plus tôt le 3 juin 2027. Au barreau le plus bas de l'échelle de D109, application comprise (111 à 319 h par run), premier run le 2 février : 1 run publié avant le premier tour (bornes basses) ou 0 (hautes) avec 20 h par semaine, 2 ou 1 avec 40 h. Ce sont des fourchettes sur des paramètres posés, que le pilote remplacera par des mesures. Calculs : scratch/fondations/2026-11-10/ (C1, C6).",
+      "options": [
+        "Écrire au §12 une date butoir pour le premier run public (proposée : la fenêtre du mardi 2 février 2027), un rythme mensuel jusqu'au second tour, runs supplémentaires gardés, et choisir le format du run sur l'échelle de D109 d'après les heures mesurées au pilote. Chaque taux garde ses deux juges, ses humains et son intervalle : ce sont des conditions en moins, pas une approximation. Révision des §6 et §12 avant gel, D66 complétée ; aucun code rendu inutile.",
+        "Garder le format complet et le rythme hebdomadaire, et payer la capacité : 48 à 163 annotateurs à 10 h par semaine, soit 7 215 à 48 810 € par run à 15 à 30 € l'heure, contre un financement sur fonds personnels (§1).",
+        "Ne rien changer : la règle du §12 décale la publication ; au format complet elle passe après le second tour, et le projet devient une étude rétrospective."
+      ],
+      "recommandation": "Option 1 : c'est la seule où un résultat existe avant le vote sans abaisser la qualité d'un chiffre. Elle touche la consigne « qualité avant dates » si l'on tient le volume pour de la qualité : le calcul C1d montre que l'intervalle d'un candidat dépend surtout du nombre d'items, que l'échelle ne réduit pas ; c'est à l'auteur de dire si cela suffit. Elle suppose D109 et se combine avec D110."
+    },
+    {
+      "id": "D109",
+      "statut": "en_attente",
+      "question": "Volume d'un run (hypothèse H7 du registre) : préenregistrer au §12 une échelle de repli, appliquée d'après la charge mesurée au run pilote ?",
+      "contexte": "Le §12 préenregistre deux leviers : passer de 2 échantillons à 1, qui divise le volume par deux (244 à 825 h d'annotateurs par run au lieu de 481 à 1 627), et la reprise de note d'une lecture de comparateur, qui ne touche que 4 à 10 h par run. Un run complet coûte 1 317 à 1 408 € d'API, dont 1 092 € de juges, soit 9,5 à 10,2 fois la cible mensuelle de 600 € au rythme hebdomadaire ; 639 à 730 € avec les juges en lot et le cache du prompt, sans rien changer au protocole. L'intervalle d'un candidat dépend surtout du nombre d'items : à 30 items, 9,2 points de demi-largeur avec 18 réponses par item, 11,7 avec 3 (C1d). Les objections d'éditeurs vérifiées visent le canal et la représentativité, pas le volume ; une contestation de la notation rapportée par le relevé n'a pas pu être vérifiée. Sans échelle écrite avant le gel, le premier contact avec la charge mesurée force un amendement (§9). Calculs : scratch/fondations/2026-11-10/ (C1d, C2, C6).",
+      "options": [
+        "Échelle écrite au §12 et descendue dans cet ordre, selon les heures mesurées au pilote : (1) un échantillon ; (2) le seul mode de tête de chaque outil (§8) ; (3) une formulation, la neutre. Heures d'annotateurs par run : 244 à 825, puis 157 à 534, puis 57 à 194. Ce qui devient « sans objet » est écrit d'avance : au barreau 2, H2 du protocole et la part du mode dans QR6 ; au barreau 3, H3, la part de la formulation dans QR6 et la métrique « confirmation de prémisse ». Juges en lot avec cache dans tous les cas. Révision des §6, §8 et §12 avant gel, D66 complétée ; lots interrogation, analyse, go-no-go et questions-tirage-symetrie, seulement si un barreau est descendu.",
+        "S'en tenir aux deux leviers déjà écrits : avec un seul échantillon, application comprise, aucun run n'est publié avant le premier tour sous 40 h d'annotateurs par semaine, un seul à 40 h aux bornes basses (C6.3).",
+        "Réduire plutôt le nombre d'items par candidat : passer de 30 à 10 items P n'épargne que 144 h de validation, met chaque candidat au seuil de couverture et porte la demi-largeur de son intervalle de 9,2 à 15,6 points (C1d)."
+      ],
+      "recommandation": "Option 1 : elle dépense le volume là où les objections vérifiées ne portent pas, garde intactes les couches de fiabilité et de neutralité (double validation, deux familles de juges, échantillon humain, test contrefactuel, symétrie), et dit d'avance ce que chaque barreau fait perdre. Le mode de tête de chaque outil reste à documenter (D112, point 3)."
+    },
+    {
+      "id": "D110",
+      "statut": "en_attente",
+      "question": "Capacité (hypothèse H8 du registre) : chercher un partenaire de capacité d'annotation et de relecture, sans rôle dans la méthode ?",
+      "contexte": "Le §1 pose un projet porté par un particulier, sur fonds personnels ; les §7 et §10 demandent des annotateurs et des testeurs rémunérés, de sensibilités déclarées différentes. Au barreau le plus bas de l'échelle de D109, un run demande 111 à 319 h d'annotateurs et de testeurs, application comprise ; deux personnes à 5 à 10 h par semaine en fournissent 43 à 87 par mois. Les audits vérifiés dont le porteur est établi l'étaient tous par une structure (association, média, autorité, université). Reste hors champ (D104) tout financement, don ou accès venant d'un parti, d'un candidat, d'une campagne ou d'un éditeur évalué. Calcul : scratch/fondations/2026-11-10/c6_echelle_de_repli.py (C6.3).",
+      "options": [
+        "Chercher dès maintenant un partenaire de capacité, déclaré au §1, sans rôle dans la méthode ni accès anticipé (§10) : un vivier d'annotateurs recrutés par une école ou un laboratoire et payés par le projet, et un relecteur académique nommé pour la 1.0. La question est posée au chercheur de l'essai E1. Avec 40 h d'annotateurs par semaine au barreau le plus bas : 2 runs publiés avant le premier tour (bornes basses) ou 1 (hautes). Délai d'un accord inconnu ; révision des §1, §7 et §10 avant gel. Si le partenaire payait les annotateurs, « fonds personnels uniquement » (§1) changerait : à décider à part.",
+        "Rester seul et recruter directement deux annotateurs : 0 run publié avant le premier tour avec 10 h par semaine au total, 1 ou 0 avec 20 h (C6.3).",
+        "Un partenariat de méthode ou de marque avec une rédaction ou une institution : plus de portée, mais le résultat serait lu comme celui du partenaire, et le délai d'une convention est inconnu (pari, aucune source)."
+      ],
+      "recommandation": "Option 1 : c'est la capacité, pas la méthode, qui manque, et un vivier d'annotateurs de sensibilités déclarées est ce que le §7 demande déjà. La question de droit (statut et rémunération des annotateurs, données personnelles) est pour l'avocat."
+    },
+    {
+      "id": "D111",
+      "statut": "en_attente",
+      "question": "Mesure de résultat (hypothèse H11 du registre) : écrire avant le gel des indicateurs de succès et de dommage du projet, suivis dans un journal public ?",
+      "contexte": "Le protocole ne dit nulle part ce qui compterait comme un succès (les mots « utilité », « impact » et « mesure de succès » n'y figurent pas) ; l'auteur a posé le 2026-11-10 qu'un résultat irréprochable que personne n'utilise est un échec. Des projets comparables ont suivi un résultat : une part de réponses à problème passée de 51 % à 37 % entre deux mesures du même porteur, un nouvel échantillon un mois après, un taux de réponse de signataires. Le seul indicateur de progrès du protocole, H5, peut être confirmé par une rustine ou par des refus (D106). Sources : docs/fondations/2026-11-10.md (S20, S21, S23, S27).",
+      "options": [
+        "Écrire au §12, avant le gel, quatre indicateurs suivis dans un journal public sourcé et repris au rapport de synthèse : une réponse publique d'éditeur (§6) ; une reprise par une rédaction, une autorité ou un chercheur ; l'exactitude sur les questions neuves (D106) ; un dommage (un résultat lu comme un classement de candidats, une erreur du banc reprise comme un fait). Ils jugent le projet, pas les outils, et ne touchent aucun chiffre préenregistré. Lot site : un journal en JSON, en ajout seul, et sa page ; temps d'auteur par run non mesuré.",
+        "Tenir le journal des reprises sans rien écrire au protocole : même travail, mais des indicateurs choisis après avoir vu les résultats.",
+        "Ne rien changer : le rapport de synthèse ne pourra pas dire si le projet a servi."
+      ],
+      "recommandation": "Option 1 : des indicateurs écrits d'avance coûtent une demi-page de protocole et rendent le rapport de synthèse falsifiable ; l'indicateur de dommage est celui qui protège la neutralité."
+    },
+    {
+      "id": "D112",
+      "statut": "en_attente",
+      "question": "Cinq points du protocole 0.34 relevés par la passe du 2026-11-10 sans être des hypothèses structurantes : les confier à la prochaine passe critique-protocole ?",
+      "contexte": "(1) Le §3 dit que la liste des outils « ne bouge qu'en cas de disparition d'un outil ou de sortie d'un nouvel outil remplissant la règle (amendement, section 9) », le §11 qu'« Un outil apparu après la version 1.0 n'est pas mesuré ». (2) Le §12 fixe les plafonds de la 1.0 d'après les mesures du run pilote, mais sa table place le gel (15 octobre) avant le pilote (22 novembre). (3) Le §6 demande le modèle par défaut du produit grand public « tel que documenté publiquement » : pour Claude, Grok et Perplexity aucune page lue le 2026-11-10 ne le nomme, et pour ChatGPT la page d'aide n'a pas pu être ouverte ; le mode de tête du §8 dépend de la même documentation. (4) Le §6 ne dit pas si le produit grand public est l'offre gratuite ou payante, alors qu'un éditeur au moins réserve un modèle à ses abonnés et que 86 à 88 % des utilisateurs de deux assistants n'utilisent que la version gratuite. (5) Le paragraphe « Tendance » du §8 ne nomme pas la métrique comparée ; QR7 parle de « ces taux », le code compare l'exactitude seule (analysis/analyse-du-run.ts, calculerTendance). Détail : docs/fondations/2026-11-10.md, dernière section.",
+      "options": [
+        "Les confier à la prochaine passe critique-protocole, avant le gel, qui instruit chacun et propose un texte. Lectures que la passe tient pour les plus simples, à confirmer : (1) un outil nouveau n'entre que par amendement, le §11 le redit ; (2) la table du §12 est recalée, pilote avant gel ; (4) l'offre gratuite ; (5) la tendance préenregistrée porte sur l'exactitude, les autres taux en exploratoire (D106). Le point (3) n'a pas de lecture simple : il faut une règle pour le cas où aucune page ne documente le modèle par défaut.",
+        "Les écrire directement dans la 0.35, avec les dix-huit items déjà tranchés : une révision de moins, sans le contrôle croisé de critique-protocole.",
+        "Ne rien écrire : (2) et (5) restent des ambiguïtés de lecture ; (1), (3) et (4) laissent un choix à faire après avoir vu des données, ce que le §1 exclut."
+      ],
+      "recommandation": "Option 1 : aucun de ces points n'est structurant, tous doivent être réglés avant le gel, et le point (3) demande une instruction que la passe n'a pas faite."
     }
   ],
   "lots": [

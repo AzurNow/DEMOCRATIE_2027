@@ -41,8 +41,26 @@ Décision de l'auteur du 2026-11-01 :
 - Une PR en conflit se met à jour par un commit de fusion de `main`, jamais par rebase : le mode
   auto refuse le force-push.
 
-## État au 2026-11-09 (soir)
+## État au 2026-11-11
 
+- **Passe `hypotheses-structurantes` du 2026-11-10 terminée**, branche
+  `docs/fondations-2026-11-10`. Registre `docs/fondations/registre.md` (H1 à H12), passe datée
+  `docs/fondations/2026-11-10.md`, scripts `c1` à `c7` et fichiers de travail dans
+  `scratch/fondations/2026-11-10/` (`verification.md` est la seule base de faits admise). Statuts :
+  H3 confirmée ; H1, H2, H4, H5 et H10 à tester ; H6, H7 (couches de volume), H8 et H11 infirmées ;
+  H9 pari assumé ; H12 infirmée, rien à changer. La passe n'a touché ni au protocole, ni à une
+  règle, ni à un jalon. **À l'auteur** : huit décisions `en_attente`, D105 à D112 (application
+  saisie dès le pilote, tendance des non-réponses, plan de diffusion, date butoir et rythme
+  mensuel, échelle de repli, partenaire de capacité d'annotation, indicateurs de succès, cinq
+  points à confier à `critique-protocole`), et trois essais de terrain E1 à E3 (environ 6 h, 4 h,
+  3 h plus l'avocat), décrits dans la passe. D105 à D111 demandent chacune une révision du
+  protocole avant gel : les trancher avant d'écrire la 0.35 éviterait une version de plus
+  (suggestion de la session). Après les décisions : étape 8 de la compétence (texte de révision
+  dans une PR que l'auteur fusionne, puis `critique-protocole` et `conformite-protocole`).
+- `site/site/` (cache Astro non suivi daté du 2026-11-06 : `.astro/`, `node_modules/.vite`) fait
+  échouer `pnpm check` en local (« site/site/.astro/types.d.ts was not found by the project
+  service ») ; la CI n'est pas touchée. Non supprimé par la session : à supprimer ou à ignorer,
+  au choix de l'auteur.
 - Protocole **0.34** dans le dépôt. **La 0.35 est tranchée mais pas écrite** : textes exacts dans
   `docs/TACHES-AUTEUR.md` (section 1, Protocole), items 1 à 18. L'auteur l'écrit ; le classifieur
   refuse cette écriture à l'agent.

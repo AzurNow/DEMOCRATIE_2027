@@ -1,0 +1,13 @@
+C7.1 Changements du modèle par défaut de l'application, événements vérifiés seulement
+  | outil | changements vérifiés en douze mois | attendus sur six mois | P(au moins un) |
+  |---|---|---|---|
+  | Gemini | 1 | 0.50 | 0.39 |
+  | Le Chat | 1 | 0.50 | 0.39 |
+  | DeepSeek | 2 | 1.00 | 0.63 |
+  | les trois ensemble | 4 | 2.00 | 0.86 |
+  Borne basse : ChatGPT, Claude, Grok et Perplexity ne sont pas comptés, faute de page datant un changement.
+
+C7.2 Intermédiaires IA grand public lancés en France, lancements vérifiés seulement
+  lancements vérifiés en 24 mois : 2 ; attendus sur six mois : 0.50 ; P(au moins un) : 0.39
+  Borne basse : le relevé n'a pas cherché tous les lancements. Le premier (2025-03-20) est annoncé pour 41 pays
+  européens sans liste de pays ; son usage en France est attesté par une enquête de décembre 2025.

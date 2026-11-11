@@ -1,0 +1,81 @@
+C1a. Dates vérifiées le 2026-11-10 (sources dans parametres.py)
+  premier tour 2027-04-18, second tour 2027-05-02, décret ≤ 2027-02-07, clôture des parrainages 2027-03-12 18 h, liste officielle entre 2027-03-13 (paramètre) et 2027-03-26 (officiel), campagne officielle 2027-04-05
+  jours entre aujourd'hui et le premier tour : 159 ; semaines : 22.7
+  calendrier §6 complet depuis le 1er déc. : 15 runs réguliers (mensuels : ['2026-12-01', '2027-01-05'] ; hebdomadaires : 13, du 2027-02-02 au 2027-04-27) ; 13 dont la fenêtre ferme avant la veille du premier tour
+  fenêtre du mardi 2027-04-13 : fermeture jeudi 6 h, publication possible jusqu'au 2027-04-16 24 h (veille électorale §10 dès le 2027-04-17 0 h)
+
+C1b. Chemin critique : heures auteur de la feuille de route (lots non T4, hors J6)
+  hors-code                        24.00 h
+  perimetre-prompts                 5.00 h
+  protocole                         4.00 h
+  creation-items-f                  3.00 h
+  questions-tirage-symetrie         2.00 h
+  notation                          2.00 h
+  notation-humaine                  2.00 h
+  contestation-notification         2.00 h
+  site                              2.00 h
+  reformulation                     2.00 h
+  dette-validation                  1.00 h
+  collecte                          1.00 h
+  extraction                        1.00 h
+  interrogation                     1.00 h
+  test-liens                        1.00 h
+  analyse                           1.00 h
+  go-no-go                          1.00 h
+  gel                               1.00 h
+  feuille-de-route                  0.50 h
+  outillage                         0.50 h
+  alignement-0-3                    0.50 h
+  mesures-validees                  0.50 h
+  ci                                0.25 h
+  schemas                           0.00 h
+  validation-interface              0.00 h
+  total feuille de route : 58.25 h
+
+C1c. Dates simulées (ordonnanceur ; jeu bas = bornes basses, jeu haut = bornes hautes)
+  | auteur h/sem | annot h/sem | items | jeu | h auteur | h annot | pilote (mardi) | 1er run public (mardi) | publication | runs rég. avant T1 | avant T2 | supp. | runs pour H5 | runs pour un éditeur |
+  |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+  | 5 | 10 | 200 | bas | 77 | 493 | 2027-02-23 | 2027-03-23 | 2028-01-17 | 4 | 6 | 1 | 7 (H5 possible) | 6 |
+  | 5 | 10 | 400 | haut | 108 | 1658 | 2027-09-14 | 2027-11-09 | 2030-05-11 | 0 | 0 | 0 | 0 (H5 sans objet) | 0 |
+  | 5 | 20 | 200 | bas | 77 | 493 | 2027-02-02 | 2027-02-23 | 2027-07-27 | 8 | 10 | 2 | 12 (H5 possible) | 11 |
+  | 5 | 20 | 400 | haut | 108 | 1658 | 2027-05-25 | 2027-06-29 | 2028-10-05 | 0 | 0 | 0 | 0 (H5 sans objet) | 0 |
+  | 10 | 10 | 200 | bas | 77 | 493 | 2027-01-12 | 2027-02-02 | 2027-11-25 | 11 | 13 | 2 | 15 (H5 possible) | 14 |
+  | 10 | 10 | 400 | haut | 108 | 1658 | 2027-08-10 | 2027-09-28 | 2030-03-22 | 0 | 0 | 0 | 0 (H5 sans objet) | 0 |
+  | 10 | 20 | 200 | bas | 77 | 493 | 2026-12-29 | 2027-01-12 | 2027-06-11 | 11 | 13 | 2 | 15 (H5 possible) | 14 |
+  | 10 | 20 | 400 | haut | 108 | 1658 | 2027-04-20 | 2027-05-18 | 2028-08-16 | 0 | 0 | 0 | 0 (H5 sans objet) | 0 |
+  | 20 | 10 | 200 | bas | 77 | 493 | 2027-01-05 | 2027-01-26 | 2027-11-17 | 11 | 13 | 2 | 15 (H5 possible) | 14 |
+  | 20 | 10 | 400 | haut | 108 | 1658 | 2027-08-03 | 2027-09-21 | 2030-03-15 | 0 | 0 | 0 | 0 (H5 sans objet) | 0 |
+  | 20 | 20 | 200 | bas | 77 | 493 | 2026-12-22 | 2027-01-05 | 2027-06-03 | 12 | 14 | 2 | 16 (H5 possible) | 15 |
+  | 20 | 20 | 400 | haut | 108 | 1658 | 2027-04-13 | 2027-05-11 | 2028-08-09 | 0 | 0 | 0 | 0 (H5 sans objet) | 0 |
+
+  Lecture : « runs pour H5 » = runs publiés (premier et dernier doivent exister : au moins 2) ; « runs pour un éditeur » = runs qui suivent la première publication, donc occasions de mesurer une correction.
+
+C1c bis. Détail des tâches, scénario auteur 10 h/sem, annotateurs 16 h/sem, jeu haut (400 items)
+  p035           2026-11-10 → 2026-11-12  auteur   4.0 h  annot    0.0 h  délai    0 j  : Protocole 0.35 écrite par l'auteur (lot protocole)
+  decisions      2026-11-12 → 2026-11-22  auteur   4.0 h  annot    0.0 h  délai    0 j  : Décisions en attente et écarts « amendement requis »
+  agents035      2026-11-12 → 2026-11-19  auteur   0.0 h  annot    0.0 h  délai    7 j  : Code de D85, D94, D95 par les agents
+  avocat         2026-11-12 → 2026-12-24  auteur   0.0 h  annot    0.0 h  délai   42 j  : Relecture par un avocat (délai)
+  perimetre      2026-11-10 → 2026-11-15  auteur   5.0 h  annot    0.0 h  délai    0 j  : config/perimetre.yaml : candidats, preuves archivées, outils, CGU, quotas (lot perimetre-prompts)
+  sources        2026-11-15 → 2026-11-26  auteur   6.0 h  annot    0.0 h  délai    0 j  : config/sources.toml, copie de référence, première collecte et extraction réelles
+  mesures        2026-11-26 → 2026-12-06  auteur  10.7 h  annot    0.0 h  délai    0 j  : Relecture des mesures par l'auteur (§4)
+  recrutement    2026-11-10 → 2026-12-08  auteur   8.0 h  annot    0.0 h  délai   28 j  : Recrutement de deux annotateurs et d'un troisième humain (délai)
+  formation      2026-12-10 → 2027-01-05  auteur   4.0 h  annot   15.0 h  délai    0 j  : Formation : 30 items d'entraînement communs
+  controle       2026-11-26 → 2026-12-10  auteur   6.0 h  annot    0.0 h  délai    0 j  : Dérouler docs/CONTROLE-MANUEL.md (validation, formulations, notation humaine)
+  validation     2027-01-05 → 2027-04-20  auteur   0.0 h  annot  240.0 h  délai    0 j  : Double validation de 400 items (+ réannotation de 20 % des lots)
+  arbitrages     2027-04-20 → 2027-04-26  auteur   9.7 h  annot    0.0 h  délai    0 j  : Arbitrages de validation par l'auteur
+  itemsF         2027-01-05 → 2027-04-27  auteur   3.0 h  annot   18.0 h  délai    0 j  : Items F : rédaction par l'auteur (36 items) et vérification par deux annotateurs
+  reformulation  2027-04-27 → 2027-05-16  auteur   2.0 h  annot   45.1 h  délai    0 j  : Reformulations (API) et relecture de 1352 questions par un annotateur
+  adaptateurs    2026-11-15 → 2026-11-29  auteur   5.0 h  annot    0.0 h  délai   14 j  : Adaptateurs d'interrogation réels (agents) + clés et corps d'erreur (auteur)
+  gel1           2026-12-24 → 2027-01-01  auteur  12.0 h  annot    0.0 h  délai    2 j  : Gel 1.0, Wayback, dépôt Zenodo, transmission aux institutions
+  pilote         2027-05-18 → 2027-05-26  auteur  12.0 h  annot    0.0 h  délai    5 j  : Run pilote : fenêtre 48 h (32,340 réponses), liens, juges, contrefactuel
+  jeu_or         2027-05-26 → 2027-06-19  auteur   2.0 h  annot   55.0 h  délai    0 j  : Jeu d'or : 300 réponses × 2 humains + 3e humain sur 20 %
+  site           2026-11-19 → 2027-01-03  auteur   4.0 h  annot    0.0 h  délai   21 j  : Site de résultats généré depuis runs/ (agents ; lot site T0)
+  run1           2027-06-22 → 2027-06-27  auteur   8.0 h  annot    0.0 h  délai    5 j  : Premier run public : fenêtre 48 h, liens, juges (quota 1 : 490 questions, 32,340 réponses)
+  echantillon1   2027-06-27 → 2029-01-09  auteur   0.0 h  annot 1284.7 h  délai    0 j  : Échantillon humain 10 % du premier run (3,234 réponses × 2 + arbitrages), erreurs graves, lectures de comparateurs
+  publication1   2029-01-09 → 2029-01-11  auteur   3.0 h  annot    0.0 h  délai    2 j  : Analyse, checklist annexe F, note éditoriale, publication (à la main)
+
+C1c ter. Borne de capacité : heures d'annotateurs par run hebdomadaire au périmètre complet (sans le levier 2 -> 1)
+  jeu bas : 32,340 réponses, échantillon 3,234 ; notation humaine 453 h + comparateurs 18 h par run ; capacité 10 h/sem ⇒ 0.02 run publiable par semaine
+  jeu bas : 32,340 réponses, échantillon 3,234 ; notation humaine 453 h + comparateurs 18 h par run ; capacité 20 h/sem ⇒ 0.04 run publiable par semaine
+  jeu haut : 32,340 réponses, échantillon 3,234 ; notation humaine 1536 h + comparateurs 18 h par run ; capacité 10 h/sem ⇒ 0.01 run publiable par semaine
+  jeu haut : 32,340 réponses, échantillon 3,234 ; notation humaine 1536 h + comparateurs 18 h par run ; capacité 20 h/sem ⇒ 0.01 run publiable par semaine
