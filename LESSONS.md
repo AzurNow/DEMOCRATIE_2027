@@ -592,3 +592,35 @@ exigeait le test des liens que la fixture de #387 ne posait pas, et `notation-re
 sur main. Chaque PR était verte contre un main qui ne contenait pas l'autre.
 
 **Marquer « réglé » dans le rapport daté de revue ou de conformité dès la fusion qui règle un constat.** Le constat 8 de la revue du 2026-11-09 était corrigé sur `main` (8678b9b) mais restait « ouvert » : un agent a été briefé dessus et l'a redécouvert. La clôture du 2026-11-09 après-midi a mis à jour les statuts des deux rapports du jour.
+
+**Poser une charge chiffrée sur le calendrier, pas seulement sur un plafond.** Le 2026-11-02, la
+critique du protocole écrivait « des centaines d'heures d'annotateurs rémunérés par run » et
+renvoyait la mesure au pilote (D66) : un constat de budget. Le 2026-11-10, les mêmes heures (481 à
+1 627 par run) divisées par une capacité de 10 à 40 h par semaine et posées sur les 159 jours
+restants ont dit autre chose : aucun run complet publié avant le premier tour. Et le premier calcul
+oubliait le canal application du §6, saisi par les mêmes personnes (54 à 126 h par passage) : il
+comptait un run de trop (`scratch/fondations/2026-11-10/c6_sortie.txt`, C6.2 contre C6.3).
+
+**Écrire un registre de faits avec la base vérifiée ouverte, pas de mémoire du relevé.** Le
+2026-11-11, `docs/fondations/registre.md` a d'abord été écrit d'après le souvenir du relevé du
+sous-agent : la plupart des entrées citaient des détails que la vérification avait retirés ou
+jamais confirmés (un cinquième audit auquel un éditeur aurait répondu, des « versions gratuites »
+que la page lue ne dit pas). Il a fallu tout reprendre contre `verification.md`, fait par fait.
+Même cause pour l'essai E1, qui recopiait une chaîne simulée incomplète au lieu de renvoyer à
+`runs/README.md`. Quand un relevé brut et sa vérification coexistent, celui qui a lu les deux les
+confond.
+
+**Un fait retiré faute de vérification n'autorise pas l'énoncé contraire.** Le 2026-11-11, l'entrée
+H7 du registre écrivait qu'aucune objection d'éditeur ne visait la notation. Le relevé rapportait
+pourtant une contestation de la notation par deux éditeurs, retirée seulement parce que sa page
+n'avait pas pu être rouverte. « Aucune source vérifiée ne le montre » devenait « personne ne l'a
+fait », à l'appui d'une échelle de repli. L'entrée dit maintenant ce qui a été retiré et pourquoi,
+et ne conclut rien de l'absence.
+
+**Contrôler par une recherche l'interdit donné à un sous-agent, avant d'écrire qu'il est tenu.** Le
+2026-11-11, la passe affirmait qu'aucun candidat n'était nommé dans les fichiers de travail, sur la
+foi du brief qui l'interdisait. Un `grep` fait juste avant le commit a trouvé quatre noms de
+candidats d'élections étrangères dans `releve-monde.md` (le descripteur d'un préenregistrement,
+l'adresse d'un article), commités et poussés la veille. Retirés du fichier, ils restent dans
+l'historique : la recherche se fait à la réception du fichier, avant le premier commit, et les
+adresses se lisent comme le texte.

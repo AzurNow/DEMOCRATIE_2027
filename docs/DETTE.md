@@ -13,6 +13,62 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-11-11 — Passe `hypotheses-structurantes` du 2026-11-10 : registre, passe datée, décisions D105 à D112 (PR #410 : `docs/fondations/`, `scratch/fondations/2026-11-10/`, `docs/feuille-de-route.json`)
+
+### 1. Les fourchettes de capacité qui fondent D108 à D110 reposent sur des paramètres que la 0.35 et le périmètre peuvent changer — *moyenne*
+
+Les heures d'annotateurs par run (481 à 1 627 au format complet, 57 à 194 au barreau le plus bas),
+les euros d'API et le nombre de runs publiés avant le premier tour sortent des scripts `c1` à `c7`
+de `scratch/fondations/2026-11-10/` et de leur `parametres.py` : 7 outils, 11 couples outil × mode,
+12 candidats, quota 1, 2 à 5 minutes par notation, 22 à 37 % de réponses renvoyées à un humain,
+tarifs lus le 2026-11-10. `docs/fondations/registre.md` et le contexte de D108, D109 et D110 dans
+`docs/feuille-de-route.json` recopient ces chiffres.
+
+**Pourquoi ça casse.** Si `config/perimetre.yaml` retient un autre nombre d'outils, de modes ou de
+candidats, ou si la 0.35 change un quota, les heures par run changent en proportion ; les chiffres
+recopiés ne bougent pas, et la date butoir de D108 se décide sur une capacité qui n'est plus la
+bonne. Aucun test ne lit ces fichiers : seul le run pilote, qui mesure les heures, le montrerait,
+après la décision.
+
+**Ce qu'il faut faire.** Avant de trancher D108 à D110 si le périmètre ou un quota a bougé, et de
+toute façon après le run pilote : mettre `parametres.py` à jour, relancer les scripts (commande en
+tête de la section « Calculs » de `docs/fondations/2026-11-10.md`) et reporter les chiffres par une
+passe courte. L'auteur décide ; la session relance.
+
+### 2. Le registre tient ses preuves dans `scratch/`, que le dépôt dit jetable — *basse*
+
+`docs/fondations/registre.md` et la passe renvoient à `scratch/fondations/2026-11-10/` pour tout ce
+qui les fonde : `verification.md` (seule base de faits admise, avec le passage cité de chaque
+source), les scripts `c1` à `c7`, et `releve-monde.md`, qui porte seul l'adresse de la source S5
+(non recopiée dans la passe parce qu'elle nomme des partis étrangers). `CLAUDE.md` range `scratch/`
+parmi les « scripts jetables d'exploration ».
+
+**Pourquoi ça casse.** Un ménage de `scratch/` laisse un registre dont aucun chiffre ne se refait et
+dont S5, citée dans quatre entrées, n'a plus d'adresse ; or la compétence veut qu'un fait sans
+adresse disparaisse. On s'en aperçoit à la passe suivante, en suivant un renvoi mort ; l'historique
+Git permet de restaurer.
+
+**Ce qu'il faut faire.** Ne pas nettoyer `scratch/fondations/`. Si l'auteur veut un `scratch/`
+vraiment jetable, déplacer les pièces d'une passe sous `docs/fondations/AAAA-MM-JJ/` et corriger la
+compétence `hypotheses-structurantes`, qui fixe aujourd'hui cet emplacement (« Les preuves
+admises », point 1).
+
+### 3. Les citations du registre sont celles du protocole 0.34 — *basse*
+
+Chaque entrée du registre cite le protocole mot pour mot (« Le protocole dit »), et la passe cite
+`runs/README.md`, `CLAUDE.md` et le plan de la page pédagogique. La 0.35 est tranchée et pas
+écrite ; D105 à D111 proposent elles-mêmes de réviser les §1, §6, §7, §8, §10, §11 et §12.
+
+**Pourquoi ça casse.** Une phrase réécrite par une révision (le calendrier du §12, que D108 propose
+de changer) reste citée au registre dans son ancienne forme, et une hypothèse garde pour appui un
+texte qui n'existe plus. Rien ne le signale tant que personne ne relance le contrôle.
+
+**Ce qu'il faut faire.** Après chaque révision du protocole : `PYTHONDONTWRITEBYTECODE=1 python3
+scratch/fondations/2026-11-10/verif_citations.py` (sortie 1 si une citation a disparu), puis une
+passe courte sur les hypothèses touchées.
+
+---
+
 ## 2026-11-09 (après-midi) — Constats bas de la revue et de la conformité du jour (PR #399 à #405 : `validation/`, `schema/`, `pipeline/gel/`, `pipeline/notation/`, `tests/`)
 
 ### 1. Le gel refuse un périmètre qui garde la raison d'un changement de quota d'un run à l'autre — *basse*

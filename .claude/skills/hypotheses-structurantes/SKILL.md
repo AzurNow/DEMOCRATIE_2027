@@ -153,7 +153,9 @@ session.
 4. **Vérifier soi-même**, sans déléguer : chaque citation du protocole existe mot pour mot (`grep
    -F`) ; le protocole ne répond pas déjà ailleurs (un texte de cette densité traite souvent au §11
    ce qu'on croit manquer au §3) ; chaque URL est ouverte et dit ce qu'on lui fait dire ; chaque
-   calcul est relancé après relecture de ses hypothèses ; chaque fait a une date. Avant de changer
+   calcul est relancé après relecture de ses hypothèses ; chaque fait a une date ; aucun fichier de
+   sous-agent ne nomme un candidat (le chercher par `grep`, adresses comprises, avant le premier
+   commit : un interdit écrit dans un brief n'est pas un interdit tenu). Avant de changer
    le statut d'une hypothèse, écrire **l'argument contraire le plus fort** et y répondre sur pièces ;
    s'il tient, le statut ne change pas. Un fait non vérifié est retiré, pas gardé « à vérifier ».
 

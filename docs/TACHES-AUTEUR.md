@@ -11,6 +11,26 @@ Complété le 2026-11-02 (fusions, D62) ; mis à jour en entier le 2026-10-16. S
 
 ## 0. Fusions en attente
 
+- [ ] (2026-11-11) Trancher **D105 à D112** dans `docs/feuille-de-route.json` : les huit décisions
+      de la passe `hypotheses-structurantes` (`docs/fondations/registre.md`, H1 à H12). Commencer
+      par **D108** (date butoir du premier run public, rythme mensuel) et **D109** (échelle de
+      repli du volume), dont dépend **D110** (partenaire de capacité d'annotation). D105 à D111
+      demandent chacune une révision du protocole avant gel : les trancher avant d'écrire la 0.35
+      éviterait une version de plus.
+- [ ] (2026-11-11) Exécuter les trois essais de terrain décrits dans `docs/fondations/2026-11-10.md` :
+      **E1** (un rapport d'exemple fictif remis à trois destinataires, environ 6 h, avant D107),
+      **E2** (de vraies questions d'électeurs, environ 4 h), **E3** (la même question à chaque
+      éditeur, environ 3 h, après relecture de l'avocat). Le résultat revient au registre en
+      agrégat, sans nom de personne.
+- [ ] (2026-11-11) Ajouter à la relecture de l'avocat les questions de la passe : une réponse
+      d'assistant entre-t-elle dans le champ du décret de Viginum ; par quelle voie un tiers
+      porte-t-il un constat au coordinateur national (Arcom) ; le projet est-il éligible à
+      l'agrément des chercheurs de l'article 40 du DSA (80 jours ouvrés au plus) ; statut,
+      rémunération et données personnelles d'annotateurs fournis par un partenaire (D110) ; le
+      message de l'essai E3 change-t-il quelque chose à l'indépendance déclarée au §1.
+- [ ] (2026-11-11) Supprimer ou ignorer `site/site/` (cache Astro non suivi du 2026-11-06 :
+      `.astro/`, `node_modules/.vite`), qui fait échouer `pnpm check` en local sur
+      `site/site/.astro/types.d.ts`. La CI n'est pas touchée.
 - [x] (2026-11-09) Trancher **D103** (option 1, publié) puis passer **#406** de brouillon à prête (l'auteur ne peut pas
       arbitrer, conformité n° 13) : le pseudonyme d'annotateur de l'auteur est-il publié dans
       `run.json` ?

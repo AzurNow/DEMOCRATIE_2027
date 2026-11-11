@@ -69,8 +69,11 @@ candidat nommé.
   générale, rustine sur les questions publiées, refus de répondre sur les élections, rien), et par
   quel canal la pression est passée (presse, régulateur, signalement direct, engagement volontaire) ?
   Un refus généralisé de répondre est-il une issue fréquente, et le protocole la compte-t-il comme
-  un progrès ou comme une perte pour l'électeur ? Ce qui tomberait : la forme du rapport aux
-  éditeurs, et la place du taux de non-réponse dans ce qui est mis en avant.
+  un progrès ou comme une perte pour l'électeur ? **À lire dans le protocole et le code** : sur
+  quelles questions et avec quel dénominateur l'indicateur de progrès se calcule-t-il (questions
+  communes à deux runs, donc déjà publiées ? non-réponses comptées ?), et une rustine ou un refus
+  suffirait-il à le faire monter ? Ce qui tomberait : la forme du rapport aux éditeurs, et la
+  place du taux de non-réponse dans ce qui est mis en avant.
 
 ## P5. Quelqu'un agit sur un résultat
 
@@ -97,10 +100,13 @@ candidat nommé.
   pour qu'un éditeur corrige, qu'une tendance se lise (H5) et qu'un électeur en profite.
 - **À calculer** : d'après l'avancement réel de `docs/feuille-de-route.json` et ce qui reste à
   l'auteur (`docs/TACHES-AUTEUR.md`), la date réaliste du gel, du run pilote et du premier run
-  public ; le nombre de runs avant le premier tour dans ce scénario ; ce qu'un périmètre réduit
-  (moins de candidats au premier run, moins de formulations, un mode) avancerait, et ce qu'il
-  retirerait aux intervalles. **À savoir** : à quel moment d'une campagne les audits comparables
-  ont été publiés, et lesquels ont eu des suites.
+  public ; le nombre de runs avant le premier tour dans ce scénario ; les heures de notation
+  humaine qu'un run exige entre la fin de l'interrogation et sa publication, et le réservoir qui
+  les fournit (annotateurs et testeurs du canal application sont-ils les mêmes personnes ?), car
+  une fenêtre de run ouverte n'est pas un run publié ; ce qu'un périmètre réduit (moins de
+  candidats au premier run, moins de formulations, un mode) avancerait, et ce qu'il retirerait aux
+  intervalles. **À savoir** : à quel moment d'une campagne les audits comparables ont été publiés,
+  et lesquels ont eu des suites.
 
 ## P7. Chaque couche de rigueur ajoute de la crédibilité qui sert
 
@@ -191,11 +197,12 @@ n'est interrogé sur un candidat ; aucun nom de personne ne revient au registre.
 
 - **Un rapport d'exemple, un destinataire.** Hypothèses : P5, P10, P11. Bâtir un rapport de run sur
   le jeu de démonstration (`validation/fixtures/`), marqué fictif à chaque page, candidats et outils
-  anonymes ; le remettre à une personne qui pourrait agir (journaliste, chercheur, agent d'une
-  autorité). Observer : ce qu'elle lit en premier, ce qu'elle comprend de travers, ce qu'elle
-  demande en plus, ce qu'elle ferait d'un vrai rapport, et sous quelle forme elle le voudrait.
-  Falsifie si : elle ne voit aucune action à en tirer, ou seulement une action que le §10 interdit
-  (classer des candidats).
+  anonymes (la chaîne qui le produit est-elle complète ? la lire dans `runs/README.md`, « De bout en
+  bout en mode simulé », et y renvoyer plutôt que la recopier) ; le remettre à une personne qui
+  pourrait agir (journaliste, chercheur, agent d'une autorité). Observer : ce qu'elle lit en
+  premier, ce qu'elle comprend de travers, ce qu'elle demande en plus, ce qu'elle ferait d'un vrai
+  rapport, et sous quelle forme elle le voudrait. Falsifie si : elle ne voit aucune action à en
+  tirer, ou seulement une action que le §10 interdit (classer des candidats).
 - **De vraies questions d'électeurs.** Hypothèses : P1, P2, P3. Demander à quelques personnes hors
   du milieu technique comment elles se renseigneraient sur un candidat avec une IA : quel outil,
   ouvert où, quelle question, dans leurs mots. Ne noter que le canal, l'outil et la forme de la
