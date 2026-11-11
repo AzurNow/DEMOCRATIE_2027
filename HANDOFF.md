@@ -43,10 +43,12 @@ Décision de l'auteur du 2026-11-01 :
 
 ## État au 2026-11-11
 
-- **Passe `hypotheses-structurantes` du 2026-11-10 terminée**, branche
-  `docs/fondations-2026-11-10`. Registre `docs/fondations/registre.md` (H1 à H12), passe datée
-  `docs/fondations/2026-11-10.md`, scripts `c1` à `c7` et fichiers de travail dans
-  `scratch/fondations/2026-11-10/` (`verification.md` est la seule base de faits admise). Statuts :
+- **Passe `hypotheses-structurantes` du 2026-11-10 terminée et fusionnée (#410)** ; session close
+  le 2026-11-11 (dette, leçons, tâches de l'auteur). Registre `docs/fondations/registre.md` (H1 à
+  H12), passe datée `docs/fondations/2026-11-10.md`, scripts `c1` à `c7` et fichiers de travail
+  dans `scratch/fondations/2026-11-10/` (`verification.md` est la seule base de faits admise ;
+  `verif_citations.py` recontrôle les citations, à relancer après chaque révision du protocole,
+  DETTE 2026-11-11 n° 3 ; ne pas nettoyer ce répertoire, DETTE n° 2). Statuts :
   H3 confirmée ; H1, H2, H4, H5 et H10 à tester ; H6, H7 (couches de volume), H8 et H11 infirmées ;
   H9 pari assumé ; H12 infirmée, rien à changer. La passe n'a touché ni au protocole, ni à une
   règle, ni à un jalon. **À l'auteur** : huit décisions `en_attente`, D105 à D112 (application
@@ -55,8 +57,10 @@ Décision de l'auteur du 2026-11-01 :
   points à confier à `critique-protocole`), et trois essais de terrain E1 à E3 (environ 6 h, 4 h,
   3 h plus l'avocat), décrits dans la passe. D105 à D111 demandent chacune une révision du
   protocole avant gel : les trancher avant d'écrire la 0.35 éviterait une version de plus
-  (suggestion de la session). Après les décisions : étape 8 de la compétence (texte de révision
-  dans une PR que l'auteur fusionne, puis `critique-protocole` et `conformite-protocole`).
+  (suggestion de la session). Si le périmètre ou un quota change avant ces décisions, relancer
+  d'abord les scripts (DETTE n° 1). Après les décisions : étape 8 de la compétence (texte de
+  révision dans une PR que l'auteur fusionne, puis `critique-protocole` et
+  `conformite-protocole`).
 - `site/site/` (cache Astro non suivi daté du 2026-11-06 : `.astro/`, `node_modules/.vite`) fait
   échouer `pnpm check` en local (« site/site/.astro/types.d.ts was not found by the project
   service ») ; la CI n'est pas touchée. Non supprimé par la session : à supprimer ou à ignorer,
