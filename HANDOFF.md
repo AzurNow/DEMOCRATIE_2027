@@ -76,6 +76,41 @@ Décision de l'auteur du 2026-11-01 :
 
 Rien hors #359 (brouillon, 0.35).
 
+## Faisabilité et démarchage (discussion du 2026-11-12, rien de tranché)
+
+Discussion sans code, recopiée ici parce que l'auteur reprend depuis une autre machine.
+
+- **Constat.** 0 item dans `data/items/`, protocole non gelé, annotateurs non recrutés : les jalons
+  du 15 nov., du 22 nov. et du 1er déc. ne tiennent plus. Le modèle de la critique
+  (`scratch/critique/D/faisabilite.py`) donne, au périmètre réaliste (≈ 490 questions, 11 couples,
+  1 échantillon), ≈ 456 € d'API et **256 à 499 h d'annotation par run**. La charge vient de deux
+  règles du §7 (échantillon proportionnel de 10 %, renvoi humain de chaque désaccord), pas du
+  périmètre ; retirer des candidats ne gagne presque rien.
+- **Brouillon d'amendement** : `scratch/amendement-charge/BROUILLON.md` (pas le protocole).
+  Échantillon humain fixe de 400 réponses et strate de désaccord échantillonnée à 400, pondérée ;
+  80 à 142 h par run. Pas de troisième juge (le §7 impose deux juges, et le renvoi humain des
+  désaccords est un garde-fou de conflit d'intérêts déclaré). Trous ouverts : poids dans le
+  bootstrap du §8, puissance de la robustesse (a), taille 400 à simuler. Décisions à l'auteur, en
+  fin de brouillon.
+- **Autres pistes** : 4 à 5 runs événementiels au lieu de l'hebdomadaire ; ~5 couples outil × mode
+  en gardant des paires web / sans web (H2) ; association loi 1901 ; partenaires (laboratoire,
+  rédaction, ONG) qui apportent leurs propres annotateurs. L'auteur ne finance pas l'annotation de
+  sa poche : ne jamais proposer de mission rémunérée non financée.
+- **Démarchage préparé, pas envoyé.** Liste de cibles, page de présentation et courriels sont
+  **hors du dépôt** (dossier privé de l'auteur : noms de personnes), à copier par l'auteur d'une
+  machine à l'autre. Concurrents 2027 vérifiés (Fondation Jean-Jaurès et Onclusive,
+  Angie/Meteoria, La Voix des IA, T. Mendès France) : aucun ne vérifie l'exactitude contre des
+  citations sourcées, c'est le positionnement du projet.
+- **Ordre convenu avant tout envoi** : (1) l'auteur écrit la 0.35 ; (2) il tranche le principe de
+  l'amendement de charge ; (3) deuxième passe `/critique-protocole` sur la 0.35 et le brouillon,
+  lancée par l'auteur, avec deux lentilles à ajouter (faisabilité opérationnelle ; sobriété et
+  lisibilité pour un lecteur extérieur) ; (4) guide de lecture de 3 à 4 pages, FR et EN ; (5)
+  courriels corrigés : « une heure suffit » est faux tant que le protocole fait ≈ 23 000 mots en
+  français ; (6) envoi, sans nouvelle passe interne avant les retours extérieurs.
+- **Code restant estimé** : 4 à 6 semaines agentiques (0.35 et D85/D94/D95/D98 ; adaptateurs réels
+  et `run:live` ; poids de l'amendement dans `analysis/` ; site de résultats), plus 1 à 3 semaines
+  au premier contact avec le réel. Le goulot est le temps de l'auteur et le hors-code.
+
 ## Prochaines tâches, par priorité
 
 1. Protocole 0.35 par l'auteur, puis D94, D85, D95 et la séparation des populations.
